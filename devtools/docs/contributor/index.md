@@ -11,7 +11,7 @@ Bugs and issues <bugs-issues.md>
 
 # Firefox DevTools Contributor Docs
 
-This is the contributor documentation for Firefox Developer Tools. If you're looking for help with using the tools, see the [user docs](https://firefox-source-docs.mozilla.org/devtools-user/index.html). Note that this section only contains technical information specific to Firefox DevTools, make sure to first read the [Firefox contributor documentation](https://firefox-source-docs.mozilla.org/contributing/index.html) which explains how to contribute to Firefox in general (setting up the environment, submitting patches, etc.).
+This is the contributor documentation for Firefox Developer Tools. If you're looking for help with using the tools, see the {doc}`user docs </devtools-user/index>`. Note that this section only contains technical information specific to Firefox DevTools, make sure to first read the {doc}`Firefox contributor documentation </contributing/index>` which explains how to contribute to Firefox in general (setting up the environment, submitting patches, etc.).
 
 ## Automated tests
 

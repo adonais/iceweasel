@@ -1,0 +1,11 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+
+@template
+def HostSimplePrograms(names):
+    HOST_SIMPLE_PROGRAMS += names
+    HOST_SOURCES += [f"{n}.cpp" for n in names]
+
+
+HostSimplePrograms(["host_asimple"])

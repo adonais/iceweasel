@@ -106,14 +106,13 @@ class CodeCoverageMixin(SingleTestMixin):
             build_mozinfo = json.load(f)
 
         self.prefix = build_mozinfo["topsrcdir"]
-        self.path_to_gcnos = os.path.join(self.grcov_dir, "gcno")
 
         strip_count = len(list(filter(None, self.prefix.split("/"))))
         os.environ["GCOV_PREFIX_STRIP"] = str(strip_count)
 
         # Download the gcno archive from the build machine.
         url_to_gcno = self.query_build_dir_url("target.code-coverage-gcno.zip")
-        self.download_unpack(url_to_gcno, extract_to=self.path_to_gcnos)
+        self.download_file(url_to_gcno, parent_dir=self.grcov_dir)
 
         # Download the chrome-map.json file from the build machine.
         url_to_chrome_map = self.query_build_dir_url("chrome-map.json")
@@ -278,7 +277,7 @@ class CodeCoverageMixin(SingleTestMixin):
             self.prefix,
             "--ignore",
             "**/fetches/*",
-            self.path_to_gcnos,
+            os.path.join(self.grcov_dir, "target.code-coverage-gcno.zip"),
             gcov_dir,
         ]
 

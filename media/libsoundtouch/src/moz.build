@@ -128,3 +128,15 @@ LICENSES["libsoundtouch"].notice = """
 LICENSED_UNDER += [
     "libsoundtouch",
 ]
+
+SOURCE_HEADERS += [
+	"AAFilter.h",
+	"cpu_detect.h",
+	"FIFOSampleBuffer.h",
+	"FIRFilter.h",
+	"InterpolateCubic.h",
+	"InterpolateLinear.h",
+	"InterpolateShannon.h",
+	"RateTransposer.h",
+	"TDStretch.h",
+]

@@ -162,6 +162,14 @@ RenderDMABUFTextureHost* RenderTextureHostWrapper::AsRenderDMABUFTextureHost() {
   return mTextureHost->AsRenderDMABUFTextureHost();
 }
 
+RenderWaylandTextureHost*
+RenderTextureHostWrapper::AsRenderWaylandTextureHost() {
+  if (!mTextureHost) {
+    return nullptr;
+  }
+  return mTextureHost->AsRenderWaylandTextureHost();
+}
+
 RenderAndroidHardwareBufferTextureHost*
 RenderTextureHostWrapper::AsRenderAndroidHardwareBufferTextureHost() {
   if (!mTextureHost) {

@@ -2721,10 +2721,15 @@ void ARGBExtractAlphaRow_NEON(const uint8_t* src_argb,
                               int width) {
   asm volatile(
       "1:          \n"
-      "ld4         {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // load 16
+      "ldp         q0, q1, [%0]                  \n"  // load 8 ARGB pixels
+      "ldp         q2, q3, [%0, #32]             \n"  // load next 8 ARGB pixels
+      "add         %0, %0, #64                   \n"
       "prfm        pldl1keep, [%0, 448]          \n"
+      "uzp2        v0.8h, v0.8h, v1.8h           \n"
+      "uzp2        v2.8h, v2.8h, v3.8h           \n"
+      "uzp2        v0.16b, v0.16b, v2.16b        \n"
       "subs        %w2, %w2, #16                 \n"  // 16 processed per loop
-      "st1         {v3.16b}, [%1], #16           \n"  // store 16 A's.
+      "str         q0, [%1], #16                 \n"  // store 16 A's.
       "b.gt        1b                            \n"
       : "+r"(src_argb),  // %0
         "+r"(dst_a),     // %1
@@ -2732,6 +2737,36 @@ void ARGBExtractAlphaRow_NEON(const uint8_t* src_argb,
       :
       : "cc", "memory", "v0", "v1", "v2", "v3"  // Clobber List
   );
+}
+
+void ARGBCopyYToAlphaRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "1:          \n"
+      "ldr         q4, [%0], #16                 \n"
+      "ldp         q0, q1, [%1]                  \n"
+      "ldp         q2, q3, [%1, #32]             \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "zip1        v6.16b, v4.16b, v4.16b        \n"
+      "zip2        v7.16b, v4.16b, v4.16b        \n"
+      "zip1        v4.8h, v6.8h, v6.8h           \n"
+      "zip2        v5.8h, v6.8h, v6.8h           \n"
+      "zip1        v6.8h, v7.8h, v7.8h           \n"
+      "zip2        v7.8h, v7.8h, v7.8h           \n"
+      "sli         v0.4s, v4.4s, #24             \n"
+      "sli         v1.4s, v5.4s, #24             \n"
+      "sli         v2.4s, v6.4s, #24             \n"
+      "sli         v3.4s, v7.4s, #24             \n"
+      "stp         q0, q1, [%1]                  \n"
+      "stp         q2, q3, [%1, #32]             \n"
+      "add         %1, %1, #64                   \n"
+      "subs        %w2, %w2, #16                 \n"
+      "b.gt        1b                            \n"
+      : "+r"(src),   // %0
+        "+r"(dst),   // %1
+        "+r"(width)  // %2
+      :
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
 // Coefficients expressed as negatives to allow 128

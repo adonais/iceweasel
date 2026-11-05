@@ -10,6 +10,9 @@ export default {
   globals: {
     // WebAssembly is available everywhere but is not a webIDL definition.
     WebAssembly: "readonly",
+    // Manually added awaiting full list update:
+    DecompressionStream: "readonly",
+    TextDecoderStream: "readonly",
     // This list of items is currently obtained manually from the list of
     // mozilla::dom::constructor::id::ID enumerations in an object directory
     // generated dom/bindings/RegisterBindings.cpp

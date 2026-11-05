@@ -256,6 +256,10 @@ async function runTests() {
     info("Opening and closing context native context menu");
     let contextMenu = window.EditContextMenu.popup;
     let popupshown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+    // ... we should, however, see a focus event on the input after the
+    // native menu is closed. We await this below to ensure the popup is fully
+    // hidden (to a11y) before moving on.
+    focused = waitForEvent(EVENT_FOCUS, textBox);
     EventUtils.synthesizeMouseAtCenter(
       gURLBar.querySelector(".urlbar-input-box"),
       {
@@ -266,6 +270,7 @@ async function runTests() {
     let popuphidden = BrowserTestUtils.waitForEvent(contextMenu, "popuphidden");
     contextMenu.hidePopup();
     await popuphidden;
+    await focused;
   } else {
     info(
       "Ensuring context menu gets menu event on launch, and item focus on down"

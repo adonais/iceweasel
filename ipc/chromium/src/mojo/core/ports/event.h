@@ -95,7 +95,6 @@ class Event {
 
   size_t GetSerializedSize() const;
   void Serialize(void* buffer) const;
-  virtual ScopedEvent CloneForBroadcast() const;
 
   const PortName& from_port() const { return from_port_; }
   void set_from_port(const PortName& from_port) { from_port_ = from_port; }
@@ -227,7 +226,6 @@ class ObserveProxyEvent : public Event {
  private:
   size_t GetSerializedDataSize() const override;
   void SerializeData(void* buffer) const override;
-  ScopedEvent CloneForBroadcast() const override;
 
   const NodeName proxy_node_name_;
   const PortName proxy_port_name_;

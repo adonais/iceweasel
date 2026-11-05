@@ -82,7 +82,7 @@ static MOZ_CAN_RUN_SCRIPT void ActivateItem(dom::Element& aElement) {
       bool newValue = !*checked;
       if (newValue) {
         aElement.SetAttr(kNameSpaceID_None, nsGkAtoms::checked, u"true"_ns,
-                         true);
+                         true, dom::IsKnownNewAttr::No);
       } else {
         aElement.UnsetAttr(kNameSpaceID_None, nsGkAtoms::checked, true);
       }

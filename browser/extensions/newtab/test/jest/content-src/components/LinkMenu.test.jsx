@@ -290,9 +290,18 @@ describe("<LinkMenu>", () => {
         is_sponsored: true,
       },
       "newtab-menu-open-new-private-window": {
+        card_type: FAKE_SITE.card_type,
         url: FAKE_SITE.url,
         referrer: FAKE_SITE.referrer,
         event_source: "CONTEXT_MENU",
+        topic: undefined,
+        tile_id: undefined,
+        scheduled_corpus_item_id: undefined,
+        corpus_item_id: undefined,
+        received_rank: undefined,
+        recommended_at: undefined,
+        format: undefined,
+        is_pocket_card: false,
       },
       "newtab-menu-dismiss": [
         {
@@ -538,6 +547,56 @@ describe("<LinkMenu>", () => {
         is_pocket_card: true,
       };
       expect(blockUrlOption.action.data[0]).toEqual(expected);
+    });
+  });
+
+  describe("OpenInNewWindow dwell time", () => {
+    function openInNewWindow(site) {
+      const dispatch = jest.fn();
+      const { options } = mountLinkMenu({
+        site,
+        dispatch,
+        index: 3,
+        options: ["OpenInNewWindow"],
+        source: "CARDGRID",
+      }).render().props;
+      options[0].onClick({});
+      const [[action], [userEvent]] = dispatch.mock.calls;
+      return { action, userEvent };
+    }
+
+    it("should give a story's window and its user event the same dwell_id", () => {
+      const site = { url: "https://example.com", dwell_label: "story_organic" };
+      const first = openInNewWindow(site);
+      const second = openInNewWindow(site);
+
+      expect(first.action.data.dwell_label).toBe("story_organic");
+      expect(first.action.data.dwell_id).toBeDefined();
+      expect(first.userEvent.data.value.dwell_id).toBe(
+        first.action.data.dwell_id
+      );
+      expect(second.action.data.dwell_id).not.toBe(first.action.data.dwell_id);
+    });
+
+    it("should label a top site's window without a dwell_id", () => {
+      const { action, userEvent } = openInNewWindow({
+        url: "https://example.com",
+        dwell_label: "topsite_organic",
+      });
+
+      expect(action.data.dwell_label).toBe("topsite_organic");
+      expect(action.data).not.toHaveProperty("dwell_id");
+      expect(userEvent.data.value).not.toHaveProperty("dwell_id");
+    });
+
+    it("should leave an unlabelled window out of dwell time", () => {
+      const { action, userEvent } = openInNewWindow({
+        url: "https://example.com",
+      });
+
+      expect(action.data).not.toHaveProperty("dwell_label");
+      expect(action.data).not.toHaveProperty("dwell_id");
+      expect(userEvent.data.value).not.toHaveProperty("dwell_id");
     });
   });
 });

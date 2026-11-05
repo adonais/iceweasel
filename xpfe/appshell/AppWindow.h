@@ -189,7 +189,7 @@ class AppWindow final : public nsIBaseWindow,
   NS_IMETHOD EnsurePrompter();
   NS_IMETHOD EnsureAuthPrompter();
   NS_IMETHOD ForceRoundedDimensions();
-  NS_IMETHOD GetAvailScreenSize(int32_t* aAvailWidth, int32_t* aAvailHeight);
+  Maybe<CSSIntSize> GetAvailScreenSize();
 
   MOZ_CAN_RUN_SCRIPT void FinishFullscreenChange(bool aInFullscreen);
 
@@ -199,7 +199,7 @@ class AppWindow final : public nsIBaseWindow,
                        int32_t aSpecWidth, int32_t aSpecHeight);
   bool LoadPositionFromXUL(int32_t aSpecWidth, int32_t aSpecHeight);
   bool LoadSizeFromXUL(int32_t& aSpecWidth, int32_t& aSpecHeight);
-  void SetSpecifiedSize(int32_t aSpecWidth, int32_t aSpecHeight);
+  void SetSpecifiedSize(const CSSIntSize&);
   MOZ_CAN_RUN_SCRIPT bool UpdateWindowStateFromMiscXULAttributes();
   void SyncAttributesToWidget();
   void SavePersistentAttributes(PersistentAttributes);

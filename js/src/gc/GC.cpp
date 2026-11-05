@@ -512,7 +512,7 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       incrementalGCEnabled(TuningDefaults::IncrementalGCEnabled),
       perZoneGCEnabled(TuningDefaults::PerZoneGCEnabled),
       numActiveZoneIters(0),
-      grayBitsValid(true),
+      grayBitsInvalid(0),
       majorGCTriggerReason(JS::GCReason::NO_REASON),
       minorGCNumber(0),
       majorGCNumber(0),
@@ -3916,6 +3916,7 @@ void GCRuntime::checkGCStateNotInUse() {
   MOZ_ASSERT(!hasDelayedMarking());
   MOZ_ASSERT(!hasAnyDeferredWeakMaps());
   MOZ_ASSERT(!didYieldAtEndOfMarkPhase);
+  MOZ_ASSERT(!(grayBitsInvalid & GrayBitsInvalidatedInCurrentGC));
 
   MOZ_ASSERT(!disableBarriersForSweeping);
   MOZ_ASSERT(foregroundFinalizedArenas.ref().isNothing());
@@ -4148,11 +4149,12 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
         zone->arenas.mergeArenasFromCollectingLists();
       }
 
+      incrementalState = State::NotActive;
+
       // The gray marking state may not be valid. We don't do gray unmarking
       // when zones are in the Prepare state.
       setGrayBitsInvalid();
 
-      incrementalState = State::NotActive;
       checkGCStateNotInUse();
       break;
 
@@ -4178,11 +4180,6 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
       for (GCCompartmentsIter c(rt); !c.done(); c.next()) {
         resetGrayList(c);
       }
-
-      // The gray marking state may not be valid. We depend on the mark stack to
-      // do gray unmarking in zones that are being marked by the GC and we've
-      // just cancelled that part way through.
-      setGrayBitsInvalid();
 
       // Wait for sweeping of nursery owned sized allocations to finish.
       nursery().joinSweepTask();
@@ -4211,6 +4208,11 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
 
       didYieldAtEndOfMarkPhase = false;
       incrementalState = State::Finish;
+
+      // The gray marking state may not be valid. We depend on the mark stack to
+      // do gray unmarking in zones that are being marked by the GC and we've
+      // just cancelled that part way through.
+      setGrayBitsInvalid();
 
 #ifdef DEBUG
       for (auto& marker : markers) {
@@ -4261,8 +4263,12 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
 }
 
 void GCRuntime::setGrayBitsInvalid() {
-  waitBackgroundSweepEnd();
-  grayBitsValid = false;
+  uint32_t bitsToSet = GrayBitsInvalid;
+  if (state() >= State::MarkRoots && state() <= State::Sweep) {
+    // This is cleared in GCRuntime::endSweepPhase.
+    bitsToSet |= GrayBitsInvalidatedInCurrentGC;
+  }
+  grayBitsInvalid |= bitsToSet;
 }
 
 void GCRuntime::disableIncrementalBarriers() {
@@ -5695,6 +5701,10 @@ MOZ_COLD bool GCRuntime::waitForBackgroundTasksOnAllocFailure() {
   }
 
   if (nursery().joinDecommitTask()) {
+    waited = true;
+  }
+
+  if (unmarkTask.join()) {
     waited = true;
   }
 

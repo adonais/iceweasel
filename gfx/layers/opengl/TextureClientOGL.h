@@ -14,9 +14,7 @@
 #include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor
 #include "mozilla/layers/TextureClient.h"   // for TextureClient, etc
 #ifdef MOZ_WIDGET_ANDROID
-#  include "AndroidNativeWindow.h"
 #  include "AndroidSurfaceTexture.h"
-#  include "mozilla/java/GeckoSurfaceWrappers.h"
 #  include "mozilla/layers/AndroidHardwareBuffer.h"
 #endif
 
@@ -68,45 +66,6 @@ class AndroidSurfaceTextureData : public TextureData {
   const bool mHasAlpha;
   const bool mForceBT709ColorSpace;
   const Maybe<gfx::Matrix4x4> mTransformOverride;
-};
-
-class AndroidNativeWindowTextureData : public TextureData {
- public:
-  static AndroidNativeWindowTextureData* Create(gfx::IntSize aSize,
-                                                gfx::SurfaceFormat aFormat);
-
-  TextureType GetTextureType() const override {
-    return TextureType::AndroidNativeWindow;
-  }
-
-  void FillInfo(TextureData::Info& aInfo) const override;
-
-  bool Serialize(SurfaceDescriptor& aOutDescriptor) override;
-
-  bool Lock(OpenMode) override;
-  void Unlock() override;
-
-  void Forget(LayersIPCChannel*) override;
-  void Deallocate(LayersIPCChannel*) override {}
-
-  already_AddRefed<gfx::DrawTarget> BorrowDrawTarget() override;
-
-  void OnForwardedToHost() override;
-
- protected:
-  AndroidNativeWindowTextureData(java::GeckoSurface::Param aSurface,
-                                 gfx::IntSize aSize,
-                                 gfx::SurfaceFormat aFormat);
-
- private:
-  java::GeckoSurface::GlobalRef mSurface;
-  ANativeWindow* mNativeWindow;
-  ANativeWindow_Buffer mBuffer;
-  // Keeps track of whether the underlying NativeWindow is actually locked.
-  bool mIsLocked;
-
-  const gfx::IntSize mSize;
-  const gfx::SurfaceFormat mFormat;
 };
 
 class AndroidHardwareBufferTextureData : public TextureData {

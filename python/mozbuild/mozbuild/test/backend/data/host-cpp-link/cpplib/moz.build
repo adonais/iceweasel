@@ -1,0 +1,12 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+
+@template
+def HostLibrary(name):
+    HOST_LIBRARY_NAME = name
+
+
+HostLibrary("cpplib")
+
+HOST_SOURCES += ["c.cpp"]

@@ -2361,8 +2361,8 @@ RTCStatsCollector::PrepareTransceiverStatsInfosAndCallStats_s_w() {
         std::move(transceiver_stats_infos);
     worker_result.transceiver_references = std::move(transceiver_references);
 
-    // Create the TrackMediaInfoMap for each transceiver stats object
-    // and keep track of whether we have at least one audio receiver.
+    // Create the TrackMediaInfoMap for each transceiver stats object and keep
+    // track of whether audio is played out.
     bool has_audio_receiver = false;
     RTC_DCHECK_EQ(worker_result.results.transceiver_stats_infos.size(),
                   worker_result.transceiver_references.size());
@@ -2419,8 +2419,11 @@ RTCStatsCollector::PrepareTransceiverStatsInfosAndCallStats_s_w() {
           std::move(voice_media_info), std::move(video_media_info),
           std::move(stats.sender_infos), std::move(sender_parameters),
           std::move(stats.receiver_infos), std::move(receiver_parameters));
-      if (stats.media_type == MediaType::AUDIO) {
-        has_audio_receiver |= stats.has_receivers;
+      // There is no playout path until negotiated to receive audio.
+      if (stats.media_type == MediaType::AUDIO && stats.has_receivers &&
+          (stats.current_direction == RtpTransceiverDirection::kSendRecv ||
+           stats.current_direction == RtpTransceiverDirection::kRecvOnly)) {
+        has_audio_receiver = true;
       }
     }
 

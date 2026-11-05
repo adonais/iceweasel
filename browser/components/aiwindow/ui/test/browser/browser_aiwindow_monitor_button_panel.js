@@ -19,6 +19,10 @@ const { MonitorAgent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs"
 );
 
+const { MonitorPanel } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/MonitorPanel.sys.mjs"
+);
+
 const { SpecialMessageActions } = ChromeUtils.importESModule(
   "resource://messaging-system/lib/SpecialMessageActions.sys.mjs"
 );
@@ -141,6 +145,54 @@ add_task(async function test_monitor_panel_toggles() {
       "false",
       "Button reports the panel as collapsed again"
     );
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+/**
+ * A click that lands while the panel is still opening hides it before it was
+ * ever shown, so teardown runs without the observer the shown panel would have
+ * added. Teardown has to survive that: if it doesn't, the panel node is left
+ * behind and every later click toggles a panel the user cannot see, leaving the
+ * button dead for the rest of the session.
+ */
+add_task(async function test_monitor_panel_click_while_opening() {
+  const win = await openAIWindow();
+  try {
+    await promiseNavigateAndLoad(
+      win.gBrowser.selectedBrowser,
+      "https://example.com/"
+    );
+    const monitorButton = getMonitorButton(win);
+
+    // Two clicks in the same turn, so the second one lands before the panel
+    // has finished opening.
+    MonitorPanel.toggleMonitorPanel(win);
+    MonitorPanel.toggleMonitorPanel(win);
+
+    await TestUtils.waitForCondition(
+      () => !win.document.getElementById(PANEL_ID),
+      "Panel hidden before it was shown is still removed from the DOM"
+    );
+    Assert.equal(
+      monitorButton.getAttribute("aria-expanded"),
+      "false",
+      "Button reports the panel as collapsed"
+    );
+
+    // The button has to keep working afterwards.
+    const shown = BrowserTestUtils.waitForEvent(
+      win.document.getElementById("mainPopupSet"),
+      "popupshown"
+    );
+    EventUtils.synthesizeMouseAtCenter(monitorButton, {}, win);
+    const panel = (await shown).target;
+    Assert.equal(panel.id, PANEL_ID, "The button still opens the panel");
+
+    const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+    panel.hidePopup();
+    await hidden;
   } finally {
     await BrowserTestUtils.closeWindow(win);
   }
@@ -1091,6 +1143,51 @@ add_task(async function test_monitor_panel_create_seeds_current_page() {
       "A page no monitor can watch seeds nothing"
     );
     await closePanel(panel);
+  } finally {
+    sb.restore();
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+add_task(async function test_monitor_panel_create_chip_shows_page_title() {
+  const OPEN_URL =
+    "https://example.com/browser/browser/components/aiwindow/ui/test/browser/test_context_url_page.html";
+  const sb = this.sinon.createSandbox();
+  sb.stub(MonitorAgent, "listMonitors").resolves([]);
+  const win = await openAIWindow();
+
+  try {
+    await promiseNavigateAndLoad(win.gBrowser.selectedBrowser, OPEN_URL);
+    const openTitle = win.gBrowser.selectedBrowser.contentTitle;
+    Assert.ok(openTitle, "The open test page has a title");
+
+    const shown = BrowserTestUtils.waitForEvent(
+      win.document.getElementById("mainPopupSet"),
+      "popupshown"
+    );
+    EventUtils.synthesizeMouseAtCenter(getMonitorButton(win), {}, win);
+    const panel = (await shown).target;
+    const contents = panel.querySelector("agent-monitor-panel");
+    await contents.updateComplete;
+    contents.shadowRoot.querySelector(".monitor-footer-row").click();
+    await contents.updateComplete;
+    const form = contents.shadowRoot.querySelector("agent-monitor-item");
+
+    const chip = () =>
+      form.shadowRoot.querySelector(".page-pills-row ai-website-chip");
+    await TestUtils.waitForCondition(
+      () => chip()?.label === openTitle,
+      "Waiting for the page title to reach the seeded chip"
+    );
+    Assert.equal(
+      chip().label,
+      openTitle,
+      "The page the form was opened from is labelled with its title"
+    );
+
+    const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+    panel.hidePopup();
+    await hidden;
   } finally {
     sb.restore();
     await BrowserTestUtils.closeWindow(win);

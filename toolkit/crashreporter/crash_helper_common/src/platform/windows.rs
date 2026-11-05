@@ -4,7 +4,7 @@
 
 use crate::{AsRawProcessHandle, AsRawThreadHandle, FromRawThreadHandle, Pid, IO_TIMEOUT};
 use std::{
-    ffi::{CStr, CString, OsString},
+    ffi::{CString, OsStr, OsString},
     mem::{zeroed, MaybeUninit},
     os::windows::io::{
         AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle, RawHandle,
@@ -45,8 +45,8 @@ impl ProcessHandle {
     }
 
     /// Deserialize a process handle from an argument passed on the command-line
-    pub fn deserialize(string: &CStr) -> Result<ProcessHandle, PlatformError> {
-        let string = string.to_str().map_err(|_e| PlatformError::ParseHandle)?;
+    pub fn deserialize(string: &OsStr) -> Result<ProcessHandle, PlatformError> {
+        let string = string.to_str().ok_or(PlatformError::ParseHandle)?;
         let handle = usize::from_str(string).map_err(|_e| PlatformError::ParseHandle)?;
 
         Ok(ProcessHandle(unsafe {

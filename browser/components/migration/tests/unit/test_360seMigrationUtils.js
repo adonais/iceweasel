@@ -4,21 +4,27 @@ const { Qihoo360seMigrationUtils } = ChromeUtils.importESModule(
   "moz-src:///browser/components/migration/360seMigrationUtils.sys.mjs"
 );
 
-const parentPath = do_get_file("AppData/Roaming/360se6/User Data").path;
 const loggedInPath = "0f3ab103a522f4463ecacc36d34eb996";
-const loggedInBackup = PathUtils.join(
-  parentPath,
-  "Default",
-  loggedInPath,
-  "DailyBackup",
-  "360default_ori_2021_12_02.favdb"
-);
-const loggedOutBackup = PathUtils.join(
-  parentPath,
-  "Default",
-  "DailyBackup",
-  "360default_ori_2021_12_02.favdb"
-);
+let parentPath;
+let loggedInBackup;
+let loggedOutBackup;
+
+add_setup(async function setup() {
+  parentPath = (await copyFixtureDir("AppData/Roaming/360se6/User Data")).path;
+  loggedInBackup = PathUtils.join(
+    parentPath,
+    "Default",
+    loggedInPath,
+    "DailyBackup",
+    "360default_ori_2021_12_02.favdb"
+  );
+  loggedOutBackup = PathUtils.join(
+    parentPath,
+    "Default",
+    "DailyBackup",
+    "360default_ori_2021_12_02.favdb"
+  );
+});
 
 function getSqlitePath(profileId) {
   return PathUtils.join(parentPath, profileId, loggedInPath, "360sefav.dat");

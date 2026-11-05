@@ -2581,6 +2581,188 @@ void BlendPlaneRow_AVX512BW(const uint8_t* src0,
 }
 #endif  // HAS_BLENDPLANEROW_AVX512BW
 
+#ifdef HAS_ARGBEXTRACTALPHAROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void ARGBExtractAlphaRow_AVX512BW(const uint8_t* src_argb,
+                                  uint8_t* dst_a,
+                                  int width) {
+  while (width >= 32) {
+    __m512i z0 = _mm512_loadu_si512((const __m512i*)src_argb);
+    __m512i z1 = _mm512_loadu_si512((const __m512i*)(src_argb + 64));
+    __m128i a0 = _mm512_cvtepi32_epi8(_mm512_srli_epi32(z0, 24));
+    __m128i a1 = _mm512_cvtepi32_epi8(_mm512_srli_epi32(z1, 24));
+    _mm_storeu_si128((__m128i*)dst_a, a0);
+    _mm_storeu_si128((__m128i*)(dst_a + 16), a1);
+    src_argb += 128;
+    dst_a += 32;
+    width -= 32;
+  }
+  if (width >= 16) {
+    __m512i z0 = _mm512_loadu_si512((const __m512i*)src_argb);
+    __m128i a0 = _mm512_cvtepi32_epi8(_mm512_srli_epi32(z0, 24));
+    _mm_storeu_si128((__m128i*)dst_a, a0);
+    src_argb += 64;
+    dst_a += 16;
+    width -= 16;
+  }
+  if (width > 0) {
+    __mmask16 mask = (__mmask16)((1u << width) - 1u);
+    __m512i z0 = _mm512_maskz_loadu_epi32(mask, src_argb);
+    _mm512_mask_cvtepi32_storeu_epi8(dst_a, mask, _mm512_srli_epi32(z0, 24));
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_ARGBEXTRACTALPHAROW_AVX512BW
+
+#ifdef HAS_ARGBCOPYYTOALPHAROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void ARGBCopyYToAlphaRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width) {
+  __m512i rgb_mask = _mm512_set1_epi32(0x00ffffff);
+  while (width >= 32) {
+    __m512i a0 = _mm512_slli_epi32(
+        _mm512_cvtepu8_epi32(_mm_loadu_si128((const __m128i*)src)), 24);
+    __m512i a1 = _mm512_slli_epi32(
+        _mm512_cvtepu8_epi32(_mm_loadu_si128((const __m128i*)(src + 16))), 24);
+    a0 = _mm512_ternarylogic_epi32(
+        a0, rgb_mask, _mm512_loadu_si512((const __m512i*)dst), 0xf8);
+    a1 = _mm512_ternarylogic_epi32(
+        a1, rgb_mask, _mm512_loadu_si512((const __m512i*)(dst + 64)), 0xf8);
+    _mm512_storeu_si512((__m512i*)dst, a0);
+    _mm512_storeu_si512((__m512i*)(dst + 64), a1);
+    src += 32;
+    dst += 128;
+    width -= 32;
+  }
+  if (width >= 16) {
+    __m512i a0 = _mm512_slli_epi32(
+        _mm512_cvtepu8_epi32(_mm_loadu_si128((const __m128i*)src)), 24);
+    a0 = _mm512_ternarylogic_epi32(
+        a0, rgb_mask, _mm512_loadu_si512((const __m512i*)dst), 0xf8);
+    _mm512_storeu_si512((__m512i*)dst, a0);
+    src += 16;
+    dst += 64;
+    width -= 16;
+  }
+  if (width > 0) {
+    __mmask16 mask = (__mmask16)((1u << width) - 1u);
+    __m512i a0 = _mm512_slli_epi32(
+        _mm512_maskz_cvtepu8_epi32(mask, _mm_maskz_loadu_epi8(mask, src)), 24);
+    a0 = _mm512_ternarylogic_epi32(a0, rgb_mask,
+                                   _mm512_maskz_loadu_epi32(mask, dst), 0xf8);
+    _mm512_mask_storeu_epi32(dst, mask, a0);
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_ARGBCOPYYTOALPHAROW_AVX512BW
+
+#ifdef HAS_ARGBMIRRORROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void ARGBMirrorRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width) {
+  const __m512i rev =
+      _mm512_set_epi32(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+  const uint8_t* s = src + (ptrdiff_t)width * 4;
+  while (width >= 16) {
+    s -= 64;
+    _mm512_storeu_si512(
+        (__m512i*)dst,
+        _mm512_permutexvar_epi32(rev, _mm512_loadu_si512((const __m512i*)s)));
+    dst += 64;
+    width -= 16;
+  }
+  if (width > 0) {
+    // Remaining 1 to 15 pixels are at the start of src.
+    __mmask16 mask = (__mmask16)((1u << width) - 1u);
+    __m512i idx = _mm512_sub_epi32(rev, _mm512_set1_epi32(16 - width));
+    __m512i v = _mm512_maskz_loadu_epi32(mask, src);
+    _mm512_mask_storeu_epi32(dst, mask, _mm512_permutexvar_epi32(idx, v));
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_ARGBMIRRORROW_AVX512BW
+
+#ifdef HAS_RGB24MIRRORROW_AVX512VBMI
+static const uint8_t kPermMirrorRGB24_0[64] = {
+    125u, 126u, 127u, 122u, 123u, 124u, 119u, 120u, 121u, 116u, 117u,
+    118u, 113u, 114u, 115u, 110u, 111u, 112u, 107u, 108u, 109u, 104u,
+    105u, 106u, 101u, 102u, 103u, 98u,  99u,  100u, 95u,  96u,  97u,
+    92u,  93u,  94u,  89u,  90u,  91u,  86u,  87u,  88u,  83u,  84u,
+    85u,  80u,  81u,  82u,  77u,  78u,  79u,  74u,  75u,  76u,  71u,
+    72u,  73u,  68u,  69u,  70u,  65u,  66u,  67u,  62u};
+static const uint8_t kPermMirrorRGB24_1[64] = {
+    127u, 128u, 123u, 124u, 125u, 120u, 121u, 122u, 117u, 118u, 119u,
+    114u, 115u, 116u, 111u, 112u, 113u, 108u, 109u, 110u, 105u, 106u,
+    107u, 102u, 103u, 104u, 99u,  100u, 101u, 96u,  97u,  98u,  93u,
+    94u,  95u,  90u,  91u,  92u,  87u,  88u,  89u,  84u,  85u,  86u,
+    81u,  82u,  83u,  78u,  79u,  80u,  75u,  76u,  77u,  72u,  73u,
+    74u,  69u,  70u,  71u,  66u,  67u,  68u,  63u,  64u};
+static const uint8_t kPermMirrorRGB24_2[64] = {
+    65u, 60u, 61u, 62u, 57u, 58u, 59u, 54u, 55u, 56u, 51u, 52u, 53u,
+    48u, 49u, 50u, 45u, 46u, 47u, 42u, 43u, 44u, 39u, 40u, 41u, 36u,
+    37u, 38u, 33u, 34u, 35u, 30u, 31u, 32u, 27u, 28u, 29u, 24u, 25u,
+    26u, 21u, 22u, 23u, 18u, 19u, 20u, 15u, 16u, 17u, 12u, 13u, 14u,
+    9u,  10u, 11u, 6u,  7u,  8u,  3u,  4u,  5u,  0u,  1u,  2u};
+
+// Byte mask with the low n bits set, clamped to [0, 64].
+static inline __mmask64 RGB24MirrorMask(int n) {
+  return n <= 0 ? 0ull : n >= 64 ? ~0ull : (1ull << n) - 1ull;
+}
+
+// Mirror 64 RGB24 pixels (3 full zmm vectors) per loop.  The remaining 1 to
+// 63 pixels use masked loads and stores that access only valid bytes.
+LIBYUV_TARGET_AVX512VBMI
+void RGB24MirrorRow_AVX512VBMI(const uint8_t* src_rgb24,
+                               uint8_t* dst_rgb24,
+                               int width) {
+  const __m512i idx0 = _mm512_loadu_si512((const __m512i*)kPermMirrorRGB24_0);
+  const __m512i idx1 = _mm512_loadu_si512((const __m512i*)kPermMirrorRGB24_1);
+  const __m512i idx2 = _mm512_loadu_si512((const __m512i*)kPermMirrorRGB24_2);
+  int r = width & 63;
+  int w = width - r;
+  if (w > 0) {
+    const uint8_t* src = src_rgb24 + (ptrdiff_t)width * 3 - 192;
+    do {
+      __m512i a = _mm512_loadu_si512((const __m512i*)src);
+      __m512i b = _mm512_loadu_si512((const __m512i*)(src + 64));
+      __m512i c = _mm512_loadu_si512((const __m512i*)(src + 128));
+      __m512i d0 = _mm512_permutex2var_epi8(b, idx0, c);
+      __m512i d1 = _mm512_permutex2var_epi8(a, idx1, b);
+      __m512i d2 = _mm512_permutex2var_epi8(a, idx2, b);
+      d1 = _mm512_mask_broadcastb_epi8(d1, (__mmask64)2,
+                                       _mm512_castsi512_si128(c));
+      _mm512_storeu_si512((__m512i*)dst_rgb24, d0);
+      _mm512_storeu_si512((__m512i*)(dst_rgb24 + 64), d1);
+      _mm512_storeu_si512((__m512i*)(dst_rgb24 + 128), d2);
+      src -= 192;
+      dst_rgb24 += 192;
+      w -= 64;
+    } while (w > 0);
+  }
+  if (r) {
+    int nb = r * 3;
+    int off = 192 - nb;
+    __mmask64 m0 = RGB24MirrorMask(nb);
+    __mmask64 m1 = RGB24MirrorMask(nb - 64);
+    __mmask64 m2 = RGB24MirrorMask(nb - 128);
+    __m512i a = _mm512_maskz_loadu_epi8(m0, src_rgb24);
+    __m512i b = _mm512_maskz_loadu_epi8(m1, src_rgb24 + 64);
+    __m512i c = _mm512_maskz_loadu_epi8(m2, src_rgb24 + 128);
+    __m512i t0 = _mm512_sub_epi8(idx0, _mm512_set1_epi8((char)(off - 64)));
+    __m512i t1 = _mm512_sub_epi8(idx1, _mm512_set1_epi8((char)off));
+    __m512i t2 = _mm512_sub_epi8(idx2, _mm512_set1_epi8((char)off));
+    __m512i d0 = _mm512_mask_permutexvar_epi8(
+        _mm512_permutex2var_epi8(a, t0, b), _mm512_movepi8_mask(t0), t0, c);
+    __m512i d1 = _mm512_mask_permutexvar_epi8(
+        _mm512_permutex2var_epi8(a, t1, b), _mm512_movepi8_mask(t1), t1, c);
+    __m512i d2 = _mm512_mask_permutexvar_epi8(
+        _mm512_permutex2var_epi8(a, t2, b), _mm512_movepi8_mask(t2), t2, c);
+    _mm512_mask_storeu_epi8(dst_rgb24, m0, d0);
+    _mm512_mask_storeu_epi8(dst_rgb24 + 64, m1, d1);
+    _mm512_mask_storeu_epi8(dst_rgb24 + 128, m2, d2);
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_RGB24MIRRORROW_AVX512VBMI
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

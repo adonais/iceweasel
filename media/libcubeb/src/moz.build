@@ -110,3 +110,27 @@ CFLAGS += CONFIG['MOZ_PULSEAUDIO_CFLAGS']
 
 # We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
+
+SOURCE_HEADERS += [
+	"cubeb-internal.h",
+	"cubeb-jni-instances.h",
+	"cubeb-jni.h",
+	"cubeb-speex-resampler.h",
+	"cubeb_android.h",
+	"cubeb_array_queue.h",
+	"cubeb_assert.h",
+	"cubeb_audio_dump.h",
+	"cubeb_log.h",
+	"cubeb_mixer.h",
+	"cubeb_osx_run_loop.h",
+	"cubeb_resampler.h",
+	"cubeb_resampler_internal.h",
+	"cubeb_ring_array.h",
+	"cubeb_ringbuffer.h",
+	"cubeb_strings.h",
+	"cubeb_tracing.h",
+	"cubeb_triple_buffer.h",
+	"cubeb_utils.h",
+	"cubeb_utils_unix.h",
+	"cubeb_utils_win.h",
+]

@@ -19,5 +19,8 @@ support-files = [
   "head.js",
 ]
 
+["browser_smartwindow_intent_perf.js"]
+disabled = "Runs as a perftest only, not in regular CI"
+
 ["browser_smartwindow_perf.js"]
 disabled = "Runs as a perftest only, not in regular CI"

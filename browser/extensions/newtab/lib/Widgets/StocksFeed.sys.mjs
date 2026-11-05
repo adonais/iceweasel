@@ -20,7 +20,11 @@ import {
   normalize,
   parseWatchlist,
 } from "resource://newtab/common/StocksWatchlist.mjs";
-import { PREF_STOCKS_WATCHLIST } from "resource://newtab/common/WidgetsRegistry.mjs";
+import {
+  isWidgetAddable,
+  PREF_STOCKS_WATCHLIST,
+  WIDGET_REGISTRY,
+} from "resource://newtab/common/WidgetsRegistry.mjs";
 
 const CACHE_KEY = "stocks_feed";
 const MERINO_CLIENT_KEY = "HNT_STOCKS_FEED";
@@ -33,6 +37,7 @@ const MAX_RETRIES = 1;
 
 const PREF_WIDGETS_STOCKS_ENABLED = "widgets.stocks.enabled";
 const PREF_WIDGETS_SYSTEM_STOCKS_ENABLED = "widgets.system.stocks.enabled";
+const STOCKS_ENTRY = WIDGET_REGISTRY.find(w => w.id === "stocks");
 
 /**
  * Periodically fetches the default-ETF stock snapshots from Merino for HNT and
@@ -69,11 +74,10 @@ export class StocksFeed {
 
   isEnabled() {
     const { values } = this.store.getState().Prefs;
-    const userValue = values[PREF_WIDGETS_STOCKS_ENABLED];
-    const systemValue = values[PREF_WIDGETS_SYSTEM_STOCKS_ENABLED];
-    const experimentValue =
-      values.trainhopConfig?.widgets?.stocksEnabled || false;
-    return userValue && (systemValue || experimentValue);
+    return Boolean(
+      values[PREF_WIDGETS_STOCKS_ENABLED] &&
+      isWidgetAddable(STOCKS_ENTRY, values)
+    );
   }
 
   async init() {
@@ -500,6 +504,7 @@ export class StocksFeed {
     switch (action.data.name) {
       case PREF_WIDGETS_STOCKS_ENABLED:
       case PREF_WIDGETS_SYSTEM_STOCKS_ENABLED:
+      case "region":
       case "trainhopConfig": {
         const enabled = this.isEnabled();
         if (enabled && !this.loaded) {

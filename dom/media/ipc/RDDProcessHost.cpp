@@ -23,9 +23,7 @@ bool RDDProcessHost::sLaunchWithMacSandbox = false;
 #endif
 
 RDDProcessHost::RDDProcessHost(Listener* aListener)
-    : GeckoChildProcessHost(GeckoProcessType_RDD),
-      mListener(aListener),
-      mLiveToken(new media::Refcountable<bool>(true)) {
+    : GeckoChildProcessHost(GeckoProcessType_RDD), mListener(aListener) {
   MOZ_COUNT_CTOR(RDDProcessHost);
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
@@ -69,14 +67,15 @@ bool RDDProcessHost::Launch(geckoargs::ChildProcessArgs aExtraOpts) {
     GetMainThreadSerialEventTarget()->DelayedDispatch(
         NS_NewRunnableFunction(
             "RDDProcessHost::Launchtimeout",
-            [this, liveToken = mLiveToken]() {
-              if (!*liveToken || mTimerChecked) {
+            [weakSelf = ThreadSafeWeakPtr<RDDProcessHost>{this}]() {
+              RefPtr<RDDProcessHost> self(weakSelf);
+              if (!self || self->mShutdownRequested || self->mTimerChecked) {
                 // We have been deleted or the runnable has already started, we
                 // can abort.
                 return;
               }
-              InitAfterConnect(false);
-              MOZ_ASSERT(mTimerChecked,
+              self->InitAfterConnect(false);
+              MOZ_ASSERT(self->mTimerChecked,
                          "InitAfterConnect must have acted on the promise");
             }),
         timeoutMs);
@@ -99,10 +98,10 @@ RefPtr<GenericNonExclusivePromise> RDDProcessHost::LaunchPromise() {
   mLaunchPromise = MakeRefPtr<GenericNonExclusivePromise::Private>(__func__);
   WhenProcessHandleReady()->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [this, liveToken = mLiveToken](
+      [this, self = RefPtr{this}](
           const ipc::ProcessHandlePromise::ResolveOrRejectValue& aResult) {
-        if (!*liveToken) {
-          // The RDDProcessHost got deleted. Abort. The promise would have
+        if (mShutdownRequested) {
+          // The RDDProcessHost is shutting down. Abort. The promise would have
           // already been rejected.
           return;
         }
@@ -127,8 +126,8 @@ void RDDProcessHost::OnChannelConnected(base::ProcessId peer_pid) {
   GeckoChildProcessHost::OnChannelConnected(peer_pid);
 
   NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "RDDProcessHost::OnChannelConnected", [this, liveToken = mLiveToken]() {
-        if (*liveToken && mLaunchPhase == LaunchPhase::Waiting) {
+      "RDDProcessHost::OnChannelConnected", [this, self = RefPtr{this}]() {
+        if (!mShutdownRequested && mLaunchPhase == LaunchPhase::Waiting) {
           InitAfterConnect(true);
         }
       }));
@@ -178,15 +177,13 @@ void RDDProcessHost::Shutdown() {
   MOZ_ASSERT(!mShutdownRequested);
 
   RejectPromise();
+  mShutdownRequested = true;
 
   if (mRDDChild) {
-    // OnChannelClosed uses this to check if the shutdown was expected or
-    // unexpected.
-    mShutdownRequested = true;
-
     // The channel might already be closed if we got here unexpectedly.
     if (!mChannelClosed) {
       mRDDChild->Close();
+      MOZ_ASSERT(!mRDDChild);
     }
 
 #ifndef NS_FREE_PERMANENT_DATA
@@ -194,17 +191,7 @@ void RDDProcessHost::Shutdown() {
     // communicate anything back.
     KillHard("NormalShutdown");
 #endif
-
-    // If we're shutting down unexpectedly, we're in the middle of handling an
-    // ActorDestroy for PRDDChild, which is still on the stack. We'll return
-    // back to OnChannelClosed.
-    //
-    // Otherwise, we'll wait for OnChannelClose to be called whenever PRDDChild
-    // acknowledges shutdown.
-    return;
   }
-
-  DestroyProcess();
 }
 
 void RDDProcessHost::OnChannelClosed() {
@@ -216,8 +203,6 @@ void RDDProcessHost::OnChannelClosed() {
   if (!mShutdownRequested && mListener) {
     // This is an unclean shutdown. Notify our listener that we're going away.
     mListener->OnProcessUnexpectedShutdown(this);
-  } else {
-    DestroyProcess();
   }
 
   // Release the actor.
@@ -238,17 +223,6 @@ void RDDProcessHost::KillHard(const char* aReason) {
 uint64_t RDDProcessHost::GetProcessToken() const {
   MOZ_ASSERT(NS_IsMainThread());
   return mProcessToken;
-}
-
-void RDDProcessHost::DestroyProcess() {
-  MOZ_ASSERT(NS_IsMainThread());
-  RejectPromise();
-
-  // Any pending tasks will be cancelled from now on.
-  *mLiveToken = false;
-
-  NS_DispatchToMainThread(
-      NS_NewRunnableFunction("DestroyProcessRunnable", [this] { Destroy(); }));
 }
 
 void RDDProcessHost::ResolvePromise() {

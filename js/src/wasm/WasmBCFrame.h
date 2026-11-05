@@ -669,7 +669,15 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
     masm.store32(src, addressOfLocal(dest));
   }
 
+  void storeLocalI32(Imm32 src, const Local& dest) {
+    masm.store32(src, addressOfLocal(dest));
+  }
+
   void storeLocalI64(RegI64 src, const Local& dest) {
+    masm.store64(src, addressOfLocal(dest));
+  }
+
+  void storeLocalI64(Imm64 src, const Local& dest) {
     masm.store64(src, addressOfLocal(dest));
   }
 

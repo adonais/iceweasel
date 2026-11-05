@@ -1,6 +1,0 @@
-[DEFAULT]
-dupe-manifest = true
-tags = "nova"
-prefs = ["browser.nova.enabled=true"]
-
-["browser_maximized_decoration.js"]

@@ -257,33 +257,18 @@ function handleHelperResult(response) {
           );
           break;
         case "screenshotOutput": {
-          const { args, value } = helperResult;
+          const { args } = helperResult;
           const targetFront =
             getSelectedTarget(hud.commands.targetCommand.store.getState()) ||
             hud.currentTarget;
-          let screenshotMessages;
 
-          // @backward-compat { version 87 } The screenshot-content actor isn't available
-          // in older server.
-          // With an old server, the console actor captures the screenshot when handling
-          // the command, and send it to the client which only needs to save it to a file.
-          // With a new server, the server simply acknowledges the command,
-          // and the client will drive the whole screenshot process (capture and save).
-          if (targetFront.hasActor("screenshotContent")) {
-            screenshotMessages = await captureAndSaveScreenshot(
-              targetFront,
-              webConsoleUI.getPanelWindow(),
-              args
-            );
-          } else {
-            screenshotMessages = await saveScreenshot(
-              webConsoleUI.getPanelWindow(),
-              args,
-              value
-            );
-          }
+          const screenshotMessages = await captureAndSaveScreenshot(
+            targetFront,
+            webConsoleUI.getPanelWindow(),
+            args
+          );
 
-          if (screenshotMessages && screenshotMessages.length) {
+          if (screenshotMessages?.length) {
             dispatch(
               messagesActions.messagesAdd(
                 screenshotMessages.map(message => ({

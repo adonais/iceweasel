@@ -61,7 +61,7 @@ support-files = [
   "test_context_url_injection_page.html"
 ]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && tsan && nova", # Bug 2057552
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && tsan", # Bug 2057552
 ]
 
 ["browser_memories_icon_button.js"]
@@ -128,6 +128,11 @@ skip-if = [
 
 ["browser_smartwindow_duplicate_chat_tabs.js"]
 
+["browser_smartwindow_first_character_telemetry.js"]
+skip-if = [
+  "os == 'win' && debug && standalone", # Bug 2028654
+]
+
 ["browser_smartwindow_footer.js"]
 
 ["browser_smartwindow_get_page_content_timeout.js"]
@@ -158,6 +163,11 @@ skip-if = [
 ["browser_smartwindow_panel_list.js"]
 
 ["browser_smartwindow_prompts.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 2022097
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 2022097
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov", # Bug 2022097
+]
 
 ["browser_smartwindow_recentchats.js"]
 
@@ -174,13 +184,15 @@ skip-if = [
 
 ["browser_smartwindow_run_search.js"]
 
+["browser_smartwindow_run_search_telemetry.js"]
+
 ["browser_smartwindow_sanitize.js"]
 
 ["browser_smartwindow_shortcut.js"]
 
 ["browser_smartwindow_sidebar.js"]
 skip-if = [
-  "nova", # Bug 2057925
+  "true", # Bug 2057925
 ]
 
 ["browser_smartwindow_sidebar_auto_open_pref_prompt.js"]

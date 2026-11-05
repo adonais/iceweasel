@@ -7,22 +7,47 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
 
+/*
+ * Puts the UI in choose state where the user can
+ * choose to open the AITab in either the currently
+ * opened tab or in a new tab.
+ */
+export const STATE_CHOOSE = "choose";
 /**
- * Renders AITab creation progress state and options for
- * user to choose where to open the AITab.
+ * Puts the UI in complete state after the user has
+ * already chosen what tab to open the AITab in,
+ * renders a link to the AITab to either re-focus
+ * the AITab or re-open it if it's closed
+ */
+export const STATE_COMPLETE = "complete";
+/*
+ * List of available states for this component.
+ */
+export const STATES = [STATE_CHOOSE, STATE_COMPLETE];
+
+/**
+ * Renders options for opening a generated AITab and its completed state.
  */
 export class AITabToolUI extends MozLitElement {
   static properties = {
     state: { type: String },
     title: { type: String },
+    viewerURL: { type: String },
     completeStateOpen: { type: Boolean },
   };
 
   constructor() {
     super();
-    this.state = "creating";
+    this.state = STATE_CHOOSE;
     this.title = "";
+    this.viewerURL = "";
     this.completeStateOpen = true;
+  }
+
+  #handleTitleClick(event) {
+    event.preventDefault();
+
+    this.#requestOpen("new");
   }
 
   #handleKeyboardActivation(event) {
@@ -46,14 +71,6 @@ export class AITabToolUI extends MozLitElement {
     );
   }
 
-  #renderCreating() {
-    return html`<p
-      class="status"
-      role="status"
-      data-l10n-id="smartwindow-aitab-creating"
-    ></p>`;
-  }
-
   #renderChoose() {
     return html`<div class="card">
       <p class="title">
@@ -63,7 +80,7 @@ export class AITabToolUI extends MozLitElement {
           width="16"
           height="16"
         />
-        ${this.title}
+        <span class="card-title">${this.title}</span>
       </p>
       <div class="actions">
         <moz-button
@@ -80,6 +97,27 @@ export class AITabToolUI extends MozLitElement {
         ></moz-button>
       </div>
     </div>`;
+  }
+
+  #renderTitle() {
+    const title = html`
+      <img
+        src="chrome://browser/skin/smart-window-mono-32.svg"
+        alt=""
+        width="16"
+        height="16"
+      />
+      ${this.title}
+    `;
+
+    return this.viewerURL
+      ? html`<a
+          href=${this.viewerURL}
+          class="title"
+          @click=${this.#handleTitleClick}
+          >${title}</a
+        >`
+      : html`<p class="title">${title}</p>`;
   }
 
   #renderComplete() {
@@ -99,31 +137,16 @@ export class AITabToolUI extends MozLitElement {
         <span data-l10n-id="smartwindow-aitab-created-an-aitab"></span>
       </div>
 
-      ${this.completeStateOpen
-        ? html`
-            <p class="title">
-              <img
-                src="chrome://browser/skin/smart-window-mono-32.svg"
-                alt=""
-                width="16"
-                height="16"
-              />
-              ${this.title}
-            </p>
-          `
-        : nothing}
+      ${this.completeStateOpen ? this.#renderTitle() : nothing}
     </div>`;
   }
 
   #renderState() {
     switch (this.state) {
-      case "creating":
-        return this.#renderCreating();
-
-      case "choose":
+      case STATE_CHOOSE:
         return this.#renderChoose();
 
-      case "complete":
+      case STATE_COMPLETE:
         return this.#renderComplete();
 
       default:
@@ -133,6 +156,10 @@ export class AITabToolUI extends MozLitElement {
 
   render() {
     return html`
+      <link
+        rel="stylesheet"
+        href="chrome://browser/content/aiwindow/components/ai-action-confirmation.css"
+      />
       <link
         rel="stylesheet"
         href="chrome://browser/content/aiwindow/components/aitab-tool-ui.css"

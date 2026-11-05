@@ -65,5 +65,16 @@ def test_missing_fetched_dir_falls_back_to_clone(benchmark, tmp_path):
         assert benchmark._setup_fetched_benchmark(tmp_path, run_local=True) is None
 
 
+def test_source_path_mapping_points_at_the_served_directory(benchmark, tmp_path):
+    benchmark.host = "127.0.0.1"
+    benchmark.port = "62763"
+    benchmark.bench_dir = tmp_path
+
+    assert benchmark.get_source_path_mapping() == {
+        "urlPrefix": "http://127.0.0.1:62763/",
+        "localPath": str(tmp_path.resolve()),
+    }
+
+
 if __name__ == "__main__":
     mozunit.main()

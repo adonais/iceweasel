@@ -26,7 +26,6 @@
  *  nssHash_Add
  *  nssHash_Remove
  *  nssHash_Count
- *  nssHash_Exists
  *  nssHash_Lookup
  *  nssHash_Iterate
  */
@@ -44,12 +43,6 @@ struct nssHashStr {
     PLHashTable *plHashTable;
     PRUint32 count;
 };
-
-static PLHashNumber
-nss_identity_hash(const void *key)
-{
-    return (PLHashNumber)((char *)key - (char *)NULL);
-}
 
 static PLHashNumber
 nss_item_hash(const void *key)
@@ -123,17 +116,6 @@ nssHash_Create(NSSArena *arenaOpt, PRUint32 numBuckets, PLHashFunction keyHash,
 loser:
     (void)nss_ZFreeIf(rv);
     return (nssHash *)NULL;
-}
-
-/*
- * nssHash_CreatePointer
- *
- */
-NSS_IMPLEMENT nssHash *
-nssHash_CreatePointer(NSSArena *arenaOpt, PRUint32 numBuckets)
-{
-    return nssHash_Create(arenaOpt, numBuckets, nss_identity_hash,
-                          PL_CompareValues, PL_CompareValues);
 }
 
 /*
@@ -237,28 +219,6 @@ nssHash_Count(nssHash *hash)
     (void)PR_Unlock(hash->mutex);
 
     return count;
-}
-
-/*
- * nssHash_Exists
- *
- */
-NSS_IMPLEMENT PRBool
-nssHash_Exists(nssHash *hash, const void *it)
-{
-    void *value;
-
-    PR_Lock(hash->mutex);
-
-    value = PL_HashTableLookup(hash->plHashTable, it);
-
-    (void)PR_Unlock(hash->mutex);
-
-    if ((void *)NULL == value) {
-        return PR_FALSE;
-    } else {
-        return PR_TRUE;
-    }
 }
 
 /*

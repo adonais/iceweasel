@@ -1,0 +1,12 @@
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="300">
+  <title>SVG text with fill-opacity, opacity and decorations</title>
+  <rect x="0" y="0" width="500" height="300" fill="lightblue"/>
+  <text x="20" y="40" font-size="24" font-family="sans-serif" fill="black" fill-opacity="0.5">Half transparent fill</text>
+  <text x="20" y="80" font-size="24" font-family="sans-serif" fill="red" opacity="0.5">Half transparent element</text>
+  <text x="20" y="120" font-size="24" font-family="sans-serif" text-decoration="underline">Underlined text</text>
+  <text x="20" y="160" font-size="24" font-family="sans-serif" fill="blue" text-decoration="line-through">Struck text</text>
+  <text x="20" y="200" font-size="24" font-family="sans-serif" text-decoration="overline underline" style="text-decoration-style: dotted">Dotted lines</text>
+  <text x="20" y="240" font-size="24" font-family="sans-serif" fill="green" fill-opacity="0.3" text-decoration="underline">Translucent underlined</text>
+</svg>

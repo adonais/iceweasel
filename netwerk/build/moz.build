@@ -43,3 +43,7 @@ LOCAL_INCLUDES += [
     "!/netwerk/dns",
     "/modules/brotli/dec",
 ]
+
+SOURCE_HEADERS += [
+    "nsNetModule.h",
+]

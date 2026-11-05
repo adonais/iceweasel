@@ -22,6 +22,8 @@ tags = "os_integration"
 ["test_BinarySearch.js"]
 
 ["test_BrowserUtils.js"]
+
+["test_BrowserUtils_callModulesFromCategory.js"]
 support-files = [
   "my_catman_1.sys.mjs",
   "my_catman_2.sys.mjs",
@@ -41,7 +43,6 @@ support-files = [
 skip-if = [
   "os == 'android'",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # osx: Bug 1550141
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929423
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # osx: Bug 1550141
 ]
 
@@ -115,6 +116,16 @@ skip-if = [
 ["test_PrivacyLevel.js"]
 
 ["test_ProfileAge.js"]
+
+["test_ProfileKekPassword.js"]
+# Every set / change / remove cycle runs 800k-iteration PBKDF2 derivations
+# back-to-back; the cumulative wall time exceeds the default per-test budget
+# on slower hardware.
+requesttimeoutfactor = 5
+# TSan instruments every NSS lock acquisition along the PBKDF2 path, which
+# blows out the per-task budget even with the factor above (bug 1892964),
+# the same way it does for security/lockstore's own xpcshell test.
+skip-if = ["tsan"]
 
 ["test_Region.js"]
 

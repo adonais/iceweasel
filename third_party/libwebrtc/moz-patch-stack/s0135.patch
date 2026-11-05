@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/1eae5aad7a7622115
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/call/payload_type_picker.cc b/call/payload_type_picker.cc
-index 46cb5dc259..28cab659e8 100644
+index 5d8be2f782..5bb1fd6c90 100644
 --- a/call/payload_type_picker.cc
 +++ b/call/payload_type_picker.cc
-@@ -368,7 +368,7 @@ void PayloadTypeRecorder::Rollback() {
+@@ -406,7 +406,7 @@ void PayloadTypeRecorder::ReallowRedefinition() {
  RTCError RtpHeaderExtensionRecorder::AddMapping(RtpHeaderExtensionId id,
                                                  absl::string_view uri,
                                                  bool encrypt) {
@@ -22,7 +22,7 @@ index 46cb5dc259..28cab659e8 100644
    if (it != uri_to_id_.end()) {
      if (it->second != id) {
        RTC_HISTOGRAM_BOOLEAN(
-@@ -391,7 +391,7 @@ RTCError RtpHeaderExtensionRecorder::AddMapping(RtpHeaderExtensionId id,
+@@ -429,7 +429,7 @@ RTCError RtpHeaderExtensionRecorder::AddMapping(RtpHeaderExtensionId id,
  RTCErrorOr<RtpHeaderExtensionId> RtpHeaderExtensionRecorder::LookupId(
      absl::string_view uri,
      bool encrypt) const {

@@ -971,7 +971,6 @@ if (is_mac) {
       "../../rtc_base/system:rtc_export",
       "../../sdk:helpers_objc",
       "../../system_wrappers",
-      "//third_party/abseil-cpp/absl/base:core_headers",
       "//third_party/abseil-cpp/absl/base:nullability",
       "//third_party/abseil-cpp/absl/strings:str_format",
     ]

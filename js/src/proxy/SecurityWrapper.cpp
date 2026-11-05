@@ -15,7 +15,9 @@ template <class Base>
 bool SecurityWrapper<Base>::enter(JSContext* cx, HandleObject wrapper,
                                   HandleId id, Wrapper::Action act,
                                   bool mayThrow, bool* bp) const {
-  ReportAccessDenied(cx);
+  if (mayThrow) {
+    ReportAccessDenied(cx);
+  }
   *bp = false;
   return false;
 }

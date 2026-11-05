@@ -6,6 +6,10 @@ const { TabMetrics } = ChromeUtils.importESModule(
   "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs"
 );
 
+const { CustomizableUITestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/CustomizableUITestUtils.sys.mjs"
+);
+
 let resetTelemetry = async () => {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
@@ -1006,4 +1010,119 @@ add_task(async function test_detach_group_to_new_window() {
 
   await BrowserTestUtils.closeWindow(newWin);
   await resetTelemetry();
+});
+
+let openTabsMenu = async () => {
+  let viewShown = BrowserTestUtils.waitForEvent(
+    document.getElementById("allTabsMenu-allTabsView"),
+    "ViewShown"
+  );
+  document.getElementById("alltabs-button").click();
+  return (await viewShown).target;
+};
+
+let closeTabsMenu = async () => {
+  let panel = document
+    .getElementById("allTabsMenu-allTabsView")
+    .closest("panel");
+  if (!panel) {
+    return;
+  }
+  let hidden = BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+  panel.hidePopup();
+  await hidden;
+};
+
+let openAppMenuTabGroupsList = async () => {
+  await new CustomizableUITestUtils(window).openMainMenu();
+  let subView = PanelMultiView.getViewNode(
+    document,
+    "appMenu-tabGroupsListView"
+  );
+  let viewShown = BrowserTestUtils.waitForEvent(subView, "ViewShown");
+  PanelMultiView.getViewNode(document, "appMenu-tab-groups-button").click();
+  await viewShown;
+  await subView.querySelector("tab-groups-list").updateComplete;
+  return subView;
+};
+
+let closeAppMenu = async () => {
+  if (PanelUI.panel.state == "closed") {
+    return;
+  }
+  await new CustomizableUITestUtils(window).hideMainMenu();
+};
+
+// replaceGroupWithWindow should record DETACH with the correct source when
+// triggered from the "list all tabs" overflow menu's context menu.
+add_task(async function test_detach_group_to_new_window_tab_overflow() {
+  await resetTelemetry();
+
+  let tab1 = await addTab("about:blank");
+  let tab2 = await addTab("about:blank");
+  let group = gBrowser.addTabGroup([tab1, tab2]);
+  gBrowser.tabGroupMenu.close();
+
+  let allTabsMenu = await openTabsMenu();
+  let tabGroupButton = allTabsMenu.querySelector(
+    `#allTabsMenu-groupsView [data-tab-group-id="${group.id}"]`
+  );
+  let menu = await getContextMenu(
+    tabGroupButton,
+    "open-tab-group-context-menu"
+  );
+
+  let newWindowPromise = BrowserTestUtils.waitForNewWindow();
+  menu.querySelector("#open-tab-group-context-menu_moveToNewWindow").click();
+  await closeContextMenu(menu);
+  await closeTabsMenu();
+  let newWin = await newWindowPromise;
+
+  assertInteractionEvent(getLastInteractionEvent(), {
+    action: TabMetrics.METRIC_ACTION.DETACH,
+    source: TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
+    tab_count: 2,
+  });
+
+  await BrowserTestUtils.closeWindow(newWin);
+  await resetTelemetry();
+});
+
+// replaceGroupWithWindow should record DETACH with the correct source when
+// triggered from the app menu tab groups list's context menu.
+add_task(async function test_detach_group_to_new_window_app_menu() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.groups.alternateMenu", true]],
+  });
+  await resetTelemetry();
+
+  let tab1 = await addTab("about:blank");
+  let tab2 = await addTab("about:blank");
+  let group = gBrowser.addTabGroup([tab1, tab2]);
+  gBrowser.tabGroupMenu.close();
+
+  let subView = await openAppMenuTabGroupsList();
+  let tabGroupButton = subView.querySelector(
+    `[data-tab-group-id="${group.id}"]`
+  );
+  let menu = await getContextMenu(
+    tabGroupButton,
+    "open-tab-group-context-menu"
+  );
+
+  let newWindowPromise = BrowserTestUtils.waitForNewWindow();
+  menu.querySelector("#open-tab-group-context-menu_moveToNewWindow").click();
+  await closeContextMenu(menu);
+  let newWin = await newWindowPromise;
+
+  assertInteractionEvent(getLastInteractionEvent(), {
+    action: TabMetrics.METRIC_ACTION.DETACH,
+    source: TabMetrics.METRIC_SOURCE.APP_MENU_GROUP_LIST,
+    tab_count: 2,
+  });
+
+  await closeAppMenu();
+  await BrowserTestUtils.closeWindow(newWin);
+  await resetTelemetry();
+  await SpecialPowers.popPrefEnv();
 });

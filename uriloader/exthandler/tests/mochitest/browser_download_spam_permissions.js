@@ -48,6 +48,7 @@ add_setup(async function () {
   });
 
   registerCleanupFunction(async () => {
+    PermissionTestUtils.remove(TEST_URI, "automatic-download");
     Services.prefs.clearUserPref("browser.download.folderList");
     Services.prefs.clearUserPref("browser.download.dir");
     await IOUtils.remove(tempDir.path, { recursive: true });

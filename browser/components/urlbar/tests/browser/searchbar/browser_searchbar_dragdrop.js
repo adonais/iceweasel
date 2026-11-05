@@ -13,7 +13,7 @@ add_setup(async function () {
   searchbar = document.getElementById("searchbar-new");
 
   let sandbox = sinon.createSandbox();
-  openLinkSpy = sinon.spy(window, "openTrustedLinkIn");
+  openLinkSpy = sandbox.spy(URILoadingHelper, "openTrustedLinkIn");
   registerCleanupFunction(() => {
     CustomizableUI.removeWidgetFromArea("home-button");
     Services.prefs.clearUserPref("browser.engagement.home-button.has-removed");

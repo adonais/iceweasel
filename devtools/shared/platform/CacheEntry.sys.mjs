@@ -2,47 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(
-  lazy,
-  {
-    NetworkHelper:
-      "resource://devtools/shared/network-observer/NetworkHelper.sys.mjs",
-  },
-  { global: "contextual" }
-);
-
-/**
- * Global cache session object.
- */
-let gCacheSession = null;
-
-/**
- * Get (and create if necessary) a cache session / cache storage session.
- *
- * @param {nsIRequest} request
- */
-function getCacheSession(request) {
-  if (!gCacheSession) {
-    try {
-      const cacheService = Services.cache2;
-      if (cacheService) {
-        let loadContext = lazy.NetworkHelper.getRequestLoadContext(request);
-        if (!loadContext) {
-          // Get default load context if we can't fetch.
-          loadContext = Services.loadContextInfo.default;
-        }
-        gCacheSession = cacheService.diskCacheStorage(loadContext);
-      }
-    } catch (e) {
-      gCacheSession = null;
-    }
-  }
-
-  return gCacheSession;
-}
-
 /**
  * Parses a cache entry returned from the backend to build a response cache
  * object.
@@ -81,39 +40,24 @@ function buildResponseCacheObject(cacheEntry) {
 }
 
 /**
- * Does the fetch for the cache entry from the session.
+ * Get the cache entry used by the channel and build a response cache object.
+ * This must be called before the channel stops, as the channel releases its
+ * cache entry at that point.
  *
- * @param {nsIRequest} request
- *     The request object.
+ * @param {nsIChannel} channel
+ *     The channel object.
  *
- * @returns {Promise}
- *     Promise which resolve a response cache object object, or null if none
- *     was available.
+ * @returns {object | null}
+ *     A response cache object, or null if the channel has no cache entry.
  */
-export function getResponseCacheObject(request) {
-  const cacheSession = getCacheSession(request);
-  if (!cacheSession) {
-    return Promise.resolve(null);
+export function getResponseCacheObject(channel) {
+  let cacheEntry;
+  try {
+    cacheEntry = channel
+      .QueryInterface(Ci.nsICachingChannel)
+      .cacheToken.QueryInterface(Ci.nsICacheEntry);
+  } catch (e) {
+    return null;
   }
-
-  return new Promise(resolve => {
-    cacheSession.asyncOpenURI(
-      request.URI,
-      "",
-      Ci.nsICacheStorage.OPEN_SECRETLY,
-      {
-        onCacheEntryCheck: () => {
-          return Ci.nsICacheEntryOpenCallback.ENTRY_WANTED;
-        },
-        onCacheEntryAvailable: cacheEntry => {
-          if (cacheEntry) {
-            const cacheObject = buildResponseCacheObject(cacheEntry);
-            resolve(cacheObject);
-          } else {
-            resolve(null);
-          }
-        },
-      }
-    );
-  });
+  return buildResponseCacheObject(cacheEntry);
 }

@@ -79,6 +79,9 @@ terms:
 | profilerstacks      | Profiler | When profiling with the Firefox Profiler and log modules are enabled, capture the callstack for each log statement.                                                                                                 |
 | jsstacks            | Any      | Enables logging JavaScript stack traces when logging JavaScript console messages. (this may be extended outside of only console messages)                                                                           |
 
+For `rotate` and `maxsize`, **N** is clamped to 2047 MB, and 0 or a negative
+value disables the option.
+
 This syntax is used for most methods of enabling logging.
 
 ### Enabling Logging

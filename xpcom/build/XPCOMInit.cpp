@@ -405,7 +405,7 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
 
 #ifdef MOZ_MEMORY
   // We did set up our main thread earlier and can read prefs now.
-  mozilla::TaskController::SetupIdleMemoryCleanup();
+  mozilla::TaskController::SetupMemoryCleanup();
 #endif
 
   // After autoreg, but before we actually instantiate any components,

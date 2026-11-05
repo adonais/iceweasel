@@ -12815,6 +12815,21 @@ if (isDisplayGridLanesEnabled) {
     "grid-lanes",
     "inline-grid-lanes"
   );
+  gCSSProperties["fit-tolerance"] = {
+    domProp: "fitTolerance",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: ["normal"],
+    other_values: ["infinite", "0", "1em", "4%", "calc(2px + 10%)"],
+    invalid_values: ["none", "-1px", "-1%", "1", "normal 1px", "1px infinite"],
+  };
+  gCSSProperties["flow-tolerance"] = {
+    domProp: "flowTolerance",
+    inherited: false,
+    type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
+    alias_for: "fit-tolerance",
+    subproperties: ["fit-tolerance"],
+  };
 }
 
 gCSSProperties["display"].other_values.push("grid", "inline-grid");

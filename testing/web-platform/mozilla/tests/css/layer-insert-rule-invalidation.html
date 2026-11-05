@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<title>CSS Cascade Layers: inserting layer rules only restyles when layer order changes</title>
+<link rel="help" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2079147">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<div id="target"></div>
+<script>
+const utils = SpecialPowers.getDOMWindowUtils(window);
+
+const testCases = [
+  {
+    title: "Appending a new layer statement",
+    update: sheets => sheets[1].insertRule("@layer third;", sheets[1].cssRules.length),
+    expectRestyle: false,
+  },
+  {
+    title: "Appending a new layer block with non-matching rules",
+    update: sheets => sheets[1].insertRule("@layer third { .nonexistent { color: blue } }", sheets[1].cssRules.length),
+    expectRestyle: false,
+  },
+  {
+    title: "Inserting a statement for existing layers in the same order",
+    update: sheets => sheets[0].insertRule("@layer first, second;", 0),
+    expectRestyle: false,
+  },
+  {
+    title: "Inserting an empty block for the first layer",
+    update: sheets => sheets[0].insertRule("@layer first {}", 0),
+    expectRestyle: false,
+  },
+  {
+    title: "Inserting an empty nested block that doesn't change the order",
+    update: sheets => sheets[1].cssRules[1].insertRule("@layer inner {}", 0),
+    expectRestyle: false,
+  },
+  {
+    title: "Inserting a layer statement that reorders layers",
+    update: sheets => sheets[0].insertRule("@layer second;", 0),
+    expectRestyle: true,
+  },
+  {
+    title: "Inserting a layer block that reorders layers",
+    update: sheets => sheets[0].insertRule("@layer second {}", 0),
+    expectRestyle: true,
+  },
+];
+
+onload = function() {
+  for (const testCase of testCases) {
+    test(t => {
+      const elements = [
+        "",
+        `
+          @layer first { #target { color: green } }
+          @layer second { @layer inner { #target { color: red } } }
+        `,
+      ].map(text => {
+        const element = document.createElement("style");
+        element.textContent = text;
+        document.head.appendChild(element);
+        return element;
+      });
+      t.add_cleanup(() => elements.forEach(e => e.remove()));
+      const sheets = elements.map(e => e.sheet);
+
+      getComputedStyle(target).color;
+      document.documentElement.offsetTop;
+      const generation = utils.restyleGeneration;
+
+      testCase.update(sheets);
+      getComputedStyle(target).color;
+      document.documentElement.offsetTop;
+
+      if (testCase.expectRestyle) {
+        assert_greater_than(utils.restyleGeneration, generation, "Should have restyled");
+      } else {
+        assert_equals(utils.restyleGeneration, generation, "Shouldn't have restyled");
+      }
+    }, testCase.title);
+  }
+}
+</script>

@@ -124,3 +124,12 @@ LOCAL_INCLUDES += [
 MOZ_SRC_FILES += ["URIFixup.sys.mjs"]
 
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "nsAboutRedirector.h",
+    "nsDocShellEditorData.h",
+    "nsDocShellEnumerator.h",
+    "nsDocShellTelemetryUtils.h",
+    "nsPingListener.h",
+    "nsRefreshTimer.h",
+]

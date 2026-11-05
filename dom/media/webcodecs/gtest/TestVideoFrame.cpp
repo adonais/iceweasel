@@ -2,13 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <iterator>
+
 #include "2D.h"
 #include "ImageContainer.h"
 #include "Tools.h"
+#include "YUVBufferGenerator.h"
 #include "gtest/gtest.h"
 #include "js/ArrayBuffer.h"
 #include "js/RootingAPI.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/Variant.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/BufferSourceBinding.h"
 #include "mozilla/dom/Promise.h"
@@ -29,6 +33,309 @@ constexpr uint8_t kUVal = 100;
 constexpr uint8_t kVVal = 200;
 static uint8_t YValue(int32_t aRow, int32_t aCol) {
   return static_cast<uint8_t>((aRow * 16 + aCol) & 0xFF);
+}
+
+class DummyTestImage final : public Image {
+ public:
+  explicit DummyTestImage(Maybe<IntSize> aAddressableSize, IntRect aPictureRect,
+                          bool aIsValid = true)
+      : Image(nullptr, ImageFormat::MOZ2D_SURFACE),
+        mAddressableSize(aAddressableSize),
+        mPictureRect(aPictureRect),
+        mIsValid(aIsValid) {}
+
+  IntSize GetSize() const override { return mPictureRect.Size(); }
+  IntRect GetPictureRect() const override { return mPictureRect; }
+  Maybe<IntSize> GetAddressableSize() const override {
+    ++mAddressableSizeQueries;
+    return mIsValid ? mAddressableSize : Nothing();
+  }
+  bool IsValid() const override { return mIsValid; }
+  already_AddRefed<SourceSurface> GetAsSourceSurface() override {
+    return nullptr;
+  }
+  uint32_t AddressableSizeQueries() const { return mAddressableSizeQueries; }
+
+ private:
+  ~DummyTestImage() override = default;
+
+  const Maybe<IntSize> mAddressableSize;
+  const IntRect mPictureRect;
+  const bool mIsValid;
+  mutable uint32_t mAddressableSizeQueries = 0;
+};
+
+static constexpr VideoPixelFormat kSubsampledFormats[] = {
+    VideoPixelFormat::I420, VideoPixelFormat::NV12};
+
+static already_AddRefed<Image> GenerateYUVImage(YUVBufferGenerator& aGenerator,
+                                                VideoPixelFormat aFormat) {
+  if (aFormat == VideoPixelFormat::I420) {
+    return aGenerator.GenerateI420Image();
+  }
+  MOZ_ASSERT(aFormat == VideoPixelFormat::NV12);
+  return aGenerator.GenerateNV12Image();
+}
+
+static auto CreateTestVideoFrame(Image* aImage, IntRect aVisibleRect,
+                                 IntSize aDisplaySize,
+                                 Maybe<VideoPixelFormat> aFormat = Nothing()) {
+  nsCOMPtr<nsIGlobalObject> global =
+      xpc::NativeGlobal(xpc::PrivilegedJunkScope());
+  RefPtr<Image> image = aImage;
+  return VideoFrame::CreateFromImage(global, image, aFormat, aVisibleRect,
+                                     aDisplaySize, Nothing(), 0, {});
+}
+
+using AllocationResult = Variant<uint32_t, nsresult>;
+
+static void ExpectAllocationResult(VideoFrame* aFrame,
+                                   const AllocationResult& aExpected) {
+  AutoJSAPI jsapi;
+  ASSERT_TRUE(jsapi.Init(xpc::PrivilegedJunkScope()));
+  RootedDictionary<VideoFrameCopyToOptions> options(jsapi.cx());
+  ErrorResult rv;
+  const uint32_t size = aFrame->AllocationSize(options, rv);
+  if (aExpected.is<uint32_t>()) {
+    ASSERT_FALSE(rv.Failed());
+    EXPECT_EQ(size, aExpected.as<uint32_t>());
+  } else {
+    EXPECT_EQ(size, 0u);
+    ASSERT_TRUE(rv.Failed());
+    EXPECT_TRUE(rv.ErrorCodeIs(aExpected.as<nsresult>()));
+    rv.SuppressException();
+  }
+}
+
+TEST(VideoFrameTest, PreservesCodedSizeWithoutRequery)
+{
+  constexpr IntSize kCodedSize(5, 6);
+  const IntPoint kPictureOrigin(1, 1);
+  const IntRect kPictureRect(kPictureOrigin,
+                             IntSize(kCodedSize.Width() - kPictureOrigin.X(),
+                                     kCodedSize.Height() - kPictureOrigin.Y()));
+  auto image = MakeRefPtr<DummyTestImage>(Some(kCodedSize), kPictureRect);
+  auto result = CreateTestVideoFrame(image, kPictureRect, kPictureRect.Size());
+  ASSERT_TRUE(result.isOk());
+  RefPtr<VideoFrame> frame = result.unwrap();
+  EXPECT_EQ(frame->NativeCodedSize(), kCodedSize);
+  EXPECT_EQ(image->AddressableSizeQueries(), 1u);
+
+  RefPtr clone = MakeRefPtr<VideoFrame>(*frame);
+  EXPECT_EQ(clone->NativeCodedSize(), kCodedSize);
+  EXPECT_EQ(image->AddressableSizeQueries(), 1u);
+
+  nsCOMPtr<nsIGlobalObject> global =
+      xpc::NativeGlobal(xpc::PrivilegedJunkScope());
+  UniquePtr<VideoFrame::TransferredData> transferred = clone->Transfer();
+  ASSERT_TRUE(transferred);
+  RefPtr<VideoFrame> received =
+      VideoFrame::FromTransferred(global, transferred.get());
+  ASSERT_TRUE(received);
+  EXPECT_EQ(received->NativeCodedSize(), kCodedSize);
+  EXPECT_EQ(received->NativeVisibleRect(), kPictureRect);
+  EXPECT_EQ(image->AddressableSizeQueries(), 1u);
+  received->Close();
+  frame->Close();
+}
+
+TEST(VideoFrameTest, AcceptsPositiveDisplaySizesIndependentOfCodedSize)
+{
+  constexpr uint32_t kPictureWidth = 4;
+  constexpr uint32_t kPictureHeight = 4;
+  constexpr uint32_t kChromaWidth = kPictureWidth / 2;
+  constexpr uint32_t kChromaHeight = kPictureHeight / 2;
+  constexpr uint32_t kExpectedAllocationSize =
+      kPictureWidth * kPictureHeight + 2 * kChromaWidth * kChromaHeight;
+  const IntRect kPictureRect(0, 0, kPictureWidth, kPictureHeight);
+  const IntSize kDisplaySizes[] = {kPictureRect.Size(), IntSize(2, 3),
+                                   IntSize(8, 6)};
+
+  for (const VideoPixelFormat format : kSubsampledFormats) {
+    YUVBufferGenerator generator;
+    ASSERT_TRUE(generator.Init(kPictureRect));
+    RefPtr<Image> image = GenerateYUVImage(generator, format);
+    ASSERT_TRUE(image);
+
+    for (const IntSize displaySize : kDisplaySizes) {
+      auto result =
+          CreateTestVideoFrame(image, kPictureRect, displaySize, Some(format));
+      ASSERT_TRUE(result.isOk());
+      RefPtr<VideoFrame> frame = result.unwrap();
+      EXPECT_EQ(frame->NativeDisplaySize(), displaySize);
+      ExpectAllocationResult(frame, AsVariant(kExpectedAllocationSize));
+      frame->Close();
+    }
+  }
+}
+
+TEST(VideoFrameTest, RejectsUnavailableSize)
+{
+  constexpr IntSize kDisplaySize(4, 4);
+  const IntRect kPictureRect(IntPoint(0, 0), kDisplaySize);
+  auto image = MakeRefPtr<DummyTestImage>(Nothing(), kPictureRect);
+  EXPECT_TRUE(CreateTestVideoFrame(image, kPictureRect, kDisplaySize).isErr());
+}
+
+TEST(VideoFrameTest, RejectsInvalidImage)
+{
+  constexpr IntSize kSize(4, 4);
+  const IntRect kPictureRect(IntPoint(0, 0), kSize);
+  auto image = MakeRefPtr<DummyTestImage>(Some(kSize), kPictureRect, false);
+  EXPECT_TRUE(CreateTestVideoFrame(image, kPictureRect, kSize).isErr());
+}
+
+TEST(VideoFrameTest, RejectsNonPositiveSize)
+{
+  constexpr IntSize kDisplaySize(4, 4);
+  const IntRect kPictureRect(IntPoint(0, 0), kDisplaySize);
+  auto empty = MakeRefPtr<DummyTestImage>(Some(IntSize()), kPictureRect);
+  EXPECT_TRUE(CreateTestVideoFrame(empty, kPictureRect, kDisplaySize).isErr());
+
+  auto negative =
+      MakeRefPtr<DummyTestImage>(Some(IntSize(-1, 4)), kPictureRect);
+  EXPECT_TRUE(
+      CreateTestVideoFrame(negative, kPictureRect, kDisplaySize).isErr());
+}
+
+TEST(VideoFrameTest, RejectsPictureRectOutsideCodedDomain)
+{
+  constexpr IntSize kSize(4, 4);
+  const IntRect kInvalidRect(IntPoint(1, 1), kSize);
+  const IntRect kValidRect(IntPoint(0, 0), kSize);
+  auto image = MakeRefPtr<DummyTestImage>(Some(kSize), kInvalidRect);
+  EXPECT_TRUE(CreateTestVideoFrame(image, kValidRect, kSize).isErr());
+}
+
+TEST(VideoFrameTest, RejectsVisibleRectOutsideCodedDomain)
+{
+  constexpr IntSize kSize(4, 4);
+  const IntRect kInvalidRect(IntPoint(1, 1), kSize);
+  const IntRect kValidRect(IntPoint(0, 0), kSize);
+  auto image = MakeRefPtr<DummyTestImage>(Some(kSize), kValidRect);
+  EXPECT_TRUE(CreateTestVideoFrame(image, kInvalidRect, kSize).isErr());
+}
+
+TEST(VideoFrameTest, RejectsEmptyDisplaySize)
+{
+  constexpr IntSize kSize(4, 4);
+  const IntRect kPictureRect(IntPoint(0, 0), kSize);
+  auto image = MakeRefPtr<DummyTestImage>(Some(kSize), kPictureRect);
+  EXPECT_TRUE(CreateTestVideoFrame(image, kPictureRect, IntSize()).isErr());
+}
+
+TEST(VideoFrameTest, AcceptsChromaUnalignedNativePictureRect)
+{
+  const IntRect kPictureRects[] = {IntRect(1, 0, 4, 4), IntRect(0, 1, 4, 4)};
+
+  for (size_t rectIndex = 0; rectIndex < std::size(kPictureRects);
+       ++rectIndex) {
+    const IntRect pictureRect = kPictureRects[rectIndex];
+    const IntSize codedSize(pictureRect.XMost(), pictureRect.YMost());
+    for (const VideoPixelFormat format : kSubsampledFormats) {
+      SCOPED_TRACE(rectIndex);
+      SCOPED_TRACE(static_cast<int>(format));
+      YUVBufferGenerator generator;
+      ASSERT_TRUE(generator.Init(pictureRect));
+      RefPtr<Image> image = GenerateYUVImage(generator, format);
+      ASSERT_TRUE(image);
+
+      auto result = CreateTestVideoFrame(image, pictureRect, pictureRect.Size(),
+                                         Some(format));
+      ASSERT_TRUE(result.isOk());
+      RefPtr<VideoFrame> frame = result.unwrap();
+      EXPECT_EQ(frame->NativeCodedSize(), codedSize);
+      EXPECT_EQ(frame->NativeVisibleRect(), pictureRect);
+      ExpectAllocationResult(
+          frame, AsVariant(NS_ERROR_INTERNAL_ERRORRESULT_TYPEERROR));
+      frame->Close();
+    }
+  }
+}
+
+TEST(VideoFrameTest, AcceptsChromaUnalignedNativeVisibleRect)
+{
+  const IntRect kVisibleRect(1, 0, 4, 4);
+  const IntSize kCodedSize(kVisibleRect.XMost(), kVisibleRect.YMost());
+  const IntRect kPictureRect(IntPoint(), kCodedSize);
+
+  for (const VideoPixelFormat format : kSubsampledFormats) {
+    YUVBufferGenerator generator;
+    ASSERT_TRUE(generator.Init(kPictureRect));
+    RefPtr<Image> image = GenerateYUVImage(generator, format);
+    ASSERT_TRUE(image);
+
+    auto result = CreateTestVideoFrame(image, kVisibleRect, kVisibleRect.Size(),
+                                       Some(format));
+    ASSERT_TRUE(result.isOk());
+    RefPtr<VideoFrame> frame = result.unwrap();
+    EXPECT_EQ(frame->NativeCodedSize(), kCodedSize);
+    EXPECT_EQ(frame->NativeVisibleRect(), kVisibleRect);
+    ExpectAllocationResult(frame,
+                           AsVariant(NS_ERROR_INTERNAL_ERRORRESULT_TYPEERROR));
+    frame->Close();
+  }
+}
+
+TEST(VideoFrameTest, AcceptsChromaAlignedOddPictureExtent)
+{
+  const IntRect kPictureRect(16, 16, 289, 209);
+  const IntSize kCodedSize(kPictureRect.XMost(), kPictureRect.YMost());
+
+  for (const VideoPixelFormat format : kSubsampledFormats) {
+    YUVBufferGenerator generator;
+    ASSERT_TRUE(generator.Init(kPictureRect));
+    RefPtr<Image> image = GenerateYUVImage(generator, format);
+    ASSERT_TRUE(image);
+
+    auto result = CreateTestVideoFrame(image, kPictureRect, kPictureRect.Size(),
+                                       Some(format));
+    ASSERT_TRUE(result.isOk());
+    RefPtr<VideoFrame> frame = result.unwrap();
+    EXPECT_EQ(frame->NativeCodedSize(), kCodedSize);
+    EXPECT_EQ(frame->NativeVisibleRect(), kPictureRect);
+    // TODO: (bug 2068332) Verify that AllocationSize returns the expected size
+    // for a chroma-aligned odd picture extent.
+    frame->Close();
+  }
+}
+
+TEST(VideoFrameTest, AcceptsVisibleRectOutsidePictureRectWithinCodedSize)
+{
+  const IntSize kCodedSize(8, 8);
+  constexpr int32_t kVisibleWidth = 4;
+  constexpr int32_t kVisibleHeight = 4;
+  constexpr uint32_t kExpectedAllocationSize =
+      kVisibleWidth * kVisibleHeight +
+      2 * (kVisibleWidth / 2) * (kVisibleHeight / 2);
+  const IntSize kVisibleSize(kVisibleWidth, kVisibleHeight);
+  const IntRect kCodedRect(IntPoint(), kCodedSize);
+  const IntRect kPictureRect(IntPoint(4, 4), kVisibleSize);
+  const IntRect kVisibleRect(IntPoint(2, 2), kVisibleSize);
+
+  ASSERT_TRUE(kCodedRect.Contains(kPictureRect));
+  ASSERT_TRUE(kCodedRect.Contains(kVisibleRect));
+  ASSERT_FALSE(kPictureRect.Contains(kVisibleRect));
+  ASSERT_FALSE(kVisibleRect.Contains(kPictureRect));
+
+  for (const VideoPixelFormat format : kSubsampledFormats) {
+    SCOPED_TRACE(static_cast<int>(format));
+    YUVBufferGenerator generator;
+    ASSERT_TRUE(generator.Init(kPictureRect));
+    RefPtr<Image> image = GenerateYUVImage(generator, format);
+    ASSERT_TRUE(image);
+    EXPECT_EQ(image->GetPictureRect(), kPictureRect);
+
+    auto result =
+        CreateTestVideoFrame(image, kVisibleRect, kVisibleSize, Some(format));
+    ASSERT_TRUE(result.isOk());
+    RefPtr<VideoFrame> frame = result.unwrap();
+    EXPECT_EQ(frame->NativeCodedSize(), kCodedSize);
+    EXPECT_EQ(frame->NativeVisibleRect(), kVisibleRect);
+    EXPECT_EQ(frame->NativeDisplaySize(), kVisibleSize);
+    ExpectAllocationResult(frame, AsVariant(kExpectedAllocationSize));
+    frame->Close();
+  }
 }
 
 // Create a PlanarYCbCrImage with aligned strides, simulating what a video
@@ -110,9 +417,11 @@ TEST(VideoFrameTest, CopyToI420AlignedStride)
                                      VideoColorPrimaries::Bt709,
                                      VideoTransferCharacteristics::Bt709);
 
-  RefPtr<VideoFrame> frame = MakeRefPtr<VideoFrame>(
+  auto result = VideoFrame::CreateFromImage(
       global.get(), RefPtr<layers::Image>(image), Some(VideoPixelFormat::I420),
-      codedSize, visibleRect, codedSize, Nothing(), int64_t(0), colorSpace);
+      visibleRect, codedSize, Nothing(), int64_t(0), colorSpace);
+  ASSERT_TRUE(result.isOk());
+  RefPtr<VideoFrame> frame = result.unwrap();
 
   // Get the required allocation size.
   RootedDictionary<VideoFrameCopyToOptions> options(cx);
@@ -242,9 +551,11 @@ TEST(VideoFrameTest, CopyToNV12AlignedStride)
                                      VideoColorPrimaries::Bt709,
                                      VideoTransferCharacteristics::Bt709);
 
-  RefPtr<VideoFrame> frame = MakeRefPtr<VideoFrame>(
+  auto result = VideoFrame::CreateFromImage(
       global.get(), RefPtr<layers::Image>(image), Some(VideoPixelFormat::NV12),
-      codedSize, visibleRect, codedSize, Nothing(), int64_t(0), colorSpace);
+      visibleRect, codedSize, Nothing(), int64_t(0), colorSpace);
+  ASSERT_TRUE(result.isOk());
+  RefPtr<VideoFrame> frame = result.unwrap();
 
   RootedDictionary<VideoFrameCopyToOptions> options(cx);
   ErrorResult rv;
@@ -345,9 +656,11 @@ TEST(VideoFrameTest, CopyToBGRAAlignedStride)
   IntRect visibleRect(0, 0, kWidth, kHeight);
   VideoColorSpaceInternal colorSpace;
 
-  RefPtr<VideoFrame> frame = MakeRefPtr<VideoFrame>(
+  auto result = VideoFrame::CreateFromImage(
       global.get(), RefPtr<layers::Image>(image), Some(VideoPixelFormat::BGRA),
-      codedSize, visibleRect, codedSize, Nothing(), int64_t(0), colorSpace);
+      visibleRect, codedSize, Nothing(), int64_t(0), colorSpace);
+  ASSERT_TRUE(result.isOk());
+  RefPtr<VideoFrame> frame = result.unwrap();
 
   RootedDictionary<VideoFrameCopyToOptions> options(cx);
   ErrorResult rv;

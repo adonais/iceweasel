@@ -14,11 +14,7 @@ class ColorPickerParent : public PColorPickerParent {
  public:
   ColorPickerParent(BrowsingContext* aBrowsingContext, const nsString& aTitle,
                     const nsString& aInitialColor,
-                    const nsTArray<nsString>& aDefaultColors)
-      : mBrowsingContext(aBrowsingContext),
-        mTitle(aTitle),
-        mInitialColor(aInitialColor),
-        mDefaultColors(aDefaultColors.Clone()) {}
+                    const nsTArray<nsString>& aDefaultColors);
 
   NS_INLINE_DECL_REFCOUNTING(ColorPickerParent, final)
 
@@ -41,7 +37,7 @@ class ColorPickerParent : public PColorPickerParent {
   };
 
  private:
-  virtual ~ColorPickerParent() = default;
+  virtual ~ColorPickerParent();
 
   bool CreateColorPicker();
 

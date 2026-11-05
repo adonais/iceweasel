@@ -60,7 +60,7 @@ Integration.downloads.defineESModuleGetter(
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
-var gDownloadElementButtons = {
+var gDownloadElementButtons = Object.freeze({
   cancel: {
     commandName: "downloadsCmd_cancel",
     l10nId: "downloads-cmd-cancel",
@@ -107,7 +107,7 @@ var gDownloadElementButtons = {
     panelL10nId: "downloads-cmd-remove-file-panel",
     iconClass: "downloadIconCancel",
   },
-};
+});
 
 /**
  * Associates each document with a pre-built DOM fragment representing the
@@ -364,6 +364,10 @@ export var DownloadsViewUI = {
       alwaysOpenSimilarFilesItem.removeAttribute("checked");
     }
   },
+
+  get downloadElementButtons() {
+    return gDownloadElementButtons;
+  },
 };
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -392,7 +396,7 @@ DownloadsViewUI.BaseView = class {
 
 /**
  * A download element shell is responsible for handling the commands and the
- * displayed data for a single element that uses the "download.xml" binding.
+ * displayed data for a single download.
  *
  * The information to display is obtained through the associated Download object
  * from the JavaScript API for downloads, and commands are executed using a

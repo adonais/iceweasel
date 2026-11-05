@@ -115,7 +115,7 @@ std::unique_ptr<TestAudioDeviceModule::Capturer> CreateAudioCapturer(
   }
   if (audio_config->input_file_name) {
     return TestAudioDeviceModule::CreateWavFileReader(
-        *audio_config->input_file_name, /*repeat=*/true);
+        *audio_config->input_file_name, audio_config->repeat);
   } else {
     return TestAudioDeviceModule::CreatePulsedNoiseCapturer(
         kGeneratedAudioMaxAmplitude, audio_config->sampling_frequency_in_hz);

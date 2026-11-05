@@ -1117,6 +1117,8 @@ NS_IMPL_ISUPPORTS(SystemHeapReporter, nsIMemoryReporter)
 
 #  include <sys/resource.h>
 
+#  include <memory>
+
 #  define HAVE_RESIDENT_PEAK_REPORTER 1
 
 [[nodiscard]] static nsresult ResidentPeakDistinguishedAmount(int64_t* aN) {
@@ -2466,9 +2468,9 @@ nsMemoryReporterManager::BlockRegistrationAndHideExistingReporters() {
   mSavedStrongEternalReporters.swap(mStrongEternalReporters);
   mSavedStrongReporters.swap(mStrongReporters);
   mSavedWeakReporters.swap(mWeakReporters);
-  mStrongEternalReporters.reset(new StrongReportersArray());
-  mStrongReporters.reset(new StrongReportersTable());
-  mWeakReporters.reset(new WeakReportersTable());
+  mStrongEternalReporters = std::make_unique<StrongReportersArray>();
+  mStrongReporters = std::make_unique<StrongReportersTable>();
+  mWeakReporters = std::make_unique<WeakReportersTable>();
 
   return NS_OK;
 }

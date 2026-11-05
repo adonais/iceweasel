@@ -281,6 +281,38 @@ class _SearchTestUtils {
           if (!obj.variants) {
             obj.variants = [{ environment: { allRegionsAndLocales: true } }];
           }
+          if (lazy.SearchUtils.configV3FeatureGate) {
+            // Automatically translate instances of partnerCode & telemetrySuffix to
+            // the new format, to avoid having to transtion tests straight away.
+            if ("partnerCode" in obj.base) {
+              obj.base.partner = { default: { code: obj.base.partnerCode } };
+              delete obj.base.partnerCode;
+            }
+
+            function replacePartnerCode(section) {
+              let partner = {};
+              if ("partnerCode" in section) {
+                partner.code = section.partnerCode;
+                delete section.partnerCode;
+              }
+              if ("telemetrySuffix" in section) {
+                partner.telemetrySuffix = section.telemetrySuffix;
+                delete section.telemetrySuffix;
+              }
+              if ("code" in partner || "telemetrySuffix" in partner) {
+                section.partner = { default: partner };
+              }
+            }
+
+            for (let variant of obj.variants || []) {
+              replacePartnerCode(variant);
+
+              for (let subVariant of variant.subVariants || []) {
+                replacePartnerCode(subVariant);
+              }
+            }
+          }
+
           numEngines++;
           break;
         case "defaultEngines":
@@ -690,8 +722,7 @@ class _SearchTestUtils {
   }
 
   /**
-   * Sets the search configuration and search overrides configuration without
-   * reloading the engines.
+   * Sets the search configuration without reloading the engines.
    * If parameters are not specified, the appropriate configuration is
    * reset to the data stored in remote settings.
    *
@@ -700,13 +731,10 @@ class _SearchTestUtils {
    *
    * @param {object[]} [partialConfig]
    *   The replacement configuration. Will be expanded via `expandPartialConfig`.
-   * @param {object[]} [overridesConfig]
-   *   The replacement overrides configuration.
    */
-  setRemoteSettingsConfig(partialConfig, overridesConfig) {
+  setRemoteSettingsConfig(partialConfig) {
     let config = this.expandPartialConfig(partialConfig);
     this.#stubConfig(lazy.SearchUtils.SETTINGS_KEY, config);
-    this.#stubConfig(lazy.SearchUtils.SETTINGS_OVERRIDES_KEY, overridesConfig);
   }
 
   /**
@@ -719,37 +747,22 @@ class _SearchTestUtils {
    *
    * @param {object[]} [partialConfig]
    *   The replacement configuration. Will be expanded via `expandPartialConfig`.
-   * @param {object[]} [overridesConfig]
-   *   The replacement overrides configuration.
    */
-  async updateRemoteSettingsConfig(partialConfig, overridesConfig) {
+  async updateRemoteSettingsConfig(partialConfig) {
     if (!this.#idleServiceCID) {
       this.useMockIdleService();
     }
     let config = this.expandPartialConfig(partialConfig);
     this.#stubConfig(lazy.SearchUtils.SETTINGS_KEY, config);
-    this.#stubConfig(lazy.SearchUtils.SETTINGS_OVERRIDES_KEY, overridesConfig);
 
     if (!config) {
       let settings = lazy.RemoteSettings(lazy.SearchUtils.SETTINGS_KEY);
       config = await settings.get();
     }
-    if (!overridesConfig) {
-      let settings = lazy.RemoteSettings(
-        lazy.SearchUtils.SETTINGS_OVERRIDES_KEY
-      );
-      overridesConfig = await settings.get();
-    }
     const reloadObserved = this.promiseSearchNotification("engines-reloaded");
     await lazy.RemoteSettings(lazy.SearchUtils.SETTINGS_KEY).emit("sync", {
       data: { current: config },
     });
-    await lazy
-      .RemoteSettings(lazy.SearchUtils.SETTINGS_OVERRIDES_KEY)
-      .emit("sync", {
-        data: { current: overridesConfig },
-      });
-
     this.idleService._fireObservers("idle");
     await reloadObserved;
   }

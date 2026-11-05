@@ -61,7 +61,6 @@ class WebNotificationTest : BaseSessionTest() {
     @Test
     fun onSilentNotification() {
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.webnotifications.silent.enabled" to true))
-        val notificationResult = GeckoResult<Void>()
 
         sessionRule.delegateDuringNextWait(
             object : WebNotificationDelegate {
@@ -73,7 +72,6 @@ class WebNotificationTest : BaseSessionTest() {
                     assertThat("Source should match", notification.source, equalTo(createTestUrl(HELLO_HTML_PATH)))
                     assertThat("Origin should match", notification.origin, equalTo(GeckoSessionTestRule.TEST_ENDPOINT))
                     notification.show()
-                    notificationResult.complete(null)
                 }
             }
         )
@@ -85,7 +83,7 @@ class WebNotificationTest : BaseSessionTest() {
                 .trimIndent()
         )
 
-        sessionRule.waitForResult(notificationResult)
+        sessionRule.waitUntilCalled(WebNotificationDelegate::class, "onShowNotification")
     }
 
     fun assertNotificationData(notification: WebNotification, requireInteraction: Boolean) {
@@ -121,7 +119,6 @@ class WebNotificationTest : BaseSessionTest() {
     @Test
     fun onShowNotification() {
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.webnotifications.vibrate.enabled" to true))
-        val notificationResult = GeckoResult<Void>()
         val requireInteraction = sessionRule.getPrefs("dom.webnotifications.requireinteraction.enabled")[0] as Boolean
 
         sessionRule.delegateDuringNextWait(
@@ -131,7 +128,6 @@ class WebNotificationTest : BaseSessionTest() {
                     assertNotificationData(notification, requireInteraction)
                     assertThat("privateBrowsing should match", notification.privateBrowsing, equalTo(true))
                     notification.show()
-                    notificationResult.complete(null)
                 }
             }
         )
@@ -145,25 +141,12 @@ class WebNotificationTest : BaseSessionTest() {
                 .trimIndent()
         )
 
-        sessionRule.waitForResult(notificationResult)
+        sessionRule.waitUntilCalled(WebNotificationDelegate::class, "onShowNotification")
     }
 
     @Test
     fun onShowNotificationSameTag() {
         val tags = mutableListOf<String>()
-        val notificationResult = GeckoResult<Void>()
-
-        sessionRule.delegateDuringNextWait(
-            object : WebNotificationDelegate {
-                @GeckoSessionTestRule.AssertCalled
-                override fun onShowNotification(notification: WebNotification) {
-                    tags += notification.tag
-                    if (tags.size == 2) {
-                        notificationResult.complete(null)
-                    }
-                }
-            }
-        )
 
         mainSession.evaluateJS(
             """
@@ -173,7 +156,14 @@ class WebNotificationTest : BaseSessionTest() {
                 .trimIndent()
         )
 
-        sessionRule.waitForResult(notificationResult)
+        sessionRule.waitUntilCalled(
+            object : WebNotificationDelegate {
+                @GeckoSessionTestRule.AssertCalled(count = 2)
+                override fun onShowNotification(notification: WebNotification) {
+                    tags += notification.tag
+                }
+            }
+        )
 
         assertThat("tags should be same", tags[0], equalTo(tags[1]))
     }
@@ -181,19 +171,6 @@ class WebNotificationTest : BaseSessionTest() {
     @Test
     fun onShowNotificationDifferentTag() {
         val tags = mutableListOf<String>()
-        val notificationResult = GeckoResult<Void>()
-
-        sessionRule.delegateDuringNextWait(
-            object : WebNotificationDelegate {
-                @GeckoSessionTestRule.AssertCalled
-                override fun onShowNotification(notification: WebNotification) {
-                    tags += notification.tag
-                    if (tags.size == 2) {
-                        notificationResult.complete(null)
-                    }
-                }
-            }
-        )
 
         mainSession.evaluateJS(
             """
@@ -203,21 +180,23 @@ class WebNotificationTest : BaseSessionTest() {
                 .trimIndent()
         )
 
-        sessionRule.waitForResult(notificationResult)
+        sessionRule.waitUntilCalled(
+            object : WebNotificationDelegate {
+                @GeckoSessionTestRule.AssertCalled(count = 2)
+                override fun onShowNotification(notification: WebNotification) {
+                    tags += notification.tag
+                }
+            }
+        )
 
         assertThat("tags should be different", tags[0], not(equalTo(tags[1])))
     }
 
     @Test
     fun onCloseNotification() {
-        val closeCalled = GeckoResult<Void>()
-
         sessionRule.delegateDuringNextWait(
             object : WebNotificationDelegate {
-                @GeckoSessionTestRule.AssertCalled
-                override fun onCloseNotification(notification: WebNotification) {
-                    closeCalled.complete(null)
-                }
+                @GeckoSessionTestRule.AssertCalled override fun onCloseNotification(notification: WebNotification) {}
             }
         )
 
@@ -229,7 +208,7 @@ class WebNotificationTest : BaseSessionTest() {
                 .trimIndent()
         )
 
-        sessionRule.waitForResult(closeCalled)
+        sessionRule.waitUntilCalled(WebNotificationDelegate::class, "onCloseNotification")
     }
 
     @Test
@@ -351,7 +330,6 @@ class WebNotificationTest : BaseSessionTest() {
 
     @Test
     fun clickNotification() {
-        val notificationResult = GeckoResult<Void>()
         var notificationShown: WebNotification? = null
 
         sessionRule.delegateDuringNextWait(
@@ -360,7 +338,6 @@ class WebNotificationTest : BaseSessionTest() {
                 override fun onShowNotification(notification: WebNotification) {
                     notificationShown = notification
                     notification.show()
-                    notificationResult.complete(null)
                 }
             }
         )
@@ -378,7 +355,7 @@ class WebNotificationTest : BaseSessionTest() {
                     .trimIndent()
             )
 
-        sessionRule.waitForResult(notificationResult)
+        sessionRule.waitUntilCalled(WebNotificationDelegate::class, "onShowNotification")
         notificationShown!!.click()
 
         assertThat("Promise should have been resolved.", promiseResult.value as Double, equalTo(1.0))
@@ -386,7 +363,6 @@ class WebNotificationTest : BaseSessionTest() {
 
     @Test
     fun dismissNotification() {
-        val notificationResult = GeckoResult<Void>()
         var notificationShown: WebNotification? = null
 
         sessionRule.delegateDuringNextWait(
@@ -395,7 +371,6 @@ class WebNotificationTest : BaseSessionTest() {
                 override fun onShowNotification(notification: WebNotification) {
                     notificationShown = notification
                     notification.show()
-                    notificationResult.complete(null)
                 }
             }
         )
@@ -413,7 +388,7 @@ class WebNotificationTest : BaseSessionTest() {
                     .trimIndent()
             )
 
-        sessionRule.waitForResult(notificationResult)
+        sessionRule.waitUntilCalled(WebNotificationDelegate::class, "onShowNotification")
         notificationShown!!.dismiss()
 
         assertThat("Promise should have been resolved", promiseResult.value as Double, equalTo(1.0))

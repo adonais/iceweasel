@@ -8,9 +8,11 @@
 #include <functional>
 
 #include "mozilla/Mutex.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/dom/PWebTransport.h"
 #include "nsISupportsImpl.h"
 #include "nsIWebTransport.h"
+#include "nsString.h"
 #include "nsTArray.h"
 
 class WebTransportSessionEventListener;
@@ -53,13 +55,21 @@ class WebTransportSessionBase {
   virtual uint64_t GetStreamId() const = 0;
   virtual void CloseSession(uint32_t aStatus, const nsACString& aReason) = 0;
   virtual void GetMaxDatagramSize() = 0;
+  virtual void GetResponseHeaders(nsTArray<nsCString>& aNames,
+                                  nsTArray<nsCString>& aValues) {}
   virtual nsresult ExportKeyingMaterial(const nsTArray<uint8_t>& aLabel,
                                         const nsTArray<uint8_t>& aContext,
+                                        uint32_t aOutputLength,
                                         nsTArray<uint8_t>& aKeyingMaterial) = 0;
   virtual void GetNegotiatedProtocol(nsACString& aProtocol) = 0;
   virtual void GetStats() = 0;
+  // aTimestamp is when the datagram was written, for outgoingMaxAge.
   virtual void SendDatagram(nsTArray<uint8_t>&& aData, uint64_t aTrackingId,
-                            uint64_t aSendGroupId, int64_t aSendOrder) = 0;
+                            uint64_t aSendGroupId, int64_t aSendOrder,
+                            TimeStamp aTimestamp) = 0;
+  virtual void SetDatagramMaxBufferedDatagrams(
+      uint32_t aMaxBufferedDatagrams) = 0;
+  virtual void SetDatagramMaxAge(double aMaxAge) = 0;
   virtual nsresult RegisterSendGroup(uint64_t aGroupId) = 0;
   virtual void CreateOutgoingBidirectionalStream(
       std::function<void(Result<RefPtr<WebTransportStreamBase>, nsresult>&&)>&&

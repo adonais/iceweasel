@@ -156,7 +156,12 @@ const AVAILABLE_SHIMS = [
     name: "Amazon Ad System",
     bug: "1977375",
     file: "empty-shim.txt",
-    matches: ["*://aax.amazon-adsystem.com/e/dtb/bid/*/prebid*"],
+    matches: [
+      {
+        patterns: ["*://aax.amazon-adsystem.com/e/dtb/bid/*/prebid*"],
+        types: ["script", "xmlhttprequest"],
+      },
+    ],
     onlyIfBlockedByETP: true,
   },
   {
@@ -958,6 +963,28 @@ const AVAILABLE_SHIMS = [
     isSmartblockEmbedShim: true,
     onlyIfBlockedByETP: true,
     unblocksOnOptIn: ["*://*.disqus.com/*", "*://*.disquscdn.com/*"],
+  },
+  {
+    id: "SendToNewsEmbed",
+    platform: "desktop",
+    name: "SendToNews embed placeholder",
+    bug: "1945659",
+    runFirst: "sendtonews-embed.js",
+    // Blank stub file just so we run the script above when the matched script
+    // files get blocked.
+    file: "empty-script.js",
+    matches: ["*://*.sendtonews.com/player3/embedcode.js*"],
+    logos: ["video-embed.svg"],
+    webExposedShimHelpers: [],
+    needsShimHelpers: [
+      "embedClicked",
+      "smartblockEmbedReplaced",
+      "smartblockGetFluentString",
+      "shouldShowEmbedContentInPlaceholders",
+    ],
+    isSmartblockEmbedShim: true,
+    onlyIfBlockedByETP: true,
+    unblocksOnOptIn: ["*://*.sendtonews.com/*"],
   },
   {
     id: "FingerpringJSBotd",

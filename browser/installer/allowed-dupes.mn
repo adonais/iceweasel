@@ -85,7 +85,6 @@ chrome/toolkit/skin/classic/mozapps/extensions/themeGeneric.svg
 browser/chrome/browser/skin/classic/browser/customize.svg
 
 # Bug 1718144 - De-duplicate lightbulb icon
-browser/features/webcompat-reporter@mozilla.org/icons/lightbulb.svg
 chrome/toolkit/skin/classic/global/icons/lightbulb.svg
 
 # Bug 1895873 - Search engines with the same icon

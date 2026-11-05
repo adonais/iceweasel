@@ -155,6 +155,15 @@ static void ComputeLinearRGBLuminanceMask(
   }
 }
 
+RefPtr<DrawTarget> DrawTarget::CreateClippedDrawTargetForRect(
+    const IntRect& aRect, SurfaceFormat aFormat) {
+  RefPtr<DrawTarget> similar = CreateSimilarDrawTarget(aRect.Size(), aFormat);
+  if (!similar) {
+    return nullptr;
+  }
+  return Factory::CreateOffsetDrawTarget(similar, aRect.TopLeft());
+}
+
 void DrawTarget::PushDeviceSpaceClipRects(const IntRect* aRects,
                                           uint32_t aCount) {
   Matrix oldTransform = GetTransform();

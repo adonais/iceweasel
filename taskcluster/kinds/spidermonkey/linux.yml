@@ -9,7 +9,6 @@ task-defaults:
         env:
             MOZ_JS_UPLOAD_BINARIES_DEFAULT: "0"
     run:
-        clone-with: hg
         tooltool-downloads: public
 
 sm-package-linux64/opt:

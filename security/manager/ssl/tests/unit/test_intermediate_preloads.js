@@ -311,13 +311,11 @@ add_task(async function test_preload_basic() {
   );
   // This ensures the test server doesn't include the intermediate in the
   // handshake.
-  let certDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
-  certDir.append("test_intermediate_preloads");
-  Assert.ok(certDir.exists(), "test_intermediate_preloads should exist");
   let args = ["-D", "-n", "int"];
-  // If the certdb is cached from a previous run, the intermediate will have
-  // already been deleted, so this may "fail".
-  run_certutil_on_directory(certDir.path, args, false);
+  run_certutil_on_directory(
+    getCertDirCopy("test_intermediate_preloads").path,
+    args
+  );
 
   await checkCertErrorGeneric(
     certDB,

@@ -181,7 +181,7 @@ devtools-verify-bundle:
     run:
         command: >
             cd devtools/client/debugger &&
-            yarn &&
+            npm ci &&
             $MOZ_FETCHES_DIR/node/bin/node bin/bundle.js &&
             cd ../../.. &&
             ./mach python taskcluster/scripts/misc/verify-devtools-bundle.py --output /builds/worker/issues.json

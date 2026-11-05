@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>At-Page Size: mixed sizes</title>
+<style>
+  body {
+    margin: 0;
+  }
+  /* 4in x 6in (288pt x 432pt), the size of a typical shipping label. */
+  @page {
+    size: 4in 6in;
+    margin: 0;
+  }
+  /* The same sheet, rotated (432pt x 288pt).  Gecko only supports per-page
+     orientation changes for now, not different dimensions (bug 1868708). */
+  @page wide {
+    size: landscape;
+    margin: 0;
+  }
+  .wide {
+    page: wide;
+  }
+  div {
+    height: 1in;
+  }
+  div + div {
+    break-before: page;
+  }
+</style>
+<div>Page one: 4in x 6in</div>
+<div class="wide">Page two: 6in x 4in (landscape)</div>
+<div>Page three: 4in x 6in</div>

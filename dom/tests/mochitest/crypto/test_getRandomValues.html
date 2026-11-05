@@ -82,10 +82,11 @@ function onWindowLoad()
             testNsCryptoGetRandomValues(testData[i].len, testData[i].type, testData[i].pass);
           }
           catch (ex) {
-            todo("QuotaExceededError" in window && ex instanceof QuotaExceededError,
-                 "Exception was the correct type");
-            failedWithCorrectError = ex.toString().search(/QUOTA_EXCEEDED_ERR/);
-            ok(failedWithCorrectError, "Extended length array buffer fails, NS_ERROR_DOM_QUOTA_EXCEEDED_ERR thrown");
+            if (SpecialPowers.getBoolPref("dom.quota_exceeded_error.enabled")) {
+              ok(ex instanceof QuotaExceededError, "Exception was the correct type");
+            }
+            ok(ex.code == DOMException.QUOTA_EXCEEDED_ERR,
+               "Extended length array buffer fails, NS_ERROR_DOM_QUOTA_EXCEEDED_ERR thrown");
           }
         } // 8
 

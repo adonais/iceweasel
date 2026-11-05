@@ -37,11 +37,11 @@ policy-Backup = Disable backup or restore of profile data.
 
 policy-BlockAboutAddons = Block access to the Add-ons Manager (about:addons).
 
-policy-BlockAboutConfig = Block access to the about:config page.
+policy-BlockAboutConfig2 = Block access to Advanced Preferences (about:config).
 
-policy-BlockAboutProfiles = Block access to the about:profiles page.
+policy-BlockAboutProfiles2 = Block access to About Profiles (about:profiles).
 
-policy-BlockAboutSupport = Block access to the about:support page.
+policy-BlockAboutSupport2 = Block access to Troubleshooting Information (about:support).
 
 policy-Bookmarks = Create bookmarks in the Bookmarks toolbar, Bookmarks menu, or a specified folder inside them.
 
@@ -77,7 +77,7 @@ policy-DisableAppUpdate = Prevent the browser from updating.
 
 policy-DisableBuiltinPDFViewer = Disable PDF.js, the built-in PDF viewer in { -brand-short-name }.
 
-policy-DisableDefaultBrowserAgent = Prevent the default browser agent from taking any actions. Only applicable to Windows; other platforms don’t have the agent.
+policy-DisableDefaultBrowserAgent2 = Prevent the default browser agent from taking any actions.
 
 policy-DisableDeveloperTools = Block access to the developer tools.
 
@@ -99,6 +99,8 @@ policy-DisableFormHistory = Don’t remember search and form history.
 
 policy-DisableLaunchOnLogin = Prevent { -brand-short-name } from launching automatically when the user logs in.
 
+policy-DisableMacOSUserPolicies = Ignore policies from the user’s preferences and from user-scope configuration profiles on macOS.
+
 policy-DisablePrimaryPasswordCreation = If true, a Primary Password can’t be created.
 
 policy-DisablePasswordReveal2 = Do not allow passwords to be revealed in saved logins or password fields.
@@ -107,13 +109,13 @@ policy-DisablePrivateBrowsing = Disable Private Browsing.
 
 policy-DisableProfileImport = Disable the menu command to Import data from another browser.
 
-policy-DisableProfileRefresh = Disable the Refresh { -brand-short-name } button in the about:support page.
+policy-DisableProfileRefresh2 = Disable the Refresh { -brand-short-name } button in Troubleshooting Information (about:support) and on support.mozilla.org, as well as the prompt offering to refresh { -brand-short-name } when it hasn’t been used for a while.
 
 policy-DisableRemoteImprovements = Prevent { -brand-short-name } from applying performance, stability, and feature changes between updates.
 
 policy-DisableRemoteSettingsAndAcceptSecurityConsequences = Disable remote settings.
 
-policy-DisableSafeMode = Disable the feature to restart in Safe Mode. Note: the Shift key to enter Safe Mode can only be disabled on Windows using Group Policy.
+policy-DisableSafeMode2 = Disable restarting in Troubleshoot Mode (Safe Mode).
 
 policy-DisableSecurityBypass = Prevent the user from bypassing certain security warnings.
 
@@ -123,7 +125,7 @@ policy-DisableSystemAddonUpdate = Prevent the browser from installing and updati
 
 policy-DisableTelemetry = Turn off Telemetry.
 
-policy-DisableThirdPartyModuleBlocking = Prevent the user from blocking third-party modules that get injected into the { -brand-short-name } process.
+policy-DisableThirdPartyModuleBlocking2 = Prevent the user from using Third-party Module Information (about:third-party) to block third-party modules injected into the { -brand-short-name } process.
 
 policy-DisplayBookmarksToolbar = Display the Bookmarks Toolbar by default.
 
@@ -211,7 +213,7 @@ policy-OverrideFirstRunPage = Override the first run page. Set this policy to bl
 
 policy-OverridePostUpdatePage = Override the post-update “What’s New” page. Set this policy to blank if you want to disable the post-update page.
 
-policy-PasswordManagerEnabled = Enable saving passwords to the password manager.
+policy-PasswordManagerEnabled2 = Enable or disable saving passwords to the password manager. If disabled, Passwords (about:logins) is also blocked.
 
 policy-PasswordManagerExceptions = Prevent { -brand-short-name } from saving passwords for specific sites.
 
@@ -244,7 +246,7 @@ policy-SanitizeOnShutdown2 = Clear navigation data on shutdown.
 
 policy-SearchBar = Set the default location of the search bar. The user is still allowed to customize it.
 
-policy-SearchEngines = Configure search engine settings. This policy is only available on the Extended Support Release (ESR) version.
+policy-SearchEngines2 = Configure search engine settings.
 
 policy-SearchSuggestEnabled = Enable or disable search suggestions.
 

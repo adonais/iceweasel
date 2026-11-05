@@ -39,9 +39,9 @@ add_setup(async () => {
     await focusAndActivateElement(sidebarButton, () =>
       EventUtils.synthesizeKey("VK_SPACE")
     );
-
     Assert.ok(isActiveElement(sidebarButton), "Button has focus");
     await sidebarLauncher.updateComplete;
+    await SidebarController.waitUntilStable();
   }
   Assert.ok(
     BrowserTestUtils.isVisible(sidebarLauncher),
@@ -169,9 +169,7 @@ add_task(async function test_keyboard_navigation() {
   let customizeDocument = SidebarController.browser.contentDocument;
   const customizeComponent =
     customizeDocument.querySelector("sidebar-customize");
-  const sidebarPanelHeader = customizeComponent.shadowRoot.querySelector(
-    "sidebar-panel-header"
-  );
+  const sidebarPanelHeader = SidebarController.panelHeader;
   let closeButton = sidebarPanelHeader.closeButton;
   info("Press Tab key.");
   EventUtils.synthesizeKey("KEY_Tab", {});
@@ -189,6 +187,7 @@ add_task(async function test_keyboard_navigation() {
   ok(isActiveElement(closeButton), "Close button is focused.");
   EventUtils.synthesizeKey("KEY_Enter", {});
   await sidebar.updateComplete;
+  await SidebarController.waitUntilStable();
   ok(!sidebar.open, "Sidebar is closed.");
 });
 

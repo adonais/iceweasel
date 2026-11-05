@@ -181,6 +181,13 @@ class AudioContext final : public DOMEventTargetHelper,
   bool ShouldSuspendNewTrack() const {
     return mTracksAreSuspended || mCloseCalled;
   }
+  // Whether the page and media control want the context to run, even while its
+  // window is suspended. Unlike State(), this changes as soon as a suspend or
+  // resume is requested.
+  bool IsRunningOrResuming() const {
+    return mWasAllowedToStart && !mSuspendedByContent &&
+           !mSuspendedByMediaControl && !mCloseCalled && !mIsShutDown;
+  }
   double CurrentTime();
 
   AudioListener* Listener();
@@ -230,8 +237,12 @@ class AudioContext final : public DOMEventTargetHelper,
   void SuspendFromMediaControl();
   // Resume a media-control suspend (e.g. audio focus restored). Mirrors
   // SuspendFromMediaControl by clearing the same suspended-by-content
-  // bookkeeping and firing a statechange event.
-  void ResumeFromMediaControl();
+  // bookkeeping and firing a statechange event. Returns whether it released the
+  // media-control suspend.
+  bool ResumeFromMediaControl();
+  // Make a suspend media control caused count as one the page asked for,
+  // without resuming, so a page resume() can restart the context.
+  void TransferSuspendToContent();
   // Called on completion of offline rendering:
   void OfflineClose();
 
@@ -433,7 +444,8 @@ class AudioContext final : public DOMEventTargetHelper,
   // This flag stores the value of previous status of `allowed-to-start`.
   // true if offline.
   bool mWasAllowedToStart;
-  // Whether this AudioContext is suspended because the page called suspend().
+  // Whether this AudioContext is in a suspend the page owns: one it asked for
+  // with suspend(), or one handed to it after a permanent audio-focus loss.
   // Unused if offline.
   bool mSuspendedByContent;
   // Whether this AudioContext is suspended because the Window is suspended.

@@ -543,6 +543,10 @@ void InputToReadableStreamAlgorithms::ErrorPropagation(JSContext* aCx,
     return;
   }
 
+  if (!ShouldPropagateError(aError)) {
+    return;
+  }
+
   JS::Rooted<JS::Value> errorValue(aCx);
   BuildErrorValue(aCx, aError, &errorValue);
 

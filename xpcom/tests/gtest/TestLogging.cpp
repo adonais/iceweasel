@@ -9,7 +9,9 @@
 namespace mozilla::detail {
 bool LimitFileToLessThanSize(const char* aFilename, uint32_t aSize,
                              uint16_t aLongLineSize);
-}
+int32_t MaxSizeOptionToBytes(int32_t aMegabytes);
+int32_t RotateOptionToBytes(int32_t aMegabytes);
+}  // namespace mozilla::detail
 
 // These format strings result in 1024 byte lines on disk regardless
 // of OS, which makes various file sizes OS-agnostic.
@@ -177,4 +179,31 @@ TEST(Logging, MayCutLongLinesInexact)
   AssertSizeAndFirstLine(nameBuf, 256 * 1024 - 512, expectedLine);
 
   EXPECT_FALSE(remove(nameBuf));
+}
+
+TEST(Logging, MaxSizeOptionToBytes)
+{
+  using mozilla::detail::MaxSizeOptionToBytes;
+  EXPECT_EQ(MaxSizeOptionToBytes(0), 0);
+  EXPECT_EQ(MaxSizeOptionToBytes(1), 1 << 20);
+  EXPECT_EQ(MaxSizeOptionToBytes(40), 40 << 20);
+  EXPECT_EQ(MaxSizeOptionToBytes(2047), 2047 << 20);
+  EXPECT_EQ(MaxSizeOptionToBytes(2048), 2047 << 20);
+  EXPECT_EQ(MaxSizeOptionToBytes(4096), 2047 << 20);
+  EXPECT_EQ(MaxSizeOptionToBytes(INT32_MAX), 2047 << 20);
+  EXPECT_EQ(MaxSizeOptionToBytes(-5), 0);
+  EXPECT_EQ(MaxSizeOptionToBytes(INT32_MIN), 0);
+}
+
+TEST(Logging, RotateOptionToBytes)
+{
+  using mozilla::detail::RotateOptionToBytes;
+  EXPECT_EQ(RotateOptionToBytes(0), 0);
+  EXPECT_EQ(RotateOptionToBytes(1), (1 << 20) / 4);
+  EXPECT_EQ(RotateOptionToBytes(40), (40 << 20) / 4);
+  EXPECT_EQ(RotateOptionToBytes(2047), (2047 << 20) / 4);
+  EXPECT_EQ(RotateOptionToBytes(2048), (2047 << 20) / 4);
+  EXPECT_EQ(RotateOptionToBytes(INT32_MAX), (2047 << 20) / 4);
+  EXPECT_EQ(RotateOptionToBytes(-5), 0);
+  EXPECT_EQ(RotateOptionToBytes(INT32_MIN), 0);
 }

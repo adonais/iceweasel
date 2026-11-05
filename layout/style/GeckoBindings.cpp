@@ -1752,6 +1752,14 @@ uint64_t Gecko_Element_GetSubtreeBloomFilter(const Element* aElement) {
   return aElement->GetSubtreeBloomFilter();
 }
 
+uint64_t Gecko_Element_GetRandomSeed(const Element* aElement) {
+  return aElement->GetRandomSeed();
+}
+
+uint64_t Gecko_Document_GetRandomSeed(const Document* aDocument) {
+  return aDocument->GetRandomSeed();
+}
+
 bool StyleSingleFontFamily::IsNamedFamily(const nsAString& aFamilyName) const {
   if (!IsFamilyName()) {
     return false;

@@ -25,7 +25,7 @@ linux64-treeherder-cli:
         toolchain:
             - linux64-clang-toolchain
             - linux64-rust-toolchain
-            - linux64-toolchain-sysroot
+            - sysroot-x86_64-linux-gnu
 
 linux64-aarch64-treeherder-cli:
     treeherder:
@@ -36,7 +36,7 @@ linux64-aarch64-treeherder-cli:
         toolchain:
             - linux64-clang-toolchain
             - linux64-rust-toolchain
-            - linux64-aarch64-toolchain-sysroot
+            - sysroot-aarch64-linux-gnu
 
 macosx64-treeherder-cli:
     treeherder:
@@ -60,22 +60,22 @@ macosx64-aarch64-treeherder-cli:
             - linux64-rust-macos-toolchain
             - macosx64-sdk-toolchain
 
-win32-treeherder-cli:
+win64-treeherder-cli:
     treeherder:
-        symbol: TW32(treeherder-cli)
+        symbol: TW64(treeherder-cli)
     run:
-        arguments: ['i686-pc-windows-msvc']
+        arguments: ['x86_64-pc-windows-msvc']
     fetches:
         toolchain:
             - linux64-clang-toolchain
             - linux64-rust-windows-toolchain
             - vs-toolchain
 
-win64-treeherder-cli:
+win64-aarch64-treeherder-cli:
     treeherder:
-        symbol: TW64(treeherder-cli)
+        symbol: TWA64(treeherder-cli)
     run:
-        arguments: ['x86_64-pc-windows-msvc']
+        arguments: ['aarch64-pc-windows-msvc']
     fetches:
         toolchain:
             - linux64-clang-toolchain

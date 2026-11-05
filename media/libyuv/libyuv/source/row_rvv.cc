@@ -21,6 +21,14 @@
 #if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
 #include <assert.h>
 
+#ifndef RVV_VL_CLOBBER
+#ifdef __clang__
+#define RVV_VL_CLOBBER
+#else
+#define RVV_VL_CLOBBER "vl",
+#endif
+#endif
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -166,7 +174,7 @@ void ARGBToAR64Row_RVV(const uint8_t* src_argb, uint16_t* dst_ar64, int width) {
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       : [k0101] "r"(0x0101)
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17");
 }
 #endif
 
@@ -198,7 +206,7 @@ void ARGBToAB64Row_RVV(const uint8_t* src_argb, uint16_t* dst_ab64, int width) {
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       : [k0101] "r"(0x0101)
-      : "vl", "vtype", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10",
+      : RVV_VL_CLOBBER "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10",
         "v11", "v12", "v13", "v14", "v15");
 }
 #endif
@@ -224,7 +232,7 @@ void AR64ToARGBRow_RVV(const uint16_t* src_ar64, uint8_t* dst_argb, int width) {
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17");
 }
 #endif
 
@@ -252,7 +260,7 @@ void AR64ToAB64Row_RVV(const uint16_t* src_ar64,
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 }
 #endif
@@ -280,7 +288,7 @@ void AB64ToARGBRow_RVV(const uint16_t* src_ab64, uint8_t* dst_argb, int width) {
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10",
+      : RVV_VL_CLOBBER "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10",
         "v11", "v12", "v13", "v14", "v15");
 }
 #endif
@@ -312,7 +320,7 @@ void RAWToARGBRow_RVV(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
         [vl] "=&r"(vl),             // %[vl]
         [tmp] "=&r"(tmp)            // %[tmp]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21");
 }
 #endif
@@ -344,7 +352,7 @@ void RAWToRGBARow_RVV(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
         [vl] "=&r"(vl),             // %[vl]
         [tmp] "=&r"(tmp)            // %[tmp]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21");
 }
 #endif
@@ -372,7 +380,7 @@ void RAWToRGB24Row_RVV(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
         [vl] "=&r"(vl),               // %[vl]
         [tmp] "=&r"(tmp)              // %[tmp]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v16",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v16",
         "v17", "v18", "v19", "v20", "v21");
 }
 #endif
@@ -401,7 +409,7 @@ void ARGBToRAWRow_RVV(const uint8_t* src_argb, uint8_t* dst_raw, int width) {
         [vl] "=&r"(vl),             // %[vl]
         [tmp] "=&r"(tmp)            // %[tmp]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21");
 }
 #endif
@@ -429,7 +437,7 @@ void ARGBToRGB24Row_RVV(const uint8_t* src_argb,
         [vl] "=&r"(vl),               // %[vl]
         [tmp] "=&r"(tmp)              // %[tmp]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -456,7 +464,7 @@ void ARGBToABGRRow_RVV(const uint8_t* src_argb, uint8_t* dst_abgr, int width) {
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 }
 #endif
@@ -487,7 +495,7 @@ void ARGBToBGRARow_RVV(const uint8_t* src_argb, uint8_t* dst_bgra, int width) {
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -513,7 +521,7 @@ void ARGBToRGBARow_RVV(const uint8_t* src_argb, uint8_t* dst_rgba, int width) {
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -539,7 +547,7 @@ void RGBAToARGBRow_RVV(const uint8_t* src_rgba, uint8_t* dst_argb, int width) {
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -570,7 +578,7 @@ void RGB24ToARGBRow_RVV(const uint8_t* src_rgb24,
         [vl] "=&r"(vl),               // %[vl]
         [tmp] "=&r"(tmp)              // %[tmp]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -619,7 +627,7 @@ void I444ToARGBRow_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", YUVTORGB_REGS, "v30", "v31");
+      : RVV_VL_CLOBBER "memory", YUVTORGB_REGS, "v30", "v31");
 }
 #endif
 
@@ -669,7 +677,7 @@ void I444AlphaToARGBRow_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", YUVTORGB_REGS, "v30", "v31");
+      : RVV_VL_CLOBBER "memory", YUVTORGB_REGS, "v30", "v31");
 }
 #endif
 
@@ -716,7 +724,7 @@ void I444ToRGB24Row_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", YUVTORGB_REGS);
+      : RVV_VL_CLOBBER "memory", YUVTORGB_REGS);
 }
 #endif
 
@@ -766,7 +774,7 @@ void I422ToARGBRow_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", YUVTORGB_REGS, "v30", "v31");
+      : RVV_VL_CLOBBER "memory", YUVTORGB_REGS, "v30", "v31");
 }
 #endif
 
@@ -818,7 +826,7 @@ void I422AlphaToARGBRow_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", YUVTORGB_REGS, "v30", "v31");
+      : RVV_VL_CLOBBER "memory", YUVTORGB_REGS, "v30", "v31");
 }
 #endif
 
@@ -867,7 +875,7 @@ void I422ToRGBARow_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", YUVTORGB_REGS, "v22", "v23");
+      : RVV_VL_CLOBBER "memory", YUVTORGB_REGS, "v22", "v23");
 }
 #endif
 
@@ -916,7 +924,7 @@ void I422ToRGB24Row_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", YUVTORGB_REGS);
+      : RVV_VL_CLOBBER "memory", YUVTORGB_REGS);
 }
 #endif
 
@@ -1004,7 +1012,7 @@ void I422ToAR30Row_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", "v0", "v1", "v2", "v4", "v8", "v9", "v12",
+      : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v4", "v8", "v9", "v12",
         "v13", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 }
 #endif
@@ -1056,7 +1064,7 @@ void I400ToARGBRow_RVV(const uint8_t* src_y,
           [k0101] "=&r"(k0101)        // %[k0101]
         : [yg] "r"(yg),               // %[yg]
           [yb] "r"(yb)                // %[yb]
-        : "vl", "vtype", "memory", "v0", "v1", "v8", "v9", "v10", "v11", "v12",
+        : RVV_VL_CLOBBER "memory", "v0", "v1", "v8", "v9", "v10", "v11", "v12",
           "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22",
           "v23", "v24", "v25", "v26", "v27");
   } else {
@@ -1094,7 +1102,7 @@ void I400ToARGBRow_RVV(const uint8_t* src_y,
           [k0101] "=&r"(k0101)        // %[k0101]
         : [yg] "r"(yg),               // %[yg]
           [yb] "r"(yb)                // %[yb]
-        : "vl", "vtype", "memory", "v0", "v1", "v8", "v9", "v10", "v11", "v12",
+        : RVV_VL_CLOBBER "memory", "v0", "v1", "v8", "v9", "v10", "v11", "v12",
           "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22",
           "v23", "v24", "v25", "v26", "v27");
   }
@@ -1124,7 +1132,7 @@ void J400ToARGBRow_RVV(const uint8_t* src_y, uint8_t* dst_argb, int width) {
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -1146,7 +1154,7 @@ void CopyRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
         [w] "+r"(width),  // %[w]
         [vl] "=&r"(vl)    // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11");
 }
 #endif
 
@@ -1191,7 +1199,7 @@ void NV12ToARGBRow_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", YUVTORGB_REGS, "v30", "v31");
+      : RVV_VL_CLOBBER "memory", YUVTORGB_REGS, "v30", "v31");
 }
 #endif
 
@@ -1235,7 +1243,7 @@ void NV12ToRGB24Row_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", YUVTORGB_REGS);
+      : RVV_VL_CLOBBER "memory", YUVTORGB_REGS);
 }
 #endif
 
@@ -1280,7 +1288,7 @@ void NV21ToARGBRow_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", YUVTORGB_REGS, "v30", "v31");
+      : RVV_VL_CLOBBER "memory", YUVTORGB_REGS, "v30", "v31");
 }
 #endif
 
@@ -1324,7 +1332,7 @@ void NV21ToRGB24Row_RVV(const uint8_t* src_y,
         [br] "=&r"(br),               // %[br]
         [k0101] "=&r"(k0101)          // %[k0101]
       : [yuvconst] "r"(yuvconstants)  // %[yuvconst]
-      : "vl", "vtype", "memory", YUVTORGB_REGS);
+      : RVV_VL_CLOBBER "memory", YUVTORGB_REGS);
 }
 #endif
 
@@ -1358,7 +1366,7 @@ void InterpolateRow_RVV(uint8_t* dst_ptr,
           [dst_w] "+r"(dst_w),      // %[dst_w]
           [vl] "=&r"(vl)            // %[vl]
         :
-        : "vl", "vtype", "memory", "v8", "v9", "v10", "v11");
+        : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11");
     return;
   }
   // Blend 50 / 50.
@@ -1383,7 +1391,7 @@ void InterpolateRow_RVV(uint8_t* dst_ptr,
           [dst_w] "+r"(dst_w),        // %[dst_w]
           [vl] "=&r"(vl)              // %[vl]
         :
-        : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13",
+        : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13",
           "v14", "v15");
     return;
   }
@@ -1414,7 +1422,7 @@ void InterpolateRow_RVV(uint8_t* dst_ptr,
       : [y0_fraction] "r"(y0_fraction),  // %[y0_fraction]
         [y1_fraction] "r"(y1_fraction),  // %[y1_fraction]
         [c128] "r"(128)                  // %[c128]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17");
 }
 #endif
@@ -1449,7 +1457,7 @@ void SplitRGBRow_RVV(const uint8_t* src_rgb,
         [vl] "=&r"(vl),           // %[vl]
         [tmp] "=&r"(tmp)          // %[tmp]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13");
 }
 #endif
 
@@ -1483,7 +1491,7 @@ void MergeRGBRow_RVV(const uint8_t* src_r,
         [vl] "=&r"(vl),           // %[vl]
         [tmp] "=&r"(tmp)          // %[tmp]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13");
 }
 #endif
 
@@ -1519,7 +1527,7 @@ void SplitARGBRow_RVV(const uint8_t* src_argb,
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -1556,7 +1564,7 @@ void MergeARGBRow_RVV(const uint8_t* src_r,
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -1589,7 +1597,7 @@ void SplitXRGBRow_RVV(const uint8_t* src_argb,
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -1625,7 +1633,7 @@ void MergeXRGBRow_RVV(const uint8_t* src_r,
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -1654,7 +1662,7 @@ void SplitUVRow_RVV(const uint8_t* src_uv,
         [w] "+r"(width),        // %[w]
         [vl] "=&r"(vl)          // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -1683,7 +1691,7 @@ void MergeUVRow_RVV(const uint8_t* src_u,
         [w] "+r"(width),        // %[w]
         [vl] "=&r"(vl)          // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -1712,7 +1720,7 @@ void SwapUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
         [vl] "=&r"(vl),         // %[vl]
         "=m"(*(uint8_t (*)[width * 2]) dst_vu)
       : "m"(*(const uint8_t (*)[width * 2]) src_uv)
-      : "vl", "vtype", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
+      : RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
 #pragma GCC diagnostic pop
 }
 #endif
@@ -1762,7 +1770,7 @@ void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,
         [vl] "=&r"(vl),             // %[vl]
         [tmp] "=&r"(tmp)            // %[tmp]
       : [c] "r"(c)                  // %[c]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
         "v25", "v26", "v27", "v28", "v29", "v30", "v31");
 }
@@ -1810,7 +1818,7 @@ void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
         [vl] "=&r"(vl),           // %[vl]
         [tmp] "=&r"(tmp)          // %[tmp]
       : [c] "r"(c)                // %[c]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
         "v25", "v26", "v27", "v28", "v29");
 }
@@ -1880,7 +1888,7 @@ void ARGBToUV444MatrixRow_RVV(const uint8_t* src_argb,
         [vl] "=&r"(vl),             // %[vl]
         [tmp] "=&r"(tmp)            // %[tmp]
       : [c] "r"(c)                  // %[c]
-      : "vl", "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+      : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
         "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",
         "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27",
         "v28", "v29", "v30", "v31");
@@ -1988,7 +1996,7 @@ void ARGBToUVMatrixRow_RVV(const uint8_t* src_argb,
           [vl] "=&r"(vl),                 // %[vl]
           [tmp] "=&r"(tmp)                // %[tmp]
         : [c] "r"(c)                      // %[c]
-        : "vl", "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6",
+        : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6",
           "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",
           "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26",
           "v27");
@@ -2067,7 +2075,7 @@ void RGBToUV444MatrixRow_RVV(const uint8_t* src_rgb,
         [vl] "=&r"(vl),           // %[vl]
         [tmp] "=&r"(tmp)          // %[tmp]
       : [c] "r"(c)                // %[c]
-      : "vl", "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v8", "v9",
+      : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v8", "v9",
         "v10", "v11", "v12", "v13", "v16", "v17", "v18", "v19", "v20", "v21",
         "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29");
 }
@@ -2163,7 +2171,7 @@ void RGBToUVMatrixRow_RVV(const uint8_t* src_rgb,
           [vl] "=&r"(vl),               // %[vl]
           [tmp] "=&r"(tmp)              // %[tmp]
         : [c] "r"(c)                    // %[c]
-        : "vl", "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v8",
+        : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v8",
           "v9", "v10", "v11", "v12", "v14", "v15", "v16", "v18", "v19", "v20",
           "v21", "v22", "v23", "v24", "v25");
   }
@@ -2220,7 +2228,7 @@ void ARGBBlendRow_RVV(const uint8_t* src_argb,
         [w] "+r"(width),              // %[w]
         [vl] "=&r"(vl)                // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
         "v25", "v26", "v27", "v28", "v29", "v30", "v31");
 }
@@ -2260,7 +2268,7 @@ void BlendPlaneRow_RVV(const uint8_t* src0,
         [w] "+r"(width),      // %[w]
         [vl] "=&r"(vl)        // %[vl]
       : [k255] "r"(255)
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
         "v19", "v20", "v21", "v22", "v23");
 }
 #endif
@@ -2297,7 +2305,7 @@ void ARGBAttenuateRow_RVV(const uint8_t* src_argb,
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       : [k255] "r"(255)
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
         "v25", "v26", "v27");
 }
@@ -2335,7 +2343,7 @@ void ARGBMultiplyRow_RVV(const uint8_t* src_argb,
       : [k128] "r"(128),  // %[k128]
         "m"(*(const uint8_t (*)[w])src_argb),
         "m"(*(const uint8_t (*)[w])src_argb1)
-      : "vl", "vtype", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
+      : RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
 #pragma GCC diagnostic pop
 }
 #endif
@@ -2347,10 +2355,10 @@ void ARGBExtractAlphaRow_RVV(const uint8_t* src_argb,
   int vl;
   asm volatile(
       "1:          \n"
-      "vsetvli     %[vl], %[w], e16, m2, ta, ma  \n"
+      "vsetvli     %[vl], %[w], e16, m4, ta, ma  \n"
       "vle32.v     v8, (%[src_argb])             \n"
       "vnsrl.wi    v16, v8, 16                   \n"
-      "vsetvli     zero, zero, e8, m1, ta, ma    \n"
+      "vsetvli     zero, zero, e8, m2, ta, ma    \n"
       "vnsrl.wi    v8, v16, 8                    \n"
       "vse8.v      v8, (%[dst_a])                \n"
       "sub         %[w], %[w], %[vl]             \n"
@@ -2363,7 +2371,8 @@ void ARGBExtractAlphaRow_RVV(const uint8_t* src_argb,
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19");
 }
 #endif
 
@@ -2371,23 +2380,28 @@ void ARGBExtractAlphaRow_RVV(const uint8_t* src_argb,
 void ARGBCopyYToAlphaRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
   int vl;
   asm volatile(
-      "addi        %[dst], %[dst], 3             \n"
-
       "1:          \n"
-      "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
-      "vle8.v      v8, (%[src])                  \n"
-      "vsse8.v     v8, (%[dst]), %[dst_stride]   \n"
+      "vsetvli     %[vl], %[w], e32, m8, ta, ma  \n"
+      "vle8.v      v16, (%[src])                 \n"
+      "vle32.v     v8, (%[dst])                  \n"
+      "vzext.vf4   v24, v16                      \n"
+      "vand.vx     v8, v8, %[mask]               \n"
+      "vsll.vi     v24, v24, 24                  \n"
+      "vor.vv      v8, v8, v24                   \n"
+      "vse32.v     v8, (%[dst])                  \n"
       "sub         %[w], %[w], %[vl]             \n"
       "add         %[src], %[src], %[vl]         \n"
       "slli        %[vl], %[vl], 2               \n"
       "add         %[dst], %[dst], %[vl]         \n"
       "bgtz        %[w], 1b                      \n"
-      : [src] "+r"(src),     // %[src]
-        [dst] "+r"(dst),     // %[dst]
-        [w] "+r"(width),     // %[w]
-        [vl] "=&r"(vl)       // %[vl]
-      : [dst_stride] "r"(4)  // %[dst_stride]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11");
+      : [src] "+r"(src),         // %[src]
+        [dst] "+r"(dst),         // %[dst]
+        [w] "+r"(width),         // %[w]
+        [vl] "=&r"(vl)           // %[vl]
+      : [mask] "r"(0x00ffffffu)  // %[mask]
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v24", "v25", "v26", "v27", "v28", "v29", "v30",
+        "v31");
 }
 #endif
 
@@ -2413,7 +2427,7 @@ void Convert16To8Row_RVV(const uint16_t* src_y,
         [w] "+r"(width),                                 // %[w]
         [vl] "=&r"(vl)                                   // %[vl]
       : [shift] "r"(__builtin_clz((int32_t)scale) - 15)  // %[shift]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17");
 }
 #endif
 
@@ -2447,7 +2461,7 @@ void Convert8To16Row_RVV(const uint8_t* src_y,
         [w] "+r"(width),      // %[w]
         [vl] "=&r"(vl)        // %[vl]
       : [shift] "r"(16 - bits), [k0101] "r"(0x0101)
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17");
 }
 #endif
 
@@ -2473,7 +2487,7 @@ void MultiplyRow_16_RVV(const uint16_t* src_y,
         [w] "+r"(width),      // %[w]
         [vl] "=&r"(vl)        // %[vl]
       : [scale] "r"(scale)    // %[scale]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11");
 }
 #endif
 
@@ -2509,7 +2523,7 @@ void HalfRow_16To8_RVV(const uint16_t* src_uv,
         [w] "+r"(width),                                 // %[w]
         [vl] "=&r"(vl)                                   // %[vl]
       : [shift] "r"(__builtin_clz((int32_t)scale) - 15)  // %[shift]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17");
 }
 #endif
@@ -2550,7 +2564,7 @@ void HalfWidthRow_16To8_RVV(const uint16_t* src_uv,
         [vl] "=&r"(vl)                                    // %[vl]
       : [shift] "r"(__builtin_clz((int32_t)scale) - 15),  // %[shift]
         [c2] "r"(2)                                       // %[c2]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
         "v19", "v20", "v21", "v22", "v23");
 }
 #endif

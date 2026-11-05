@@ -9,9 +9,6 @@ run-if = [
 ]
 
 ["browser_appmenu.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1996375
-]
 
 ["browser_appmenu_menuitem_updates.js"]
 head = "../unit/head.js head.js"
@@ -20,7 +17,6 @@ head = "../unit/head.js head.js"
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1942961
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && verify-standalone", # Bug 1942961
-  "os == 'win' && os_version == '11.26100' && arch == 'x86' && debug && verify-standalone", # Bug 1942961
   "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug && verify-standalone", # Bug 1942961
 ]
 

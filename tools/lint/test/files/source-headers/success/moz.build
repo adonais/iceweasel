@@ -1,0 +1,3 @@
+EXPORTS += ["export.h"]
+EXPORTS.local += ["export-local.h"]
+SOURCE_HEADERS += ["local.h"]

@@ -222,15 +222,22 @@ bool DisplayD3D::testDeviceLost()
     return mRenderer->testDeviceLost();
 }
 
-egl::Error DisplayD3D::restoreLostDevice(const egl::Display *display)
+egl::Error DisplayD3D::restoreLostDevice(const egl::ThreadSafeDisplay *threadSafeDisplay)
 {
+    // Restoring a lost device is not, and has never been, an inherently thread safe operation on
+    // the D3D backend: it tears down and recreates every swap chain owned by the display. The
+    // egl::ThreadSafeDisplay parameter therefore does not imply that this may be called
+    // concurrently; it only reflects that egl::Display is now reached through that base class.
+    // This is safe in our actual usage, because Chromium ensures thread-safety in its usage of the
+    // relevant APIs.
+    const egl::Display *display = static_cast<const egl::Display *>(threadSafeDisplay);
+
     // Release surface resources to make the Reset() succeed
-    for (auto surface : mState.surfaceMap)
-    {
-        ASSERT(!surface.second->getBoundTexture());
-        SurfaceD3D *surfaceD3D = GetImplAs<SurfaceD3D>(surface.second);
+    mState.surfaceMap.forEach([](egl::Surface *surface) {
+        ASSERT(!surface->getBoundTexture());
+        SurfaceD3D *surfaceD3D = GetImplAs<SurfaceD3D>(surface);
         surfaceD3D->releaseSwapChain();
-    }
+    });
 
     if (!mRenderer->resetDevice())
     {
@@ -238,12 +245,11 @@ egl::Error DisplayD3D::restoreLostDevice(const egl::Display *display)
     }
 
     // Restore any surfaces that may have been lost
-    for (auto surface : mState.surfaceMap)
-    {
-        SurfaceD3D *surfaceD3D = GetImplAs<SurfaceD3D>(surface.second);
+    ANGLE_TRY(mState.surfaceMap.forEach([display](egl::Surface *surface) -> egl::Error {
+        SurfaceD3D *surfaceD3D = GetImplAs<SurfaceD3D>(surface);
 
-        ANGLE_TRY(surfaceD3D->resetSwapChain(display));
-    }
+        return surfaceD3D->resetSwapChain(display);
+    }));
 
     return egl::NoError();
 }
@@ -335,11 +341,10 @@ void DisplayD3D::generateCaps(egl::Caps *outCaps) const
 
 egl::Error DisplayD3D::waitClient(const gl::Context *context)
 {
-    for (auto surface : mState.surfaceMap)
-    {
-        SurfaceD3D *surfaceD3D = GetImplAs<SurfaceD3D>(surface.second);
-        ANGLE_TRY(surfaceD3D->checkForOutOfDateSwapChain(this));
-    }
+    ANGLE_TRY(mState.surfaceMap.forEach([this](egl::Surface *surface) -> egl::Error {
+        SurfaceD3D *surfaceD3D = GetImplAs<SurfaceD3D>(surface);
+        return surfaceD3D->checkForOutOfDateSwapChain(this);
+    }));
 
     return egl::NoError();
 }

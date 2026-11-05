@@ -1,6 +1,6 @@
 ---
 name: webspec-index
-description: Use webspec-index to query WHATWG, W3C, IETF and TC39 web specifications from the command line
+description: Query WHATWG, W3C, IETF and TC39 web specifications from the command line. Use to read a spec section or algorithm, find which algorithms invoke a concept and with what arguments, trace a call chain, list who writes a spec field, see what an algorithm may cause (events, tasks), look up IDL, validate an anchor, or read a spec as changed by an open WHATWG PR.
 ---
 
 # webspec-index
@@ -11,7 +11,7 @@ Use `webspec-index` whenever you need to understand what a web spec says — alg
 
 ## Available specs
 
-Assume that all specs from WHATWG, W3C, IETF and TC39 are indexed. If in doubt, run `webspec-index specs` to list all spec names and their base URLs.
+Assume that all specs from WHATWG, W3C, IETF and TC39 are indexed. `webspec-index specs` lists every spec name and its base URL.
 
 ## Installation
 
@@ -163,7 +163,7 @@ webspec-index update --force
 ```
 
 Fetches latest spec versions. Uses 24h cache unless `--force` is given. Specs are auto-fetched on first query, so you rarely need this.
-Specs are checked on a 24h cadence; re-indexing happens only when fetched HTML content changed.
+Each check covers the spec and its transitive dependencies; re-indexing happens only when HTML content changed. The first query of the day may take a few seconds while the check completes.
 
 ### Graph traversal
 
@@ -190,6 +190,114 @@ webspec-index idl 'navigation' --spec HTML --limit 5
 Queries structured WebIDL definitions directly. Supports exact anchors (`SPEC#anchor` or URL) and canonical names (`Interface.member`, `Interface.method()`).
 Use this first when the task is about API shape or IDL ownership, then use `refs` to see algorithm usage.
 
+### Query field state (who writes a field)
+
+```bash
+webspec-index state 'HTML#is-initial-about:blank' --format markdown
+webspec-index state 'Document' --format markdown
+webspec-index state 'Document.*sandbox*' --format markdown
+webspec-index state 'HTML#*sandbox*' --format markdown
+webspec-index state 'HTML#sandboxing-flag-set' --format markdown
+webspec-index state --coverage HTML --format markdown
+webspec-index state 'SPEC#anchor' | --coverage SPEC [--no-inits] [--unclassified] [--calls] [--callers] [--opaque] [-l N] [--rules PATH] [--format json|markdown]
+```
+
+Answers: who writes a spec field, under what grammar shape, and with what initial value.
+Answers use **may-semantics** — a listed site may set the field. Reads are counted, not listed.
+
+Selector forms:
+- `SPEC#anchor` of a field → field view (writes, inits, owner, type)
+- `SPEC#anchor` of a type → type view (all fields, tables per supertype)
+- `SPEC#GLOB` (e.g. `"HTML#*sandbox*"`) → field list matching anchor glob
+- `SPEC#anchor` of a set → member view (adds/removes per member)
+- `TYPE` (e.g. `Document`) → type view
+- `"TYPE.FIELD"` (e.g. `"Element.node document"`) → field view with inheritance path
+- `"TYPE.GLOB"` (e.g. `"Document.*sandbox*"`) → field list matching name or anchor
+- `--coverage SPEC` → coverage counters (owner resolution %, set structure %, unclassified %)
+- `SPEC#anchor` of an algorithm → algorithm view (below)
+
+### Algorithms: signature, calls and callers
+
+```bash
+webspec-index state 'HTML#navigate' --format markdown
+webspec-index state 'HTML#location-object-navigate' --calls --format markdown
+webspec-index state 'DOM#concept-node-insert' --callers -l 20 --format markdown
+webspec-index state 'HTML#navigate' --opaque --format markdown
+```
+
+The algorithm view shows the call template (`navigate {navigable} to {url} using {sourceDocument},
+with named arguments`), a parameter table (type, positional or named, default), and statement counts.
+
+- `--calls`: every call the algorithm makes, with each argument bound to the callee's parameter
+  (`url ← *url* · exceptionsEnabled ← true · 9 named arguments defaulted`).
+- `--callers`: every call into the algorithm from all indexed specs, grouped by caller and bound the
+  same way. `-l N` caps the caller groups (default 20); the total is always reported.
+- `--opaque`: statements the parser could not structure.
+
+Each call carries a confidence: `exact` (every argument aligned), `partial` (some argument is opaque
+or missing; the issue list says which), or `unbound` (no signature, e.g. a callee spec that is not
+indexed). Arguments are never guessed: an `exact` binding is reliable, and a `partial` one shows its
+uncertain values verbatim. For "who invokes X and with what arguments", prefer `--callers` over
+`refs --direction incoming --kind step`.
+
+The view under-reports rather than misreports. Calls inside `If` conditions, and calls embedded in
+running prose rather than leading a step, are often missing. So `Coverage: may · partial` means more
+calls may exist: confirm with `refs --kind step` or by reading the steps before concluding a call is
+absent.
+
+### Views of long algorithms
+
+`query` on a long algorithm (HTML#navigate has 67 steps) returns thousands of words. View flags
+trim it to what you need:
+
+```bash
+webspec-index query 'HTML#navigate' --depth 1
+webspec-index query 'HTML#navigate' --steps 24.8 --format markdown
+webspec-index query 'HTML#navigate' --involving url --format markdown
+webspec-index query 'HTML#navigate' --feeding 24.9.1:historyEntry --format markdown
+```
+
+- `--depth 1`: top-level steps only. Drill into a step with `--steps 24.8` to see all sub-steps
+  under that path.
+- `--involving <name>`: forward slice from that parameter or variable — every step that uses or is
+  influenced by `name`, including the steps that carry it forward.
+- `--feeding <STEP>:<VAR>`: backward slice answering "where does `historyEntry` in step 24.9.1 come
+  from". `<VAR>` is optional; without it, every variable that feeds the step is traced.
+- Combine flags: `--involving url --depth 2` limits the forward slice to top-level steps plus one
+  level of sub-steps (paths with at most 2 components).
+- `--no-notes` drops notes and examples. Links render as short `SPEC#anchor` by default
+  (`--links full` for URLs, `--links none` for plain text).
+
+**Markers signal omissions, not algorithm boundaries.** A line like
+`- [steps 3–7 omitted: no use of *url*]` means those steps exist and were cut for relevance. The
+algorithm continues past a marker; it does not end there. The summary block appears right after the
+`## Content — …` heading (before the steps) and lists slice variables, stores, unfollowed statements,
+loop bindings, rebound names, and (for backward slices) inputs and later definitions.
+
+### Possible effects of an algorithm
+
+```bash
+webspec-index effects 'HTML#dom-location-assign' --compact --format markdown
+webspec-index effects 'HTML#navigate' --summary-only --format markdown
+webspec-index effects 'HTML#navigate' --kind event.fire --format markdown
+webspec-index effects 'HTML#navigate' --step 8 --format markdown
+```
+
+Lists what an algorithm may cause, transitively across specs: events fired, tasks and microtasks
+queued (with task source), steps run in parallel, promises resolved. Each group names the sites that
+do it. Plain `effects` adds witness traces (the call path to each site, with its conditions);
+`--compact` and `--summary-only` omit them. `--kind` or `--category events` focuses the request.
+Semantics are **may**: a listed effect is reachable along some path, not guaranteed. "Partial
+analysis" means more effects may exist. `query` output also embeds a short effects preview.
+
+### Control flow of an algorithm
+
+```bash
+webspec-index flow 'HTML#location-object-navigate' --flow-format mermaid
+```
+
+Renders the algorithm's steps as a flowchart (branches, returns, calls to other algorithms).
+
 ## Usage patterns for Gecko development
 
 ### Understanding what you're implementing
@@ -205,7 +313,55 @@ webspec-index refs 'HTML#navigate' --direction outgoing
 
 # Look up a referenced concept you don't understand
 webspec-index query 'INFRA#ordered-set'
+
+# See every algorithm it calls, with the arguments bound to each callee's parameters
+webspec-index state 'HTML#navigate' --calls --format markdown
 ```
+
+When `query` output ends with a line like `Written in 4 steps…` or `Called from 13 algorithms…`, run the
+command printed on that line.
+
+### A value ends up wrong
+
+When a bug or test failure comes down to a spec field holding the wrong value (a flag that stays set, a
+stale URL, a missing entry in a list), list every step that writes or initializes it, then read each
+writer:
+
+```bash
+webspec-index state 'HTML#ongoing-navigation' --format markdown
+webspec-index query 'HTML#navigate' --steps 24.8 --format markdown
+```
+
+A field set only at initialization never changes after construction; a writer under a guard changes it
+only when the guard holds.
+
+### Wrong arguments, or a missing call
+
+When Gecko's caller passes different arguments than the spec, or a call seems missing, compare against
+the spec's call sites. `--calls` shows what an algorithm calls and with which arguments; `--callers`
+shows every call into it, from every indexed spec:
+
+```bash
+webspec-index state 'HTML#location-object-navigate' --calls --format markdown
+webspec-index state 'DOM#concept-node-insert' --callers --format markdown
+```
+
+An `exact` binding is reliable; `N named arguments defaulted` means the spec relies on the defaults.
+The view can miss calls inside `If` conditions and in running prose, so confirm an absence with
+`refs --direction incoming --kind step` before concluding a call does not exist.
+
+### Event order and task timing
+
+When a test fails on which events fire, in what order, or whether something happens synchronously, list
+what the entry point may cause and through which task source:
+
+```bash
+webspec-index effects 'HTML#dom-location-assign' --compact --format markdown
+webspec-index effects 'HTML#dom-location-assign' --kind event.fire --format markdown
+```
+
+Then follow one effect to its site with `trace` and read the steps on the way. Effects are possible,
+not guaranteed: a guard on the route decides whether it happens.
 
 ### Finding the right spec section
 
@@ -266,9 +422,8 @@ webspec-index query 'HTML#navigate' --format json
 searchfox-cli --spec-refs 'https://html.spec.whatwg.org/#navigate'
 ```
 
-Always do this when the user asks questions like "where is X implemented", "which file handles Y",
-or "show me the Gecko code for Z". The `url` field in the `query` response is the value to pass
-to `--spec-refs` — no manual URL construction needed.
+For Gecko or SpiderMonkey implementation questions, pass the `url` field from the `query` response
+to `--spec-refs`; no manual URL construction needed.
 
 ### Implementing a feature from a spec PR
 

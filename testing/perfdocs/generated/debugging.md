@@ -36,8 +36,10 @@ The easiest way to debug the Raptor web extension is to run the Raptor test loca
 Or on Chrome, for example:
 
 ```
-./mach raptor --test raptor-tp6-amazon-chrome --app=chrome --binary="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --debug-mode
+./mach raptor --test raptor-tp6-amazon-chrome --app=chrome --debug-mode
 ```
+
+Raptor uses Chrome from its default install location.
 
 Running Raptor with debug mode will:
 
@@ -129,7 +131,7 @@ Sometimes your local system python will not behave as expected with some of the 
 
 To determine if this may be the issue, the failure log will likely have something like `'/usr/local/lib/Python3' (no such file), '/usr/lib/Python3' (no such file)` within it.
 
-If clobbering your environment and/or removing your `obj-*` directory does not work, it is recommended that you consider trying an alternative method to managing your local python environment like e.g. [pyenv](https://github.com/pyenv/pyenv). There are some other alternatives [listed here](https://firefox-source-docs.mozilla.org/build/buildsystem/python.html#installing-python-manually) as well.
+If clobbering your environment and/or removing your `obj-*` directory does not work, it is recommended that you consider trying an alternative method to managing your local python environment like e.g. [pyenv](https://github.com/pyenv/pyenv). There are some other alternatives [listed here](/build/buildsystem/python.md#installing-python-manually) as well.
 
 For example if you choose to use pyenv, after following the [installation instructions](https://github.com/pyenv/pyenv#installation) you can use pyenv to install and manage multiple Python versions, and easily switch back and forth between them. Pyenv uses shim executables to intercept your Python commands, and as a result, provide a way to supersede the system python/mozilla-central virtual env issues mentioned above. Further information on how it works can be [found here](https://github.com/pyenv/pyenv#how-it-works). **Note** you `may` have to reinstall moz-phab upon installing and using a new Python version through pyenv, but this is fairly simple to do so.
 

@@ -87,7 +87,7 @@ class Pkcs11RsaPssTestWycheproof : public ::testing::Test {
 
   void Run(const std::string& file) {
     WycheproofHeader("rsa_pss_" + file, "RSASSA-PSS",
-                     "rsassa_pss_verify_schema.json",
+                     "rsassa_pss_verify_schema_v1.json",
                      [this](JsonReader& r) { RunGroup(r); });
   }
 
@@ -145,12 +145,11 @@ class Pkcs11RsaPssTestWycheproof : public ::testing::Test {
       if (n == "") {
         break;
       }
-      if (n == "e" || n == "keyAsn" || n == "keyPem" || n == "n") {
-        (void)r.ReadString();
-      } else if (n == "keyDer") {
+      if (n == "keySize" || n == "publicKey" || n == "publicKeyAsn" ||
+          n == "publicKeyJwk" || n == "publicKeyPem" || n == "source") {
+        r.SkipValue();
+      } else if (n == "publicKeyDer") {
         public_key = r.ReadHex();
-      } else if (n == "keysize") {
-        (void)r.ReadInt();
       } else if (n == "mgf") {
         std::string s = r.ReadString();
         ASSERT_EQ(s, "MGF1");
@@ -211,7 +210,7 @@ TEST_F(Pkcs11RsaPssTest, GenerateAndSignAndVerify) {
   SECKEYPublicKey* pub_keyRaw = nullptr;
   ScopedSECKEYPrivateKey privKey(
       PK11_GenerateKeyPair(slot.get(), CKM_RSA_PKCS_KEY_PAIR_GEN, &rsaGenParams,
-                           &pub_keyRaw, false, false, nullptr));
+                           &pub_keyRaw, false, PK11_IsFIPS(), nullptr));
   ASSERT_TRUE(!!privKey && pub_keyRaw);
   ScopedSECKEYPublicKey pub_key(pub_keyRaw);
 
@@ -265,7 +264,7 @@ TEST_F(Pkcs11RsaPssTest, NoLeakWithInvalidExponent) {
   SECKEYPublicKey* pub_key = nullptr;
   SECKEYPrivateKey* privKey =
       PK11_GenerateKeyPair(slot.get(), CKM_RSA_PKCS_KEY_PAIR_GEN, &rsaGenParams,
-                           &pub_key, false, false, nullptr);
+                           &pub_key, false, PK11_IsFIPS(), nullptr);
   EXPECT_FALSE(privKey);
   EXPECT_FALSE(pub_key);
 }

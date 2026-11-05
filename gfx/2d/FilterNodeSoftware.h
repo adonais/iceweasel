@@ -529,7 +529,7 @@ class FilterNodeDisplacementMapSoftware : public FilterNodeSoftware {
   FilterNodeDisplacementMapSoftware();
   const char* GetName() override { return "DisplacementMap"; }
   using FilterNodeSoftware::SetAttribute;
-  void SetAttribute(uint32_t aIndex, Float aScale) override;
+  void SetAttribute(uint32_t aIndex, const Size& aScale) override;
   void SetAttribute(uint32_t aIndex, uint32_t aValue) override;
   IntRect MapRectToSource(const IntRect& aRect, const IntRect& aMax,
                           FilterNode* aSourceNode) override;
@@ -543,7 +543,7 @@ class FilterNodeDisplacementMapSoftware : public FilterNodeSoftware {
  private:
   IntRect InflatedSourceOrDestRect(const IntRect& aDestOrSourceRect);
 
-  Float mScale;
+  Size mScale;
   ColorChannel mChannelX;
   ColorChannel mChannelY;
 };

@@ -39,3 +39,7 @@ TEST_DIRS += ["test/gtest"]
 LICENSED_UNDER += [
     "chromium",
 ]
+
+SOURCE_HEADERS += [
+    "ApplicationReputationTelemetryUtils.h",
+]

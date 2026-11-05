@@ -24,6 +24,10 @@ UNIFIED_SOURCES += [
     "gmp-clearkey.cpp",
 ]
 
+SOURCE_HEADERS += [
+    "ClearKeyCDM.h",
+]
+
 if CONFIG["OS_ARCH"] == "WINNT":
     UNIFIED_SOURCES += [
         "VideoDecoder.cpp",
@@ -32,6 +36,12 @@ if CONFIG["OS_ARCH"] == "WINNT":
 
     SOURCES += [
         "WMFUtils.cpp",
+    ]
+
+    SOURCE_HEADERS += [
+        "VideoDecoder.h",
+        "WMFH264Decoder.h",
+        "WMFUtils.h",
     ]
 
     OS_LIBS += [

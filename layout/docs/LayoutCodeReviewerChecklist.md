@@ -2,7 +2,7 @@
 
 ## General
 
-- Follow the general [reviewer checklist](https://firefox-source-docs.mozilla.org/contributing/reviewer_checklist.html).
+- Follow the general {doc}`reviewer checklist </contributing/reviewer_checklist>`.
 
 ## Security issues
 

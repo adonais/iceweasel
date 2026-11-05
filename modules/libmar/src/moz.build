@@ -27,3 +27,7 @@ if CONFIG["MOZ_BUILD_APP"] != "tools/update-packaging":
 
     if CONFIG["OS_ARCH"] == "WINNT":
         USE_STATIC_MSVCRT = True
+
+SOURCE_HEADERS += [
+    "mar_private.h",
+]

@@ -13,9 +13,6 @@ transforms:
 kind-dependencies:
     - release-beetmover-signed-langpacks
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     release-beetmover-signed-langpacks-checksums:
         from-deps:

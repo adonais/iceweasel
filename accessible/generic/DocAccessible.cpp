@@ -761,7 +761,7 @@ nsresult DocAccessible::RemoveEventListeners() {
   return NS_OK;
 }
 
-void DocAccessible::ScrollTimerCallback(nsITimer* aTimer, void* aClosure) {
+void DocAccessible::ScrollTimerCallback(nsITimer* /*aTimer*/, void* aClosure) {
   DocAccessible* docAcc = reinterpret_cast<DocAccessible*>(aClosure);
 
   if (docAcc) {
@@ -868,7 +868,7 @@ std::pair<nsPoint, nsRect> DocAccessible::ComputeScrollData(
 static bool sIsAttrElementChanging = false;
 
 void DocAccessible::AttributeWillChange(dom::Element* aElement,
-                                        int32_t aNameSpaceID,
+                                        int32_t /*aNameSpaceID*/,
                                         nsAtom* aAttribute,
                                         AttrModType aModType) {
   if (sIsAttrElementChanging) {
@@ -1102,7 +1102,7 @@ void DocAccessible::ARIAActiveDescendantChanged(LocalAccessible* aAccessible) {
   }
 }
 
-void DocAccessible::ElementStateChanged(dom::Document* aDocument,
+void DocAccessible::ElementStateChanged(dom::Document* /*aDocument*/,
                                         dom::Element* aElement,
                                         dom::ElementState aStateMask) {
   const bool isEditable =
@@ -1380,8 +1380,8 @@ void DocAccessible::BindToDocument(LocalAccessible* aAccessible,
     }
   }
 
-  if (mIPCDoc && HasLoadState(eTreeConstructed)) {
-    // Child process and not in initial tree construction phase.
+  if (HasLoadState(eTreeConstructed)) {
+    // Not in initial tree construction phase.
     // We need to track inserted accessibles so we don't mark them as moved
     // before their initial show event.
     // If this is the initial tree construction, we will push the tree to the
@@ -2957,7 +2957,6 @@ void DocAccessible::PutChildrenBack(
 }
 
 void DocAccessible::TrackMovedAccessible(LocalAccessible* aAcc) {
-  MOZ_ASSERT(mIPCDoc);
   if (!HasLoadState(eTreeConstructed)) {
     // We're still building the initial tree, so it hasn't been sent over IPC
     // yet. Any move at this point is thus an insertion from the perspective of
@@ -3017,9 +3016,7 @@ bool DocAccessible::MoveChild(LocalAccessible* aChild,
   if (curParent == aNewParent) {
     MOZ_ASSERT(aChild->IndexInParent() != aIdxInParent, "No move case");
     curParent->RelocateChild(aIdxInParent, aChild);
-    if (mIPCDoc) {
-      TrackMovedAccessible(aChild);
-    }
+    TrackMovedAccessible(aChild);
 
 #ifdef A11Y_LOG
     logging::TreeInfo("move child: parent tree after", logging::eVerbose,
@@ -3046,9 +3043,7 @@ bool DocAccessible::MoveChild(LocalAccessible* aChild,
 
   TreeMutation imut(aNewParent);
   aNewParent->InsertChildAt(aIdxInParent, aChild);
-  if (mIPCDoc) {
-    TrackMovedAccessible(aChild);
-  }
+  TrackMovedAccessible(aChild);
   imut.AfterInsertion(aChild);
   imut.Done();
 

@@ -48,8 +48,6 @@ run-if = [
   "crashreporter",
 ]
 skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1659427; medium frequency intermittent on osx: test timed out
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1659427; medium frequency intermittent on osx: test timed out
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1659427; medium frequency intermittent on osx: test timed out
 ]
 

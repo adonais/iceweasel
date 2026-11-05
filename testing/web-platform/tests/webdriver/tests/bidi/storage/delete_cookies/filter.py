@@ -1,7 +1,3 @@
-# META: timeout=long
-
-# Longer timeout required due to a large number of cookie filter and storage partition subtests.
-
 import pytest
 from webdriver.bidi.modules.network import NetworkBase64Value, NetworkStringValue
 from webdriver.bidi.modules.storage import CookieFilter
@@ -253,6 +249,10 @@ async def test_filter_name(bidi_session, new_tab, test_page, add_document_cookie
         ("strict", "none"),
         ("lax", "strict"),
         ("strict", "lax"),
+        ("none", "default"),
+        ("default", "none"),
+        ("default", "lax"),
+        ("default", "strict"),
     ],
 )
 async def test_filter_same_site(

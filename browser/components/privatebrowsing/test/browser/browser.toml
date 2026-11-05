@@ -35,8 +35,6 @@ tags = "trackingprotection"
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
   "os == 'win' && msix", # We don't support private pinning in MSIX builds
 ]

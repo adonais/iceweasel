@@ -110,3 +110,11 @@ MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
 XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]
 
 BROWSER_CHROME_MANIFESTS += ["test/browser.toml"]
+
+SOURCE_HEADERS += [
+    "ChromeWorkerScope.h",
+    "MessageEventRunnable.h",
+    "WorkerCSPEventListener.h",
+    "WorkerEventTarget.h",
+    "WorkerThread.h",
+]

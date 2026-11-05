@@ -114,8 +114,7 @@ rtc_library("scream_network_controller") {
 }
 
 if (rtc_include_tests) {
-  rtc_library("delay_based_congestion_control_unittest") {
-    testonly = true
+  rtc_cc_test("delay_based_congestion_control_unittest") {
     sources = [ "delay_based_congestion_control_unittest.cc" ]
     deps = [
       ":delay_based_congestion_control",
@@ -134,8 +133,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("loss_estimator_unittest") {
-    testonly = true
+  rtc_cc_test("loss_estimator_unittest") {
     sources = [ "loss_estimator_unittest.cc" ]
     deps = [
       ":loss_estimator",
@@ -151,8 +149,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("scream_feedback_unittest") {
-    testonly = true
+  rtc_cc_test("scream_feedback_unittest") {
     sources = [ "scream_feedback_unittest.cc" ]
     deps = [
       ":scream_feedback",
@@ -166,8 +163,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("scream_network_controller_unittest") {
-    testonly = true
+  rtc_cc_test("scream_network_controller_unittest") {
     sources = [ "scream_network_controller_unittest.cc" ]
     deps = [
       ":scream_network_controller",
@@ -184,8 +180,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("scream_v2_unittest") {
-    testonly = true
+  rtc_cc_test("scream_v2_unittest") {
     sources = [ "scream_v2_unittest.cc" ]
     deps = [
       ":scream_v2",
@@ -202,18 +197,6 @@ if (rtc_include_tests) {
       "../../../test:test_support",
       "../../../test/network:simulated_network",
       "test:cc_feedback_generator",
-    ]
-  }
-
-  rtc_library("scream_unittests") {
-    testonly = true
-    sources = []
-    deps = [
-      ":delay_based_congestion_control_unittest",
-      ":loss_estimator_unittest",
-      ":scream_feedback_unittest",
-      ":scream_network_controller_unittest",
-      ":scream_v2_unittest",
     ]
   }
 }

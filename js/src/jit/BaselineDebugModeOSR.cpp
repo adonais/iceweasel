@@ -4,6 +4,11 @@
 
 #include "jit/BaselineDebugModeOSR.h"
 
+#include "mozilla/Maybe.h"
+
+#include "gc/Cell.h"
+#include "gc/Tracer.h"
+#include "jit/AutoWritableJitCode.h"
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
@@ -12,6 +17,8 @@
 #include "jit/JitFrames.h"
 #include "jit/JitRuntime.h"
 #include "jit/JSJitFrameIter.h"
+#include "vm/JitActivation.h"
+#include "vm/JSContext.h"
 
 #include "jit/JitScript-inl.h"
 #include "jit/JSJitFrameIter-inl.h"
@@ -24,34 +31,39 @@ using namespace js::jit;
 struct DebugModeOSREntry {
   JSScript* script;
   BaselineScript* oldBaselineScript;
-  uint32_t pcOffset;
-  RetAddrEntry::Kind frameKind;
+  // Non-null for frames needing a new preserved return-site reference.
+  BaselineFrame* baselineFrame;
+  // Specific return site being toggled in Baseline-compiled frames, even when
+  // reusing an existing preserved return site.
+  mozilla::Maybe<RetAddrEntry> retAddrEntry;
 
   explicit DebugModeOSREntry(JSScript* script)
       : script(script),
         oldBaselineScript(script->baselineScript()),
-        pcOffset(uint32_t(-1)),
-        frameKind(RetAddrEntry::Kind::Invalid) {}
+        baselineFrame(nullptr),
+        retAddrEntry(mozilla::Nothing()) {}
 
-  DebugModeOSREntry(JSScript* script, const RetAddrEntry& retAddrEntry)
+  DebugModeOSREntry(JSScript* script, BaselineFrame* baselineFrame,
+                    const RetAddrEntry& retAddrEntry)
       : script(script),
         oldBaselineScript(script->baselineScript()),
-        pcOffset(retAddrEntry.pcOffset()),
-        frameKind(retAddrEntry.kind()) {
-#ifdef DEBUG
-    MOZ_ASSERT(pcOffset == retAddrEntry.pcOffset());
-    MOZ_ASSERT(frameKind == retAddrEntry.kind());
-#endif
-  }
+        baselineFrame(baselineFrame),
+        retAddrEntry(mozilla::Some(retAddrEntry)) {}
 
   DebugModeOSREntry(DebugModeOSREntry&& other)
       : script(other.script),
         oldBaselineScript(other.oldBaselineScript),
-        pcOffset(other.pcOffset),
-        frameKind(other.frameKind) {}
+        baselineFrame(other.baselineFrame),
+        retAddrEntry(other.retAddrEntry) {}
 
   bool recompiled() const {
     return oldBaselineScript != script->baselineScript();
+  }
+
+  // Whether this entry needs a new preserved DebugModeOSRReturnSite.
+  bool needsNewReturnSite() const {
+    MOZ_ASSERT_IF(baselineFrame, retAddrEntry.isSome());
+    return baselineFrame != nullptr;
   }
 };
 
@@ -111,15 +123,37 @@ static bool CollectJitStackScripts(JSContext* cx,
           // or IonScript don't need to be patched but they do need to be
           // invalidated and recompiled. See also CollectInterpreterStackScripts
           // for C++ interpreter frames.
-          if (!entries.append(DebugModeOSREntry(script))) {
+          if (!entries.emplaceBack(script)) {
             return false;
           }
         } else {
           // The frame must be settled on a pc with a RetAddrEntry.
           uint8_t* retAddr = frame.resumePCinCurrentFrame();
-          const RetAddrEntry& retAddrEntry =
-              script->baselineScript()->retAddrEntryFromReturnAddress(retAddr);
-          if (!entries.append(DebugModeOSREntry(script, retAddrEntry))) {
+
+          // The return address is either in the frame's current BaselineScript
+          // or in a version of the script that was previously recompiled. In
+          // that case we reuse the existing return site.
+          BaselineScript* baselineScript = script->baselineScript();
+          const RetAddrEntry* retAddrEntry = nullptr;
+          BaselineFrame* pendingReturnSiteFrame = nullptr;
+          if (!baselineFrame->hasPendingDebugModeOSRReturn()) {
+            // A new DebugModeOSRReturnSite needs to be created for this
+            // return address.
+            MOZ_ASSERT(baselineScript->containsCodeAddress(retAddr));
+            retAddrEntry =
+                &baselineScript->retAddrEntryFromReturnAddress(retAddr);
+            pendingReturnSiteFrame = baselineFrame;
+          } else {
+            // A DebugModeOSRReturnSite that we can reuse already exists.
+            auto* site =
+                cx->runtime()->jitRuntime()->lookupDebugModeOSRReturnSite(
+                    retAddr);
+            MOZ_RELEASE_ASSERT(site);
+            retAddrEntry = &site->retAddrEntry();
+          }
+          MOZ_ASSERT(CanTriggerBaselineDebugModeOSR(retAddrEntry->kind()));
+          if (!entries.emplaceBack(script, pendingReturnSiteFrame,
+                                   *retAddrEntry)) {
             return false;
           }
         }
@@ -134,7 +168,7 @@ static bool CollectJitStackScripts(JSContext* cx,
         InlineFrameIterator inlineIter(cx, &frame);
         while (true) {
           if (obs.shouldRecompileOrInvalidate(inlineIter.script())) {
-            if (!entries.append(DebugModeOSREntry(inlineIter.script()))) {
+            if (!entries.emplaceBack(inlineIter.script())) {
               return false;
             }
           }
@@ -163,7 +197,7 @@ static bool CollectInterpreterStackScripts(
   for (InterpreterFrameIterator iter(act); !iter.done(); ++iter) {
     JSScript* script = iter.frame()->script();
     if (obs.shouldRecompileOrInvalidate(script)) {
-      if (!entries.append(DebugModeOSREntry(iter.frame()->script()))) {
+      if (!entries.emplaceBack(iter.frame()->script())) {
         return false;
       }
     }
@@ -204,7 +238,8 @@ static void SpewPatchBaselineFrame(const uint8_t* oldReturnAddress,
                                    RetAddrEntry::Kind frameKind,
                                    const jsbytecode* pc) {
   JitSpew(JitSpew_BaselineDebugModeOSR,
-          "Patch return %p -> %p on BaselineJS frame (%s:%u:%u) from %s at %s",
+          "Redirect return %p -> %p on BaselineJS frame (%s:%u:%u) from %s "
+          "at %s",
           oldReturnAddress, newReturnAddress, script->filename(),
           script->lineno(), script->column().oneOriginValue(),
           RetAddrEntryKindToString(frameKind), CodeName(JSOp(*pc)));
@@ -217,9 +252,15 @@ static void PatchBaselineFramesForDebugMode(
   //
   // Recompile Patching Overview
   //
-  // When toggling debug mode with live baseline scripts on the stack, we
-  // could have entered the VM via the following ways from the baseline
-  // script.
+  // When debug mode is toggled for a BaselineScript with live frames on the
+  // stack, we:
+  // - set the HAS_PENDING_DEBUG_MODE_OSR_RETURN flag on the BaselineFrame.
+  // - add a reference to a DebugModeOSRReturnSite entry in the JitRuntime that
+  // keeps the old JitCode alive until the return completes. Repeated toggles
+  // reuse the frame's existing return-site reference.
+  //
+  // Each such live frame could have entered the VM via the following ways from
+  // the baseline script.
   //
   // Off to On:
   //  A. From a non-prologue IC (fallback stub or "can call" stub).
@@ -233,10 +274,33 @@ static void PatchBaselineFramesForDebugMode(
   //  F. From the debug epilogue.
   //  G. From a JSOp::AfterYield instruction.
   //
-  // In general, we patch the return address from VM calls and ICs to the
-  // corresponding entry in the recompiled BaselineScript. For entries that are
-  // not present in the recompiled script (cases D to G above) we switch the
-  // frame to interpreter mode and resume in the Baseline Interpreter.
+  // In general, we redirect returns from VM calls and ICs to the corresponding
+  // entry in the recompiled BaselineScript. For entries that are not present in
+  // the recompiled script (cases D to G above) we switch the frame to
+  // interpreter mode and resume in the Baseline Interpreter.
+  //
+  // This redirection is done in the following steps:
+  //
+  // 1. When we toggle debug mode, we patch the DebugModeOSR point at the
+  // return site corresponding to the pending return address with a call
+  // to the old script's out-of-line debug-mode OSR epilogue. (You are here.)
+  //
+  // 2. When we return to that stack frame, the patched call invokes the
+  // debug-mode OSR epilogue, which jumps to the shared handler stub at
+  // JitRuntime::generateBaselineDebugModeOSRHandler.
+  //
+  // 3. The handler uses the patched call's return address to recover the
+  // original return site's address and calls BaselineDebugModeOSRResumeAddr
+  // to lookup the corresponding redirected resume address using the
+  // DebugModeOSRReturnSite metadata in the JitRuntime.
+  //
+  // The invariant maintained throughout is that each baseline frame with the
+  // HAS_PENDING_DEBUG_MODE_OSR_RETURN flag set holds one reference to a
+  // preserved return site in the JitRuntime. So when the frame either returns
+  // normally or is bypassed (for e.g., by exception handling), the held
+  // reference must be released. When the last reference is released, the
+  // DebugModeOSRReturnSite is removed and no longer keeps the old JitCode
+  // alive.
   //
   // Specifics on what needs to be done are documented below.
   //
@@ -267,20 +331,24 @@ static void PatchBaselineFramesForDebugMode(
         BaselineFrame* baselineFrame = frame.baselineFrame();
         if (baselineFrame->runningInInterpreter()) {
           // We recompiled the script's BaselineScript but Baseline Interpreter
-          // frames don't need to be patched.
+          // frames don't need to be patched. Any pending DebugModeOSR return
+          // already targets the interpreter.
           entryIndex++;
           break;
         }
 
+        MOZ_ASSERT(baselineFrame->hasPendingDebugModeOSRReturn());
         JSScript* script = entry.script;
-        uint32_t pcOffset = entry.pcOffset;
+        MOZ_ASSERT(entry.retAddrEntry.isSome());
+        const RetAddrEntry& oldRetAddrEntry = *entry.retAddrEntry;
+        uint32_t pcOffset = oldRetAddrEntry.pcOffset();
         jsbytecode* pc = script->offsetToPC(pcOffset);
 
         MOZ_ASSERT(script == frame.script());
         MOZ_ASSERT(pcOffset < script->length());
 
         BaselineScript* bl = script->baselineScript();
-        RetAddrEntry::Kind kind = entry.frameKind;
+        RetAddrEntry::Kind kind = oldRetAddrEntry.kind();
         uint8_t* retAddr = nullptr;
         switch (kind) {
           case RetAddrEntry::Kind::IC:
@@ -361,7 +429,34 @@ static void PatchBaselineFramesForDebugMode(
             MOZ_CRASH("Unexpected RetAddrEntry Kind");
         }
 
-        prev->setReturnAddress(retAddr);
+        auto* site = cx->runtime()->jitRuntime()->lookupDebugModeOSRReturnSite(
+            prev->returnAddress());
+        MOZ_RELEASE_ASSERT(site);
+        site->setResumeAddr(retAddr);
+
+        if (entry.needsNewReturnSite()) {
+          MOZ_ASSERT(entry.baselineFrame == baselineFrame);
+          MOZ_ASSERT(entry.oldBaselineScript->containsCodeAddress(
+              prev->returnAddress()));
+
+          JitCode* code = entry.oldBaselineScript->method();
+          if (!code->invalidated()) {
+            // Patching can overwrite embedded GC pointers. So we remove the
+            // edges from the JSScript to GC things embedded in the JitCode.
+            // Perform a barrier to let the GC know about those edges.
+            gc::PreWriteBarrier(
+                script->zone(), code,
+                [](JSTracer* trc, JitCode* code) { code->traceChildren(trc); });
+            code->setInvalidated();
+          }
+
+          AutoWritableJitCode awjc(code);
+          Assembler::PatchWrite_NearCall(
+              CodeLocationLabel(prev->returnAddress()),
+              CodeLocationLabel(
+                  entry.oldBaselineScript->debugModeOSREpilogueAddr()));
+        }
+
         entryIndex++;
         break;
       }
@@ -513,6 +608,20 @@ bool jit::RecompileOnStackBaselineScriptsForDebugMode(
     return true;
   }
 
+  // We reserve space for new return sites assuming there are no duplicates and
+  // no reuse. This makes adding the new sites to the JitRuntime infallible.
+  size_t returnSiteCount = 0;
+  for (const DebugModeOSREntry& entry : entries) {
+    if (entry.needsNewReturnSite()) {
+      returnSiteCount++;
+    }
+  }
+  if (returnSiteCount &&
+      !cx->runtime()->jitRuntime()->reserveDebugModeOSRReturnSites(
+          cx, returnSiteCount)) {
+    return false;
+  }
+
   // When the profiler is enabled, we need to have suppressed sampling,
   // since the basline jit scripts are in a state of flux.
   MOZ_ASSERT(!cx->isProfilerSamplingEnabled());
@@ -542,15 +651,17 @@ bool jit::RecompileOnStackBaselineScriptsForDebugMode(
     }
   }
 
-  // If all recompiles succeeded, destroy the old baseline scripts and patch
-  // the live frames.
+  // If all recompiles succeeded, preserve their return sites, patch the live
+  // frames, and destroy the old baseline scripts.
   //
   // After this point the function must be infallible.
 
-  for (UniqueScriptOSREntryIter iter(entries); !iter.done(); ++iter) {
-    const DebugModeOSREntry& entry = iter.entry();
-    if (entry.recompiled()) {
-      BaselineScript::Destroy(cx->gcContext(), entry.oldBaselineScript);
+  for (size_t i = entries.length(); i > 0; --i) {
+    const DebugModeOSREntry& entry = entries[i - 1];
+    if (entry.recompiled() && entry.needsNewReturnSite()) {
+      cx->runtime()->jitRuntime()->addDebugModeOSRReturnSite(
+          entry.oldBaselineScript, *entry.retAddrEntry);
+      entry.baselineFrame->setPendingDebugModeOSRReturn();
     }
   }
 
@@ -564,5 +675,75 @@ bool jit::RecompileOnStackBaselineScriptsForDebugMode(
   }
   MOZ_ASSERT(processed == entries.length());
 
+  for (UniqueScriptOSREntryIter iter(entries); !iter.done(); ++iter) {
+    const DebugModeOSREntry& entry = iter.entry();
+    if (entry.recompiled()) {
+      BaselineScript::Destroy(cx->gcContext(), entry.oldBaselineScript);
+    }
+  }
+
   return true;
+}
+
+void DebugModeOSRReturnSite::trace(JSTracer* trc) {
+  TraceRoot<JitCode*>(trc, &code_, "DebugModeOSRReturnSite::code_");
+}
+
+bool JitRuntime::reserveDebugModeOSRReturnSites(JSContext* cx, size_t count) {
+  auto& sites = debugModeOSRReturnSites_.ref();
+  if (!sites.reserve(sites.length() + count)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+  return true;
+}
+
+void JitRuntime::addDebugModeOSRReturnSite(BaselineScript* baselineScript,
+                                           const RetAddrEntry& retAddrEntry) {
+  const uint8_t* returnAddress =
+      baselineScript->method()->raw() + retAddrEntry.returnOffset().offset();
+  if (auto* site = lookupDebugModeOSRReturnSite(returnAddress)) {
+    site->incrementRefCount();
+    return;
+  }
+  debugModeOSRReturnSites_.ref().infallibleEmplaceBack(baselineScript,
+                                                       retAddrEntry);
+}
+
+void JitRuntime::releaseDebugModeOSRReturnSite(DebugModeOSRReturnSite* site) {
+  if (site->decrementRefCount() == 0) {
+    debugModeOSRReturnSites_.ref().erase(site);
+  }
+}
+
+DebugModeOSRReturnSite* JitRuntime::lookupDebugModeOSRReturnSite(
+    const uint8_t* returnAddress) {
+  auto& sites = debugModeOSRReturnSites_.ref();
+  for (size_t i = sites.length(); i > 0; --i) {
+    auto& site = sites[i - 1];
+    if (site.matchesAddress(returnAddress)) {
+      return &site;
+    }
+  }
+  return nullptr;
+}
+
+void JitRuntime::TraceDebugModeOSRReturnSites(JSTracer* trc) {
+  JSRuntime* rt = trc->runtime();
+  if (rt->hasJitRuntime()) {
+    rt->jitRuntime()->debugModeOSRReturnSites_.ref().trace(trc);
+  }
+}
+
+uint8_t* js::jit::BaselineDebugModeOSRResumeAddr(BaselineFrame* frame,
+                                                 const uint8_t* returnAddress) {
+  AutoUnsafeCallWithABI unsafe;
+  auto* jitRuntime = TlsContext.get()->runtime()->jitRuntime();
+  MOZ_ASSERT(frame->hasPendingDebugModeOSRReturn());
+  auto* site = jitRuntime->lookupDebugModeOSRReturnSite(returnAddress);
+  MOZ_RELEASE_ASSERT(site);
+  uint8_t* resumeAddr = site->resumeAddr();
+  frame->clearPendingDebugModeOSRReturn();
+  jitRuntime->releaseDebugModeOSRReturnSite(site);
+  return resumeAddr;
 }

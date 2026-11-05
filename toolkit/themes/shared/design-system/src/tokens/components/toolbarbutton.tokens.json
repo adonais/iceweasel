@@ -32,6 +32,9 @@
           "value": "1px"
         }
       }
+    },
+    "size": {
+      "value": "14px"
     }
   },
   "padding": {
@@ -87,6 +90,13 @@
           "forcedColors": "{button.text.color.ghost.active}"
         }
       },
+      "disabled": {
+        "ignoreFigma": "TODO: Fix Figma tokens sync script issues, see bug 2072751",
+        "value": {
+          "default": "{toolbarbutton.icon.fill.@base}",
+          "forcedColors": "{button.text.color.disabled}"
+        }
+      },
       "attention": {
         "@base": {
           "value": {
@@ -109,7 +119,8 @@
     "disabled": {
       "value": {
         "default": "{button.opacity.disabled}",
-        "prefersContrast": 0.3
+        "prefersContrast": 0.3,
+        "forcedColors": "{button.opacity.disabled}"
       }
     }
   },
@@ -189,6 +200,12 @@
         "value": {
           "default": "{toolbarbutton.outline.color.active}",
           "forcedColors": "SelectedItem"
+        }
+      },
+      "disabled": {
+        "value": {
+          "default": "{toolbarbutton.outline.color.@base}",
+          "forcedColors": "{button.border.color.disabled}"
         }
       }
     },

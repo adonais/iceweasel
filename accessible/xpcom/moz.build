@@ -80,3 +80,21 @@ GeneratedFile(
 FINAL_LIBRARY = "xul"
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "nsAccessibleRelation.h",
+    "xpcAccessible.h",
+    "xpcAccessibleApplication.h",
+    "xpcAccessibleDocument.h",
+    "xpcAccessibleGeneric.h",
+    "xpcAccessibleHyperLink.h",
+    "xpcAccessibleHyperText.h",
+    "xpcAccessibleImage.h",
+    "xpcAccessiblePivot.h",
+    "xpcAccessibleSelectable.h",
+    "xpcAccessibleTable.h",
+    "xpcAccessibleTableCell.h",
+    "xpcAccessibleTextLeafRange.h",
+    "xpcAccessibleTextRange.h",
+    "xpcAccessibleValue.h",
+]

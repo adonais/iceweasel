@@ -62,19 +62,14 @@ class SurfaceD3D : public SurfaceImpl
 
     angle::Result getAttachmentRenderTarget(const gl::Context *context,
                                             GLenum binding,
-                                            const gl::OwnImageIndex &ownImageIndex,
+                                            const gl::ImageIndex &imageIndex,
                                             GLsizei samples,
                                             FramebufferAttachmentRenderTarget **rtOut) override;
     angle::Result initializeContents(const gl::Context *context,
                                      GLenum binding,
-                                     const gl::OwnImageIndex &ownImageIndex) override;
+                                     const gl::ImageIndex &imageIndex) override;
 
     const angle::Format *getClientBufferTextureColorFormat() const override;
-
-    egl::Error attachToFramebuffer(const gl::Context *context,
-                                   gl::Framebuffer *framebuffer) override;
-    egl::Error detachFromFramebuffer(const gl::Context *context,
-                                     gl::Framebuffer *framebuffer) override;
 
   protected:
     SurfaceD3D(const egl::SurfaceState &state,
@@ -111,7 +106,7 @@ class SurfaceD3D : public SurfaceImpl
     EGLint mSwapInterval;
 
     HANDLE mShareHandle;
-    IUnknown *mD3DTexture;
+    angle::ComPtr<IUnknown> mD3DTexture;
 
     EGLenum mBuftype;
 };

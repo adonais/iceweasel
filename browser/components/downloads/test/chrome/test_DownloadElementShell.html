@@ -1,0 +1,436 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Testing DownloadElementShell base class</title>
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="chrome://mochikit/content/tests/SimpleTest/test.css"/>
+  <link rel="localization" href="browser/downloads.ftl" />
+
+  <script>
+  const { DownloadsViewUI } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/downloads/DownloadsViewUI.sys.mjs",
+  );
+  const { Downloads } = ChromeUtils.importESModule(
+    "resource://gre/modules/Downloads.sys.mjs",
+  );
+  const { FileUtils } = ChromeUtils.importESModule(
+    "resource://gre/modules/FileUtils.sys.mjs",
+  );
+
+  class SimpleDownloadViewElement extends DownloadsViewUI.DownloadElementShell {
+    constructor(download, containerElement, isPanel) {
+      super();
+      this.download = download;
+      this.element = containerElement;
+      this.isPanel = isPanel;
+    }
+  }
+
+  let gTestTargetFile = new FileUtils.File(
+    PathUtils.join(
+      Services.dirsvc.get("TmpD", Ci.nsIFile).path,
+      "dm-ui-test.file",
+    ),
+  );
+  let gTestSucceededDownloadDescription = {
+    source: "https://www.example.com/test-download.txt",
+    target: { path: gTestTargetFile.path },
+    succeeded: true,
+    canceled: false,
+    deleted: false,
+    error: null,
+    hasPartialData: false,
+    hasBlockedData: false,
+    openDownloadsListOnStart: false,
+    contentType: "",
+    startTime: new Date(),
+  };
+
+  async function createSimpleSucceededDownloadViewUI(isPanel = false) {
+    let download = await Downloads.createDownload(
+      gTestSucceededDownloadDescription,
+    );
+    let containerElement = document.createElement("div");
+    let downloadViewUI = new SimpleDownloadViewElement(
+      download,
+      containerElement,
+      isPanel,
+    );
+    ok(downloadViewUI, "Can construct SimpleDownloadViewElement");
+    downloadViewUI.connect();
+
+    return downloadViewUI;
+  }
+
+  add_task(async function test_construction() {
+    let downloadViewUI = await createSimpleSucceededDownloadViewUI();
+    // We need these child elements to be defined and accessible in order to
+    // test that they're in the correct states at the right times.
+    let expectedElementGetters = [
+      "_downloadTypeIcon",
+      "_downloadTarget",
+      "_downloadDetailsNormal",
+      "_downloadDetailsHover",
+      "_downloadDetailsButtonHover",
+      "_downloadButton",
+      "_downloadProgress",
+    ];
+
+    for (let getter of expectedElementGetters) {
+      ok(downloadViewUI[getter], `Child element exists for ${getter}`);
+    }
+  });
+
+  add_task(async function test_showProgress() {
+    let downloadViewUI = await createSimpleSucceededDownloadViewUI();
+
+    downloadViewUI.showProgress("normal", 50, false);
+    is(
+      downloadViewUI._downloadProgress.value,
+      50,
+      "Got the right progress value set.",
+    );
+    ok(
+      !downloadViewUI._downloadProgress.hasAttribute("paused"),
+      "Is not paused.",
+    );
+
+    downloadViewUI.showProgress("normal", 0, false);
+    is(
+      downloadViewUI._downloadProgress.value,
+      0,
+      "Got the right progress value set.",
+    );
+    ok(
+      !downloadViewUI._downloadProgress.hasAttribute("paused"),
+      "Is not paused.",
+    );
+
+    downloadViewUI.showProgress("normal", 100, false);
+    is(
+      downloadViewUI._downloadProgress.value,
+      100,
+      "Got the right progress value set.",
+    );
+    ok(
+      !downloadViewUI._downloadProgress.hasAttribute("paused"),
+      "Is not paused.",
+    );
+
+    downloadViewUI.showProgress("undetermined", 100, false);
+    is(
+      downloadViewUI._downloadProgress.value,
+      0,
+      "Got the right progress value set when undetermined.",
+    );
+    ok(
+      !downloadViewUI._downloadProgress.hasAttribute("value"),
+      "Is not showing a value.",
+    );
+    ok(
+      !downloadViewUI._downloadProgress.hasAttribute("paused"),
+      "Is not paused.",
+    );
+
+    downloadViewUI.showProgress("normal", 67, true);
+    is(
+      downloadViewUI._downloadProgress.value,
+      67,
+      "Got the right progress value set.",
+    );
+    ok(downloadViewUI._downloadProgress.hasAttribute("paused"), "Is paused.");
+  });
+
+  add_task(async function test_showDisplayNameAndIcon() {
+    let downloadViewUI = await createSimpleSucceededDownloadViewUI();
+    const kTestDisplayName = "MyCoolFile.mp3";
+    const kTestIcon = "chrome://browser/test/test-icon.png";
+
+    downloadViewUI.showDisplayNameAndIcon(kTestDisplayName, kTestIcon);
+    is(
+      downloadViewUI._downloadTypeIcon.src,
+      kTestIcon,
+      "Set the icon correctly.",
+    );
+    is(
+      downloadViewUI._downloadTarget.value,
+      kTestDisplayName,
+      "Set the value correctly on the target.",
+    );
+    is(
+      downloadViewUI._downloadTarget.getAttribute("tooltiptext"),
+      kTestDisplayName,
+      "Set the tooltiptext correctly on the target.",
+    );
+
+    // showDisplayNameAndIcon can also accept a structure for a Fluent string
+    // and attributes for the display name.
+    const kTestFluentID = "some-fluent-id";
+    const kTestArgs = Object.freeze({ test: "123" });
+    downloadViewUI.showDisplayNameAndIcon(
+      { l10n: { id: kTestFluentID, args: kTestArgs } },
+      kTestIcon,
+    );
+    is(
+      downloadViewUI._downloadTypeIcon.src,
+      kTestIcon,
+      "Set the icon correctly.",
+    );
+    is(
+      downloadViewUI._downloadTarget.getAttribute("data-l10n-id"),
+      kTestFluentID,
+      "Set the Fluent ID correctly on the target.",
+    );
+    is(
+      downloadViewUI._downloadTarget.getAttribute("data-l10n-args"),
+      JSON.stringify(kTestArgs),
+      "Set the Fluent args correctly on the target.",
+    );
+  });
+
+  add_task(async function test_showStatus() {
+    let downloadViewUI = await createSimpleSucceededDownloadViewUI();
+    const kTestStatus = "All good";
+    downloadViewUI.showStatus(kTestStatus);
+
+    ok(
+      !downloadViewUI._downloadDetailsNormal.hasAttribute("data-l10n-id"),
+      "Should not be using a Fluent string here.",
+    );
+    is(
+      downloadViewUI._downloadDetailsNormal.getAttribute("value"),
+      kTestStatus,
+      "Should have set the test status on the normal details element.",
+    );
+    is(
+      downloadViewUI._downloadDetailsNormal.getAttribute("tooltiptext"),
+      kTestStatus,
+      "Should have set the test status on the normal details element tooltiptext.",
+    );
+
+    ok(
+      !downloadViewUI._downloadDetailsHover.hasAttribute("data-l10n-id"),
+      "Should not be using a Fluent string here.",
+    );
+    is(
+      downloadViewUI._downloadDetailsHover.getAttribute("value"),
+      kTestStatus,
+      "Should have set the test status on the hover details element.",
+    );
+    is(
+      downloadViewUI._downloadDetailsHover.getAttribute("tooltiptext"),
+      kTestStatus,
+      "Should have set the test status on the hover details element tooltiptext.",
+    );
+
+    // showStatus can also accept a structure for a Fluent string
+    // and attributes for the status.
+    const kTestFluentID = "some-fluent-id";
+    const kTestArgs = Object.freeze({ test: "123" });
+    downloadViewUI.showStatus({ l10n: { id: kTestFluentID, args: kTestArgs } });
+
+    is(
+      downloadViewUI._downloadDetailsNormal.getAttribute("data-l10n-id"),
+      kTestFluentID,
+      "Should have set the Fluent ID on the normal details element.",
+    );
+    is(
+      downloadViewUI._downloadDetailsNormal.getAttribute("data-l10n-args"),
+      JSON.stringify(kTestArgs),
+      "Should have set the Fluent args on the normal details element.",
+    );
+    is(
+      downloadViewUI._downloadDetailsHover.getAttribute("data-l10n-id"),
+      kTestFluentID,
+      "Should have set the Fluent ID on the hover details element.",
+    );
+    is(
+      downloadViewUI._downloadDetailsHover.getAttribute("data-l10n-args"),
+      JSON.stringify(kTestArgs),
+      "Should have set the Fluent args on the hover details element.",
+    );
+
+    // Also test that we can override the hover details display.
+    downloadViewUI.showStatus(
+      { l10n: { id: kTestFluentID, args: kTestArgs } },
+      kTestStatus,
+    );
+
+    is(
+      downloadViewUI._downloadDetailsNormal.getAttribute("data-l10n-id"),
+      kTestFluentID,
+      "Should have set the Fluent ID on the normal details element.",
+    );
+    is(
+      downloadViewUI._downloadDetailsNormal.getAttribute("data-l10n-args"),
+      JSON.stringify(kTestArgs),
+      "Should have set the Fluent args on the normal details element.",
+    );
+    is(
+      downloadViewUI._downloadDetailsHover.getAttribute("value"),
+      kTestStatus,
+      "Should have set the test status on the hover details element.",
+    );
+    is(
+      downloadViewUI._downloadDetailsHover.getAttribute("tooltiptext"),
+      kTestStatus,
+      "Should have set the test status on the hover details element tooltiptext.",
+    );
+
+    // And test that we can override the hover details with a Fluent string.
+    const kTestHoverFluentID = "some-hover-fluent-id";
+    const kTestHoverArgs = Object.freeze({ test: "456" });
+    downloadViewUI.showStatus(
+      { l10n: { id: kTestFluentID, args: kTestArgs } },
+      { l10n: { id: kTestHoverFluentID, args: kTestHoverArgs } },
+    );
+    is(
+      downloadViewUI._downloadDetailsNormal.getAttribute("data-l10n-id"),
+      kTestFluentID,
+      "Should have set the Fluent ID on the normal details element.",
+    );
+    is(
+      downloadViewUI._downloadDetailsNormal.getAttribute("data-l10n-args"),
+      JSON.stringify(kTestArgs),
+      "Should have set the Fluent args on the normal details element.",
+    );
+    is(
+      downloadViewUI._downloadDetailsHover.getAttribute("data-l10n-id"),
+      kTestHoverFluentID,
+      "Should have set the right Fluent ID on the hover details element.",
+    );
+    is(
+      downloadViewUI._downloadDetailsHover.getAttribute("data-l10n-args"),
+      JSON.stringify(kTestHoverArgs),
+      "Should have set the right Fluent args on the hover details element.",
+    );
+  });
+
+  add_task(async function test_showButton() {
+    const buttonTypes = Object.freeze([
+      "cancel",
+      "retry",
+      "show",
+      "subviewOpenOrRemoveFile",
+      "askOpenOrRemoveFile",
+      "askRemoveFileOrAllow",
+      "removeFile",
+    ]);
+
+    for (let buttonType of buttonTypes) {
+      let nonPanelDownloadViewUI = await createSimpleSucceededDownloadViewUI(
+        false /* isPanel */,
+      );
+      let buttonData = DownloadsViewUI.downloadElementButtons[buttonType];
+      nonPanelDownloadViewUI.showButton(buttonType);
+      is(
+        nonPanelDownloadViewUI.buttonCommandName,
+        buttonData.commandName,
+        "The button command name was set.",
+      );
+      is(
+        nonPanelDownloadViewUI._downloadButton.getAttribute("data-l10n-id"),
+        buttonData.l10nId,
+        "The button Fluent strings are set correctly.",
+      );
+      ok(
+        !nonPanelDownloadViewUI._downloadDetailsButtonHover.hasAttribute(
+          "data-l10n-id",
+        ),
+        "The button details on hover strings are NOT set when not in panel mode.",
+      );
+      ok(
+        nonPanelDownloadViewUI._downloadButton.classList.contains(
+          "downloadButton",
+        ),
+        "The button has the downloadButton class.",
+      );
+      ok(
+        nonPanelDownloadViewUI._downloadButton.classList.contains(
+          buttonData.iconClass,
+        ),
+        "The button has the iconClass class.",
+      );
+      ok(
+        !nonPanelDownloadViewUI._downloadButton.hasAttribute("hidden"),
+        "The button is not hidden.",
+      );
+    }
+
+    for (let buttonType of buttonTypes) {
+      let panelDownloadViewUI = await createSimpleSucceededDownloadViewUI(
+        true /* isPanel */,
+      );
+      let buttonData = DownloadsViewUI.downloadElementButtons[buttonType];
+      panelDownloadViewUI.showButton(buttonType);
+      is(
+        panelDownloadViewUI.buttonCommandName,
+        buttonData.commandName,
+        "The button command name was set.",
+      );
+      is(
+        panelDownloadViewUI._downloadButton.getAttribute("data-l10n-id"),
+        buttonData.panelL10nId,
+        "The button Fluent strings are set correctly for panels.",
+      );
+
+      const descriptionL10nId = buttonData.descriptionL10nId;
+      if (descriptionL10nId) {
+        is(
+          panelDownloadViewUI._downloadDetailsButtonHover.getAttribute(
+            "data-l10n-id",
+          ),
+          descriptionL10nId,
+          "The button details on hover strings are set when in panel mode.",
+        );
+      } else {
+        ok(
+          !panelDownloadViewUI._downloadDetailsButtonHover.hasAttribute(
+            "data-l10n-id",
+          ),
+          "The button details on hover strings are NOT set when not defined.",
+        );
+      }
+      ok(
+        panelDownloadViewUI._downloadButton.classList.contains("downloadButton"),
+        "The button has the downloadButton class.",
+      );
+      ok(
+        panelDownloadViewUI._downloadButton.classList.contains(
+          buttonData.iconClass,
+        ),
+        "The button has the iconClass class.",
+      );
+      ok(
+        !panelDownloadViewUI._downloadButton.hasAttribute("hidden"),
+        "The button is not hidden.",
+      );
+    }
+  });
+
+  add_task(async function test_hideButton() {
+    let downloadViewUI = await createSimpleSucceededDownloadViewUI();
+    downloadViewUI.showButton("show");
+    ok(
+      !downloadViewUI._downloadButton.hasAttribute("hidden"),
+      "The button is not hidden.",
+    );
+
+    downloadViewUI.hideButton();
+    ok(
+      downloadViewUI._downloadButton.hasAttribute("hidden"),
+      "The button is hidden.",
+    );
+  });
+  </script>
+</head>
+<body>
+<p id="display"></p>
+<div id="content" style="display: none"></div>
+<pre id="test"></pre>
+</body>
+</html>

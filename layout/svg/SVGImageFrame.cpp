@@ -17,6 +17,7 @@
 #include "mozilla/SVGImageContext.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUtils.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/dom/LargestContentfulPaint.h"
 #include "mozilla/dom/PerformanceContainerTiming.h"
@@ -452,17 +453,20 @@ WebRenderCommandsResult SVGImageFrame::CreateWebRenderCommands(
     return Ok();
   }
 
+  // fill-opacity doesn't affect <image>, so if we're allowed to optimize group
+  // opacity, the opacity used for compositing the image is just the group
+  // opacity, which WebRender applies as the image's color multiplier.
   float opacity = 1.0f;
   if (SVGUtils::CanOptimizeOpacity(this)) {
     opacity = StyleEffects()->mOpacity;
   }
 
-  if (opacity != 1.0f) {
-    // FIXME: not implemented, might be trivial
+  if (opacity != 1.0f && !StaticPrefs::gfx_webrender_svg_images_opacity()) {
     return Err("opacity is not supported");
   }
-  if (StyleEffects()->HasMixBlendMode()) {
-    // FIXME: not implemented
+  // The blend itself is performed by the enclosing nsDisplayBlendMode item.
+  if (StyleEffects()->HasMixBlendMode() &&
+      !StaticPrefs::gfx_webrender_svg_shapes_blend()) {
     return Err("mix-blend-mode is not supported");
   }
 
@@ -672,7 +676,7 @@ WebRenderCommandsResult SVGImageFrame::CreateWebRenderCommands(
     if (provider) {
       aManager->CommandBuilder().PushImageProvider(
           aItem, provider, drawResult, aBuilder, aResources, destRect, clipRect,
-          rasterizedForDest && !region);
+          rasterizedForDest && !region, opacity);
     }
   }
 

@@ -45,8 +45,9 @@ reads exactly like a genuine NOT REACHED, so raise it once before believing an e
 
 Read the header before the routes:
 
-- `Found N trace(s)` with `truncated: false` means the enumeration is exhaustive at that depth. This
-  is what lets a NOT REACHED verdict claim more than "I did not find one".
+- `Found N trace(s).` with no `Search was truncated` after it (JSON: `"truncated": false`) means the
+  enumeration is exhaustive at that depth. This is what lets a NOT REACHED verdict claim more than
+  "I did not find one".
 - `Search was truncated` means it is not. Raise `-l` or narrow the endpoints; if it still truncates,
   the verdict is INCONCLUSIVE.
 - `indexing N spec(s) the route touches` on stderr means specs a route crosses were fetched on
@@ -62,15 +63,36 @@ The tool proves a route exists in the reference graph. It cannot know your scena
 route whether it is taken, from what each hop already carries:
 
 - **Guards.** Does a `- under:` condition contradict a scenario fact? That kills the route.
+  When a guard reads a field ("If *document*'s is initial `about:blank` is true"), run
+  `webspec-index state '<SPEC#field>'` to list who sets it before the guard runs. A guard
+  whose field is only set in an initialization never fires after construction.
 - **Arguments.** Does the step pass, or omit, an optional argument the callee branches on? An
   omitted argument frequently disables the branch the whole question turns on.
+  `webspec-index state '<SPEC#caller>' --calls --format markdown` binds each call's arguments to the
+  callee's parameters and counts the defaulted ones; an `exact` binding answers this directly, a
+  `partial` one still needs the step text.
 - **Ordering.** Compare step numbers within a section. A call at step 20 runs before one at step 24,
   so state it depends on may not be set up yet, or may already be torn down.
 - **Identity.** Does the hop act on the object the question is about? An algorithm that aborts *the
   previous* ongoing navigation does not report *this* one.
 
 Read the whole section when a hop's own text and guards are not enough:
-`webspec-index query '<SPEC#anchor>' --format markdown`.
+`webspec-index query '<SPEC#anchor>' --format markdown`
+(links default to `short` — `SPEC#anchor` — which you can feed back into `query`; use `--links full` for absolute URLs).
+
+To trace a parameter through one algorithm, add `--involving`:
+
+```bash
+webspec-index query '<SPEC#anchor>' --involving <param> --format markdown
+```
+
+This returns only steps that use or are influenced by `<param>`, with markers for every omitted run.
+For guards, `--feeding <STEP>:<VAR>` answers "where does *x* in step 18 come from": the backward
+slice shows which earlier steps define the value that reaches the guard.
+
+`query` output shows cross-reference counts. When a section has fewer than 5 refs in one direction
+they are listed; otherwise a ready-made `refs` command is emitted — copy and run it to fetch the
+full list (e.g. `webspec-index refs HTML#navigate -d incoming -l 117`).
 
 **A NOT REACHED verdict needs the step where the chain stops, and that step is never in the
 output.** `trace` enumerates routes that reach the target, so the step that ends a chain instead —
@@ -137,6 +159,17 @@ searchfox-cli --spec-refs '<url>'
 - Discard matches under `.claude/skills/` and `.agents/skills/`. In-tree skill documentation quotes
   spec URLs in its examples and is indexed as code, in both copies.
 
+## Effects data may be temporarily unavailable
+
+`query` output includes an `effects_status` field. When that field carries
+`"state": "unavailable"` with `"snapshot_changed"` in `"issues"` (shape:
+`{"state": "unavailable", "semantics": "may", "issues": ["snapshot_changed"], "omitted": 0}`),
+the spec's HTML was updated since effects were last built and the inline rebuild
+did not complete in time. The data is not wrong — it is absent. Run
+`webspec-index effects --all` to rebuild; subsequent queries serve fresh
+summaries. This state is transient and does not affect anchors,
+cross-references, or any non-effects output.
+
 ## Hard rules
 
 **Every quote comes from tool output.** `trace` and `refs` emit plain step text; use it as given.
@@ -144,6 +177,12 @@ searchfox-cli --spec-refs '<url>'
 `[links](...)`; stripping that to recover the spec's prose is not paraphrasing, changing a word is.
 A truncated fragment presented as a quotation is an invented quote, and an invented quote loses the
 argument the trace was written to win.
+
+**Effects and `state` output are leads, not evidence.** This includes the "Possible effects" block
+in `query` output. REACHED needs a route from `trace` or a quoted step. NOT REACHED needs an
+untruncated `trace` plus the step where the chain stops; an effect or caller that is not listed
+proves nothing, because both analyses miss some. If an effect points at the target but `trace`
+finds no route to it, the verdict is INCONCLUSIVE until the gap is explained.
 
 **Validate every anchor** with `webspec-index exists '<SPEC#anchor>'` before it ships, the
 rejected-route table included. Exit code 0 means it resolves.

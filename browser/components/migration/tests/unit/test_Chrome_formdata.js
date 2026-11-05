@@ -7,7 +7,7 @@ const { FormHistory } = ChromeUtils.importESModule(
   "resource://gre/modules/FormHistory.sys.mjs"
 );
 
-let rootDir = do_get_file("chromefiles/", true);
+let rootDir = do_get_tempdir();
 
 add_setup(async function setup_fakePaths() {
   let pathId;
@@ -54,6 +54,10 @@ async function testFormdata(migratorKey, subDirs) {
     createAncestor: true,
     ignoreExisting: true,
   });
+  await IOUtils.writeJSON(
+    PathUtils.join(target.parent.path, "Local State"),
+    []
+  );
 
   target.append("Web Data");
   await IOUtils.remove(target.path, { ignoreAbsent: true });

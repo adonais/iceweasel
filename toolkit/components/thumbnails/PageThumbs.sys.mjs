@@ -469,8 +469,8 @@ export var PageThumbs = {
    *
    * @param aBrowser the content window of this browser will be captured.
    * @param aCanvas the thumbnail will be rendered to this canvas.
-   * @returns {Promise<boolean>} false if the browser went away before the
-   *          thumbnail could be drawn, true otherwise.
+   * @returns {Promise<boolean>} false if the browser went away or has no
+   *          content to capture, true otherwise.
    */
   async captureTabPreviewThumbnail(aBrowser, aCanvas) {
     let desiredAspectRatio = aCanvas.width / aCanvas.height;
@@ -523,6 +523,9 @@ export var PageThumbs = {
     // when the scroll position is  near the bottom of the document.
     else if (contentInfo.documentHeight - captureY < captureHeight) {
       captureY = contentInfo.documentHeight - captureHeight;
+    }
+    if (!captureWidth || !captureHeight) {
+      return false;
     }
     let snapshotResult = await aBrowser.drawSnapshot(
       captureX,

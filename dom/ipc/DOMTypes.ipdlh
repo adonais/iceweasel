@@ -187,6 +187,7 @@ struct DocShellLoadStateInit
   bool InheritPrincipal;
   bool PrincipalIsExplicit;
   bool NotifiedBeforeUnloadListeners;
+  bool PageSwapFired;
   bool ForceAllowDataURI;
   bool IsExemptFromHTTPSFirstMode;
   bool OriginalFrameSrc;

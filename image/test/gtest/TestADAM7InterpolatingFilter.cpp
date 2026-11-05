@@ -23,7 +23,7 @@ using std::generate;
 using std::vector;
 
 template <typename Func>
-void WithADAM7InterpolatingFilter(const IntSize& aSize, Func aFunc) {
+void WithADAM7InterpolatingFilter(const IntSize& aSize, Func&& aFunc) {
   RefPtr<image::Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(bool(decoder));
 

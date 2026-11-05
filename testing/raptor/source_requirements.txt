@@ -1,3 +1,7 @@
+-c ../config/requirements-raptor.txt
+-r ../config/mozbase_source_requirements.txt
+-r requirements-common.txt
+
 # These dependencies are required for running raptor tests from a source checkout
 
 mozcrash ~= 2.0
@@ -12,7 +16,18 @@ mozpower >= 1.0.0
 mozversion >= 1.0
 ../condprofile
 aiohttp==3.12.15
-https://pypi.pub.build.mozilla.org/pub/arsenic-21.8-py3-none-any.whl
+# Keep aiohttp dependencies stable when using public PyPI (bug 1993260).
+aiohappyeyeballs==2.6.1
+aiosignal==1.4.0
+async-timeout==5.0.1; python_version < '3.11'
+attrs==25.4.0
+frozenlist==1.8.0
+idna==3.3
+multidict==6.7.0
+propcache==0.4.1
+typing-extensions==4.9.0; python_version < '3.13'
+yarl==1.22.0
+arsenic==21.8
 requests==2.32.3
-pyyaml==5.1.2
+pyyaml==6.0.2
 structlog==20.2.0

@@ -35,8 +35,14 @@ class TextLeafAccessible : public LinkableAccessible {
 ////////////////////////////////////////////////////////////////////////////////
 // LocalAccessible downcast method
 
+// HTMLListBulletAccessible is implemented as a TextLeafAccessible so that it
+// can cache its text. However, it is fundamentally different in some ways; e.g.
+// it doesn't have character bounds. Therefore, IsTextLeaf() returns false for
+// it.
 inline TextLeafAccessible* LocalAccessible::AsTextLeaf() {
-  return IsTextLeaf() ? static_cast<TextLeafAccessible*>(this) : nullptr;
+  return IsTextLeaf() || IsHTMLListBullet()
+             ? static_cast<TextLeafAccessible*>(this)
+             : nullptr;
 }
 
 }  // namespace a11y

@@ -59,7 +59,7 @@ will lead to a smoother, more rapid process of review and acceptance.
 ## Style
 
 - Follow the [style
-  guide](https://firefox-source-docs.mozilla.org/code-quality/coding-style/index.html)
+  guide](/code-quality/coding-style/index.md)
   for the language and module in question.
 - Follow local style for the surrounding code, even if that local style
   isn't formally documented.

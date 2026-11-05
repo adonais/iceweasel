@@ -39,15 +39,17 @@ class FirefoxAccountsAuthFeature(
      *
      * @param context [Context] The application context
      * @param entrypoint [FxAEntryPoint] The Firefox Accounts feature/entrypoint that is launching authentication
+     * @param service The FxA service being authenticated into
      * @param scopes [Set<String>] The oAuth scopes being requested
      */
     fun beginAuthentication(
         context: Context,
         entrypoint: FxAEntryPoint,
+        service: String,
         scopes: Set<String> = emptySet(),
     ) {
         beginAuthenticationAsync(context) {
-            accountManager.beginAuthentication(entrypoint = entrypoint, authScopes = scopes)
+            accountManager.beginAuthentication(service = service, entrypoint = entrypoint, authScopes = scopes)
         }
     }
 
@@ -57,12 +59,14 @@ class FirefoxAccountsAuthFeature(
      * @param context [Context] The application context
      * @param pairingUrl [String] The pairing URL retrieved from the QR scanner
      * @param entrypoint [FxAEntryPoint] The Firefox Accounts feature/entrypoint that is launching
+     * @param service The FxA service being authenticated into
      * @param scopes [Set<String>] The oAuth scopes being requested authentication
      */
     fun beginPairingAuthentication(
         context: Context,
         pairingUrl: String,
         entrypoint: FxAEntryPoint,
+        service: String,
         scopes: Set<String> = emptySet(),
     ) {
         beginAuthenticationAsync(
@@ -72,10 +76,15 @@ class FirefoxAccountsAuthFeature(
             // back to a normal sync sign-in that still carries the entrypoint, instead of a
             // bare URL that sends the user to Account Settings.
             fallbackAuthentication = {
-                accountManager.beginAuthentication(entrypoint = entrypoint, authScopes = scopes)
+                accountManager.beginAuthentication(service = service, entrypoint = entrypoint, authScopes = scopes)
             },
         ) {
-            accountManager.beginAuthentication(pairingUrl, entrypoint = entrypoint, scopes)
+            accountManager.beginAuthentication(
+                service = service,
+                pairingUrl = pairingUrl,
+                entrypoint = entrypoint,
+                authScopes = scopes,
+            )
         }
     }
 

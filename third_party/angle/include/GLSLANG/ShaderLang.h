@@ -26,7 +26,7 @@
 
 // Version number for shader translation API.
 // It is incremented every time the API changes.
-#define ANGLE_SH_VERSION 419
+#define ANGLE_SH_VERSION 424
 
 enum ShShaderSpec
 {
@@ -409,7 +409,10 @@ struct ShCompileOptions
     // Always write explicit location layout qualifiers for fragment outputs.
     uint64_t explicitFragmentLocations : 1;
 
-    uint64_t unused : 1;
+    // Precompute the vertex pre-rotation swap + Y-flip into a driver uniform (transformXY) so the
+    // injected ANGLETransformPosition reduces to two dot products instead of a per-vertex
+    // ternary/unpack/multiply.  When unset, the original ternary+flip path is emitted.
+    uint64_t preferPrecomputedVertexTransform : 1;
 
     // Avoid complex expressions in struct constructors to work around driver bugs.
     uint64_t avoidComplexExpressionsInStructConstructor : 1;
@@ -475,9 +478,7 @@ struct ShCompileOptions
     // Ensure all loops execute side-effects or terminate.
     uint64_t ensureLoopForwardProgress : 1;
 
-    // Do not preform any shader validation or perform any shader transformations. Shader state can
-    // still be reflected.
-    uint64_t skipAllValidationAndTransforms : 1;
+    uint64_t unused2 : 1;
 
     uint64_t transformFloatUniformTo16Bits : 1;
 
@@ -614,22 +615,6 @@ struct ShBuiltInResources
     // Set a 64 bit hash function to enable user-defined name hashing.
     // Default is NULL.
     ShHashFunction64 HashFunction;
-
-    // User defined variables are prefixed with '_' and UserVariableNamePrefix. If UserVariableName
-    // is the null character, no prefixing is done and collisions between user variables and
-    // variables introduced during translation is possible.
-    //
-    // Can't prefix with just _ because then we might introduce a double underscore, which is not
-    // safe in GLSL (ESSL 3.00.6 section 3.8: All identifiers containing a double underscore are
-    // reserved for use by the underlying implementation).
-    //
-    // Defaults to 'u' for user-defined.
-    char UserVariableNamePrefix;
-    // To avoid collision with structs of the same name, block names are prefixed instead with '_'
-    // and UserBlockNamePrefix.
-    //
-    // Default to 'b' for block.
-    char UserBlockNamePrefix;
 
     // The maximum complexity an expression can be when limitExpressionComplexity is turned on.
     int MaxExpressionComplexity;
@@ -992,6 +977,9 @@ inline bool IsWebGLBasedSpec(ShShaderSpec spec)
     return (spec == SH_WEBGL_SPEC || spec == SH_WEBGL2_SPEC);
 }
 
+extern const char kUserVariableNamePrefix;
+extern const char kUserBlockNamePrefix;
+
 enum class MetadataFlags
 {
     // Applicable to vertex shaders (technically all pre-rasterization shaders could use this flag,
@@ -1019,6 +1007,10 @@ enum class MetadataFlags
     InvalidEnum,
     EnumCount = InvalidEnum,
 };
+
+// If samplers are extracted from structs, their names will be <prefix><N>, where <N> is a
+// zero-based index assigned in DFS-order of declaration.
+extern const char kExtractedSamplerNamePrefix[];
 
 namespace vk
 {

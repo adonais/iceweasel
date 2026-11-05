@@ -855,6 +855,65 @@ TEST_F(ImageDecoders, ICOWithANDMaskDownscaleDuringDecode) {
   CheckDownscaleDuringDecode(DownscaledTransparentICOWithANDMaskTestCase());
 }
 
+static void CheckWebPDownscaleDuringDecode(const ImageTestCase& aTestCase,
+                                           bool aScaledDecoding) {
+  bool oldValue = false;
+  Preferences::GetBool("image.webp.scaled-decoding.enabled", &oldValue);
+  Preferences::SetBool("image.webp.scaled-decoding.enabled", aScaledDecoding);
+  auto resetPref = MakeScopeExit([&] {
+    Preferences::SetBool("image.webp.scaled-decoding.enabled", oldValue);
+  });
+
+  CheckDownscaleDuringDecode(aTestCase);
+}
+
+TEST_F(ImageDecoders, WebPUnscaledDownscaleDuringDecode) {
+  CheckWebPDownscaleDuringDecode(DownscaledWebPTestCase(), false);
+}
+
+TEST_F(ImageDecoders, WebPLossyUnscaledDownscaleDuringDecode) {
+  CheckWebPDownscaleDuringDecode(DownscaledLossyWebPTestCase(), false);
+}
+
+TEST_F(ImageDecoders, WebPScaledDownscaleDuringDecode) {
+  CheckWebPDownscaleDuringDecode(DownscaledWebPTestCase(), true);
+}
+
+TEST_F(ImageDecoders, WebPLossyScaledDownscaleDuringDecode) {
+  CheckWebPDownscaleDuringDecode(DownscaledLossyWebPTestCase(), true);
+}
+
+TEST_F(ImageDecoders, TransparentWebPScaledDownscaleDuringDecode) {
+  // Images with alpha are meant to take the full-size path even with the pref
+  // on. A solid image cannot tell the two paths apart, so this only checks
+  // that the decode still succeeds and produces the right colour.
+  bool oldValue = false;
+  Preferences::GetBool("image.webp.scaled-decoding.enabled", &oldValue);
+  Preferences::SetBool("image.webp.scaled-decoding.enabled", true);
+  auto resetPref = MakeScopeExit([&] {
+    Preferences::SetBool("image.webp.scaled-decoding.enabled", oldValue);
+  });
+
+  ImageTestCase testCase = TransparentWebPTestCase();
+  IntSize outputSize(20, 20);
+
+  WithSingleChunkDecode(
+      testCase, Some(outputSize), /* aUseDecodePool */ false,
+      [&](image::Decoder* aDecoder) {
+        ASSERT_FALSE(aDecoder->HasError());
+        EXPECT_TRUE(aDecoder->GetDecodeDone());
+
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        ASSERT_TRUE(bool(currentFrame));
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
+        ASSERT_TRUE(surface != nullptr);
+
+        EXPECT_EQ(outputSize, surface->GetSize());
+        EXPECT_TRUE(IsSolidColor(surface, testCase.Color().Premultiply(),
+                                 /* aFuzz = */ 2));
+      });
+}
+
 TEST_F(ImageDecoders, JPGExifOrientationDctDownscale) {
   CheckExifOrientationDownscale(ExifOrientationDownscaleJPGTestCase());
 }

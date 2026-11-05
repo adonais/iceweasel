@@ -4,7 +4,7 @@
 
 /* import-globals-from http2_test_common.js */
 
-const { Http3ProxyFilter, NodeHTTP2ProxyServer } = ChromeUtils.importESModule(
+const { Http3ProxyFilter } = ChromeUtils.importESModule(
   "resource://testing-common/NodeServer.sys.mjs"
 );
 
@@ -65,18 +65,13 @@ add_setup(async function setup() {
   );
   pps.registerFilter(proxyFilter, 10);
 
-  let h2Proxy = new NodeHTTP2ProxyServer();
-  await h2Proxy.startWithoutProxyFilter(proxyPort);
-  Assert.equal(proxyPort, h2Proxy.port());
-
-  registerCleanupFunction(async () => {
+  registerCleanupFunction(() => {
     Services.prefs.clearUserPref("network.http.http3.enable");
     Services.prefs.clearUserPref("network.dns.localDomains");
     Services.prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
     Services.prefs.clearUserPref(
       "network.http.http3.alt-svc-mapping-for-testing"
     );
-    await h2Proxy.stop();
     pps.unregisterFilter(proxyFilter);
   });
 });

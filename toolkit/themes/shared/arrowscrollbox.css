@@ -49,11 +49,15 @@ toolbarbutton {
 
   &[disabled] {
     fill-opacity: var(--toolbarbutton-opacity-disabled);
+
+    @media (forced-colors) {
+      --toolbarbutton-icon-fill: var(--toolbarbutton-icon-fill-disabled);
+      color: var(--button-text-color-disabled);
+    }
   }
 
   > .toolbarbutton-icon {
     padding: var(--arrowscrollbox-scrollicon-padding, 0);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-radius: var(--arrowscrollbox-scrollicon-border-radius, 0);
     background-color: var(--arrowscrollbox-scrollicon-background-color, transparent);
     transition: var(--arrowscrollbox-scrollicon-transition, none);

@@ -6,10 +6,6 @@ const { FileTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/FileTestUtils.sys.mjs"
 );
 
-let { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
 let { MockFilePicker } = SpecialPowers;
 
 add_setup(async function () {
@@ -68,7 +64,7 @@ class CsvImportHelper {
       }, "waiting for menu to open");
     });
 
-    Services.telemetry.clearEvents();
+    Services.fog.testResetFOG();
 
     function getImportMenuItem() {
       let menuButton = window.document.querySelector("menu-button");
@@ -79,17 +75,11 @@ class CsvImportHelper {
 
     async function waitForFilePicker() {
       let filePickerPromise = CsvImportHelper.waitForOpenFilePicker(csvFile);
-      // First event is for opening about:logins
-      await LoginTestUtils.telemetry.waitForEventCount(
+      await Services.fog.testFlushAllChildren();
+      Assert.equal(
+        Glean.pwmgr.mgmtMenuItemUsedImportFromCsv.testGetValue().length,
         1,
-        "content",
-        "pwmgr",
-        "mgmt_menu_item_used"
-      );
-      TelemetryTestUtils.assertEvents(
-        [["pwmgr", "mgmt_menu_item_used", "import_from_csv"]],
-        { category: "pwmgr", method: "mgmt_menu_item_used" },
-        { process: "content", clear: false }
+        "One import from CSV event"
       );
 
       info("waiting for Import file picker to get opened");
@@ -178,12 +168,14 @@ class CsvImportHelper {
    */
   static async waitForImportToComplete() {
     info("Waiting for the import to complete");
-    await LoginTestUtils.telemetry.waitForEventCount(1, "parent");
-    TelemetryTestUtils.assertEvents(
-      [["pwmgr", "mgmt_menu_item_used", "import_csv_complete"]],
-      { category: "pwmgr", method: "mgmt_menu_item_used" },
-      { process: "parent" }
-    );
+    TestUtils.waitForCondition(() => {
+      return (
+        Glean.pwmgr.mgmtMenuItemUsedImportCsvComplete.testGetValue()?.length ==
+        1
+      );
+    }, "Waiting for the import to complete.");
+    // TODO: We have to sleep a bit here or the next open of the import menu fails for some reason.
+    await new Promise(resolve => setTimeout(resolve, 100)); // eslint-disable-line mozilla/no-arbitrary-setTimeout
   }
 
   /**

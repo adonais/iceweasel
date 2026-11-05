@@ -42,6 +42,59 @@ const PingServer = {
       this._defers.push(Promise.withResolvers());
       deferred.resolve(request);
     });
+    const ohttp = Cc["@mozilla.org/network/oblivious-http;1"].getService(
+      Ci.nsIObliviousHttp
+    );
+    const ohttpServer = ohttp.server();
+    this._httpServer.registerPrefixHandler("/", (request, response) => {
+      console.trace(
+        `OHTTP handler - ${request.method} ${request.scheme}://${request.host}:${request.port}${request.path}`
+      );
+      if (request.path.includes("ohttp-configs")) {
+        // OHTTP Configs Server
+        const bstream = Cc["@mozilla.org/binaryoutputstream;1"].createInstance(
+          Ci.nsIBinaryOutputStream
+        );
+        bstream.setOutputStream(response.bodyOutputStream);
+        bstream.writeByteArray(ohttpServer.encodedConfig);
+        response.setStatusLine(request.httpVersion, 200, "OK");
+      } else {
+        // OHTTP Relay Server
+        const inputStream = Cc[
+          "@mozilla.org/binaryinputstream;1"
+        ].createInstance(Ci.nsIBinaryInputStream);
+        inputStream.setInputStream(request.bodyInputStream);
+        const requestBody = inputStream.readByteArray(inputStream.available());
+        const ohttpRequest = ohttpServer.decapsulate(requestBody);
+        const bhttp = Cc["@mozilla.org/network/binary-http;1"].getService(
+          Ci.nsIBinaryHttp
+        );
+        const decodedRequest = bhttp.decodeRequest(ohttpRequest.request);
+
+        // Fake success
+        response.processAsync();
+        const bhttpResponse = {
+          status: 200,
+          headerNames: [],
+          headerValues: [],
+          content: new TextEncoder().encode(decodedRequest.content),
+        };
+        const encResponse = ohttpRequest.encapsulate(
+          bhttp.encodeResponse(bhttpResponse)
+        );
+        response.setStatusLine(request.httpVersion, 200, "OK");
+        const bstream = Cc["@mozilla.org/binaryoutputstream;1"].createInstance(
+          Ci.nsIBinaryOutputStream
+        );
+        bstream.setOutputStream(response.bodyOutputStream);
+        bstream.writeByteArray(encResponse);
+        response.finish();
+
+        let deferred = this._defers.at(-1);
+        this._defers.push(Promise.withResolvers());
+        deferred.resolve(decodedRequest);
+      }
+    });
   },
 
   start() {
@@ -74,9 +127,7 @@ const PingServer = {
   },
 
   promiseNextPing() {
-    return this.promiseNextRequest().then(request =>
-      decodeRequestPayload(request)
-    );
+    return this.promiseNextRequest().then(decodeRequestPayload);
   },
 
   async promiseNextRequests(count) {
@@ -90,7 +141,7 @@ const PingServer = {
 
   promiseNextPings(count) {
     return this.promiseNextRequests(count).then(requests => {
-      return Array.from(requests, decodeRequestPayload);
+      return Promise.all(Array.from(requests, decodeRequestPayload));
     });
   },
 };
@@ -101,7 +152,21 @@ const PingServer = {
  * @param {object} request The data representing an HTTP request (nsIHttpRequest).
  * @returns {object} The decoded ping payload.
  */
-function decodeRequestPayload(request) {
+async function decodeRequestPayload(request) {
+  if (request instanceof Ci.nsIBinaryHttpRequest) {
+    const dgzip = new DecompressionStream("gzip");
+    const stream = dgzip.readable.pipeThrough(new TextDecoderStream());
+    const writer = dgzip.writable.getWriter();
+    // For some reason we can't write the Array<octet> directly and need a new Uint8Array.
+    writer.write(new Uint8Array(request.content));
+    const writePromise = writer.close();
+    let result = "";
+    for await (const chunk of stream) {
+      result += chunk;
+    }
+    await writePromise;
+    return JSON.parse(result);
+  }
   let s = request.bodyInputStream;
   let payload = null;
 

@@ -1,6 +1,7 @@
 "use strict";
 
 const {
+  ADB,
   BaseNodeServer,
   HTTP3Server,
   NodeHTTPServer,
@@ -95,8 +96,7 @@ class NodeSNIServerCode {
       });
       socket.on("error", () => {});
     });
-    await new Promise(resolve => global.server.listen(port, resolve));
-    return global.server.address().port;
+    return ADB.listenAndForwardPort(global.server, port);
   }
 }
 
@@ -104,6 +104,7 @@ class NodeSNIServerCode {
 class NodeSNIServer extends BaseNodeServer {
   async start(port = 0) {
     this.processId = await NodeServer.fork();
+    await this.execute(ADB);
     await this.execute(NodeSNIServerCode);
     this._port = await this.execute(`NodeSNIServerCode.startServer(${port})`);
   }

@@ -61,11 +61,16 @@
  *     pointer, we ensure that if the backtrack stack has been reallocated,
  *     we will store a pointer into the current buffer, not the old one.
  *
+ * On platforms with enough registers, we also pin a copy of the
+ * regexp::Stack's limit to backtrack_stack_limit_, because it is checked on
+ * most pushes. On x86, we load the limit from memory instead.
+ *
  * Whenever we call into C++ that can reallocate the backtrack stack (that is,
  * GrowBacktrackStack or HandleRegExpInterrupt), we update the stack pointer
  * in the regexp::Stack with the current value of backtrack_stack_pointer_.
- * When we return, we reload backtrack_stack_pointer_ and backtrackStackBase,
- * and store the stack base into our local FrameData.
+ * When we return, we reload backtrack_stack_pointer_, backtrackStackBase, and
+ * (if available) backtrack_stack_limit_, and store the stack base into our
+ * local FrameData.
  *
  */
 
@@ -227,6 +232,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
 
   void StoreBacktrackStackToMemory();
   void LoadBacktrackStackFromMemory(js::jit::Address backtrackStackBaseAddr);
+  void LoadBacktrackStackRegsFromMemory();
 
  public:
   static bool GrowBacktrackStack(Stack* regexp_stack);
@@ -313,6 +319,8 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
    *     downward (like the native stack).
    * - temp0_, temp1_, temp2_:
    *     Scratch registers.
+   * - backtrack_stack_limit_:
+   *     Copy of the regexp::Stack's stack limit. Not available on x86.
    *
    * The native stack pointer is used to access arguments (InputOutputData),
    * local variables (FrameData), and irregexp's internal virtual registers
@@ -324,6 +332,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   js::jit::Register input_end_pointer_;
   js::jit::Register backtrack_stack_pointer_;
   js::jit::Register temp0_, temp1_, temp2_;
+  js::jit::Register backtrack_stack_limit_;
 
   // These labels are used in various API calls and bound (if used) in
   // GetCode. If we abort in the middle of a compilation, as may

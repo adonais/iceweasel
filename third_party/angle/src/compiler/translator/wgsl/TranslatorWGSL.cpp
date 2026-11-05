@@ -8,6 +8,7 @@
 #include "common/unsafe_buffers.h"
 
 #include <iostream>
+#include <string_view>
 #include <variant>
 
 #include "GLSLANG/ShaderLang.h"
@@ -31,7 +32,6 @@
 #include "compiler/translator/tree_ops/RewriteArrayOfArrayOfOpaqueUniforms.h"
 #include "compiler/translator/tree_ops/RewriteStructSamplers.h"
 #include "compiler/translator/tree_ops/SeparateDeclarations.h"
-#include "compiler/translator/tree_ops/SeparateStructFromUniformDeclarations.h"
 #include "compiler/translator/tree_ops/wgsl/EmulateMutableFunctionParams.h"
 #include "compiler/translator/tree_ops/wgsl/PullExpressionsIntoFunctions.h"
 #include "compiler/translator/tree_ops/wgsl/RewriteMixedTypeMathExprs.h"
@@ -146,7 +146,6 @@ class OutputWGSLTraverser : public TIntermTraverser
 {
   public:
     OutputWGSLTraverser(TInfoSinkBase *sink,
-                        const ShBuiltInResources &resources,
                         RewritePipelineVarOutput *rewritePipelineVarOutput,
                         UniformBlockMetadata *uniformBlockMetadata,
                         WGSLGenerationMetadataForUniforms *arrayElementTypesInUniforms,
@@ -181,7 +180,6 @@ class OutputWGSLTraverser : public TIntermTraverser
         EmitTypeConfig typeConfig;
         bool isParameter                                     = false;
         std::optional<WgslPointerAddressSpace> emitAsPointer = std::nullopt;
-        bool disableStructSpecifier                          = false;
         bool isDeclaration                                   = false;
         bool isGlobalScope                                   = false;
     };
@@ -224,7 +222,6 @@ class OutputWGSLTraverser : public TIntermTraverser
     bool emulateDoWhileLoop(TIntermLoop *);
 
     TInfoSinkBase &mSink;
-    const ShBuiltInResources &mResources;
     const RewritePipelineVarOutput *mRewritePipelineVarOutput;
     const UniformBlockMetadata *mUniformBlockMetadata;
     WGSLGenerationMetadataForUniforms *mWGSLGenerationMetadataForUniforms;
@@ -239,7 +236,6 @@ class OutputWGSLTraverser : public TIntermTraverser
 
 OutputWGSLTraverser::OutputWGSLTraverser(
     TInfoSinkBase *sink,
-    const ShBuiltInResources &resources,
     RewritePipelineVarOutput *rewritePipelineVarOutput,
     UniformBlockMetadata *uniformBlockMetadata,
     WGSLGenerationMetadataForUniforms *wgslGenerationMetadataForUniforms,
@@ -247,7 +243,6 @@ OutputWGSLTraverser::OutputWGSLTraverser(
     WGSLProgramPrelude *prelude)
     : TIntermTraverser(true, false, false),
       mSink(*sink),
-      mResources(resources),
       mRewritePipelineVarOutput(rewritePipelineVarOutput),
       mUniformBlockMetadata(uniformBlockMetadata),
       mWGSLGenerationMetadataForUniforms(wgslGenerationMetadataForUniforms),
@@ -278,7 +273,7 @@ void OutputWGSLTraverser::groupedTraverse(TIntermNode &node)
 
 void OutputWGSLTraverser::emitNameOf(const VarDecl &decl)
 {
-    WriteNameOf(mSink, decl.symbolType, decl.symbolName, mResources.UserVariableNamePrefix);
+    WriteNameOf(mSink, decl.symbolType, decl.symbolName, kUserVariableNamePrefix);
 }
 
 void OutputWGSLTraverser::emitIndentation()
@@ -338,12 +333,12 @@ void OutputWGSLTraverser::visitSymbol(TIntermSymbol *symbolNode)
         if (mRewritePipelineVarOutput->IsInputVar(var.uniqueId()))
         {
             mSink << kBuiltinInputStructName << ".";
-            WriteNameOf(mSink, var, mResources.UserVariableNamePrefix);
+            WriteNameOf(mSink, var, kUserVariableNamePrefix);
         }
         else if (mRewritePipelineVarOutput->IsOutputVar(var.uniqueId()))
         {
             mSink << kBuiltinOutputStructName << ".";
-            WriteNameOf(mSink, var, mResources.UserVariableNamePrefix);
+            WriteNameOf(mSink, var, kUserVariableNamePrefix);
         }
         else
         {
@@ -359,7 +354,7 @@ void OutputWGSLTraverser::visitSymbol(TIntermSymbol *symbolNode)
             {
                 mSink << "(*";
             }
-            WriteNameOf(mSink, var, mResources.UserVariableNamePrefix);
+            WriteNameOf(mSink, var, kUserVariableNamePrefix);
             if (needsDereference)
             {
                 mSink << ")";
@@ -1267,7 +1262,7 @@ void OutputWGSLTraverser::emitStructIndexNoUnwrapping(TIntermBinary *binaryNode)
 
     groupedTraverse(leftNode);
     mSink << ".";
-    WriteNameOf(mSink, getDirectField(leftNode, rightNode), mResources.UserVariableNamePrefix);
+    WriteNameOf(mSink, getDirectField(leftNode, rightNode), kUserVariableNamePrefix);
 }
 
 bool OutputWGSLTraverser::visitBinary(Visit, TIntermBinary *binaryNode)
@@ -1544,7 +1539,7 @@ void OutputWGSLTraverser::emitFunctionName(const TFunction &func)
     {
         mSink << "ANGLEfunc" << func.uniqueId().get();
     }
-    WriteNameOf(mSink, func, mResources.UserVariableNamePrefix);
+    WriteNameOf(mSink, func, kUserVariableNamePrefix);
 }
 
 void OutputWGSLTraverser::emitFunctionSignature(const TFunction &func)
@@ -1636,10 +1631,10 @@ void OutputWGSLTraverser::emitTextureBuiltin(const TOperator op, const TIntermSe
     ImmutableString wgslTextureVarName("");
     ImmutableString wgslSamplerVarName("");
 
-    constexpr char k2DCoordsSwizzle[] = ".xy";
-    constexpr char k3DCoordsSwizzle[] = ".xyz";
+    constexpr std::string_view k2DCoordsSwizzle = ".xy";
+    constexpr std::string_view k3DCoordsSwizzle = ".xyz";
 
-    constexpr char kPossibleElems[] = "xyzw";
+    constexpr std::string_view kPossibleElems = "xyzw";
 
     // MonomorphizeUnsupportedFunctions() and RewriteStructSamplers() ensure that this is a
     // reference to the global sampler.
@@ -1868,8 +1863,8 @@ void OutputWGSLTraverser::emitTextureBuiltin(const TOperator op, const TIntermSe
             ASSERT(pIndex == 1);
             const uint8_t vecSize = args[pIndex]->getAsTyped()->getNominalSize();
             ASSERT(vecSize == 3 || vecSize == 4);
-            projectionDivisionSwizzle = BuildConcatenatedImmutableString(
-                '.', ANGLE_UNSAFE_TODO(kPossibleElems[vecSize - 1]));
+            projectionDivisionSwizzle =
+                BuildConcatenatedImmutableString('.', kPossibleElems[vecSize - 1]);
         }
 
         // If sampling from an array, set the swizzle that extracts the array layer number from the
@@ -1894,18 +1889,17 @@ void OutputWGSLTraverser::emitTextureBuiltin(const TOperator op, const TIntermSe
                 elemIndex = 3;
             }
 
-            depthRefSwizzle =
-                BuildConcatenatedImmutableString('.', ANGLE_UNSAFE_TODO(kPossibleElems[elemIndex]));
+            depthRefSwizzle = BuildConcatenatedImmutableString('.', kPossibleElems[elemIndex]);
         }
 
         // Finally, set the swizzle for extracting coordinates from the p vector.
         if (IsSampler2D(samplerType) || IsSampler2DArray(samplerType))
         {
-            coordsSwizzle = ImmutableString(k2DCoordsSwizzle);
+            coordsSwizzle = ImmutableString(k2DCoordsSwizzle.data(), k2DCoordsSwizzle.size());
         }
         else if (IsSampler3D(samplerType) || IsSamplerCube(samplerType))
         {
-            coordsSwizzle = ImmutableString(k3DCoordsSwizzle);
+            coordsSwizzle = ImmutableString(k3DCoordsSwizzle.data(), k3DCoordsSwizzle.size());
         }
     }
 
@@ -2272,7 +2266,6 @@ void OutputWGSLTraverser::emitStructDeclaration(const TType &type)
         EmitVariableDeclarationConfig evdConfig;
         evdConfig.typeConfig.addressSpace =
             isInUniformAddressSpace ? WgslAddressSpace::Uniform : WgslAddressSpace::NonUniform;
-        evdConfig.disableStructSpecifier = true;
         emitVariableDeclaration({field->symbolType(), field->name(), *fieldType}, evdConfig);
         mSink << ",\n";
     }
@@ -2293,8 +2286,7 @@ void OutputWGSLTraverser::emitVariableDeclaration(const VarDecl &decl,
         return;
     }
 
-    if (basicType == TBasicType::EbtStruct && decl.type.isStructSpecifier() &&
-        !evdConfig.disableStructSpecifier)
+    if (basicType == TBasicType::EbtStruct && decl.type.isStructSpecifier())
     {
         // TODO(anglebug.com/42267100): in WGSL structs probably can't be declared in
         // function parameters or in uniform declarations or in variable declarations, or
@@ -2366,7 +2358,7 @@ void OutputWGSLTraverser::emitVariableDeclaration(const VarDecl &decl,
               << ", ";
     }
 
-    WriteWgslType(mSink, mResources, decl.type, evdConfig.typeConfig);
+    WriteWgslType(mSink, decl.type, evdConfig.typeConfig);
 
     if (isOutParam || evdConfig.emitAsPointer)
     {
@@ -2620,12 +2612,12 @@ void OutputWGSLTraverser::visitPreprocessorDirective(TIntermPreprocessorDirectiv
 
 void OutputWGSLTraverser::emitBareTypeName(const TType &type)
 {
-    WriteWgslBareTypeName(mSink, mResources, type, {});
+    WriteWgslBareTypeName(mSink, type, {});
 }
 
 void OutputWGSLTraverser::emitType(const TType &type)
 {
-    WriteWgslType(mSink, mResources, type, {});
+    WriteWgslType(mSink, type, {});
 }
 
 // Unlike Vulkan having auto viewport flipping extension, in WGPU we have to flip gl_Position.y
@@ -2737,7 +2729,7 @@ bool TranslatorWGSL::preTranslateTreeModifications(TIntermBlock *root,
 
     // TODO(anglebug.com/42267100): just use the struct mode to avoid a rewrite of the interface
     // block by ReduceInterfaceBlocks into a struct.
-    DriverUniform driverUniforms(DriverUniformMode::InterfaceBlock);
+    DriverUniform driverUniforms(DriverUniformMode::InterfaceBlock, SH_WGSL_OUTPUT);
     ASSERT(getShaderType() != GL_COMPUTE_SHADER);
     driverUniforms.addGraphicsDriverUniformsToShader(root, &getSymbolTable());
 
@@ -2779,6 +2771,15 @@ bool TranslatorWGSL::preTranslateTreeModifications(TIntermBlock *root,
         {
             return false;
         }
+
+        if (aggregateTypesUsedForUniforms > 0)
+        {
+            // Requires MonomorphizeUnsupportedFunctions() to have been run already.
+            if (!RewriteStructSamplers(this, root, &getSymbolTable()))
+            {
+                return false;
+            }
+        }
     }
     else
     {
@@ -2810,22 +2811,6 @@ bool TranslatorWGSL::preTranslateTreeModifications(TIntermBlock *root,
 
         // Replace root's sequence with |replacement|.
         root->replaceAllChildren(std::move(replacement));
-    }
-
-    if (aggregateTypesUsedForUniforms > 0)
-    {
-        if (!SeparateStructFromUniformDeclarations(this, root, &getSymbolTable()))
-        {
-            return false;
-        }
-
-        int removedUniformsCount;
-
-        // Requires MonomorphizeUnsupportedFunctions() to have been run already.
-        if (!RewriteStructSamplers(this, root, &getSymbolTable(), &removedUniformsCount))
-        {
-            return false;
-        }
     }
 
     // Replace array of array of opaque uniforms with a flattened array.  This is run after
@@ -2935,14 +2920,14 @@ bool TranslatorWGSL::translate(TIntermBlock *root,
 
     // Generate the body of the WGSL including the GLSL main() function.
     TInfoSinkBase traverserOutput;
-    OutputWGSLTraverser traverser(&traverserOutput, getResources(), &rewritePipelineVarOutput,
+    OutputWGSLTraverser traverser(&traverserOutput, &rewritePipelineVarOutput,
                                   &uniformBlockMetadata, &wgslGenerationMetadataForUniforms,
                                   &overloadedFunctions, &prelude);
     root->traverse(&traverser);
 
     // The makeup of the prelude is determined by the traverser, and then must be outputted near the
     // top of the program.
-    prelude.outputPrelude(sink, getResources());
+    prelude.outputPrelude(sink);
 
     // Start writing the output structs that will be referred to by the `traverser`'s output.'
     if (!rewritePipelineVarOutput.OutputStructs(sink))
@@ -2958,15 +2943,14 @@ bool TranslatorWGSL::translate(TIntermBlock *root,
     }
 
     sink << "\n";
-    OutputUniformWrapperStructsAndConversions(sink, getResources(),
-                                              wgslGenerationMetadataForUniforms);
+    OutputUniformWrapperStructsAndConversions(sink, wgslGenerationMetadataForUniforms);
 
     // The traverser output needs to be in the code after uniform wrapper structs are emitted above,
     // since the traverser code references the wrapper struct types.
     sink << traverserOutput.str();
 
     // Write the actual WGSL main function, wgslMain(), which calls the GLSL main function.
-    if (!rewritePipelineVarOutput.OutputMainFunction(sink, getUserVariableNamePrefix()))
+    if (!rewritePipelineVarOutput.OutputMainFunction(sink))
     {
         ANGLE_LOG(ERR) << "Failed to output WGSL main function";
         return false;

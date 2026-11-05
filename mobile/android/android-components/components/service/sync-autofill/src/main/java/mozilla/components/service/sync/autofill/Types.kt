@@ -6,7 +6,6 @@ package mozilla.components.service.sync.autofill
 
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCard
-import mozilla.components.concept.storage.CreditCardNumber
 import mozilla.components.concept.storage.UpdatableAddressFields
 import mozilla.components.concept.storage.UpdatableCreditCardFields
 
@@ -31,15 +30,9 @@ internal fun UpdatableAddressFields.into(): mozilla.appservices.autofill.Updatab
 
 /** Conversion from a generic [UpdatableCreditCardFields] into its comrade within the 'autofill' lib. */
 internal fun UpdatableCreditCardFields.into(): mozilla.appservices.autofill.UpdatableCreditCardFields {
-    val encryptedCardNumber =
-        when (this.cardNumber) {
-            is CreditCardNumber.Encrypted -> this.cardNumber.number
-            is CreditCardNumber.Plaintext -> throw AutofillStorageException.TriedToPersistPlaintextCardNumber()
-        }
     return mozilla.appservices.autofill.UpdatableCreditCardFields(
         ccName = this.billingName,
-        ccNumberEnc = encryptedCardNumber,
-        ccNumberLast4 = this.cardNumberLast4,
+        ccNumber = this.cardNumber,
         ccExpMonth = this.expiryMonth,
         ccExpYear = this.expiryYear,
         ccType = this.cardType,
@@ -72,7 +65,7 @@ internal fun mozilla.appservices.autofill.CreditCard.into(): CreditCard {
     return CreditCard(
         guid = this.guid,
         billingName = this.ccName,
-        encryptedCardNumber = CreditCardNumber.Encrypted(this.ccNumberEnc),
+        cardNumber = this.ccNumber,
         cardNumberLast4 = this.ccNumberLast4,
         expiryMonth = this.ccExpMonth,
         expiryYear = this.ccExpYear,

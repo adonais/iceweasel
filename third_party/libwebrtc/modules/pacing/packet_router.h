@@ -56,12 +56,13 @@ class PacketRouter : public PacingController::PacketSender {
       absl::AnyInvocable<void(const RtpPacketToSend& packet,
                               const PacedPacketInfo& pacing_info)> callback);
 
-  // If `set_transport_seq` is true, PacketRouter generates transport sequence
-  // numbers for all RTP packets even if transport sequence number header
-  // extension has not been negotiated. If `send_rtp_packets_as_ect1` is true,
-  // packets will be requested to be sent as ect1.
-  void ConfigureForRtcpFeedback(bool set_transport_seq,
-                                bool send_rtp_packets_as_ect1);
+  // If `generate` is true, PacketRouter generates transport sequence numbers
+  // for all RTP packets even if transport sequence number header extension has
+  // not been negotiated.
+  void SetGenerateTransportSequenceNumbers(bool generate);
+
+  // If `send_as_ect1` is true, packets will be requested to be sent as ECT(1).
+  void SetSendPacketsAsEct1(bool send_as_ect1);
 
   void AddSendRtpModule(RtpRtcpInterface* rtp_module, bool remb_candidate);
   void RemoveSendRtpModule(RtpRtcpInterface* rtp_module);

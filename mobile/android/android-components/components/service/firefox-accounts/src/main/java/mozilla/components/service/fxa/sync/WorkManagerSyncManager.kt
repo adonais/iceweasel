@@ -571,12 +571,6 @@ internal class WorkManagerSyncWorker(
                 SyncEngine.Bookmarks -> it.value.lazyStore.value.registerWithSyncManager()
                 SyncEngine.CreditCards -> {
                     it.value.lazyStore.value.registerWithSyncManager()
-
-                    checkNotNull(it.value.keyProvider) {
-                        "CreditCards store must be configured with a KeyProvider"
-                    }
-
-                    engineKeyProviders[it.key] = it.value.keyProvider!!.value
                 }
                 SyncEngine.Addresses -> {
                     it.value.lazyStore.value.registerWithSyncManager()

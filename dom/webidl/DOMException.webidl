@@ -64,7 +64,7 @@ Exception includes ExceptionMembers;
 // XXXkhuey this is an 'exception', not an interface, but we don't have any
 // parser or codegen mechanisms for dealing with exceptions.
 [ExceptionClass,
- Exposed=(Window, Worker),
+ Exposed=*,
  Serializable]
 interface DOMException {
   constructor(optional DOMString message = "", optional DOMString name);

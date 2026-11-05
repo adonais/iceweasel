@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<html id="one-pixel-client" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Sizes</title>
+    <style>
+      :root {
+        min-width: 200px;
+        min-height: 100px;
+        max-width: 400px;
+        max-height: 300px;
+      }
+      :root:target {
+        min-height: 0;
+      }
+      :root, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: clip;
+      }
+      #content {
+        width: 400px;
+        height: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="content">Window content</div>
+  </body>
+</html>

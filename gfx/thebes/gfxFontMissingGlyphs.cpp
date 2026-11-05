@@ -158,6 +158,8 @@ static inline already_AddRefed<SourceSurface> GetGlyphAtlas(
     return surface.forget();
   }
 
+  delete currAtlas;
+
   // Make a new atlas in the color we want.
   GlyphAtlas* atlas = MakeGlyphAtlas(color);
   RefPtr<SourceSurface> surface = atlas ? atlas->Surface() : nullptr;

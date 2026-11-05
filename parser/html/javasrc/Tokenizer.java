@@ -1003,9 +1003,10 @@ public class Tokenizer implements Locator, Locator2 {
         // CPPONLY:   return digitAtom;
         // CPPONLY: }
         // CPPONLY:
-        String str = Portability.newStringFromBuffer(strBuf, 0, strBufLen
-            // CPPONLY: , tokenHandler, attributeName.isUseAtom() ? interner : null
-        );
+        // CPPONLY: String str = AtomizeAttributeValueOrNewString();
+        // [NOCPP[
+        String str = Portability.newStringFromBuffer(strBuf, 0, strBufLen);
+        // ]NOCPP]
         clearStrBufAfterUse();
         return str;
     }

@@ -12,7 +12,6 @@
 
 #import <ScreenCaptureKit/ScreenCaptureKit.h>
 
-#include "absl/base/attributes.h"
 #include "api/sequence_checker.h"
 
 #include <memory>
@@ -37,8 +36,7 @@ class API_AVAILABLE(macos(14.0)) SckPickerProxy {
     return SCContentSharingPicker.sharedPicker;
   }
 
-  ABSL_MUST_USE_RESULT std::optional<DesktopCapturer::SourceId>
-      AcquireSourceId() {
+  [[nodiscard]] std::optional<DesktopCapturer::SourceId> AcquireSourceId() {
     MutexLock lock(&mutex_);
     if (AtCapacityLocked()) {
       return std::nullopt;

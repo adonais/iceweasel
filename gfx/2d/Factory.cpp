@@ -685,9 +685,9 @@ already_AddRefed<ScaledFont> Factory::CreateScaledFontForDWriteFont(
 #endif  // WIN32
 
 already_AddRefed<DrawTarget> Factory::CreateDrawTargetWithSkCanvas(
-    SkCanvas* aCanvas) {
+    SkCanvas* aCanvas, bool aSupportsGlyphSourceText) {
   RefPtr newTarget = MakeRefPtr<DrawTargetSkia>();
-  if (!newTarget->Init(aCanvas)) {
+  if (!newTarget->Init(aCanvas, aSupportsGlyphSourceText)) {
     return nullptr;
   }
   return newTarget.forget();

@@ -506,7 +506,7 @@ addAccessibleTask(
       content.document.querySelector("#f").remove();
     });
   },
-  { chrome: false, iframe: true, remoteIframe: true }
+  { chrome: true, iframe: true, remoteIframe: true }
 );
 
 /**

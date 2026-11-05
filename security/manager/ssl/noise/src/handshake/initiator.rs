@@ -5,7 +5,7 @@
 //! Noise initiator handshake
 
 use crate::{
-    ec::{sec1_ec2_key_to_der, P256_X962_LENGTH},
+    ec::{ec2_pubkey_to_uncompressed_sec1, sec1_ec2_key_to_der, P256_X962_LENGTH},
     handshake::{HandshakeType, TAG_LEN},
     Channel, Error, Result, SymmetricState,
 };
@@ -66,14 +66,7 @@ impl InitiatorHandshake {
     ///
     /// [0]: https://fidoalliance.org/specs/fido-v2.3-ps-20260226/fido-client-to-authenticator-protocol-v2.3-ps-20260226.html#hybrid-qr-initiated
     pub fn new_qr_initiated(psk: &[u8; 32], local_identity: EcdhKeypair) -> Result<Self> {
-        let local_pub = local_identity.public.key_data()?;
-
-        if local_pub.len() != P256_X962_LENGTH
-            || local_pub.first().is_none_or(|&b| b != 4)
-        {
-            // Doesn't look like a raw P256 public key!
-            return Err(Error::InvalidArgument);
-        }
+        let local_pub = ec2_pubkey_to_uncompressed_sec1(&local_identity.public)?;
 
         let mut ss = SymmetricState::initialize_symmetric(HandshakeType::KNpsk0);
         ss.mix_hash(&[1]);
@@ -116,11 +109,8 @@ impl InitiatorHandshake {
         ss.mix_key_and_hash(psk, Mode::Encrypt)?;
 
         let ephemeral_key = ecdh_keygen(&EcCurve::P256)?;
-        let ephemeral_key_bytes: [u8; P256_X962_LENGTH] = ephemeral_key
-            .public
-            .key_data()?
-            .try_into()
-            .map_err(|_| Error::Internal)?;
+        let ephemeral_key_bytes: [u8; P256_X962_LENGTH] =
+            ec2_pubkey_to_uncompressed_sec1(&ephemeral_key.public)?;
 
         ss.mix_hash(&ephemeral_key_bytes);
         ss.mix_key(&ephemeral_key_bytes, Mode::Encrypt)?;

@@ -42,7 +42,7 @@ add_setup(async function os_key_store_setup() {
   });
 });
 
-let rootDir = do_get_file("chromefiles/", true);
+let rootDir = do_get_tempdir();
 
 function checkCardsAreEqual(importedCard, testCard, id) {
   const CC_NUMBER_RE = /^(\•+)(.{4})$/;

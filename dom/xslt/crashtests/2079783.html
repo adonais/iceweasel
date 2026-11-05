@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<body>
+<script>
+let fired = false;
+function onDCL() {
+  if (fired) return;
+  fired = true;
+  for (let i = 0; i < 5; i++) {
+    let x = new XMLHttpRequest();
+    x.open("GET", "2079783-blank.txt?" + i, false);
+    try { x.send(); } catch (e) {}
+  }
+}
+let f = document.createElement("iframe");
+f.src = "2079783-source.xml";
+f.addEventListener("load", () => {
+  setTimeout(() => document.documentElement.classList.remove("reftest-wait"), 0);
+});
+document.body.appendChild(f);
+let hooked = false;
+function poll() {
+  let d = f.contentDocument;
+  if (d && d.contentType != "text/html") {
+    d.addEventListener("DOMContentLoaded", onDCL);
+    hooked = true;
+  }
+  if (!hooked) setTimeout(poll, 0);
+}
+poll();
+</script>
+</body>
+</html>

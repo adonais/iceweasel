@@ -910,13 +910,13 @@ JSOutOfMemory:
   glean:
     metric: memory
 
-
 LastInteractionDuration:
   description: >
     How long the user had been inactive in seconds if the user was inactive
     at crash.  The value is not set if the user state was active.
   type: u64
   scope: ping
+  skip_if: "0"
   glean:
     type: timespan
     time_unit: second
@@ -974,6 +974,18 @@ MacAvailableMemorySysctl:
     Expected to be a percentage integer value.
   type: u32
   scope: report
+
+MacStartupRunLoop:
+  description: >
+    Names of the app delegate and run loop events seen while InitializeMacApp()
+    spins the native run loop during startup, in order, followed by the number
+    of run loop wake-ups and the milliseconds since the loop started at the last
+    one. Only present if the process crashed or hung inside that loop. macOS
+    only, early beta or earlier.
+  type: string
+  scope: report
+  bugs:
+    - 1610213
 
 Marionette:
   description: >

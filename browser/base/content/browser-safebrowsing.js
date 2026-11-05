@@ -86,7 +86,7 @@ var gSafeBrowsing = {
         docURI.spec.startsWith("about:blocked?e=deceptiveBlocked")
       ) {
         let actor = global.getActor("BlockedSite");
-        actor.sendQuery("DeceptiveBlockedDetails").then(data => {
+        actor.sendQuery("DeceptiveBlockedDetails").then(async data => {
           let reportUrl = gSafeBrowsing.getReportURL(
             "PhishMistake",
             data.blockedInfo
@@ -94,16 +94,14 @@ var gSafeBrowsing = {
           if (reportUrl) {
             openTrustedLinkIn(reportUrl, "tab");
           } else {
-            let bundle = Services.strings.createBundle(
-              "chrome://browser/locale/safebrowsing/safebrowsing.properties"
-            );
-            Services.prompt.alert(
-              window,
-              bundle.GetStringFromName("errorReportFalseDeceptiveTitle"),
-              bundle.formatStringFromName("errorReportFalseDeceptiveMessage", [
-                data.blockedInfo.provider,
-              ])
-            );
+            let l10n = new Localization([
+              "browser/safebrowsing/blockedSite.ftl",
+            ]);
+            let [title, message] = await l10n.formatValues([
+              "safeb-report-false-deceptive-error-title",
+              "safeb-report-false-deceptive-error-message",
+            ]);
+            Services.prompt.alert(window, title, message);
           }
         });
       }

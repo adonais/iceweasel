@@ -21,7 +21,6 @@
   --sidebar-panel-list-item-height: var(--size-item-large);
   --sidebar-panel-subheading-min-height: auto;
   --sidebar-panel-subheading-padding-block: var(--space-medium);
-  --sidebar-panel-header-heading-margin-block: var(--space-large);
   --sidebar-panel-scrollable-margin-inline-end: 0;
   --sidebar-panel-scrollable-padding-inline-end: var(--space-xsmall);
 
@@ -29,7 +28,6 @@
     --sidebar-panel-list-item-height: 28px;
     --sidebar-panel-subheading-min-height: 36px;
     --sidebar-panel-subheading-padding-block: 0;
-    --sidebar-panel-header-heading-margin-block: var(--space-medium);
 
     @media -moz-pref("sidebar.verticalTabs") {
       --sidebar-panel-scrollable-margin-inline-end: calc(-1 * var(--space-large) + 1px);
@@ -68,7 +66,11 @@ moz-card {
     border: none;
 
     &::part(moz-card-heading-wrapper) {
-      padding-inline: 8px;
+      padding-inline: var(--space-small);
+    }
+    .notabs {
+      padding-inline: var(--space-small);
+      color: var(--text-color-deemphasized);
     }
   }
 
@@ -92,6 +94,9 @@ moz-card {
   display: flex;
   flex-direction: column;
   padding: var(--space-large);
+  @media -moz-pref("browser.nova.enabled") {
+    padding-block-start: var(--space-small);
+  }
   box-sizing: border-box;
   border-radius: var(--border-radius-medium);
   width: 100%;
@@ -150,6 +155,7 @@ fxview-empty-state {
   display: flex;
   width: 100%;
   align-items: center;
+  margin-block-end: var(--space-large);
 }
 
 moz-input-search {

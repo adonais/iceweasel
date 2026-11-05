@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.ServiceState
+import mozilla.components.feature.ipprotection.storage.IPProtectionEligibilityStorage
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.AccountState
@@ -18,6 +19,8 @@ import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.LocationListUpdateState
 import mozilla.components.feature.ipprotection.store.state.LocationState
+import mozilla.components.feature.ipprotection.store.state.PendingActivationRequest
+import mozilla.components.feature.ipprotection.store.state.ProxyActivation
 import mozilla.components.feature.ipprotection.store.state.ProxyStatus
 import mozilla.components.feature.ipprotection.store.state.Uninitialized
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
@@ -50,17 +53,27 @@ internal fun buildStore(
 }
 
 internal fun buildIPProtectionState(
+    remainingDataBytes: Long = -1L,
+    maxDataBytes: Long = -1L,
+    resetDate: String? = null,
     accountStatus: AccountStatus = AccountStatus.Authenticated,
     serviceStatus: ServiceState = ServiceState.Uninitialized,
     proxyStatus: ProxyStatus = Uninitialized,
     eligibilityStatus: EligibilityStatus = EligibilityStatus.Unknown,
     updateState: LocationListUpdateState = LocationListUpdateState.NotRequested,
+    pendingActivationRequest: PendingActivationRequest? = null,
+    proxyActivation: ProxyActivation = ProxyActivation.Idle,
 ): IPProtectionState {
     return IPProtectionState(
+        remainingDataBytes = remainingDataBytes,
+        maxDataBytes = maxDataBytes,
+        resetDate = resetDate,
         accountState = AccountState(accountStatus),
         serviceStatus = serviceStatus,
         proxyStatus = proxyStatus,
         eligibilityStatus = eligibilityStatus,
         locationState = LocationState(updateState = updateState),
+        proxyActivation = proxyActivation,
+        pendingActivationRequest = pendingActivationRequest,
     )
 }

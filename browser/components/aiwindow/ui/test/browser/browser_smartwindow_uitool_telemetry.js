@@ -71,6 +71,43 @@ add_task(async function test_recordBrowserActionPromptResponse() {
   }
 });
 
+const PROMPT_TOGGLE_ALL_CASES = [
+  {
+    name: "select all from a chat request",
+    location: "sidebar",
+    chat_id: "test-chat-toggle-1",
+    message_seq: 3,
+    action: "close_tabs",
+    prompt_type: "safety_confirmation",
+    entrypoint: "browser_action",
+    toggle: "select_all",
+    candidates: 4,
+  },
+  {
+    name: "deselect all from a resume pill",
+    location: "fullpage",
+    chat_id: "test-chat-toggle-2",
+    message_seq: 2,
+    action: "open_tabs",
+    prompt_type: "safety_confirmation",
+    entrypoint: "resume",
+    toggle: "deselect_all",
+    candidates: 3,
+  },
+];
+
+add_task(async function test_recordBrowserActionPromptToggleAll() {
+  for (const { name, ...testData } of PROMPT_TOGGLE_ALL_CASES) {
+    Services.fog.testResetFOG();
+    ToolUITelemetry.recordBrowserActionPromptToggleAll(testData);
+    assertGleanEvent(
+      Glean.smartWindow.browserActionPromptToggleAll,
+      testData,
+      `prompt toggle all ${name}`
+    );
+  }
+});
+
 const UNDO_CASES = [
   {
     name: "success",

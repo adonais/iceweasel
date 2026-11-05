@@ -24,3 +24,7 @@ LOCAL_INCLUDES += ["/third_party/abseil-cpp"]
 
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "ConfigHelpers.h",
+]

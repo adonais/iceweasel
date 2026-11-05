@@ -621,7 +621,7 @@ class TestChecksConfigure(unittest.TestCase):
             args=["--with-java-bin-path=%s" % mozpath.dirname(alt_java)],
         )
         self.assertEqual(status, 0)
-        self.assertEqual(config, {"JAVA": alt_java, "MOZ_JAVA_CODE_COVERAGE": False})
+        self.assertEqual(config, {"JAVA": alt_java})
         self.assertEqual(
             out,
             textwrap.dedent(
@@ -641,7 +641,7 @@ class TestChecksConfigure(unittest.TestCase):
             args=["--with-java-bin-path=%s" % mozpath.dirname(alt_java)],
         )
         self.assertEqual(status, 0)
-        self.assertEqual(config, {"JAVA": alt_java, "MOZ_JAVA_CODE_COVERAGE": False})
+        self.assertEqual(config, {"JAVA": alt_java})
         self.assertEqual(
             out,
             textwrap.dedent(
@@ -652,23 +652,11 @@ class TestChecksConfigure(unittest.TestCase):
             ),
         )
 
-        # --enable-java-coverage should set MOZ_JAVA_CODE_COVERAGE.
-        alt_java_home = mozpath.dirname(mozpath.dirname(java))
-        config, out, status = run_configure_java(
-            paths,
-            mock_java_home=alt_java_home,
-            mock_path=mozpath.dirname(java),
-            args=["--enable-java-coverage"],
-        )
-        self.assertEqual(status, 1)
-        self.assertEqual(config, {})
-
         # Any missing tool is fatal when these checks run.
         paths = {}
         config, out, status = run_configure_java(
             mock_fs_paths={},
             mock_path=mozpath.dirname(java),
-            args=["--enable-java-coverage"],
         )
         self.assertEqual(status, 1)
         self.assertEqual(config, {})

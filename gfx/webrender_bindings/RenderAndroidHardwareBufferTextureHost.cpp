@@ -147,7 +147,10 @@ void RenderAndroidHardwareBufferTextureHost::DeleteTextureHandle() {
     return;
   }
   MOZ_ASSERT(mGL);
-  mGL->fDeleteTextures(1, &mTextureHandle);
+  // Deferred destruction may run with a different GL context current.
+  if (mGL->MakeCurrent()) {
+    mGL->fDeleteTextures(1, &mTextureHandle);
+  }
   mTextureHandle = 0;
 }
 

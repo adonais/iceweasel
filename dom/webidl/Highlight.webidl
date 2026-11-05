@@ -30,19 +30,7 @@ interface Highlight {
 
   [Throws]
   constructor(AbstractRange... initialRanges);
-  setlike<AbstractRange>;
+  [DOMBackedStorage] setlike<AbstractRange>;
   attribute long priority;
   attribute HighlightType type;
-};
-
-partial interface Highlight {
-  // Setlike methods need to be overridden.
-  // Iterating a setlike is not possible from C++ yet.
-  // Therefore a separate data structure must be held and kept in sync.
-  [Throws]
-  Highlight add(AbstractRange range);
-  [Throws]
-  undefined clear();
-  [Throws]
-  boolean delete(AbstractRange range);
 };

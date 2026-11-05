@@ -1,0 +1,14 @@
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">
+  <title>Filled circles, ellipses and rounded rects</title>
+  <!-- Large shapes so that they are considered worth making active. -->
+  <circle cx="100" cy="100" r="80" fill="green"/>
+  <ellipse cx="300" cy="100" rx="90" ry="50" fill="blue"/>
+  <rect x="20" y="200" width="160" height="80" rx="20" fill="red"/>
+  <rect x="220" y="200" width="160" height="80" rx="60" ry="20" fill="purple"/>
+  <!-- Radii larger than half the size are clamped. -->
+  <rect x="200" y="20" width="40" height="40" rx="100" fill="orange"/>
+  <!-- fill-opacity and opacity are folded into the color. -->
+  <circle cx="100" cy="100" r="40" fill="black" fill-opacity="0.5" opacity="0.5"/>
+</svg>

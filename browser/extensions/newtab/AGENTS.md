@@ -61,6 +61,29 @@ The version is when the workaround can be removed (once that Firefox version hit
 - If you must depend on an external change, add a `@backward-compat` comment and plan the removal
 - The `newtabTrainhop` escape hatch in `AboutNewTabChild.sys.mjs` allows overriding the XPI-bundled content with a locally-built version for testing train-hop changes before they ship
 
+### Design tokens
+
+Design tokens (`--space-*`, `--color-*`, `--dialog-*` and so on) are defined in `toolkit/themes/shared/design-system/` and ride the release train. A train-hopped New Tab only gets the tokens of the Firefox it runs on, and an undefined token silently drops the declaration (Bug 2080654: dialogs turned transparent on 158 and 159). Custom properties defined under `browser/extensions/newtab/` ship in the XPI and are exempt, but only when every token their value references is also defined there or is on Release: `--x: var(--new-platform-token)` breaks just the same.
+
+When you write or review a change under `browser/extensions/newtab/` that adds or changes a `var(--…)` reference (CSS, SCSS, inline styles, a token rename, a regenerated `content-src/styles/nova/_tokens.scss`), check the tokens it references against Release:
+
+1. List the distinct token names on the added or changed lines, including lines that only moved in a regenerated file, and check each name once. Drop names defined under `browser/extensions/newtab/`, but keep the names their values reference.
+2. Query them all in one call, with `--space-large` as a control. Keep the quotes, and raise `-l` above the number of names:
+   ```
+   searchfox-cli -R mozilla-release -r -l 500 "--query=--(space-large|dialog-border-color|dialog-padding):|moz-pref" -p ^toolkit/themes/shared/design-system/dist/tokens-
+   ```
+3. Read the result:
+   - No `--space-large` line, or an error: the query failed. Report the names as unverified on Release rather than guessing.
+   - A match counts only in `tokens-shared.css` or `tokens-brand.css`, above that file's `moz-pref("browser.nova.enabled")` line. Anything below that line is Nova-only, which New Tab doesn't get from the platform.
+   - A name with no counted match that is also missing from the local `toolkit/themes/shared/design-system/dist/tokens-shared.css` doesn't exist at all: flag it as a phantom token, not a train-hop issue.
+   - Any other name with no counted match is newer than Release. Run the same query against `-R mozilla-beta` for those names.
+4. For each newer token, either use a token that is on Release, or fall back to the one its definition on main aliases and mark it:
+   ```scss
+   // @backward-compat { version 160 }
+   border-radius: var(--dialog-border-radius, var(--popup-border-radius));
+   ```
+   The version is the first Firefox that ships the token: the Release version plus 1 if Beta has it, plus 2 if only main does. Read the Release version from `searchfox-cli -R mozilla-release --get-file browser/config/version.txt`, since a local checkout may be behind.
+
 ## Nova CSS
 - Nova-specific CSS must be scoped under `.nova-enabled` — the CSS file switcher has been removed. Flag any nova styles not behind this class.
 

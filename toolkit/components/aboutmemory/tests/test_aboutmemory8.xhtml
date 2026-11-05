@@ -1,0 +1,154 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/css" href="chrome://global/skin"?>
+<?xml-stylesheet type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css"?>
+<window title="about:memory"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"/>
+
+  <!-- This file tests "Measure and save…", both with a file picker that
+       supports save mode and with one that doesn't, like GeckoView's. -->
+
+  <!-- test results are displayed in the html:body -->
+  <body xmlns="http://www.w3.org/1999/xhtml"></body>
+
+  <iframe id="amFrame"  height="400" src="about:memory"></iframe>
+
+  <script type="application/javascript">
+  <![CDATA[
+  "use strict";
+
+  const { Integration } = ChromeUtils.importESModule(
+    "resource://gre/modules/Integration.sys.mjs"
+  );
+  const { MockRegistrar } = ChromeUtils.importESModule(
+    "resource://testing-common/MockRegistrar.sys.mjs"
+  );
+  const MockFilePicker = SpecialPowers.MockFilePicker;
+
+  const noSaveModePicker = {
+    QueryInterface: ChromeUtils.generateQI(["nsIFilePicker"]),
+    init(aBrowsingContext, aTitle, aMode) {
+      if (aMode == Ci.nsIFilePicker.modeSave) {
+        throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+      }
+    },
+    get defaultString() {
+      return "";
+    },
+    set defaultString(aValue) {},
+  };
+
+  function localFile(aPath) {
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    file.initWithPath(aPath);
+    return file;
+  }
+
+  // about:memory replaces mainDiv whenever it shows a message.
+  async function clickSaveAndGetMessage() {
+    let doc = document.getElementById("amFrame").contentDocument;
+    let oldMain = doc.getElementById("mainDiv");
+    doc.getElementById("measureAndSaveButton").click();
+    await SimpleTest.promiseWaitForCondition(
+      () => doc.getElementById("mainDiv") != oldMain,
+      "about:memory shows the outcome of saving"
+    );
+    return doc.getElementById("mainDiv").firstChild;
+  }
+
+  async function withNoSaveModePicker(aDownloadsDir, aFunc) {
+    let cid = MockRegistrar.register(
+      "@mozilla.org/filepicker;1",
+      noSaveModePicker
+    );
+    let downloadsOverride = () => ({
+      getSystemDownloadsDirectory: () => Promise.resolve(aDownloadsDir),
+    });
+    Integration.downloads.register(downloadsOverride);
+    try {
+      // XPConnect reports the exception thrown by noSaveModePicker.init().
+      SimpleTest.expectUncaughtException();
+      return await aFunc();
+    } finally {
+      Integration.downloads.unregister(downloadsOverride);
+      MockRegistrar.unregister(cid);
+    }
+  }
+
+  add_setup(async function () {
+    await SimpleTest.promiseFocus(window);
+  });
+
+  add_task(async function test_picker_with_save_mode() {
+    let tmpDir = await IOUtils.createUniqueDirectory(
+      PathUtils.tempDir,
+      "aboutmemory-save"
+    );
+    let picked = PathUtils.join(tmpDir, "picked.json.gz");
+    let modesWhenConfigured = [];
+    MockFilePicker.init(window.browsingContext);
+    try {
+      MockFilePicker.setFiles([localFile(picked)]);
+      MockFilePicker.appendFilterCallback = fp =>
+        modesWhenConfigured.push(fp.mode);
+      MockFilePicker.appendFiltersCallback = fp =>
+        modesWhenConfigured.push(fp.mode);
+
+      let msg = await clickSaveAndGetMessage();
+      ok(
+        msg.textContent.startsWith("Saved memory reports to " + picked),
+        "saved to the picked file: " + msg.textContent
+      );
+      ok(await IOUtils.exists(picked), "the picked file exists");
+      ok(
+        modesWhenConfigured.length &&
+          modesWhenConfigured.every(m => m == Ci.nsIFilePicker.modeSave),
+        "filters are added after init()"
+      );
+    } finally {
+      MockFilePicker.cleanup();
+      await IOUtils.remove(tmpDir, { recursive: true });
+    }
+  });
+
+  add_task(async function test_picker_without_save_mode() {
+    let tmpDir = await IOUtils.createUniqueDirectory(
+      PathUtils.tempDir,
+      "aboutmemory-save"
+    );
+    try {
+      let msg = await withNoSaveModePicker(tmpDir, clickSaveAndGetMessage);
+      let fallback = PathUtils.join(tmpDir, "memory-report.json.gz");
+      ok(
+        msg.textContent.startsWith("Saved memory reports to " + fallback),
+        "saved to the downloads directory: " + msg.textContent
+      );
+      ok(await IOUtils.exists(fallback), "the fallback file exists");
+    } finally {
+      await IOUtils.remove(tmpDir, { recursive: true });
+    }
+  });
+
+  add_task(async function test_fallback_failure_is_reported() {
+    let tmpDir = await IOUtils.createUniqueDirectory(
+      PathUtils.tempDir,
+      "aboutmemory-save"
+    );
+    try {
+      let notADirectory = PathUtils.join(tmpDir, "not-a-directory");
+      await IOUtils.writeUTF8(notADirectory, "");
+      let msg = await withNoSaveModePicker(
+        notADirectory,
+        clickSaveAndGetMessage
+      );
+      ok(
+        msg.classList.contains("badInputWarning"),
+        "a failure to save is reported: " + msg.textContent
+      );
+    } finally {
+      await IOUtils.remove(tmpDir, { recursive: true });
+    }
+  });
+  ]]>
+  </script>
+</window>

@@ -276,3 +276,104 @@ defaultagent:
     send_in_pings:
       - default-agent
     unit: days
+
+install:
+  has_win_package_id:
+    type: boolean
+    description: >
+      Whether this installation is a packaged (MSIX) install, such as one from
+      the Microsoft Store. The same value as `system.has_win_package_id` in the
+      main browser's pings.
+    lifetime: application
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079741
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079741
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - install-update@mozilla.com
+    expires: never
+    send_in_pings:
+      - default-agent
+
+  win_package_family_name:
+    type: string
+    description: >
+      The Windows package family name of this installation, which identifies
+      the MSIX package it came from, for example the Microsoft Store package.
+      Only recorded for packages published by Mozilla, that is, family names
+      starting with "Mozilla." or "MozillaCorporation.", as for
+      `system.win_package_family_name` in the main browser's pings.
+    lifetime: application
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079741
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079741
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - install-update@mozilla.com
+    expires: never
+    send_in_pings:
+      - default-agent
+
+  installer_type:
+    type: string
+    description: >
+      How this installation was installed, with the same values as
+      `installation.first_seen.installer_type` in the main browser's pings:
+      * "stub" for the stub installer
+      * "full" for the full installer, including MSI installs
+      * "msix" for MSIX packages
+
+      Not recorded if it could not be determined, for example because
+      `installation_telemetry.json` is missing from the installation directory.
+    lifetime: application
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079741
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079741
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - install-update@mozilla.com
+    expires: never
+    send_in_pings:
+      - default-agent
+
+  from_msi:
+    type: boolean
+    description: >
+      Whether this installation was installed from an MSI package. Only
+      recorded when `install.installer_type` is "full".
+    lifetime: application
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079741
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079741
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - install-update@mozilla.com
+    expires: never
+    send_in_pings:
+      - default-agent
+
+  silent:
+    type: boolean
+    description: >
+      Whether this installation was a silent install, as used for managed
+      deployments. Only recorded when `install.installer_type` is "full".
+    lifetime: application
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079741
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079741
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - install-update@mozilla.com
+    expires: never
+    send_in_pings:
+      - default-agent

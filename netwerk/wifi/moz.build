@@ -67,3 +67,9 @@ LICENSED_UNDER += ["gears-istumbler"]
 LICENSED_UNDER["gears-istumbler"].paths = [
     "mac/Wifi.h",
 ]
+
+SOURCE_HEADERS += [
+    "nsWifiAccessPoint.h",
+    "nsWifiMonitor.h",
+    "WifiScanner.h",
+]

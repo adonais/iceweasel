@@ -48,6 +48,17 @@ function run_test() {
 
   var flags = Ci.nsIDNSService.RESOLVE_BYPASS_CACHE;
 
+  // This one will not be canceled, including by cancelAsyncResolve(hostname2).
+  requestList1NotCanceled = Services.dns.asyncResolve(
+    hostname1,
+    Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
+    flags,
+    null, // resolverInfo
+    listener1,
+    mainThread,
+    defaultOriginAttributes
+  );
+
   // This one will be canceled with cancelAsyncResolve.
   Services.dns.asyncResolve(
     hostname2,
@@ -65,17 +76,6 @@ function run_test() {
     null, // resolverInfo
     listener1,
     Cr.NS_ERROR_ABORT,
-    defaultOriginAttributes
-  );
-
-  // This one will not be canceled.
-  requestList1NotCanceled = Services.dns.asyncResolve(
-    hostname1,
-    Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
-    flags,
-    null, // resolverInfo
-    listener1,
-    mainThread,
     defaultOriginAttributes
   );
 

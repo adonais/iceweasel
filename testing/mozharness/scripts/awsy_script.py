@@ -33,6 +33,8 @@ external_tools_path = os.path.join(scripts_path, "external_tools")
 
 
 class AWSY(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
+    python_constraints = "requirements-marionette.txt"
+
     config_options = (
         [
             [

@@ -129,17 +129,14 @@ static const char* gBlockedConfigs[] = {"dsengine.cfg"};
  * can still set them with pref().
  */
 static const char* const gAutoConfigInputPrefs[] = {
-    "general.config.filename",      "general.config.vendor",
-    "autoadmin.global_config_url",  "autoadmin.offline_failover",
-    "autoadmin.append_emailaddr",   "autoadmin.refresh_interval",
-    "autoadmin.failover_to_cached",
+    "general.config.filename",    "autoadmin.global_config_url",
+    "autoadmin.offline_failover", "autoadmin.append_emailaddr",
+    "autoadmin.refresh_interval", "autoadmin.failover_to_cached",
 };
 
 nsresult nsReadConfig::readConfigFile() {
   nsresult rv = NS_OK;
   nsAutoCString lockFileName;
-  nsAutoCString lockVendor;
-  uint32_t fileNameLen = 0;
 
   nsCOMPtr<nsIPrefBranch> defaultPrefBranch;
   nsCOMPtr<nsIPrefService> prefService =
@@ -193,11 +190,6 @@ nsresult nsReadConfig::readConfigFile() {
   }
   // If the lockFileName is nullptr return ok, because no lockFile will be used
 
-  // Once the config file is read, we should check that the vendor name
-  // is consistent By checking for the vendor name after reading the config
-  // file we allow for the preference to be set (and locked) by the creator
-  // of the cfg file meaning the file can not be renamed (successfully).
-
   nsCOMPtr<nsIPrefBranch> prefBranch;
   rv = prefService->GetBranch(nullptr, getter_AddRefs(prefBranch));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -214,26 +206,6 @@ nsresult nsReadConfig::readConfigFile() {
             ("error evaluating .cfg file %s %" PRIx32 "\n", lockFileName.get(),
              static_cast<uint32_t>(rv)));
     return rv;
-  }
-
-  rv = prefBranch->GetCharPref("general.config.filename", lockFileName);
-  if (NS_FAILED(rv))
-    // There is NO REASON we should ever get here. This is POST reading
-    // of the config file.
-    return NS_ERROR_FAILURE;
-
-  rv = prefBranch->GetCharPref("general.config.vendor", lockVendor);
-  // If vendor is not nullptr, do this check
-  if (NS_SUCCEEDED(rv)) {
-    fileNameLen = strlen(lockFileName.get());
-
-    // lockVendor and lockFileName should be the same with the addtion of
-    // .cfg to the filename by checking this post reading of the cfg file
-    // this value can be set within the cfg file adding a level of security.
-
-    if (strncmp(lockFileName.get(), lockVendor.get(), fileNameLen - 4) != 0) {
-      return NS_ERROR_FAILURE;
-    }
   }
 
   // get the value of the autoconfig url

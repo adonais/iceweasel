@@ -4,15 +4,24 @@
 
 import { SettingGroupManager } from "chrome://browser/content/preferences/config/SettingGroupManager.mjs";
 import { Preferences } from "chrome://global/content/preferences/Preferences.mjs";
+import {
+  getNotificationPermissions,
+  isNotificationChange,
+} from "chrome://browser/content/preferences/config/notification-permissions.mjs";
 
 const XPCOMUtils = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 ).XPCOMUtils;
 
 const lazy = XPCOMUtils.declareLazy({
+  notificationsSectionEnabled: {
+    pref: "browser.preferences.notifications-section.enabled",
+    default: false,
+  },
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
+  SitePermissions: "resource:///modules/SitePermissions.sys.mjs",
   AlertsServiceDND: () => {
     try {
       let alertsService = Cc["@mozilla.org/alerts-service;1"]
@@ -42,6 +51,8 @@ Preferences.addAll([
 
   // Permissions
   { id: "media.setsinkid.enabled", type: "bool" },
+
+  { id: "permissions.default.register-protocol-handler", type: "int" },
 
   // Popups
   { id: "dom.disable_open_during_load", type: "bool" },
@@ -195,6 +206,22 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "xrSettingsButton",
   onUserClick: () => showPermissionExceptions({ permissionType: "xr" }),
+});
+Preferences.addSetting({
+  id: "allowAppLinkRequests",
+  pref: "permissions.default.register-protocol-handler",
+  get: prefVal => prefVal != lazy.SitePermissions.BLOCK,
+  set: checked =>
+    checked ? lazy.SitePermissions.UNKNOWN : lazy.SitePermissions.BLOCK,
+});
+/**
+ * Displays the dialog listing sites blocked from asking to register a
+ * protocol handler.
+ */
+Preferences.addSetting({
+  id: "registerProtocolHandlerSettingsButton",
+  onUserClick: () =>
+    showPermissionExceptions({ permissionType: "register-protocol-handler" }),
 });
 Preferences.addSetting({
   id: "popupPolicy",
@@ -498,7 +525,72 @@ Preferences.addSetting(
   })
 );
 
+Preferences.addSetting(
+  class extends Preferences.AsyncSetting {
+    static id = "notificationSettingsEntry";
+
+    count = 0;
+
+    // The section is off in shipped builds, so start hidden rather than let
+    // the card show until the first refresh resolves.
+    defaultVisible = false;
+
+    beforeRefresh() {
+      this.count = lazy.notificationsSectionEnabled
+        ? getNotificationPermissions().length
+        : 0;
+    }
+
+    async visible() {
+      return lazy.notificationsSectionEnabled;
+    }
+
+    async getControlConfig() {
+      // Both branches set l10nId, since setting-control merges each config
+      // into the last one and would otherwise keep the previous message.
+      return {
+        l10nId: this.count
+          ? "notifications-entry-manage-button"
+          : "notifications-entry-manage-button-empty",
+        l10nArgs: { count: this.count },
+      };
+    }
+
+    onUserClick(event) {
+      event.preventDefault();
+      window.gotoPref("paneNotifications");
+    }
+
+    setup() {
+      Services.obs.addObserver(this.#onPermissionChanged, "perm-changed");
+      return () => {
+        Services.obs.removeObserver(this.#onPermissionChanged, "perm-changed");
+      };
+    }
+
+    #onPermissionChanged = subject => {
+      if (isNotificationChange(subject)) {
+        this.emitChange();
+      }
+    };
+  }
+);
+
 SettingGroupManager.registerGroups({
+  notificationsEntry: {
+    l10nId: "notifications-entry-card-header",
+    iconSrc:
+      "chrome://browser/skin/notification-icons/desktop-notification.svg",
+    headingLevel: 2,
+    items: [
+      {
+        id: "notificationSettingsEntry",
+        control: "moz-box-button",
+        l10nId: "notifications-entry-manage-button",
+        loadPane: "notifications",
+      },
+    ],
+  },
   permissions: {
     id: "permissions",
     subcategory: "permissions",
@@ -636,6 +728,22 @@ SettingGroupManager.registerGroups({
             controlAttrs: {
               "search-l10n-ids":
                 "permissions-address,permissions-allow.label,permissions-remove.label,permissions-remove-all.label,permissions-exceptions-addons-window2.title,permissions-exceptions-addons-desc",
+            },
+          },
+        ],
+      },
+      {
+        id: "allowAppLinkRequests",
+        l10nId: "permissions-allow-app-links",
+        supportPage: "change-program-used-open-email-links",
+        items: [
+          {
+            id: "registerProtocolHandlerSettingsButton",
+            l10nId: "permissions-app-links-manage-button",
+            control: "moz-box-button",
+            controlAttrs: {
+              "search-l10n-ids":
+                "permissions-remove.label,permissions-remove-all.label,permissions-site-app-links-window.title,permissions-site-app-links-desc",
             },
           },
         ],

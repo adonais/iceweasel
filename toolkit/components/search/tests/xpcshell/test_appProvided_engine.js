@@ -96,22 +96,17 @@ let CONFIG = [
       },
     ],
   },
-];
-
-const TEST_CONFIG_OVERRIDE = [
   {
-    identifier: "override",
-    urls: {
-      search: {
-        params: [
-          { name: "new_param", value: "new_value" },
-          { name: "pc", value: "{partnerCode}" },
-        ],
-      },
+    identifier: "deprecatedEngine",
+    base: {
+      deprecated: true,
     },
-    partnerCode: "new_partner_code",
-    telemetrySuffix: "tsfx",
-    clickUrl: "https://example.org/somewhere",
+  },
+  {
+    identifier: "notDeprecatedEngine",
+    base: {
+      deprecated: false,
+    },
   },
 ];
 
@@ -269,57 +264,6 @@ add_task(async function test_engine_with_some_params_set() {
   checkUrlOfType(engine);
 });
 
-add_task(async function test_engine_remote_override() {
-  // First check the existing engine doesn't have the overrides.
-  let engine = SearchService.getEngineById("override");
-  Assert.ok(engine, "Should have found the override engine");
-
-  Assert.equal(engine.name, "override name", "Should have the expected name");
-  Assert.equal(
-    engine.telemetryId,
-    "override",
-    "Should not have a telemetry suffix - overrides not applied yet"
-  );
-  Assert.equal(
-    engine.getSubmission("test").uri.spec,
-    "https://www.example.com/search?old_param=old_value&pc=old-pc&q=test",
-    "Should not have overridden URL - overrides not applied yet"
-  );
-  Assert.equal(
-    engine.clickUrl,
-    null,
-    "Should not have a click URL - overrides not applied yet"
-  );
-
-  // Now apply and test the overrides.
-  await SearchTestUtils.updateRemoteSettingsConfig(
-    CONFIG,
-    TEST_CONFIG_OVERRIDE
-  );
-
-  engine = SearchService.getEngineById("override");
-  Assert.ok(engine, "Should have found the override engine");
-
-  Assert.equal(engine.name, "override name", "Should have the expected name");
-  Assert.equal(
-    engine.telemetryId,
-    "override-tsfx",
-    "Should have the overridden telemetry suffix"
-  );
-  Assert.equal(
-    engine.getSubmission("test").uri.spec,
-    "https://www.example.com/search?new_param=new_value&pc=new_partner_code&q=test",
-    "Should have the overridden URL"
-  );
-  Assert.equal(
-    engine.clickUrl,
-    "https://example.org/somewhere",
-    "Should have the click URL specified by the override"
-  );
-
-  checkUrlOfType(engine);
-});
-
 add_task(async function test_displayName() {
   let engine = SearchService.getEngineById("testEngine");
 
@@ -414,23 +358,19 @@ add_task(async function test_isNew_variant() {
   );
 });
 
-add_task(async function test_isNew_overridden() {
-  let engine = SearchService.getEngineById("override");
-  Assert.ok(engine.isNew(), "isNew should return true before being overridden");
-
-  // An engine overridden by a third-party add-on is no longer considered new.
-  engine.setAttr("overriddenBy", "thirdparty@example.com");
-  Assert.ok(
-    !engine.isNew(),
-    "isNew should return false when overridden by a third-party add-on"
-  );
-
-  engine.setAttr("overriddenBy", undefined);
-  Assert.ok(
-    engine.isNew(),
-    "isNew should return true after clearing the override"
-  );
-});
+add_task(
+  { skip_if: () => !SearchUtils.configV3FeatureGate },
+  async function test_deprecated_engine_not_loaded() {
+    Assert.ok(
+      !SearchService.getEngineById("deprecatedEngine"),
+      "Should not have loaded the deprecated engine"
+    );
+    Assert.ok(
+      SearchService.getEngineById("notDeprecatedEngine"),
+      "Should have loaded the engine with deprecated set to false"
+    );
+  }
+);
 
 function checkUrlOfType(engine) {
   for (let [key, type] of Object.entries(SearchUtils.URL_TYPE)) {

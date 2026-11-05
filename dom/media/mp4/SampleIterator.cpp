@@ -456,6 +456,7 @@ MP4SampleIndex::MP4SampleIndex(const IndiceWrapper& aIndices,
       }
       if (indice.start_offset > uint64_t(INT64_MAX) ||
           indice.end_offset > uint64_t(INT64_MAX)) {
+        mDataOffset.Clear();
         return;
       }
       if (indice.sync || mIsAudio) {

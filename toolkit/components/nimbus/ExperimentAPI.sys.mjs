@@ -620,11 +620,13 @@ export const ExperimentAPI = new (class {
       aiFeaturesPreviouslyEnabled !== this.aiFeaturesEnabled;
 
     if (studiesEnabledChanged || rolloutsEnabledChanged) {
-      if (!this.studiesEnabled) {
+      if (studiesEnabledChanged && !this.studiesEnabled) {
+        Glean.nimbusEvents.studiesOptOut.record();
         this.manager._handleStudiesOptOut();
       }
 
-      if (!this.rolloutsEnabled) {
+      if (rolloutsEnabledChanged && !this.rolloutsEnabled) {
+        Glean.nimbusEvents.rolloutsOptOut.record();
         this.manager._handleRolloutsOptOut();
       }
 
@@ -726,6 +728,34 @@ export const ExperimentAPI = new (class {
    */
   async optInToExperiment(options) {
     return this._rsLoader._optInToExperiment(options);
+  }
+
+  /**
+   * Perform a Nimbus update limited to the provided feature IDs, without
+   * waiting for the next scheduled update.
+   *
+   * NB: Please talk to the Nimbus team before adding new callers of this API.
+   *
+   * @param {string} trigger
+   * The name of the event that triggered the update.
+   *
+   * @param {string[]} featureIds
+   * Only recipes that include at least one of these features are evaluated.
+   *
+   * @returns {Promise<void>}
+   */
+  async updateRecipesForFeatures(trigger, featureIds) {
+    if (!featureIds?.length) {
+      throw new Error("featureIds required");
+    }
+    await this.init();
+    if (!this.studiesEnabled && !this.rolloutsEnabled) {
+      return;
+    }
+    await this._rsLoader.finishedUpdating();
+    await this._rsLoader.updateRecipes(trigger, {
+      onlyFeatureIds: new Set(featureIds),
+    });
   }
 
   /**

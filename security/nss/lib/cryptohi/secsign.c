@@ -474,23 +474,6 @@ DERTemplate CERTSignedDataTemplate[] = {
     { 0 }
 };
 
-SEC_ASN1_MKSUB(SECOID_AlgorithmIDTemplate)
-
-const SEC_ASN1Template CERT_SignedDataTemplate[] = {
-    { SEC_ASN1_SEQUENCE,
-      0, NULL, sizeof(CERTSignedData) },
-    { SEC_ASN1_ANY,
-      offsetof(CERTSignedData, data) },
-    { SEC_ASN1_INLINE | SEC_ASN1_XTRN,
-      offsetof(CERTSignedData, signatureAlgorithm),
-      SEC_ASN1_SUB(SECOID_AlgorithmIDTemplate) },
-    { SEC_ASN1_BIT_STRING,
-      offsetof(CERTSignedData, signature) },
-    { 0 }
-};
-
-SEC_ASN1_CHOOSER_IMPLEMENT(CERT_SignedDataTemplate)
-
 static SECOidTag
 seckey_CurveOidFromPrivKey(const SECKEYPrivateKey *privKey)
 {

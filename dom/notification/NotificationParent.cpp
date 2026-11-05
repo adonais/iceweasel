@@ -234,8 +234,12 @@ mozilla::ipc::IPCResult NotificationParent::RecvShow(Maybe<IPCImage>&& aIcon,
 }
 
 nsresult NotificationParent::Show(Maybe<IPCImage>&& aIcon) {
+  nsCOMPtr<imgIContainer> icon;
+  if (aIcon) {
+    icon = nsContentUtils::IPCImageToImage(*aIcon);
+  }
   auto result = CreateAlertForNotification(mArgs.mNotification.options(),
-                                           *mArgs.mPrincipal, std::move(aIcon));
+                                           *mArgs.mPrincipal, icon);
 
   if (result.isErr()) {
     return result.unwrapErr();

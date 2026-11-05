@@ -379,7 +379,7 @@ void CompositorBridgeChild::SetForceSyncFlushRendering(
 }
 
 bool CompositorBridgeChild::SendStartFrameTimeRecording(
-    const int32_t& bufferSize, uint32_t* startIndex) {
+    const uint32_t& bufferSize, uint32_t* startIndex) {
   if (!mCanSend) {
     return false;
   }

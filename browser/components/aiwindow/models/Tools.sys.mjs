@@ -14,8 +14,8 @@
  * @import { AITabContext, AITabResult } from "moz-src:///browser/components/aiwindow/models/aitab/AITab.sys.mjs"
  */
 
+import { isSmartPageURL } from "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs";
 import { getSkillPrompt } from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
-import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import { searchBrowsingHistory as implSearchBrowsingHistory } from "moz-src:///browser/components/aiwindow/models/SearchBrowsingHistory.sys.mjs";
 import {
   manageTabsAction,
@@ -49,6 +49,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AITab: "moz-src:///browser/components/aiwindow/models/aitab/AITab.sys.mjs",
   AITabStore:
     "moz-src:///browser/components/aiwindow/ui/modules/AITabStore.sys.mjs",
+  getHeadingFont:
+    "moz-src:///browser/components/aiwindow/ui/modules/AITabHeadingFont.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
@@ -184,12 +186,13 @@ export const SEARCH_THE_WEB_PATH = Object.freeze({
  * The answers path is only available on Mozilla MLPA endpoint - custom endpoints
  * must use search_the_web_fast or grounded
  *
+ * @param {ChatConversation} conversation
  * @returns {SEARCH_THE_WEB_PATH}
  */
-export function selectSearchTheWebPath() {
+export function selectSearchTheWebPath(conversation) {
   if (
     Services.prefs.getBoolPref(SEARCH_THE_WEB_ANSWERS_PREF, false) &&
-    !openAIEngine.usesCustomEndpoint()
+    conversation.engine?.isDefaultEndpoint
   ) {
     return SEARCH_THE_WEB_PATH.ANSWERS;
   }
@@ -346,10 +349,11 @@ export const SEARCH_THE_WEB_TOOL_CONFIG_FAST = {
  * The search_the_web config for the path that will run, or null for the
  * grounded path, whose config is the one already in `toolsConfig`.
  *
+ * @param {ChatConversation} conversation
  * @returns {object|null}
  */
-export function searchTheWebToolConfig() {
-  switch (selectSearchTheWebPath()) {
+export function searchTheWebToolConfig(conversation) {
+  switch (selectSearchTheWebPath(conversation)) {
     case SEARCH_THE_WEB_PATH.ANSWERS:
       return SEARCH_THE_WEB_TOOL_CONFIG_ANSWERS;
     case SEARCH_THE_WEB_PATH.FAST:
@@ -1088,6 +1092,13 @@ export class GetPageContent {
   static MAX_CHARACTERS = 10000;
 
   /**
+   * Generous until telemetry shows real transcript lengths. 2^16
+   * because `text_length` is rounded down to a power of two, so its 65536
+   * bucket counts exactly the truncated transcripts.
+   */
+  static MAX_TRANSCRIPT_CHARACTERS = 65536;
+
+  /**
    * getPageContent's results as plain text. A failed read contributes the
    * sentence explaining it, so callers that must tell the two apart want
    * getPageContent itself.
@@ -1118,10 +1129,14 @@ export class GetPageContent {
    * @param {string[]} toolParams.url_list
    * @param {AbortSignal} [toolParams.signal] - Cancels in-flight extractions
    *   (and tears down any headless browser) when it aborts.
+   * @param {number} [toolParams.settleDelayMs] - Extra wait for headless loads.
    * @param {ChatConversation} conversation
    * @returns {Promise<Array<{url: ?string, ok: boolean, content: string}>>}
    */
-  static async getPageContent({ url_list, signal }, conversation) {
+  static async getPageContent(
+    { url_list, signal, settleDelayMs },
+    conversation
+  ) {
     // Sanitize the inputs from the language model:
     if (!Array.isArray(url_list)) {
       return [
@@ -1136,6 +1151,9 @@ export class GetPageContent {
     // SecurityProperties and the URLs. Tab URLs don't do any new page loads. Mention urls
     // have been added by the user so they should be allowed. SERP urls came from a
     // trusted search provider's SERP and are eligible for an anonymous fetch.
+    // AITab URLs are an exception, reading the contents of an open
+    // about:smartpage tab extracts content locally and the content for the
+    // AITab is also stored locally, so there is no risk of data exfiltration.
     // All other URLs are restricted when both private and untrusted data has been seen.
     //
     // │ Flags               │ tab urls │ mention urls │ serp urls          │ any urls │
@@ -1150,7 +1168,7 @@ export class GetPageContent {
 
     const results = await Promise.all(
       url_list.map(async (url, index) => {
-        if (!isAllowedURLProtocol(url)) {
+        if (!isAllowedURLProtocol(url) && !isSmartPageURL(URL.parse(url))) {
           return { url, ok: false, content: "This URL is not allowed: " + url };
         }
         const startTime = ChromeUtils.now();
@@ -1160,7 +1178,8 @@ export class GetPageContent {
               url,
               mentionedUrls,
               conversation,
-              signal
+              signal,
+              settleDelayMs
             );
           ChromeUtils.addProfilerMarker(
             "SmartWindow",
@@ -1278,6 +1297,7 @@ export class GetPageContent {
    * @param {ChatConversation} conversation
    * @param {AbortSignal} [signal] - Cancels the extraction (and tears down any
    *   headless browser) when it aborts.
+   * @param {number} [settleDelayMs] - Extra wait for headless loads.
    *
    * @returns {Promise<{ok: boolean, content: string}>}
    *   ok is false when content is a failure description rather than page text.
@@ -1286,7 +1306,8 @@ export class GetPageContent {
     url,
     mentionedUrls,
     conversation,
-    signal
+    signal,
+    settleDelayMs
   ) {
     if (signal?.aborted) {
       throw new DOMException("Aborted", "AbortError");
@@ -1345,6 +1366,8 @@ export class GetPageContent {
               traceId
             ),
           anonymousFetch: true,
+          settleDelayMs,
+          signal,
         });
       }
       return {
@@ -1366,6 +1389,8 @@ export class GetPageContent {
           signal,
           traceId
         ),
+      settleDelayMs,
+      signal,
     });
   }
 
@@ -1398,6 +1423,7 @@ export class GetPageContent {
       pageExtractor.getText(
         {
           sufficientLength: GetPageContent.MAX_CHARACTERS,
+          sufficientTranscriptLength: GetPageContent.MAX_TRANSCRIPT_CHARACTERS,
           cleanWhitespace: true,
           removeBoilerplate: true,
           sourceUrl,
@@ -1513,9 +1539,10 @@ export async function addMemory(
 }
 
 /**
- * Stores a generated page. A new page gets a slug of its own; a modification
- * is written as the next version of the slug it revised, and the versions it
- * replaces are dropped: only one is kept for now.
+ * Stores a generated page. A new page gets a slug of its own and belongs to
+ * `conversation`; a modification is written as the next version of the slug it
+ * revised, keeps the chat that owns it, and the versions it replaces are
+ * dropped: only one is kept for now.
  *
  * @param {AITabResult} result - From AITab.generateAITab.
  * @param {ChatConversation} conversation - The chat that asked for the page.
@@ -1532,9 +1559,9 @@ async function persistAITabPage(
   conversation,
   isModification
 ) {
-  const { context, toolConvId, ...pageMetadata } = metadata;
+  const { context, convId, toolConvId, ...pageMetadata } = metadata;
   const page = {
-    convId: conversation.id,
+    convId: convId ?? conversation.id,
     toolConvId,
     slug: metadata.id,
     title: metadata.title,
@@ -1561,6 +1588,56 @@ async function persistAITabPage(
 }
 
 /**
+ * How a generate_aitab call was requested, for telemetry.
+ *
+ * @param {ChatConversation} conversation
+ * @param {boolean} isEdit - Whether the call modifies an existing page, which
+ *   the tab menus never ask for.
+ * @returns {"tab_list"|"tab_group"|"chat"|"chat_followup"}
+ */
+function getAITabInitiator(conversation, isEdit) {
+  if (!isEdit && conversation.aitabSource) {
+    return conversation.aitabSource;
+  }
+  return conversation.lastSubmitType == "follow-up" ? "chat_followup" : "chat";
+}
+
+const INTERNAL_ERROR_GUIDANCE =
+  "Please surface to the user that there was an internal error, but the user may try again.";
+
+// What the chat model should do next for each AITab error code. Codes not
+// listed are internal failures.
+const AITAB_ERROR_GUIDANCE = Object.freeze({
+  content_related: "Please surface the error to the user.",
+  no_content:
+    "Call the tool again with the pages or content to build from, or ask the user what the page should be about.",
+  nothing_to_change:
+    "Call the tool again with modify_instructions describing the change, or ask the user what they would like changed.",
+  page_not_found:
+    "Use the slug from an earlier successful page result in this conversation. If there is none, do not guess; create a new page instead or ask the user which page they mean.",
+  conversation_unavailable:
+    "Tell the user this page can no longer be edited, and offer to generate a new page from the same sources.",
+  history_limit:
+    "Tell the user this page has reached its edit limit, and offer to generate a new page instead. Do not try to modify it again.",
+  pages_unreadable:
+    "Tell the user the pages could not be read and suggest trying different pages. Do not retry with the same pages.",
+  canceled:
+    "The user canceled page generation. Do not try again unless they ask.",
+});
+
+/**
+ * Whether the modify_slug field in the tool params is configured
+ * for an AITab modification
+ *
+ * @param {string} modify_slug
+ *
+ * @returns {boolean}
+ */
+export function isAITabModification(modify_slug) {
+  return typeof modify_slug == "string" && !!modify_slug.trim();
+}
+
+/**
  * @param {object} toolParams
  * @param {string[]} [toolParams.url_list]
  * @param {string} [toolParams.focus]
@@ -1571,11 +1648,12 @@ async function persistAITabPage(
  * @param {AbortSignal} [signal] - Cancels in-flight page extractions.
  * @returns {Promise<
  *   {success: true,
- *    toolResult: {message: string, aiTab: {uuid: string, slug: string}},
- *    uiData: {uiType: "aitab",
+ *    toolResult: {message: string, page: {slug: string}},
+ *    uiData?: {uiType: "aitab",
  *      properties: {state: "choose", viewerURL: string, title: string}}} |
  *   {success: false, toolResult: string}
- * >} The model response and UI data on success, or an error message on failure.
+ * >} The model response on success, plus UI data for a new page (a
+ *   modification has none), or an error message on failure.
  */
 export async function createAITab(
   { url_list, focus, raw_content, modify_slug, modify_instructions },
@@ -1586,26 +1664,36 @@ export async function createAITab(
     "[Tool] aiTab",
     JSON.stringify({ url_list, focus, modify_slug })
   );
+  // Fetch the heading font while the page generates, so it is usually
+  // installed by the time the page opens.
+  lazy
+    .getHeadingFont()
+    .catch(error =>
+      lazy.console.error("[Tool] Failed to prefetch the heading font", error)
+    );
   // Whether this call revises an existing page or writes a new one, so every
   // message the model gets back names what actually happened.
   // Matches how generateAITab reads modify_slug, so a blank one is a create.
-  const isModification = typeof modify_slug == "string" && !!modify_slug.trim();
+  const isModification = isAITabModification(modify_slug);
   const action = isModification ? "updated" : "created";
   const result = await lazy.AITab.generateAITab(
     {
-      urlList: url_list,
+      urlList: lazy.AITab.selectContextUrls(url_list),
       focus,
       rawContent: raw_content,
       modifySlug: modify_slug,
       modifyInstructions: modify_instructions,
+      howInitiated: getAITabInitiator(conversation, isModification),
       signal,
     },
     conversation
   );
   if (result.error) {
+    const guidance =
+      AITAB_ERROR_GUIDANCE[result.code] ?? INTERNAL_ERROR_GUIDANCE;
     return {
       success: false,
-      toolResult: `The page could not be ${action}: ${result.error}.`,
+      toolResult: `The page could not be ${action}: ${result.error}. ${guidance}`,
     };
   }
 
@@ -1618,7 +1706,19 @@ export async function createAITab(
     lazy.console.error("[Tool] Failed to persist page", e.message);
     return {
       success: false,
-      toolResult: `The page could not be ${action}: it could not be saved.`,
+      toolResult: `The page could not be ${action}: it could not be saved. Tell the user the page could not be saved. Do not try again.`,
+    };
+  }
+
+  // slug addresses the page in its URL and is shared by every version, and
+  // is what modify_slug takes to revise this page on a later turn. Lets a
+  // later turn find this page from the conversation's tool messages.
+  const page = { slug: stored.slug };
+
+  if (isModification) {
+    return {
+      success: true,
+      toolResult: { message: "The page was modified.", page },
     };
   }
 
@@ -1642,12 +1742,8 @@ export async function createAITab(
   return {
     success: true,
     toolResult: {
-      message: `The page was ${action}. Link the user to it as [${title}](§url_token: ${token}§).`,
-      // slug addresses the page in its URL and is shared by every version, and
-      // is what modify_slug takes to revise this page on a later turn; uuid pins
-      // the single version this call wrote. Lets a later turn find this page
-      // from the conversation's tool messages.
-      aiTab: { uuid: stored.uuid, slug: stored.slug },
+      message: `The page was created. Link the user to it as [${title}](§url_token: ${token}§).`,
+      page,
     },
     uiData: {
       uiType: UI_TYPES.AITAB,

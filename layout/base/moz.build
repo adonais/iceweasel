@@ -168,3 +168,12 @@ BROWSER_CHROME_MANIFESTS += ["tests/browser.toml"]
 MARIONETTE_MANIFESTS += ["tests/marionette/manifest.toml"]
 MOCHITEST_MANIFESTS += ["tests/mochitest.toml"]
 MOCHITEST_CHROME_MANIFESTS += ["tests/chrome/chrome.toml"]
+
+SOURCE_HEADERS += [
+    "AccessibleCaret.h",
+    "AccessibleCaretLogger.h",
+    "AccessibleCaretManager.h",
+    "AutoProfilerStyleMarker.h",
+    "nsCSSColorUtils.h",
+    "nsIDocumentViewerPrint.h",
+]

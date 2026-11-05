@@ -248,10 +248,11 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> PremultiplyVector_SIMD(
         xsimd::bitwise_cast<uint16_t>(xsimd::bitwise_cast<uint32_t>(ga) |
                                       xsimd::batch<uint32_t, Arch>(0x00FF0000));
   }
-  // Multiply each channel by the alpha, add 255, divide by 255, all in place.
-  rb = xsimd::fma(rb, a16, xsimd::batch<uint16_t, Arch>(0xFF));
+  // Multiply each channel by the alpha, rounding to nearest when dividing by
+  // 255.
+  rb = xsimd::fma(rb, a16, xsimd::batch<uint16_t, Arch>(0x80));
   rb = (rb + (rb >> 8)) >> 8;
-  ga = xsimd::fma(ga, a16, xsimd::batch<uint16_t, Arch>(0xFF));
+  ga = xsimd::fma(ga, a16, xsimd::batch<uint16_t, Arch>(0x80));
   ga = (ga + (ga >> 8)) >> 8;
   // Swap R and B if necessary.
   if constexpr (aSwapRB) {
@@ -308,16 +309,18 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> UnpremultiplyReverse_SIMD(
   auto ga =
       xsimd::bitwise_cast<uint16_t>(xsimd::bitwise_cast<uint32_t>(aGa) &
                                     xsimd::batch<uint32_t, Arch>(0x000000FF));
-  // Exact (channel * reciprocal) >> 16 in 16-bit lanes. Since
+  // Rounded (channel * reciprocal) >> 16 in 16-bit lanes. Since
   //   channel*Q = channel*qHi*0x10000 + channel*qLo,
   //   (channel*Q) >> 16 = channel*qHi + ((channel*qLo) >> 16)
-  //                     = mullo(channel, qHi) + mulhi(channel, qLo).
+  //                     = mullo(channel, qHi) + mulhi(channel, qLo),
+  // the top bit of mullo(channel, qLo) supplies the rounding carry.
   // mullo gives the exact low 16 bits of channel*qHi; masking to a byte keeps
   // the high byte clear for the recombine below and makes any out-of-range
   // (channel > alpha) input wrap to the low byte exactly as the scalar path.
   const xsimd::batch<uint16_t, Arch> lowByte(0x00FF);
-  auto rb = (aRb * qHi16 + xsimd::mul_hi(aRb, qLo16)) & lowByte;
-  ga = (ga * qHi16 + xsimd::mul_hi(ga, qLo16)) & lowByte;
+  auto rb = (aRb * qHi16 + xsimd::mul_hi(aRb, qLo16) + ((aRb * qLo16) >> 15)) &
+            lowByte;
+  ga = (ga * qHi16 + xsimd::mul_hi(ga, qLo16) + ((ga * qLo16) >> 15)) & lowByte;
   // Combine back to final pixel with rb | (ga << 8) | (aSrc & 0xFF000000),
   // which will add back on the original alpha value unchanged.
   auto alpha =

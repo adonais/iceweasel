@@ -34,7 +34,6 @@ const startupPhases = {
         "resource://gre/modules/AppConstants.sys.mjs",
         "resource://gre/modules/ActorManagerParent.sys.mjs",
         "resource://gre/modules/CustomElementsListener.sys.mjs",
-        "resource://gre/modules/LaunchOnLogin.sys.mjs",
         "resource://gre/modules/MainProcessSingleton.sys.mjs",
         "resource://gre/modules/XPCOMUtils.sys.mjs",
       ]),
@@ -107,13 +106,6 @@ const startupPhases = {
     },
   },
 };
-
-if (AppConstants.platform != "linux") {
-  let modules = startupPhases["before profile selection"].allowlist.modules;
-  modules.add(
-    "moz-src:///browser/components/shell/StartupOSIntegration.sys.mjs"
-  );
-}
 
 if (
   Services.prefs.getBoolPref("browser.startup.blankWindow") &&

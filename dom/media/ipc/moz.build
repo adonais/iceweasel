@@ -123,3 +123,8 @@ include("/tools/fuzzing/libfuzzer-config.mozbuild")
 
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "RemoteAudioDecoder.h",
+    "RemoteVideoDecoder.h",
+]

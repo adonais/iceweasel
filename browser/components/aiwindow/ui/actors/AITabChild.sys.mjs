@@ -11,17 +11,62 @@ export class AITabChild extends JSWindowActorChild {
   handleEvent(event) {
     switch (event.type) {
       case "AITab:GetPage":
+      case "AITab:GetHeadingFont":
       case "AITab:DeletePage":
         this.#query(event);
         break;
-      // Nothing comes back from a link open, so this takes the fire and
-      // forget path rather than the query one.
+      // Events whose dispatchers do not expect a response take this
+      // fire-and-forget path, rather than waiting for a response like
+      // events which go through #query().
       case "AITab:OpenLink":
+        this.sendAsyncMessage(event.type, {
+          ...(event.detail ?? {}),
+          component_type: this.#componentType(event),
+        });
+        break;
+      case "AITab:RecordView":
         this.sendAsyncMessage(event.type, event.detail);
         break;
       default:
         console.warn(`AITabChild received unknown event: ${event.type}`);
     }
+  }
+
+  receiveMessage({ name, data }) {
+    if (!this.contentWindow) {
+      return;
+    }
+
+    const win = this.contentWindow;
+    switch (name) {
+      case "AITab:RefreshPageData":
+        win.dispatchEvent(
+          new win.CustomEvent(name, {
+            detail: Cu.cloneInto(data, win),
+          })
+        );
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  /**
+   * The catalog component that contained the click, using the same name
+   * creation telemetry records. A click outside those blocks is "unknown".
+   *
+   * @param {Event} event
+   * @returns {string}
+   */
+  #componentType(event) {
+    for (const node of event.composedPath()) {
+      const type = node.dataset?.aitabComponent;
+      if (type) {
+        return type;
+      }
+    }
+    return "unknown";
   }
 
   /**

@@ -46,6 +46,7 @@ DIRS += [
     "mozcachedohttp",
     "multilineeditor",
     "newtab",
+    "nimbus",
     "originattributes",
     "pagedata",
     "passwordmgr",
@@ -79,6 +80,7 @@ DIRS += [
     "uitour",
     "urlbar",
     "webrtc",
+    "widgets",
 ]
 
 DIRS += ["build"]

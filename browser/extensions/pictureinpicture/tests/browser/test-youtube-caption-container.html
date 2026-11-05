@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>YouTube Caption Container Test</title>
+</head>
+<body>
+  <div id="movie_player" class="html5-video-player">
+    <div class="html5-video-container">
+      <video id="youtube-video" src="test-video.mp4" controls loop width="400" height="225"></video>
+    </div>
+    <div id="ytp-caption-window-container">
+      <span class="captions-text">
+        <span class="caption-visual-line">first caption</span>
+      </span>
+    </div>
+  </div>
+  <script>
+    let player = document.getElementById("movie_player");
+    let video = document.getElementById("youtube-video");
+    player.getVolume = () => video.volume * 100;
+    player.setVolume = value => (video.volume = value / 100);
+    player.mute = () => (video.muted = true);
+    player.unMute = () => (video.muted = false);
+    player.getPlaybackRate = () => video.playbackRate;
+    player.setPlaybackRate = rate => (video.playbackRate = rate);
+  </script>
+</body>
+</html>

@@ -119,6 +119,50 @@ GetClassifierFeaturesForTrackers() {
   return *sUrlClassifierFeaturesForTracker;
 }
 
+// We hardcode this block reason since the first-party storage access
+// permission is granted for the purpose of blocking trackers.
+// Note that if aReason is eOpenerAfterUserInteraction and the
+// trackingPrincipal is not in a blocklist, we don't check the
+// user-interaction state, because it could be that the current process has
+// just sent the request to store the user-interaction permission into the
+// parent, without having received the permission itself yet.
+//
+// For ePrivilegeStorageAccessForOriginAPI, we explicitly don't check the user
+// interaction for the tracking origin.
+//
+// If the user-interaction state is available via aHadPriorUserInteraction,
+// we use that value with a fallback to getting the current interaction state
+bool IsMissingRequiredUserInteraction(
+    dom::BrowsingContext* aParentContext, nsIPrincipal* aTrackingPrincipal,
+    ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
+    const Maybe<bool>& aHadPriorUserInteraction) {
+  MOZ_ASSERT(aTrackingPrincipal);
+
+  if (aReason == ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI) {
+    return false;
+  }
+
+  bool isInPrefList = false;
+  aTrackingPrincipal->IsURIInPrefList(
+      "privacy.restrict3rdpartystorage."
+      "userInteractionRequiredForHosts",
+      &isInPrefList);
+  if (!isInPrefList || aHadPriorUserInteraction.valueOrFrom([&] {
+        return ContentBlockingUserInteraction::Exists(aTrackingPrincipal);
+      })) {
+    return false;
+  }
+
+  LOG_PRIN(("Tracking principal (%s) hasn't been interacted with before, "
+            "refusing to add a first-party storage permission to access it",
+            _spec),
+           aTrackingPrincipal);
+  ContentBlockingNotifier::OnDecision(
+      aParentContext, ContentBlockingNotifier::BlockingDecision::eBlock,
+      nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER);
+  return true;
+}
+
 }  // namespace
 
 /* static */ RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise>
@@ -220,15 +264,13 @@ StorageAccessAPIHelper::AllowAccessForHelper(
 
   // We are a first party resource.
   if (!isParentThirdParty) {
-    nsAutoCString origin;
-    nsresult rv = aPrincipal->GetOriginNoSuffix(origin);
+    nsresult rv = aPrincipal->GetOriginNoSuffix(aTrackingOrigin);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       LOG(("Can't get the origin from the URI"));
       return StorageAccessPermissionGrantPromise::CreateAndReject(false,
                                                                   __func__);
     }
 
-    aTrackingOrigin = origin;
     *aTrackingPrincipal = aPrincipal;
     *aTopLevelWindowId = aParentContext->GetCurrentInnerWindowId();
     if (NS_WARN_IF(!*aTopLevelWindowId)) {
@@ -242,12 +284,6 @@ StorageAccessAPIHelper::AllowAccessForHelper(
     if (*aBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
         !parentWindowContext->GetIsThirdPartyTrackingResourceWindow()) {
       LOG(("Our window isn't a third-party tracking window"));
-      return StorageAccessPermissionGrantPromise::CreateAndReject(false,
-                                                                  __func__);
-    }
-    if (*aBehavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN &&
-        !isParentThirdParty) {
-      LOG(("Our window isn't a third-party window"));
       return StorageAccessPermissionGrantPromise::CreateAndReject(false,
                                                                   __func__);
     }
@@ -479,36 +515,8 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
 
   LOG(("Tracking origin is %s", PromiseFlatCString(trackingOrigin).get()));
 
-  // We hardcode this block reason since the first-party storage access
-  // permission is granted for the purpose of blocking trackers.
-  // Note that if aReason is eOpenerAfterUserInteraction and the
-  // trackingPrincipal is not in a blocklist, we don't check the
-  // user-interaction state, because it could be that the current process has
-  // just sent the request to store the user-interaction permission into the
-  // parent, without having received the permission itself yet.
-  //
-  // For ePrivilegeStorageAccessForOriginAPI, we explicitly don't check the user
-  // interaction for the tracking origin.
-  //
-  // If the user-interaction state is available via aHadPriorUserInteraction,
-  // we use that value with a fallback to getting the current interaction state
-
-  bool isInPrefList = false;
-  trackingPrincipal->IsURIInPrefList(
-      "privacy.restrict3rdpartystorage."
-      "userInteractionRequiredForHosts",
-      &isInPrefList);
-  if (aReason != ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI &&
-      isInPrefList && !aHadPriorUserInteraction.valueOrFrom([&] {
-        return ContentBlockingUserInteraction::Exists(trackingPrincipal);
-      })) {
-    LOG_PRIN(("Tracking principal (%s) hasn't been interacted with before, "
-              "refusing to add a first-party storage permission to access it",
-              _spec),
-             trackingPrincipal);
-    ContentBlockingNotifier::OnDecision(
-        aParentContext, ContentBlockingNotifier::BlockingDecision::eBlock,
-        nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER);
+  if (IsMissingRequiredUserInteraction(aParentContext, trackingPrincipal,
+                                       aReason, aHadPriorUserInteraction)) {
     return StorageAccessPermissionGrantPromise::CreateAndReject(false,
                                                                 __func__);
   }
@@ -549,13 +557,9 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
                                      aReason);
     }
 
-    Maybe<ContentBlockingNotifier::StorageAccessPermissionGrantedReason>
-        reportReason;
     // We can directly report here if we can know the origin of the top.
     ContentBlockingNotifier::ReportUnblockingToConsole(
         parentBC, NS_ConvertUTF8toUTF16(trackingOrigin), aReason);
-    // Set the report reason to nothing if we've already reported.
-    reportReason = Nothing();
 
     LOG(("Saving the permission: trackingOrigin=%s", trackingOrigin.get()));
     bool frameOnly = StaticPrefs::dom_storage_access_frame_only() &&
@@ -700,55 +704,26 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnChildProcess(
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
     const PerformPermissionGrant& aPerformFinalChecks,
     const Maybe<bool>& aHadPriorUserInteraction) {
-  MOZ_ASSERT_IF(XRE_IsContentProcess(), aParentContext->IsInProcess());
   MOZ_ASSERT(XRE_IsContentProcess());
   MOZ_ASSERT(aParentContext);
+  MOZ_ASSERT(aParentContext->IsInProcess());
   MOZ_ASSERT(aTrackingPrincipal);
 
-  nsCOMPtr<nsIPrincipal> trackingPrincipal;
-  nsAutoCString trackingOrigin;
-  trackingOrigin = aTrackingOrigin;
-  trackingPrincipal = aTrackingPrincipal;
+  nsCOMPtr<nsIPrincipal> trackingPrincipal = aTrackingPrincipal;
+  nsAutoCString trackingOrigin(aTrackingOrigin);
 
   LOG(("Tracking origin is %s", PromiseFlatCString(trackingOrigin).get()));
 
-  // We hardcode this block reason since the first-party storage access
-  // permission is granted for the purpose of blocking trackers.
-  // Note that if aReason is eOpenerAfterUserInteraction and the
-  // trackingPrincipal is not in a blocklist, we don't check the
-  // user-interaction state, because it could be that the current process has
-  // just sent the request to store the user-interaction permission into the
-  // parent, without having received the permission itself yet.
-  //
-  // For ePrivilegeStorageAccessForOriginAPI, we explicitly don't check the user
-  // interaction for the tracking origin.
-
-  bool isInPrefList = false;
-  aTrackingPrincipal->IsURIInPrefList(
-      "privacy.restrict3rdpartystorage."
-      "userInteractionRequiredForHosts",
-      &isInPrefList);
-  // See the comment in CompleteAllowAccessForOnParentProcess.
-  if (aReason != ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI &&
-      isInPrefList && !aHadPriorUserInteraction.valueOrFrom([&] {
-        return ContentBlockingUserInteraction::Exists(aTrackingPrincipal);
-      })) {
-    LOG_PRIN(("Tracking principal (%s) hasn't been interacted with before, "
-              "refusing to add a first-party storage permission to access it",
-              _spec),
-             aTrackingPrincipal);
-    ContentBlockingNotifier::OnDecision(
-        aParentContext, ContentBlockingNotifier::BlockingDecision::eBlock,
-        nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER);
+  if (IsMissingRequiredUserInteraction(aParentContext, trackingPrincipal,
+                                       aReason, aHadPriorUserInteraction)) {
     return StorageAccessPermissionGrantPromise::CreateAndReject(false,
                                                                 __func__);
   }
 
   // Ensure we can find the window before continuing, so we can safely
   // execute storePermission.
-  if (aParentContext->IsInProcess() &&
-      (!aParentContext->GetDOMWindow() ||
-       !aParentContext->GetDOMWindow()->GetCurrentInnerWindow())) {
+  if (!aParentContext->GetDOMWindow() ||
+      !aParentContext->GetDOMWindow()->GetCurrentInnerWindow()) {
     LOG(
         ("No window found for our parent browsing context, bailing out "
          "early"));

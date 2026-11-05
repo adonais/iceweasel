@@ -346,6 +346,10 @@ var SessionHistoryInternal = {
       if (!entry.url) {
         continue;
       }
+      if (entry.url.startsWith("javascript:")) {
+        // javascript: URIs don't enter SH anymore, this could crash.
+        continue;
+      }
       let shEntry = this.deserializeEntry(entry, idMap, docIdentMap, history);
 
       // To enable a smooth migration, we treat values of null/undefined as having

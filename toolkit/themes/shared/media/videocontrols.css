@@ -483,6 +483,12 @@
   fill: currentColor;
 }
 
+@media (-moz-platform: android) {
+  .statusIcon[type="pictureInPicture"] {
+    background-image: url(chrome://global/skin/media/picture-in-picture-open-android.svg);
+  }
+}
+
 .videocontrols[localedir="rtl"] .statusIcon[type="pictureInPicture"] {
   transform: scaleX(-1);
 }

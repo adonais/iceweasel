@@ -363,19 +363,6 @@ extern "C" NS_EXPORT void EnablePHC() {
 #endif
 };
 
-char testData[32];
-
-extern "C" NS_EXPORT uint64_t SaveAppMemory() {
-  for (size_t i = 0; i < sizeof(testData); i++) testData[i] = i;
-
-  FILE* fp = fopen("crash-addr", "w");
-  if (!fp) return 0;
-  fprintf(fp, "%p\n", (void*)testData);
-  fclose(fp);
-
-  return (int64_t)testData;
-}
-
 #ifdef XP_WIN
 static LONG WINAPI HandleException(EXCEPTION_POINTERS* exinfo) {
   TerminateProcess(GetCurrentProcess(), 0);

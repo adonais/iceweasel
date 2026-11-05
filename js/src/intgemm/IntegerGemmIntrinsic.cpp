@@ -442,7 +442,9 @@ int32_t js::intgemm::IntrI8SelectColumnsOfB(wasm::Instance* instance,
     return -1;
   }
 
-  // Memory Bound checks for all matricies
+  // Memory bound checks for all matrices. SelectColumnsB reads and writes the
+  // input and output matrices with aligned SIMD stores, so both must be
+  // alignment-checked, not just bounds-checked.
   uint64_t sizeB = (uint64_t)rowsB * (uint64_t)colsB;
   uint64_t sizeOutput = (uint64_t)rowsB * (uint64_t)sizeColIndexList;
   size_t wasmBufferSize = GetWasmRawBufferLength(memBase);
@@ -450,7 +452,8 @@ int32_t js::intgemm::IntrI8SelectColumnsOfB(wasm::Instance* instance,
                                     sizeof(int8_t)) ||
       !CheckMatrixBound(colIndexList, sizeColIndexList, wasmBufferSize,
                         sizeof(uint32_t)) ||
-      !CheckMatrixBound(output, sizeOutput, wasmBufferSize, sizeof(int8_t))) {
+      !CheckMatrixBoundAndAlignment(output, sizeOutput, wasmBufferSize,
+                                    sizeof(int8_t))) {
     return -1;
   }
 

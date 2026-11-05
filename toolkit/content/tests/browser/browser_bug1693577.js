@@ -10,17 +10,18 @@
 
 add_task(async function test_search_input_popupshowing() {
   let sidebar = document.getElementById("sidebar");
-
-  let loadPromise = BrowserTestUtils.waitForEvent(sidebar, "load", true);
-  SidebarController.toggle("viewBookmarksSidebar");
-  await loadPromise;
-
   const isUpdatedBookmarks = Services.prefs.getBoolPref(
     "sidebar.updatedBookmarks.enabled"
   );
+  let loadPromise = BrowserTestUtils.waitForEvent(sidebar, "load", true);
+  SidebarController.toggle("viewBookmarksSidebar");
+  await SidebarController.waitUntilStable();
+  await loadPromise;
+
   const bookmarksComponent = isUpdatedBookmarks
     ? sidebar.contentDocument.querySelector("sidebar-bookmarks")
     : null;
+  await SidebarController.waitUntilStable();
   const inputField = isUpdatedBookmarks
     ? bookmarksComponent.searchInput.inputEl
     : sidebar.contentDocument.getElementById("search-box");

@@ -9,6 +9,7 @@
 #include "gfxRect.h"
 #include "gfxTextRun.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/DisplaySVGItem.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShellForwards.h"
@@ -222,6 +223,20 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
   void NotifySVGChanged(ChangeFlags aFlags) override;
   void PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
                 imgDrawingParams& aImgParams) override;
+
+  /**
+   * Emits WebRender text primitives for the rendered runs of this frame, one
+   * reference frame per run. Returns an error when some run cannot be drawn
+   * with WebRender, in which case nothing has been emitted. With aDryRun the
+   * commands are built and then discarded; this is how the blob grouping code
+   * decides whether the item can be active.
+   */
+  WebRenderCommandsResult CreateWebRenderCommands(
+      wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
+      const layers::StackingContextHelper& aSc,
+      layers::RenderRootStateManager* aManager,
+      nsDisplayListBuilder* aDisplayListBuilder, DisplaySVGText* aItem,
+      bool aDryRun);
   nsIFrame* GetFrameForPoint(const gfxPoint& aPoint) override;
   void ReflowSVG() override;
   SVGBBox GetBBoxContribution(const Matrix& aToBBoxUserspace,
@@ -629,6 +644,44 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
   EnumeratedArray<WhichRange, CachedMeasuredRange> mCachedRanges;
 
   Maybe<nsTextFrame::PropertyProvider> mCachedProvider;
+};
+
+class DisplaySVGText final : public DisplaySVGItem {
+ public:
+  DisplaySVGText(nsDisplayListBuilder* aBuilder, SVGTextFrame* aFrame)
+      : DisplaySVGItem(aBuilder, aFrame) {
+    MOZ_COUNT_CTOR(DisplaySVGText);
+  }
+
+  MOZ_COUNTED_DTOR_FINAL(DisplaySVGText)
+
+  NS_DISPLAY_DECL_NAME("DisplaySVGText", TYPE_SVG_TEXT)
+
+  nsDisplayItemGeometry* AllocateGeometry(
+      nsDisplayListBuilder* aBuilder) override {
+    return new nsDisplayItemGenericGeometry(this, aBuilder);
+  }
+
+  nsRect GetComponentAlphaBounds(
+      nsDisplayListBuilder* aBuilder) const override {
+    bool snap;
+    return GetBounds(aBuilder, &snap);
+  }
+
+  // Whether the text can be drawn with WebRender primitives (a dry run of
+  // CreateWebRenderCommands).
+  bool ShouldBeActive(mozilla::wr::DisplayListBuilder& aBuilder,
+                      mozilla::wr::IpcResourceUpdateQueue& aResources,
+                      const mozilla::layers::StackingContextHelper& aSc,
+                      mozilla::layers::RenderRootStateManager* aManager,
+                      nsDisplayListBuilder* aDisplayListBuilder);
+
+  WebRenderCommandsResult CreateWebRenderCommands(
+      mozilla::wr::DisplayListBuilder& aBuilder,
+      mozilla::wr::IpcResourceUpdateQueue& aResources,
+      const mozilla::layers::StackingContextHelper& aSc,
+      mozilla::layers::RenderRootStateManager* aManager,
+      nsDisplayListBuilder* aDisplayListBuilder) override;
 };
 
 }  // namespace mozilla

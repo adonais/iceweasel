@@ -8,6 +8,9 @@ import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.File
 import java.nio.charset.StandardCharsets
+import kotlin.test.assertIs
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.BrowserAction
@@ -22,6 +25,9 @@ import mozilla.components.concept.fetch.Headers.Names.CONTENT_TYPE
 import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
+import mozilla.components.feature.downloads.facts.ShareResourceFacts
+import mozilla.components.support.base.Component
+import mozilla.components.support.base.facts.processor.CollectionProcessor
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
@@ -38,6 +44,7 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
@@ -144,8 +151,15 @@ class ShareResourceFeatureTest {
 
             shareFeature.scope = this
 
-            shareFeature.startSharing(shareState)
-            testDispatcher.scheduler.advanceUntilIdle()
+            CollectionProcessor.withFactCollection { facts ->
+                shareFeature.startSharing(shareState)
+                testDispatcher.scheduler.advanceUntilIdle()
+
+                assertEquals(
+                    ShareResourceFacts.ShareType.INTERNET,
+                    facts.single().metadata?.get(ShareResourceFacts.MetadataKeys.SHARE_TYPE),
+                )
+            }
 
             verify(shareFeature).download(shareState)
             verify(shareFeature).shareInternetResource(downloadedFile.canonicalPath, "contentType", null, null)
@@ -165,8 +179,15 @@ class ShareResourceFeatureTest {
 
             shareFeature.scope = this
 
-            shareFeature.startSharing(shareState)
-            testDispatcher.scheduler.advanceUntilIdle()
+            CollectionProcessor.withFactCollection { facts ->
+                shareFeature.startSharing(shareState)
+                testDispatcher.scheduler.advanceUntilIdle()
+
+                assertEquals(
+                    ShareResourceFacts.ShareType.DIRECT,
+                    facts.single().metadata?.get(ShareResourceFacts.MetadataKeys.SHARE_TYPE),
+                )
+            }
 
             verify(shareFeature).downloadDirectResource(response)
             verify(shareFeature).shareInternetResource(downloadedFile.canonicalPath, "contentType", null, null)
@@ -180,11 +201,142 @@ class ShareResourceFeatureTest {
             val shareState = ShareResourceState.LocalResource(url = "content://pdf.pdf", contentType = "contentType")
             shareFeature.scope = this
 
-            shareFeature.startSharing(shareState)
-            testDispatcher.scheduler.advanceUntilIdle()
+            CollectionProcessor.withFactCollection { facts ->
+                shareFeature.startSharing(shareState)
+                testDispatcher.scheduler.advanceUntilIdle()
+
+                assertEquals(
+                    ShareResourceFacts.ShareType.LOCAL,
+                    facts.single().metadata?.get(ShareResourceFacts.MetadataKeys.SHARE_TYPE),
+                )
+            }
 
             verify(shareFeature, never()).download(any())
             verify(shareFeature).shareLocalPdf("content://pdf.pdf", "contentType")
+        }
+
+    @Test
+    fun `startSharing() emits a share duration fact with the share type once sharing has finished`() =
+        runTest(testDispatcher) {
+            CollectionProcessor.withFactCollection { facts ->
+                val shareFeature = spy(createFeature())
+                doReturn(true).`when`(shareFeature).shareLocalPdf(any(), any())
+                shareFeature.scope = this
+
+                shareFeature.startSharing(
+                    ShareResourceState.LocalResource(url = "content://pdf.pdf", contentType = "application/pdf")
+                )
+                testDispatcher.scheduler.advanceUntilIdle()
+
+                with(facts.single()) {
+                    assertEquals(Component.FEATURE_DOWNLOADS, component)
+                    assertEquals(ShareResourceFacts.Items.SHARE_DURATION, item)
+                    assertEquals(
+                        ShareResourceFacts.ShareType.LOCAL,
+                        metadata?.get(ShareResourceFacts.MetadataKeys.SHARE_TYPE),
+                    )
+                    assertIs<Long>(metadata?.get(ShareResourceFacts.MetadataKeys.DURATION_MS))
+                    assertEquals(
+                        ShareResourceFacts.ShareContentType.PDF,
+                        metadata?.get(ShareResourceFacts.MetadataKeys.CONTENT_TYPE),
+                    )
+                }
+            }
+        }
+
+    @Test
+    fun `startSharing() emits a share failed fact with the timeout reason when sharing times out`() =
+        runTest(testDispatcher) {
+            val shareFeature = spy(createFeature())
+            doThrow(mock<TimeoutCancellationException>()).`when`(shareFeature).downloadDirectResource(any())
+            shareFeature.scope = this
+
+            CollectionProcessor.withFactCollection { facts ->
+                shareFeature.startSharing(
+                    ShareResourceState.DirectResource(
+                        url = "testUrl",
+                        contentType = "application/pdf",
+                        response = mock(),
+                    )
+                )
+                testDispatcher.scheduler.advanceUntilIdle()
+
+                with(facts.single()) {
+                    assertEquals(Component.FEATURE_DOWNLOADS, component)
+                    assertEquals(ShareResourceFacts.Items.SHARE_FAILED, item)
+                    assertEquals(
+                        ShareResourceFacts.FailureReason.TIMEOUT,
+                        metadata?.get(ShareResourceFacts.MetadataKeys.FAILURE_REASON),
+                    )
+                    assertEquals(
+                        ShareResourceFacts.ShareType.DIRECT,
+                        metadata?.get(ShareResourceFacts.MetadataKeys.SHARE_TYPE),
+                    )
+                    assertEquals(
+                        ShareResourceFacts.ShareContentType.PDF,
+                        metadata?.get(ShareResourceFacts.MetadataKeys.CONTENT_TYPE),
+                    )
+                }
+            }
+
+            verify(shareFeature, never()).shareInternetResource(any(), any(), any(), any())
+        }
+
+    @Test
+    fun `startSharing() emits a share failed fact with the cancelled reason when the feature is stopped while sharing`() =
+        runTest(testDispatcher) {
+            val shareFeature = spy(createFeature())
+            doAnswer {
+                    shareFeature.stop()
+                    true
+                }
+                .`when`(shareFeature)
+                .shareLocalPdf(any(), any())
+            shareFeature.scope = CoroutineScope(testDispatcher)
+
+            CollectionProcessor.withFactCollection { facts ->
+                shareFeature.startSharing(
+                    ShareResourceState.LocalResource(url = "content://pdf.pdf", contentType = "application/pdf")
+                )
+                testDispatcher.scheduler.advanceUntilIdle()
+
+                with(facts.single()) {
+                    assertEquals(ShareResourceFacts.Items.SHARE_FAILED, item)
+                    assertEquals(
+                        ShareResourceFacts.FailureReason.CANCELLED,
+                        metadata?.get(ShareResourceFacts.MetadataKeys.FAILURE_REASON),
+                    )
+                }
+            }
+        }
+
+    @Test
+    fun `startSharing() emits a share failed fact with the error reason when sharing fails`() =
+        runTest(testDispatcher) {
+            val shareFeature = spy(createFeature())
+            doThrow(RuntimeException("Resource is not available to download")).`when`(shareFeature).download(any())
+            shareFeature.scope = CoroutineScope(testDispatcher)
+
+            CollectionProcessor.withFactCollection { facts ->
+                shareFeature.startSharing(ShareResourceState.InternetResource(url = "testUrl"))
+                testDispatcher.scheduler.advanceUntilIdle()
+
+                with(facts.single()) {
+                    assertEquals(ShareResourceFacts.Items.SHARE_FAILED, item)
+                    assertEquals(
+                        ShareResourceFacts.FailureReason.ERROR,
+                        metadata?.get(ShareResourceFacts.MetadataKeys.FAILURE_REASON),
+                    )
+                    assertEquals(
+                        ShareResourceFacts.ShareType.INTERNET,
+                        metadata?.get(ShareResourceFacts.MetadataKeys.SHARE_TYPE),
+                    )
+                    assertEquals(
+                        ShareResourceFacts.ShareContentType.OTHER,
+                        metadata?.get(ShareResourceFacts.MetadataKeys.CONTENT_TYPE),
+                    )
+                }
+            }
         }
 
     @Test

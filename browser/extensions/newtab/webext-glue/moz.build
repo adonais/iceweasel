@@ -151,6 +151,16 @@ if newtab_locales:
     GENERATED_FILES["locales-report.json"].extra_deps = locales_report_deps
     FINAL_TARGET_FILES.locales += ["!locales-report.json"]
 
+# English-only New Tab strings live in a preview file that is not translated.
+# Package the same English file under every locale in the XPI, as jar.mn does
+# for omni.ja. Fluent only builds a bundle for a locale when every resource the
+# document requests exists in that locale, so if this file were missing for a
+# locale, the whole New Tab page would fall back to English (bug 2054868).
+for locale in ["en-US"] + newtab_locales:
+    FINAL_TARGET_FILES.locales[locale].preview += [
+        "/browser/locales-preview/newtabPreview.ftl",
+    ]
+
 if not CONFIG["RELEASE_OR_BETA"]:
     FINAL_TARGET_FILES.prerendered += [
         "../prerendered/activity-stream-debug.html",

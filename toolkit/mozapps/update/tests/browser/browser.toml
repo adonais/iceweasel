@@ -39,6 +39,8 @@ run-if = [
 ["browser_aboutDialog_bc_downloaded.js"]
 tags = "os_integration"
 
+["browser_aboutDialog_bc_downloaded_restart.js"]
+
 ["browser_aboutDialog_bc_downloaded_staged.js"]
 
 ["browser_aboutDialog_bc_downloaded_staging.js"]

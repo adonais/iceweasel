@@ -1,0 +1,17 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/.
+   - Play glyph from toolkit/themes/shared/media/play-fill.svg, recoloured
+   - because SmartBlock placeholders load their logo as an <img>, which cannot
+   - use context-fill. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+    path {
+      fill: light-dark(rgb(91, 91, 102), rgb(191, 191, 201));
+    }
+  </style>
+  <path d="m2.992 13.498 0-10.996a1.5 1.5 0 0 1 2.245-1.303l9.621 5.498a1.5 1.5 0 0 1 0 2.605L5.237 14.8a1.5 1.5 0 0 1-2.245-1.302z"/>
+</svg>

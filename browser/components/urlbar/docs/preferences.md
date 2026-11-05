@@ -303,6 +303,19 @@ browser.urlbar.switchTabs.adoptIntoActiveWindow (boolean, default: false)
 : When using switch to tabs, if set to true this will move the tab into the
   active window, instead of just switching to it.
 
+browser.urlbar.suggest.temporal (boolean, default: true)
+
+: If `browser.urlbar.temporal.featureGate` is true, this controls whether
+  temporal search suggestions are shown in the zero prefix view.
+
+browser.urlbar.temporal.featureGate (boolean, default: false)
+
+: Feature gate pref for temporal search suggestions in the zero prefix view.
+
+browser.urlbar.temporal.rowCount (integer, default: 3)
+
+: The maximum number of temporal search suggestions to show.
+
 browser.urlbar.trimURLs (boolean, default: true)
 
 : Clean-up URLs when showing them in the Address Bar.

@@ -1,0 +1,32 @@
+# The credit card browser tests, run with the Rust credit card store serving
+# every credit card read and write.
+#
+# The include at the end of this file runs everything in test/browser/creditCard/
+# under the prefs in [DEFAULT]. The entries listed here are the credit card
+# tests that live in test/browser/ instead, whose manifest also holds address,
+# passport and ML tests that must not run against this store; each is a shim
+# that loads its original rather than a copy.
+#
+# Every file here is a second run of a test that lives elsewhere, so this
+# directory can be deleted whole once the Rust store is the only one.
+[DEFAULT]
+dupe-manifest = true
+prefs = [
+  "extensions.formautofill.creditCards.enabled=true",
+  "extensions.formautofill.skipProgrammaticCheckForTests=true",
+  "extensions.formautofill.creditCards.storage.rust.enabled=true",
+]
+support-files = [
+  # The shims listed below are not covered by the include, and mochitest loads
+  # a head only from the test's own directory, silently skipping a missing one.
+  "../head.js",
+  "../../fixtures/**",
+]
+
+["browser_autofill_creditCard_expiry.js"]
+
+["browser_autofill_creditCard_name.js"]
+
+["browser_autofill_creditCard_type.js"]
+
+["include:../creditCard/browser.toml"]

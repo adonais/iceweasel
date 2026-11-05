@@ -4,6 +4,8 @@
 
 package mozilla.components.feature.listentopage
 
+import kotlin.time.Duration
+import mozilla.components.feature.listentopage.synthesis.SpeechRate
 import mozilla.components.lib.state.Action
 
 /** Actions for the [ListenStore]. */
@@ -21,8 +23,21 @@ sealed interface ListenAction : Action {
             val url: String,
         ) : Session
 
-        /** The listening session is over. It resets to the initial state. */
-        data object StopRequested : Session
+        /**
+         * The listening session is over. It resets to the initial state.
+         *
+         * @property source What ended the session.
+         */
+        data class StopRequested(val source: StopSource = StopSource.CloseButton) : Session
+
+        /** What ended a listening session. */
+        enum class StopSource {
+            /** The user tapped the player's close button. */
+            CloseButton,
+
+            /** The listened tab was closed or user navigated elsewhere. */
+            TabClosed,
+        }
     }
 
     /** Actions reporting the article the session reads out. */
@@ -50,8 +65,21 @@ sealed interface ListenAction : Action {
          * The voice was changed.
          *
          * @property voice The voice selected for the article.
+         * @property source Source for voice selection.
          */
-        data class VoiceSelected(val voice: Voice) : Voices
+        data class VoiceSelected(
+            val voice: Voice,
+            val source: VoiceSource = VoiceSource.UserSelected,
+        ) : Voices
+
+        /** What chose a voice. */
+        enum class VoiceSource {
+            /** The user picked the voice from the list. */
+            UserSelected,
+
+            /** The voice was chosen automatically after the saved one became unavailable. */
+            Fallback,
+        }
 
         /** Available voices were loaded from the engine. */
         data class AvailableVoicesLoaded(val voices: List<Voice>, val selectedVoice: Voice) : Voices
@@ -77,12 +105,21 @@ sealed interface ListenAction : Action {
         /** The user asked for the voices to pick from. */
         data object VoicesClicked : Controls
 
+        /** The user asked for the speeds to pick from. */
+        data object PlaybackSpeedClicked : Controls
+
         /**
          * The user picked a playback speed.
          *
          * @property playbackSpeed The speed to read the article out at.
          */
         data class PlaybackSpeedSelected(val playbackSpeed: PlaybackSpeed) : Controls
+
+        /** The user dismissed the voices list without picking one. */
+        data object VoicesDismissed : Controls
+
+        /** The user dismissed the speeds list without picking one. */
+        data object PlaybackSpeedDismissed : Controls
     }
 
     /** Actions reporting what the player is doing. */
@@ -95,16 +132,18 @@ sealed interface ListenAction : Action {
         data class StateChangeObserved(val playbackState: PlaybackState) : Playback
 
         /**
-         * How far through the article playback has got was worked out afresh.
+         * The progress was put back to what it was before a seek that could not be made.
          *
          * @property positionMs How far into the article.
          * @property durationMs How long the whole article lasts.
          * @property chunkDurationsMs How long each chunk lasts, as they stood when this was worked out.
+         * @property barPosition Where the progress bar is drawn. See [ArticleProgress.barPosition].
          */
-        data class ArticleProgressChanged(
+        data class ArticleProgressReverted(
             val positionMs: Long,
             val durationMs: Long,
             val chunkDurationsMs: List<Long> = emptyList(),
+            val barPosition: Float? = null,
         ) : Playback
 
         /**
@@ -118,15 +157,17 @@ sealed interface ListenAction : Action {
         /**
          * The reader chose a place in the article to carry on from.
          *
-         * @property positionMs How far into the article to move to, measured against the lengths in
-         *   [ArticleProgress.chunkDurationsMs].
+         * @property fraction How far into the article to move to.
          */
-        data class SeekRequested(val positionMs: Long) : Playback
+        data class SeekRequested(val fraction: Float) : Playback
 
-        /** The player read out every chunk it had been given and the article has more to come. */
+        /**
+         * Playback waits for audio that is still being made: the opening when a session starts, or the next chunk after
+         * the player read out every chunk it had been given.
+         */
         data object PlaybackWaiting : Playback
 
-        /** The player read the last chunk of the article out. */
+        /** The article was read to its end, or a seek moved playback to its end. */
         data object PlaybackEnded : Playback
 
         /** The player could not read the article out. */
@@ -148,4 +189,89 @@ sealed interface ListenAction : Action {
 
     /** The error that needs to be cleared it is shown. */
     data object ErrorDismissed : ListenAction
+}
+
+// The actions below are only dispatched by the session's own middleware, so they are internal. They sit outside
+// ListenAction because Kotlin makes everything nested in an interface public.
+
+/**
+ * The player sent a report.
+ *
+ * @property report What the player reported, naming the chunk it is reading.
+ */
+internal data class PlayerReportReceived(val report: PlaybackState) : ListenAction.Playback
+
+/** Actions recording what has been handed to the player, which its reports are read against. */
+internal sealed interface PlaylistAction : ListenAction {
+    /** A new article is starting at its top, so nothing is queued, and a seek in the article before it is forgotten. */
+    data object ArticleStarted : PlaylistAction
+
+    /**
+     * What was handed to the player no longer counts, because the session is replacing it. A seek in progress is kept,
+     * since it is what the new playlist is being made for.
+     */
+    data object Cleared : PlaylistAction
+
+    /**
+     * The chunk at [chunkIndex] was handed to the player behind what was queued.
+     *
+     * @property chunkIndex The index of the chunk handed over.
+     */
+    data class ChunkQueued(val chunkIndex: Int) : PlaylistAction
+
+    /**
+     * Playback is being moved to [articlePositionMs] into the article, which is inside the chunk at [chunkIndex].
+     *
+     * @property articlePositionMs Where in the article playback is moving to.
+     * @property chunkIndex The index of the chunk that holds it.
+     */
+    data class SeekStarted(val articlePositionMs: Long, val chunkIndex: Int) : PlaylistAction
+
+    /** The seek was given up. */
+    data object SeekAbandoned : PlaylistAction
+
+    /** A seek moved playback to the end of the article, which finished it there. */
+    data object Finished : PlaylistAction
+
+    /**
+     * The player was given a new playlist that starts on the chunk at [chunkIndex], [startMs] into the article.
+     *
+     * @property chunkIndex The index of the chunk the new playlist starts on.
+     * @property chunkDurationsBeforePlaylistMs The durations of the chunks before the chunk at [chunkIndex] that the
+     *   playlist was placed by.
+     * @property startMs Where in the article playback starts.
+     */
+    data class Restarted(
+        val chunkIndex: Int,
+        val chunkDurationsBeforePlaylistMs: List<Long>,
+        val startMs: Long,
+    ) : PlaylistAction
+}
+
+/**
+ * Actions copying into [ListenState.articleMeasurements] what synthesis has found out about the article. Each one is
+ * dispatched where the synthesis queue changes, so that the two always agree.
+ */
+internal sealed interface MeasurementAction : ListenAction.Synthesis {
+    /** Synthesis of the article started again, so nothing is known yet about how long it lasts. */
+    data object Started : MeasurementAction
+
+    /** The article's audio was thrown away, so there is nothing to work its length out from. */
+    data object Cleared : MeasurementAction
+
+    /**
+     * The article was split into chunks once its opening was made.
+     *
+     * @property chunkCharacters How many characters each chunk holds, in reading order.
+     * @property speechRate What the opening measured at, or `null` when it could not be measured.
+     */
+    data class ArticleSplit(val chunkCharacters: List<Int>, val speechRate: SpeechRate?) : MeasurementAction
+
+    /**
+     * Chunk at [index] was made and measured.
+     *
+     * @property index The index of the chunk.
+     * @property duration How long its audio lasts.
+     */
+    data class ChunkMeasured(val index: Int, val duration: Duration) : MeasurementAction
 }

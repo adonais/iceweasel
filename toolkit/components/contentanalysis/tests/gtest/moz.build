@@ -24,6 +24,10 @@ if CONFIG["OS_TARGET"] == "WINNT":
         "TestContentAnalysisTelemetry.cpp",
         "TestContentAnalysisUtils.cpp",
     ]
+
+    SOURCE_HEADERS += [
+        "TestContentAnalysisUtils.h",
+    ]
     DIRS += ["agent"]
     OS_LIBS += ["pathcch"]
 

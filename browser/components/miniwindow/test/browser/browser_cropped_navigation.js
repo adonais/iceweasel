@@ -27,6 +27,9 @@ add_task(async function test_cropped_navigation_returns_tab_home() {
   let miniWin = await popTabForTest(tab, croppedInfoFor(tab.linkedBrowser));
   let mini = [...MiniWindowManager._miniwindows][0];
 
+  // Make sure the window is focussed
+  await SimpleTest.promiseFocus(miniWin);
+
   // A user-initiated navigation away from the cropped page: click the
   // fixture button, which sets location.href.
   let closed = BrowserTestUtils.domWindowClosed(miniWin);
@@ -40,6 +43,45 @@ add_task(async function test_cropped_navigation_returns_tab_home() {
   );
   Assert.ok(true, "Successfully navigated");
 
+  removeTestTabs(EXAMPLE_URL);
+});
+
+/**
+ * Pop a cropped mini window, then have its page navigate on its own (no user
+ * gesture) and resolve to the tab once it's back home.
+ *
+ * @param {object} options
+ * @param {boolean} options.miniWindowActive - whether the user is using the
+ *   mini window when the page navigates.
+ */
+async function navigateFromPage({ miniWindowActive }) {
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, REDIRECT_URL);
+  let miniWin = await popTabForTest(tab, croppedInfoFor(tab.linkedBrowser));
+  let mini = [...MiniWindowManager._miniwindows][0];
+  await SimpleTest.promiseFocus(miniWindowActive ? miniWin : window);
+
+  let closed = BrowserTestUtils.domWindowClosed(miniWin);
+  await SpecialPowers.spawn(mini.browser, [NEXT_URL], url => {
+    content.location.href = url;
+  });
+  await closed;
+
+  assertNoMiniWindowsOpen();
+  return TestUtils.waitForCondition(
+    () => gBrowser.tabs.find(t => t.linkedBrowser.currentURI.spec === NEXT_URL),
+    "the tab came back and the navigation continued"
+  );
+}
+
+add_task(async function test_page_navigation_returns_tab_quietly() {
+  let returned = await navigateFromPage({ miniWindowActive: false });
+  Assert.notEqual(gBrowser.selectedTab, returned, "the tab isn't selected");
+  removeTestTabs(EXAMPLE_URL);
+});
+
+add_task(async function test_page_navigation_in_active_mini_window_focuses() {
+  let returned = await navigateFromPage({ miniWindowActive: true });
+  Assert.equal(gBrowser.selectedTab, returned, "the tab is selected");
   removeTestTabs(EXAMPLE_URL);
 });
 

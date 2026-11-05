@@ -10,5 +10,6 @@
       }
     ]
   },
-  "include": ["**/*.js", "**/*.mjs", "types/*.ts"]
+  "include": ["**/*.js", "**/*.mjs", "types/*.ts"],
+  "exclude": ["./test"]
 }

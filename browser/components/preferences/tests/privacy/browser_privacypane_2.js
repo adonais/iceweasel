@@ -10,10 +10,4 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-run_test_subset([
-  test_pane_visibility,
-  test_dependent_elements,
-  test_dependent_cookie_elements,
-  test_dependent_clearonclose_elements,
-  test_dependent_prefs,
-]);
+run_test_subset([test_dependent_elements_redesigned]);

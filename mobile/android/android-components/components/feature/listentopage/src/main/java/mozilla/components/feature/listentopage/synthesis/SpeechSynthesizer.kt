@@ -178,20 +178,25 @@ internal class AndroidTtsSpeechSynthesizer(
             return emptyList()
         }
 
-        val offlineVoices = runCatching { tts.voices.filter { it.isAvailableOffline() } }.getOrDefault(listOf())
+        val offlineVoices = runCatching {
+            tts.voices.filter { it.isAvailableOffline() }
+        }
+            .getOrDefault(listOf())
+            .associateWith { it.locale.normalized() }
 
         // Matched on a language range rather than by comparing the language strings, so that a tag too malformed to
         // parse is a language nothing matches instead of a parse failure.
         val ranges = languageRangeOrNull(Locale.forLanguageTag(langTag).language) ?: return emptyList()
-        val regions = Locale.filter(ranges, offlineVoices.map { it.locale }).toSet()
+        val regions = Locale.filter(ranges, offlineVoices.values.toList()).toSet()
 
         return offlineVoices
-            .filter { it.locale in regions }
+            .filterValues { it in regions }
+            .keys
             .sortedWith(voiceRanking)
             // The engines ship several near-identical voices per region, which would fill the list with rows the user
             // cannot tell apart, so each region is offered only by its best.
-            .distinctBy { it.locale }
-            .map { Voice(id = it.name, locale = it.locale) }
+            .distinctBy { offlineVoices.getValue(it) }
+            .map { Voice(id = it.name, locale = offlineVoices.getValue(it)) }
     }
 
     /**
@@ -247,4 +252,35 @@ internal class AndroidTtsSpeechSynthesizer(
 
     private fun android.speech.tts.Voice.isAvailableOffline() =
         !isNetworkConnectionRequired && features.orEmpty().none { it == TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED }
+}
+
+private val alpha3Languages: Map<String, String> by lazy {
+    Locale.getISOLanguages().associateByNotNull { runCatching { Locale.forLanguageTag(it).isO3Language }.getOrNull() }
+}
+
+private val alpha3Regions: Map<String, String> by lazy {
+    Locale.getISOCountries().associateByNotNull {
+        runCatching { Locale.forLanguageTag("und-$it").isO3Country }.getOrNull()
+    }
+}
+
+private inline fun Array<String>.associateByNotNull(key: (String) -> String?): Map<String, String> =
+    mapNotNull { value ->
+        key(value)?.takeIf { it.isNotEmpty() }?.let { it to value }
+    }
+    .toMap()
+
+/**
+ * Some engines, Samsung's among them, name the locale of a voice in three-letter codes and append the voice to it as a
+ * variant, as in `spa_MEX_default`. Nothing matches those against a language tag, so they are rewritten to the
+ * two-letter language and region the rest of the platform uses, dropping the variant.
+ */
+internal fun Locale.normalized(): Locale {
+    val language = alpha3Languages[language] ?: language
+    val region = alpha3Regions[country] ?: country
+    if (language == this.language && region == country) {
+        return this
+    }
+
+    return runCatching { Locale.Builder().setLanguage(language).setRegion(region).build() }.getOrDefault(this)
 }

@@ -20,19 +20,25 @@ interface nsIRunnable : nsISupports
 [scriptable, uuid(e75aa42a-80a9-11e6-afb5-e89d87348e2c)]
 interface nsIRunnablePriority : nsISupports
 {
-    const unsigned long PRIORITY_IDLE = 0;
-    const unsigned long PRIORITY_DEFERRED_TIMERS = 1;
-    const unsigned long PRIORITY_LOW = 2;
+    // LOWEST is available to TaskController tasks only, hence not declared
+    // here. It is for work that only wants the main thread's leftovers: it
+    // loses against every other priority, idle included, and is interrupted
+    // as soon as anything else becomes ready. Unlike an idle task it does not
+    // need an idle period, so it can also run when there is none.
+    // const unsigned long PRIORITY_LOWEST = 0;
+    const unsigned long PRIORITY_IDLE = 1;
+    const unsigned long PRIORITY_DEFERRED_TIMERS = 2;
+    const unsigned long PRIORITY_LOW = 3;
     // INPUT_LOW isn't supposed to be used directly.
-    // const unsigned long PRIORITY_INPUT_LOW = 3;
-    const unsigned long PRIORITY_NORMAL = 4;
-    const unsigned long PRIORITY_MEDIUMHIGH = 5;
-    const unsigned long PRIORITY_INPUT_HIGH = 6;
-    const unsigned long PRIORITY_VSYNC = 7;
+    // const unsigned long PRIORITY_INPUT_LOW = 4;
+    const unsigned long PRIORITY_NORMAL = 5;
+    const unsigned long PRIORITY_MEDIUMHIGH = 6;
+    const unsigned long PRIORITY_INPUT_HIGH = 7;
+    const unsigned long PRIORITY_VSYNC = 8;
     // INPUT_HIGHEST is InputTaskManager's internal priority
-    //const unsigned long PRIORITY_INPUT_HIGHEST = 8;
-    const unsigned long PRIORITY_RENDER_BLOCKING = 9;
-    const unsigned long PRIORITY_CONTROL = 10;
+    //const unsigned long PRIORITY_INPUT_HIGHEST = 9;
+    const unsigned long PRIORITY_RENDER_BLOCKING = 10;
+    const unsigned long PRIORITY_CONTROL = 11;
 
     readonly attribute unsigned long priority;
 };

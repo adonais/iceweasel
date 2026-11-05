@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use api::{BuiltDisplayList, ColorF, DynamicProperties, Epoch, FontRenderMode, IdNamespace};
+use api::{BuiltDisplayList, ColorF, DynamicProperties, EmbedPolicy, Epoch, FontRenderMode, IdNamespace};
 use api::{PipelineId, PropertyBinding, PropertyBindingId, PropertyValue, MixBlendMode, StackingContext};
 use api::units::*;
 use api::channel::Sender;
@@ -16,7 +16,7 @@ use crate::hit_test::{HitTester, HitTestingScene, HitTestingSceneStats};
 use crate::internal_types::{FastHashMap, FastHashSet};
 use crate::surface::SurfaceInfo;
 use crate::picture_graph::PictureGraph;
-use crate::prim_store::{PrimitiveStore, PrimitiveStoreStats, PictureIndex, PrimitiveInstance};
+use crate::prim_store::{PrimitiveStore, PrimitiveStoreStats, PictureIndex, PrimitiveInstance, PrimitiveInstanceIndex};
 use crate::tile_cache::TileCacheConfig;
 use std::sync::Arc;
 
@@ -220,6 +220,10 @@ pub struct Scene {
     pub root_pipeline_id: Option<PipelineId>,
     pub pipelines: FastHashMap<PipelineId, ScenePipeline>,
     pub pipeline_epochs: FastHashMap<PipelineId, Epoch>,
+    #[cfg_attr(feature = "replay", serde(default))]
+    pub embed_policies: FastHashMap<PipelineId, EmbedPolicy>,
+    #[cfg_attr(feature = "replay", serde(default))]
+    pub enforce_embed_policy: bool,
 }
 
 impl Scene {
@@ -228,6 +232,8 @@ impl Scene {
             root_pipeline_id: None,
             pipelines: FastHashMap::default(),
             pipeline_epochs: FastHashMap::default(),
+            embed_policies: FastHashMap::default(),
+            enforce_embed_policy: false,
         }
     }
 
@@ -257,6 +263,18 @@ impl Scene {
         }
         self.pipelines.remove(&pipeline_id);
         self.pipeline_epochs.remove(&pipeline_id);
+        self.embed_policies.remove(&pipeline_id);
+    }
+
+    /// Whether an iframe item in `embedder`'s display list may embed `child`.
+    pub fn may_embed(&self, embedder: PipelineId, child: PipelineId) -> bool {
+        if !self.enforce_embed_policy {
+            return true;
+        }
+        match self.embed_policies.get(&embedder) {
+            Some(policy) => policy.allows(child),
+            None => false,
+        }
     }
 
     pub fn update_epoch(&mut self, pipeline_id: PipelineId, epoch: Epoch) {
@@ -295,6 +313,14 @@ impl StackingContextHelpers for StackingContext {
     }
 }
 
+/// A backdrop-filter chain in the scene.
+#[derive(Copy, Clone, Debug)]
+pub struct BackdropChain {
+    /// The outermost picture (`IntermediateSurface`) of the chain.
+    pub output_pic_index: PictureIndex,
+    /// The `BackdropCapture` primitive in the innermost picture of the chain.
+    pub capture_instance_index: PrimitiveInstanceIndex,
+}
 
 /// WebRender's internal representation of the scene.
 pub struct BuiltScene {
@@ -307,12 +333,16 @@ pub struct BuiltScene {
     pub hit_testing_scene: Arc<HitTestingScene>,
     pub tile_cache_config: TileCacheConfig,
     pub snapshot_pictures: Vec<PictureIndex>,
+    pub backdrop_chains: Vec<BackdropChain>,
     pub tile_cache_pictures: Vec<PictureIndex>,
     pub picture_graph: PictureGraph,
     pub num_plane_splitters: usize,
     pub prim_instances: Vec<PrimitiveInstance>,
     pub surfaces: Vec<SurfaceInfo>,
     pub clip_tree: ClipTree,
+    /// The (embedder, child) pairs of the iframe items that the embedder's
+    /// embed policy rejected.
+    pub embed_policy_violations: Vec<(PipelineId, PipelineId)>,
 
     /// Deallocating memory outside of the thread that allocated it causes lock
     /// contention in jemalloc. To avoid this we send the built scene back to
@@ -332,12 +362,14 @@ impl BuiltScene {
             hit_testing_scene: Arc::new(HitTestingScene::new(&HitTestingSceneStats::empty())),
             tile_cache_config: TileCacheConfig::new(0),
             snapshot_pictures: Vec::new(),
+            backdrop_chains: Vec::new(),
             tile_cache_pictures: Vec::new(),
             picture_graph: PictureGraph::new(),
             num_plane_splitters: 0,
             prim_instances: Vec::new(),
             surfaces: Vec::new(),
             clip_tree: ClipTree::new(),
+            embed_policy_violations: Vec::new(),
             recycler_tx: None,
             config: FrameBuilderConfig {
                 default_font_render_mode: FontRenderMode::Mono,

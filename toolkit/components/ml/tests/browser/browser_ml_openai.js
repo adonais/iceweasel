@@ -501,7 +501,7 @@ add_task(async function test_openai_abandoned_generator_rejection_is_handled() {
 });
 
 /**
- * Test that fxAccountToken is properly passed to the OpenAI client
+ * Test that token is properly passed to the OpenAI client
  */
 add_task(async function test_openai_fxaccount_token() {
   const records = [
@@ -539,7 +539,7 @@ add_task(async function test_openai_fxaccount_token() {
     },
   });
 
-  const fxAccountToken = "test_fxa_token_12345";
+  const token = "test_fxa_token_12345";
   const apiKey = "test-api-key";
   const chatId = "test-chat-id-12345";
 
@@ -557,12 +557,12 @@ add_task(async function test_openai_fxaccount_token() {
         content: "Test request with FxA token",
       },
     ],
-    fxAccountToken,
+    token,
     chatId,
   };
 
   try {
-    info("Run the inference with fxAccountToken");
+    info("Run the inference with token");
     const result = await engineInstance.run(request);
 
     Assert.equal(
@@ -598,15 +598,15 @@ add_task(async function test_openai_fxaccount_token() {
       "User-Agent header should be the browser's user agent"
     );
 
-    info("Test without fxAccountToken - should not include header");
+    info("Test without token - should not include header");
 
-    // Create another engine without fxAccountToken
+    // Create another engine without token
     const engineWithoutToken = await createEngine({
       ...BASE_ENGINE_OPTIONS,
       apiKey: "test-api-key",
       baseURL: `http://localhost:${port}/v1`,
       backend: "openai",
-      // No fxAccountToken
+      // No token
     });
 
     capturedFxaHeader = null;
@@ -618,7 +618,7 @@ add_task(async function test_openai_fxaccount_token() {
           content: "Test request with FxA token",
         },
       ],
-      // No fxAccountToken
+      // No token
     };
     await engineWithoutToken.run(requestWithoutToken);
 
@@ -634,6 +634,53 @@ add_task(async function test_openai_fxaccount_token() {
       "ai",
       "service-type header should be present"
     );
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+    await stopMockOpenAI(mockServer);
+  }
+});
+
+/**
+ * A service that rejects a request reports why through the HTTP status and a
+ * body error code. Both have to survive the trip from the inference process,
+ * where structured clone keeps only the Error's name and message.
+ */
+add_task(async function test_openai_error_keeps_status_and_code() {
+  const records = [
+    {
+      ...BASE_ENGINE_OPTIONS,
+      id: "74a71cfd-1734-44e6-85c0-69cf3e874138",
+    },
+  ];
+  const { cleanup } = await setup({ records });
+  const { server: mockServer, port } = startMockOpenAI({
+    errorResponse: { status: 429, body: { error: 1 } },
+  });
+
+  const engineInstance = await createEngine({
+    ...BASE_ENGINE_OPTIONS,
+    apiKey: "ollama",
+    baseURL: `http://localhost:${port}/v1`,
+    backend: "openai",
+    maxRetries: 0,
+  });
+
+  try {
+    let error;
+    try {
+      await engineInstance.run({
+        args: [{ role: "user", content: "Hello" }],
+      });
+    } catch (e) {
+      error = e;
+    }
+    Assert.ok(
+      error?.message.includes("429"),
+      "The run rejects with the backend's error"
+    );
+    Assert.equal(error.status, 429, "The HTTP status is kept on the error");
+    Assert.equal(error.error, 1, "The body error code is kept on the error");
   } finally {
     await EngineProcess.destroyMLEngine();
     await cleanup();

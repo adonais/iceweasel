@@ -15,6 +15,9 @@ const { Chat, executeToolByName } = ChromeUtils.importESModule(
 const { RunSearch, GetPageContent, toolFns } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
+const { AuthProvider } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs"
+);
 const {
   MODEL_FEATURES,
   openAIEngine,
@@ -200,7 +203,7 @@ add_task(async function test_Chat_fetchWithHistory_streams_and_forwards_args() {
       },
     };
 
-    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+    sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
     const conversation = new ChatConversation({
       title: "chat title",
@@ -283,7 +286,7 @@ add_task(async function test_Chat_fetchWithHistory_sends_compacted_args() {
         return {};
       },
     };
-    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+    sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
     const conversation = new ChatConversation({
       title: "t",
@@ -362,7 +365,7 @@ add_task(async function test_Chat_fetchWithHistory_handles_tool_calls() {
       .stub(toolFns, "searchBrowsingHistory")
       .resolves("tool result");
 
-    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+    sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
     const conversation = new ChatConversation({
       title: "chat title",
@@ -447,7 +450,7 @@ add_task(
         },
       };
 
-      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+      sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "chat title",
@@ -518,7 +521,7 @@ add_task(
         .stub(toolFns, "searchBrowsingHistory")
         .resolves("should not be called");
 
-      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+      sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "chat title",
@@ -592,7 +595,7 @@ add_task(
       };
 
       sb.stub(toolFns, "getOpenTabs").resolves([]);
-      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+      sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "chat title",
@@ -708,7 +711,7 @@ add_task(
           secProps.setPrivateData();
           return [{ url: _params?.url, ok: true, content: "page content" }];
         });
-      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+      sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "flags test",
@@ -811,7 +814,7 @@ add_task(async function test_Chat_fetchWithHistory_uses_modelId_from_pref() {
     const createEngineStub = sb
       .stub(openAIEngine, "_createEngine")
       .resolves(fakeEngineInstance);
-    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+    sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
     const conversation = new ChatConversation({
       title: "chat title",
@@ -893,7 +896,7 @@ add_task(
       const runSearchStub = sb
         .stub(RunSearch, "runSearch")
         .resolves("search result");
-      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+      sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
       const mockBrowser = {
         documentGlobal: {
@@ -1032,7 +1035,7 @@ add_task(
         };
         return Promise.resolve("search result");
       });
-      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+      sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
       const mockBrowser = {
         documentGlobal: {
@@ -1150,7 +1153,7 @@ add_task(
       };
 
       sb.stub(toolFns, "getUserMemories").rejects(new Error("boom"));
-      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+      sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "failed tool",
@@ -1230,7 +1233,7 @@ add_task(
       };
 
       sb.stub(toolFns, "getUserMemories").resolves("list of memories");
-      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+      sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "memories are enabled",
@@ -1308,7 +1311,7 @@ add_task(
       };
 
       sb.stub(toolFns, "getUserMemories").resolves("list of memories");
-      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+      sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "memories are enabled",
@@ -1373,7 +1376,7 @@ add_task(
         },
       };
 
-      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+      sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "chat title",
@@ -1446,7 +1449,7 @@ add_task(
         abortController.abort();
         return "tool result";
       });
-      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+      sb.stub(AuthProvider, "getToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "chat title",

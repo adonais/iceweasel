@@ -92,12 +92,15 @@ already_AddRefed<TextureClient> ImageClient::CreateTextureClientForImage(
     if (!data) {
       return nullptr;
     }
+    const auto sizes = data->GetPlaneSizes();
+    if (!sizes) {
+      return nullptr;
+    }
     texture = TextureClient::CreateForYCbCr(
-        aKnowsCompositor, data->mPictureRect, data->YDataSize(), data->mYStride,
-        data->CbCrDataSize(), data->mCbCrStride, data->mStereoMode,
-        data->mColorDepth, data->mYUVColorSpace, data->mColorRange,
-        data->mTransferFunction, data->mChromaSubsampling,
-        TextureFlags::DEFAULT, data->mHDRMetadata);
+        aKnowsCompositor, data->mPictureRect, sizes->mY, data->mYStride,
+        sizes->mCbCr, data->mCbCrStride, data->mStereoMode, data->mColorDepth,
+        data->mYUVColorSpace, data->mColorRange, data->mTransferFunction,
+        data->mChromaSubsampling, TextureFlags::DEFAULT, data->mHDRMetadata);
     if (!texture) {
       return nullptr;
     }

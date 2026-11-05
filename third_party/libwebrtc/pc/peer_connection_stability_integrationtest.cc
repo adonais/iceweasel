@@ -429,7 +429,12 @@ class PeerConnectionIntegrationTest : public PeerConnectionIntegrationBaseTest {
   }
 };
 
+#if defined(WEBRTC_USE_H264)
 TEST_F(PeerConnectionIntegrationTest, BasicOfferAnswerPayloadTypesStable) {
+#else
+TEST_F(PeerConnectionIntegrationTest,
+       DISABLED_BasicOfferAnswerPayloadTypesStable) {
+#endif
   FactorySignature factory_signature(env_.field_trials());
   ASSERT_THAT(factory_signature.id(),
               Not(Eq(FactorySignature::Id::kNotRecognized)));

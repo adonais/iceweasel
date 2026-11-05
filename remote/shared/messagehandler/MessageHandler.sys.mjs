@@ -68,8 +68,8 @@ export const ContextDescriptorType = {
  * MessageHandler instances are designed to form a network, where each instance
  * should allow to inspect a specific context (eg. a BrowsingContext, a Worker,
  * etc). Those instances might live in different processes and threads but
- * should be linked together by the usage of a single sessionId, shared by all
- * the instances of a single MessageHandler network.
+ * should be linked together by the usage of a single internalSessionId, shared
+ * by all the instances of a single MessageHandler network.
  *
  * MessageHandler instances will be dynamically spawned depending on which
  * Command or which Event needs to be processed and should therefore not be
@@ -82,36 +82,39 @@ export const ContextDescriptorType = {
  * However, even to create this ROOT MessageHandler, consumers should use the
  * RootMessageHandlerRegistry. This singleton will ensure that MessageHandler
  * instances are properly registered and can be retrieved based on a given
- * session id as well as some other context information.
+ * internal session id as well as some other context information.
  */
 export class MessageHandler extends EventEmitter {
   #context;
   #contextId;
   #eventsDispatcher;
+  #internalSessionId;
   #moduleCache;
   #registry;
-  #sessionId;
 
   /**
    * Create a new MessageHandler instance.
    *
-   * @param {string} sessionId
-   *     ID of the session the handler is used for.
+   * @param {string} internalSessionId
+   *     ID of the MessageHandler network the handler is part of. This ID
+   *     is shared with content processes, so it must never be the public
+   *     WebDriver session id.
    * @param {object} context
    *     The context linked to this MessageHandler instance.
    * @param {MessageHandlerRegistry} registry
    *     The MessageHandlerRegistry which owns this MessageHandler instance.
    */
-  constructor(sessionId, context, registry) {
+  constructor(internalSessionId, context, registry) {
     super();
 
     this.#moduleCache = new lazy.ModuleCache(this);
 
-    this.#sessionId = sessionId;
     this.#context = context;
+    this.#internalSessionId = internalSessionId;
+    this.#registry = registry;
+
     this.#contextId = this.constructor.getIdFromContext(context);
     this.#eventsDispatcher = new lazy.EventsDispatcher(this);
-    this.#registry = registry;
   }
 
   get context() {
@@ -131,20 +134,22 @@ export class MessageHandler extends EventEmitter {
   }
 
   get name() {
-    return [this.sessionId, this.constructor.type, this.contextId].join("-");
+    return [this.internalSessionId, this.constructor.type, this.contextId].join(
+      "-"
+    );
   }
 
   get registry() {
     return this.#registry;
   }
 
-  get sessionId() {
-    return this.#sessionId;
+  get internalSessionId() {
+    return this.#internalSessionId;
   }
 
   destroy() {
     lazy.logger.trace(
-      `MessageHandler ${this.constructor.type} for session ${this.sessionId} is being destroyed`
+      `MessageHandler ${this.constructor.type} ${this.internalSessionId} is being destroyed`
     );
     this.#eventsDispatcher.destroy();
     this.#moduleCache.destroy();
@@ -207,7 +212,7 @@ export class MessageHandler extends EventEmitter {
       name,
       relatedContexts,
       data,
-      sessionId: this.sessionId,
+      internalSessionId: this.internalSessionId,
     });
   }
 

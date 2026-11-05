@@ -14,6 +14,7 @@ TEST_DIRS += [
 ]
 
 MOCHITEST_MANIFESTS += [
+    "connection-allowlist/mochitest.toml",
     "cors/mochitest.toml",
     "csp/mochitest.toml",
     "general/mochitest.toml",

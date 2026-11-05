@@ -7,8 +7,8 @@ const { Sampling } = ChromeUtils.importESModule(
 const { ClientID } = ChromeUtils.importESModule(
   "resource://gre/modules/ClientID.sys.mjs"
 );
-const { ClientEnvironment } = ChromeUtils.importESModule(
-  "resource://normandy/lib/ClientEnvironment.sys.mjs"
+const { ClientEnvironmentBase } = ChromeUtils.importESModule(
+  "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs"
 );
 const { ExperimentStore } = ChromeUtils.importESModule(
   "resource://nimbus/lib/ExperimentStore.sys.mjs"
@@ -555,7 +555,11 @@ add_task(async function test_sampling_check() {
   const { sandbox, manager, cleanup } = await setupTest();
 
   sandbox.stub(Sampling, "bucketSample").resolves(true);
-  sandbox.replaceGetter(ClientEnvironment, "userId", () => 42);
+  sandbox.replaceGetter(
+    ClientEnvironmentBase,
+    "legacyRandomizationId",
+    () => 42
+  );
 
   let recipe = NimbusTestUtils.factories.recipe("foo", { bucketConfig: null });
 

@@ -45,10 +45,15 @@ var gStateObject;
 /** @type {TreeRow[]} */
 var gTreeData;
 var gTreeInitialized = false;
+var gOfferedCounts = null;
+var gSingleTabsRestored = 0;
+var gOutcomeRecorded = false;
 
 // Page initialization
 
 window.onload = function () {
+  window.addEventListener("pagehide", onPageHide);
+
   let toggleTabs = /** @type {HTMLButtonElement} */ (
     document.getElementById("tabsToggle")
   );
@@ -91,10 +96,18 @@ window.onload = function () {
   );
   if (!sessionData.value) {
     errorTryAgainButton.disabled = true;
+    recordOutcome("no_data");
     return;
   }
 
   gStateObject = JSON.parse(sessionData.value);
+  gOfferedCounts = {
+    windows_offered: gStateObject.windows.length,
+    tabs_offered: gStateObject.windows.reduce(
+      (count, win) => count + win.tabs.length,
+      0
+    ),
+  };
 
   // make sure the data is tracked to be restored in case of a subsequent crash
   var event = document.createEvent("UIEvents");
@@ -200,6 +213,13 @@ function restoreSession() {
       }
     }
   }
+  let { tabs_selected } = getSelectedCounts();
+  recordOutcome(
+    tabs_selected == gOfferedCounts.tabs_offered
+      ? "restore_all"
+      : "restore_subset"
+  );
+
   var stateString = JSON.stringify(gStateObject);
 
   var top = getBrowserWindow();
@@ -211,7 +231,7 @@ function restoreSession() {
   }
 
   // restore the session into a new window and close the current tab
-  var newWindow = /** @type {ChromeWindow} */ (
+  var newWindow = /** @type {BrowserWindow} */ (
     top.openDialog(top.location.href, "_blank", "chrome,dialog=no,all")
   );
 
@@ -231,6 +251,7 @@ function restoreSession() {
 }
 
 function startNewSession() {
+  recordOutcome("start_new_session");
   if (Services.prefs.getIntPref("browser.startup.page") == 0) {
     getBrowserWindow().gBrowser.loadURI(Services.io.newURI("about:blank"), {
       triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
@@ -304,13 +325,68 @@ function getTryAgainButton() {
 }
 
 /**
- * @returns {ChromeWindow}
+ * @returns {BrowserWindow}
  */
 function getBrowserWindow() {
-  return /** @type {ChromeWindow} */ (
+  return /** @type {BrowserWindow} */ (
     /** @type {CanonicalBrowsingContext} */ (window.browsingContext)
       .topChromeWindow
   );
+}
+
+function onPageHide() {
+  recordOutcome(Services.startup.shuttingDown ? "shutdown" : "abandoned");
+}
+
+/**
+ * Counts the windows and tabs that would be restored by restoreSession(). When
+ * the tab list isn't shown, everything is restored, whatever is checked in it.
+ */
+function getSelectedCounts() {
+  if (!gTreeInitialized || !isTreeViewVisible()) {
+    return {
+      windows_selected: gOfferedCounts.windows_offered,
+      tabs_selected: gOfferedCounts.tabs_offered,
+    };
+  }
+  let counts = { windows_selected: 0, tabs_selected: 0 };
+  for (let item of gTreeData) {
+    if (!("open" in item)) {
+      continue;
+    }
+    let checkedTabs = item.tabs.filter(tab => tab.checked).length;
+    if (checkedTabs) {
+      counts.windows_selected++;
+      counts.tabs_selected += checkedTabs;
+    }
+  }
+  return counts;
+}
+
+/**
+ * Records the session_restore.restore_page_outcome event, at most once per
+ * page load.
+ *
+ * @param {string} outcome
+ *        One of the outcomes listed for the event in metrics.yaml.
+ */
+function recordOutcome(outcome) {
+  if (gOutcomeRecorded) {
+    return;
+  }
+  gOutcomeRecorded = true;
+
+  let extra = { outcome, single_tabs_restored: gSingleTabsRestored };
+  let showReason = /** @type {HTMLInputElement} */ (
+    document.getElementById("showReason")
+  ).value;
+  if (showReason) {
+    extra.show_reason = showReason;
+  }
+  if (gOfferedCounts) {
+    Object.assign(extra, gOfferedCounts, getSelectedCounts());
+  }
+  Glean.sessionRestore.restorePageOutcome.record(extra);
 }
 
 function toggleRowChecked(aIx) {
@@ -349,8 +425,9 @@ function toggleRowChecked(aIx) {
 }
 
 function restoreSingleTab(aIx, aShifted) {
+  gSingleTabsRestored++;
   var tabbrowser = getBrowserWindow().gBrowser;
-  var newTab = tabbrowser.addWebTab();
+  var newTab = tabbrowser.addWebTab("about:blank");
   var item = gTreeData[aIx];
 
   var tabState =

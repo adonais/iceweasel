@@ -7,7 +7,7 @@ written in Rust. It is a drop-in replacement for markdownlint and ships with
 
 ## Run Locally
 
-The mozlint integration can be run using [`mach`](https://firefox-source-docs.mozilla.org/mach/):
+The mozlint integration can be run using [`mach`](/mach/index.md):
 
 ```{eval-rst}
 .. parsed-literal::

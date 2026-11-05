@@ -35,21 +35,27 @@ float GetInitialSpeechLevelEstimateDbfs(
 SpeechLevelEstimatorExperimentalImpl::SpeechLevelEstimatorExperimentalImpl(
     ApmDataDumper* apm_data_dumper,
     const AudioProcessing::Config::GainController2::AdaptiveDigital& config,
-    int adjacent_speech_frames_threshold)
+    int adjacent_speech_frames_threshold,
+    float background_speaker_offset_dbfs,
+    int max_time_to_update_ms)
     : apm_data_dumper_(apm_data_dumper),
       initial_speech_level_dbfs_(GetInitialSpeechLevelEstimateDbfs(config)),
       adjacent_speech_frames_threshold_(adjacent_speech_frames_threshold),
+      background_speaker_offset_dbfs_(background_speaker_offset_dbfs),
+      max_time_to_update_ms_(max_time_to_update_ms),
+      max_frames_to_update_(max_time_to_update_ms / kFrameDurationMs),
       level_dbfs_(initial_speech_level_dbfs_),
       is_confident_(false),
       is_background_speaker_(false) {
   RTC_DCHECK(apm_data_dumper_);
   RTC_DCHECK_GE(adjacent_speech_frames_threshold_, 1);
+  RTC_DCHECK_GT(background_speaker_offset_dbfs_, 0.0f);
+  RTC_DCHECK_GT(max_time_to_update_ms_, 0);
   Reset();
 }
 
 void SpeechLevelEstimatorExperimentalImpl::Update(float rms_dbfs,
                                                   float speech_probability) {
-  constexpr float kBackgroundSpeakerOffsetDbfs = 10.0f;
   constexpr int kFramesPerUpdate = 100;
 
   if (speech_probability < kVadConfidenceThreshold) {
@@ -74,24 +80,38 @@ void SpeechLevelEstimatorExperimentalImpl::Update(float rms_dbfs,
         const float reliable_level_dbfs = ClampLevelEstimateDbfs(
             reliable_state_.sum_of_levels_dbfs / reliable_state_.num_frames);
         if (is_confident_ &&
-            reliable_level_dbfs < level_dbfs_ - kBackgroundSpeakerOffsetDbfs) {
+            reliable_level_dbfs <
+                level_dbfs_ - background_speaker_offset_dbfs_) {
+          // Level drop: detected when reliable speech is significantly quieter
+          // than the established target speaker level.
           is_background_speaker_ = true;
         } else {
           is_background_speaker_ = false;
           level_dbfs_ = reliable_level_dbfs;
           is_confident_ = true;
         }
-        ResetLevelEstimatorState(reliable_state_);
-        ResetLevelEstimatorState(preliminary_state_);
+        ResetLevelEstimatorState();
       }
     }
   }
+
+  if (is_confident_ && reliable_state_.num_frames > 0) {
+    num_frames_in_current_update_window_++;
+    // Low activity: a target speaker triggers the VAD frequently, whereas
+    // sporadic bursts that time out before accumulating enough reliable frames
+    // are assumed to come from a distant background speaker.
+    if (num_frames_in_current_update_window_ >= max_frames_to_update_) {
+      ResetLevelEstimatorState();
+      num_adjacent_speech_frames_ = 0;
+      is_background_speaker_ = true;
+    }
+  }
+
   DumpDebugData();
 }
 
 void SpeechLevelEstimatorExperimentalImpl::Reset() {
-  ResetLevelEstimatorState(preliminary_state_);
-  ResetLevelEstimatorState(reliable_state_);
+  ResetLevelEstimatorState();
   level_dbfs_ = initial_speech_level_dbfs_;
   num_adjacent_speech_frames_ = 0;
   tracking_level_dbfs_ = initial_speech_level_dbfs_;
@@ -99,10 +119,12 @@ void SpeechLevelEstimatorExperimentalImpl::Reset() {
   is_background_speaker_ = false;
 }
 
-void SpeechLevelEstimatorExperimentalImpl::ResetLevelEstimatorState(
-    LevelEstimatorState& state) const {
-  state.num_frames = 0;
-  state.sum_of_levels_dbfs = 0;
+void SpeechLevelEstimatorExperimentalImpl::ResetLevelEstimatorState() {
+  preliminary_state_.num_frames = 0;
+  preliminary_state_.sum_of_levels_dbfs = 0.0f;
+  reliable_state_.num_frames = 0;
+  reliable_state_.sum_of_levels_dbfs = 0.0f;
+  num_frames_in_current_update_window_ = 0;
 }
 
 void SpeechLevelEstimatorExperimentalImpl::DumpDebugData() const {
@@ -120,6 +142,9 @@ void SpeechLevelEstimatorExperimentalImpl::DumpDebugData() const {
       preliminary_state_.num_frames);
   apm_data_dumper_->DumpRaw("agc2_adaptive_level_estimator_reliable_num_frames",
                             reliable_state_.num_frames);
+  apm_data_dumper_->DumpRaw(
+      "agc2_adaptive_level_estimator_num_frames_in_current_update_window",
+      num_frames_in_current_update_window_);
 }
 
 }  // namespace webrtc

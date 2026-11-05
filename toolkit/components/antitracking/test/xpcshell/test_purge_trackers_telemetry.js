@@ -13,9 +13,44 @@ const { SiteDataTestUtils } = ChromeUtils.importESModule(
 const { PermissionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PermissionTestUtils.sys.mjs"
 );
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
+
+// Get expected Glean histogram bucket value for timing distribution
+// Use round=true for getting the bucket for a value returned from Glean and
+// round=false to get a bucket for a specific time
+function getExpBucketValue(timeNs, round) {
+  const bucket = 8 * Math.log2(Number(timeNs) + 1);
+  return round ? Math.round(bucket) : Math.floor(bucket);
+}
+
+function assertHistogram(histogram, index, expected, timeDist) {
+  let found = false;
+  if (timeDist) {
+    index = getExpBucketValue(index);
+  }
+  for (let [i, val] of Object.entries(histogram?.values || [])) {
+    if (timeDist) {
+      i = getExpBucketValue(i, true);
+    }
+    if (i == index) {
+      found = true;
+      Assert.equal(
+        val,
+        expected,
+        `expected counts should match for ${JSON.stringify(histogram)} at index ${i}`
+      );
+    } else {
+      Assert.equal(
+        val,
+        0,
+        `unexpected counts should be zero for ${JSON.stringify(histogram)} at index ${i}  -- expected ${expected} at ${index}`
+      );
+    }
+  }
+  Assert.ok(
+    found,
+    `Should have found an entry for ${JSON.stringify(histogram)} at index ${index} with expected ${expected}`
+  );
+}
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -44,6 +79,8 @@ add_task(async function setup() {
 
   // Needed for BounceTrackingProtection.
   do_get_profile(true);
+
+  Services.fog.initializeFOG();
 });
 
 /**
@@ -67,18 +104,7 @@ add_task(async function () {
   SiteDataTestUtils.addToCookies({ origin: TRACKING_PAGE });
   await SiteDataTestUtils.addToIndexedDB(TRACKING_PAGE);
 
-  let purgedHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "COOKIE_PURGING_ORIGINS_PURGED"
-  );
-  let notPurgedHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "COOKIE_PURGING_TRACKERS_WITH_USER_INTERACTION"
-  );
-  let remainingDaysHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "COOKIE_PURGING_TRACKERS_USER_INTERACTION_REMAINING_DAYS"
-  );
-  let intervalHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "COOKIE_PURGING_INTERVAL_HOURS"
-  );
+  Services.fog.testResetFOG();
 
   // Purge while storage access permission exists.
   await PurgeTrackerService.purgeTrackingCookieJars();
@@ -97,20 +123,27 @@ add_task(async function () {
     `We have data for ${TRACKING_PAGE}`
   );
 
-  TelemetryTestUtils.assertHistogram(purgedHistogram, 0, 1);
-  TelemetryTestUtils.assertHistogram(notPurgedHistogram, 1, 1);
-  TelemetryTestUtils.assertHistogram(remainingDaysHistogram, 4, 2);
-  TelemetryTestUtils.assertHistogram(intervalHistogram, 0, 1);
+  await Services.fog.testFlushAllChildren();
 
-  purgedHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "COOKIE_PURGING_ORIGINS_PURGED"
-  );
-  notPurgedHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "COOKIE_PURGING_TRACKERS_WITH_USER_INTERACTION"
-  );
-  intervalHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "COOKIE_PURGING_INTERVAL_HOURS"
-  );
+  let purgedHistogram = Glean.cookiePurging.originsPurged.testGetValue();
+  let notPurgedHistogram =
+    Glean.cookiePurging.trackersWithUserInteraction.testGetValue();
+  let remainingDaysHistogram =
+    Glean.cookiePurging.trackersUserInteractionRemainingDays.testGetValue();
+  let intervalHistogram = Glean.cookiePurging.intervalHours.testGetValue();
+
+  const nsPerHour = 60 * 60 * 1e9;
+  const nsPerDay = 24 * nsPerHour;
+
+  assertHistogram(purgedHistogram, 0, 1);
+  assertHistogram(notPurgedHistogram, 1, 1);
+  assertHistogram(remainingDaysHistogram, 4 * nsPerDay, 2, true);
+  // The interval between purges here is 0 hours, but Glean's timing
+  // distribution clamps a sample of 0 to 1 (in the metric's time_unit) before
+  // converting to nanoseconds, so 0 hours becomes 1 hour.
+  assertHistogram(intervalHistogram, nsPerHour, 1, true);
+
+  Services.fog.testResetFOG();
 
   // Run purge after storage access permission has been removed.
   PermissionTestUtils.remove(TRACKING_PAGE, "storageAccessAPI");
@@ -136,13 +169,16 @@ add_task(async function () {
     "quota storage was deleted"
   );
 
-  TelemetryTestUtils.assertHistogram(purgedHistogram, 1, 1);
-  Assert.equal(
-    notPurgedHistogram.snapshot().sum,
-    0,
-    "no origins with user interaction"
-  );
-  TelemetryTestUtils.assertHistogram(intervalHistogram, 0, 1);
+  await Services.fog.testFlushAllChildren();
+
+  purgedHistogram = Glean.cookiePurging.originsPurged.testGetValue();
+  notPurgedHistogram =
+    Glean.cookiePurging.trackersWithUserInteraction.testGetValue();
+  intervalHistogram = Glean.cookiePurging.intervalHours.testGetValue();
+
+  assertHistogram(purgedHistogram, 1, 1);
+  Assert.equal(notPurgedHistogram.sum, 0, "no origins with user interaction");
+  assertHistogram(intervalHistogram, nsPerHour, 1, true);
 
   UrlClassifierTestUtils.cleanupTestTrackers();
 });
@@ -159,9 +195,7 @@ add_task(async function () {
   SiteDataTestUtils.addToCookies({ origin: TRACKING_PAGE, name: "cookie2" });
   Services.prefs.setIntPref("privacy.purge_trackers.max_purge_count", 1);
 
-  let purgedHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "COOKIE_PURGING_ORIGINS_PURGED"
-  );
+  Services.fog.testResetFOG();
 
   await PurgeTrackerService.purgeTrackingCookieJars();
 
@@ -171,7 +205,10 @@ add_task(async function () {
     "cookie is removed after purge."
   );
 
-  TelemetryTestUtils.assertHistogram(purgedHistogram, 1, 1);
+  await Services.fog.testFlushAllChildren();
+  let purgedHistogram = Glean.cookiePurging.originsPurged.testGetValue();
+
+  assertHistogram(purgedHistogram, 1, 1);
 
   Services.prefs.clearUserPref("privacy.purge_trackers.max_purge_count");
   UrlClassifierTestUtils.cleanupTestTrackers();

@@ -20,6 +20,7 @@
 #include "api/field_trials_view.h"
 #include "api/media_types.h"
 #include "api/rtc_error.h"
+#include "api/rtp_parameters.h"
 #include "api/rtp_transceiver_direction.h"
 #include "api/sequence_checker.h"
 #include "call/payload_type.h"
@@ -116,12 +117,15 @@ class CodecVendor {
       const RtpTransceiverDirection& offer,
       const RtpTransceiverDirection& answer) const;
 
-  RTCError MergeCodecsByDirection(MediaType type,
-                                  RtpTransceiverDirection direction,
-                                  absl::string_view mid,
-                                  CodecList& codecs_out,
-                                  PayloadTypeSuggester& pt_suggester,
-                                  bool pick_from_top_of_range);
+  RTCError MergeAndAssignConfiguredCodecs(
+      MediaType type,
+      RtpTransceiverDirection direction,
+      absl::string_view mid,
+      CodecList& codecs_out,
+      PayloadTypeSuggester& pt_suggester,
+      bool pick_from_top_of_range,
+      std::span<const RtpCodecCapability> codec_preferences = {},
+      bool vad_enabled = true);
 
   // Makes sure that modifications and reading data is done on the same thread
   // and to makessure we consistently make calls to GetNegotiatedCodecsForOffer

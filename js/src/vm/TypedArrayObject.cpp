@@ -385,10 +385,16 @@ static TypedArrayType* NewTypedArrayObject(JSContext* cx, const JSClass* clasp,
   static_assert(!std::is_same_v<TypedArrayType, FixedLengthTypedArrayObject> ||
                 nfixed == FixedLengthTypedArrayObject::FIXED_DATA_START);
 
+  ObjectFlags objectFlags;
+  if constexpr (std::is_same_v<TypedArrayType, ImmutableTypedArrayObject>) {
+    // Immutable elements are non-configurable, non-writable data properties.
+    objectFlags.setFlag(ObjectFlag::NeedsProxyGetSetResultValidation);
+  }
+
   Rooted<SharedShape*> shape(
       cx,
       SharedShape::getInitialShape(cx, clasp, cx->realm(), AsTaggedProto(proto),
-                                   nfixed, ObjectFlags()));
+                                   nfixed, objectFlags));
   if (!shape) {
     return nullptr;
   }
@@ -4261,9 +4267,10 @@ TypedArrayObject* js::TypedArraySubarrayWithLength(
     intptr_t length) {
   MOZ_ASSERT(!obj->hasDetachedBuffer());
   MOZ_ASSERT(!obj->is<ResizableTypedArrayObject>());
-  MOZ_ASSERT(start >= 0);
-  MOZ_ASSERT(length >= 0);
-  MOZ_ASSERT(size_t(start + length) <= obj->length().valueOr(0));
+  MOZ_RELEASE_ASSERT(start >= 0);
+  MOZ_RELEASE_ASSERT(length >= 0);
+  MOZ_RELEASE_ASSERT(size_t(start) + size_t(length) <=
+                     obj->length().valueOr(0));
 
   if (!TypedArrayObject::ensureHasBuffer(cx, obj)) {
     return nullptr;
@@ -4306,9 +4313,9 @@ TypedArrayObject* js::TypedArraySubarrayRecover(JSContext* cx,
                                                 Handle<TypedArrayObject*> obj,
                                                 intptr_t start,
                                                 intptr_t length) {
-  MOZ_ASSERT(!obj->is<ResizableTypedArrayObject>());
-  MOZ_ASSERT(start >= 0);
-  MOZ_ASSERT(length >= 0);
+  MOZ_RELEASE_ASSERT(!obj->is<ResizableTypedArrayObject>());
+  MOZ_RELEASE_ASSERT(start >= 0);
+  MOZ_RELEASE_ASSERT(length >= 0);
 
   // Special case: The buffer was detached after calling `subarray`. This case
   // can only happen when recovering a TypedArraySubarray allocation.

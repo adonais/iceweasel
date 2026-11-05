@@ -159,6 +159,11 @@ class HTMLAreaElement final : public nsGenericHTMLElement, public Link {
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
 
+  bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
+                      const nsAString& aValue,
+                      nsIPrincipal* aMaybeScriptedPrincipal,
+                      nsAttrValue& aResult) override;
+
   virtual void AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                             const nsAttrValue* aValue,
                             const nsAttrValue* aOldValue,

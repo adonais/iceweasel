@@ -198,10 +198,12 @@ CreateEncryptedFileRandomAccessStream(
   // between two files without the authentication noticing. Also, the random
   // nonces of all those blocks would have to stay collision free under that one
   // key, which is fatal for ChaCha20-Poly1305.
-  QM_TRY_UNWRAP(RefPtr<EncryptedRandomAccessStream> stream,
-                EncryptedRandomAccessStream::Create(
-                    fs::FileSystemCipherStrategy{}, std::move(baseStream),
-                    aCipherKeyManager.Ensure(aFileId.Value())));
+  QM_TRY_INSPECT(const auto& cipherKey,
+                 aCipherKeyManager.Ensure(aFileId.Value()));
+  QM_TRY_UNWRAP(
+      RefPtr<EncryptedRandomAccessStream> stream,
+      EncryptedRandomAccessStream::Create(fs::FileSystemCipherStrategy{},
+                                          std::move(baseStream), cipherKey));
 
   return nsCOMPtr<nsIRandomAccessStream>(std::move(stream));
 }

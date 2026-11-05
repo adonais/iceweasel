@@ -37,14 +37,12 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared {
 
   MoveOperand toMoveOperand(LAllocation a) const;
 
-  void bailoutIf(Assembler::Condition condition, LSnapshot* snapshot);
+  using CodeGeneratorShared::bailoutIf;
   void bailoutIf(Assembler::DoubleCondition condition, LSnapshot* snapshot);
   void bailoutIfFalseBool(Register reg, LSnapshot* snapshot) {
     masm.test32(reg, Imm32(0xFF));
     bailoutIf(Assembler::Zero, snapshot);
   }
-
-  void emitBailoutOOL(LSnapshot* snapshot);
 
   bool generateOutOfLineCode();
 

@@ -32,6 +32,8 @@ ZeroRttHandle::ZeroRttHandle(HappyEyeballsConnectionAttempt* aHet)
                       static_cast<nsSupportsWeakReference*>(aHet))
                 : nullptr) {}
 
+ZeroRttHandle::~ZeroRttHandle() = default;
+
 static bool IsUsableRealTxn(nsHttpTransaction* aRealTxn) {
   return aRealTxn && !aRealTxn->Closed();
 }

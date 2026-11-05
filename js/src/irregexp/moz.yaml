@@ -9,8 +9,8 @@ origin:
   description: A fast regular expression engine from V8
   url: https://v8.dev
 
-  release: 9f30cc5fc4ad6c3236c522fd23224ddc94591a20 (Sun Sep 06 03:04:04 2026).
-  revision: 9f30cc5fc4ad6c3236c522fd23224ddc94591a20
+  release: 48a0da03cb526a5eef4c7c096ef8047516c06e33 (Mon Oct 19 17:26:20 2026).
+  revision: 48a0da03cb526a5eef4c7c096ef8047516c06e33
 
   license: BSD-3-Clause
   license-file: LICENSE.v8

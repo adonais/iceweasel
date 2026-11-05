@@ -3,6 +3,16 @@
 
 "use strict";
 
+add_setup(() => {
+  // The tests measure tab positions between drops, so tabs must not still be
+  // sliding into place from the previous drop.
+  let reduceMotionOverride = gReduceMotionOverride;
+  gReduceMotionOverride = true;
+  registerCleanupFunction(() => {
+    gReduceMotionOverride = reduceMotionOverride;
+  });
+});
+
 const moveOverThresholdPercent = Math.min(
   1.0,
   Math.max(

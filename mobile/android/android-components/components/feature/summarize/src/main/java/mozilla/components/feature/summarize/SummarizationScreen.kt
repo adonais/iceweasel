@@ -44,6 +44,9 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
@@ -328,7 +331,13 @@ private fun SummarizationScreenScaffold(
             modifier =
                 Modifier.fillMaxWidth().wrapContentHeight().padding(horizontal = AcornTheme.layout.space.static200)
         ) {
-            DragHandle(modifier = Modifier.fillMaxWidth())
+            DragHandle(
+                modifier =
+                    Modifier.fillMaxWidth().semantics {
+                        testTagsAsResourceId = true
+                        testTag = "shake.to.summarize.bottom.sheet.drag.handle"
+                    }
+            )
             Spacer(Modifier.height(AcornTheme.layout.space.static200))
             content()
             Spacer(Modifier.height(AcornTheme.layout.space.static400))

@@ -1,0 +1,13 @@
+EXTRA_JS_MODULES += [
+    "!Generated.sys.mjs",
+    "Allowed.sys.mjs",
+    "New.sys.mjs",
+]
+
+EXTRA_JS_MODULES.foo.bar += [
+    "NewNested.sys.mjs",
+]
+
+MOZ_SRC_FILES += [
+    "NotChecked.sys.mjs",
+]

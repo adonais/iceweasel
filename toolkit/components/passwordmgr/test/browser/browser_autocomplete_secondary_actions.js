@@ -162,7 +162,19 @@ add_task(async function test_flyout_when_pref_enabled() {
     { gBrowser, url: TEST_URL_PATH },
     async function (browser) {
       const popup = document.getElementById("PopupAutoComplete");
+      Services.fog.testResetFOG();
       await openACPopup(popup, browser, "#form-basic-username");
+      const shownEvents = Glean.autocomplete.dropdownShown.testGetValue();
+      Assert.equal(
+        shownEvents?.length,
+        1,
+        "One dropdown shown event is recorded"
+      );
+      Assert.equal(
+        shownEvents[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
 
       const { item, rowItem, button } = getSecondaryAction(popup, 0);
 
@@ -235,9 +247,71 @@ add_task(async function test_flyout_when_pref_enabled() {
       );
 
       await closePopup(popup);
+      const closedEvents = Glean.autocomplete.dropdownClosed.testGetValue();
+      Assert.equal(
+        closedEvents?.length,
+        1,
+        "One dropdown closed event is recorded"
+      );
+      Assert.equal(
+        closedEvents[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
+      Assert.equal(
+        closedEvents[0].extra.close_reason,
+        "dismissed",
+        "Closing the panel records a dismissed close"
+      );
+      Assert.ok(closedEvents[0].extra.flow_id, "The event carries a flow id");
+      Assert.equal(
+        closedEvents[0].extra.flow_id,
+        shownEvents[0].extra.flow_id,
+        "The closed event's flow id matches the shown event for the same dropdown"
+      );
     }
   );
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_selecting_a_login_records_dropdown_closed() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: TEST_URL_PATH },
+    async function (browser) {
+      const popup = document.getElementById("PopupAutoComplete");
+      await openACPopup(popup, browser, "#form-basic-username");
+
+      const { item } = getSecondaryAction(popup, 0);
+      await selectRow(item, 0);
+
+      Services.fog.testResetFOG();
+      const popupHidden = BrowserTestUtils.waitForEvent(
+        popup,
+        "popuphidden",
+        false,
+        event => event.target == popup
+      );
+      await EventUtils.synthesizeKey("KEY_Enter");
+      await popupHidden;
+
+      const closedEvents = Glean.autocomplete.dropdownClosed.testGetValue();
+      Assert.equal(
+        closedEvents?.length,
+        1,
+        "One dropdown closed event is recorded"
+      );
+      Assert.equal(
+        closedEvents[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
+      Assert.equal(
+        closedEvents[0].extra.close_reason,
+        "selected",
+        "Picking a login records a selected close"
+      );
+    }
+  );
 });
 
 add_task(async function test_flyout_opens_via_keyboard() {
@@ -417,6 +491,7 @@ add_task(async function test_flyout_edit_opens_about_logins() {
         return originalAddTrustedTab.call(gBrowser, url, ...rest);
       };
 
+      Services.fog.testResetFOG();
       let tab;
       try {
         menupopup.activateItem(editItem);
@@ -424,6 +499,19 @@ add_task(async function test_flyout_edit_opens_about_logins() {
       } finally {
         gBrowser.addTrustedTab = originalAddTrustedTab;
       }
+
+      const events = Glean.autocomplete.recordInteraction.testGetValue();
+      Assert.equal(events?.length, 1, "One interaction event is recorded");
+      Assert.equal(
+        events[0].extra.interaction_type,
+        "edit",
+        "The flyout edit item records an edit interaction"
+      );
+      Assert.equal(
+        events[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
 
       Assert.equal(
         openedURL,
@@ -741,6 +829,7 @@ add_task(async function test_delete_reauthenticates_then_confirms() {
         mi => mi.getAttribute("label") === deleteLabel
       );
 
+      Services.fog.testResetFOG();
       let dialogWin;
       const dialogClosed = BrowserTestUtils.promiseAlertDialog(
         null,
@@ -784,6 +873,41 @@ add_task(async function test_delete_reauthenticates_then_confirms() {
         "Reauthentication is recorded against the autocomplete delete"
       );
       Assert.ok(dialogWin, "The confirmation dialog was shown");
+
+      const events = Glean.autocomplete.recordDialogInteraction.testGetValue();
+      Assert.equal(
+        events?.length,
+        1,
+        "One dialog interaction event is recorded"
+      );
+      Assert.equal(
+        events[0].extra.interaction_type,
+        "cancel",
+        "Cancelling the dialog records a cancel interaction"
+      );
+      Assert.equal(
+        events[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
+      Assert.equal(
+        events[0].extra.update_type,
+        "delete",
+        "The update type is delete"
+      );
+
+      const clickEvents = Glean.autocomplete.recordInteraction.testGetValue();
+      Assert.equal(clickEvents?.length, 1, "One interaction event is recorded");
+      Assert.equal(
+        clickEvents[0].extra.interaction_type,
+        "delete",
+        "The flyout delete item records a delete interaction"
+      );
+      Assert.equal(
+        clickEvents[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
 
       await TestUtils.waitForCondition(
         () => popup.state == "open",
@@ -833,6 +957,7 @@ add_task(async function test_delete_skips_confirm_when_reauth_fails() {
         mi => mi.getAttribute("label") === deleteLabel
       );
 
+      Services.fog.testResetFOG();
       menupopup.activateItem(menuitem);
       await TestUtils.waitForCondition(
         () => gReauthCalls.length,
@@ -841,6 +966,23 @@ add_task(async function test_delete_skips_confirm_when_reauth_fails() {
       await TestUtils.waitForTick();
 
       Assert.ok(!sawDialog, "No confirmation is shown when reauth is declined");
+      Assert.equal(
+        Glean.autocomplete.recordDialogInteraction.testGetValue(),
+        null,
+        "No dialog interaction is recorded when reauth is declined"
+      );
+      const clickEvents = Glean.autocomplete.recordInteraction.testGetValue();
+      Assert.equal(clickEvents?.length, 1, "One interaction event is recorded");
+      Assert.equal(
+        clickEvents[0].extra.interaction_type,
+        "delete",
+        "The flyout delete item records a delete interaction before reauth"
+      );
+      Assert.equal(
+        clickEvents[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
 
       await TestUtils.waitForCondition(
         () => popup.state == "open",
@@ -882,6 +1024,7 @@ add_task(async function test_delete_removes_the_login() {
         mi => mi.getAttribute("label") === DELETE_LABEL
       );
 
+      Services.fog.testResetFOG();
       const dialogClosed = BrowserTestUtils.promiseAlertDialog("accept");
       menupopup.activateItem(menuitem);
       await dialogClosed;
@@ -890,6 +1033,41 @@ add_task(async function test_delete_removes_the_login() {
         const logins = await Services.logins.getAllLogins();
         return logins.length == before.length - 1;
       }, "Wait for the confirmed removal to reach storage");
+
+      const events = Glean.autocomplete.recordInteraction.testGetValue();
+      Assert.equal(events?.length, 1, "One interaction event is recorded");
+      Assert.equal(
+        events[0].extra.interaction_type,
+        "delete",
+        "The flyout delete item records a delete interaction"
+      );
+      Assert.equal(
+        events[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
+      const dialogEvents =
+        Glean.autocomplete.recordDialogInteraction.testGetValue();
+      Assert.equal(
+        dialogEvents?.length,
+        1,
+        "One dialog interaction event is recorded"
+      );
+      Assert.equal(
+        dialogEvents[0].extra.interaction_type,
+        "confirm",
+        "Accepting the dialog records a confirm interaction"
+      );
+      Assert.equal(
+        dialogEvents[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
+      Assert.equal(
+        dialogEvents[0].extra.update_type,
+        "delete",
+        "The update type is delete"
+      );
 
       const remaining = await Services.logins.getAllLogins();
       const removed = before.find(

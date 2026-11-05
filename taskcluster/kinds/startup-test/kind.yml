@@ -23,14 +23,12 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
-    run-on-repo-type: [hg]
     name: startup-test
     description: Check whether or not a product crashes on startup
     run-on-projects: ['mozilla-central']
     worker:
         max-run-time: 3600
     run:
-        clone-with: hg
         sparse-profile: startup-test
     attributes:
         build_type: opt

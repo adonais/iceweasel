@@ -18,6 +18,19 @@ type UrlbarQueryContext =
 type UrlbarResult = import("../content/UrlbarResult.mjs").UrlbarResult;
 
 /**
+ * The search access point name of a UrlbarInput.
+ * It is used to check for capabilities, for logging and for telemetry.
+ *
+ * In search telemetry, it is related to the `source` extra key whose possible
+ * values are a superset of UrlbarSapName, see `KNOWN_SEARCH_SOURCES`.
+ *
+ * In urlbar telemetry, it is related to the `sap` extra key whose possible
+ * values are a different superset of UrlbarSapName, see return value of
+ * `#searchSourceToSap`.
+ */
+type UrlbarSapName = "newtab_searchbar" | "searchbar" | "smartbar" | "urlbar";
+
+/**
  * A structure that holds the details of commands for results.
  */
 type UrlbarResultCommand = {

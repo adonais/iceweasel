@@ -55,6 +55,9 @@
 ["include:tests/custom/browsertime-custom.toml"]
 # Local custom browsertime tests
 
+["include:tests/custom/browsertime-doh-busy-site.toml"]
+# DoH lookup timings while replaying recorded news-site request timelines locally
+
 ["include:tests/custom/browsertime-hev3-connection.toml"]
 # Custom Happy Eyeballs v3 connection tests
 

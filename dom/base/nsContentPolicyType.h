@@ -71,6 +71,7 @@
   NAME(TYPE_JSON)                                 \
   NAME(TYPE_INTERNAL_JSON_PRELOAD)                \
   NAME(TYPE_TEXT)                                 \
-  NAME(TYPE_INTERNAL_TEXT_PRELOAD)
+  NAME(TYPE_INTERNAL_TEXT_PRELOAD)                \
+  NAME(TYPE_INTERNAL_SPECULATION_RULES)
 
 #endif  // nsContentPolicyType_h

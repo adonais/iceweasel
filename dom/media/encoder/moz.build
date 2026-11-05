@@ -38,3 +38,7 @@ include("/ipc/chromium/chromium-config.mozbuild")
 #    defined, which complains about an important MOZ_EXPORT for android::AString
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     CXXFLAGS += ["-Wno-error=attributes"]
+
+SOURCE_HEADERS += [
+    "Muxer.h",
+]

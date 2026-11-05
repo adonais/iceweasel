@@ -166,7 +166,9 @@ FT2FontEntry::~FT2FontEntry() {
   auto* face = mHBFace.exchange(nullptr);
   hb_face_destroy(face);
   if (mMMVar) {
+    // Scaled fonts may still be using the shared face.
     SharedFTFace* face = mFTFace;
+    AutoLockSharedFTFace lock(face);
     FT_Done_MM_Var(face->GetFace()->glyph->library, mMMVar);
   }
   if (mFTFace) {
@@ -653,6 +655,7 @@ FT_MM_Var* FT2FontEntry::GetMMVar() {
   if (!face) {
     return nullptr;
   }
+  AutoLockSharedFTFace faceLock(face);
   if (FT_Err_Ok != FT_Get_MM_Var(face->GetFace(), &mMMVar)) {
     mMMVar = nullptr;
   }

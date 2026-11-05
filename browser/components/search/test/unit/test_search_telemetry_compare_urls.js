@@ -162,6 +162,73 @@ const TESTS = [
     },
     expected: 0,
   },
+  {
+    title: "Ignored query parameter with different values",
+    url1: "https://www.example.org/search?a=b&ck=1",
+    url2: "https://www.example.org/search?a=b&ck=2",
+    options: {
+      ignoredQueryParamNames: ["ck"],
+    },
+    expected: 5,
+  },
+  {
+    title: "Ignored query parameter with different values, paramValues on",
+    url1: "https://www.example.org/search?a=b&ck=1",
+    url2: "https://www.example.org/search?a=b&ck=2",
+    options: {
+      paramValues: true,
+      ignoredQueryParamNames: ["ck"],
+    },
+    expected: 5,
+  },
+  {
+    title: "Ignored query parameter with same values",
+    url1: "https://www.example.org/search?a=b&ck=1",
+    url2: "https://www.example.org/search?ck=1&a=b",
+    options: {
+      ignoredQueryParamNames: ["ck"],
+    },
+    expected: 5,
+  },
+  {
+    title: "Ignored query parameter missing in one URL",
+    url1: "https://www.example.org/search?a=b&ck=1",
+    url2: "https://www.example.org/search?a=b",
+    options: {
+      ignoredQueryParamNames: ["ck"],
+    },
+    expected: 5,
+  },
+  {
+    title: "Multiple ignored query parameters, paramValues on",
+    url1: "https://www.example.org/search?a=b&ck=1&t=1",
+    url2: "https://www.example.org/search?a=b&ck=2&t=2",
+    options: {
+      paramValues: true,
+      ignoredQueryParamNames: ["ck", "t"],
+    },
+    expected: 5,
+  },
+  {
+    title: "Non-ignored query parameter still differs, paramValues on",
+    url1: "https://www.example.org/search?a=b&ck=1",
+    url2: "https://www.example.org/search?a=c&ck=2",
+    options: {
+      paramValues: true,
+      ignoredQueryParamNames: ["ck"],
+    },
+    expected: 0,
+  },
+  {
+    title: "Empty ignored query parameter list, paramValues on",
+    url1: "https://www.example.org/search?a=b&ck=1",
+    url2: "https://www.example.org/search?a=b&ck=2",
+    options: {
+      paramValues: true,
+      ignoredQueryParamNames: [],
+    },
+    expected: 0,
+  },
 ];
 
 add_setup(async function () {

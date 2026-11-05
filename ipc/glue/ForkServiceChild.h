@@ -101,9 +101,7 @@ class ForkServiceChild final {
   Mutex mMutex;
   UniquePtr<MiniTransceiver> mTcver MOZ_GUARDED_BY(mMutex);
   bool mFailed MOZ_GUARDED_BY(mMutex);  // crashed or disconnected.
-  // mProcess is accessed only by the dtor so should be inherently
-  // thread-safe
-  GeckoChildProcessHost* mProcess;
+  const RefPtr<GeckoChildProcessHost> mProcess;
 };
 
 /**

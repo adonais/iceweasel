@@ -18,6 +18,10 @@ const lazy = XPCOMUtils.declareLazy({
       prefix: "SearchUtils",
       maxLogLevel: SearchUtils.loggingEnabled ? "Debug" : "Warn",
     }),
+  configV3FeatureGate: {
+    pref: "browser.search.configV3.featureGate",
+    default: false,
+  },
 });
 
 const BinaryInputStream = Components.Constructor(
@@ -163,20 +167,21 @@ export var SearchUtils = {
   SETTINGS_ALLOWLIST_KEY: "search-default-override-allowlist",
 
   /**
+   * Returns true if search-config-v3 should be used.
+   */
+  get configV3FeatureGate() {
+    return lazy.configV3FeatureGate;
+  },
+
+  /**
    * This is the Remote Settings key that we use to get the search engine
    * configurations.
    *
    * @readonly
    */
-  SETTINGS_KEY: "search-config-v2",
-
-  /**
-   * This is the Remote Settings key that we use to get the search engine
-   * configuration overrides.
-   *
-   * @readonly
-   */
-  SETTINGS_OVERRIDES_KEY: "search-config-overrides-v2",
+  get SETTINGS_KEY() {
+    return lazy.configV3FeatureGate ? "search-config-v3" : "search-config-v2";
+  },
 
   /**
    * Topic used for observer events involving the service itself.
@@ -220,6 +225,26 @@ export var SearchUtils = {
     TRENDING_JSON: "application/x-trending+json",
     SEARCH_FORM: "searchform",
     VISUAL_SEARCH: "application/x-visual-search+html",
+  }),
+
+  /**
+   * A map of SAP sources to their sources as defined by the search configuration.
+   *
+   * If a source is directly listed in the search configuration, we will use the
+   * value from the configuration, overriding this map.
+   * If a source is not directly listed in the search configuration, but is listed
+   * in this map, then we will look up the mapped name from the search configuration.
+   * If a source is not listed in the search configuration, and not listed in this
+   * map, then we will use the "default" value in the search configuration.
+   *
+   * @readonly
+   */
+  SAP_SOURCE_TO_SEARCH_CONFIG_MAP: Object.freeze({
+    contextmenu: "context",
+    text_selection: "context",
+    newtab_searchbar: "newtab",
+    about_home: "newtab",
+    about_newtab: "newtab",
   }),
 
   /**

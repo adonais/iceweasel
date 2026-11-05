@@ -176,6 +176,26 @@ def test_scriptinfo_dynamic_metadata_parsing_destructured_imports():
     assert info.script_type == ScriptType.xpcshell
 
 
+@pytest.mark.skipif(not shutil.which("node"), reason="requires Node.js")
+def test_scriptinfo_top_level_imported_utility_calls() -> None:
+    """Extract metadata after initializing an imported utility at the top level."""
+    content = """
+        const { MLPerfTestUtils } = ChromeUtils.importESModule(
+          "resource://testing-common/MLPerfTestUtils.sys.mjs"
+        );
+        MLPerfTestUtils.init(this);
+        """ + EXAMPLE_XPCSHELL_DESTRUCTURED_TEST.read_text()
+
+    with temp_file(name="test_imported_utility.js", content=content) as script:
+        info = ScriptInfo(script)
+        metadata = info._get_perf_metadata_from_node()
+
+    assert metadata["owner"] == "Performance Testing Team"
+    assert metadata["name"] == "Example"
+    assert metadata["options"] == {"default": {"perfherder": True}}
+    assert info.script_type == ScriptType.xpcshell
+
+
 @mock.patch("mozperftest.script.ScriptInfo._get_node_builtins", return_value=set())
 @mock.patch("mozperftest.script.subprocess.run")
 def test_scriptinfo_fallback_on_node_failure(mock_run, mock_builtins):

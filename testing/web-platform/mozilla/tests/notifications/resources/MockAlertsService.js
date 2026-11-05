@@ -282,10 +282,18 @@ const MockAlertsService = {
     );
   },
   async getIconImage(id) {
-    return await this._chromeScript.sendQuery(
+    const pngData = await this._chromeScript.sendQuery(
       "mock-alert-service:get-icon-image",
       id
     );
+    if (!pngData) {
+      return null;
+    }
+    const imageDecoder = new ImageDecoder({ type: "image/png", data: pngData });
+    const {image} = await imageDecoder.decode();
+    const rgba = new Uint8Array(image.allocationSize());
+    image.copyTo(rgba, {format: "RGBA"});
+    return rgba;
   },
   async setHistory(ids) {
     return await this._chromeScript.sendQuery(

@@ -26,3 +26,10 @@ LOCAL_INCLUDES += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "AudioChunkList.h",
+    "AudioResampler.h",
+    "DriftController.h",
+    "DynamicResampler.h",
+]

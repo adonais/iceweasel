@@ -335,10 +335,14 @@ class EditorBase : public nsIEditor,
    * Return true if it's possible to undo/redo right now.
    */
   bool CanUndo() const {
-    return IsUndoRedoEnabled() && NumberOfUndoItems() > 0;
+    // We should always allow undo/redo for EditContext, since the
+    // history is managed by the web app.
+    return (IsUndoRedoEnabled() && NumberOfUndoItems() > 0) ||
+           ComputeEditContext();
   }
   bool CanRedo() const {
-    return IsUndoRedoEnabled() && NumberOfRedoItems() > 0;
+    return (IsUndoRedoEnabled() && NumberOfRedoItems() > 0) ||
+           ComputeEditContext();
   }
 
   /**
@@ -1022,6 +1026,22 @@ class EditorBase : public nsIEditor,
       mSelectionCreatedByDoubleclick = aSelectionCreatedByDoubleclick;
     }
 
+    /**
+     * Set whether the selection was created by double-click on the innermost
+     * edit action which is dispatching `beforeinput` or `input`, if any.
+     */
+    void SetSelectionCreatedByDoubleclickOfEditActionDispatchingInputEvent(
+        bool aSelectionCreatedByDoubleclick) {
+      for (AutoEditActionDataSetter* editActionData = this; editActionData;
+           editActionData = editActionData->mParentData) {
+        if (editActionData->mDispatchingInputEvent) {
+          editActionData->SetSelectionCreatedByDoubleclick(
+              aSelectionCreatedByDoubleclick);
+          return;
+        }
+      }
+    }
+
     [[nodiscard]] bool SelectionCreatedByDoubleclick() const {
       return mSelectionCreatedByDoubleclick;
     }
@@ -1676,6 +1696,14 @@ class EditorBase : public nsIEditor,
   EditAction GetEditAction() const {
     return mEditActionData ? mEditActionData->GetEditAction()
                            : EditAction::eNone;
+  }
+
+  /**
+   * Return true if the edit action being handled deletes a selection which
+   * was created by double-clicking a word.
+   */
+  [[nodiscard]] bool IsSelectionCreatedByDoubleclick() const {
+    return mEditActionData && mEditActionData->SelectionCreatedByDoubleclick();
   }
 
   /**

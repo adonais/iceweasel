@@ -11,6 +11,8 @@ import {
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
+  AuthProvider:
+    "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   ChatStore:
@@ -170,7 +172,7 @@ export class TelemetryPromptEngine {
    * @returns {Promise<object>} Raw LLM response
    */
   async run(conversation) {
-    const fxAccountToken = await lazy.openAIEngine.getFxAccountToken();
+    const token = await lazy.AuthProvider.getToken();
     // The LLM-as-judge model needs the raw URLs, not the chat URL tokens.
     const messages = conversation.getMessagesInChatCompletionsFormat({
       applyUrlTokens: false,
@@ -182,7 +184,7 @@ export class TelemetryPromptEngine {
     });
 
     const result = await this.#engineInstance.run({
-      fxAccountToken,
+      token,
       args: [{ role: "system", content: prompt }],
     });
 

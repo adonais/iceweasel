@@ -544,6 +544,9 @@ static constexpr struct {
     {"browser.display.permit_backplate"_ns, widget::ThemeChangeKind::Style},
     {"ui.use_standins_for_native_colors"_ns, widget::ThemeChangeKind::Style},
     {"privacy.resistFingerprinting"_ns, widget::ThemeChangeKind::Style},
+    // This could be dealt with in nsPresContext::PreferenceChanged but
+    // accessibility telemetry gets recorded in PreferenceSheet.
+    {"layout.css.always_underline_links"_ns, widget::ThemeChangeKind::Style},
     // End of PreferenceSheet prefs.
 };
 

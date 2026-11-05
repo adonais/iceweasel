@@ -3,46 +3,53 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
-  /* The type scale in aitab-base.css sizes against this rather than the
-     viewport, which is wider than the page whenever the chat pane is open.
-     container-type has no effect on an inline box, hence display. */
-  display: block;
-  container: aitab-page / inline-size;
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100vh;
+
+  --aitab-footer-bloom: light-dark(var(--color-violet-desaturated-20, var(--color-violet-10)), var(--color-violet-desaturated-70, var(--color-violet-80)));
+  --aitab-sheet-background-color: light-dark(var(--color-white), var(--color-violet-desaturated-90, #1b0533));
+  --aitab-sheet-background-image: radial-gradient(ellipse 100% 240px at 50% calc(100% + 38px), var(--aitab-footer-bloom), 25%, transparent);
+  --aitab-sheet-radius: 128px;
+
+  @media (forced-colors) {
+    --aitab-sheet-background-image: none;
+  }
 }
 
 .aitab-sheet {
   display: flex;
+  flex-grow: 1;
   flex-direction: column;
+  z-index: 1;
   gap: var(--space-xlarge);
-  margin-inline: auto;
-  padding: var(--space-xlarge);
+  padding-inline: var(--space-xlarge);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding-block-end: var(--aitab-sheet-radius);
+  border-block-end: var(--border-width) solid var(--border-color-transparent);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-end-start-radius: var(--aitab-sheet-radius);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-end-end-radius: var(--aitab-sheet-radius);
+  background-color: var(--aitab-sheet-background-color);
+  background-image: var(--aitab-sheet-background-image);
+  background-origin: border-box;
 }
 
 .aitab-blocks {
   display: flex;
   flex-direction: column;
   gap: var(--space-large);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  max-width: 1170px;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin: var(--aitab-section-vertical-gap) auto 0 auto;
+  width: 100%;
 }
 
-.aitab-footer-text {
-  margin-block: 0 var(--space-small);
-}
-
-.aitab-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-small);
-}
-
-.aitab-chip {
-  border-radius: var(--border-radius-circle);
-  padding: var(--space-xsmall) var(--space-medium);
-  background-color: var(--button-background-color);
-  color: var(--button-text-color);
-  text-decoration: none;
-
-  &[data-variant="primary"] {
-    background-color: var(--button-background-color-primary);
-    color: var(--button-text-color-primary);
-  }
+aitab-footer {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin-block-start: calc(-1 * var(--aitab-sheet-radius));
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding-block-start: var(--aitab-sheet-radius);
 }

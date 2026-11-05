@@ -1,7 +1,3 @@
-# META: timeout=long
-
-# Longer timeout required due to multiple navigation and emulation verification subtests.
-
 import pytest
 
 from tests.bidi import recursive_compare
@@ -133,16 +129,7 @@ async def test_window_offline_online_events(bidi_session, top_context, url,
     )
 
 
-@pytest.mark.skip("TODO: implement the test")
-async def test_websocket_disconnected():
-    pass
+# TODO: implement test_websocket_disconnected.
+# TODO: implement test_service_worker_fetch.
+# TODO: implement test_service_worker_websocket_disconnected.
 
-
-@pytest.mark.skip("TODO: implement the test")
-async def test_service_worker_fetch():
-    pass
-
-
-@pytest.mark.skip("TODO: implement the test")
-async def test_service_worker_websocket_disconnected():
-    pass

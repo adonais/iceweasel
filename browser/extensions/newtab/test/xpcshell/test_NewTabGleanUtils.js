@@ -111,6 +111,48 @@ add_task(async function test_registerMetricsAndPings_validFormat() {
 });
 
 /**
+ * Test case: A failed metric registration doesn't block later ones
+ * Verifies that registration continues past a failing metric, and reports
+ * the failure in its result
+ */
+add_task(async function test_registerMetricsAndPings_continuesAfterFailure() {
+  const sandbox = test_setup();
+
+  NewTabGleanUtils.readJSON.returns({
+    metrics: {
+      newtab_category: {
+        failing_metric: {
+          type: "text",
+          pings: ["newtab"],
+          disabled: false,
+        },
+        later_metric: {
+          type: "text",
+          lifetime: "ping",
+          pings: ["newtab"],
+          disabled: false,
+        },
+      },
+    },
+  });
+
+  let result =
+    await NewTabGleanUtils.registerMetricsAndPings(TEST_RESOURCE_URI);
+  Assert.ok(!result, "Registration reports the failed metric");
+  Assert.strictEqual(
+    Glean.newtab.metricRegistered.failing_metric.testGetValue(),
+    false,
+    "Failing metric is recorded as not registered"
+  );
+  Assert.ok(
+    Glean.newtab.metricRegistered.later_metric.testGetValue(),
+    "Metric after the failing one is still registered"
+  );
+
+  sandbox.restore();
+});
+
+/**
  * Test case: Handle ping configuration options name from runtime-metrics JSON
  * Verifies successful registration of pings with ping config options (such as `include_client_id`)
  * in snake case inside runtime-metrics JSON
@@ -332,6 +374,48 @@ add_task(async function test_registerMetricIfNeeded_eventMetrics() {
   let events = Glean.testCategory.event2.testGetValue();
   Assert.equal(1, events.length, "Events recorded count");
 });
+
+/**
+ * Test case: Re-registering a built-in event metric with new extra keys
+ * Verifies the runtime definition takes over, so events with the new key are
+ * recorded instead of dropped.
+ */
+add_task(
+  async function test_registerMetricIfNeeded_existingEventNewExtraKeys() {
+    Services.fog.testResetFOG();
+
+    Assert.ok(
+      "featureHighlightDismiss" in Glean.newtab,
+      "Test relies on newtab.feature_highlight_dismiss being a built-in event"
+    );
+
+    NewTabGleanUtils.registerMetricIfNeeded({
+      name: "feature_highlight_dismiss",
+      category: "newtab",
+      type: "event",
+      // Bug 1954203: custom pings aren't re-registered after testResetFOG.
+      pings: ["events"],
+      lifetime: "ping",
+      disabled: false,
+      extraArgs: {
+        allowed_extra_keys: ["feature", "newtab_visit_id", "new_extra"],
+      },
+    });
+
+    Glean.newtab.featureHighlightDismiss.record({
+      feature: "test-feature",
+      new_extra: "new value",
+    });
+
+    const events = Glean.newtab.featureHighlightDismiss.testGetValue();
+    Assert.equal(events?.length, 1, "Event with the new extra key is recorded");
+    Assert.equal(
+      events[0].extra.new_extra,
+      "new value",
+      "New extra key value is recorded"
+    );
+  }
+);
 
 /**
  * Test case: Non-event metric registration

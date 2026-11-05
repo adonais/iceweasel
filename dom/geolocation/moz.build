@@ -73,3 +73,7 @@ BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
 MOCHITEST_CHROME_MANIFESTS += ["test/chrome/chrome.toml"]
 MOCHITEST_MANIFESTS += ["test/mochitest/mochitest.toml"]
 XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
+
+SOURCE_HEADERS += [
+    "MLSFallback.h",
+]

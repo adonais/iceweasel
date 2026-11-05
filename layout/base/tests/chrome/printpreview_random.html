@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CSS random() values across a static cloned document (like print preview)</title>
+</head>
+<body>
+  <template id="template">
+    <style>
+      .element-scoped { left: random(element-scoped, 10px, 1000px); }
+      .dashed-ident { left: random(--foo, 10px, 1000px); }
+      .auto { left: random(10px, 1000px); }
+      canvas { left: 0px; }
+    </style>
+    <canvas class="element-scoped"></canvas>
+    <canvas class="dashed-ident"></canvas>
+    <canvas class="auto"></canvas>
+  </template>
+  <iframe id="iframe"></iframe>
+  <script>
+    document.body.append(template.content.cloneNode(true));
+    iframe.contentDocument.body.append(iframe.contentDocument.importNode(template.content, true));
+  </script>
+</body>
+</html>

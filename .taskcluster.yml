@@ -247,7 +247,7 @@ tasks:
                       # exist in tree so we must hard code the hash
                       image: 'mozillareleases/gecko_decision:5.1.0@sha256:8879ecb7f859e1001b0aa67de440a18c3a896446bfd0e2e87688bb367e590667'
 
-                      maxRunTime: 3600
+                      maxRunTime: 1800
 
                       command:
                           - /builds/worker/bin/run-task-hg
@@ -409,8 +409,8 @@ tasks:
                   $let:
                       repoType:
                           $switch:
-                              'repoUrl == "https://github.com/mozilla/firefox-dev"': "dev"
                               'repoUrl == "https://github.com/mozilla-releng/staging-firefox"': "dev"
+                              'repoUrl == "https://github.com/mozilla-firefox/firefox-dev"': "dev"
                               'repoUrl == "https://github.com/mozilla-firefox/firefox"': "prod"
                               $default: null
                       shortRef:

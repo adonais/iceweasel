@@ -211,3 +211,79 @@ add_task(async function testFallbackChangeShowsRestart() {
   await Promise.all(addons.map(addon => addon.uninstall()));
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
+
+// Installed regional variants of the preferred language (es-AR after es-ES)
+// are negotiated right after it, but the fallback should follow the requested
+// locales, not the negotiated app locales.
+add_task(async function testFallbackWithRegionalVariants() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["intl.multilingual.enabled", true],
+      ["intl.multilingual.downloadEnabled", false],
+      ["intl.multilingual.liveReload", true],
+      ["intl.multilingual.liveReloadBidirectional", true],
+      ["intl.locale.requested", "en-US"],
+      ["extensions.langpacks.signatures.required", false],
+    ],
+  });
+
+  let addons = await installLangpacks(["es-ES", "es-AR"]);
+  let doc = await openLanguagesPrefs();
+  let win = doc.defaultView;
+  await waitForLanguageUI(doc);
+
+  await changeLocale(doc, "es-ES");
+  await TestUtils.waitForCondition(
+    () => Services.locale.requestedLocales[0] === "es-ES",
+    "es-ES is live-applied"
+  );
+  Assert.deepEqual(
+    Services.locale.appLocalesAsBCP47,
+    ["es-ES", "es-AR", "en-US"],
+    "Negotiation places the regional variant before en-US"
+  );
+
+  let fallbackControl = getSettingControl("browserLanguageFallback", win);
+  await waitForSettingVisible("browserLanguageFallback", win);
+  await TestUtils.waitForCondition(
+    () => fallbackControl.controlEl.value === "en-US",
+    "Fallback shows the requested en-US, not the negotiated es-AR"
+  );
+
+  await changeMozSelectValue(fallbackControl.controlEl, "es-AR");
+  await TestUtils.waitForCondition(
+    () => Services.locale.requestedLocales.join(",") === "es-ES,es-AR",
+    "es-AR is set as the fallback"
+  );
+  await TestUtils.waitForCondition(
+    () => fallbackControl.controlEl.value === "es-AR",
+    "Fallback shows es-AR"
+  );
+
+  await changeMozSelectValue(fallbackControl.controlEl, "en-US");
+  await TestUtils.waitForCondition(
+    () => Services.locale.requestedLocales.join(",") === "es-ES,en-US",
+    "en-US is set as the fallback"
+  );
+  await TestUtils.waitForCondition(
+    () => fallbackControl.controlEl.value === "en-US",
+    "Fallback sticks to en-US"
+  );
+  assertRestartMessageHidden(doc);
+
+  // A change made elsewhere (e.g. another Settings tab) that leaves the
+  // negotiated app locales unchanged should still update the fallback.
+  Services.locale.requestedLocales = ["es-ES", "es-AR"];
+  Assert.deepEqual(
+    Services.locale.appLocalesAsBCP47,
+    ["es-ES", "es-AR", "en-US"],
+    "Negotiated app locales are unchanged"
+  );
+  await TestUtils.waitForCondition(
+    () => fallbackControl.controlEl.value === "es-AR",
+    "Fallback reflects an external change to requested locales"
+  );
+
+  await Promise.all(addons.map(addon => addon.uninstall()));
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});

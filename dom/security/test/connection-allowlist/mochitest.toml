@@ -1,0 +1,10 @@
+[DEFAULT]
+prefs = ["security.connection_allowlists.enabled=true"]
+support-files = [
+  "file_enforce.html",
+  "file_enforce.html^headers^",
+  "file_report_only.html",
+  "file_report_only.html^headers^",
+]
+
+["test_console_messages.html"]

@@ -46,9 +46,7 @@
     --timer-focus-color: var(--color-orange-30, #FF8D5B);
     --timer-break-color: var(--color-violet-50, #764EDD);
     // Figma celebration palette; no matching design-system token.
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     --timer-celebration-leading: #B89CFF;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     --timer-celebration-trailing: #FF9565;
     // Diverges from --border-color for dark-mode contrast on translucent surfaces.
     --timer-ring-idle-color: light-dark(var(--color-gray-20), var(--color-gray-30));
@@ -173,7 +171,6 @@
       font-size: var(--newtab-font-size-xsmall);
       font-weight: var(--font-weight);
       // No matching letter-spacing design-system token.
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       letter-spacing: 0.022em;
       text-transform: none;
       white-space: nowrap;
@@ -255,7 +252,6 @@
         flex-shrink: 0;
         gap: var(--space-medium);
         justify-content: center;
-        /* stylelint-disable-next-line declaration-property-value-disallowed-list */
         min-inline-size: 180px;
       }
 
@@ -319,7 +315,6 @@
     &.large-widget .progress-circle-wrapper :is(.progress-circle-background, .progress-circle-background-break, .progress-circle, .progress-circle-complete, .progress-circle-cap-rotator) {
       inset-block-end: auto;
       inset-block-start: var(--space-medium);
-      /* stylelint-disable-next-line declaration-property-value-disallowed-list */
       block-size: var(--progress-circle-size);
     }
 
@@ -365,7 +360,6 @@
       &::part(button) {
         background-color: transparent;
         border-color: transparent;
-        /* stylelint-disable-next-line declaration-property-value-disallowed-list */
         color: light-dark(#816297, #ECE0F5);
       }
 

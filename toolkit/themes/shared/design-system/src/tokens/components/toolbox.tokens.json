@@ -20,27 +20,47 @@
           "default": "{toolbox.background.color.@base}",
           "nativeTheme": "-moz-headerbarinactive"
         }
-      },
-      "gradient-leading": {
-        "override": true,
-        "value": "unset"
-      },
-      "gradient-trailing": {
-        "override": true,
-        "value": "unset"
       }
     },
     "gradient": {
-      "comment": "This gradient is only used for Nova",
-      "override": true,
-      "value": {
-        "default": "unset",
-        "nova": {
-          "comment": "This linear-gradient cannot be expressed in Figma",
-          "value": {
-            "default": "linear-gradient(96deg, color-mix({toolbox.background.color.gradient-leading} 50%, transparent) 39.84%, color-mix({toolbox.background.color.gradient-trailing} 50%, transparent) 101.72%)",
-            "nativeTheme": "image(transparent)",
-            "forcedColors": "image(transparent)"
+      "@base": {
+        "comment": "This gradient is only used for Nova",
+        "override": true,
+        "value": {
+          "default": "unset",
+          "nova": {
+            "comment": "This linear-gradient cannot be expressed in Figma",
+            "value": {
+              "default": "linear-gradient(96deg, color-mix({toolbox.background.gradient.leading} 50%, transparent) 39.84%, color-mix({toolbox.background.gradient.trailing} 50%, transparent) 101.72%)",
+              "nativeTheme": "image(transparent)",
+              "forcedColors": "image(transparent)"
+            }
+          }
+        }
+      },
+      "leading": {
+        "override": true,
+        "value": {
+          "default": "unset",
+          "nova": {
+            "value": {
+              "light": "{color.violet.10}",
+              "dark": "{color.violet-desaturated.70}",
+              "forcedColors": "Canvas"
+            }
+          }
+        }
+      },
+      "trailing": {
+        "override": true,
+        "value": {
+          "default": "unset",
+          "nova": {
+            "value": {
+              "light": "{color.orange.10}",
+              "dark": "{color.orange.70}",
+              "forcedColors": "Canvas"
+            }
           }
         }
       }

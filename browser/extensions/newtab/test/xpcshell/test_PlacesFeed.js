@@ -1190,7 +1190,9 @@ add_task(async function test_onAction_OPEN_LINK_reports_the_opened_browser() {
       url: "https://foo.com",
       dwell_label: "story_sponsored",
       is_sponsored: true,
+      dwell_id: 7,
     },
+    meta: { fromTarget: "port1" },
     _target: { window: { openTrustedLinkIn } },
   });
 
@@ -1200,15 +1202,89 @@ add_task(async function test_onAction_OPEN_LINK_reports_the_opened_browser() {
     "openTrustedLinkIn was asked for the destination browser"
   );
 
+  // TelemetryFeed pairs the browser with its click by dwell_id and port_id,
+  // whichever of the two arrives first.
   let browser = { permanentKey: {} };
   params.resolveOnContentBrowserCreated(browser);
   Assert.ok(
     feed.store.dispatch.calledWith({
       type: actionTypes.DWELL_LINK_OPENED,
-      data: { browser, dwell_label: "story_sponsored" },
+      data: {
+        browser,
+        dwell_label: "story_sponsored",
+        dwell_id: 7,
+        port_id: "port1",
+      },
     }),
-    "The browser is dispatched with the label the click site chose"
+    "The browser is dispatched with the ids that pair it with its click"
   );
+
+  sandbox.restore();
+});
+
+add_task(async function test_onAction_OPEN_NEW_WINDOW_reports_the_browser() {
+  info(
+    "PlacesFeed should report the <browser> a labelled Open in a New Window " +
+      "loads into, the same as for a clicked link"
+  );
+  let sandbox = sinon.createSandbox();
+  let feed = getPlacesFeedForTest(sandbox);
+  let openTrustedLinkIn = sandbox.stub();
+  feed.onAction({
+    type: actionTypes.OPEN_NEW_WINDOW,
+    data: {
+      url: "https://foo.com",
+      dwell_label: "story_organic",
+      dwell_id: 3,
+    },
+    meta: { fromTarget: "port1" },
+    _target: { window: { openTrustedLinkIn } },
+  });
+
+  let [, where, params] = openTrustedLinkIn.firstCall.args;
+  Assert.equal(where, "window", "Opened in a new window");
+  let browser = { permanentKey: {} };
+  params.resolveOnContentBrowserCreated(browser);
+  Assert.ok(
+    feed.store.dispatch.calledWith({
+      type: actionTypes.DWELL_LINK_OPENED,
+      data: {
+        browser,
+        dwell_label: "story_organic",
+        dwell_id: 3,
+        port_id: "port1",
+      },
+    }),
+    "The new window's browser was reported with the label and id"
+  );
+
+  sandbox.restore();
+});
+
+add_task(async function test_onAction_OPEN_LINK_forwards_no_dwell_id() {
+  info(
+    "PlacesFeed should forward an absent dwell_id as undefined, so a link " +
+      "that cannot be matched to a story never adopts another one's identity"
+  );
+  let sandbox = sinon.createSandbox();
+  let feed = getPlacesFeedForTest(sandbox);
+  let openTrustedLinkIn = sandbox.stub();
+  feed.onAction({
+    type: actionTypes.OPEN_LINK,
+    data: { url: "https://foo.com", dwell_label: "topsite_organic" },
+    meta: { fromTarget: "port2" },
+    _target: { window: { openTrustedLinkIn } },
+  });
+
+  let [, , params] = openTrustedLinkIn.firstCall.args;
+  let browser = { permanentKey: {} };
+  params.resolveOnContentBrowserCreated(browser);
+
+  let [dispatched] = feed.store.dispatch.args.find(
+    ([a]) => a.type === actionTypes.DWELL_LINK_OPENED
+  );
+  Assert.equal(dispatched.data.dwell_id, undefined, "No id to match against");
+  Assert.equal(dispatched.data.port_id, "port2", "The sender is still known");
 
   sandbox.restore();
 });

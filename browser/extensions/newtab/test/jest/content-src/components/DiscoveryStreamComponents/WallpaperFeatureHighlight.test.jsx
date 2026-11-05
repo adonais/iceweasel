@@ -61,6 +61,92 @@ describe("<WallpaperFeatureHighlight>", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("uses the message's l10n ids over the built-in Nova copy", () => {
+    const state = {
+      ...INITIAL_STATE,
+      Prefs: {
+        ...INITIAL_STATE.Prefs,
+        values: {
+          ...INITIAL_STATE.Prefs.values,
+          "nova.enabled": true,
+        },
+      },
+      Messages: {
+        ...INITIAL_STATE.Messages,
+        messageData: {
+          content: {
+            feature: "WALLPAPER",
+            messageType: "CustomWallpaperHighlight",
+            title: "newtab-nova-customization-callout-header",
+            subtitle: "newtab-nova-customization-callout-message",
+            cta: "newtab-nova-customization-callout-primary-button",
+          },
+        },
+      },
+    };
+    const { container } = render(
+      <WrapWithProvider state={state}>
+        <WallpaperFeatureHighlight
+          dispatch={jest.fn()}
+          handleDismiss={jest.fn()}
+          handleClick={jest.fn()}
+          handleBlock={jest.fn()}
+        />
+      </WrapWithProvider>
+    );
+    expect(container.querySelector(".title").getAttribute("data-l10n-id")).toBe(
+      "newtab-nova-customization-callout-header"
+    );
+    expect(
+      container.querySelector(".subtitle").getAttribute("data-l10n-id")
+    ).toBe("newtab-nova-customization-callout-message");
+    expect(
+      container.querySelector("moz-button").getAttribute("data-l10n-id")
+    ).toBe("newtab-nova-customization-callout-primary-button");
+  });
+
+  it("uses the message's raw card copy over the built-in Nova copy", () => {
+    const state = {
+      ...INITIAL_STATE,
+      Prefs: {
+        ...INITIAL_STATE.Prefs,
+        values: {
+          ...INITIAL_STATE.Prefs.values,
+          "nova.enabled": true,
+        },
+      },
+      Messages: {
+        ...INITIAL_STATE.Messages,
+        messageData: {
+          content: {
+            feature: "WALLPAPER",
+            messageType: "CustomWallpaperHighlight",
+            cardTitle: "Card title",
+            cardMessage: "Card message",
+            cardCta: "Card CTA",
+          },
+        },
+      },
+    };
+    const { container } = render(
+      <WrapWithProvider state={state}>
+        <WallpaperFeatureHighlight
+          dispatch={jest.fn()}
+          handleDismiss={jest.fn()}
+          handleClick={jest.fn()}
+          handleBlock={jest.fn()}
+        />
+      </WrapWithProvider>
+    );
+    expect(container.querySelector(".title").textContent).toBe("Card title");
+    expect(container.querySelector(".subtitle").textContent).toBe(
+      "Card message"
+    );
+    expect(container.querySelector("moz-button").getAttribute("label")).toBe(
+      "Card CTA"
+    );
+  });
+
   it("renders the World Cup variant when messageType is WorldCupWallpaperHighlight", () => {
     const state = {
       ...INITIAL_STATE,

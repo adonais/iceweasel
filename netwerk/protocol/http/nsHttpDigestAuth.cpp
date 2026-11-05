@@ -158,6 +158,7 @@ nsHttpDigestAuth::ChallengeReceived(nsIHttpAuthenticableChannel* authChannel,
                                     nsISupports** sessionState,
                                     nsISupports** continuationState,
                                     bool* result) {
+  MOZ_ASSERT(NS_IsMainThread());
   nsAutoCString realm, domain, nonce, opaque;
   bool stale;
   uint16_t algorithm, qop;
@@ -202,6 +203,7 @@ nsHttpDigestAuth::GenerateCredentials(
     nsISupports** continuationState, uint32_t* aFlags, nsACString& creds)
 
 {
+  MOZ_ASSERT(NS_IsMainThread());
   LOG(("nsHttpDigestAuth::GenerateCredentials [challenge=%s]\n",
        PromiseFlatCString(aChallenge).get()));
 

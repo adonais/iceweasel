@@ -404,11 +404,10 @@ EMEDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
   if (aParams.mConfig.IsVideo()) {
     if (StaticPrefs::media_eme_video_blank()) {
       EME_LOG(
-          "EMEDecoderModule::CreateVideoDecoder() creating a blank decoder.");
+          "EMEDecoderModule::AsyncCreateDecoder() creating a blank video "
+          "decoder.");
       RefPtr<PlatformDecoderModule> m(BlankDecoderModule::Create());
-      RefPtr<MediaDataDecoder> decoder = m->CreateVideoDecoder(aParams);
-      return EMEDecoderModule::CreateDecoderPromise::CreateAndResolve(decoder,
-                                                                      __func__);
+      return m->AsyncCreateDecoder(aParams);
     }
 
     const bool gmpSupported =
@@ -464,11 +463,11 @@ EMEDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
   MOZ_ASSERT(mPDM);
 
   if (StaticPrefs::media_eme_audio_blank()) {
-    EME_LOG("EMEDecoderModule::CreateAudioDecoder() creating a blank decoder.");
+    EME_LOG(
+        "EMEDecoderModule::AsyncCreateDecoder() creating a blank audio "
+        "decoder.");
     RefPtr<PlatformDecoderModule> m(BlankDecoderModule::Create());
-    RefPtr<MediaDataDecoder> decoder = m->CreateAudioDecoder(aParams);
-    return EMEDecoderModule::CreateDecoderPromise::CreateAndResolve(decoder,
-                                                                    __func__);
+    return m->AsyncCreateDecoder(aParams);
   }
 
   UniquePtr<ADTSSampleConverter> converter = nullptr;

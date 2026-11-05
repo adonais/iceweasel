@@ -24,3 +24,8 @@ LOCAL_INCLUDES += [
     "/netwerk/base",
     "/widget/windows",
 ]
+
+SOURCE_HEADERS += [
+    "nsWindowsSystemProxySettings.h",
+    "WindowsInternetFunctionsWrapper.h",
+]

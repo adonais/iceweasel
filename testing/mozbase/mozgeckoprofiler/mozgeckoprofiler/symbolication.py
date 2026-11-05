@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import atexit
+import json
 import os
 import platform
 import shutil
@@ -10,6 +11,7 @@ import subprocess
 import tempfile
 import time
 import zipfile
+from contextlib import contextmanager
 from functools import cache
 from pathlib import Path
 from urllib.parse import unquote
@@ -87,7 +89,32 @@ def _validate_symbolication_deps(paths_to_validate):
     return True
 
 
-def symbolicate_profile_file(in_path, out_path, symbol_dir=None):
+@contextmanager
+def source_path_mapping_args(source_path_mappings):
+    """Yield the profiler-edit arguments that embed the JS sources of the mappings.
+
+    The mappings are written to a temporary file for profiler-edit to read,
+    which is removed when the context exits. Yields an empty list when there
+    are no mappings.
+
+    Args:
+        source_path_mappings (list): Mappings from URL prefixes to the local
+            directories they were served from, as dicts with "urlPrefix" and
+            "localPath" keys.
+    """
+    if not source_path_mappings:
+        yield []
+        return
+
+    with tempfile.TemporaryDirectory() as mapping_dir:
+        mapping_path = Path(mapping_dir, "source-path-mappings.json")
+        mapping_path.write_text(json.dumps({"mappings": source_path_mappings}))
+        yield ["--map-source-paths", str(mapping_path)]
+
+
+def symbolicate_profile_file(
+    in_path, out_path, symbol_dir=None, source_path_mappings=None
+):
     """Symbolicate a Gecko profile, using samply and profiler-edit.
 
     The profile is never read into this process: both tools work on file paths,
@@ -102,6 +129,10 @@ def symbolicate_profile_file(in_path, out_path, symbol_dir=None):
             left behind.
         symbol_dir (path): Directory of Breakpad symbols to use. When omitted,
             it is looked up with get_extracted_symbols().
+        source_path_mappings (list): Mappings from URL prefixes to the local
+            directories they were served from, as dicts with "urlPrefix" and
+            "localPath" keys. The JS sources found there, and their source
+            maps, are embedded into the profile.
 
     Returns:
         bool: Whether a complete symbolicated profile was written to out_path.
@@ -201,16 +232,18 @@ def symbolicate_profile_file(in_path, out_path, symbol_dir=None):
                 "--symbolicate-with-server",
                 server_url,
             ]
-            LOG.info(f"Running profiler-edit command: {profiler_edit_cmd}")
-            with subprocess.Popen(
-                profiler_edit_cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-            ) as profiler_edit_process:
-                for line in profiler_edit_process.stdout:
-                    LOG.info(f"profiler-edit {line.strip()}")
+            with source_path_mapping_args(source_path_mappings) as mapping_args:
+                profiler_edit_cmd.extend(mapping_args)
+                LOG.info(f"Running profiler-edit command: {profiler_edit_cmd}")
+                with subprocess.Popen(
+                    profiler_edit_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                ) as profiler_edit_process:
+                    for line in profiler_edit_process.stdout:
+                        LOG.info(f"profiler-edit {line.strip()}")
         finally:
             if platform.system() == "Windows":
                 samply_process.terminate()

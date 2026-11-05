@@ -153,8 +153,8 @@ class MegamorphicCacheEntry {
 // [SMDOC] Megamorphic Property Lookup Cache (MegamorphicCache)
 //
 // MegamorphicCache is a data structure used to speed up megamorphic property
-// lookups from JIT code. The same cache is currently used for both GetProp and
-// HasProp (in, hasOwnProperty) operations.
+// lookups (primarily but not exclusively from JIT code). The same cache is
+// currently used for both GetProp and HasProp (in, hasOwnProperty) operations.
 //
 // This is implemented as a fixed-size array of entries. Lookups are performed
 // based on the receiver object's Shape + PropertyKey. If found in the cache,

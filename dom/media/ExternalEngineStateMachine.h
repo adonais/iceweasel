@@ -339,6 +339,8 @@ class ExternalEngineStateMachine final
 
   void NotifyAudibleStateChangeIfNeeded();
 
+  void ApplyPendingCDMProxy();
+
   UniquePtr<ExternalPlaybackEngine> mEngine;
 
   bool mHasEnoughAudio = false;
@@ -356,7 +358,7 @@ class ExternalEngineStateMachine final
 #endif
 
   // Only used if setting CDM happens before the engine finishes initialization.
-  MozPromiseHolder<SetCDMPromise> mSetCDMProxyPromise;
+  RefPtr<CDMProxy> mPendingCDMProxy;
   MozPromiseRequestHolder<SetCDMPromise> mSetCDMProxyRequest;
 
   // If seek happens while the engine is still initializing, then we would

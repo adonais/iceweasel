@@ -56,7 +56,7 @@ skip-if = [
 https_first_disabled = true
 skip-if = [
   "debug", # bug 1369731
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && nova", # Bug 2057534
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt", # Bug 2057534
 ]
 
 ["browser_devices_get_user_media_in_xorigin_frame_chain.js"]
@@ -72,8 +72,6 @@ https_first_disabled = true
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt", # Bug 1440900
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1440900
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # platform migration
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1869787
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1707735
   "os == 'win' && opt", # Bug 1440900
 ]
@@ -83,7 +81,6 @@ https_first_disabled = true
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1775945
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1775945
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1974591
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1974591
   "os == 'win'", # Bug 1775945, Bug 1974591
   "verify-standalone",
@@ -108,7 +105,6 @@ skip-if = [
 https_first_disabled = true
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1775945
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # platform migration
 ]
 
 ["browser_devices_get_user_media_unprompted_access.js"]
@@ -143,13 +139,9 @@ run-if = [
 
 ["browser_stop_streams_on_indicator_close.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && ccov", # Bug 1775943
   "os == 'win' && os_version == '11.26200' && ccov", # Bug 1775943
 ]
 
 ["browser_tab_switch_warning.js"]
 
 ["browser_webrtc_hooks.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1869787
-]

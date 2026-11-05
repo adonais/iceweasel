@@ -5,6 +5,7 @@
 #ifndef nsMenuUtilsX_h_
 #define nsMenuUtilsX_h_
 
+#include "mozilla/AlreadyAddRefed.h"
 #include "nsStringFwd.h"
 #include "nscore.h"
 
@@ -22,7 +23,7 @@ void DispatchCommandTo(nsIContent* aTargetContent,
 NSString* GetTruncatedCocoaLabel(const nsString& itemLabel);
 uint8_t GeckoModifiersForNodeAttribute(const nsString& modifiersAttribute);
 unsigned int MacModifiersForGeckoModifiers(uint8_t geckoModifiers);
-nsMenuBarX* GetHiddenWindowMenuBar();  // returned object is not retained
+already_AddRefed<nsMenuBarX> GetHiddenWindowMenuBar();
 bool NodeIsHiddenOrCollapsed(nsIContent* aContent);
 NSAttributedString* AttributedStringForContent(nsIContent* aContent,
                                                NSString* aLabel);

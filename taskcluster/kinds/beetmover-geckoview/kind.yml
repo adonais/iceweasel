@@ -37,7 +37,6 @@ not-for-build-platforms:
     - win64-aarch64-devedition/opt
 
 task-defaults:
-    run-on-repo-type: [hg]
     task-context:
         from-parameters:
             project: project

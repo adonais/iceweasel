@@ -17,9 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.feature.addons.ui.showInformationDialog
@@ -100,10 +98,7 @@ class AddonDetailsActivity : AppCompatActivity() {
         val context = this@AddonDetailsActivity
 
         lifecycleScope.launch {
-            val updateAttempt =
-                withContext(Dispatchers.IO) {
-                    updateAttemptStorage.findUpdateAttemptBy(addon.id)
-                }
+            val updateAttempt = updateAttemptStorage.findUpdateAttemptBy(addon.id)
 
             updateAttempt?.showInformationDialog(context)
         }

@@ -10,6 +10,7 @@ const { ProfileDataUpgrader } = ChromeUtils.importESModule(
 add_setup(() => {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("browser.fixup.alternate.enabled");
+    Services.prefs.clearUserPref("browser.ipProtection.locationListCache");
     Services.prefs.clearUserPref("browser.migration.version");
   });
 });
@@ -22,5 +23,16 @@ add_task(async function browser_fixup_alternate_enabled() {
   Assert.ok(
     !Services.prefs.getBoolPref("browser.fixup.alternate.enabled", false),
     "browser.fixup.alternate.enabled pref should be cleared"
+  );
+});
+
+add_task(async function browser_ipProtection_locationListCache() {
+  Services.prefs.setCharPref("browser.ipProtection.locationListCache", "[]");
+
+  ProfileDataUpgrader.upgrade(183, 184);
+
+  Assert.ok(
+    !Services.prefs.prefHasUserValue("browser.ipProtection.locationListCache"),
+    "browser.ipProtection.locationListCache pref should be cleared"
   );
 });

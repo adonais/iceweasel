@@ -210,7 +210,6 @@ ChannelMediaDecoder::CreateStateMachine(bool aDisableExternalEngine) {
   MOZ_ASSERT(NS_IsMainThread());
   MediaFormatReaderInit init;
   init.mVideoFrameContainer = GetVideoFrameContainer();
-  init.mKnowsCompositor = GetCompositor();
   init.mCrashHelper = GetOwner()->CreateGMPCrashHelper();
   init.mFrameStats = mFrameStats;
   init.mResource = mResource;

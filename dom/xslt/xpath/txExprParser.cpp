@@ -10,6 +10,7 @@
 
 #include "txExprParser.h"
 
+#include <memory>
 #include <utility>
 
 #include "nsError.h"
@@ -378,7 +379,7 @@ nsresult txExprParser::createFilterOrStep(txExprLexer& lexer,
   }
 
   if (lexer.peek()->mType == Token::L_BRACKET) {
-    UniquePtr<FilterExpr> filterExpr(new FilterExpr(expr.get()));
+    auto filterExpr = std::make_unique<FilterExpr>(expr.get());
 
     (void)expr.release();
 
@@ -537,8 +538,8 @@ nsresult txExprParser::createLocationStep(txExprLexer& lexer,
     }
   }
 
-  UniquePtr<LocationStep> lstep(
-      new LocationStep(nodeTest.get(), axisIdentifier));
+  UniquePtr<LocationStep> lstep =
+      std::make_unique<LocationStep>(nodeTest.get(), axisIdentifier);
 
   (void)nodeTest.release();
 
@@ -639,7 +640,7 @@ nsresult txExprParser::createPathExpr(txExprLexer& lexer,
   }
 
   // We have a PathExpr containing several steps
-  UniquePtr<PathExpr> pathExpr(new PathExpr());
+  auto pathExpr = std::make_unique<PathExpr>();
   pathExpr->addExpr(expr.release(), PathExpr::RELATIVE_OP);
 
   // this is ugly
@@ -686,7 +687,7 @@ nsresult txExprParser::createUnionExpr(txExprLexer& lexer,
     return NS_OK;
   }
 
-  UniquePtr<UnionExpr> unionExpr(new UnionExpr());
+  auto unionExpr = std::make_unique<UnionExpr>();
   unionExpr->addExpr(expr.release());
 
   while (lexer.peek()->mType == Token::UNION_OP) {

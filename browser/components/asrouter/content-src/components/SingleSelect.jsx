@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 
 import { Localized } from "./MSLocalized";
 import { TileButton } from "./TileButton";
 import { TileList } from "./TileList";
 import { MultiStageUtils } from "../lib/multistage-utils.mjs";
-import { CarouselNav } from "./CarouselNav";
+import { CarouselNav, useCarouselScroll } from "./CarouselNav";
 
 // This component was formerly "Themes" and continues to support theme
 export const SingleSelect = ({
@@ -16,25 +16,26 @@ export const SingleSelect = ({
   activeTheme,
   content,
   handleAction,
+  messageId,
   setActiveSingleSelectSelection,
   singleSelectId,
 }) => {
   const category = content.tiles?.category?.type || content.tiles?.type;
   const isSingleSelect = category === "single-select";
+  const isCarousel = isSingleSelect && content.tiles?.layout === "carousel";
 
-  const cardRefs = useRef(new Map());
+  const { scrollerRef, registerCard, isSmallLayout } = useCarouselScroll(
+    activeSingleSelectSelections[singleSelectId],
+    isCarousel
+  );
 
   const handlePillSelect = id => {
     setActiveSingleSelectSelection(id, singleSelectId);
-    const card = cardRefs.current.get(id);
-    const reduceMotion = window.matchMedia?.(
-      "(prefers-reduced-motion: reduce)"
-    )?.matches;
-    card?.scrollIntoView?.({
-      behavior: reduceMotion ? "auto" : "smooth",
-      inline: "center",
-      block: "nearest",
-    });
+    MultiStageUtils.sendActionTelemetry(
+      messageId,
+      `carousel-pill-${id}`,
+      "CLICK_BUTTON"
+    );
   };
 
   const autoTriggerAllowed = itemAction => {
@@ -107,17 +108,23 @@ export const SingleSelect = ({
   ];
 
   return (
-    <div className={`tiles-single-select-container`}>
-      {isSingleSelect ? (
+    <div
+      className={`tiles-single-select-container ${isCarousel ? "carousel" : ""}`}
+    >
+      {isCarousel ? (
         <CarouselNav
           items={content.tiles?.data}
           activeId={activeSingleSelectSelections[singleSelectId]}
           onSelect={handlePillSelect}
           navLabel={content.tiles?.pill_nav_label}
+          compact={isSmallLayout}
         />
       ) : null}
-      <div>
-        <fieldset className={`tiles-single-select-section ${category}`}>
+      <div className="tiles-single-select-wrapper">
+        <fieldset
+          className={`tiles-single-select-section ${category} ${isCarousel ? "carousel" : ""}`}
+          ref={scrollerRef}
+        >
           <Localized text={content.tiles?.subtitle || content.subtitle}>
             <legend className="sr-only" />
           </Localized>
@@ -158,6 +165,9 @@ export const SingleSelect = ({
                   icon.darkModeBackground;
                 delete iconStyle.background;
               }
+              if (isCarousel && iconStyle) {
+                iconStyle.backgroundSize = "100% 100%";
+              }
 
               const handleClick = evt => {
                 if (isSingleSelect) {
@@ -183,13 +193,7 @@ export const SingleSelect = ({
                   {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */}
                   <label
                     className={`select-item ${type} ${selected ? " selected" : ""}`}
-                    ref={el => {
-                      if (el) {
-                        cardRefs.current.set(value, el);
-                      } else {
-                        cardRefs.current.delete(value);
-                      }
-                    }}
+                    ref={el => registerCard(value, el)}
                     onKeyDown={e => handleKeyDown(e)}
                     style={{
                       ...MultiStageUtils.getValidStyle(
@@ -245,6 +249,7 @@ export const SingleSelect = ({
                         content={tilebutton}
                         handleAction={handleAction}
                         inputName={inputName}
+                        inert={isCarousel && !selected}
                       />
                     ) : (
                       ""

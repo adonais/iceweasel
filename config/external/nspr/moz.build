@@ -24,3 +24,8 @@ if CONFIG["MOZ_BUILD_NSPR"]:
     EXPORTS.nspr += ["prcpucfg.h"]
 else:
     OS_LIBS += CONFIG["NSPR_LIBS"]
+
+SOURCE_HEADERS += [
+    "_pl_bld.h",
+    "_pr_bld.h",
+]

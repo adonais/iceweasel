@@ -37,6 +37,7 @@ const SIDEBAR_PREFS = {
   "widgets.weather.size": "small",
   "widgets.system.weather.enabled": true,
   showWeather: true,
+  region: "US",
 };
 
 describe("WidgetsSidebar", () => {

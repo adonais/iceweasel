@@ -23,7 +23,7 @@ function forceFocus(elem) {
 
 async function waitForProfileAndCloseTab() {
   await waitUntil(
-    () => !button.classList.contains("profiler-paused"),
+    () => !button.disabled,
     "Waiting until the profiler is no longer paused"
   );
 

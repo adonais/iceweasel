@@ -17,3 +17,12 @@ LOCAL_INCLUDES += [
 
 if CONFIG['MOZ_PHC']:
     DEFINES['MOZ_PHC'] = True
+
+SOURCE_HEADERS += [
+	"dynamic_images.h",
+	"exception_handler.h",
+	"mach_vm_compat.h",
+	"minidump_generator.h",
+	"protected_memory_allocator.h",
+	"ucontext_compat.h",
+]

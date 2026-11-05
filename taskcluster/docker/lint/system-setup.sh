@@ -43,7 +43,5 @@ cd /build
 # shellcheck disable=SC1091
 . install-node.sh
 
-npm install -g yarn@1.22.18
-
 cd /
 rm -rf /setup

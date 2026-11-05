@@ -41,17 +41,22 @@
 
 .titlebar-buttonbox {
   &:-moz-locale-dir(ltr) {
+    /* Traffic-light spacing; rem space tokens don't preserve 12px under macOS 11px root. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     margin-inline: 12px 0;
 
     @media (-moz-mac-rtl) {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       margin-inline: 12px;
     }
   }
 
   &:-moz-locale-dir(rtl) {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     margin-inline: 12px;
 
     @media (-moz-mac-rtl) {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       margin-inline: 12px 0;
     }
   }
@@ -60,7 +65,7 @@
 /* ----- BOOKMARK TOOLBAR ----- */
 
 #nav-bar-customization-target > #wrapper-personal-bookmarks > #personal-bookmarks {
-  min-height: 32px;
+  min-height: var(--size-item-large);
   align-items: center;
 }
 
@@ -73,19 +78,23 @@
 .toolbarbutton-1:not(:hover):-moz-window-inactive,
 .bookmark-item:not(:hover):-moz-window-inactive,
 :root:not([customizing]) .toolbarbutton-1:-moz-window-inactive[disabled] {
-  opacity: 0.5;
+  opacity: var(--toolbarbutton-opacity-disabled);
 }
 
 /* Address bar */
 
 .urlbar,
 #searchbar {
+  /* macOS address/search bar font-size multiplier; no design token equivalent. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 1.25em;
 }
 
 /* ----- AUTOCOMPLETE ----- */
 
 #PopupAutoComplete > richlistbox > richlistitem[originaltype~="datalist-first"] {
+  /* macOS autocomplete separator color; no design token equivalent. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-top: 1px solid #c7c7c7;
 }
 
@@ -101,6 +110,8 @@
 #editBMPanel_folderTree,
 #editBMPanel_tagsSelector {
   appearance: none;
+  /* Local semi-transparent panel field background; no design token equivalent. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--panel-field-background);
   color: inherit;
   border-radius: var(--border-radius-xsmall);
@@ -134,6 +145,7 @@
 
 #sidebar-box {
   /* Default font size is 11px on mac, so this is 12px */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 1.0909rem;
 }
 
@@ -145,8 +157,8 @@
   }
 }
 
-.tabbrowser-tab:not(:hover) > .tab-stack > .tab-content > .tab-icon-image:not([selected], [multiselected]) {
-  opacity: 0.9;
+.tabbrowser-tab:not(:hover) > .tab-stack > .tab-content .tab-icon-image:not([selected], [multiselected]) {
+  opacity: var(--opacity-deemphasized);
 }
 
 /*
@@ -154,11 +166,13 @@
  * top of the icon.
  */
 .tab-icon-overlay {
+  /* Near-opaque value used only to create a stacking context. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   opacity: 0.9999;
 }
 
 .tab-label-container:not([selected], [multiselected]) {
-  opacity: 0.7;
+  opacity: var(--opacity-deemphasized-strong);
 }
 
 .tabbrowser-tab {
@@ -173,11 +187,16 @@
 }
 
 #UITourTooltipDescription {
+  /* macOS-specific UITour description size; no design-token equivalent. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 1.18rem;
   line-height: 2rem;
 }
 
 #UITourTooltipClose {
+  /* Compensates for macOS panel chrome; rem space tokens don't preserve these px values. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-end: -10px;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-top: -14px;
 }

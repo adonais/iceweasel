@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<meta charset="utf-8">
+<title>Container-timing record must not be recreated through a ::before element's stale cached root</title>
+<style>
+  #root::before { content: "SRCTEXT"; }
+</style>
+<body style="margin:0">
+<div style="width:300px;height:300px;background:-moz-element(#root)"></div>
+<div style="opacity:0;position:absolute;left:0;top:0">
+  <div id="root" containertiming="ct" style="width:300px;height:300px;font-size:60px;color:black"></div>
+</div>
+<script>
+function raf() {
+  return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+}
+async function go() {
+  try {
+    await run();
+  } finally {
+    document.documentElement.classList.remove("reftest-wait");
+  }
+}
+async function run() {
+  await raf();
+  await raf();
+
+  let root = document.getElementById("root");
+
+  // Unregister the container root. The ::before generated-content element is
+  // not reached by the subtree recompute, so it keeps caching the root, and
+  // repainting its text recreates a record keyed by the root.
+  root.removeAttribute("containertiming");
+  root.style.color = "blue";
+  await raf();
+  await raf();
+
+  // The root no longer has the attribute, so detaching it doesn't drop the
+  // recreated record, leaving a dangling raw pointer in the map.
+  root.remove();
+  root = null;
+
+  SpecialPowers.forceGC();
+  SpecialPowers.forceCC();
+  SpecialPowers.forceGC();
+  SpecialPowers.forceCC();
+
+  await raf();
+
+  // First contentful paint finalizes container-timing entries; if the freed
+  // root were still keyed in the map this dereferences it (UAF).
+  const d = document.createElement("div");
+  d.textContent = "TRIGGER PAINT";
+  document.body.appendChild(d);
+
+  await raf();
+}
+go();
+</script>
+</body>
+</html>

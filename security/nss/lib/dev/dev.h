@@ -145,7 +145,6 @@ nssModule_GetCertOrder(
  *
  * nssSlot_Destroy
  * nssSlot_AddRef
- * nssSlot_GetName
  * nssSlot_IsTokenPresent
  * nssSlot_IsPermanent
  * nssSlot_IsFriendly
@@ -169,10 +168,6 @@ nssSlot_AddRef(
 
 NSS_EXTERN void
 nssSlot_ResetDelay(
-    NSSSlot *slot);
-
-NSS_EXTERN NSSUTF8 *
-nssSlot_GetName(
     NSSSlot *slot);
 
 NSS_EXTERN NSSModule *
@@ -219,14 +214,6 @@ nssSlot_Logout(
     NSSSlot *slot,
     nssSession *sessionOpt);
 
-NSS_EXTERN void
-nssSlot_EnterMonitor(
-    NSSSlot *slot);
-
-NSS_EXTERN void
-nssSlot_ExitMonitor(
-    NSSSlot *slot);
-
 #define NSSSLOT_ASK_PASSWORD_FIRST_TIME -1
 #define NSSSLOT_ASK_PASSWORD_EVERY_TIME 0
 NSS_EXTERN void
@@ -260,7 +247,6 @@ nssSlot_CreateSession(
  * nssToken_GetName
  * nssToken_GetModule
  * nssToken_GetSlot
- * nssToken_NeedsPINInitialization
  * nssToken_ImportCertificate
  * nssToken_ImportTrust
  * nssToken_ImportCRL
@@ -275,12 +261,7 @@ nssSlot_CreateSession(
  * nssToken_FindCertificateByEncodedCertificate
  * nssToken_FindTrustForCertificate
  * nssToken_FindCRLsBySubject
- * nssToken_FindPrivateKeys
- * nssToken_FindPrivateKeyByID
  * nssToken_Digest
- * nssToken_BeginDigest
- * nssToken_ContinueDigest
- * nssToken_FinishDigest
  */
 
 NSS_EXTERN PRStatus
@@ -302,10 +283,6 @@ nssToken_GetModule(
 NSS_EXTERN NSSSlot *
 nssToken_GetSlot(
     NSSToken *tok);
-
-NSS_EXTERN PRBool
-nssToken_NeedsPINInitialization(
-    NSSToken *token);
 
 NSS_EXTERN nssCryptokiObject **
 nssToken_FindObjectsByTemplate(
@@ -395,15 +372,6 @@ nssToken_FindCertificatesByEmail(
     PRUint32 maximumOpt,
     PRStatus *statusOpt);
 
-NSS_EXTERN nssCryptokiObject **
-nssToken_FindCertificatesByID(
-    NSSToken *token,
-    nssSession *sessionOpt,
-    NSSItem *id,
-    nssTokenSearchType searchType,
-    PRUint32 maximumOpt,
-    PRStatus *statusOpt);
-
 NSS_EXTERN nssCryptokiObject *
 nssToken_FindCertificateByIssuerAndSerialNumber(
     NSSToken *token,
@@ -439,51 +407,12 @@ nssToken_FindCRLsBySubject(
     PRUint32 maximumOpt,
     PRStatus *statusOpt);
 
-NSS_EXTERN nssCryptokiObject **
-nssToken_FindPrivateKeys(
-    NSSToken *token,
-    nssSession *sessionOpt,
-    nssTokenSearchType searchType,
-    PRUint32 maximumOpt,
-    PRStatus *statusOpt);
-
-NSS_EXTERN nssCryptokiObject *
-nssToken_FindPrivateKeyByID(
-    NSSToken *token,
-    nssSession *sessionOpt,
-    NSSItem *keyID);
-
-NSS_EXTERN nssCryptokiObject *
-nssToken_FindPublicKeyByID(
-    NSSToken *token,
-    nssSession *sessionOpt,
-    NSSItem *keyID);
-
 NSS_EXTERN NSSItem *
 nssToken_Digest(
     NSSToken *tok,
     nssSession *sessionOpt,
     NSSAlgorithmAndParameters *ap,
     NSSItem *data,
-    NSSItem *rvOpt,
-    NSSArena *arenaOpt);
-
-NSS_EXTERN PRStatus
-nssToken_BeginDigest(
-    NSSToken *tok,
-    nssSession *sessionOpt,
-    NSSAlgorithmAndParameters *ap);
-
-NSS_EXTERN PRStatus
-nssToken_ContinueDigest(
-    NSSToken *tok,
-    nssSession *sessionOpt,
-    NSSItem *item);
-
-NSS_EXTERN NSSItem *
-nssToken_FinishDigest(
-    NSSToken *tok,
-    nssSession *sessionOpt,
     NSSItem *rvOpt,
     NSSArena *arenaOpt);
 

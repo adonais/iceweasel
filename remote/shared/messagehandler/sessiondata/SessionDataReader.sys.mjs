@@ -21,7 +21,7 @@ ChromeUtils.defineLazyGetter(lazy, "sharedData", () => {
  * sessionDataMap singleton of SessionData.sys.mjs.
  *
  *  @returns {Map.<string, Array<SessionDataItem>>}
- *     Map of session id to arrays of SessionDataItems.
+ *     Map of internal session id to arrays of SessionDataItems.
  */
 export const readSessionData = () =>
   lazy.sharedData.get(lazy.SESSION_DATA_SHARED_DATA_KEY) || new Map();

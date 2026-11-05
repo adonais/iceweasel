@@ -12,6 +12,9 @@ const { E10SUtils } = ChromeUtils.importESModule(
 const { Preferences } = ChromeUtils.importESModule(
   "resource://gre/modules/Preferences.sys.mjs"
 );
+const { GeckoViewPictureInPictureController } = ChromeUtils.importESModule(
+  "resource://gre/modules/GeckoViewPictureInPicture.sys.mjs"
+);
 
 this.test = class extends ExtensionAPI {
   onStartup() {
@@ -102,6 +105,22 @@ this.test = class extends ExtensionAPI {
           );
         },
 
+        /* Whether the video at `selector` is being cloned into another video element. */
+        async isVideoCloning(tabId, selector) {
+          return getActorForTab(tabId, "TestSupport").sendQuery(
+            "IsVideoCloning",
+            { selector }
+          );
+        },
+
+        /* The message the video controls overlay shows over the video at `selector`, if any. */
+        async getVideoStatusMessage(tabId, selector) {
+          return getActorForTab(tabId, "TestSupport").sendQuery(
+            "GetVideoStatusMessage",
+            { selector }
+          );
+        },
+
         async getRequestedLocales() {
           return Services.locale.requestedLocales;
         },
@@ -110,6 +129,24 @@ this.test = class extends ExtensionAPI {
           const tab = context.extension.tabManager.get(tabId);
           const pids = E10SUtils.getBrowserPids(tab.browser);
           return pids[0];
+        },
+
+        async getBrowsingContextGroupIdForTab(tabId) {
+          const tab = context.extension.tabManager.get(tabId);
+          return tab.browser.browsingContext.group.id;
+        },
+
+        async getRemoteTypeForTab(tabId) {
+          const tab = context.extension.tabManager.get(tabId);
+          return tab.browser.remoteType;
+        },
+
+        async mintPictureInPicturePlacementToken(tabId) {
+          const tab = context.extension.tabManager.get(tabId);
+          return GeckoViewPictureInPictureController.mintPlacementToken(
+            tab.browser.browsingContext.group.id,
+            tab.browser.remoteType
+          );
         },
 
         async waitForContentTransformsReceived(tabId) {

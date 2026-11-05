@@ -15,6 +15,7 @@
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorTypes.h"
+#include "mozilla/layers/LayerTreeLog.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/webrender/WebRenderAPI.h"
@@ -92,6 +93,9 @@ bool RemoteLayerTreeOwner::Initialize(BrowserParent* aBrowserParent) {
   mLayersConnected = gpm->AllocateAndConnectLayerTreeId(
       compositor, mTabProcessId, GetEmbedderLayersId(mBrowserParent),
       &mLayersId, &mCompositorOptions);
+  LAYERTREE_LOG("Layer tree {:x} for content {} initialized, connected {}",
+                mLayersId, mBrowserParent->Manager()->ChildID(),
+                mLayersConnected);
 
   mInitialized = true;
   return true;
@@ -99,6 +103,9 @@ bool RemoteLayerTreeOwner::Initialize(BrowserParent* aBrowserParent) {
 
 void RemoteLayerTreeOwner::Destroy() {
   if (mLayersId.IsValid()) {
+    LAYERTREE_LOG("Layer tree {:x} for content {} destroyed", mLayersId,
+                  mBrowserParent ? mBrowserParent->Manager()->ChildID()
+                                 : dom::ContentParentId());
     GPUProcessManager::Get()->UnmapLayerTreeId(mLayersId, mTabProcessId);
   }
 
@@ -117,6 +124,7 @@ void RemoteLayerTreeOwner::EnsureLayersConnected(
   mLayersConnected =
       renderer->GetCompositorBridgeChild()->SendNotifyChildRecreated(
           mLayersId, GetEmbedderLayersId(mBrowserParent), &mCompositorOptions);
+  LAYERTREE_LOG("Layer tree {:x} reconnected {}", mLayersId, mLayersConnected);
   aCompositorOptions = Some(mCompositorOptions);
 }
 
@@ -129,6 +137,7 @@ bool RemoteLayerTreeOwner::AttachWindowRenderer() {
   // Perhaps the document containing this frame currently has no presentation?
   if (renderer && renderer->GetCompositorBridgeChild() &&
       renderer != mWindowRenderer) {
+    LAYERTREE_LOG("Layer tree {:x} moving to another window", mLayersId);
     mLayersConnected = renderer->GetCompositorBridgeChild()->SendAdoptChild(
         mLayersId, GetEmbedderLayersId(mBrowserParent));
   }

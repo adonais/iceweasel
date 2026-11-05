@@ -7,125 +7,17 @@
 //! helpers.
 
 use api::units::*;
-use crate::command_buffer::{CommandBufferBuilderKind, CommandBufferList, CommandBufferBuilder, CommandBufferIndex};
-use crate::internal_types::{FastHashMap, FastHashSet};
+use crate::command_buffer::{CommandBufferBuilderKind, CommandBufferBuilder, CommandBufferIndex, OpenBackdropCapture};
+use crate::internal_types::FastHashMap;
 use crate::picture_composite_mode::PictureCompositeMode;
 use crate::tile_cache::{TileKey, SubSliceIndex, MAX_COMPOSITOR_SURFACES};
-use crate::prim_store::PictureIndex;
 use crate::render_task_graph::{RenderTaskId, RenderTaskGraphBuilder};
-use crate::render_target::ResolveOp;
-use crate::render_task::{RenderTask, RenderTaskKind, RenderTaskLocation};
+use crate::render_task::RenderTaskKind;
 use crate::space::SpaceMapper;
 use crate::spatial_tree::{CoordinateSpaceMapping, CoordinateSystemId, SpatialTree, SpatialNodeIndex};
 use crate::util::{MaxRect, ScaleOffset};
-use crate::visibility::{DrawState, PrimitiveDrawHeader, FrameVisibilityContext};
+use crate::visibility::{BackdropCaptureIndex, DrawState, PrimitiveDrawHeader, FrameVisibilityContext};
 pub use crate::picture_composite_mode::get_surface_rects;
-
-/// Walk the filter chain rooted at `task_id` and make every task in it that
-/// samples `src_task_id` depend on `dep_task_id` as well.
-///
-/// The tasks that sample the chain's source sit at the *start* of the chain, not
-/// at the root (which is its output), so making the root alone depend on
-/// `dep_task_id` is not enough. How many there are depends on the chain:
-///  - Blur: one, the vertical blur - or the first downscale, for a blur large
-///    enough that `new_blur` scales it down first.
-///  - Drop-shadow: one. Every shadow blurs from the same source task, but only
-///    the last chain is reachable from the root, and all of the shadow quads
-///    sample that one task.
-///  - SVG filter graph: potentially several, since any node in the graph may
-///    take SourceGraphic as an input.
-fn order_readers_after(
-    rg_builder: &mut RenderTaskGraphBuilder,
-    task_id: RenderTaskId,
-    src_task_id: RenderTaskId,
-    dep_task_id: RenderTaskId,
-) {
-    let mut visited = FastHashSet::default();
-    let mut pending = FastHashSet::default();
-    pending.insert(task_id);
-
-    while !pending.is_empty() {
-        for task_id in std::mem::take(&mut pending) {
-            if !visited.insert(task_id.index) {
-                continue;
-            }
-
-            let children = rg_builder.get_task(task_id).children.clone();
-
-            if children.contains(&src_task_id) {
-                rg_builder.add_dependency(task_id, dep_task_id);
-            }
-            for child_id in children {
-                if child_id != src_task_id &&
-                   child_id.index != dep_task_id.index &&
-                   !visited.contains(&child_id.index) {
-                    pending.insert(child_id);
-                }
-            }
-        }
-    }
-}
-
-/// Fetch the raster spatial node of a picture render task (used to relate the
-/// raster spaces of a resolve target and the surface(s) it reads back from).
-fn raster_spatial_node(
-    rg_builder: &RenderTaskGraphBuilder,
-    task_id: RenderTaskId,
-) -> SpatialNodeIndex {
-    match rg_builder.get_task(task_id).kind {
-        RenderTaskKind::Picture(ref info) => info.raster_spatial_node_index,
-        _ => unreachable!("bug: resolve src/dest task is not a picture"),
-    }
-}
-
-/// Compute the mapping from a resolve target's raster space into the raster
-/// space of the surface(s) it reads back from, for use by `handle_resolve`.
-///
-/// A resolve target (backdrop-filter sub-graph) and the surface it captures
-/// always share a surface spatial node: `finalize_picture` resolves the filter
-/// picture's spatial node to its backdrop root. They differ only in their raster
-/// root, and only when the resolve target promotes to a root-snapping raster
-/// root (the root reference frame) while the parent rasterizes against its own
-/// node (e.g. a scrolling tile cache). Both nodes are then in the root
-/// coordinate system, so the relationship is always a `ScaleOffset` (the
-/// identity when the raster roots coincide); it can never be a non-axis-aligned
-/// `Transform`, because a resolve target under a non-root coordinate system does
-/// not promote and shares its parent's raster node.
-fn resolve_dest_to_src_raster(
-    rg_builder: &RenderTaskGraphBuilder,
-    spatial_tree: &SpatialTree,
-    dest_task_id: RenderTaskId,
-    src_task_ids: &[RenderTaskId],
-) -> ScaleOffset {
-    // All src tasks are tiles of the same parent surface, so they share a raster
-    // node; the first is representative.
-    let Some(&first_src) = src_task_ids.first() else {
-        return ScaleOffset::identity();
-    };
-
-    let dest_raster = raster_spatial_node(rg_builder, dest_task_id);
-    let src_raster = raster_spatial_node(rg_builder, first_src);
-
-    if src_raster == dest_raster {
-        return ScaleOffset::identity();
-    }
-
-    match spatial_tree.get_relative_transform(dest_raster, src_raster) {
-        CoordinateSpaceMapping::ScaleOffset(scale_offset) => scale_offset,
-        // Distinct nodes with an identity relationship: no correction needed.
-        CoordinateSpaceMapping::Local => ScaleOffset::identity(),
-        CoordinateSpaceMapping::Transform(..) => {
-            // Unreachable given the shared-coordinate-system invariant above; a
-            // rect-to-rect copy can't express a rotation, so degrade to the old
-            // (uncorrected) behaviour rather than crash a release build.
-            debug_assert!(
-                false,
-                "resolve target and its backdrop source must share the root coordinate system",
-            );
-            ScaleOffset::identity()
-        }
-    }
-}
 
 /// The mapping between a raster node's space and the screen framebuffer's device
 /// space. That is the root reference frame's space - the root carries no device
@@ -335,6 +227,9 @@ pub struct SurfaceInfo {
     /// spans), so a translation alone is not enough. All SVGFE coverage paths
     /// map the subregions through this so they line up with the geometry.
     pub svgfe_source_map: ScaleOffset,
+    /// Whether this is the surface of a picture in a backdrop-filter chain that
+    /// rasterizes like the surface it reads its backdrop from.
+    pub in_backdrop_chain: bool,
 }
 
 impl SurfaceInfo {
@@ -458,6 +353,7 @@ impl SurfaceInfo {
             allow_snapping,
             force_scissor_rect,
             svgfe_source_map: ScaleOffset::identity(),
+            in_backdrop_chain: false,
             culling_rect,
             culling_rect_projection_failed,
         }
@@ -649,12 +545,8 @@ impl SurfaceInfo {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SurfaceTileDescriptor {
-    /// Target render task for commands added to this tile. This is changed
-    /// each time a sub-graph is encountered on this tile
+    /// Target render task for commands added to this tile.
     pub current_task_id: RenderTaskId,
-    /// The compositing task for this tile, if required. This is only needed
-    /// when a tile contains one or more sub-graphs.
-    pub composite_task_id: Option<RenderTaskId>,
     /// Dirty rect for this tile
     pub dirty_rect: PictureRect,
 }
@@ -684,6 +576,15 @@ pub struct SurfaceDescriptor {
 }
 
 impl SurfaceDescriptor {
+    /// The task this surface's primitives are drawn into.
+    pub fn content_task_id(&self) -> RenderTaskId {
+        match self.kind {
+            SurfaceDescriptorKind::Tiled { .. } => panic!("bug: tiled surfaces have no single content task"),
+            SurfaceDescriptorKind::Simple { render_task_id, .. } |
+            SurfaceDescriptorKind::Chained { render_task_id, .. } => render_task_id,
+        }
+    }
+
     // Create a picture cache tiled surface
     pub fn new_tiled(
         tiles: FastHashMap<TileKey, SurfaceTileDescriptor>,
@@ -793,16 +694,12 @@ impl CommandBufferTargets {
     }
 }
 
-// Main helper interface to build a graph of surfaces. In future patches this
-// will support building sub-graphs.
+// Main helper interface to build a graph of surfaces.
 pub struct SurfaceBuilder {
     // The currently set cmd buffer targets (updated during push/pop)
     current_cmd_buffers: CommandBufferTargets,
     // Stack of surfaces that are parents to the current targets
     builder_stack: Vec<CommandBufferBuilder>,
-    // A map of the output render tasks from any sub-graphs that haven't
-    // been consumed by BackdropRender prims yet
-    pub sub_graph_output_map: FastHashMap<PictureIndex, RenderTaskId>,
 }
 
 impl SurfaceBuilder {
@@ -810,37 +707,40 @@ impl SurfaceBuilder {
         SurfaceBuilder {
             current_cmd_buffers: CommandBufferTargets::new(),
             builder_stack: Vec::new(),
-            sub_graph_output_map: FastHashMap::default(),
         }
     }
 
-    /// Register the current surface as the source of a resolve for the task sub-graph that
-    /// is currently on the surface builder stack.
-    pub fn register_resolve_source(
-        &mut self,
-    ) {
-        let surface_task_id = match self.builder_stack.last().unwrap().kind {
-            CommandBufferBuilderKind::Tiled { .. } | CommandBufferBuilderKind::Invalid => {
-                panic!("bug: only supported for non-tiled surfaces");
-            }
-            CommandBufferBuilderKind::Simple { render_task_id, .. } => render_task_id,
-        };
+    /// Open a backdrop-filter capture on the current surface. Until it is
+    /// closed, each primitive prepared on the surface that is behind the
+    /// element is drawn into it too.
+    pub fn open_backdrop_capture(&mut self, capture: OpenBackdropCapture) {
+        self.builder_stack.last_mut().unwrap().backdrop_captures.push(capture);
+    }
 
+    /// Close the capture at `index`, open on the current surface or one below
+    /// it, and return it.
+    pub fn close_backdrop_capture(&mut self, index: BackdropCaptureIndex) -> Option<OpenBackdropCapture> {
         for builder in self.builder_stack.iter_mut().rev() {
-            if builder.establishes_sub_graph {
-                assert_eq!(builder.resolve_source, None);
-                builder.resolve_source = Some(surface_task_id);
-                return;
+            if let Some(position) = builder.backdrop_captures.iter().position(|capture| capture.index == index) {
+                return Some(builder.backdrop_captures.swap_remove(position));
             }
         }
+        None
+    }
 
-        unreachable!("bug: resolve source with no sub-graph");
+    /// Make the open captures the primitive being prepared is drawn into
+    /// depend on `task_id`, as the current surface does.
+    fn add_backdrop_capture_dependency(&mut self, task_id: RenderTaskId) {
+        if let Some(builder) = self.builder_stack.last_mut() {
+            for capture in builder.backdrop_captures.iter_mut().filter(|capture| capture.drawn_into) {
+                capture.dependencies.push(task_id);
+            }
+        }
     }
 
     pub fn push_surface(
         &mut self,
         surface_index: SurfaceIndex,
-        is_sub_graph: bool,
         clipping_rect: DeviceRect,
         descriptor: Option<SurfaceDescriptor>,
         surfaces: &mut [SurfaceInfo],
@@ -859,7 +759,6 @@ impl SurfaceBuilder {
                 SurfaceDescriptorKind::Simple { render_task_id, dirty_rect, .. } => {
                     CommandBufferBuilder::new_simple(
                         render_task_id,
-                        is_sub_graph,
                         None,
                         dirty_rect,
                     )
@@ -867,7 +766,6 @@ impl SurfaceBuilder {
                 SurfaceDescriptorKind::Chained { render_task_id, root_task_id, dirty_rect, .. } => {
                     CommandBufferBuilder::new_simple(
                         render_task_id,
-                        is_sub_graph,
                         Some(root_task_id),
                         dirty_rect,
                     )
@@ -888,6 +786,8 @@ impl SurfaceBuilder {
         child_task_id: RenderTaskId,
         rg_builder: &mut RenderTaskGraphBuilder,
     ) {
+        self.add_backdrop_capture_dependency(child_task_id);
+
         let builder = self.builder_stack.last().unwrap();
 
         match builder.kind {
@@ -909,13 +809,14 @@ impl SurfaceBuilder {
         }
     }
 
-    // Add a picture render task as a dependency of the parent surface. This is a
-    // special case with extra complexity as the root of the surface may change
-    // when inside a sub-graph. It's currently only needed for drop-shadow effects.
+    // Add a picture render task as a dependency of the task this surface's
+    // primitives are drawn into, once the surface is popped. It's currently only
+    // needed for drop-shadow effects.
     pub fn add_picture_render_task(
         &mut self,
         child_task_id: RenderTaskId,
     ) {
+        self.add_backdrop_capture_dependency(child_task_id);
         self.builder_stack
             .last_mut()
             .unwrap()
@@ -932,7 +833,7 @@ impl SurfaceBuilder {
     ) -> bool {
         targets.clear();
 
-        match vis.state {
+        let has_targets = match vis.state {
             DrawState::Unset => {
                 panic!("bug: invalid vis state");
             }
@@ -949,292 +850,62 @@ impl SurfaceBuilder {
             DrawState::PassThrough => {
                 true
             }
+        };
+
+        // A primitive drawn on this surface is drawn into the open captures it
+        // is behind too.
+        if let Some(builder) = self.builder_stack.last_mut() {
+            let is_drawn = !targets.is_empty();
+            for capture in &mut builder.backdrop_captures {
+                capture.drawn_into = is_drawn &&
+                    vis.prim_instance_index.0 < capture.capture_instance_index.0 &&
+                    capture.region.intersects(&vis.clip_chain.pic_coverage_rect);
+                if capture.drawn_into {
+                    targets.push(capture.cmd_buffer_index);
+                }
+            }
         }
+
+        has_targets
     }
 
     pub fn pop_empty_surface(&mut self) {
-        let builder = self.builder_stack.pop().unwrap();
-        assert!(!builder.establishes_sub_graph);
+        self.builder_stack.pop().unwrap();
     }
 
     // Finish adding primitives and child tasks to a surface and pop it off the stack
     pub fn pop_surface(
         &mut self,
-        pic_index: PictureIndex,
         rg_builder: &mut RenderTaskGraphBuilder,
-        cmd_buffers: &mut CommandBufferList,
-        spatial_tree: &SpatialTree,
     ) {
         let builder = self.builder_stack.pop().unwrap();
 
-        if builder.establishes_sub_graph {
-            // If we are popping a sub-graph off the stack the dependency setup is rather more complex...
-            match builder.kind {
-                CommandBufferBuilderKind::Tiled { .. } | CommandBufferBuilderKind::Invalid => {
-                    unreachable!("bug: sub-graphs can only be simple surfaces");
-                }
-                CommandBufferBuilderKind::Simple { render_task_id: child_render_task_id, root_task_id: child_root_task_id, .. } => {
-                    // Get info about the resolve operation to copy from parent surface or tiles to the picture cache task
-                    if let Some(resolve_task_id) = builder.resolve_source {
-                        let mut src_task_ids = Vec::new();
+        match builder.kind {
+            CommandBufferBuilderKind::Tiled { .. } => {}
+            CommandBufferBuilderKind::Simple { render_task_id: child_task_id, root_task_id: child_root_task_id, .. } => {
+                self.add_backdrop_capture_dependency(child_root_task_id.unwrap_or(child_task_id));
 
-                        // Make the output of the sub-graph a dependency of the new replacement tile task
-                        let _old = self.sub_graph_output_map.insert(
-                            pic_index,
-                            child_root_task_id.unwrap_or(child_render_task_id),
-                        );
-                        debug_assert!(_old.is_none());
-
-                        // Set up dependencies for the sub-graph. The basic concepts below are the same, but for
-                        // tiled surfaces are a little more complex as there are multiple tasks to set up.
-                        //  (a) Set up new task(s) on parent surface that write to the same location
-                        //  (b) Set up a resolve target to copy from parent surface tasks(s) to the resolve target
-                        //  (c) Make the old parent surface tasks input dependencies of the resolve target
-                        //  (d) Make the sub-graph output an input dependency of the new task(s).
-
-                        match self.builder_stack.last_mut().unwrap().kind {
-                            CommandBufferBuilderKind::Tiled { ref mut tiles } => {
-                                let keys: Vec<TileKey> = tiles.keys().cloned().collect();
-
-                                // For each tile in parent surface
-                                for key in keys {
-                                    let descriptor = tiles.remove(&key).unwrap();
-                                    let parent_task_id = descriptor.current_task_id;
-                                    let parent_task = rg_builder.get_task_mut(parent_task_id);
-
-                                    match parent_task.location {
-                                        RenderTaskLocation::Unallocated { .. } | RenderTaskLocation::Existing { .. } => {
-                                            // Get info about the parent tile task location and params
-                                            let location = RenderTaskLocation::Existing {
-                                                parent_task_id,
-                                                size: parent_task.location.size(),
-                                            };
-
-                                            let pic_task = match parent_task.kind {
-                                                RenderTaskKind::Picture(ref mut pic_task) => {
-                                                    let cmd_buffer_index = cmd_buffers.create_cmd_buffer();
-                                                    let new_pic_task = pic_task.duplicate(cmd_buffer_index);
-
-                                                    // Add the resolve src to copy from tile -> picture input task
-                                                    src_task_ids.push(parent_task_id);
-
-                                                    new_pic_task
-                                                }
-                                                _ => panic!("bug: not a picture"),
-                                            };
-
-                                            // Make the existing tile an input dependency of the resolve target
-                                            rg_builder.add_dependency(
-                                                resolve_task_id,
-                                                parent_task_id,
-                                            );
-
-                                            // Create the new task to replace the tile task
-                                            let new_task_id = rg_builder.add().init(
-                                                RenderTask::new(
-                                                    location,          // draw to same place
-                                                    RenderTaskKind::Picture(pic_task),
-                                                ),
-                                            );
-
-                                            // Ensure that the parent task will get scheduled earlier during
-                                            // pass assignment since we are reusing the existing surface,
-                                            // even though it's not technically needed for rendering order.
-                                            rg_builder.add_dependency(
-                                                new_task_id,
-                                                parent_task_id,
-                                            );
-
-                                            // Update the surface builder with the now current target for future primitives
-                                            tiles.insert(
-                                                key,
-                                                SurfaceTileDescriptor {
-                                                    current_task_id: new_task_id,
-                                                    ..descriptor
-                                                },
-                                            );
-                                        }
-                                        RenderTaskLocation::Static { .. } => {
-                                            // Update the surface builder with the now current target for future primitives
-                                            tiles.insert(
-                                                key,
-                                                descriptor,
-                                            );
-                                        }
-                                        _ => {
-                                            panic!("bug: unexpected task location");
-                                        }
-                                    }
-                                }
-                            }
-                            CommandBufferBuilderKind::Simple { render_task_id: ref mut parent_task_id, root_task_id: ref parent_root_task_id, .. } => {
-                                let parent_task = rg_builder.get_task_mut(*parent_task_id);
-
-                                // Get info about the parent tile task location and params
-                                let location = RenderTaskLocation::Existing {
-                                    parent_task_id: *parent_task_id,
-                                    size: parent_task.location.size(),
-                                };
-                                let pic_task = match parent_task.kind {
-                                    RenderTaskKind::Picture(ref mut pic_task) => {
-                                        let cmd_buffer_index = cmd_buffers.create_cmd_buffer();
-
-                                        let new_pic_task = pic_task.duplicate(cmd_buffer_index);
-
-                                        // Add the resolve src to copy from tile -> picture input task
-                                        src_task_ids.push(*parent_task_id);
-
-                                        new_pic_task
-                                    }
-                                    _ => panic!("bug: not a picture"),
-                                };
-
-                                // Make the existing surface an input dependency of the resolve target
-                                rg_builder.add_dependency(
-                                    resolve_task_id,
-                                    *parent_task_id,
-                                );
-
-                                // Create the new task to replace the parent surface task
-                                let new_task_id = rg_builder.add().init(
-                                    RenderTask::new(
-                                        location,          // draw to same place
-                                        RenderTaskKind::Picture(pic_task),
-                                    ),
-                                );
-
-                                // Ensure that the parent task will get scheduled earlier during
-                                // pass assignment since we are reusing the existing surface,
-                                // even though it's not technically needed for rendering order.
-                                rg_builder.add_dependency(
-                                    new_task_id,
-                                    *parent_task_id,
-                                );
-
-                                // If the parent is a chained surface (e.g. a CSS blur or drop-shadow
-                                // filter), the tasks in that chain sample the same texture that
-                                // new_task_id draws the post-backdrop-capture content into. They must
-                                // run after new_task_id, otherwise those primitives are missing from
-                                // the filter output.
-                                if let Some(root_task_id) = *parent_root_task_id {
-                                    order_readers_after(
-                                        rg_builder,
-                                        root_task_id,
-                                        *parent_task_id,
-                                        new_task_id,
-                                    );
-                                }
-
-                                // Update the surface builder with the now current target for future primitives
-                                *parent_task_id = new_task_id;
-                            }
-                            CommandBufferBuilderKind::Invalid => {
-                                unreachable!();
-                            }
-                        }
-
-                        // The resolve target may establish a different raster
-                        // root than the parent surface(s) it reads back from (for
-                        // example a backdrop-filter that promoted to a
-                        // root-snapping raster root inside a scrolled subtree). The
-                        // copy rects computed in `handle_resolve` then live in two
-                        // different raster spaces, so pre-compute the mapping
-                        // between them here (identity in the common case).
-                        let dest_to_src_raster = resolve_dest_to_src_raster(
-                            rg_builder,
-                            spatial_tree,
-                            resolve_task_id,
-                            &src_task_ids,
-                        );
-
-                        let dest_task = rg_builder.get_task_mut(resolve_task_id);
-
-                        match dest_task.kind {
-                            RenderTaskKind::Picture(ref mut dest_task_info) => {
-                                assert!(dest_task_info.resolve_op.is_none());
-                                dest_task_info.resolve_op = Some(ResolveOp {
-                                    src_task_ids,
-                                    dest_task_id: resolve_task_id,
-                                    dest_to_src_raster,
-                                })
-                            }
-                            _ => {
-                                unreachable!("bug: not a picture");
-                            }
-                        }
-                    }
-
-                    // This can occur if there is an edge case where the resolve target is found
-                    // not visible even though the filter chain was (for example, in the case of
-                    // an extreme scale causing floating point inaccuracies). Adding a dependency
-                    // here is also a safety in case for some reason the backdrop render primitive
-                    // doesn't pick up the dependency, ensuring that it gets scheduled and freed
-                    // as early as possible.
-                    match self.builder_stack.last().unwrap().kind {
-                        CommandBufferBuilderKind::Tiled { ref tiles } => {
-                            // For a tiled render task, add as a dependency to every tile.
-                            for (_, descriptor) in tiles {
-                                rg_builder.add_dependency(
-                                    descriptor.current_task_id,
-                                    child_root_task_id.unwrap_or(child_render_task_id),
-                                );
-                            }
-                        }
-                        CommandBufferBuilderKind::Simple { render_task_id: parent_task_id, .. } => {
+                match self.builder_stack.last().unwrap().kind {
+                    CommandBufferBuilderKind::Tiled { ref tiles } => {
+                        // For a tiled render task, add as a dependency to every tile.
+                        for (_, descriptor) in tiles {
                             rg_builder.add_dependency(
-                                parent_task_id,
-                                child_root_task_id.unwrap_or(child_render_task_id),
-                            );
-                        }
-                        CommandBufferBuilderKind::Invalid => {
-                            unreachable!();
-                        }
-                    }
-                }
-            }
-        } else {
-            match builder.kind {
-                CommandBufferBuilderKind::Tiled { ref tiles } => {
-                    for (_, descriptor) in tiles {
-                        if let Some(composite_task_id) = descriptor.composite_task_id {
-                            rg_builder.add_dependency(
-                                composite_task_id,
                                 descriptor.current_task_id,
-                            );
-
-                            let composite_task = rg_builder.get_task_mut(composite_task_id);
-                            match composite_task.kind {
-                                RenderTaskKind::TileComposite(ref mut info) => {
-                                    info.task_id = Some(descriptor.current_task_id);
-                                }
-                                _ => unreachable!("bug: not a tile composite"),
-                            }
-                        }
-                    }
-                }
-                CommandBufferBuilderKind::Simple { render_task_id: child_task_id, root_task_id: child_root_task_id, .. } => {
-                    match self.builder_stack.last().unwrap().kind {
-                        CommandBufferBuilderKind::Tiled { ref tiles } => {
-                            // For a tiled render task, add as a dependency to every tile.
-                            for (_, descriptor) in tiles {
-                                rg_builder.add_dependency(
-                                    descriptor.current_task_id,
-                                    child_root_task_id.unwrap_or(child_task_id),
-                                );
-                            }
-                        }
-                        CommandBufferBuilderKind::Simple { render_task_id: parent_task_id, .. } => {
-                            rg_builder.add_dependency(
-                                parent_task_id,
                                 child_root_task_id.unwrap_or(child_task_id),
                             );
                         }
-                        CommandBufferBuilderKind::Invalid => {
-                        }
+                    }
+                    CommandBufferBuilderKind::Simple { render_task_id: parent_task_id, .. } => {
+                        rg_builder.add_dependency(
+                            parent_task_id,
+                            child_root_task_id.unwrap_or(child_task_id),
+                        );
+                    }
+                    CommandBufferBuilderKind::Invalid => {
                     }
                 }
-                CommandBufferBuilderKind::Invalid => {
-                }
+            }
+            CommandBufferBuilderKind::Invalid => {
             }
         }
 
@@ -1285,52 +956,4 @@ pub fn calculate_screen_uv(
         0.0,
         1.0,
     )
-}
-
-#[test]
-fn order_readers_after_visits_each_reader_once() {
-    // Each reader of `src` is reached both directly from the root and through
-    // an intermediate task, like an SVG filter that reads SourceGraphic both
-    // directly and through an feOffset. Visiting a reader twice used to make
-    // the traversal enter `dep` and add `dep` as a dependency of itself.
-
-    use crate::render_target::RenderTargetKind;
-
-    fn task(gb: &mut RenderTaskGraphBuilder) -> RenderTaskId {
-        gb.add().init(RenderTask::new_test(
-            RenderTaskLocation::Unallocated { size: DeviceIntSize::new(16, 16) },
-            RenderTargetKind::Color,
-        ))
-    }
-
-    let mut gb = RenderTaskGraphBuilder::new();
-
-    let src = task(&mut gb);
-    let dep = task(&mut gb);
-    gb.add_dependency(dep, src);
-
-    let root = task(&mut gb);
-    let mut readers = Vec::new();
-    let mut offsets = Vec::new();
-    for _ in 0 .. 8 {
-        let reader = task(&mut gb);
-        gb.add_dependency(reader, src);
-        let offset = task(&mut gb);
-        gb.add_dependency(offset, reader);
-        gb.add_dependency(root, offset);
-        gb.add_dependency(root, reader);
-        readers.push(reader);
-        offsets.push(offset);
-    }
-
-    order_readers_after(&mut gb, root, src, dep);
-
-    assert_eq!(gb.get_task(dep).children.as_slice(), &[src]);
-    for reader in readers {
-        let count = gb.get_task(reader).children.iter().filter(|id| **id == dep).count();
-        assert_eq!(count, 1);
-    }
-    for id in offsets.into_iter().chain(std::iter::once(root)) {
-        assert!(!gb.get_task(id).children.contains(&dep));
-    }
 }

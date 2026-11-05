@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 dialog {
-  padding: var(--space-large);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-width: 28rem;
   box-sizing: border-box;

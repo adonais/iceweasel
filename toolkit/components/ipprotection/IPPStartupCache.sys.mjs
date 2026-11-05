@@ -27,7 +27,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const STATE_CACHE_PREF = "browser.ipProtection.stateCache";
 const ENTITLEMENT_CACHE_PREF = "browser.ipProtection.entitlementCache";
-const LOCATIONLIST_CACHE_PREF = "browser.ipProtection.locationListCache";
 const USAGE_CACHE_PREF = "browser.ipProtection.usageCache";
 const HAS_UPGRADED_PREF = "browser.ipProtection.hasUpgraded";
 
@@ -122,12 +121,13 @@ class IPPStartupCacheSingleton {
     this.#startupCompleted = true;
     this.#stateFromCache = null;
 
+    lazy.IPProtectionService.updateState();
+
     if (
       lazy.IPProtectionService.state !== lazy.IPProtectionStates.UNINITIALIZED
     ) {
       await lazy.IPProtectionService.initOnStartupCompleted();
     }
-    lazy.IPProtectionService.updateState();
   }
 
   /**
@@ -163,25 +163,6 @@ class IPPStartupCacheSingleton {
         ""
       );
       return new lazy.Entitlement(JSON.parse(entitlement_string));
-    } catch (e) {
-      return null;
-    }
-  }
-
-  storeLocationList(locationList) {
-    Services.prefs.setCharPref(
-      LOCATIONLIST_CACHE_PREF,
-      JSON.stringify(locationList)
-    );
-  }
-
-  get locationList() {
-    try {
-      const locationList = Services.prefs.getCharPref(
-        LOCATIONLIST_CACHE_PREF,
-        ""
-      );
-      return JSON.parse(locationList);
     } catch (e) {
       return null;
     }

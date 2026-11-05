@@ -329,13 +329,13 @@ DefaultAgent::GetDefaultPdfHandler(nsAString& aDefaultPdfHandler) {
 }
 
 NS_IMETHODIMP
-DefaultAgent::SendPing(const nsAString& aDefaultBrowser,
-                       const nsAString& aPreviousDefaultBrowser,
-                       const nsAString& aDefaultPdfHandler,
-                       const nsAString& aNotificationShown,
-                       const nsAString& aNotificationAction,
-                       uint32_t daysSinceLastAppLaunch,
-                       const nsAString& aIsTaskbarPinned) {
+DefaultAgent::SendPing(
+    const nsAString& aDefaultBrowser, const nsAString& aPreviousDefaultBrowser,
+    const nsAString& aDefaultPdfHandler, const nsAString& aNotificationShown,
+    const nsAString& aNotificationAction, uint32_t daysSinceLastAppLaunch,
+    const nsAString& aIsTaskbarPinned, bool aHasWinPackageId,
+    const nsAString& aWinPackageFamilyName, const nsAString& aInstallerType,
+    bool aInstallerFromMsi, bool aInstallerSilent) {
   DefaultBrowserInfo browserInfo = {
       GetBrowserFromString(std::string(NS_ConvertUTF16toUTF8(aDefaultBrowser))),
       GetBrowserFromString(
@@ -353,8 +353,14 @@ DefaultAgent::SendPing(const nsAString& aDefaultBrowser,
                                                 shown, action};
 
   std::string isTaskbarPinned{NS_ConvertUTF16toUTF8(aIsTaskbarPinned).get()};
+  InstallInfo installInfo = {
+      aHasWinPackageId,
+      std::string(NS_ConvertUTF16toUTF8(aWinPackageFamilyName).get()),
+      std::string(NS_ConvertUTF16toUTF8(aInstallerType).get()),
+      aInstallerFromMsi, aInstallerSilent};
   HRESULT hr = SendDefaultAgentPing(browserInfo, pdfInfo, activitiesPerformed,
-                                    daysSinceLastAppLaunch, isTaskbarPinned);
+                                    daysSinceLastAppLaunch, isTaskbarPinned,
+                                    installInfo);
   return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
 }
 

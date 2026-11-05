@@ -456,12 +456,6 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
       "onShowSendMoreInfoPrefChanged",
   };
 
-  constructor() {
-    for (const pref of Object.keys(this.#OBSERVED_PREFS)) {
-      Services.prefs.addObserver(pref, this);
-    }
-  }
-
   #windows = new Set();
 
   #onNewWindow(win) {
@@ -848,6 +842,10 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
       return;
     }
 
+    for (const sendButton of state.sendButtons) {
+      sendButton.disabled = true;
+    }
+
     const multiview = target.closest("panelmultiview");
     this.#recordGleanEvent("send", {
       sent_with_blocked_trackers: state.shouldSendBlockedTrackers,
@@ -859,6 +857,10 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
 
     multiview.showSubView("report-broken-site-popup-reportSentView");
     state.reset();
+
+    for (const sendButton of state.sendButtons) {
+      sendButton.disabled = false;
+    }
   }
 
   #learnMoreLinkHandler({ target }) {

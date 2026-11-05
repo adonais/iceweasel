@@ -1,0 +1,101 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>ImageDecoder with ArrayBuffers from another compartment</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<script>
+document.domain = "example.com";
+
+let PNG;
+
+function createBuffer(win, offset = 0) {
+  const buffer = new win.ArrayBuffer(offset + PNG.length);
+  new win.Uint8Array(buffer).set(PNG, offset);
+  return buffer;
+}
+
+async function checkDecoder(decoder, desc) {
+  await decoder.tracks.ready;
+  const result = await decoder.decode();
+  ok(result.complete, `${desc}: complete image`);
+  is(result.image.codedWidth, 100, `${desc}: width`);
+  is(result.image.codedHeight, 100, `${desc}: height`);
+  result.image.close();
+  decoder.close();
+}
+
+async function runTests(imageDecoderCtor, bufferWin, desc) {
+  {
+    const buffer = createBuffer(bufferWin);
+    const decoder = new imageDecoderCtor({
+      type: "image/png",
+      data: buffer,
+      transfer: [buffer],
+    });
+    ok(buffer.detached, `${desc}, ArrayBuffer data: buffer is detached`);
+    await checkDecoder(decoder, `${desc}, ArrayBuffer data`);
+  }
+
+  {
+    const buffer = createBuffer(bufferWin);
+    const decoder = new imageDecoderCtor({
+      type: "image/png",
+      data: new bufferWin.Uint8Array(buffer),
+      transfer: [buffer],
+    });
+    ok(buffer.detached, `${desc}, ArrayBufferView data: buffer is detached`);
+    await checkDecoder(decoder, `${desc}, ArrayBufferView data`);
+  }
+
+  {
+    const buffer = createBuffer(bufferWin, 4);
+    const decoder = new imageDecoderCtor({
+      type: "image/png",
+      data: new bufferWin.Uint8Array(buffer, 4),
+      transfer: [buffer],
+    });
+    ok(
+      buffer.detached,
+      `${desc}, ArrayBufferView data with offset: buffer is detached`
+    );
+    await checkDecoder(decoder, `${desc}, ArrayBufferView data with offset`);
+  }
+
+  {
+    const buffer = createBuffer(bufferWin);
+    const decoder = new imageDecoderCtor({
+      type: "image/png",
+      data: new Uint8Array(PNG),
+      transfer: [buffer],
+    });
+    ok(buffer.detached, `${desc}, transfer only: buffer is detached`);
+    await checkDecoder(decoder, `${desc}, transfer only`);
+  }
+}
+
+add_task(async function test_cross_compartment_transfer() {
+  const response = await fetch("green.png");
+  PNG = new Uint8Array(await response.arrayBuffer());
+
+  const iframe = document.createElement("iframe");
+  iframe.src =
+    "https://test1.example.com/tests/dom/media/webcodecs/test/file_crossCompartment_frame.html";
+  const loaded = new Promise(resolve => (iframe.onload = resolve));
+  document.body.appendChild(iframe);
+  await loaded;
+
+  const win = iframe.contentWindow;
+  ok(
+    !(createBuffer(win) instanceof ArrayBuffer),
+    "Buffer should come from the iframe's global"
+  );
+
+  await runTests(ImageDecoder, win, "iframe buffer");
+  await runTests(win.ImageDecoder, window, "iframe constructor");
+});
+</script>
+</body>
+</html>

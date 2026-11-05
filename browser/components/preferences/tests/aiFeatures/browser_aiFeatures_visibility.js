@@ -44,8 +44,7 @@ describe("settings ai features", () => {
       let generalTab = gBrowser.selectedTab;
       let generalDoc = gBrowser.selectedBrowser.contentDocument;
       let generalWin = generalDoc.documentGlobal;
-      const linkPreviewPane = srdAwarePane("general", "tabsBrowsing");
-      await maybeNavigateToPane(linkPreviewPane, generalWin);
+      await maybeNavigateToPane("tabsBrowsing", generalWin);
 
       let linkPreviewSetting =
         generalWin.Preferences.getSetting("linkPreviewEnabled");
@@ -131,8 +130,7 @@ describe("settings ai features", () => {
       let generalTab = gBrowser.selectedTab;
       let generalDoc = gBrowser.selectedBrowser.contentDocument;
       let generalWin = generalDoc.documentGlobal;
-      const tabGroupPane = srdAwarePane("general", "tabsBrowsing");
-      await maybeNavigateToPane(tabGroupPane, generalWin);
+      await maybeNavigateToPane("tabsBrowsing", generalWin);
 
       let tabGroupSetting = generalWin.Preferences.getSetting(
         "tabGroupSuggestions"
@@ -183,18 +181,13 @@ describe("settings ai features", () => {
       let generalTab = gBrowser.selectedTab;
       let generalDoc = gBrowser.selectedBrowser.contentDocument;
       let generalWin = generalDoc.documentGlobal;
-      const translationsPane = srdAwarePane("general", "languages");
-      await maybeNavigateToPane(translationsPane, generalWin);
+      await maybeNavigateToPane("languages", generalWin);
 
-      const srdEnabled = Services.prefs.getBoolPref(
-        "browser.settings-redesign.enabled"
+      let translationsSetting =
+        generalWin.Preferences.getSetting("offerTranslations");
+      let translationsGroup = generalDoc.querySelector(
+        'setting-group[groupid="translations"]'
       );
-      let translationsSetting = generalWin.Preferences.getSetting(
-        srdEnabled ? "offerTranslations" : "legacyTranslationsVisible"
-      );
-      let translationsGroup = srdEnabled
-        ? generalDoc.querySelector('setting-group[groupid="translations"]')
-        : generalDoc.getElementById("translationsGroup");
       Assert.ok(
         BrowserTestUtils.isVisible(translationsGroup),
         "Translations group is visible"
@@ -269,8 +262,7 @@ describe("settings ai features", () => {
       let generalTab = gBrowser.selectedTab;
       let generalDoc = gBrowser.selectedBrowser.contentDocument;
       let generalWin = generalDoc.documentGlobal;
-      const linkPreviewPane = srdAwarePane("general", "tabsBrowsing");
-      await maybeNavigateToPane(linkPreviewPane, generalWin);
+      await maybeNavigateToPane("tabsBrowsing", generalWin);
 
       let linkPreviewSetting =
         generalWin.Preferences.getSetting("linkPreviewEnabled");

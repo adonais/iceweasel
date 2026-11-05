@@ -8,7 +8,7 @@
  * Search providers for the web search flow.
  */
 
-import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
+import { AuthProvider } from "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs";
 import {
   SEARCH_QUERY_APIKEY_PREF,
   SEARCH_QUERY_ENDPOINT_PREF,
@@ -92,8 +92,7 @@ export class SearchProvider {
  * /v1/search endpoint.
  *
  * The base URL is read from a dedicated pref so that users with a custom
- * chat endpoint (BYOM) still hit Mozilla's MLPA for search. Auth is the
- * FxA OAuth token used elsewhere for MLPA requests.
+ * chat endpoint (BYOM) still hit Mozilla's MLPA for search.
  */
 export class ExaSearchProvider extends SearchProvider {
   static MAX_RESULTS = 10;
@@ -142,7 +141,7 @@ export class ExaSearchProvider extends SearchProvider {
 
     const token =
       Services.prefs.getStringPref(SEARCH_QUERY_APIKEY_PREF, "") ||
-      (await openAIEngine.getFxAccountToken());
+      (await AuthProvider.getToken());
     if (!token) {
       throw annotateSearchError(
         new Error("ExaSearchProvider.search: auth token unavailable"),

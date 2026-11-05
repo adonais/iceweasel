@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
@@ -188,8 +187,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
   // network (or a timeout occurs), we will start allocating ports.
   void ConfigReady(std::unique_ptr<PortConfiguration> config);
   // TODO(bugs.webrtc.org/12840) Remove once unused in downstream projects.
-  ABSL_DEPRECATED(
-      "Use ConfigReady(std::unique_ptr<PortConfiguration>) instead!")
+  [[deprecated("Use ConfigReady(std::unique_ptr<PortConfiguration>) instead!")]]
   void ConfigReady(PortConfiguration* config);
 
  private:

@@ -23,6 +23,9 @@ if CONFIG["MOZ_OMX"]:
     UNIFIED_SOURCES += [
         "PureOmxPlatformLayer.cpp",
     ]
+    SOURCE_HEADERS += [
+        "PureOmxPlatformLayer.h",
+    ]
 
 FINAL_LIBRARY = "xul"
 
@@ -32,3 +35,10 @@ if CONFIG["CC_TYPE"] == "clang-cl":
 
 # Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "OmxCoreLibLinker.h",
+    "OmxDataDecoder.h",
+    "OmxPlatformLayer.h",
+    "OmxPromiseLayer.h",
+]

@@ -98,10 +98,10 @@ index 1ed0d868df..b5e3a93812 100644
  
  }  // namespace voe
 diff --git a/audio/channel_receive.h b/audio/channel_receive.h
-index c054da3947..dc46784272 100644
+index 53c4f655ea..e97ee387b7 100644
 --- a/audio/channel_receive.h
 +++ b/audio/channel_receive.h
-@@ -183,6 +183,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -182,6 +182,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
      RtcpEventObserver* rtcp_event_observer,
      PacketRouter* absl_nonnull packet_router,

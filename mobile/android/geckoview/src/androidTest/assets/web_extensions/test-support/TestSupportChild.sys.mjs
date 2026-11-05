@@ -64,6 +64,25 @@ export class TestSupportChild extends GeckoViewActorChild {
           );
         return color;
       }
+      case "IsVideoCloning": {
+        const { selector } = aMsg.data;
+        const video = this.document.querySelector(selector);
+        if (!video) {
+          throw new Error("No video for " + selector);
+        }
+        return video.isCloningElementVisually;
+      }
+      case "GetVideoStatusMessage": {
+        const { selector } = aMsg.data;
+        const video = this.document.querySelector(selector);
+        if (!video) {
+          throw new Error("No video for " + selector);
+        }
+        const label = video.openOrClosedShadowRoot?.querySelector(
+          ".pictureInPictureOverlay:not([hidden]) .statusLabel"
+        );
+        return label ? label.textContent : null;
+      }
       case "SetResolutionAndScaleTo": {
         return new Promise(resolve => {
           const window = this.contentWindow;

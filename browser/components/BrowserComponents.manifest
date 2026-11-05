@@ -187,6 +187,7 @@ category browser-first-window-ready moz-src:///browser/components/protections/Co
 category browser-first-window-ready moz-src:///toolkit/components/captchadetection/CaptchaDetectionPingUtils.sys.mjs CaptchaDetectionPingUtils.init
 category browser-first-window-ready moz-src:///browser/components/ipprotection/IPProtectionHelpers.sys.mjs IPProtectionActivator.init
 category browser-first-window-ready moz-src:///browser/components/customizableui/SearchWidgetTracker.sys.mjs SearchWidgetTracker.init
+category browser-first-window-ready moz-src:///toolkit/components/widgets/WidgetManager.sys.mjs WidgetManager.init
 #ifdef MOZ_SANDBOX
 #ifdef XP_LINUX
 category browser-first-window-ready resource://gre/modules/SandboxUtils.sys.mjs SandboxUtils.maybeWarnAboutMissingUserNamespaces
@@ -208,6 +209,7 @@ category browser-idle-startup moz-src:///browser/components/search/SERPCategoriz
 category browser-idle-startup resource://gre/modules/ContentRelevancyManager.sys.mjs ContentRelevancyManager.init
 category browser-idle-startup resource://gre/modules/AppServicesTracing.sys.mjs RustLogForwarder.init
 category browser-idle-startup moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs ContextualIdentityService.load
+category browser-idle-startup resource:///modules/asrouter/ASRouterTargeting.sys.mjs WebPushTargeting.init
 #ifdef MOZ_UPDATER
 category browser-idle-startup resource://gre/modules/UpdateListener.sys.mjs UpdateListener.maybeShowUnsupportedNotification
 category browser-idle-startup resource:///modules/UpdatePolicyEnforcer.sys.mjs UpdatePolicyEnforcer.registerObservers
@@ -244,7 +246,9 @@ category browser-quit-application-granted moz-src:///browser/components/search/S
 category browser-quit-application-granted resource://gre/modules/UpdateListener.sys.mjs UpdateListener.reset
 #endif
 category browser-quit-application-granted moz-src:///browser/components/urlbar/UrlbarSearchTermsPersistence.sys.mjs UrlbarSearchTermsPersistence.uninit
+category browser-quit-application-granted moz-src:///toolkit/components/widgets/WidgetManager.sys.mjs WidgetManager.uninit
 category browser-quit-application-granted moz-src:///browser/components/ipprotection/IPProtectionHelpers.sys.mjs IPProtectionActivator.uninit
+category browser-quit-application-granted moz-src:///browser/components/sessionstore/SessionWindowUI.sys.mjs SessionWindowUI.maybeIncrementRestoreSessionSuggestionCount
 
 category search-service-notification moz-src:///browser/components/search/SearchUIUtils.sys.mjs SearchUIUtils.showSearchServiceNotification
 

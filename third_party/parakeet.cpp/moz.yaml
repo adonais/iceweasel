@@ -10,8 +10,8 @@ origin:
 
   url: https://github.com/mudler/parakeet.cpp
 
-  release: f469a57270a1cc4554acb15febf60e56619673b9 (2026-06-26T06:49:50Z).
-  revision: f469a57270a1cc4554acb15febf60e56619673b9
+  release: 623a968bccbd2214588df398fcce687cd4218dea (2026-09-29T16:18:01Z).
+  revision: 623a968bccbd2214588df398fcce687cd4218dea
 
   license: MIT
 
@@ -40,9 +40,7 @@ vendoring:
     - parakeet-no-drwav.patch # drop the vendored dr_wav.h dependency (unused: Firefox only feeds PCM)
     - parakeet-stream-words.patch # typed per-word drain (timing + confidence)
     - parakeet-no-exceptions.patch # include moz-overrides.h, to build with -fno-exceptions
-    - parakeet-move-mel-batch.patch # move, don't copy, the mel buffer into the 1-item MelBatch
     - parakeet-weights-bytes.patch # expose the weights' size, for about:memory
-    - parakeet-free-host-weights.patch # drop the host weights once uploaded
     - parakeet-chunk-samples.patch # expose the encoder chunk length, to feed one at a time
     - parakeet-end-utterance.patch # let the host close an utterance (models with no <EOU>)
     - parakeet-eou-reset-encoder.patch # drop the encoder cache at an <EOU>, as NeMo does

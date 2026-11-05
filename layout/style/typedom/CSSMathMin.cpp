@@ -79,16 +79,8 @@ already_AddRefed<CSSMathMin> CSSMathMin::Constructor(
 
   // Step 3.
 
-  AutoTArray<const StyleNumericType*, 8> numericTypes;
-  numericTypes.SetCapacity(values.Length());
-
-  for (const auto& value : values) {
-    numericTypes.AppendElement(&value->GetNumericType());
-  }
-
-  auto numericType = MakeUnique<StyleNumericType>();
-  if (!Servo_NumericType_AddTypes(&numericTypes, numericType.get())) {
-    aRv.ThrowTypeError("Incompatible types");
+  auto numericType = AddTypes(values, aRv);
+  if (aRv.Failed()) {
     return nullptr;
   }
 

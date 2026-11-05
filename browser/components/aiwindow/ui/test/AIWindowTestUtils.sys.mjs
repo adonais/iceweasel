@@ -6,6 +6,7 @@
  * @import { MockLLMEngine, MockedResponse } from "../../../../toolkit/components/ml/tests/MLTestUtils.sys.mjs"
  * @import { ModelFeature } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
  * @import { HttpServer } from "resource://testing-common/httpd.sys.mjs"
+ * @import { SmartbarAction } from "chrome://browser/content/aiwindow/components/input-cta/input-cta.mjs"
  * @import { ChatConversation } from "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
  */
 
@@ -15,8 +16,17 @@ import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys
 import { sinon } from "resource://testing-common/Sinon.sys.mjs";
 import { MLTestUtils } from "resource://testing-common/MLTestUtils.sys.mjs";
 
+import { AIWindow } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs";
+import { AIWindowUI } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs";
 import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
+import { AuthProvider } from "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs";
+import { Chat } from "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
+import {
+  MODEL_FEATURES,
+  PURPOSES,
+  SERVICE_TYPES,
+} from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 import { ExaSearchProvider } from "moz-src:///browser/components/aiwindow/models/search/SearchProviders.sys.mjs";
 import { MemoryStore } from "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs";
 import { embeddingsGeneratorFactory } from "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs";
@@ -44,6 +54,31 @@ export function newConversation() {
   });
 }
 
+/**
+ * @typedef {object} HTTPChatWindowFixture
+ * @property {MozBrowser} browser - The new window's selected browser.
+ * @property {sinon.SinonStub} buildStub - Records engine builds and delegates
+ *   chat and title generation to their production implementations.
+ */
+
+/**
+ * A conversation with a chat engine, ready for Chat.fetchWithHistory. Call it
+ * while a MockEngineManager is installed so the engine is a mocked one.
+ *
+ * @returns {Promise<ChatConversation>}
+ */
+export async function newChatConversation() {
+  const conversation = newConversation();
+  conversation.engine = await openAIEngine.build({
+    model: "test-model",
+    serviceType: SERVICE_TYPES.AI,
+    purpose: PURPOSES.CHAT,
+    flowId: null,
+    feature: MODEL_FEATURES.CHAT,
+  });
+  return conversation;
+}
+
 const testContext = {};
 
 function context() {
@@ -69,11 +104,40 @@ export class MockEngineManager {
   engines = new Map();
   /** @type {any[]} */
   mocks;
+  /**
+   * Aborts every chat turn started while the mocks are installed, so none can
+   * outlive them.
+   *
+   * @type {AbortController}
+   */
+  #abortController = new AbortController();
+  /**
+   * The chat turns still running.
+   *
+   * @type {Set<Promise<void>>}
+   */
+  #chatTurns = new Set();
+  #nextToolCallId = 0;
 
   /**
    * Install the mocks.
    */
   constructor() {
+    const fetchWithHistory = sinon
+      .stub(Chat, "fetchWithHistory")
+      .callsFake(options => {
+        const signal = options.signal
+          ? AbortSignal.any([options.signal, this.#abortController.signal])
+          : this.#abortController.signal;
+        const turn = fetchWithHistory.wrappedMethod.call(Chat, {
+          ...options,
+          signal,
+        });
+        const settle = () => this.#chatTurns.delete(turn);
+        turn.then(settle, settle);
+        this.#chatTurns.add(turn);
+        return turn;
+      });
     this.mocks = [
       sinon.stub(openAIEngine, "_createEngine").callsFake(options =>
         // When a new engine is requested create the mock one and track it in
@@ -83,8 +147,38 @@ export class MockEngineManager {
           () => new MLTestUtils.MockLLMEngine(options)
         )
       ),
-      sinon.stub(openAIEngine, "getFxAccountToken").resolves("mock-fxa-token"),
+      sinon.stub(AuthProvider, "getToken").resolves("mock-fxa-token"),
+      fetchWithHistory,
     ];
+  }
+
+  /**
+   * Answer the pending chat request with a call to a tool, as `respondTo()`
+   * does with text.
+   *
+   * @param {object} options
+   * @param {string} options.toolName
+   * @param {object} options.toolParams - The arguments the model calls it with.
+   * @returns {Promise<string>} The tool call id, which the tool's result message
+   *   carries as `tool_call_id`.
+   */
+  async respondToWithToolCall({ toolName, toolParams }) {
+    const id = `${toolName}_${this.#nextToolCallId++}`;
+    await this.respondTo({
+      purpose: PURPOSES.CHAT,
+      response: {
+        text: "",
+        tokens: null,
+        isPrompt: false,
+        toolCalls: [
+          {
+            id,
+            function: { name: toolName, arguments: JSON.stringify(toolParams) },
+          },
+        ],
+      },
+    });
+    return id;
   }
 
   /**
@@ -155,14 +249,38 @@ export class MockEngineManager {
     return {
       request,
       respond: response => engine.respond(requestId, response),
+      reject: error => engine.reject(requestId, error),
     };
   }
 
   /**
-   * Reject all outstanding engine requests. This can help ensure that a test
-   * run is clean before asserting specific behavior.
+   * Reject all outstanding engine requests, and abort the chat turns still
+   * running, rejecting their requests until they finish. Await this before
+   * `cleanupMocks()`: a turn that outlived the mocks would build a real engine
+   * and reach the production endpoint.
    */
-  rejectAllRequests() {
+  async rejectAllRequests() {
+    this.#abortController.abort();
+    this.#rejectPendingRequests();
+    if (this.#chatTurns.size) {
+      let settled = false;
+      Promise.allSettled(this.#chatTurns).then(() => (settled = true));
+      // An aborted turn can still make one more request before it returns, so
+      // keep rejecting until every turn is done.
+      await TestUtils.waitForCondition(
+        () => {
+          this.#rejectPendingRequests();
+          return settled;
+        },
+        "The chat turns didn't finish after their requests were rejected",
+        100,
+        200
+      );
+    }
+    this.#abortController = new AbortController();
+  }
+
+  #rejectPendingRequests() {
     for (const [purpose, engine] of this.engines) {
       if (engine.runRequests.size) {
         dump(
@@ -561,6 +679,124 @@ export const AIWindowTestUtils = {
   },
 
   /**
+   * Submits a smartbar value with the specified action.
+   *
+   * @param {MozBrowser} browser - The browser hosting the AI window.
+   * @param {string} value - The submitted prompt or query.
+   * @param {SmartbarAction} action - The selected smartbar action.
+   * @returns {Promise<void>}
+   */
+  async dispatchSmartbarCommit(browser, value, action) {
+    const { SpecialPowers } = context().window;
+    await SpecialPowers.spawn(browser, [value, action], async (val, act) => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+      const smartbar = await ContentTaskUtils.waitForCondition(
+        () => aiWindowElement.shadowRoot?.querySelector("#ai-window-smartbar"),
+        "Wait for Smartbar to be rendered"
+      );
+      const commitEvent = new content.CustomEvent("smartbar-commit", {
+        detail: { value: val, action: act },
+        bubbles: true,
+        composed: true,
+      });
+
+      smartbar.ownerDocument.dispatchEvent(commitEvent);
+    });
+  },
+
+  /**
+   * Waits for and asserts keyboard focus in the sidebar smartbar.
+   *
+   * @param {Window} win - The AI window containing the sidebar.
+   * @param {string} message - The assertion's scenario description.
+   * @returns {Promise<void>}
+   */
+  async assertSidebarSmartbarFocused(win, message) {
+    const { SpecialPowers } = context().window;
+    const sidebarBrowser = win.document.getElementById("ai-window-browser");
+    await TestUtils.waitForCondition(() => {
+      const focusedElement = Services.focus.focusedElement;
+      return (
+        focusedElement === sidebarBrowser ||
+        focusedElement?.ownerDocument === sidebarBrowser.contentDocument
+      );
+    }, `${message}: wait for sidebar browser focus`);
+
+    await SpecialPowers.spawn(sidebarBrowser, [message], async msg => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+      const smartbar = await ContentTaskUtils.waitForCondition(
+        () => aiWindowElement.shadowRoot?.querySelector("#ai-window-smartbar"),
+        `${msg}: wait for Smartbar`
+      );
+      // Smartbar lives in ai-window's shadow root, so document.activeElement
+      // returns the AI-WINDOW shadow host. Pierce one boundary to confirm
+      // focus actually landed on the smartbar's input field.
+      await ContentTaskUtils.waitForCondition(
+        () => smartbar.contains(aiWindowElement.shadowRoot.activeElement),
+        `${msg}: wait for Smartbar focus`
+      );
+      Assert.ok(
+        smartbar.contains(aiWindowElement.shadowRoot.activeElement),
+        `${msg}: Smartbar should contain shadow active element`
+      );
+    });
+  },
+
+  /**
+   * Leaves the sidebar preloaded and closed, with the AI tab selected.
+   *
+   * @param {Window} win - The AI window containing the sidebar.
+   * @param {MozTabbrowserTab} aiTab - The tab to select after preloading.
+   * @returns {Promise<void>}
+   */
+  async preloadAndCloseSidebar(win, aiTab) {
+    const preloadTab = await BrowserTestUtils.openNewForegroundTab(
+      win.gBrowser,
+      "https://example.com/"
+    );
+
+    try {
+      await AIWindowUI.openSidebar(win);
+      await AIWindowUI.focusSidebar(win);
+      await AIWindowTestUtils.assertSidebarSmartbarFocused(
+        win,
+        "Preloaded sidebar"
+      );
+    } finally {
+      AIWindowUI.closeSidebar(win, "test");
+      await BrowserTestUtils.removeTab(preloadTab);
+      win.gBrowser.selectedTab = aiTab;
+    }
+  },
+
+  /**
+   * Performs a search handoff to the sidebar with a local test results page.
+   *
+   * @param {BrowsingContext} browsingContext - The tab receiving search results.
+   * @returns {Promise<string>} The mock search result returned to the model.
+   */
+  async runSearchWithSidebarHandoff(browsingContext) {
+    const browser = browsingContext.embedderElement;
+    const win = browsingContext.topChromeWindow;
+    const tab = win.gBrowser.getTabForBrowser(browser);
+
+    await AIWindow.moveConversationToSidebar(win, tab);
+    BrowserTestUtils.startLoadingURIString(
+      browser,
+      "https://example.com/search_results"
+    );
+    await BrowserTestUtils.browserLoaded(browser);
+    browser.focus();
+    await AIWindow.focusSidebar(win);
+    await AIWindowTestUtils.assertSidebarSmartbarFocused(
+      win,
+      "Search completed handoff"
+    );
+
+    return "Mock search results";
+  },
+
+  /**
    * Select an explicit action from the smartbar CTA dropdown menu.
    *
    * @param {object} browser - The browser element
@@ -596,6 +832,81 @@ export const AIWindowTestUtils = {
       );
       actionItem.click();
     });
+  },
+
+  /**
+   * Runs a chat scenario in a new window with HTTP chat and title responses,
+   * mocked engines for other features, and cleanup of its requests and window.
+   *
+   * @param {MockOpenAIServerOptions} serverOptions - The HTTP response options.
+   * @param {(fixture: HTTPChatWindowFixture) => Promise<void>} task
+   *   The chat scenario to run.
+   * @returns {Promise<void>}
+   */
+  async withHTTPChatWindow(serverOptions, task) {
+    const { SpecialPowers } = context().window;
+    const { stubEngineNetworkBoundaries } = context().scope;
+    const { restore, port } = await stubEngineNetworkBoundaries({
+      passthroughFeatures: new Set(["chat", "title-generation"]),
+      serverOptions,
+    });
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.customEndpoint", `http://localhost:${port}/v1`],
+      ],
+    });
+
+    const sandbox = sinon.createSandbox();
+    const abortController = new AbortController();
+    const turns = new Set();
+    const conversations = new Set();
+    let win;
+
+    try {
+      const fetchWithHistory = sandbox
+        .stub(Chat, "fetchWithHistory")
+        .callsFake(options => {
+          conversations.add(options.conversation);
+          const signal = options.signal
+            ? AbortSignal.any([options.signal, abortController.signal])
+            : abortController.signal;
+          const turn = fetchWithHistory.wrappedMethod.call(Chat, {
+            ...options,
+            signal,
+          });
+          turns.add(turn);
+          const settled = () => turns.delete(turn);
+          turn.then(settled, settled);
+
+          return turn;
+        });
+
+      win = await AIWindowTestUtils.openReadyAIWindow();
+      await task({
+        browser: win.gBrowser.selectedBrowser,
+        buildStub: openAIEngine.build,
+      });
+    } finally {
+      abortController.abort();
+      try {
+        while (turns.size) {
+          await Promise.allSettled(turns);
+        }
+        await Promise.allSettled(
+          Array.from(conversations, conversation => conversation.titlePromise)
+        );
+      } finally {
+        try {
+          if (win) {
+            await BrowserTestUtils.closeWindow(win);
+          }
+        } finally {
+          sandbox.restore();
+          await SpecialPowers.popPrefEnv();
+          await restore();
+        }
+      }
+    }
   },
 
   /**
@@ -636,6 +947,8 @@ export const AIWindowTestUtils = {
    *   ["Hello from mock."].
    * @property {number} [streamChunkDelayMs] - Delay in milliseconds before
    *   each streamed chunk. Defaults to 0.
+   * @property {(index: number) => Promise<void>|void} [beforeStreamChunk]
+   *   Called before sending each text chunk; may pause the stream.
    * @property {MockToolCall|null} [toolCall] - When non-null, the first
    *   streaming request that includes tools will respond with this tool call
    *   instead of text content. A subsequent request containing the tool result
@@ -665,6 +978,7 @@ export const AIWindowTestUtils = {
   startMockOpenAI({
     streamChunks = ["Hello from mock."],
     streamChunkDelayMs = 0,
+    beforeStreamChunk,
     toolCall = null,
     followupChunks = ["Tool complete."],
     onRequest,
@@ -790,6 +1104,9 @@ export const AIWindowTestUtils = {
 
         (async () => {
           for (const [index, chunk] of streamChunks.entries()) {
+            if (beforeStreamChunk) {
+              await beforeStreamChunk(index);
+            }
             if (streamChunkDelayMs) {
               await new Promise(resolve =>
                 lazy.setTimeout(resolve, streamChunkDelayMs)
@@ -854,7 +1171,7 @@ export const AIWindowTestUtils = {
 
   /**
    * Convenience wrapper that starts a mock OpenAI server, pushes the endpoint
-   * pref, stubs getFxAccountToken, runs a task, then tears everything down.
+   * pref, stubs getToken, runs a task, then tears everything down.
    *
    * Consider using stubEngineNetworkBoundaries (in the functional suite's
    * head.js) instead for new tests — it additionally stubs openAIEngine.build
@@ -876,14 +1193,14 @@ export const AIWindowTestUtils = {
       ],
     });
 
-    const getFxAccountTokenStub = sinon
-      .stub(openAIEngine, "getFxAccountToken")
+    const getTokenStub = sinon
+      .stub(AuthProvider, "getToken")
       .resolves("mock-fxa-token");
 
     try {
       await task({ port });
     } finally {
-      getFxAccountTokenStub.restore();
+      getTokenStub.restore();
       await SpecialPowers.popPrefEnv();
       await AIWindowTestUtils.stopMockOpenAI(server);
     }

@@ -311,22 +311,6 @@ LICENSES["gyp"].paths = [
     "third_party/python/gyp",
 ]
 
-LICENSES += ["harfbuzz"]
-LICENSES["harfbuzz"].title = "HarfBuzz License"
-LICENSES["harfbuzz"].text = "harfbuzz.txt"
-LICENSES["harfbuzz"].notice = """
-<p>This license, with different copyright holders, applies to the files in the directory <code>gfx/harfbuzz/</code>.
-            The copyright holders and the applicable ranges of dates are as follows:</p>
-            <ul>
-                <li>1998-2004  David Turner and Werner Lemberg</li>
-                <li>2004, 2007, 2008, 2009, 2010  Red Hat, Inc.</li>
-                <li>2006  Behdad Esfahbod</li>
-                <li>2007  Chris Wilson</li>
-                <li>2009  Keith Stribley &lt;devel@thanlwinsoft.org&gt;</li>
-                <li>2010  Mozilla Foundation</li>
-            </ul>
-"""
-
 LICENSES += ["immutable"]
 LICENSES["immutable"].title = "Immutable.js License"
 LICENSES["immutable"].text = "immutable.txt"
@@ -751,18 +735,6 @@ LICENSES["x264"].notice = """
 LICENSES["x264"].paths = [
     "third_party/aom/third_party/x86inc/x86inc.asm",
 ]
-
-LICENSES += ["xiph"]
-LICENSES["xiph"].title = "Xiph.org Foundation License"
-LICENSES["xiph"].text = "xiph.txt"
-LICENSES["xiph"].spdx = "BSD-3-Clause"
-# The license text leaves the copyright year as a placeholder, so the ranges are
-# spelled out here; the covered directories come from their LICENSED_UNDER.
-LICENSES["xiph"].notice = """
-<p>The Xiph.org Foundation copyright year is 2002 for <code>media/libogg/</code>,
-2002-2004 for <code>media/libvorbis/</code> and 2002-2008 for
-<code>media/libspeex_resampler/</code>.</p>
-"""
 
 if CONFIG["MOZ_DXCOMPILER"]:
     LICENSES += ["llvm"]

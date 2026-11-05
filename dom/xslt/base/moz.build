@@ -19,3 +19,17 @@ LOCAL_INCLUDES += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "txCore.h",
+    "txErrorObserver.h",
+    "txExpandedName.h",
+    "txExpandedNameMap.h",
+    "txList.h",
+    "txLog.h",
+    "txNamespaceMap.h",
+    "txOwningArray.h",
+    "txStack.h",
+    "txStringUtils.h",
+    "txURIUtils.h",
+]

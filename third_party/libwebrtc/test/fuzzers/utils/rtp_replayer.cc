@@ -22,13 +22,14 @@
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
 #include "api/media_types.h"
-#include "api/task_queue/task_queue_base.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/test/time_controller.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "call/call.h"
 #include "call/call_config.h"
 #include "call/video_receive_stream.h"
+#include "media/base/fake_video_renderer.h"
 #include "media/engine/internal_decoder_factory.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -43,7 +44,6 @@
 #include "test/rtp_file_reader.h"
 #include "test/run_loop.h"
 #include "test/time_controller/simulated_time_controller.h"
-#include "test/video_renderer.h"
 
 namespace webrtc {
 namespace test {
@@ -145,8 +145,7 @@ void RtpReplayer::SetupVideoStreams(
     }
 
     // Create the window to display the rendered video.
-    stream_state->sinks.emplace_back(
-        test::VideoRenderer::Create("Fuzzing WebRTC Video Config", 640, 480));
+    stream_state->sinks.push_back(std::make_unique<FakeVideoRenderer>());
     // Create a receive stream for this config.
     receive_config.renderer = stream_state->sinks.back().get();
     receive_config.decoder_factory = stream_state->decoder_factory.get();

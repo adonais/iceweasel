@@ -3,7 +3,6 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
-import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers.closeTo
@@ -11,7 +10,6 @@ import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.greaterThanOrEqualTo
 import org.hamcrest.Matchers.notNullValue
 import org.junit.After
-import org.junit.Assume.assumeThat
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -129,6 +127,82 @@ class MediaSessionTest : BaseSessionTest() {
     @Test
     fun audioSessionTypeWebSpeechIsTransient() {
         checkAudioSessionType(AUDIO_SESSION_TYPE_WEBSPEECH_PATH, "transient")
+    }
+
+    // A platform audio-focus loss pauses the tab's audible media. After a
+    // permanent loss the page can play again on its own; during a transient
+    // loss it cannot, until a focus gain resumes the media. The refused play()
+    // comes from the dom.audio_session.block_start_during_interrupt.enabled
+    // gate rather than from the Audio Session spec, which suspends and later
+    // resumes instead. The tab's gate is updated before its media is paused,
+    // so the pause marks that the loss has been applied.
+    @Test
+    fun audioFocusPermanentLossDoesNotBlockPlay() {
+        val (session, mediaSession) = openPlayingAudioFocusSession()
+
+        mediaSession.notifySystemAudioFocusChange(MediaSession.SYSTEM_AUDIO_FOCUS_PERMANENT_LOSS)
+        assertThat("The loss pauses the audio", waitForAudioPaused(session, true), equalTo(true))
+        assertThat("The page can play again after a permanent loss", playAudio(session), equalTo("played"))
+        session.close()
+    }
+
+    @Test
+    fun audioFocusTransientLossBlocksPlayUntilGain() {
+        val (session, mediaSession) = openPlayingAudioFocusSession()
+
+        mediaSession.notifySystemAudioFocusChange(MediaSession.SYSTEM_AUDIO_FOCUS_TRANSIENT_LOSS)
+        assertThat("The loss pauses the audio", waitForAudioPaused(session, true), equalTo(true))
+        assertThat("The page cannot play during a transient loss", playAudio(session), equalTo("NotAllowedError"))
+
+        mediaSession.notifySystemAudioFocusChange(MediaSession.SYSTEM_AUDIO_FOCUS_GAIN)
+        assertThat("A focus gain resumes the audio", waitForAudioPaused(session, false), equalTo(false))
+        session.close()
+    }
+
+    private fun openPlayingAudioFocusSession(): Pair<GeckoSession, MediaSession> {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                "dom.audio_session.enabled" to true,
+                "dom.audio_session.block_start_during_interrupt.enabled" to true,
+                "media.autoplay.default" to 0,
+            )
+        )
+        val session = sessionRule.createOpenSession()
+        val activated = GeckoResult<MediaSession>()
+        var reported = false
+        session.delegateUntilTestEnd(
+            object : MediaSession.Delegate {
+                override fun onActivated(
+                    session: GeckoSession,
+                    mediaSession: MediaSession,
+                ) {
+                    if (!reported) {
+                        reported = true
+                        activated.complete(mediaSession)
+                    }
+                }
+            }
+        )
+        session.loadTestPath(AUDIO_FOCUS_INTERRUPT_PATH)
+        session.waitForPageStop()
+        assertThat("The audio plays", playAudio(session), equalTo("played"))
+        return Pair(session, sessionRule.waitForResult(activated))
+    }
+
+    // Returns "played", or the name of the error play() rejected with.
+    private fun playAudio(session: GeckoSession): String =
+        session.evaluatePromiseJS("document.querySelector('audio').play().then(() => 'played', e => e.name)").value
+            as String
+
+    private fun waitForAudioPaused(session: GeckoSession, paused: Boolean): Boolean {
+        val event = if (paused) "pause" else "playing"
+        return session
+            .evaluatePromiseJS(
+                "new Promise(r => { const a = document.querySelector('audio');" +
+                    " if (a.paused === $paused) { r(a.paused); return; }" +
+                    " a.addEventListener('$event', () => r(a.paused), { once: true }); })"
+            )
+            .value as Boolean
     }
 
     @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
@@ -859,10 +933,6 @@ class MediaSessionTest : BaseSessionTest() {
     @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test
     fun fullscreenVideoElementMetadata() {
-        // Bug 1981579
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
-        }
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "media.autoplay.default" to 0,
@@ -1030,12 +1100,12 @@ class MediaSessionTest : BaseSessionTest() {
 
         val path = VIDEO_WEBM_PATH
         val session = sessionRule.createOpenSession()
-        val resultFullscreen = GeckoResult<Void>()
         session.loadTestPath(path)
         sessionRule.waitForPageStop()
 
         session.delegateDuringNextWait(
             object : MediaSession.Delegate {
+                @AssertCalled(count = 1)
                 override fun onFullscreen(
                     session: GeckoSession,
                     mediaSession: MediaSession,
@@ -1052,22 +1122,17 @@ class MediaSessionTest : BaseSessionTest() {
                         meta,
                         notNullValue(),
                     )
-                    resultFullscreen.complete(null)
                 }
             }
         )
 
         session.evaluateJS("document.querySelector('video').requestFullscreen()")
-        sessionRule.waitForResult(resultFullscreen)
+        session.waitUntilCalled(MediaSession.Delegate::class, "onFullscreen")
     }
 
     @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test
     fun switchingProcess() {
-        // Bug 1981579
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
-        }
         sessionRule.setPrefsUntilTestEnd(mapOf("media.autoplay.default" to 0))
 
         mainSession.loadUri("about:blank")
@@ -1076,20 +1141,17 @@ class MediaSessionTest : BaseSessionTest() {
         mainSession.loadTestPath(VIDEO_WEBM_PATH)
         sessionRule.waitForPageStop()
 
-        val onPlayCalled = GeckoResult<Void>()
         mainSession.delegateUntilTestEnd(
             object : MediaSession.Delegate {
                 @AssertCalled(count = 1)
                 override fun onPlay(
                     session: GeckoSession,
                     mediaSession: MediaSession,
-                ) {
-                    onPlayCalled.complete(null)
-                }
+                ) {}
             }
         )
 
         mainSession.evaluateJS("document.querySelector('video').play()")
-        sessionRule.waitForResult(onPlayCalled)
+        mainSession.waitUntilCalled(MediaSession.Delegate::class, "onPlay")
     }
 }

@@ -65,3 +65,16 @@ when = { any_file = { include = [
 load = [
   { type = "file", path = ".claude/skills/js-review/SKILL.md" },
 ]
+
+# WebRender: Triggered when a patch touches WebRender source code.
+[[rules]]
+name = "WebRender"
+description = "Guidance for reviewing WebRender code"
+when = { any_file = { include = [
+  "gfx/wr/**",
+], ext = [
+  ".rs",
+] } }
+load = [
+  { type = "file", path = "gfx/wr/webrender/doc/code-review.md" },
+]

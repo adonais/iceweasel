@@ -20,12 +20,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
 });
 
-ChromeUtils.defineLazyGetter(lazy, "gWidgetsBundle", function () {
-  const kUrl =
-    "chrome://browser/locale/customizableui/customizableWidgets.properties";
-  return Services.strings.createBundle(kUrl);
-});
-
 const kDefaultThemeID = "default-theme@mozilla.org";
 
 const kSpecialWidgetPfx = "customizableui-special-";
@@ -216,6 +210,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
+  "fireButtonEnabled",
+  "browser.fireButton.enabled",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
   "sidebarRevampEnabled",
   "sidebar.revamp",
   false,
@@ -374,6 +375,7 @@ var CustomizableUIInternal = {
       lazy.ippEnabled ? "ipprotection-button" : null,
       "fxa-toolbar-menu-button",
       lazy.resetPBMToolbarButtonEnabled ? "reset-pbm-toolbar-button" : null,
+      lazy.fireButtonEnabled ? "fire-button" : null,
     ].filter(name => name);
 
     this.registerArea(
@@ -2838,17 +2840,13 @@ var CustomizableUIInternal = {
           }
         }
       } else {
-        node.setAttribute("label", this.getLocalizedProperty(aWidget, "label"));
+        node.setAttribute("label", aWidget.label ?? "");
         if (button != node) {
           // This is probably a "button-and-view" widget.
           button.setAttribute("label", node.getAttribute("label"));
         }
 
-        let tooltip = this.getLocalizedProperty(
-          aWidget,
-          "tooltiptext",
-          shortcut ? [shortcut] : []
-        );
+        let tooltip = aWidget.tooltiptext;
         if (tooltip) {
           node.setAttribute("tooltiptext", tooltip);
           if (button != node) {
@@ -2916,62 +2914,9 @@ var CustomizableUIInternal = {
   },
 
   /**
-   * @see CustomizableUI.getLocalizedProperty
-   * @param {string|object} aWidget
-   * @param {string} aProp
-   * @param {string[]} [aFormatArgs]
-   * @param {string} [aDef]
-   * @returns {string}
-   */
-  getLocalizedProperty(aWidget, aProp, aFormatArgs, aDef) {
-    const kReqStringProps = ["label"];
-
-    if (typeof aWidget == "string") {
-      aWidget = gPalette.get(aWidget);
-    }
-    if (!aWidget) {
-      throw new Error(
-        "getLocalizedProperty was passed a non-widget to work with."
-      );
-    }
-    let def, name;
-    // Let widgets pass their own string identifiers or strings, so that
-    // we can use strings which aren't the default (in case string ids change)
-    // and so that non-builtin-widgets can also provide labels, tooltips, etc.
-    if (aWidget[aProp] != null) {
-      name = aWidget[aProp];
-      // By using this as the default, if a widget provides a full string rather
-      // than a string ID for localization, we will fall back to that string
-      // and return that.
-      def = aDef || name;
-    } else {
-      name = aWidget.id + "." + aProp;
-      def = aDef || "";
-    }
-    if (aWidget.localized === false) {
-      return def;
-    }
-    try {
-      if (Array.isArray(aFormatArgs) && aFormatArgs.length) {
-        return (
-          lazy.gWidgetsBundle.formatStringFromName(name, aFormatArgs) || def
-        );
-      }
-      return lazy.gWidgetsBundle.GetStringFromName(name) || def;
-    } catch (ex) {
-      // If an empty string was explicitly passed, treat it as an actual
-      // value rather than a missing property.
-      if (!def && (name != "" || kReqStringProps.includes(aProp))) {
-        lazy.log.error("Could not localize property '" + name + "'.");
-      }
-    }
-    return def;
-  },
-
-  /**
    * @see CustomizableUI.addShortcut
    * @param {Element} aShortcutNode
-   * @param {Element|null} aTargetNode
+   * @param {Element} [aTargetNode]
    */
   addShortcut(aShortcutNode, aTargetNode = aShortcutNode) {
     // Detect if we've already been here before.
@@ -4371,7 +4316,6 @@ var CustomizableUIInternal = {
       source: aSource || CustomizableUI.SOURCE_EXTERNAL,
       instances: new Map(),
       currentArea: null,
-      localized: true,
       removable: true,
       overflows: true,
       defaultArea: null,
@@ -4429,7 +4373,6 @@ var CustomizableUIInternal = {
       "overflows",
       "tabSpecific",
       "locationSpecific",
-      "localized",
       "keepBroadcastAttributesWhenCustomizing",
       "disallowSubView",
       "webExtension",
@@ -6371,10 +6314,6 @@ export var CustomizableUI = {
    * @property {string} [label]
    *   **Deprecated** - use l10nId and Fluent instead. A string to use for the
    *   label of the widget.
-   * @property {string} [localized]
-   *   **Deprecated** - use l10nId and Fluent instead. If true, or undefined,
-   *   attempt to retrieve the widget's string properties from the customizable
-   *   widgets string bundle.
    * @property {boolean} [removable=true]
    *   Whether the widget can be removed from a customizable area.
    *   Note: if you specify false here, you must provide a defaultArea, too.
@@ -6391,11 +6330,10 @@ export var CustomizableUI = {
    *   supplied, defaultArea is used regardless of tab orientation.
    * @property {string} [shortcutId]
    *   The id of an element that has a shortcut for this widget. This is only
-   *   used to display the shortcut as part of the tooltip for builtin widgets
-   *   (which have strings inside customizableWidgets.properties). If you're in
-   *   an add-on, you should not set this property. If l10nId is provided, the
-   *   resulting shortcut is passed as the "$shortcut" variable to the Fluent
-   *   message.
+   *   used to display the shortcut as part of the tooltip for builtin widgets.
+   *   If you're in an add-on, you should not set this property. If l10nId is
+   *   provided, the resulting shortcut is passed as the "$shortcut" variable to
+   *   the Fluent message.
    * @property {boolean} [showInPrivateBrowsing=true]
    *   True to show the widget in private browsing mode windows.
    * @property {boolean} [hideInNonPrivateBrowsing=false]
@@ -6850,48 +6788,14 @@ export var CustomizableUI = {
   },
 
   /**
-   * DEPRECATED! Use fluent instead.
-   *
-   * Get a localized property off a (widget?) object.
-   *
-   * NB: this is unlikely to be useful unless you're in Firefox code, because
-   *     this code uses the builtin widget stringbundle, and can't be told
-   *     to use add-on-provided strings. It's mainly here as convenience for
-   *     custom builtin widgets that build their own DOM but use the same
-   *     stringbundle as the other builtin widgets.
-   *
-   * @param {string|object} aWidget
-   *   The ID of a widget, or a widget object whose properties we should use to
-   *   fetch a localizable string.
-   * @param {string} aProp
-   *   The property on the object to use for the fetching from
-   *   customizableWidgets.properties.
-   * @param {string[]} [aFormatArgs]
-   *   Any extra arguments to use for a formatted string.
-   * @param {string} [aDef]
-   *   The default to return if we don't find the string in the stringbundle.
-   * @returns {string}
-   *   The localized string, or aDef if the string isn't in the bundle. If no
-   *   default is provided, if aProp exists on aWidget, we'll return that,
-   *   otherwise we'll return the empty string.
-   */
-  getLocalizedProperty(aWidget, aProp, aFormatArgs, aDef) {
-    return CustomizableUIInternal.getLocalizedProperty(
-      aWidget,
-      aProp,
-      aFormatArgs,
-      aDef
-    );
-  },
-  /**
    * Utility function to detect, find and set a keyboard shortcut for a menuitem
    * or (toolbar)button.
    *
    * @param {Element} aShortcutNode
    *   The XUL node where the shortcut will be derived from;
-   * @param {Element|null} aTargetNode
-   *   The XUL node on which the `shortcut` attribute will be set. If NULL, the
-   *   shortcut will be set on aShortcutNode.
+   * @param {Element} [aTargetNode]
+   *   The XUL node on which the `shortcut` attribute will be set. If missing,
+   *   the shortcut will be set on aShortcutNode.
    */
   addShortcut(aShortcutNode, aTargetNode) {
     return CustomizableUIInternal.addShortcut(aShortcutNode, aTargetNode);

@@ -292,10 +292,16 @@ bool BaseCompiler::addInterruptCheck() {
   masm.branch32(Assembler::Equal,
                 Address(tmp, wasm::Instance::offsetOfInterrupt()), Imm32(0),
                 &ok);
-  trap(wasm::Trap::CheckInterrupt);
+  FaultingCodeRange fcr = trap(wasm::Trap::CheckInterrupt);
   masm.bind(&ok);
+
+  if (!fcr.isValid()) {
+    return false;
+  }
+
   // stackmap for: interrupt check
-  return createStackMap(Some(wasm::Trap::CheckInterrupt));
+  return createStackMap(Some(wasm::Trap::CheckInterrupt),
+                        CodeOffset(fcr.resumeOffset()));
 }
 
 void BaseCompiler::checkDivideByZero(RegI32 rhs) {
@@ -2913,18 +2919,24 @@ void BaseCompiler::convertI64ToF64(RegI64 src, bool isUnsigned, RegF64 dest,
 //
 // Global variable access.
 
-Address BaseCompiler::addressOfGlobalVar(const GlobalDesc& global, RegPtr tmp) {
+Address BaseCompiler::GlobalVarAddress::init(BaseCompiler& bc,
+                                             const GlobalDesc& global) {
   uint32_t globalToInstanceOffset = Instance::offsetInData(global.offset());
 #ifdef RABALDR_PIN_INSTANCE
-  movePtr(RegPtr(InstanceReg), tmp);
+  Register instance = InstanceReg;
 #else
-  fr.loadInstancePtr(tmp);
+  tmp_.emplace(bc);
+  bc.fr.loadInstancePtr(*tmp_);
+  Register instance = *tmp_;
 #endif
   if (global.isIndirect()) {
-    masm.loadPtr(Address(tmp, globalToInstanceOffset), tmp);
-    return Address(tmp, 0);
+    if (tmp_.isNothing()) {
+      tmp_.emplace(bc);
+    }
+    bc.masm.loadPtr(Address(instance, globalToInstanceOffset), *tmp_);
+    return Address(*tmp_, 0);
   }
-  return Address(tmp, globalToInstanceOffset);
+  return Address(instance, globalToInstanceOffset);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -3987,8 +3999,13 @@ void BaseCompiler::emitBranchSetup(BranchState* b) {
           break;
         }
         case ValType::I64: {
-          pop2xI64(&b->i64.lhs, &b->i64.rhs);
-          b->i64.rhsImm = false;
+          if (popConst(&b->i64.imm)) {
+            b->i64.lhs = popI64();
+            b->i64.rhsImm = true;
+          } else {
+            pop2xI64(&b->i64.lhs, &b->i64.rhs);
+            b->i64.rhsImm = false;
+          }
           break;
         }
         case ValType::F32: {
@@ -6197,24 +6214,42 @@ bool BaseCompiler::emitSetOrTeeLocal(uint32_t slot) {
   bceLocalIsUpdated(slot);
   switch (locals_[slot].kind()) {
     case ValType::I32: {
-      RegI32 rv = popI32();
-      syncLocal(slot);
-      fr.storeLocalI32(rv, localFromSlot(slot, MIRType::Int32));
-      if (isSetLocal) {
-        freeI32(rv);
+      int32_t c;
+      if (popConst(&c)) {
+        syncLocal(slot);
+        fr.storeLocalI32(Imm32(c), localFromSlot(slot, MIRType::Int32));
+        if (!isSetLocal) {
+          pushI32(c);
+        }
       } else {
-        pushI32(rv);
+        RegI32 rv = popI32();
+        syncLocal(slot);
+        fr.storeLocalI32(rv, localFromSlot(slot, MIRType::Int32));
+        if (isSetLocal) {
+          freeI32(rv);
+        } else {
+          pushI32(rv);
+        }
       }
       break;
     }
     case ValType::I64: {
-      RegI64 rv = popI64();
-      syncLocal(slot);
-      fr.storeLocalI64(rv, localFromSlot(slot, MIRType::Int64));
-      if (isSetLocal) {
-        freeI64(rv);
+      int64_t c;
+      if (popConst(&c)) {
+        syncLocal(slot);
+        fr.storeLocalI64(Imm64(c), localFromSlot(slot, MIRType::Int64));
+        if (!isSetLocal) {
+          pushI64(c);
+        }
       } else {
-        pushI64(rv);
+        RegI64 rv = popI64();
+        syncLocal(slot);
+        fr.storeLocalI64(rv, localFromSlot(slot, MIRType::Int64));
+        if (isSetLocal) {
+          freeI64(rv);
+        } else {
+          pushI64(rv);
+        }
       }
       break;
     }
@@ -6333,44 +6368,38 @@ bool BaseCompiler::emitGetGlobal() {
   switch (global.type().kind()) {
     case ValType::I32: {
       RegI32 rv = needI32();
-      ScratchPtr tmp(*this);
-      masm.load32(addressOfGlobalVar(global, tmp), rv);
+      masm.load32(GlobalVarAddress(*this, global), rv);
       pushI32(rv);
       break;
     }
     case ValType::I64: {
       RegI64 rv = needI64();
-      ScratchPtr tmp(*this);
-      masm.load64(addressOfGlobalVar(global, tmp), rv);
+      masm.load64(GlobalVarAddress(*this, global), rv);
       pushI64(rv);
       break;
     }
     case ValType::F32: {
       RegF32 rv = needF32();
-      ScratchPtr tmp(*this);
-      masm.loadFloat32(addressOfGlobalVar(global, tmp), rv);
+      masm.loadFloat32(GlobalVarAddress(*this, global), rv);
       pushF32(rv);
       break;
     }
     case ValType::F64: {
       RegF64 rv = needF64();
-      ScratchPtr tmp(*this);
-      masm.loadDouble(addressOfGlobalVar(global, tmp), rv);
+      masm.loadDouble(GlobalVarAddress(*this, global), rv);
       pushF64(rv);
       break;
     }
     case ValType::Ref: {
       RegRef rv = needRef();
-      ScratchPtr tmp(*this);
-      masm.loadPtr(addressOfGlobalVar(global, tmp), rv);
+      masm.loadPtr(GlobalVarAddress(*this, global), rv);
       pushRef(rv);
       break;
     }
 #ifdef ENABLE_JIT_SIMD
     case ValType::V128: {
       RegV128 rv = needV128();
-      ScratchPtr tmp(*this);
-      masm.loadUnalignedSimd128(addressOfGlobalVar(global, tmp), rv);
+      masm.loadUnalignedSimd128(GlobalVarAddress(*this, global), rv);
       pushV128(rv);
       break;
     }
@@ -6398,40 +6427,32 @@ bool BaseCompiler::emitSetGlobal() {
   switch (global.type().kind()) {
     case ValType::I32: {
       RegI32 rv = popI32();
-      ScratchPtr tmp(*this);
-      masm.store32(rv, addressOfGlobalVar(global, tmp));
+      masm.store32(rv, GlobalVarAddress(*this, global));
       freeI32(rv);
       break;
     }
     case ValType::I64: {
       RegI64 rv = popI64();
-      ScratchPtr tmp(*this);
-      masm.store64(rv, addressOfGlobalVar(global, tmp));
+      masm.store64(rv, GlobalVarAddress(*this, global));
       freeI64(rv);
       break;
     }
     case ValType::F32: {
       RegF32 rv = popF32();
-      ScratchPtr tmp(*this);
-      masm.storeFloat32(rv, addressOfGlobalVar(global, tmp));
+      masm.storeFloat32(rv, GlobalVarAddress(*this, global));
       freeF32(rv);
       break;
     }
     case ValType::F64: {
       RegF64 rv = popF64();
-      ScratchPtr tmp(*this);
-      masm.storeDouble(rv, addressOfGlobalVar(global, tmp));
+      masm.storeDouble(rv, GlobalVarAddress(*this, global));
       freeF64(rv);
       break;
     }
     case ValType::Ref: {
       RegPtr valueAddr(PreBarrierReg);
       needPtr(valueAddr);
-      {
-        ScratchPtr tmp(*this);
-        masm.computeEffectiveAddress(addressOfGlobalVar(global, tmp),
-                                     valueAddr);
-      }
+      masm.computeEffectiveAddress(GlobalVarAddress(*this, global), valueAddr);
       RegRef rv = popRef();
       // emitBarrieredStore preserves rv
       if (!emitBarrieredStore(Nothing(), valueAddr, rv, PreBarrierKind::Normal,
@@ -6444,8 +6465,7 @@ bool BaseCompiler::emitSetGlobal() {
 #ifdef ENABLE_JIT_SIMD
     case ValType::V128: {
       RegV128 rv = popV128();
-      ScratchPtr tmp(*this);
-      masm.storeUnalignedSimd128(rv, addressOfGlobalVar(global, tmp));
+      masm.storeUnalignedSimd128(rv, GlobalVarAddress(*this, global));
       freeV128(rv);
       break;
     }
@@ -6650,10 +6670,20 @@ void BaseCompiler::emitCompareI64(Assembler::Condition compareOp,
     return;
   }
 
+  int64_t c;
+  if (popConst(&c)) {
+    RegI64 rs0 = popI64();
+    RegI32 rd(fromI64(rs0));
+    masm.cmp64Set(compareOp, rs0, Imm64(c), rd);
+    freeI64Except(rs0, rd);
+    pushI32(rd);
+    return;
+  }
+
   RegI64 rs0, rs1;
   pop2xI64(&rs0, &rs1);
   RegI32 rd(fromI64(rs0));
-  cmp64Set(compareOp, rs0, rs1, rd);
+  masm.cmp64Set(compareOp, rs0, rs1, rd);
   freeI64(rs1);
   freeI64Except(rs0, rd);
   pushI32(rd);

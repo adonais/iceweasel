@@ -67,3 +67,18 @@ if CONFIG["CC_TYPE"] == "clang-cl":
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "ApplicationAccessibleWrap.h",
+    "DocAccessibleWrap.h",
+    "EnumVariant.h",
+    "MsaaAccessible.h",
+    "MsaaDocAccessible.h",
+    "MsaaIdGenerator.h",
+    "MsaaRootAccessible.h",
+    "MsaaXULMenuAccessible.h",
+    "nsEventMap.h",
+    "NtUndoc.h",
+    "RootAccessibleWrap.h",
+    "ServiceProvider.h",
+]

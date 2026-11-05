@@ -107,3 +107,8 @@ if CONFIG["INTEL_ARCHITECTURE"]:
         LOCAL_INCLUDES += ["/third_party/xsimd/include"]
         SOURCES += ["nsRectIntersectGenericSSE42.cpp"]
         SOURCES["nsRectIntersectGenericSSE42.cpp"].flags += CONFIG["SSE4_2_FLAGS"]
+
+SOURCE_HEADERS += [
+    "nsRectIntersectGenericImpl.h",
+    "nsThebesFontEnumerator.h",
+]

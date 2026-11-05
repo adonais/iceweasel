@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Protocol registrar page with a same-origin handler</title>
+  </head>
+  <body>
+    <button id="register">Register</button>
+    <script>
+      function register() {
+        navigator.registerProtocolHandler("web+testprotocol", "/foobar?uri=%s");
+      }
+      register();
+      document.getElementById("register").addEventListener("click", register);
+    </script>
+  </body>
+</html>

@@ -15,6 +15,9 @@
 
 #include "mozIStorageFunction.h"
 
+#include "nsCOMPtr.h"
+#include "nsTSubstring.h"
+
 class mozIStorageConnection;
 
 namespace mozilla {

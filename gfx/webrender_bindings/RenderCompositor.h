@@ -105,7 +105,13 @@ class RenderCompositor {
 
   // True if AttachExternalImage supports being used with an external
   // image that maps to a RenderBufferTextureHost
-  virtual bool SupportsExternalBufferTextures() const { return false; }
+  virtual bool SupportsExternalBufferTextures() const {
+#ifdef MOZ_WAYLAND
+    return true;
+#else
+    return false;
+#endif
+  }
 
   virtual LayoutDeviceIntSize GetBufferSize() = 0;
 

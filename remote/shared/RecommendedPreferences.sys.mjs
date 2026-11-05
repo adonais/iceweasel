@@ -248,7 +248,6 @@ const COMMON_PREFERENCES = new Map([
   ["datareporting.policy.dataSubmissionPolicyAccepted", false],
   ["datareporting.policy.dataSubmissionPolicyBypassNotification", true],
   ["datareporting.usage.uploadEnabled", false],
-  ["telemetry.fog.test.localhost_port", -1],
 
   // Disable popup-blocker
   ["dom.disable_open_during_load", false],
@@ -432,6 +431,9 @@ const COMMON_PREFERENCES = new Map([
   ["startup.homepage_welcome_url", "about:blank"],
   ["startup.homepage_welcome_url.additional", ""],
 
+  // Don't upload telemetry reports
+  ["telemetry.fog.test.localhost_port", -1],
+
   // Do not show TOU new user modal which can interfere with tests
   ["termsofuse.bypassNotification", true],
 
@@ -444,6 +446,14 @@ const COMMON_PREFERENCES = new Map([
   // Disable window occlusion on Windows, which can prevent webdriver commands
   // such as WebDriver:FindElements from working properly (Bug 1802473).
   ["widget.windows.window_occlusion_tracking.enabled", false],
+]);
+
+const LOCKED_PREFERENCES = new Map([
+  // Do not initialize Glean during shutdown, which can cause long delays. It
+  // has to be locked because TelemetryReportingPolicy sets a user value.
+  //
+  // TODO: Remove lock mechanism once bug 2076854 is fixed.
+  ["telemetry.fog.init_on_shutdown", false],
 ]);
 
 /**
@@ -533,11 +543,18 @@ export const RecommendedPreferences = {
     // Only apply common recommended preferences on first call to
     // applyPreferences.
     if (!this.isInitialized) {
+      this.isInitialized = true;
+
+      // Apply and lock these preferences before any other recommended
+      // preference, so that their value cannot be overridden.
+      this.applyPreferences(LOCKED_PREFERENCES);
+      for (const [k] of LOCKED_PREFERENCES) {
+        Services.prefs.lockPref(k);
+      }
+
       // Merge common preferences and optionally provided preferences in a
       // single map. Hereby the extra preferences have higher priority.
       preferences = new Map([...COMMON_PREFERENCES, ...preferences]);
-
-      this.isInitialized = true;
     }
 
     const defaultBranch = Services.prefs.getDefaultBranch("");
@@ -585,6 +602,11 @@ export const RecommendedPreferences = {
    */
   resetForTesting() {
     const defaultBranch = Services.prefs.getDefaultBranch("");
+
+    // Locked preferences have to be unlocked before they can be restored.
+    for (const [k] of LOCKED_PREFERENCES) {
+      Services.prefs.unlockPref(k);
+    }
 
     for (const [k, defaultValue] of this.alteredPrefs) {
       lazy.logger.debug(`Resetting recommended pref ${k}`);

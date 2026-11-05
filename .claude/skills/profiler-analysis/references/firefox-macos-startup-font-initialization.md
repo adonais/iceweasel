@@ -1,3 +1,4 @@
+# Firefox macOS startup font initialization lock contention
 
 Profile: https://profiler.firefox.com/public/fx5sg9g8p9bp6bq36aggg74r8cmrbfcaxcm1rb0
 

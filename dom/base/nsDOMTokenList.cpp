@@ -101,7 +101,8 @@ void nsDOMTokenList::SetValue(const nsAString& aValue, ErrorResult& rv) {
     return;
   }
 
-  rv = mElement->SetAttr(kNameSpaceID_None, mAttrAtom, aValue, true);
+  rv = mElement->SetAttr(kNameSpaceID_None, mAttrAtom, aValue, true,
+                         IsKnownNewAttr::No);
 }
 
 void nsDOMTokenList::CheckToken(const nsAString& aToken, ErrorResult& aRv) {
@@ -172,7 +173,8 @@ void nsDOMTokenList::AddInternal(const nsAttrValue* aAttr,
     addedClasses.AppendElement(aToken);
   }
 
-  mElement->SetAttr(kNameSpaceID_None, mAttrAtom, resultStr, true);
+  mElement->SetAttr(kNameSpaceID_None, mAttrAtom, resultStr, true,
+                    IsKnownNewAttr::No);
 }
 
 void nsDOMTokenList::Add(const nsTArray<nsString>& aTokens,
@@ -209,7 +211,8 @@ void nsDOMTokenList::RemoveInternal(const nsAttrValue* aAttr,
     resultStr.Append(nsDependentAtomString(aAttr->AtomAt(i)));
   }
 
-  mElement->SetAttr(kNameSpaceID_None, mAttrAtom, resultStr, true);
+  mElement->SetAttr(kNameSpaceID_None, mAttrAtom, resultStr, true,
+                    IsKnownNewAttr::No);
 }
 
 void nsDOMTokenList::Remove(const nsTArray<nsString>& aTokens,
@@ -333,7 +336,8 @@ bool nsDOMTokenList::ReplaceInternal(const nsAttrValue* aAttr,
   }
 
   MOZ_ASSERT(sawIt, "How could we not have found our token this time?");
-  mElement->SetAttr(kNameSpaceID_None, mAttrAtom, resultStr, true);
+  mElement->SetAttr(kNameSpaceID_None, mAttrAtom, resultStr, true,
+                    IsKnownNewAttr::No);
   return true;
 }
 

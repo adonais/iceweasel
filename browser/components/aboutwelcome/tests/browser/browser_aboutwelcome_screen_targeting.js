@@ -129,7 +129,7 @@ add_task(async function test_aboutwelcome_mr_template_easy_setup_default() {
   const sandbox = sinon.createSandbox();
   await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
   sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
-  sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+  sandbox.stub(ShellService, "isDefaultBrowserAsync").resolves(false);
   sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITHOUT_PIN_PROMPT);
 
   await clearHistoryAndBookmarks();
@@ -156,7 +156,7 @@ add_task(async function test_aboutwelcome_mr_template_easy_setup_needs_pin() {
   const sandbox = sinon.createSandbox();
   await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
   sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
-  sandbox.stub(ShellService, "isDefaultBrowser").returns(true);
+  sandbox.stub(ShellService, "isDefaultBrowserAsync").resolves(true);
   sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITHOUT_PIN_PROMPT);
 
   await clearHistoryAndBookmarks();
@@ -193,7 +193,7 @@ add_task(
       ["browser.bypassAutoTriggerActions", false]
     );
     sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
-    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isDefaultBrowserAsync").resolves(false);
     sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(true);
     sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITH_WIN_PIN_PROMPT);
 
@@ -226,7 +226,7 @@ add_task(
     await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
     sandbox.stub(ShellService, "doesAppNeedPin").returns(false);
     sandbox.stub(ShellService, "doesAppNeedStartMenuPin").returns(false);
-    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isDefaultBrowserAsync").resolves(false);
     sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITHOUT_PIN_PROMPT);
 
     await clearHistoryAndBookmarks();
@@ -262,7 +262,7 @@ add_task(
       ["browser.bypassAutoTriggerActions", false]
     );
     sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
-    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isDefaultBrowserAsync").resolves(false);
     sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(false);
     sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_MAC);
 
@@ -301,7 +301,7 @@ add_task(
       ["browser.bypassAutoTriggerActions", false]
     );
     sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
-    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isDefaultBrowserAsync").resolves(false);
     sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(true);
     sandbox
       .stub(ClientEnvironmentBase, "os")
@@ -341,7 +341,7 @@ add_task(
       ["browser.bypassAutoTriggerActions", false]
     );
     sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
-    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isDefaultBrowserAsync").resolves(false);
     sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(false);
     sandbox
       .stub(ClientEnvironmentBase, "os")
@@ -382,7 +382,7 @@ add_task(
     );
     sandbox.stub(ShellService, "doesAppNeedPin").returns(false);
     sandbox.stub(ShellService, "doesAppNeedStartMenuPin").returns(false);
-    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isDefaultBrowserAsync").resolves(false);
     sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(false);
     sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_MAC);
 
@@ -420,7 +420,7 @@ add_task(
       ["browser.bypassAutoTriggerActions", true]
     );
     sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
-    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isDefaultBrowserAsync").resolves(false);
     sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(false);
     sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_MAC);
 
@@ -459,7 +459,7 @@ add_task(
       ["browser.backup.restore.enabled", true]
     );
     sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
-    sandbox.stub(ShellService, "isDefaultBrowser").returns(true);
+    sandbox.stub(ShellService, "isDefaultBrowserAsync").resolves(true);
     sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(true);
     sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITH_WIN_PIN_PROMPT);
     sandbox

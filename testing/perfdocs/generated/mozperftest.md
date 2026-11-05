@@ -187,6 +187,25 @@ perftest_browser_xhtml_dom.js
 
 Performance tests for Smart Window on Firefox Desktop
 
+browser_smartwindow_intent_perf.js
+==================================
+
+:owner: GenAI Team
+:name: browser_smartwindow_intent_perf.js
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:SMART-INTENT-default-intent-latency-first-use,unit:ms,shouldAlert:False, name:SMART-INTENT-default-intent-latency-cold,unit:ms,shouldAlert:True, name:SMART-INTENT-default-intent-latency-warm,unit:ms,shouldAlert:True, name:SMART-INTENT-default-engine-creation-time-first-use,unit:ms,shouldAlert:False, name:SMART-INTENT-default-engine-creation-time-cold,unit:ms,shouldAlert:True, name:SMART-INTENT-default-engine-run-time-first-use,unit:ms,shouldAlert:False, name:SMART-INTENT-default-engine-run-time-cold,unit:ms,shouldAlert:True, name:SMART-INTENT-default-engine-run-time-warm,unit:ms,shouldAlert:True, name:SMART-INTENT-default-memory-before-run-first-use,unit:MiB,shouldAlert:False, name:SMART-INTENT-default-memory-before-run-cold,unit:MiB,shouldAlert:True, name:SMART-INTENT-default-memory-before-run-warm,unit:MiB,shouldAlert:True, name:SMART-INTENT-default-memory-after-run-first-use,unit:MiB,shouldAlert:False, name:SMART-INTENT-default-memory-after-run-cold,unit:MiB,shouldAlert:True, name:SMART-INTENT-default-memory-after-run-warm,unit:MiB,shouldAlert:True, name:SMART-INTENT-default-peak-memory,unit:MiB,shouldAlert:True, name:SMART-INTENT-en-fr-intent-latency-first-use,unit:ms,shouldAlert:False, name:SMART-INTENT-en-fr-intent-latency-cold,unit:ms,shouldAlert:True, name:SMART-INTENT-en-fr-intent-latency-warm,unit:ms,shouldAlert:True, name:SMART-INTENT-en-fr-engine-creation-time-first-use,unit:ms,shouldAlert:False, name:SMART-INTENT-en-fr-engine-creation-time-cold,unit:ms,shouldAlert:True, name:SMART-INTENT-en-fr-engine-run-time-first-use,unit:ms,shouldAlert:False, name:SMART-INTENT-en-fr-engine-run-time-cold,unit:ms,shouldAlert:True, name:SMART-INTENT-en-fr-engine-run-time-warm,unit:ms,shouldAlert:True, name:SMART-INTENT-en-fr-memory-before-run-first-use,unit:MiB,shouldAlert:False, name:SMART-INTENT-en-fr-memory-before-run-cold,unit:MiB,shouldAlert:True, name:SMART-INTENT-en-fr-memory-before-run-warm,unit:MiB,shouldAlert:True, name:SMART-INTENT-en-fr-memory-after-run-first-use,unit:MiB,shouldAlert:False, name:SMART-INTENT-en-fr-memory-after-run-cold,unit:MiB,shouldAlert:True, name:SMART-INTENT-en-fr-memory-after-run-warm,unit:MiB,shouldAlert:True, name:SMART-INTENT-en-fr-peak-memory,unit:MiB,shouldAlert:True
+ --verbose
+ --ml-services
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**User-perceived latency and inference memory for the Smart Window intent classifier, driven through the production smartbar flow**
+
 browser_smartwindow_perf.js
 ===========================
 
@@ -963,6 +982,30 @@ browser_ml_suggest_inference.js
  --try-platform linux, mac, win
 
 **Template test for ML suggest Inference Model**
+
+
+## toolkit/components/pdfjs/test
+
+Performance tests for PDF.js features on Firefox Desktop
+
+browser_pdfjs_alttext_perf.js
+=============================
+
+:owner: GenAI Team
+:name: browser_pdfjs_alttext_perf.js
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:PDFJS-ALT-TEXT-alt-text-latency-first-use,unit:ms,shouldAlert:False, name:PDFJS-ALT-TEXT-alt-text-latency-cold,unit:ms,shouldAlert:True, name:PDFJS-ALT-TEXT-alt-text-latency-warm,unit:ms,shouldAlert:True, name:PDFJS-ALT-TEXT-engine-creation-time-first-use,unit:ms,shouldAlert:False, name:PDFJS-ALT-TEXT-engine-creation-time-cold,unit:ms,shouldAlert:True, name:PDFJS-ALT-TEXT-engine-run-time-first-use,unit:ms,shouldAlert:False, name:PDFJS-ALT-TEXT-engine-run-time-cold,unit:ms,shouldAlert:True, name:PDFJS-ALT-TEXT-engine-run-time-warm,unit:ms,shouldAlert:True, name:PDFJS-ALT-TEXT-memory-before-run-first-use,unit:MiB,shouldAlert:False, name:PDFJS-ALT-TEXT-memory-before-run-cold,unit:MiB,shouldAlert:True, name:PDFJS-ALT-TEXT-memory-before-run-warm,unit:MiB,shouldAlert:True, name:PDFJS-ALT-TEXT-memory-after-run-first-use,unit:MiB,shouldAlert:False, name:PDFJS-ALT-TEXT-memory-after-run-cold,unit:MiB,shouldAlert:True, name:PDFJS-ALT-TEXT-memory-after-run-warm,unit:MiB,shouldAlert:True, name:PDFJS-ALT-TEXT-peak-memory,unit:MiB,shouldAlert:True
+ --verbose
+ --ml-services
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**User-perceived latency and inference memory for PDF.js alt-text generation, driven through the production image-adding flow**
 
 
 ## toolkit/components/places/tests/browser/performance

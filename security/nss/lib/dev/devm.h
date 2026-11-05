@@ -69,10 +69,6 @@ NSS_EXTERN nssSession *
 nssToken_GetDefaultSession(
     NSSToken *token);
 
-NSS_EXTERN PRBool
-nssToken_IsLoginRequired(
-    NSSToken *token);
-
 NSS_EXTERN void
 nssToken_Remove(
     NSSToken *token);
@@ -143,14 +139,6 @@ nssToken_GetCachedObjectAttributes(
     CK_OBJECT_CLASS objclass,
     CK_ATTRIBUTE_PTR atemplate,
     CK_ULONG atlen);
-
-/* PKCS#11 stores strings in a fixed-length buffer padded with spaces.  This
- * function gets the length of the actual string.
- */
-NSS_EXTERN PRUint32
-nssPKCS11String_Length(
-    CK_CHAR *pkcs11str,
-    PRUint32 bufLen);
 
 PR_END_EXTERN_C
 

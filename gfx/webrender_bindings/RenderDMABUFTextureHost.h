@@ -39,7 +39,7 @@ class RenderDMABUFTextureHost final : public RenderTextureHostSWGL {
     return mSurface->GetFormat();
   }
   gfx::ColorDepth GetColorDepth() const override {
-    return gfx::ColorDepth::COLOR_8;
+    return mSurface->GetColorDepth();
   }
   size_t GetPlaneCount() const override { return mSurface->GetTextureCount(); };
   bool MapPlane(RenderCompositor* aCompositor, uint8_t aChannelIndex,

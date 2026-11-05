@@ -1,55 +1,55 @@
 {
   "hashFunction": "sha512",
-  "name": "Widevine-4.10.3050.0",
+  "name": "Widevine-4.10.3112.0",
   "schema_version": 1000,
   "vendors": {
     "gmp-widevinecdm": {
       "platforms": {
         "Darwin_aarch64-gcc3": {
-          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/ad7g6ajom265ggbvq6rrx4nb22ra_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_mac_arm64_ad6r3hn3iuwofjkdi4widjwuy3na.crx3",
+          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/ac7kldzznoqpelvhlm22cvg6iw7q_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_mac_arm64_acwuvzzk4g3lgkvyjjsbyjwqnxoq.crx3",
           "mirrorUrls": [
-            "https://www.google.com/dl/release2/chrome_component/ad7g6ajom265ggbvq6rrx4nb22ra_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_mac_arm64_ad6r3hn3iuwofjkdi4widjwuy3na.crx3"
+            "https://www.google.com/dl/release2/chrome_component/ac7kldzznoqpelvhlm22cvg6iw7q_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_mac_arm64_acwuvzzk4g3lgkvyjjsbyjwqnxoq.crx3"
           ],
-          "filesize": 20189918,
-          "hashValue": "5ade9a40703c835026d26dc660cf5793a03e275229438f7ff7154116a33ce595d1ee99a79f6f0579231bdc9f51e72363d35c958f02ace911a7c47fb260402560"
+          "filesize": 20423379,
+          "hashValue": "6f319883d2eeaabc8df1c0d682eb2b165f6bdadc22f8c5dbe5f4d5a6b22e35a4f7976eb94c4b31d2a0ab899fcb32123d15893b47138c0ddd33a395b04da05914"
         },
         "Darwin_x86_64-gcc3": {
           "alias": "Darwin_x86_64-gcc3-u-i386-x86_64"
         },
         "Darwin_x86_64-gcc3-u-i386-x86_64": {
-          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/ac46odufbnrvxcdn4wur6s2o4kjq_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_mac64_acvag6gyzleiuk2y32voj4ebbeja.crx3",
+          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/acvkbk6uzwaavliybbd7ayuuab5a_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_mac64_adtfufbhdjipnvjmwyq2z6yuhyaa.crx3",
           "mirrorUrls": [
-            "https://www.google.com/dl/release2/chrome_component/ac46odufbnrvxcdn4wur6s2o4kjq_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_mac64_acvag6gyzleiuk2y32voj4ebbeja.crx3"
+            "https://www.google.com/dl/release2/chrome_component/acvkbk6uzwaavliybbd7ayuuab5a_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_mac64_adtfufbhdjipnvjmwyq2z6yuhyaa.crx3"
           ],
-          "filesize": 22572251,
-          "hashValue": "46811cd377e161a6720ac51687a170430651157b5d3b5296f09904f3d3420ac148c4beb59533f5ebde5a50a941f48b477b624fda6c67d0dc2264d7e4d6af3e47"
+          "filesize": 22867646,
+          "hashValue": "b16a01aed3b19ab648efc477d1c712454a39a2b5226d09a1e166e8cba4def6d6eeed5107cd80c577a4f79dec43cce6b4cd45bcc48ce026cf0f82b14b3d32ecca"
         },
         "Linux_x86_64-gcc3": {
-          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/bywu6vkyg6gmcthxdaetzfkptm_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_linux_aduyhcxcs7a2znuo6ss5tffn5jpa.crx3",
+          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/acqexsh26ysyu3zxeotqtsp63idq_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_linux64_ad7kyx4q7wx7xknykmkbonbbmnwq.crx3",
           "mirrorUrls": [
-            "https://www.google.com/dl/release2/chrome_component/bywu6vkyg6gmcthxdaetzfkptm_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_linux_aduyhcxcs7a2znuo6ss5tffn5jpa.crx3"
+            "https://www.google.com/dl/release2/chrome_component/acqexsh26ysyu3zxeotqtsp63idq_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_linux64_ad7kyx4q7wx7xknykmkbonbbmnwq.crx3"
           ],
-          "filesize": 21685984,
-          "hashValue": "e578b2eed7ac887e13efd559e917e488ece43beb49db40a133c18f57bf9f6ed5da5434534e70f7fc3cf4eefdb9c766164b6559c513e1738e899d84d7943d577a"
+          "filesize": 21970001,
+          "hashValue": "4bc44f7e2010ff1dec995ab496702467ec02f45db2f4d977822be89e40043ee0dd75f3d777539ecf243617029bbe5b41a1171d293b2fa615ffeacf5cd7112f29"
         },
         "Linux_x86_64-gcc3-asan": {
           "alias": "Linux_x86_64-gcc3"
         },
         "WINNT_aarch64-msvc-aarch64": {
-          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/mubkn7mn6cy5fk3644kmxgyueu_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win_arm64_fyramdylknoqrjqvzyqaipdjki.crx3",
+          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/dwkibvowtnp3ccsioc42ee5t4a_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_win_arm64_adrud4pksl7zkkzbg67adpiiepba.crx3",
           "mirrorUrls": [
-            "https://www.google.com/dl/release2/chrome_component/mubkn7mn6cy5fk3644kmxgyueu_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win_arm64_fyramdylknoqrjqvzyqaipdjki.crx3"
+            "https://www.google.com/dl/release2/chrome_component/dwkibvowtnp3ccsioc42ee5t4a_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_win_arm64_adrud4pksl7zkkzbg67adpiiepba.crx3"
           ],
-          "filesize": 20015668,
-          "hashValue": "dfa88e631ea2058fb8cbcc238a1750369002586da532fe321322edf1585174a2d0cd38381180b326f2685cb615fd551d6b0de7ba5bae4a48fccf72afa1c8b5c1"
+          "filesize": 20270133,
+          "hashValue": "ed45700ad1068c5e28468517460e79c06da24fd2d7cbb63750e925b1d527eb371c19af0e3141b9cd19e34949f0d6c27726bac482c47708b360d2df1cdb7d472a"
         },
         "WINNT_x86-msvc": {
-          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/d3hxhzhfhhog7gjt44k3wn7fby_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win32_kledswiwyoquaizrfcfmnaj3oa.crx3",
+          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/adkwczgybxfk7ozk3sjrnxqmaa6q_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_win32_fguc35glkzwtyw6k4zjbwl36zq.crx3",
           "mirrorUrls": [
-            "https://www.google.com/dl/release2/chrome_component/d3hxhzhfhhog7gjt44k3wn7fby_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win32_kledswiwyoquaizrfcfmnaj3oa.crx3"
+            "https://www.google.com/dl/release2/chrome_component/adkwczgybxfk7ozk3sjrnxqmaa6q_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_win32_fguc35glkzwtyw6k4zjbwl36zq.crx3"
           ],
-          "filesize": 21540366,
-          "hashValue": "eff1acf3cabd1cb5971a050bd8e72f8e6a3b7344b835901d1f8e5df947785a6420efd7e7f0aea17d9467bb1c2beaabedea8b7c7e6d300db644c61093734b0bb6"
+          "filesize": 21861906,
+          "hashValue": "e9289fe90d86ddc72b6b5b57cb315a1e8d7dd418ebf9e1e37d48b8c6587b8d37682adb8719d80559f14516ff19f1f2c77c764555d21b3a25372f18adedc18a8c"
         },
         "WINNT_x86-msvc-x64": {
           "alias": "WINNT_x86-msvc"
@@ -58,12 +58,12 @@
           "alias": "WINNT_x86-msvc"
         },
         "WINNT_x86_64-msvc": {
-          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/acddvywyhts76ngei465tcu7besa_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win64_adoev3c5ys462nbqhaead57zg2pa.crx3",
+          "fileUrl": "https://edgedl.me.gvt1.com/edgedl/release2/chrome_component/acomjnhpjyodpde7g3m33u5nkqoa_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_win64_a5xadnsxzavp7cn4ay5kc6gq6u.crx3",
           "mirrorUrls": [
-            "https://www.google.com/dl/release2/chrome_component/acddvywyhts76ngei465tcu7besa_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win64_adoev3c5ys462nbqhaead57zg2pa.crx3"
+            "https://www.google.com/dl/release2/chrome_component/acomjnhpjyodpde7g3m33u5nkqoa_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_win64_a5xadnsxzavp7cn4ay5kc6gq6u.crx3"
           ],
-          "filesize": 22692383,
-          "hashValue": "b763712aa4bd9819b7972a40216c08fd32338b14fab7ce4b166e39ce441ad62678bf0e1f25da436ffdb56ff1b1a21e3dbbaf47c0f5918c252e70656f5d0307ac"
+          "filesize": 22976546,
+          "hashValue": "ae8624becb7619dd9602f416203c54096ae0e23c4c2574c8069e633f9682b0b9bf5bbb95e94fca6610b9581746d5ed648fd41c47d762b174bd5d632937df6689"
         },
         "WINNT_x86_64-msvc-x64": {
           "alias": "WINNT_x86_64-msvc"
@@ -72,7 +72,7 @@
           "alias": "WINNT_x86_64-msvc"
         }
       },
-      "version": "4.10.3050.0"
+      "version": "4.10.3112.0"
     }
   }
 }

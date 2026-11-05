@@ -16,7 +16,6 @@
 #include "mozilla/Queue.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/WeakPtr.h"
 
 #ifdef FUZZING_SNAPSHOT
 #  include "mozilla/fuzzing/IPCFuzzController.h"
@@ -58,8 +57,9 @@ class NodeChannel final : public IPC::Channel::Listener {
 
     virtual void OnEventMessage(const NodeName& aFromNode,
                                 UniquePtr<IPC::Message> aMessage) = 0;
-    virtual void OnBroadcast(const NodeName& aFromNode,
-                             UniquePtr<IPC::Message> aMessage) = 0;
+    virtual void OnDeadProxy(const NodeName& aFromNode,
+                             const NodeName& aProxyNode,
+                             const PortName& aProxyPort) = 0;
     virtual void OnIntroduce(const NodeName& aFromNode,
                              Introduction aIntroduction) = 0;
     virtual void OnRequestIntroduction(const NodeName& aFromNode,
@@ -79,9 +79,9 @@ class NodeChannel final : public IPC::Channel::Listener {
   // thread.
   void SendEventMessage(UniquePtr<IPC::Message> aMessage);
 
-  // Ask the broker process to broadcast this message to every node. May be
-  // called from any thread.
-  void Broadcast(UniquePtr<IPC::Message> aMessage);
+  // Notify this peer that the given proxy has become dead due to unexpected
+  // node loss. May be called from any thread.
+  void DeadProxy(const NodeName& aProxyNode, const PortName& aProxyPort);
 
   // Ask the broker process to introduce this node to another node with the
   // given name. May be called from any thread.
@@ -168,7 +168,7 @@ class NodeChannel final : public IPC::Channel::Listener {
 #endif
 
   // WARNING: Must only be accessed on the IO thread.
-  WeakPtr<mozilla::ipc::GeckoChildProcessHost> mChildProcessHost;
+  ThreadSafeWeakPtr<mozilla::ipc::GeckoChildProcessHost> mChildProcessHost;
 };
 
 }  // namespace mozilla::ipc

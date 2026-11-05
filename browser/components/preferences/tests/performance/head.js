@@ -6,4 +6,4 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-const PERF_PREF_PANE = SRD_PREF_VALUE ? "paneTabsBrowsing" : "paneGeneral";
+const PERF_PREF_PANE = "paneTabsBrowsing";

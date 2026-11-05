@@ -250,7 +250,7 @@ this section.
 ### How embedders run javascript
 
 The only supported way of accessing a web page for embedders is to [write a
-built-in WebExtension](https://firefox-source-docs.mozilla.org/mobile/android/geckoview/consumer/web-extensions.html)
+built-in WebExtension](/mobile/android/geckoview/consumer/web-extensions.md)
 and install it. This was done intentionally to avoid having to rewrite a lot of
 the Web-Content-related APIs that the WebExtension API offers.
 

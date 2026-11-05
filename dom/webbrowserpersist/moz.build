@@ -45,3 +45,12 @@ LOCAL_INCLUDES += [
     "/dom/base",
     "/dom/html",
 ]
+
+SOURCE_HEADERS += [
+    "nsWebBrowserPersist.h",
+    "WebBrowserPersistRemoteDocument.h",
+    "WebBrowserPersistResourcesChild.h",
+    "WebBrowserPersistResourcesParent.h",
+    "WebBrowserPersistSerializeChild.h",
+    "WebBrowserPersistSerializeParent.h",
+]

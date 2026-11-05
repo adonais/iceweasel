@@ -92,3 +92,15 @@ LOCAL_INCLUDES += [
 RESOURCE_FILES += [
     "svg.css",
 ]
+
+SOURCE_HEADERS += [
+    "AutoReferenceChainGuard.h",
+    "CSSFilterInstance.h",
+    "SVGFilterFrame.h",
+    "SVGGFrame.h",
+    "SVGInnerSVGFrame.h",
+    "SVGMarkerFrame.h",
+    "SVGPatternFrame.h",
+    "SVGSymbolFrame.h",
+    "SVGViewportFrame.h",
+]

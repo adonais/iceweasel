@@ -342,13 +342,8 @@ add_task(async function run_test() {
   ps.setCharPref("ReadPref.char", "hello");
 
   // save those prefs in a file
-  let savePrefFile = do_get_cwd();
-  savePrefFile.append("data");
+  let savePrefFile = do_get_tempdir();
   savePrefFile.append("savePref.js");
-
-  if (savePrefFile.exists()) {
-    savePrefFile.remove(false);
-  }
   savePrefFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0o666);
   ps.savePrefFile(savePrefFile);
   ps.resetPrefs();

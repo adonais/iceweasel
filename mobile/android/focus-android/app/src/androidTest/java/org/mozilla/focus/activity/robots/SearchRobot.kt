@@ -6,6 +6,7 @@ package org.mozilla.focus.activity.robots
 
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.mozilla.focus.R
@@ -16,6 +17,7 @@ import org.mozilla.focus.helpers.TestHelper.packageName
 import org.mozilla.focus.helpers.TestHelper.pressEnterKey
 import org.mozilla.focus.helpers.TestHelper.waitingTime
 import org.mozilla.focus.idlingResources.SessionLoadedIdlingResource
+import org.mozilla.focus.topsites.TOP_SITES_ROW_TEST_TAG
 
 class SearchRobot {
 
@@ -77,6 +79,16 @@ class SearchRobot {
 
     fun verifySearchSuggestionsContain(title: String) {
         assertTrue(suggestionsList.getChild(UiSelector().textContains(title)).waitForExists(waitingTime))
+    }
+
+    fun verifyPageShortcutsAreCentered() {
+        val shortcutsRow = suggestionsList.getChild(UiSelector().resourceId(TOP_SITES_ROW_TEST_TAG))
+        assertTrue(shortcutsRow.waitForExists(waitingTime))
+        assertEquals(
+            suggestionsList.visibleBounds.exactCenterX(),
+            shortcutsRow.visibleBounds.exactCenterX(),
+            1f,
+        )
     }
 
     class Transition {

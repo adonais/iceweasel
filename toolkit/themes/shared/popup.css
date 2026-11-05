@@ -69,9 +69,6 @@
     padding: var(--panel-padding);
     color: var(--panel-text-color);
     background: var(--panel-background-color);
-    /* The values chosen for the border radius should match OS values, not necessarily
-     * design system values. */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-radius: var(--panel-border-radius);
     border: 1px solid var(--panel-border-color);
     width: var(--panel-width);

@@ -596,20 +596,30 @@ async function runTestBounce(options = {}) {
     targetURL
   );
 
+  let bounceURL = getBounceURL({
+    bounceType,
+    targetURL,
+    setState,
+    setStateSameSiteFrame,
+    setStateCrossSiteFrame,
+    setStateInWebWorker,
+    setStateInNestedWebWorker,
+    setCookieViaImage,
+  });
+
+  // BTP sets the record's final host on the top level STATE_STOP in the parent,
+  // which can arrive after the content load event. If the tab is closed before
+  // that, the destination site is classified as a bounce tracker too.
+  let targetURLStoppedPromise;
+  if (closeTabAfterBounce) {
+    targetURLStoppedPromise = BrowserTestUtils.browserStopped(
+      browser,
+      bounceURL.href
+    );
+  }
+
   // Navigate through the bounce chain.
-  await navigateLinkClick(
-    browser,
-    getBounceURL({
-      bounceType,
-      targetURL,
-      setState,
-      setStateSameSiteFrame,
-      setStateCrossSiteFrame,
-      setStateInWebWorker,
-      setStateInNestedWebWorker,
-      setCookieViaImage,
-    })
-  );
+  await navigateLinkClick(browser, bounceURL);
 
   await targetURLLoadedPromise;
 
@@ -619,6 +629,8 @@ async function runTestBounce(options = {}) {
   // In this case the extended navigation end is triggered by the tab close
   // itself.
   if (closeTabAfterBounce) {
+    await targetURLStoppedPromise;
+
     // This either closes the normal or private browsing tab depending on
     // 'usePrivateWindow'.
     BrowserTestUtils.removeTab(tab);

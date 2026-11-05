@@ -326,7 +326,7 @@ remain for this commit:
   # commit the updated moz.build files with the appropriate commit msg
   bash {script_dir}/commit-build-file-changes.sh
   # do a (hopefully) quick test build
-  ./mach build && ./mach build recurse_gtest && echo "Successful build"
+  ./mach build && ./mach build gtest && echo "Successful build"
 
 After a successful build, you may resume this script:
     bash {script_dir}/loop-ff.sh
@@ -361,7 +361,7 @@ Then complete these steps:
   # commit the updated moz.build files with the appropriate commit msg
   bash {script_dir}/commit-build-file-changes.sh
   # do a (hopefully) quick test build
-  ./mach build && ./mach build recurse_gtest && echo "Successful build"
+  ./mach build && ./mach build gtest && echo "Successful build"
 
 After a successful build, you may resume this script:
     bash {script_dir}/loop-ff.sh
@@ -403,14 +403,14 @@ The test build has failed.  Most likely this is due to an upstream api
 change that must be reflected in Mozilla code outside of the
 third_party/libwebrtc directory. After fixing the build, you may resume
 running this script with the following command:
-    ./mach build && ./mach build recurse_gtest && \\
+    ./mach build && ./mach build gtest && \\
     bash {script_dir}/loop-ff.sh
 """
         )
         echo_log("Test build - ./mach build")
         run_command(["./mach", "build"])
-        echo_log("Test build - ./mach build recurse_gtest")
-        run_command(["./mach", "build", "recurse_gtest"])
+        echo_log("Test build - ./mach build gtest")
+        run_command(["./mach", "build", "gtest"])
         error_help.set_help(None)
 
         # If we've committed moz.build changes, spin up try builds.

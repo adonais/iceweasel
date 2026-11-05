@@ -29,3 +29,9 @@ NoVisibilityFlags()
 # Don't use STL wrappers; this isn't Gecko code
 DisableStlWrapping()
 NO_PGO = True
+
+SOURCE_HEADERS += [
+    "cdm-test-decryptor.h",
+    "cdm-test-output-protection.h",
+    "cdm-test-storage.h",
+]

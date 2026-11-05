@@ -9,14 +9,14 @@ const { RootMessageHandler } = ChromeUtils.importESModule(
 
 add_task(async function test_tab_is_removed() {
   const tab = await addTab("https://example.com/document-builder.sjs?html=tab");
-  const sessionId = "realms";
+  const internalSessionId = "realms";
   const browsingContext = tab.linkedBrowser.browsingContext;
   const contextDescriptor = {
     type: ContextDescriptorType.TopBrowsingContext,
     id: browsingContext.browserId,
   };
 
-  const rootMessageHandler = createRootMessageHandler(sessionId);
+  const rootMessageHandler = createRootMessageHandler(internalSessionId);
 
   const onRealmCreated = rootMessageHandler.once("realm-created");
 
@@ -51,14 +51,14 @@ add_task(async function test_tab_is_removed() {
 
 add_task(async function test_same_origin_navigation() {
   const tab = await addTab("https://example.com/document-builder.sjs?html=tab");
-  const sessionId = "realms";
+  const internalSessionId = "realms";
   const browsingContext = tab.linkedBrowser.browsingContext;
   const contextDescriptor = {
     type: ContextDescriptorType.TopBrowsingContext,
     id: browsingContext.browserId,
   };
 
-  const rootMessageHandler = createRootMessageHandler(sessionId);
+  const rootMessageHandler = createRootMessageHandler(internalSessionId);
 
   const onRealmCreated = rootMessageHandler.once("realm-created");
 
@@ -102,14 +102,14 @@ add_task(async function test_same_origin_navigation() {
 
 add_task(async function test_cross_origin_navigation() {
   const tab = await addTab("https://example.com/document-builder.sjs?html=tab");
-  const sessionId = "realms";
+  const internalSessionId = "realms";
   const browsingContext = tab.linkedBrowser.browsingContext;
   const contextDescriptor = {
     type: ContextDescriptorType.TopBrowsingContext,
     id: browsingContext.browserId,
   };
 
-  const rootMessageHandler = createRootMessageHandler(sessionId);
+  const rootMessageHandler = createRootMessageHandler(internalSessionId);
 
   const onRealmCreated = rootMessageHandler.once("realm-created");
 

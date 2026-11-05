@@ -21,6 +21,7 @@
 #include "libANGLE/Debug.h"
 #include "libANGLE/Error.h"
 #include "libANGLE/FramebufferAttachment.h"
+#include "libANGLE/Image.h"
 #include "libANGLE/RefCountObject.h"
 #include "libANGLE/formatutils.h"
 #include "libANGLE/renderer/SurfaceImpl.h"
@@ -52,6 +53,12 @@ struct SurfaceState final : private angle::NonCopyable
 
     bool isRobustResourceInitEnabled() const;
     bool hasProtectedContent() const;
+
+    gl::OwnerImageIndex toOwnerIndex(const gl::ImageIndex &index) const
+    {
+        // Surfaces cannot be an EGL image sibling, so the translation is no-op.
+        return ImageSourceAttributes{}.toOwnerIndex(index);
+    }
 
     SurfaceID id;
 

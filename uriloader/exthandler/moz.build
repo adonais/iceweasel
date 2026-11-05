@@ -115,6 +115,13 @@ IPDL_SOURCES += [
     "PHandlerService.ipdl",
 ]
 
+SOURCE_HEADERS += [
+    "HandlerServiceChild.h",
+    "HandlerServiceParent.h",
+    "nsExternalProtocolHandler.h",
+    "nsMIMEInfoImpl.h",
+]
+
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"

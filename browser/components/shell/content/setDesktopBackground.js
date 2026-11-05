@@ -11,12 +11,11 @@ var gSetBackground = {
   _screenHeight: 0,
   _image: null,
   _canvas: null,
-  _imageName: null,
 
   get _shell() {
-    return Cc["@mozilla.org/browser/shell-service;1"].getService(
-      Ci.nsIShellService
-    );
+    return ChromeUtils.importESModule(
+      "moz-src:///browser/components/shell/ShellService.sys.mjs"
+    ).ShellService;
   },
 
   load() {
@@ -86,9 +85,8 @@ var gSetBackground = {
     );
   },
 
-  init(aImage, aImageName) {
+  init(aImage) {
     this._image = aImage;
-    this._imageName = aImageName;
 
     // set the size of the coordinate space
     this._canvas.width = this._canvas.clientWidth;
@@ -143,8 +141,9 @@ var gSetBackground = {
     }
     this._shell.setDesktopBackground(
       this._image,
-      Ci.nsIShellService["BACKGROUND_" + this._position],
-      this._imageName
+      this._image.naturalWidth,
+      this._image.naturalHeight,
+      Ci.nsIShellService["BACKGROUND_" + this._position]
     );
   },
 

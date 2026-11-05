@@ -429,6 +429,51 @@ void HashTrustParams(EndEntityOrCA endEntityOrCA, const CertPolicyId& policy,
   sha512Hash.emplace(std::move(result));
 }
 
+void GetCertTrustFromNSS(EndEntityOrCA endEntityOrCA,
+                         const CertPolicyId& policy, SECTrustType trustType,
+                         Input cert, /*out*/ TrustLevel& trustLevel) {
+  trustLevel = TrustLevel::InheritsTrust;
+
+  // NB: CERT_GetDERCertTrust returns SECFailure if no trust records were
+  // found, in which case the assumption is that the certificate inherits its
+  // trust.
+  SECItem certItem = UnsafeMapInputToSECItem(cert);
+  CERTCertTrust trust = {0, 0, 0};
+  if (CERT_GetDERCertTrust(&certItem, &trust) != SECSuccess) {
+    return;
+  }
+
+  uint32_t flags = SEC_GET_TRUST_FLAGS(&trust, trustType);
+
+  // For DISTRUST, we use the CERTDB_TRUSTED or CERTDB_TRUSTED_CA bit,
+  // because we can have active distrust for either type of cert. Note
+  // that CERTDB_TERMINAL_RECORD means "stop trying to inherit trust" so
+  // if the relevant trust bit isn't set then that means the cert must
+  // be considered distrusted.
+  uint32_t relevantTrustBit = endEntityOrCA == EndEntityOrCA::MustBeCA
+                                  ? CERTDB_TRUSTED_CA
+                                  : CERTDB_TRUSTED;
+  if (((flags & (relevantTrustBit | CERTDB_TERMINAL_RECORD))) ==
+      CERTDB_TERMINAL_RECORD) {
+    trustLevel = TrustLevel::ActivelyDistrusted;
+    return;
+  }
+
+  // For TRUST, we use the CERTDB_TRUSTED_CA bit.
+  if (flags & CERTDB_TRUSTED_CA) {
+    if (policy.IsAnyPolicy()) {
+      trustLevel = TrustLevel::TrustAnchor;
+      return;
+    }
+
+    nsTArray<uint8_t> certBytes(cert.UnsafeGetData(), cert.GetLength());
+    if (CertIsAuthoritativeForEVPolicy(certBytes, policy)) {
+      trustLevel = TrustLevel::TrustAnchor;
+      return;
+    }
+  }
+}
+
 Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
                                           const CertPolicyId& policy,
                                           Input candidateCertDER,
@@ -499,95 +544,14 @@ Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
     return Success;
   }
 
-  // Synchronously dispatch a task to the socket thread to construct a
-  // CERTCertificate and get its trust from NSS. This involves querying NSS
-  // structures and databases, so it should be done on the socket thread.
-  Result result = Result::FATAL_ERROR_LIBRARY_FAILURE;
-  RefPtr<Runnable> getTrustTask =
-      NS_NewRunnableFunction("NSSCertDBTrustDomain::GetCertTrust", [&]() {
-        if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-          result = Result::FATAL_ERROR_LIBRARY_FAILURE;
-          return;
-        }
-        // This would be cleaner and more efficient if we could get the trust
-        // information without constructing a CERTCertificate here, but NSS
-        // doesn't expose it in any other easy-to-use fashion. The use of
-        // CERT_NewTempCertificate to get a CERTCertificate shouldn't be a
-        // performance problem for certificates already known to NSS because NSS
-        // will just find the existing CERTCertificate in its in-memory cache
-        // and return it. For certificates not already in NSS (namely
-        // third-party roots and intermediates), we want to avoid calling
-        // CERT_NewTempCertificate repeatedly, so we've already checked if the
-        // candidate certificate is a third-party certificate, above.
-        SECItem candidateCertDERSECItem =
-            UnsafeMapInputToSECItem(candidateCertDER);
+  GetCertTrustFromNSS(endEntityOrCA, policy, mCertDBTrustType, candidateCertDER,
+                      trustLevel);
 
-        UniqueCERTCertificate candidateCert(CERT_NewTempCertificate(
-            CERT_GetDefaultCertDB(), &candidateCertDERSECItem, nullptr, false,
-            true));
-        if (!candidateCert) {
-          result = MapPRErrorCodeToResult(PR_GetError());
-          return;
-        }
-        // NB: CERT_GetCertTrust seems to be abusing SECStatus as a boolean,
-        // where SECSuccess means that there is a trust record and SECFailure
-        // means there is not a trust record. I looked at NSS's internal uses of
-        // CERT_GetCertTrust, and all that code uses the result as a boolean
-        // meaning "We have a trust record."
-
-        CERTCertTrust trust;
-        if (CERT_GetCertTrust(candidateCert.get(), &trust) == SECSuccess) {
-          uint32_t flags = SEC_GET_TRUST_FLAGS(&trust, mCertDBTrustType);
-
-          // For DISTRUST, we use the CERTDB_TRUSTED or CERTDB_TRUSTED_CA bit,
-          // because we can have active distrust for either type of cert. Note
-          // that CERTDB_TERMINAL_RECORD means "stop trying to inherit trust" so
-          // if the relevant trust bit isn't set then that means the cert must
-          // be considered distrusted.
-          uint32_t relevantTrustBit = endEntityOrCA == EndEntityOrCA::MustBeCA
-                                          ? CERTDB_TRUSTED_CA
-                                          : CERTDB_TRUSTED;
-          if (((flags & (relevantTrustBit | CERTDB_TERMINAL_RECORD))) ==
-              CERTDB_TERMINAL_RECORD) {
-            trustLevel = TrustLevel::ActivelyDistrusted;
-            result = Success;
-            return;
-          }
-
-          // For TRUST, we use the CERTDB_TRUSTED_CA bit.
-          if (flags & CERTDB_TRUSTED_CA) {
-            if (policy.IsAnyPolicy()) {
-              trustLevel = TrustLevel::TrustAnchor;
-              result = Success;
-              return;
-            }
-
-            nsTArray<uint8_t> certBytes(candidateCert->derCert.data,
-                                        candidateCert->derCert.len);
-            if (CertIsAuthoritativeForEVPolicy(certBytes, policy)) {
-              trustLevel = TrustLevel::TrustAnchor;
-              result = Success;
-              return;
-            }
-          }
-        }
-        trustLevel = TrustLevel::InheritsTrust;
-        result = Success;
-      });
-  nsCOMPtr<nsIEventTarget> socketThread(
-      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID));
-  if (!socketThread) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-  nsresult rv = SyncRunnable::DispatchToThread(socketThread, getTrustTask);
-  if (NS_FAILED(rv)) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-  if (result == Success && sha512Hash.isSome()) {
+  if (sha512Hash.isSome()) {
     uint8_t trust = static_cast<uint8_t>(trustLevel);
     trust_cache_insert(mTrustCache, sha512Hash.ref().Elements(), trust);
   }
-  return result;
+  return Success;
 }
 
 Result NSSCertDBTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
@@ -1550,7 +1514,7 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
   // If this is the utility process, the pref to enable the utility process
   // better be true (or this is a gtest).
   MOZ_ASSERT(!XRE_IsUtilityProcess() ||
-             StaticPrefs::security_utility_pkcs11_module_process_enabled() ||
+             PKCS11ModuleDB::UtilityProcessEnabled() ||
              PR_GetEnv("MOZ_RUN_GTEST"));
 
   // The NSS_INIT_NOROOTINIT flag turns off the loading of the root certs
@@ -1566,8 +1530,7 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
   // process and the PKCS#11 utility process is enabled, don't load the NSS
   // PKCS#11 module DB.
   bool isParentProcessButLoadingModulesInUtilityProcess =
-      XRE_IsParentProcess() &&
-      StaticPrefs::security_utility_pkcs11_module_process_enabled();
+      XRE_IsParentProcess() && PKCS11ModuleDB::UtilityProcessEnabled();
   if (pkcs11DbConfig == PKCS11DBConfig::DoNotLoadModules ||
       isParentProcessButLoadingModulesInUtilityProcess) {
     flags |= NSS_INIT_NOMODDB;
@@ -1606,8 +1569,7 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
   // Collect third party PKCS#11 module telemetry if this is the parent process
   // and the utility process is not enabled or if this is the utility process.
   bool isParentProcessAndNotLoadingModulesInUtilityProcess =
-      XRE_IsParentProcess() &&
-      !StaticPrefs::security_utility_pkcs11_module_process_enabled();
+      XRE_IsParentProcess() && !PKCS11ModuleDB::UtilityProcessEnabled();
   if (isParentProcessAndNotLoadingModulesInUtilityProcess ||
       XRE_IsUtilityProcess()) {
     CollectThirdPartyPKCS11ModuleTelemetry(/*aIsInitialization=*/true);

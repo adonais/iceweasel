@@ -412,6 +412,15 @@ class CodeGeneratorShared : public LElementVisitor {
     return deoptLabel_.used() || deoptJumpPending_;
   }
 
+  // Pushes the snapshot offset and jumps to deoptLabel_.
+  void emitBailoutOOL(LSnapshot* snapshot);
+
+// MIPS64, Loong64, and RISC-V64 have no flags register and can't implement
+// this with a condition code.
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || \
+    defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+  void bailoutIf(Assembler::Condition condition, LSnapshot* snapshot);
+#endif
   void bailoutFrom(Label* label, LSnapshot* snapshot);
   void bailout(LSnapshot* snapshot);
 

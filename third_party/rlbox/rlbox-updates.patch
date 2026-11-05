@@ -1,0 +1,495 @@
+diff --git a/include/rlbox.hpp b/include/rlbox.hpp
+index 31f9038..7200c8f 100644
+--- a/include/rlbox.hpp
++++ b/include/rlbox.hpp
+@@ -65,7 +65,7 @@ public:
+   inline auto unverified_safe_because(const char (&reason)[N]) const
+   {
+     RLBOX_UNUSED(reason);
+-    static_assert(!std::is_pointer_v<T>,
++    static_assert(!std::is_pointer_v<std::remove_all_extents_t<T>>,
+                   "unverified_safe_because does not support pointers. Use "
+                   "unverified_safe_pointer_because.");
+     return UNSAFE_unverified();
+@@ -90,7 +90,8 @@ public:
+ 
+     auto ret = UNSAFE_unverified();
+     if (ret != nullptr) {
+-      size_t bytes = sizeof(T_Pointed) * count;
++      size_t bytes = detail::checked_multiply(
++        count, sizeof(T_Pointed), "Overflow in buffer size computation");
+       detail::check_sandbox_pointer_range_is_contained<T_Sbx>(ret, bytes);
+     }
+     return ret;
+@@ -380,17 +381,28 @@ public:
+     if constexpr (std::is_pointer_v<T>) {
+       auto ptr = this->impl().get_raw_value();
+ 
++      detail::dynamic_check(ptr, "Tried to index a null tainted pointer");
++
+       // increment the target by size of the data structure
+-      auto target =
+-        reinterpret_cast<uintptr_t>(ptr) + raw_rhs * sizeof(*this->impl());
+-      auto no_overflow = rlbox_sandbox<T_Sbx>::is_in_same_sandbox(
++      auto target = static_cast<uintptr_t>(reinterpret_cast<uintptr_t>(ptr) +
++                                           raw_rhs * sizeof(*this->impl()));
++      auto no_overflow_start = rlbox_sandbox<T_Sbx>::is_in_same_sandbox(
+         ptr, reinterpret_cast<const void*>(target));
+       detail::dynamic_check(
+-        no_overflow,
++        no_overflow_start,
+         "Pointer arithmetic overflowed a pointer beyond sandbox memory");
+ 
+       auto target_wrap = tainted<const T, T_Sbx>::internal_factory(
+         reinterpret_cast<const T>(target));
++
++      auto target_end = detail::checked_add(
++        target, sizeof(*target_wrap) - 1, "Pointer end calculation overflow");
++      auto no_overflow_end = rlbox_sandbox<T_Sbx>::is_in_same_sandbox(
++        ptr, reinterpret_cast<const void*>(target_end));
++      detail::dynamic_check(
++        no_overflow_end,
++        "Pointer arithmetic overflowed a pointer beyond sandbox memory");
++
+       return *target_wrap;
+     } else {
+       using T_Rhs_Unsigned = std::make_unsigned_t<decltype(raw_rhs)>;
+@@ -630,8 +642,9 @@ public:
+       "fundamental or enum types. For other types, call "
+       "copy_and_verify on each element --- a[i].copy_and_verify(...)");
+ 
++    tainted<T, T_Sbx> t_start = this->impl();
+     std::unique_ptr<T_CopyAndVerifyRangeEl[]> target =
+-      copy_and_verify_range_helper(count);
++      t_start.copy_and_verify_range_helper(count);
+     return verifier(std::move(target));
+   }
+ 
+@@ -654,7 +667,8 @@ public:
+ 
+     using T_VerifParam = detail::func_first_arg_t<T_Func>;
+ 
+-    auto start = impl().get_raw_value();
++    tainted<T, T_Sbx> t_start = this->impl();
++    auto start = t_start.get_raw_value();
+     if_constexpr_named(
+       cond1,
+       std::is_same_v<T_VerifParam, std::unique_ptr<char[]>> ||
+@@ -668,9 +682,10 @@ public:
+       // does not have a null and we try to copy all the memory out of the
+       // sandbox however, copy_and_verify_range ensures that we never copy
+       // memory outsider the range
+-      auto str_len = std::strlen(start) + 1;
++      auto str_len = detail::checked_add(
++        std::strlen(start), static_cast<size_t>(1), "String Size overflow");
+       std::unique_ptr<T_CopyAndVerifyRangeEl[]> target =
+-        copy_and_verify_range_helper(str_len);
++        t_start.copy_and_verify_range_helper(str_len);
+ 
+       // ensure the string has a trailing null
+       target[str_len - 1] = '\0';
+@@ -688,7 +703,8 @@ public:
+       // does not have a null and we try to copy all the memory out of the
+       // sandbox however, copy_and_verify_range ensures that we never copy
+       // memory outsider the range
+-      auto str_len = std::strlen(start) + 1;
++      auto str_len = detail::checked_add(
++        std::strlen(start), static_cast<size_t>(1), "String Size overflow");
+ 
+       const char* checked_start = (const char*)verify_range_helper(str_len);
+       if (checked_start == nullptr) {
+diff --git a/include/rlbox_conversion.hpp b/include/rlbox_conversion.hpp
+index 5eeb188..85701c5 100644
+--- a/include/rlbox_conversion.hpp
++++ b/include/rlbox_conversion.hpp
+@@ -35,14 +35,18 @@ inline constexpr void convert_type_fundamental(T_To& to,
+                                  detail::remove_cv_ref_t<T_From>>);
+     to = from;
+   }
++  else if_constexpr_named(cond4, std::is_same_v<T_To, bool>)
++  {
++    to = (from != 0);
++  }
+   else if_constexpr_named(
+-    cond4, is_floating_point_v<T_To> || is_floating_point_v<T_From>)
++    cond5, is_floating_point_v<T_To> || is_floating_point_v<T_From>)
+   {
+     static_assert(is_floating_point_v<T_To> && is_floating_point_v<T_From>);
+     // language coerces different float types
+     to = from;
+   }
+-  else if_constexpr_named(cond5, is_integral_v<T_To> || is_integral_v<T_From>)
++  else if_constexpr_named(cond6, is_integral_v<T_To> || is_integral_v<T_From>)
+   {
+     static_assert(is_integral_v<T_To> && is_integral_v<T_From>);
+ 
+@@ -52,40 +56,43 @@ inline constexpr void convert_type_fundamental(T_To& to,
+     // Some branches don't use the param
+     RLBOX_UNUSED(err_msg);
+ 
++    T_From fromCopy = from;
++
+     if constexpr (is_signed_v<T_To> == is_signed_v<T_From> &&
+                   sizeof(T_To) >= sizeof(T_From)) {
+       // Eg: int64_t from int32_t, uint64_t from uint32_t
+     } else if constexpr (is_unsigned_v<T_To> && is_unsigned_v<T_From>) {
+       // Eg: uint32_t from uint64_t
+-      dynamic_check(from <= numeric_limits<T_To>::max(), err_msg);
++      dynamic_check(fromCopy <= numeric_limits<T_To>::max(), err_msg);
+     } else if constexpr (is_signed_v<T_To> && is_signed_v<T_From>) {
+       // Eg: int32_t from int64_t
+-      dynamic_check(from >= numeric_limits<T_To>::min(), err_msg);
+-      dynamic_check(from <= numeric_limits<T_To>::max(), err_msg);
++      dynamic_check(fromCopy >= numeric_limits<T_To>::min(), err_msg);
++      dynamic_check(fromCopy <= numeric_limits<T_To>::max(), err_msg);
+     } else if constexpr (is_unsigned_v<T_To> && is_signed_v<T_From>) {
+       if constexpr (sizeof(T_To) < sizeof(T_From)) {
+         // Eg: uint32_t from int64_t
+-        dynamic_check(from >= 0, err_msg);
++        dynamic_check(fromCopy >= 0, err_msg);
+         auto to_max = numeric_limits<T_To>::max();
+-        dynamic_check(from <= static_cast<T_From>(to_max), err_msg);
++        dynamic_check(fromCopy <= static_cast<T_From>(to_max), err_msg);
+       } else {
+         // Eg: uint32_t from int32_t, uint64_t from int32_t
+-        dynamic_check(from >= 0, err_msg);
++        dynamic_check(fromCopy >= 0, err_msg);
+       }
+     } else if constexpr (is_signed_v<T_To> && is_unsigned_v<T_From>) {
+       if constexpr (sizeof(T_To) <= sizeof(T_From)) {
+         // Eg: int32_t from uint32_t, int32_t from uint64_t
+         auto to_max = numeric_limits<T_To>::max();
+-        dynamic_check(from <= static_cast<T_From>(to_max), err_msg);
++        dynamic_check(fromCopy <= static_cast<T_From>(to_max), err_msg);
+       } else {
+         // Eg: int64_t from uint32_t
+       }
+     }
+-    to = static_cast<T_To>(from);
++    to = static_cast<T_To>(fromCopy);
+   }
+   else
+   {
+-    constexpr auto unknownCase = !(cond1 || cond2 || cond3 || cond4 || cond5);
++    constexpr auto unknownCase =
++      !(cond1 || cond2 || cond3 || cond4 || cond5 || cond6);
+     rlbox_detail_static_fail_because(
+       unknownCase, "Unexpected case for convert_type_fundamental");
+   }
+diff --git a/include/rlbox_helpers.hpp b/include/rlbox_helpers.hpp
+index 1016545..8d74412 100644
+--- a/include/rlbox_helpers.hpp
++++ b/include/rlbox_helpers.hpp
+@@ -28,8 +28,8 @@ namespace detail {
+         RLBOX_CUSTOM_ABORT(msg);
+       #else
+         fprintf(stderr, "%s\n", msg);
+-        std::abort();
+       #endif
++      std::abort();
+     #endif
+   }
+     // clang-format on
+@@ -186,7 +186,7 @@ namespace detail {
+   }
+ 
+ /*
+-Make sure classes can access the private memmbers of tainted<T1> and
++Make sure classes can access the private members of tainted<T1> and
+ tainted_volatile. Ideally, this should be
+ 
+ template <typename U1>
+@@ -212,6 +212,31 @@ But C++ doesn't seem to allow the above
+                                                                                \
+   template<typename U1, typename U2>                                           \
+   friend class app_pointer;
++
++  template<typename T>
++  T checked_add(T aLhs, T aRhs, const char* aErrorMsg)
++  {
++    static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
++
++    T ret = aLhs + aRhs;
++    bool has_overflow = ret < aLhs;
++    detail::dynamic_check(!has_overflow, aErrorMsg);
++
++    return ret;
++  }
++
++  template<typename T>
++  T checked_multiply(T aLhs, T aRhs, const char* aErrorMsg)
++  {
++    static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
++
++    bool has_overflow =
++      (aLhs != 0) && (aRhs > (std::numeric_limits<T>::max() / aLhs));
++    detail::dynamic_check(!has_overflow, aErrorMsg);
++
++    T ret = aLhs * aRhs;
++    return ret;
++  }
+ }
+ 
+ }
+diff --git a/include/rlbox_range.hpp b/include/rlbox_range.hpp
+index 3e6d0d0..bff3a12 100644
+--- a/include/rlbox_range.hpp
++++ b/include/rlbox_range.hpp
+@@ -4,6 +4,7 @@
+ 
+ #include <cstdint>
+ 
++#include "rlbox_helpers.hpp"
+ #include "rlbox_types.hpp"
+ 
+ namespace rlbox::detail {
+@@ -16,7 +17,13 @@ inline void check_sandbox_pointer_range_is_contained(const void* ptr,
+   auto ptr_start_val = reinterpret_cast<uintptr_t>(ptr);
+   detail::dynamic_check(ptr_start_val,
+                         "Performing memory operation on a null pointer");
+-  auto ptr_end_val = ptr_start_val + size - 1;
++  // If size is 0, we'll just check for size of 1
++  if (size == 0) {
++    size = 1;
++  }
++  auto ptr_end_val = checked_add(static_cast<uintptr_t>(ptr_start_val),
++                                 (size - 1),
++                                 "Ptr end computation overflow");
+ 
+   auto ptr_start = reinterpret_cast<void*>(ptr_start_val);
+   auto ptr_end = reinterpret_cast<void*>(ptr_end_val);
+diff --git a/include/rlbox_sandbox.hpp b/include/rlbox_sandbox.hpp
+index 76e65ca..fdc620d 100644
+--- a/include/rlbox_sandbox.hpp
++++ b/include/rlbox_sandbox.hpp
+@@ -251,7 +251,7 @@ private:
+       int64_t ns = duration_cast<nanoseconds>(exit_time - enter_time).count();
+       {
+ #  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
+-        RLBOX_ACQUIRE_UNIQUE_GUARD(transition_times_lock);
++        RLBOX_ACQUIRE_UNIQUE_GUARD(lock, transition_times_lock);
+ #  endif
+         sandbox.transition_times.push_back(
+           rlbox_transition_timing{ rlbox_transition::CALLBACK,
+@@ -349,30 +349,6 @@ private:
+     return this_ptr->impl_create_sandbox(std::forward<T_Args>(args)...);
+   }
+ 
+-  template<typename T>
+-  T checked_add(T aLhs, T aRhs, const char* aErrorMsg)
+-  {
+-    static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
+-
+-    T ret = aLhs + aRhs;
+-    bool has_overflow = ret < aLhs;
+-    detail::dynamic_check(!has_overflow, aErrorMsg);
+-
+-    return ret;
+-  }
+-
+-  template<typename T>
+-  T checked_multiply(T aLhs, T aRhs, const char* aErrorMsg)
+-  {
+-    static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
+-
+-    T ret = aLhs * aRhs;
+-    bool has_overflow = (aLhs != 0) && ((ret / aLhs) != aRhs);
+-    detail::dynamic_check(!has_overflow, aErrorMsg);
+-
+-    return ret;
+-  }
+-
+ public:
+   /**
+    * @brief Unused member that allows the calling code to save data in a
+@@ -565,7 +541,7 @@ public:
+                                          std::numeric_limits<uint32_t>::max(),
+                                        "Tried to allocate an object over 4GB.");
+     }
+-    const size_t total_size = checked_multiply(
++    const size_t total_size = detail::checked_multiply(
+       static_cast<size_t>(count), sizeof(T), "Malloc object size too large");
+     if constexpr (sizeof(size_t) == 4) {
+       // On a 32-bit platform, we need to make sure that total_size is not >=4GB
+@@ -587,9 +563,10 @@ public:
+     detail::dynamic_check(is_pointer_in_sandbox_memory(ptr),
+                           "Malloc returned pointer outside the sandbox memory");
+ 
+-    auto ptr_end = checked_add(reinterpret_cast<uintptr_t>(ptr),
+-                               reinterpret_cast<uintptr_t>(total_size - 1),
+-                               "Malloc object end too large");
++    auto ptr_end =
++      detail::checked_add(reinterpret_cast<uintptr_t>(ptr),
++                          reinterpret_cast<uintptr_t>(total_size - 1),
++                          "Malloc object end too large");
+     detail::dynamic_check(
+       is_pointer_in_sandbox_memory(reinterpret_cast<const char*>(ptr_end)),
+       "Malloc returned a pointer whose range goes beyond sandbox memory");
+@@ -787,7 +764,7 @@ public:
+       int64_t ns = duration_cast<nanoseconds>(exit_time - enter_time).count();
+       {
+ #  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
+-        RLBOX_ACQUIRE_UNIQUE_GUARD(transition_times_lock);
++        RLBOX_ACQUIRE_UNIQUE_GUARD(lock, transition_times_lock);
+ #  endif
+         transition_times.push_back(rlbox_transition_timing{
+           rlbox_transition::INVOKE, func_name, func_ptr, ns });
+@@ -1065,7 +1042,7 @@ public:
+   inline int64_t get_total_ns_time_in_sandbox_and_transitions()
+   {
+ #  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
+-    RLBOX_ACQUIRE_SHARED_GUARD(transition_times_lock);
++    RLBOX_ACQUIRE_SHARED_GUARD(lock, transition_times_lock);
+ #  endif
+     int64_t ret = 0;
+     for (auto& transition_time : transition_times) {
+@@ -1080,7 +1057,7 @@ public:
+   inline void clear_transition_times()
+   {
+ #  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
+-    RLBOX_ACQUIRE_UNIQUE_GUARD(transition_times_lock);
++    RLBOX_ACQUIRE_UNIQUE_GUARD(lock, transition_times_lock);
+ #  endif
+     transition_times.clear();
+   }
+diff --git a/include/rlbox_stdlib.hpp b/include/rlbox_stdlib.hpp
+index d841f06..f0e258b 100644
+--- a/include/rlbox_stdlib.hpp
++++ b/include/rlbox_stdlib.hpp
+@@ -169,6 +169,15 @@ inline T_Wrap<T_Rhs*, T_Sbx> memcpy(rlbox_sandbox<T_Sbx>& sandbox,
+ 
+   static_assert(!std::is_const_v<T_Rhs>, "Destination is const");
+ 
++  constexpr bool is_src_tainted = detail::rlbox_is_tainted_or_vol_v<T_Lhs>;
++  constexpr bool is_num_tainted =
++    detail::rlbox_is_tainted_or_vol_v<T_Num> ||
++    detail::rlbox_is_tainted_boolean_hint_v<T_Num>;
++  // The combination of an untainted source and a tainted num is bad, so we
++  // should disallow this
++  static_assert(!(!is_src_tainted && is_num_tainted),
++                "Using a tainted size for an untainted source is not allowed");
++
+   auto num_val = detail::unwrap_value(num);
+   detail::dynamic_check(num_val <= sandbox.get_total_memory(),
+                         "Called memcpy for memory larger than the sandbox");
+@@ -215,6 +224,15 @@ inline T_Wrap<T_Rhs*, T_Sbx> strncpy(rlbox_sandbox<T_Sbx>& sandbox,
+ 
+   static_assert(!std::is_const_v<T_Rhs>, "Destination is const");
+ 
++  constexpr bool is_src_tainted = detail::rlbox_is_tainted_or_vol_v<T_Lhs>;
++  constexpr bool is_num_tainted =
++    detail::rlbox_is_tainted_or_vol_v<T_Num> ||
++    detail::rlbox_is_tainted_boolean_hint_v<T_Num>;
++  // The combination of an untainted source and a tainted num is bad, so we
++  // should disallow this
++  static_assert(!(!is_src_tainted && is_num_tainted),
++                "Using a tainted size for an untainted source is not allowed");
++
+   auto num_val = detail::unwrap_value(num);
+   detail::dynamic_check(num_val <= sandbox.get_total_memory(),
+                         "Called strncpy for memory larger than the sandbox");
+@@ -240,15 +258,29 @@ inline T_Wrap<T_Rhs*, T_Sbx> strncpy(rlbox_sandbox<T_Sbx>& sandbox,
+  * @brief Compare data in sandbox memory area.
+  */
+ template<typename T_Sbx, typename T_Rhs, typename T_Lhs, typename T_Num>
+-inline tainted_int_hint memcmp(rlbox_sandbox<T_Sbx>& sandbox,
+-                               T_Rhs&& dest,
+-                               T_Lhs&& src,
+-                               T_Num&& num)
++inline tainted_int_hint memcmp(
++  rlbox_sandbox<T_Sbx>& sandbox,
++  // Note params have to be references as memcmp can pass tainted_volatile
++  // objects which have private constructors
++  T_Rhs&& dest,
++  T_Lhs&& src,
++  T_Num&& num)
+ {
+-  static_assert(
+-    detail::rlbox_is_tainted_or_vol_v<detail::remove_cv_ref_t<T_Rhs>> ||
+-      detail::rlbox_is_tainted_or_vol_v<detail::remove_cv_ref_t<T_Lhs>>,
+-    "memcmp called on non wrapped type");
++  constexpr bool is_src_tainted =
++    detail::rlbox_is_tainted_or_vol_v<detail::remove_cv_ref_t<T_Lhs>>;
++  constexpr bool is_dest_tainted =
++    detail::rlbox_is_tainted_or_vol_v<detail::remove_cv_ref_t<T_Rhs>>;
++  static_assert(is_dest_tainted || is_src_tainted,
++                "memcmp called on non wrapped type");
++
++  using TNumNoCVRef = detail::remove_cv_ref_t<T_Num>;
++  constexpr bool is_num_tainted =
++    detail::rlbox_is_tainted_or_vol_v<TNumNoCVRef> ||
++    detail::rlbox_is_tainted_boolean_hint_v<TNumNoCVRef>;
++  // The combination of an untainted source and a tainted num is bad, so we
++  // should disallow this
++  static_assert(!(!is_src_tainted && is_num_tainted),
++                "Using a tainted size for an untainted source is not allowed");
+ 
+   auto num_val = detail::unwrap_value(num);
+   detail::dynamic_check(num_val <= sandbox.get_total_memory(),
+@@ -261,7 +293,7 @@ inline tainted_int_hint memcmp(rlbox_sandbox<T_Sbx>& sandbox,
+   const void* src_start = detail::unwrap_value(src);
+ 
+   // if src is also a tainted/tainted-volatile pointer apply the same check
+-  if constexpr (detail::rlbox_is_tainted_or_vol_v<T_Lhs>) {
++  if constexpr (is_src_tainted) {
+     detail::check_sandbox_pointer_range_is_contained<T_Sbx>(src_start, num_val);
+   }
+ 
+@@ -301,8 +333,8 @@ tainted<T*, T_Sbx> copy_memory_or_grant_access(rlbox_sandbox<T_Sbx>& sandbox,
+                 "copy_memory_or_grant_access called on tainted type. Tainted "
+                 "data is already accessible to the sandbox. ");
+ 
+-  // overflow ok
+-  size_t source_size = num * sizeof(T);
++  size_t source_size = detail::checked_multiply(
++    num, sizeof(T), "Source size computation overflow");
+ 
+   // sandbox can grant access if it includes the following line
+   // using can_grant_deny_access = void;
+@@ -347,7 +379,8 @@ tainted<T*, T_Sbx> copy_memory_or_grant_access(rlbox_sandbox<T_Sbx>& sandbox,
+  * @param free_source_on_copy If the source buffer was copied, this variable
+  * controls whether copy_memory_or_deny_access should call delete on the src.
+  * This calls delete[] if num > 1.
+- * @param copied out parameter indicating if the source was copied or transfered
++ * @param copied out parameter indicating if the source was copied or
++ * transferred
+  */
+ template<typename T_Sbx,
+          typename T,
+@@ -366,8 +399,8 @@ T* copy_memory_or_deny_access(rlbox_sandbox<T_Sbx>& sandbox,
+                 "copy_memory_or_deny_access not supported on this type as "
+                 "there may be ABI differences");
+ 
+-  // overflow ok
+-  size_t source_size = num * sizeof(T);
++  size_t source_size = detail::checked_multiply(
++    num, sizeof(T), "Source size computation overflow");
+ 
+   // sandbox can grant access if it includes the following line
+   // using can_grant_deny_access = void;
+@@ -390,7 +423,11 @@ T* copy_memory_or_deny_access(rlbox_sandbox<T_Sbx>& sandbox,
+   tainted<T*, T_Sbx> src_tainted = src;
+   char* src_raw = src_tainted.copy_and_verify_buffer_address(
+     [](uintptr_t val) { return reinterpret_cast<char*>(val); }, num);
+-  std::memcpy(copy, src_raw, source_size);
++  if (src_raw) {
++    std::memcpy(copy, src_raw, source_size);
++  } else {
++    std::memset(copy, 0, source_size);
++  }
+   if (free_source_on_copy) {
+     sandbox.free_in_sandbox(src);
+   }
+diff --git a/include/rlbox_struct_support.hpp b/include/rlbox_struct_support.hpp
+index 0146f6f..40ed685 100644
+--- a/include/rlbox_struct_support.hpp
++++ b/include/rlbox_struct_support.hpp
+@@ -202,7 +202,7 @@ struct markerStruct
+     inline Sbx_##libId##_##T<T_Sbx> get_raw_sandbox_value(                     \
+       rlbox_sandbox<T_Sbx>& sandbox) const noexcept                            \
+     {                                                                          \
+-      Sbx_##libId##_##T<T_Sbx> lhs;                                            \
++      Sbx_##libId##_##T<T_Sbx> lhs{};                                          \
+       const auto& rhs = get_raw_value_ref();                                   \
+       constexpr auto Direction = detail::adjust_type_direction::TO_SANDBOX;    \
+       constexpr auto Context = detail::adjust_type_context::SANDBOX;           \

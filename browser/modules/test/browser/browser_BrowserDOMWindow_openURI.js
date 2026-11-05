@@ -10,7 +10,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/taskbartabs/TaskbarTabsPin.sys.mjs",
 });
 
-sinon.stub(TaskbarTabsPin, "pinTaskbarTab");
+sinon.stub(TaskbarTabsPin, "pinTaskbarTab").resolves({});
 sinon.stub(TaskbarTabsPin, "unpinTaskbarTab");
 
 registerCleanupFunction(async () => {

@@ -21,3 +21,7 @@ SOURCES['xsum.cpp'].flags += ['-Wno-implicit-fallthrough', '-Wno-format', '-Wno-
 LICENSED_UNDER += [
     "mit",
 ]
+
+SOURCE_HEADERS += [
+	"xsum.h",
+]

@@ -63,6 +63,3 @@ class FreeBSDBootstrapper(BaseBootstrapper):
 
     def install_browser_artifact_mode_packages(self, mozconfig_builder):
         self.install_browser_packages(mozconfig_builder, artifact_mode=True)
-
-    def upgrade_mercurial(self, current):
-        self.pkg_install("mercurial")

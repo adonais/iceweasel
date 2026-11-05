@@ -15,6 +15,32 @@ rtc_library("leb128") {
   ]
 }
 
+if (rtc_rust) {
+  rtc_rust_library("corruption_detection_extension") {
+    crate_root = "corruption_detection_extension.rs"
+    sources = [ "corruption_detection_extension.rs" ]
+  }
+
+  rtc_rust_unittest("corruption_detection_extension_test") {
+    crate_root = "corruption_detection_extension.rs"
+    sources = [ "corruption_detection_extension.rs" ]
+  }
+
+  rtc_rust_cxx_bridge("corruption_detection_extension_cxx") {
+    allow_unsafe = true
+    source = "corruption_detection_extension_cxx.rs"
+    deps = [
+      ":corruption_detection_extension",
+      "//build/rust:cxx_rustdeps",
+    ]
+  }
+
+  group("rust_unit_tests") {
+    testonly = true
+    deps = [ ":corruption_detection_extension_test" ]
+  }
+}
+
 rtc_library("rtp_rtcp_format") {
   visibility = [ "*" ]
   public = [
@@ -142,10 +168,12 @@ rtc_library("rtp_rtcp_format") {
     "../../rtc_base:stringutils",
     "../../system_wrappers",
     "//third_party/abseil-cpp/absl/algorithm:container",
-    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
+  if (rtc_rust) {
+    deps += [ ":corruption_detection_extension_cxx" ]
+  }
 }
 
 rtc_library("rtp_rtcp") {
@@ -216,6 +244,8 @@ rtc_library("rtp_rtcp") {
     "source/rtp_packet_history.h",
     "source/rtp_packetizer_av1.cc",
     "source/rtp_packetizer_av1.h",
+    "source/rtp_packetizer_sframe.cc",
+    "source/rtp_packetizer_sframe.h",
     "source/rtp_rtcp_config.h",
     "source/rtp_rtcp_impl2.cc",
     "source/rtp_rtcp_impl2.h",
@@ -354,7 +384,6 @@ rtc_library("rtp_rtcp") {
     "../audio_coding:audio_coding_module_typedefs",
     "../video_coding:codec_globals_headers",
     "//third_party/abseil-cpp/absl/algorithm:container",
-    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
@@ -428,22 +457,6 @@ rtc_library("rtp_video_header") {
     "../../api/video:video_frame_type",
     "../../api/video:video_rtp_headers",
     "../../api/video/corruption_detection:frame_instrumentation_data",
-    "../video_coding:codec_globals_headers",
-    "//third_party/abseil-cpp/absl/container:inlined_vector",
-  ]
-}
-
-rtc_library("rtp_video_header_unittest") {
-  testonly = true
-  sources = [ "source/rtp_video_header_unittest.cc" ]
-  deps = [
-    ":rtp_video_header",
-    "../../api/transport/rtp:dependency_descriptor",
-    "../../api/video:video_frame",
-    "../../api/video:video_frame_metadata",
-    "../../api/video:video_frame_type",
-    "../../api/video:video_rtp_headers",
-    "../../test:test_support",
     "../video_coding:codec_globals_headers",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
   ]
@@ -559,8 +572,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("absolute_capture_time_interpolator_unittest") {
-    testonly = true
+  rtc_cc_test("absolute_capture_time_interpolator_unittest") {
     sources = [ "source/absolute_capture_time_interpolator_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -574,8 +586,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("absolute_capture_time_sender_unittest") {
-    testonly = true
+  rtc_cc_test("absolute_capture_time_sender_unittest") {
     sources = [ "source/absolute_capture_time_sender_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -587,8 +598,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("active_decode_targets_helper_unittest") {
-    testonly = true
+  rtc_cc_test("active_decode_targets_helper_unittest") {
     sources = [ "source/active_decode_targets_helper_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -597,8 +607,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("byte_io_unittest") {
-    testonly = true
+  rtc_cc_test("byte_io_unittest") {
     sources = [ "source/byte_io_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -607,8 +616,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("capture_clock_offset_updater_unittest") {
-    testonly = true
+  rtc_cc_test("capture_clock_offset_updater_unittest") {
     sources = [ "source/capture_clock_offset_updater_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -619,8 +627,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("fec_private_tables_bursty_unittest") {
-    testonly = true
+  rtc_cc_test("fec_private_tables_bursty_unittest") {
     sources = [ "source/fec_private_tables_bursty_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -630,8 +637,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("flexfec_03_header_reader_writer_unittest") {
-    testonly = true
+  rtc_cc_test("flexfec_03_header_reader_writer_unittest") {
     sources = [ "source/flexfec_03_header_reader_writer_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -643,8 +649,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("flexfec_header_reader_writer_unittest") {
-    testonly = true
+  rtc_cc_test("flexfec_header_reader_writer_unittest") {
     sources = [ "source/flexfec_header_reader_writer_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -655,8 +660,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("flexfec_receiver_unittest") {
-    testonly = true
+  rtc_cc_test("flexfec_receiver_unittest") {
     sources = [ "source/flexfec_receiver_unittest.cc" ]
     deps = [
       ":fec_test_helper",
@@ -670,8 +674,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("flexfec_sender_unittest") {
-    testonly = true
+  rtc_cc_test("flexfec_sender_unittest") {
     sources = [ "source/flexfec_sender_unittest.cc" ]
     deps = [
       ":fec_test_helper",
@@ -688,8 +691,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("leb128_unittest") {
-    testonly = true
+  rtc_cc_test("leb128_unittest") {
     sources = [ "source/leb128_unittest.cc" ]
     deps = [
       ":leb128",
@@ -698,8 +700,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("nack_rtx_unittest") {
-    testonly = true
+  rtc_cc_test("nack_rtx_unittest") {
     sources = [ "source/nack_rtx_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -725,8 +726,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("ntp_time_util_unittest") {
-    testonly = true
+  rtc_cc_test("ntp_time_util_unittest") {
     sources = [ "source/ntp_time_util_unittest.cc" ]
     deps = [
       ":ntp_time_util",
@@ -737,8 +737,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("packet_loss_stats_unittest") {
-    testonly = true
+  rtc_cc_test("packet_loss_stats_unittest") {
     sources = [ "source/packet_loss_stats_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -747,8 +746,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("packet_sequencer_unittest") {
-    testonly = true
+  rtc_cc_test("packet_sequencer_unittest") {
     sources = [ "source/packet_sequencer_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -761,8 +759,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("receive_statistics_unittest") {
-    testonly = true
+  rtc_cc_test("receive_statistics_unittest") {
     sources = [ "source/receive_statistics_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -776,8 +773,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("remote_ntp_time_estimator_unittest") {
-    testonly = true
+  rtc_cc_test("remote_ntp_time_estimator_unittest") {
     sources = [ "source/remote_ntp_time_estimator_unittest.cc" ]
     deps = [
       ":ntp_time_util",
@@ -791,8 +787,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtcp_nack_stats_unittest") {
-    testonly = true
+  rtc_cc_test("rtcp_nack_stats_unittest") {
     sources = [ "source/rtcp_nack_stats_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -801,8 +796,22 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("app_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_video_header_unittest") {
+    sources = [ "source/rtp_video_header_unittest.cc" ]
+    deps = [
+      ":rtp_video_header",
+      "../../api/transport/rtp:dependency_descriptor",
+      "../../api/video:video_frame",
+      "../../api/video:video_frame_metadata",
+      "../../api/video:video_frame_type",
+      "../../api/video:video_rtp_headers",
+      "../../test:test_support",
+      "../video_coding:codec_globals_headers",
+      "//third_party/abseil-cpp/absl/container:inlined_vector",
+    ]
+  }
+
+  rtc_cc_test("app_unittest") {
     sources = [ "source/rtcp_packet/app_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -813,8 +822,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("bye_unittest") {
-    testonly = true
+  rtc_cc_test("bye_unittest") {
     sources = [ "source/rtcp_packet/bye_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -825,8 +833,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("common_header_unittest") {
-    testonly = true
+  rtc_cc_test("common_header_unittest") {
     sources = [ "source/rtcp_packet/common_header_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -835,8 +842,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("compound_packet_unittest") {
-    testonly = true
+  rtc_cc_test("compound_packet_unittest") {
     sources = [ "source/rtcp_packet/compound_packet_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -847,8 +853,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("congestion_control_feedback_unittest") {
-    testonly = true
+  rtc_cc_test("congestion_control_feedback_unittest") {
     sources = [ "source/rtcp_packet/congestion_control_feedback_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -862,8 +867,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("dlrr_unittest") {
-    testonly = true
+  rtc_cc_test("dlrr_unittest") {
     sources = [ "source/rtcp_packet/dlrr_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -872,8 +876,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("extended_reports_unittest") {
-    testonly = true
+  rtc_cc_test("extended_reports_unittest") {
     sources = [ "source/rtcp_packet/extended_reports_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -886,8 +889,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("fir_unittest") {
-    testonly = true
+  rtc_cc_test("fir_unittest") {
     sources = [ "source/rtcp_packet/fir_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -898,8 +900,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("loss_notification_unittest") {
-    testonly = true
+  rtc_cc_test("loss_notification_unittest") {
     sources = [ "source/rtcp_packet/loss_notification_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -911,8 +912,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("nack_unittest") {
-    testonly = true
+  rtc_cc_test("nack_unittest") {
     sources = [ "source/rtcp_packet/nack_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -923,8 +923,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("pli_unittest") {
-    testonly = true
+  rtc_cc_test("pli_unittest") {
     sources = [ "source/rtcp_packet/pli_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -935,8 +934,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rapid_resync_request_unittest") {
-    testonly = true
+  rtc_cc_test("rapid_resync_request_unittest") {
     sources = [ "source/rtcp_packet/rapid_resync_request_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -947,8 +945,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("receiver_report_unittest") {
-    testonly = true
+  rtc_cc_test("receiver_report_unittest") {
     sources = [ "source/rtcp_packet/receiver_report_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -959,8 +956,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("remb_unittest") {
-    testonly = true
+  rtc_cc_test("remb_unittest") {
     sources = [ "source/rtcp_packet/remb_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -971,8 +967,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("remote_estimate_unittest") {
-    testonly = true
+  rtc_cc_test("remote_estimate_unittest") {
     sources = [ "source/rtcp_packet/remote_estimate_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -984,8 +979,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("report_block_unittest") {
-    testonly = true
+  rtc_cc_test("report_block_unittest") {
     sources = [ "source/rtcp_packet/report_block_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -995,8 +989,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rrtr_unittest") {
-    testonly = true
+  rtc_cc_test("rrtr_unittest") {
     sources = [ "source/rtcp_packet/rrtr_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1006,8 +999,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("sdes_unittest") {
-    testonly = true
+  rtc_cc_test("sdes_unittest") {
     sources = [ "source/rtcp_packet/sdes_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1019,8 +1011,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("sender_report_unittest") {
-    testonly = true
+  rtc_cc_test("sender_report_unittest") {
     sources = [ "source/rtcp_packet/sender_report_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1032,8 +1023,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("target_bitrate_unittest") {
-    testonly = true
+  rtc_cc_test("target_bitrate_unittest") {
     sources = [ "source/rtcp_packet/target_bitrate_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1043,8 +1033,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("tmmbn_unittest") {
-    testonly = true
+  rtc_cc_test("tmmbn_unittest") {
     sources = [ "source/rtcp_packet/tmmbn_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1055,8 +1044,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("tmmbr_unittest") {
-    testonly = true
+  rtc_cc_test("tmmbr_unittest") {
     sources = [ "source/rtcp_packet/tmmbr_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1067,8 +1055,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("transport_feedback_unittest") {
-    testonly = true
+  rtc_cc_test("transport_feedback_unittest") {
     sources = [ "source/rtcp_packet/transport_feedback_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1082,8 +1069,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtcp_packet_unittest") {
-    testonly = true
+  rtc_cc_test("rtcp_packet_unittest") {
     sources = [ "source/rtcp_packet_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1092,8 +1078,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtcp_receiver_unittest") {
-    testonly = true
+  rtc_cc_test("rtcp_receiver_unittest") {
     sources = [ "source/rtcp_receiver_unittest.cc" ]
     deps = [
       ":mock_rtp_rtcp",
@@ -1119,8 +1104,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtcp_sender_unittest") {
-    testonly = true
+  rtc_cc_test("rtcp_sender_unittest") {
     sources = [ "source/rtcp_sender_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1142,8 +1126,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtcp_transceiver_impl_unittest") {
-    testonly = true
+  rtc_cc_test("rtcp_transceiver_impl_unittest") {
     sources = [ "source/rtcp_transceiver_impl_unittest.cc" ]
     deps = [
       ":mock_rtp_rtcp",
@@ -1167,8 +1150,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtcp_transceiver_unittest") {
-    testonly = true
+  rtc_cc_test("rtcp_transceiver_unittest") {
     sources = [ "source/rtcp_transceiver_unittest.cc" ]
     deps = [
       ":rtcp_transceiver",
@@ -1186,8 +1168,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_depacketizer_sframe_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_depacketizer_sframe_unittest") {
     sources = [ "source/rtp_depacketizer_sframe_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1199,8 +1180,19 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_dependency_descriptor_extension_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_packetizer_sframe_unittest") {
+    sources = [ "source/rtp_packetizer_sframe_unittest.cc" ]
+    deps = [
+      ":rtp_rtcp",
+      ":rtp_rtcp_format",
+      ":sframe_descriptor",
+      "../../api:rtp_parameters",
+      "../../rtc_base:checks",
+      "../../test:test_support",
+    ]
+  }
+
+  rtc_cc_test("rtp_dependency_descriptor_extension_unittest") {
     sources = [ "source/rtp_dependency_descriptor_extension_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1210,8 +1202,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_fec_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_fec_unittest") {
     sources = [ "source/rtp_fec_unittest.cc" ]
     deps = [
       ":fec_test_helper",
@@ -1226,8 +1217,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_format_h264_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_format_h264_unittest") {
     sources = [ "source/rtp_format_h264_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1241,8 +1231,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_format_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_format_unittest") {
     sources = [ "source/rtp_format_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1254,8 +1243,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_format_video_generic_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_format_video_generic_unittest") {
     sources = [ "source/rtp_format_video_generic_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1267,8 +1255,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_format_vp8_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_format_vp8_unittest") {
     sources = [ "source/rtp_format_vp8_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1278,8 +1265,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_format_vp9_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_format_vp9_unittest") {
     sources = [ "source/rtp_format_vp9_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1292,8 +1278,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_generic_frame_descriptor_extension_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_generic_frame_descriptor_extension_unittest") {
     sources = [ "source/rtp_generic_frame_descriptor_extension_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1302,8 +1287,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_header_extension_map_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_header_extension_map_unittest") {
     sources = [ "source/rtp_header_extension_map_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1314,8 +1298,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_header_extension_size_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_header_extension_size_unittest") {
     sources = [ "source/rtp_header_extension_size_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1326,8 +1309,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_packet_history_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_packet_history_unittest") {
     sources = [ "source/rtp_packet_history_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1343,8 +1325,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_packet_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_packet_unittest") {
     sources = [ "source/rtp_packet_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1360,8 +1341,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_packetizer_av1_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_packetizer_av1_unittest") {
     sources = [ "source/rtp_packetizer_av1_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1375,8 +1355,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_rtcp_impl2_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_rtcp_impl2_unittest") {
     sources = [ "source/rtp_rtcp_impl2_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1408,8 +1387,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_sender_audio_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_sender_audio_unittest") {
     sources = [ "source/rtp_sender_audio_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1428,8 +1406,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_sender_egress_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_sender_egress_unittest") {
     sources = [ "source/rtp_sender_egress_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1450,8 +1427,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_sender_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_sender_unittest") {
     sources = [ "source/rtp_sender_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1475,8 +1451,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_sender_video_frame_transformer_delegate_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_sender_video_frame_transformer_delegate_unittest") {
     sources =
         [ "source/rtp_sender_video_frame_transformer_delegate_unittest.cc" ]
     deps = [
@@ -1503,8 +1478,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_sender_video_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_sender_video_unittest") {
     sources = [ "source/rtp_sender_video_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1546,8 +1520,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_sequence_number_map_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_sequence_number_map_unittest") {
     sources = [ "source/rtp_sequence_number_map_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1559,8 +1532,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_util_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_util_unittest") {
     sources = [ "source/rtp_util_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1569,8 +1541,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_video_layers_allocation_extension_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_video_layers_allocation_extension_unittest") {
     sources = [ "source/rtp_video_layers_allocation_extension_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1582,8 +1553,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rtp_video_stream_receiver_frame_transformer_delegate_unittest") {
-    testonly = true
+  rtc_cc_test("rtp_video_stream_receiver_frame_transformer_delegate_unittest") {
     sources = [
       "source/rtp_video_stream_receiver_frame_transformer_delegate_unittest.cc",
     ]
@@ -1614,8 +1584,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("source_tracker_unittest") {
-    testonly = true
+  rtc_cc_test("source_tracker_unittest") {
     sources = [ "source/source_tracker_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1631,8 +1600,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("ulpfec_generator_unittest") {
-    testonly = true
+  rtc_cc_test("ulpfec_generator_unittest") {
     sources = [ "source/ulpfec_generator_unittest.cc" ]
     deps = [
       ":fec_test_helper",
@@ -1648,8 +1616,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("ulpfec_header_reader_writer_unittest") {
-    testonly = true
+  rtc_cc_test("ulpfec_header_reader_writer_unittest") {
     sources = [ "source/ulpfec_header_reader_writer_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1661,8 +1628,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("ulpfec_receiver_unittest") {
-    testonly = true
+  rtc_cc_test("ulpfec_receiver_unittest") {
     sources = [ "source/ulpfec_receiver_unittest.cc" ]
     deps = [
       ":fec_test_helper",
@@ -1677,8 +1643,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("video_rtp_depacketizer_av1_unittest") {
-    testonly = true
+  rtc_cc_test("video_rtp_depacketizer_av1_unittest") {
     sources = [ "source/video_rtp_depacketizer_av1_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1689,8 +1654,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("video_rtp_depacketizer_generic_unittest") {
-    testonly = true
+  rtc_cc_test("video_rtp_depacketizer_generic_unittest") {
     sources = [ "source/video_rtp_depacketizer_generic_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1701,8 +1665,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("video_rtp_depacketizer_h264_unittest") {
-    testonly = true
+  rtc_cc_test("video_rtp_depacketizer_h264_unittest") {
     sources = [ "source/video_rtp_depacketizer_h264_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1718,8 +1681,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("video_rtp_depacketizer_raw_unittest") {
-    testonly = true
+  rtc_cc_test("video_rtp_depacketizer_raw_unittest") {
     sources = [ "source/video_rtp_depacketizer_raw_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1730,8 +1692,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("video_rtp_depacketizer_vp8_unittest") {
-    testonly = true
+  rtc_cc_test("video_rtp_depacketizer_vp8_unittest") {
     sources = [ "source/video_rtp_depacketizer_vp8_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1746,8 +1707,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("video_rtp_depacketizer_vp9_unittest") {
-    testonly = true
+  rtc_cc_test("video_rtp_depacketizer_vp9_unittest") {
     sources = [ "source/video_rtp_depacketizer_vp9_unittest.cc" ]
     deps = [
       ":rtp_format_vp8_test_helper",
@@ -1761,8 +1721,7 @@ if (rtc_include_tests) {
   }
 
   if (rtc_use_h265) {
-    rtc_library("rtp_packetizer_h265_unittest") {
-      testonly = true
+    rtc_cc_test("rtp_packetizer_h265_unittest") {
       sources = [ "source/rtp_packetizer_h265_unittest.cc" ]
       deps = [
         ":rtp_rtcp",
@@ -1775,8 +1734,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("video_rtp_depacketizer_h265_unittest") {
-      testonly = true
+    rtc_cc_test("video_rtp_depacketizer_h265_unittest") {
       sources = [ "source/video_rtp_depacketizer_h265_unittest.cc" ]
       deps = [
         ":rtp_rtcp",
@@ -1791,12 +1749,8 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_library("rtp_rtcp_unittests") {
-    testonly = true
-
-    sources = []
-
-    deps = [
+  rtc_test_suite("rtp_rtcp_unittests") {
+    tests = [
       ":absolute_capture_time_interpolator_unittest",
       ":absolute_capture_time_sender_unittest",
       ":active_decode_targets_helper_unittest",
@@ -1852,7 +1806,9 @@ if (rtc_include_tests) {
       ":rtp_packet_history_unittest",
       ":rtp_packet_unittest",
       ":rtp_packetizer_av1_unittest",
+      ":rtp_packetizer_sframe_unittest",
       ":rtp_rtcp_impl2_unittest",
+      ":rtp_rtcp_modules_tests",
       ":rtp_sender_audio_unittest",
       ":rtp_sender_egress_unittest",
       ":rtp_sender_unittest",
@@ -1882,20 +1838,23 @@ if (rtc_include_tests) {
     ]
 
     if (rtc_use_h265) {
-      deps += [
+      tests += [
         ":rtp_packetizer_h265_unittest",
         ":video_rtp_depacketizer_h265_unittest",
       ]
     }
   }
 
-  rtc_library("corruption_detection_extension_unittest") {
-    testonly = true
+  rtc_cc_test("corruption_detection_extension_unittest") {
     sources = [ "source/corruption_detection_extension_unittest.cc" ]
     deps = [
       ":rtp_rtcp_format",
       "../../api/transport/rtp:corruption_detection_message",
       "../../test:test_support",
     ]
+
+    if (rtc_rust) {
+      deps += [ ":corruption_detection_extension_cxx" ]
+    }
   }
 }

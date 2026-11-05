@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(this, {
   JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
   SearchEngineSelector:
     "moz-src:///toolkit/components/search/SearchEngineSelector.sys.mjs",
+  SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
 });
 
 /**
@@ -84,6 +85,37 @@ add_task(async function test_search_telemetry_validates_to_schema() {
   }
 });
 
+function getPartnerCodes(section) {
+  if (!SearchUtils.configV3FeatureGate) {
+    if ("partnerCode" in section) {
+      return new Set([section.partnerCode]);
+    }
+    return new Set();
+  }
+
+  if ("partner" in section) {
+    let result = new Set();
+    for (let [, partnerDetails] of Object.entries(section.partner)) {
+      if (partnerDetails.code) {
+        result.add(partnerDetails.code);
+      }
+    }
+    return result;
+  }
+  return new Set();
+}
+
+function checkVariantCodes(type, variant, telemetryEntryCodes) {
+  let variantPartnerCodes = getPartnerCodes(variant);
+  if (variantPartnerCodes.size) {
+    Assert.deepEqual(
+      [...variantPartnerCodes.difference(telemetryEntryCodes)],
+      [],
+      `Should have the ${type} partner codes listed in the search telemetry 'taggedCodes' (listed codes are missing)`
+    );
+  }
+}
+
 add_task(async function test_search_config_codes_in_search_telemetry() {
   let searchTelemetry = await RemoteSettings(TELEMETRY_SETTINGS_KEY).get();
 
@@ -112,10 +144,14 @@ add_task(async function test_search_config_codes_in_search_telemetry() {
       `Should have associated engine data for telemetry id ${telemetryEntry.telemetryId}`
     );
 
-    if (engine.base.partnerCode) {
-      Assert.ok(
-        telemetryEntry.taggedCodes.includes(engine.base.partnerCode),
-        `Should have the base partner code ${engine.base.partnerCode} listed in the search telemetry 'taggedCodes'`
+    let telemetryEntryCodes = new Set(telemetryEntry.taggedCodes);
+    let basePartnerCodes = getPartnerCodes(engine.base);
+
+    if (basePartnerCodes.size) {
+      Assert.deepEqual(
+        [...basePartnerCodes.difference(telemetryEntryCodes)],
+        [],
+        `Should have the base partner codes listed in the search telemetry 'taggedCodes' (listed codes are missing)`
       );
     } else {
       Assert.ok(
@@ -126,22 +162,10 @@ add_task(async function test_search_config_codes_in_search_telemetry() {
 
     if (engine.variants) {
       for (let variant of engine.variants) {
-        if ("partnerCode" in variant) {
-          Assert.ok(
-            telemetryEntry.taggedCodes.includes(variant.partnerCode),
-            `Should have the partner code ${variant.partnerCode} listed in the search telemetry 'taggedCodes'`
-          );
-        }
+        checkVariantCodes("variant", variant, telemetryEntryCodes);
 
-        if (variant.subVariants) {
-          for (let subVariant of variant.subVariants) {
-            if ("partnerCode" in subVariant) {
-              Assert.ok(
-                telemetryEntry.taggedCodes.includes(subVariant.partnerCode),
-                `Should have the partner code ${subVariant.partnerCode} listed in the search telemetry 'taggedCodes'`
-              );
-            }
-          }
+        for (let subVariant of variant.subVariants ?? []) {
+          checkVariantCodes("sub-variant", subVariant, telemetryEntryCodes);
         }
       }
     }

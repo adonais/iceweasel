@@ -23,8 +23,8 @@ NS_IMETHODIMP WebTaskMainThreadRunnable::Run() {
   return NS_OK;
 }
 
-nsresult WebTaskSchedulerMainThread::SetTimeoutForDelayedTask(
-    WebTask* aTask, uint64_t aDelay, EventQueuePriority aPriority) {
+nsresult WebTaskSchedulerMainThread::SetTimeoutForDelayedTask(WebTask* aTask,
+                                                              uint64_t aDelay) {
   JSContext* cx = nsContentUtils::GetCurrentJSContext();
   if (!cx) {
     return NS_ERROR_UNEXPECTED;
@@ -33,7 +33,7 @@ nsresult WebTaskSchedulerMainThread::SetTimeoutForDelayedTask(
   MOZ_ASSERT(global);
 
   RefPtr<DelayedWebTaskHandler> handler =
-      new DelayedWebTaskHandler(cx, this, aTask, aPriority);
+      new DelayedWebTaskHandler(cx, this, aTask);
 
   int32_t delay = aDelay > INT32_MAX ? INT32_MAX : (int32_t)aDelay;
 

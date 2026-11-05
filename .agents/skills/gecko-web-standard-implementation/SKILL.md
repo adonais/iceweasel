@@ -3,6 +3,7 @@ name: gecko-web-standard-implementation
 description: You MUST use this skill when working with C++, C, Rust code to implement or modify WebIDL interfaces and their native implementations.
 ---
 
+# Implementing web standards in Gecko
 
 ## Workflow
 - When implementing or reviewing new web-exposed interfaces, compare the code against the specification. The relevant link should be in the .webidl file. When reviewing, explicitly check each method's implementation against the corresponding spec algorithm and note any discrepancies. If `webspec-index` is available, use `webspec-index query '<spec-url-or-shortname#anchor>' --format markdown` to fetch the exact algorithm steps for each method; otherwise fall back to fetching the spec URL directly.

@@ -349,6 +349,13 @@ TEST_P(JsepTransport2WithRtcpMux, SetGoogSpedV1OptionUpdatesIceConfig) {
   bool rtcp_mux_enabled = GetParam();
   jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled);
 
+  auto fake_ice_transport = static_cast<FakeIceTransportInternal*>(
+      jsep_transport_->rtp_dtls_transport()->ice_transport());
+  // PeerConnection enables this from the field trial before negotiating.
+  IceConfig config = fake_ice_transport->config();
+  config.dtls_handshake_in_stun = true;
+  fake_ice_transport->SetIceConfig(config);
+
   scoped_refptr<RTCCertificate> local_cert =
       RTCCertificate::Create(SSLIdentity::Create("local", KT_DEFAULT));
   scoped_refptr<RTCCertificate> remote_cert =
@@ -374,16 +381,19 @@ TEST_P(JsepTransport2WithRtcpMux, SetGoogSpedV1OptionUpdatesIceConfig) {
                                                       SdpType::kAnswer)
                   .ok());
 
-  auto fake_ice_transport = static_cast<FakeIceTransportInternal*>(
-      jsep_transport_->rtp_dtls_transport()->ice_transport());
-
   EXPECT_TRUE(fake_ice_transport->config().dtls_handshake_in_stun);
 }
 
-TEST_P(JsepTransport2WithRtcpMux,
-       MissingGoogSpedV1OptionDoesNotUpdateIceConfig) {
+TEST_P(JsepTransport2WithRtcpMux, SetSpedOptionUpdatesIceConfig) {
   bool rtcp_mux_enabled = GetParam();
   jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled);
+
+  auto fake_ice_transport = static_cast<FakeIceTransportInternal*>(
+      jsep_transport_->rtp_dtls_transport()->ice_transport());
+  // PeerConnection enables this from the field trial before negotiating.
+  IceConfig config = fake_ice_transport->config();
+  config.dtls_handshake_in_stun = true;
+  fake_ice_transport->SetIceConfig(config);
 
   scoped_refptr<RTCCertificate> local_cert =
       RTCCertificate::Create(SSLIdentity::Create("local", KT_DEFAULT));
@@ -394,6 +404,7 @@ TEST_P(JsepTransport2WithRtcpMux,
   JsepTransportDescription local_description =
       MakeJsepTransportDescription(rtcp_mux_enabled, kIceUfrag1, kIcePwd1,
                                    local_cert, CONNECTIONROLE_ACTPASS);
+  local_description.transport_desc.AddOption(ICE_OPTION_SPED);
 
   ASSERT_TRUE(
       jsep_transport_
@@ -403,6 +414,160 @@ TEST_P(JsepTransport2WithRtcpMux,
   JsepTransportDescription remote_description =
       MakeJsepTransportDescription(rtcp_mux_enabled, kIceUfrag2, kIcePwd2,
                                    remote_cert, CONNECTIONROLE_ACTIVE);
+  remote_description.transport_desc.AddOption(ICE_OPTION_SPED);
+
+  ASSERT_TRUE(jsep_transport_
+                  ->SetRemoteJsepTransportDescription(remote_description,
+                                                      SdpType::kAnswer)
+                  .ok());
+
+  EXPECT_TRUE(fake_ice_transport->config().dtls_handshake_in_stun);
+}
+
+TEST_P(JsepTransport2WithRtcpMux, SetSpedOptionUpdatesIceConfigAsAnswerer) {
+  bool rtcp_mux_enabled = GetParam();
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled);
+
+  auto fake_ice_transport = static_cast<FakeIceTransportInternal*>(
+      jsep_transport_->rtp_dtls_transport()->ice_transport());
+  // PeerConnection enables this from the field trial before negotiating.
+  IceConfig config = fake_ice_transport->config();
+  config.dtls_handshake_in_stun = true;
+  fake_ice_transport->SetIceConfig(config);
+
+  scoped_refptr<RTCCertificate> local_cert =
+      RTCCertificate::Create(SSLIdentity::Create("local", KT_DEFAULT));
+  scoped_refptr<RTCCertificate> remote_cert =
+      RTCCertificate::Create(SSLIdentity::Create("remote", KT_DEFAULT));
+  jsep_transport_->SetLocalCertificate(local_cert);
+
+  JsepTransportDescription remote_description =
+      MakeJsepTransportDescription(rtcp_mux_enabled, kIceUfrag2, kIcePwd2,
+                                   remote_cert, CONNECTIONROLE_ACTPASS);
+  remote_description.transport_desc.AddOption(ICE_OPTION_SPED);
+
+  ASSERT_TRUE(jsep_transport_
+                  ->SetRemoteJsepTransportDescription(remote_description,
+                                                      SdpType::kOffer)
+                  .ok());
+
+  JsepTransportDescription local_description =
+      MakeJsepTransportDescription(rtcp_mux_enabled, kIceUfrag1, kIcePwd1,
+                                   local_cert, CONNECTIONROLE_ACTIVE);
+  local_description.transport_desc.AddOption(ICE_OPTION_SPED);
+
+  ASSERT_TRUE(jsep_transport_
+                  ->SetLocalJsepTransportDescription(local_description,
+                                                     SdpType::kAnswer)
+                  .ok());
+
+  EXPECT_TRUE(fake_ice_transport->config().dtls_handshake_in_stun);
+}
+
+TEST_P(JsepTransport2WithRtcpMux, RemoteWithoutSpedDisablesDtlsInStun) {
+  bool rtcp_mux_enabled = GetParam();
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled);
+
+  auto fake_ice_transport = static_cast<FakeIceTransportInternal*>(
+      jsep_transport_->rtp_dtls_transport()->ice_transport());
+  // PeerConnection enables this from the field trial before negotiating.
+  IceConfig config = fake_ice_transport->config();
+  config.dtls_handshake_in_stun = true;
+  fake_ice_transport->SetIceConfig(config);
+
+  scoped_refptr<RTCCertificate> local_cert =
+      RTCCertificate::Create(SSLIdentity::Create("local", KT_DEFAULT));
+  scoped_refptr<RTCCertificate> remote_cert =
+      RTCCertificate::Create(SSLIdentity::Create("remote", KT_DEFAULT));
+  jsep_transport_->SetLocalCertificate(local_cert);
+
+  JsepTransportDescription local_description =
+      MakeJsepTransportDescription(rtcp_mux_enabled, kIceUfrag1, kIcePwd1,
+                                   local_cert, CONNECTIONROLE_ACTPASS);
+  local_description.transport_desc.AddOption(ICE_OPTION_SPED);
+
+  ASSERT_TRUE(
+      jsep_transport_
+          ->SetLocalJsepTransportDescription(local_description, SdpType::kOffer)
+          .ok());
+
+  JsepTransportDescription remote_description =
+      MakeJsepTransportDescription(rtcp_mux_enabled, kIceUfrag2, kIcePwd2,
+                                   remote_cert, CONNECTIONROLE_ACTIVE);
+
+  ASSERT_TRUE(jsep_transport_
+                  ->SetRemoteJsepTransportDescription(remote_description,
+                                                      SdpType::kAnswer)
+                  .ok());
+
+  EXPECT_FALSE(fake_ice_transport->config().dtls_handshake_in_stun);
+}
+
+TEST_P(JsepTransport2WithRtcpMux, RemoteWithoutGoogSpedV1KeepsDtlsInStun) {
+  bool rtcp_mux_enabled = GetParam();
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled);
+
+  auto fake_ice_transport = static_cast<FakeIceTransportInternal*>(
+      jsep_transport_->rtp_dtls_transport()->ice_transport());
+  // PeerConnection enables this from the field trial before negotiating.
+  IceConfig config = fake_ice_transport->config();
+  config.dtls_handshake_in_stun = true;
+  fake_ice_transport->SetIceConfig(config);
+
+  scoped_refptr<RTCCertificate> local_cert =
+      RTCCertificate::Create(SSLIdentity::Create("local", KT_DEFAULT));
+  scoped_refptr<RTCCertificate> remote_cert =
+      RTCCertificate::Create(SSLIdentity::Create("remote", KT_DEFAULT));
+  jsep_transport_->SetLocalCertificate(local_cert);
+
+  JsepTransportDescription local_description =
+      MakeJsepTransportDescription(rtcp_mux_enabled, kIceUfrag1, kIcePwd1,
+                                   local_cert, CONNECTIONROLE_ACTPASS);
+  local_description.transport_desc.AddOption(ICE_OPTION_GOOG_SPED_V1);
+
+  ASSERT_TRUE(
+      jsep_transport_
+          ->SetLocalJsepTransportDescription(local_description, SdpType::kOffer)
+          .ok());
+
+  JsepTransportDescription remote_description =
+      MakeJsepTransportDescription(rtcp_mux_enabled, kIceUfrag2, kIcePwd2,
+                                   remote_cert, CONNECTIONROLE_ACTIVE);
+
+  ASSERT_TRUE(jsep_transport_
+                  ->SetRemoteJsepTransportDescription(remote_description,
+                                                      SdpType::kAnswer)
+                  .ok());
+
+  EXPECT_TRUE(fake_ice_transport->config().dtls_handshake_in_stun);
+}
+
+TEST_P(JsepTransport2WithRtcpMux, MungedSpedOptionDoesNotUpdateIceConfig) {
+  bool rtcp_mux_enabled = GetParam();
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled);
+
+  scoped_refptr<RTCCertificate> local_cert =
+      RTCCertificate::Create(SSLIdentity::Create("local", KT_DEFAULT));
+  scoped_refptr<RTCCertificate> remote_cert =
+      RTCCertificate::Create(SSLIdentity::Create("remote", KT_DEFAULT));
+  jsep_transport_->SetLocalCertificate(local_cert);
+
+  // The ice-option is present on both sides but was never enabled locally, so
+  // it can only have been munged into the local description.
+  JsepTransportDescription local_description =
+      MakeJsepTransportDescription(rtcp_mux_enabled, kIceUfrag1, kIcePwd1,
+                                   local_cert, CONNECTIONROLE_ACTPASS);
+  local_description.transport_desc.AddOption(ICE_OPTION_SPED);
+
+  ASSERT_TRUE(
+      jsep_transport_
+          ->SetLocalJsepTransportDescription(local_description, SdpType::kOffer)
+          .ok());
+
+  JsepTransportDescription remote_description =
+      MakeJsepTransportDescription(rtcp_mux_enabled, kIceUfrag2, kIcePwd2,
+                                   remote_cert, CONNECTIONROLE_ACTIVE);
+  remote_description.transport_desc.AddOption(ICE_OPTION_SPED);
 
   ASSERT_TRUE(jsep_transport_
                   ->SetRemoteJsepTransportDescription(remote_description,

@@ -22,20 +22,7 @@ class DefaultCreditCardValidationDelegate(private val storage: Lazy<CreditCardsA
     override suspend fun shouldCreateOrUpdate(creditCard: CreditCardEntry): Result {
         val creditCards = storage.value.getAllCreditCards()
 
-        val foundCreditCard =
-            if (creditCards.isEmpty()) {
-                // No credit cards exist in the storage -> create a new credit card
-                null
-            } else {
-                val crypto = storage.value.getCreditCardCrypto()
-                val key = crypto.getOrGenerateKey()
-
-                creditCards.find {
-                    val cardNumber = crypto.decrypt(key, it.encryptedCardNumber)?.number
-
-                    it.guid == creditCard.guid || cardNumber == creditCard.number
-                }
-            }
+        val foundCreditCard = creditCards.find { it.guid == creditCard.guid || it.cardNumber == creditCard.number }
 
         return if (foundCreditCard == null) {
             Result.CanBeCreated

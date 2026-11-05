@@ -9,9 +9,12 @@
 #include "nscore.h"
 
 class nsTableFrame;
+class nsIFrame;
+class nsContainerFrame;
 
 namespace mozilla {
 class PresShell;
+class ComputedStyle;
 }  // namespace mozilla
 
 // Factory methods for creating MathML objects

@@ -37,6 +37,30 @@ body {
   width: 100%;
   background-color: var(--background-color-box);
 }
+
+#process-tfoot {
+  display: none;
+}
+/* Fixed totals footer for tab view. */
+body.tab-view #process-tbody {
+  margin-bottom: 2em;
+}
+body.tab-view #process-tfoot {
+  display: table-footer-group;
+  position: fixed;
+  z-index: 1;
+  bottom: 0;
+  height: 2em;
+  border-top: 1px solid var(--border-color);
+  width: 100%;
+  background-color: var(--background-color-box);
+}
+/* The memory cell sizes to its content, taking slack from the name column
+   instead of compressing. The CPU cell spans the shared grid's CPU and
+   action columns (15% + 36px), so multi-digit percentages fit. */
+.totals-row {
+  grid-template-columns: 1fr max-content calc(15% + 36px);
+}
 tr {
   display: grid;
   /* Flexible width for the name column, 15% width for the memory and CPU column,
@@ -371,6 +395,7 @@ tr.separate-from-previous-process-group {
 
 /* No CPU bar in the tab view -- --bar-width's default of 0 still leaves a
    rounding sliver of the gradient visible. */
-.tab-row > .cpu {
+.tab-row > .cpu,
+.totals-row > .cpu {
   background: none;
 }

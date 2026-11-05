@@ -15,3 +15,4 @@ run-sequentially = ["true"] # Has to launch application binary
 skip-if = [
   "os == 'android'",
 ]
+requesttimeoutfactor = 2 # 50 cold starts, slow on Windows ccov

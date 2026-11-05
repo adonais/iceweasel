@@ -239,7 +239,7 @@ angle::Result TextureStorage11::getSRVForSampler(const gl::Context *context,
 
     if (swizzleRequired)
     {
-        verifySwizzleExists(GetEffectiveSwizzle(textureState));
+        verifySwizzleExists(GetEffectiveSwizzle(textureState), effectiveBaseLevel, mipLevels);
     }
 
     // We drop the stencil when sampling from the SRV if three conditions hold:
@@ -476,7 +476,10 @@ angle::Result TextureStorage11::generateSwizzles(const gl::Context *context,
                                                  const gl::TextureState &textureState)
 {
     gl::SwizzleState swizzleTarget = GetEffectiveSwizzle(textureState);
-    for (int level = 0; level < getLevelCount(); level++)
+    const int baseLevel            = static_cast<int>(textureState.getEffectiveBaseLevel());
+    const int maxLevel =
+        std::min(static_cast<int>(textureState.getEffectiveMaxLevel()), getLevelCount() - 1);
+    for (int level = baseLevel; level <= maxLevel; level++)
     {
         // Check if the swizzle for this level is out of date
         if (mSwizzleCache[level] != swizzleTarget)
@@ -731,9 +734,11 @@ angle::Result TextureStorage11::generateMipmap(const gl::Context *context,
                                 false);
 }
 
-void TextureStorage11::verifySwizzleExists(const gl::SwizzleState &swizzleState)
+void TextureStorage11::verifySwizzleExists(const gl::SwizzleState &swizzleState,
+                                           unsigned int baseLevel,
+                                           unsigned int mipLevels)
 {
-    for (unsigned int level = 0; level < mMipLevels; level++)
+    for (unsigned int level = baseLevel; level < baseLevel + mipLevels; level++)
     {
         ASSERT(mSwizzleCache[level] == swizzleState);
     }
@@ -979,11 +984,13 @@ TextureStorage11_2D::TextureStorage11_2D(Renderer11 *renderer,
         mRenderTarget[i]     = nullptr;
     }
 
-    d3d11::MakeValidSize(false, mFormatInfo.texFormat, &width, &height, &mTopLevel);
+    GLsizei depth = 1;
+    d3d11::MakeValidSize(false, mFormatInfo.texFormat, gl::TextureType::_2D, width, height, depth,
+                         mTopLevel);
     mMipLevels     = mTopLevel + levels;
     mTextureWidth  = width;
     mTextureHeight = height;
-    mTextureDepth  = 1;
+    mTextureDepth  = depth;
 }
 
 void TextureStorage11_2D::onLabelUpdate()
@@ -1000,7 +1007,7 @@ void TextureStorage11_2D::onLabelUpdate()
 
 angle::Result TextureStorage11_2D::onDestroy(const gl::Context *context)
 {
-    angle::Result result = angle::Result::Continue;
+    angle::ResultAccumulator result = angle::Result::Continue;
     for (unsigned i = 0; i < gl::IMPLEMENTATION_MAX_TEXTURE_LEVELS; i++)
     {
         if (mAssociatedImages[i] != nullptr)
@@ -1009,10 +1016,7 @@ angle::Result TextureStorage11_2D::onDestroy(const gl::Context *context)
 
             // We must let the Images recover their data before we delete it from the
             // TextureStorage.
-            if (IsError(mAssociatedImages[i]->recoverFromAssociatedStorage(context)))
-            {
-                result = angle::Result::Stop;
-            }
+            result = mAssociatedImages[i]->recoverFromAssociatedStorage(context);
         }
     }
     ANGLE_TRY(result);
@@ -1396,9 +1400,8 @@ TextureStorage11_External::TextureStorage11_External(
 {
     ASSERT(stream->getProducerType() == egl::Stream::ProducerType::D3D11Texture);
     auto *producer = static_cast<StreamProducerD3DTexture *>(stream->getImplementation());
-    mTexture.set(producer->getD3DTexture(), mFormatInfo);
+    mTexture.set(angle::ComPtr<ID3D11Texture2D>(producer->getD3DTexture()), mFormatInfo);
     mSubresourceIndex = producer->getArraySlice();
-    mTexture.get()->AddRef();
     mMipLevels = 1;
 
     D3D11_TEXTURE2D_DESC desc;
@@ -1921,18 +1924,20 @@ TextureStorage11_Cube::TextureStorage11_Cube(Renderer11 *renderer,
     }
 
     // adjust size if needed for compressed textures
-    int height = size;
-    d3d11::MakeValidSize(false, mFormatInfo.texFormat, &size, &height, &mTopLevel);
+    int height    = size;
+    GLsizei depth = 1;
+    d3d11::MakeValidSize(false, mFormatInfo.texFormat, gl::TextureType::CubeMap, size, height,
+                         depth, mTopLevel);
 
     mMipLevels     = mTopLevel + levels;
     mTextureWidth  = size;
     mTextureHeight = size;
-    mTextureDepth  = 1;
+    mTextureDepth  = depth;
 }
 
 angle::Result TextureStorage11_Cube::onDestroy(const gl::Context *context)
 {
-    angle::Result result = angle::Result::Continue;
+    angle::ResultAccumulator result = angle::Result::Continue;
     for (unsigned int level = 0; level < gl::IMPLEMENTATION_MAX_TEXTURE_LEVELS; level++)
     {
         for (unsigned int face = 0; face < gl::kCubeFaceCount; face++)
@@ -1943,10 +1948,7 @@ angle::Result TextureStorage11_Cube::onDestroy(const gl::Context *context)
 
                 // We must let the Images recover their data before we delete it from the
                 // TextureStorage.
-                if (IsError(mAssociatedImages[face][level]->recoverFromAssociatedStorage(context)))
-                {
-                    result = angle::Result::Stop;
-                }
+                result = mAssociatedImages[face][level]->recoverFromAssociatedStorage(context);
             }
         }
     }
@@ -2435,7 +2437,8 @@ TextureStorage11_3D::TextureStorage11_3D(Renderer11 *renderer,
     }
 
     // adjust size if needed for compressed textures
-    d3d11::MakeValidSize(false, mFormatInfo.texFormat, &width, &height, &mTopLevel);
+    d3d11::MakeValidSize(false, mFormatInfo.texFormat, gl::TextureType::_3D, width, height, depth,
+                         mTopLevel);
 
     mMipLevels     = mTopLevel + levels;
     mTextureWidth  = width;
@@ -2445,7 +2448,7 @@ TextureStorage11_3D::TextureStorage11_3D(Renderer11 *renderer,
 
 angle::Result TextureStorage11_3D::onDestroy(const gl::Context *context)
 {
-    angle::Result result = angle::Result::Continue;
+    angle::ResultAccumulator result = angle::Result::Continue;
     for (unsigned i = 0; i < gl::IMPLEMENTATION_MAX_TEXTURE_LEVELS; i++)
     {
         if (mAssociatedImages[i] != nullptr)
@@ -2454,10 +2457,7 @@ angle::Result TextureStorage11_3D::onDestroy(const gl::Context *context)
 
             // We must let the Images recover their data before we delete it from the
             // TextureStorage.
-            if (IsError(mAssociatedImages[i]->recoverFromAssociatedStorage(context)))
-            {
-                result = angle::Result::Stop;
-            }
+            result = mAssociatedImages[i]->recoverFromAssociatedStorage(context);
         }
     }
 
@@ -2815,7 +2815,8 @@ TextureStorage11_2DArray::TextureStorage11_2DArray(Renderer11 *renderer,
           label)
 {
     // adjust size if needed for compressed textures
-    d3d11::MakeValidSize(false, mFormatInfo.texFormat, &width, &height, &mTopLevel);
+    d3d11::MakeValidSize(false, mFormatInfo.texFormat, gl::TextureType::_2DArray, width, height,
+                         depth, mTopLevel);
 
     mMipLevels     = mTopLevel + levels;
     mTextureWidth  = width;
@@ -2825,7 +2826,7 @@ TextureStorage11_2DArray::TextureStorage11_2DArray(Renderer11 *renderer,
 
 angle::Result TextureStorage11_2DArray::onDestroy(const gl::Context *context)
 {
-    angle::Result result = angle::Result::Continue;
+    angle::ResultAccumulator result = angle::Result::Continue;
     for (auto iter : mAssociatedImages)
     {
         if (iter.second)
@@ -2834,10 +2835,7 @@ angle::Result TextureStorage11_2DArray::onDestroy(const gl::Context *context)
 
             // We must let the Images recover their data before we delete it from the
             // TextureStorage.
-            if (IsError(iter.second->recoverFromAssociatedStorage(context)))
-            {
-                result = angle::Result::Stop;
-            }
+            result = iter.second->recoverFromAssociatedStorage(context);
         }
     }
     mAssociatedImages.clear();
@@ -2853,9 +2851,9 @@ void TextureStorage11_2DArray::associateImage(Image11 *image, const gl::ImageInd
     const GLint layerTarget = index.getLayerIndex();
     const GLint numLayers   = index.getLayerCount();
 
-    ASSERT(0 <= level && level < getLevelCount());
+    ASSERT(0 <= level && level < gl::IMPLEMENTATION_MAX_TEXTURE_LEVELS);
 
-    if (0 <= level && level < getLevelCount())
+    if (0 <= level && level < gl::IMPLEMENTATION_MAX_TEXTURE_LEVELS)
     {
         LevelLayerRangeKey key(level, layerTarget, numLayers);
         mAssociatedImages[key] = image;
@@ -3769,8 +3767,7 @@ angle::Result TextureStorage11_Buffer::initTexture(const gl::Context *context)
         ANGLE_TRY(buffer11->getBuffer(context, rx::BufferUsage::BUFFER_USAGE_TYPED_UAV, &buffer,
                                       &feedback));
         mBuffer.get()->applyImplFeedback(context, feedback);
-        mTexture.set(buffer, mFormatInfo);
-        mTexture.get()->AddRef();
+        mTexture.set(angle::ComPtr<ID3D11Buffer>(buffer), mFormatInfo);
     }
     return angle::Result::Continue;
 }

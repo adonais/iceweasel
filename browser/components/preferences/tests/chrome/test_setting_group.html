@@ -502,15 +502,7 @@
         await group.updateComplete;
         const fieldset = group.querySelector("moz-fieldset");
 
-        const srdEnabled = Services.prefs.getBoolPref(
-          "browser.settings-redesign.enabled",
-          false
-        );
-        is(
-          fieldset.headingLevel,
-          srdEnabled ? headingLevel + 1 : headingLevel,
-          "sets headingLevel (bumped one level up when SRD is enabled)"
-        );
+        is(fieldset.headingLevel, headingLevel + 1, "sets headingLevel");
       });
 
       add_task(async function testSettingGroupCallbacks() {

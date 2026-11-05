@@ -5,52 +5,10 @@ Services.scriptloader.loadSubScript(
 
 const TEST_URL_PATH = `https://example.org${DIRECTORY_PATH}form_basic_signup.html`;
 
-const collectRelayTelemeryEvent = sameFlow => {
-  const collectedEvents = TelemetryTestUtils.getEvents(
-    { category: "relay_integration" },
-    { process: "parent" }
-  );
-
-  return sameFlow
-    ? collectedEvents.filter((event, _, arr) => event.value === arr[0].value)
-    : collectedEvents;
-};
-
-const waitForEvents = async (expectedEvents, sameFlow) => {
-  await TestUtils.waitForCondition(
-    () =>
-      (collectRelayTelemeryEvent(sameFlow)?.length ?? 0) >=
-      (expectedEvents.length ?? 0),
-    "Wait for telemetry to be collected",
-    100,
-    100
-  );
-  return collectRelayTelemeryEvent(sameFlow);
-};
-
-async function assertEvents(expectedEvents, sameFlow = true) {
-  // To avoid intermittent failures, we wait for telemetry to be collected
-  const events = await waitForEvents(expectedEvents, sameFlow);
-  for (let i = 0; i < expectedEvents.length; i++) {
-    const keysInExpectedEvent = Object.keys(expectedEvents[i]);
-    keysInExpectedEvent.forEach(key => {
-      const assertFn =
-        typeof events[i][key] === "object"
-          ? Assert.deepEqual.bind(Assert)
-          : Assert.equal.bind(Assert);
-      assertFn(
-        events[i][key],
-        expectedEvents[i][key],
-        `Key value for ${key} should match`
-      );
-    });
-  }
-}
-
 async function openRelayAC(browser) {
   // In rare cases, especially in chaos mode in verify tests, some events creep in.
   // Clear them out before we start.
-  Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
   const popup = document.getElementById("PopupAutoComplete");
   await openACPopup(popup, browser, "#form-basic-username");
   const firstRichlistitem = document.querySelector("richlistitem");
@@ -74,19 +32,13 @@ requestLongerTimeout(2);
 add_setup(async function () {
   await setUpMockRelayServer();
 
-  const canRecordExtendedOld = Services.telemetry.canRecordExtended;
-  Services.telemetry.canRecordExtended = true;
-  Services.telemetry.clearEvents();
-  registerCleanupFunction(async () => {
-    Services.telemetry.clearEvents();
-    Services.telemetry.canRecordExtended = canRecordExtendedOld;
-    sinon.restore();
-  });
+  Services.fog.testResetFOG();
 
   stubFxAccountsToSimulateSignedIn();
 });
 
 add_task(async function test_pref_toggle() {
+  Services.fog.testResetFOG();
   await setupRelayScenario("available");
   await BrowserTestUtils.withNewTab(
     {
@@ -105,15 +57,22 @@ add_task(async function test_pref_toggle() {
         await relayIntegrationCheckbox.updateComplete;
       }
       relayIntegrationCheckbox.click();
-      await assertEvents([
-        { object: "pref_change", method: "disabled" },
-        { object: "pref_change", method: "enabled" },
-      ]);
+      Assert.equal(
+        Glean.relayIntegration.disabledPrefChange.testGetValue().length,
+        1,
+        "One disabled event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.enabledPrefChange.testGetValue().length,
+        1,
+        "One enabled event"
+      );
     }
   );
 });
 
 add_task(async function test_popup_option_optin_enabled() {
+  Services.fog.testResetFOG();
   await setupRelayScenario("available");
   setupServerScenario();
   const rsSandbox = await stubRemoteSettingsAllowList();
@@ -146,22 +105,38 @@ add_task(async function test_popup_option_optin_enabled() {
         TestUtils.waitForPrefChange("signon.firefoxRelay.feature"),
       ]);
 
-      await assertEvents([
-        {
-          object: "offer_relay",
-          method: "shown",
-          extra: { scenario: "SignUpFormScenario" },
-        },
-        {
-          object: "offer_relay",
-          method: "clicked",
-          extra: { scenario: "SignUpFormScenario" },
-        },
-        { object: "opt_in_panel", method: "shown" },
-        { object: "opt_in_panel", method: "enabled" },
-      ]);
-
-      Services.telemetry.clearEvents();
+      Assert.greaterOrEqual(
+        Glean.relayIntegration.shownOfferRelay.testGetValue().length,
+        1,
+        "At least one shown event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.shownOfferRelay.testGetValue()[0].extra.scenario,
+        "SignUpFormScenario",
+        "Shown event is for sign-up form"
+      );
+      Assert.equal(
+        Glean.relayIntegration.clickedOfferRelay.testGetValue().length,
+        1,
+        "One clicked event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.clickedOfferRelay.testGetValue()[0].extra
+          .scenario,
+        "SignUpFormScenario",
+        "Clicked event is for sign-up form"
+      );
+      Assert.equal(
+        Glean.relayIntegration.shownOptInPanel.testGetValue().length,
+        1,
+        "One opt-in panel shown event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.enabledOptInPanel.testGetValue().length,
+        1,
+        "One opt-in panel enabled event"
+      );
+      Services.fog.testResetFOG();
 
       // Retrigger AC popup
       await SpecialPowers.spawn(browser, [], async function () {
@@ -172,19 +147,24 @@ add_task(async function test_popup_option_optin_enabled() {
         usernameInput.focus();
       });
 
-      await assertEvents([
-        {
-          object: "fill_username",
-          method: "shown",
-          extra: { error_code: "0" },
-        },
-      ]);
+      await TestUtils.waitForCondition(() => {
+        return (
+          Glean.relayIntegration.shownFillUsername.testGetValue()?.length == 1
+        );
+      }, "Waiting for the username to fill.");
+      Assert.equal(
+        Glean.relayIntegration.shownFillUsername.testGetValue()[0].extra
+          .error_code,
+        "0",
+        "Error code is 0"
+      );
     }
   );
   rsSandbox.restore();
 });
 
 add_task(async function test_popup_option_optin_postponed() {
+  Services.fog.testResetFOG();
   await setupRelayScenario("available");
   const rsSandbox = await stubRemoteSettingsAllowList();
   await BrowserTestUtils.withNewTab(
@@ -212,18 +192,33 @@ add_task(async function test_popup_option_optin_postponed() {
 
       await notificationHidden;
 
-      await assertEvents([
-        { object: "offer_relay", method: "shown" },
-        { object: "offer_relay", method: "clicked" },
-        { object: "opt_in_panel", method: "shown" },
-        { object: "opt_in_panel", method: "postponed" },
-      ]);
+      Assert.equal(
+        Glean.relayIntegration.shownOfferRelay.testGetValue().length,
+        1,
+        "One offer shown event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.clickedOfferRelay.testGetValue().length,
+        1,
+        "One offer clicked event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.shownOptInPanel.testGetValue().length,
+        1,
+        "One opt-in shown event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.postponedOptInPanel.testGetValue().length,
+        1,
+        "One opt-in postponed event"
+      );
     }
   );
   rsSandbox.restore();
 });
 
 add_task(async function test_popup_option_optin_disabled() {
+  Services.fog.testResetFOG();
   await setupRelayScenario("available");
   const rsSandbox = await stubRemoteSettingsAllowList();
   await BrowserTestUtils.withNewTab(
@@ -250,18 +245,33 @@ add_task(async function test_popup_option_optin_disabled() {
       menuitem.click();
       await notificationHidden;
 
-      await assertEvents([
-        { object: "offer_relay", method: "shown" },
-        { object: "offer_relay", method: "clicked" },
-        { object: "opt_in_panel", method: "shown" },
-        { object: "opt_in_panel", method: "disabled" },
-      ]);
+      Assert.equal(
+        Glean.relayIntegration.shownOfferRelay.testGetValue().length,
+        1,
+        "One offer shown event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.clickedOfferRelay.testGetValue().length,
+        1,
+        "One offer clicked event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.shownOptInPanel.testGetValue().length,
+        1,
+        "One panel shown event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.disabledOptInPanel.testGetValue().length,
+        1,
+        "One panel disabled event"
+      );
     }
   );
   rsSandbox.restore();
 });
 
 add_task(async function test_popup_option_fillusername() {
+  Services.fog.testResetFOG();
   await setupRelayScenario("enabled");
   const rsAllowSandbox = await stubRemoteSettingsAllowList();
   const rsDenySandbox = await stubRemoteSettingsDenyList();
@@ -276,13 +286,16 @@ add_task(async function test_popup_option_fillusername() {
         ConfirmationHint._panel,
         "popuphidden"
       );
-      await assertEvents([
-        { object: "fill_username", method: "shown" },
-        {
-          object: "fill_username",
-          method: "clicked",
-        },
-      ]);
+      Assert.equal(
+        Glean.relayIntegration.shownFillUsername.testGetValue().length,
+        1,
+        "One fill show event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.clickedFillUsername.testGetValue().length,
+        1,
+        "One fill clicked event"
+      );
     }
   );
   rsAllowSandbox.restore();
@@ -290,6 +303,7 @@ add_task(async function test_popup_option_fillusername() {
 });
 
 add_task(async function test_fillusername_free_tier_limit() {
+  Services.fog.testResetFOG();
   await setupRelayScenario("enabled");
   setupServerScenario("free_tier_limit");
   const rsSandbox = await stubRemoteSettingsAllowList();
@@ -316,26 +330,32 @@ add_task(async function test_fillusername_free_tier_limit() {
       notificationPopup.querySelector(".reusable-relay-masks button").click();
       await notificationHidden;
 
-      await assertEvents([
-        { object: "fill_username", method: "shown" },
-        {
-          object: "fill_username",
-          method: "clicked",
-        },
-        {
-          object: "fill_username",
-          method: "shown",
-          extra: { error_code: "free_tier_limit" },
-        },
-        {
-          object: "reuse_panel",
-          method: "shown",
-        },
-        {
-          object: "reuse_panel",
-          method: "reuse_mask",
-        },
-      ]);
+      Assert.equal(
+        Glean.relayIntegration.shownFillUsername.testGetValue().length,
+        2,
+        "Two fill shown events"
+      );
+      Assert.equal(
+        Glean.relayIntegration.shownFillUsername.testGetValue()[1].extra
+          .error_code,
+        "free_tier_limit",
+        "Second shown event hit free tier limit"
+      );
+      Assert.equal(
+        Glean.relayIntegration.clickedFillUsername.testGetValue().length,
+        1,
+        "One fill clicked event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.shownReusePanel.testGetValue().length,
+        1,
+        "One show reuse event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.reuseMaskReusePanel.testGetValue().length,
+        1,
+        "One reuse mask event"
+      );
 
       await SpecialPowers.spawn(browser, [], async function () {
         const username = content.document.getElementById("form-basic-username");
@@ -351,6 +371,7 @@ add_task(async function test_fillusername_free_tier_limit() {
 });
 
 add_task(async function test_fillusername_error() {
+  Services.fog.testResetFOG();
   await setupRelayScenario("enabled");
   setupServerScenario("unknown_error");
   const rsSandbox = await stubRemoteSettingsAllowList();
@@ -376,24 +397,34 @@ add_task(async function test_fillusername_error() {
         "Error message should be displayed"
       );
 
-      await assertEvents([
-        { object: "fill_username", method: "shown" },
-        {
-          object: "fill_username",
-          method: "clicked",
-        },
-        {
-          object: "reuse_panel",
-          method: "shown",
-          extra: { error_code: "408" },
-        },
-      ]);
+      Assert.equal(
+        Glean.relayIntegration.shownFillUsername.testGetValue().length,
+        1,
+        "One show fill event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.clickedFillUsername.testGetValue().length,
+        1,
+        "One clicked fill event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.shownReusePanel.testGetValue().length,
+        1,
+        "One reuse shown event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.shownReusePanel.testGetValue()[0].extra
+          .error_code,
+        "408",
+        "Reuse shown with error code 408"
+      );
     }
   );
   rsSandbox.restore();
 });
 
 add_task(async function test_auth_token_error() {
+  Services.fog.testResetFOG();
   setupRelayScenario("enabled");
   const rsSandbox = await stubRemoteSettingsAllowList();
   gFxAccounts.getOAuthToken.restore();
@@ -423,23 +454,34 @@ add_task(async function test_auth_token_error() {
 
       await notificationHidden;
 
-      await assertEvents([
-        {
-          object: "fill_username",
-          method: "shown",
-          extra: { error_code: "0" },
-        },
-        {
-          object: "fill_username",
-          method: "clicked",
-          extra: { error_code: "0" },
-        },
-        {
-          object: "fill_username",
-          method: "shown",
-          extra: { error_code: "418" },
-        },
-      ]);
+      Assert.equal(
+        Glean.relayIntegration.shownFillUsername.testGetValue().length,
+        2,
+        "Two fill shown events"
+      );
+      Assert.equal(
+        Glean.relayIntegration.shownFillUsername.testGetValue()[0].extra
+          .error_code,
+        "0",
+        "First error code 0"
+      );
+      Assert.equal(
+        Glean.relayIntegration.shownFillUsername.testGetValue()[1].extra
+          .error_code,
+        "418",
+        "Second error code 418"
+      );
+      Assert.equal(
+        Glean.relayIntegration.clickedFillUsername.testGetValue().length,
+        1,
+        "One clicked event"
+      );
+      Assert.equal(
+        Glean.relayIntegration.clickedFillUsername.testGetValue()[0].extra
+          .error_code,
+        "0",
+        "Clicked error_code 0"
+      );
     }
   );
   rsSandbox.restore();

@@ -15,7 +15,6 @@ kind-dependencies:
     - post-update-verify-dummy
 
 task-defaults:
-    run-on-repo-type: [hg]
     run-on-projects: []
     shipping-phase: push
 

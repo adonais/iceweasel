@@ -35,7 +35,8 @@ if not CONFIG["JS_STANDALONE"]:
         )
         or (
             CONFIG["OS_TARGET"] == "Linux"
-            and CONFIG["TARGET_CPU"] in ("aarch64", "arm", "x86", "x86_64", "mips64")
+            and CONFIG["TARGET_CPU"]
+            in ("aarch64", "arm", "x86", "x86_64", "mips64", "loongarch64", "riscv64")
         )
         or (
             CONFIG["OS_TARGET"] == "FreeBSD"

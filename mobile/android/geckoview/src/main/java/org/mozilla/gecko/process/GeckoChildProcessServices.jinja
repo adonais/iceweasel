@@ -11,6 +11,7 @@ import androidx.annotation.Keep;
 public class GeckoChildProcessServices {
     /* package */ static final int MAX_NUM_ISOLATED_CONTENT_SERVICES = {{MOZ_ANDROID_CONTENT_SERVICE_COUNT}};
     public static final class gmplugin extends GeckoServiceChildProcess {}
+    public static final class isolatedGmplugin extends GeckoServiceChildProcess {}
     public static final class socket extends GeckoServiceChildProcess {}
     public static final class gpu extends GeckoServiceGpuProcess {}
     public static final class rdd extends GeckoServiceChildProcess {}

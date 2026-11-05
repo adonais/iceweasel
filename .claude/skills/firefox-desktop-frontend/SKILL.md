@@ -3,6 +3,7 @@ name: firefox-desktop-frontend
 description: You MUST use this skill when working with HTML, JS, CSS and other front-end code.
 ---
 
+# Firefox desktop front-end
 
 ## Workflow
 - Whenever you're building, if `./mach build` was previously run and you have not made any changes to C++ or Rust code (nor rebased past incoming changes to such code), you can use `./mach build faster` to skip the compilation and linking steps and only build the front-end code. This can save a lot of time when you're only working on the browser/ or toolkit/ code.

@@ -38,6 +38,8 @@
     <string name="device_sharing_microphone">Microphone is on</string>
     <string name="device_sharing_camera">Camera is on</string>
     <string name="device_sharing_camera_and_mic">Camera and microphone are on</string>
+    <string name="media_playing">Media is playing</string>
+    <string name="media_enter_pip">Picture-in-picture</string>
     <string name="new_tab">New tab</string>
     <string name="install_addon">Install Add-on...</string>
     <string name="install_addon_hint">Add-on URL: https://addons.mozilla.org/...</string>

@@ -237,13 +237,42 @@ class MarkupElementContainer extends MarkupContainer {
    * This is an undoable action.
    */
   removeAttribute(attrName) {
+    const attrNode = this.editor.attrElements.get(attrName);
+    const activeElement = this.editor.markup.doc.activeElement;
+    const shouldFocus =
+      attrNode && activeElement && attrNode.contains(activeElement);
+
+    let visibleAttrs;
+    let attributeIndex = -1;
+    if (shouldFocus) {
+      visibleAttrs = [...this.editor.attrList.childNodes].filter(
+        el => el.style.display != "none"
+      );
+      attributeIndex = visibleAttrs.indexOf(attrNode);
+      visibleAttrs.splice(attributeIndex, 1);
+    }
+
     const doMods = this.editor._startModifyingAttributes();
     const undoMods = this.editor._startModifyingAttributes();
     this.editor._saveAttribute(attrName, undoMods);
     doMods.removeAttribute(attrName);
+
     this.undo.do(
-      () => {
-        doMods.apply();
+      async () => {
+        await doMods.apply();
+        if (shouldFocus) {
+          const activeEditor =
+            visibleAttrs[attributeIndex] ||
+            visibleAttrs.at(-1) ||
+            this.editor.tag;
+          const editableEl =
+            activeEditor === this.editor.tag
+              ? this.editor.tag
+              : activeEditor.querySelector(".editable");
+          if (editableEl) {
+            editableEl.focus();
+          }
+        }
       },
       () => {
         undoMods.apply();

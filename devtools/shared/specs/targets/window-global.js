@@ -47,6 +47,30 @@ types.addDictType("windowGlobalTarget.reconfigure", {
   serviceWorkersTestingEnabled: "nullable:boolean",
 });
 
+const longstringType = types.getType("longstring");
+const arraybufferType = types.getType("arraybuffer");
+// The sourcedata type needs some custom marshalling, because it is sometimes
+// returned as an arraybuffer and sometimes as a longstring.
+types.addType("windowGlobalTarget.sourcedata", {
+  write: (value, context, detail) => {
+    if (value.typeName === "arraybuffer") {
+      return arraybufferType.write(value, context, detail);
+    }
+    return longstringType.write(value, context, detail);
+  },
+  read: (value, context, detail) => {
+    if (value.typeName === "arraybuffer") {
+      return arraybufferType.read(value, context, detail);
+    }
+    return longstringType.read(value, context, detail);
+  },
+});
+
+types.addDictType("windowGlobalTarget.getSourceContentForResource", {
+  contentType: "nullable:string",
+  source: "nullable:windowGlobalTarget.sourcedata",
+});
+
 const windowGlobalTargetSpecPrototype = {
   typeName: "windowGlobalTarget",
 
@@ -122,6 +146,15 @@ const windowGlobalTargetSpecPrototype = {
         flags: Option(0, "string"),
       },
       response: {},
+    },
+    getSourceContentForResource: {
+      request: {
+        resourceType: Arg(0, "string"),
+        resourceId: Arg(1, "nullable:string"),
+      },
+      response: {
+        value: RetVal("windowGlobalTarget.getSourceContentForResource"),
+      },
     },
   },
   events: {

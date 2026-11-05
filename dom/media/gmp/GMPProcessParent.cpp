@@ -18,6 +18,9 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/ipc/ProcessUtils.h"
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/java/GeckoProcessManagerWrappers.h"
+#endif
 #include "nsFmtString.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
@@ -228,6 +231,11 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
   }
 #endif
 
+#ifdef MOZ_WIDGET_ANDROID
+  java::GeckoProcessManager::SetIsolatedGmpEnabled(
+      StaticPrefs::media_gmp_android_isolated_process());
+#endif
+
   // We need to wait until OnChannelConnected to clear the pref serializer, but
   // SyncLaunch will block until that is called, so we don't actually need to do
   // any overriding, and it only lives on the stack.
@@ -238,22 +246,6 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
         name, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__);
   }
   return launched;
-}
-
-void GMPProcessParent::Delete(nsCOMPtr<nsIRunnable> aCallback) {
-  mDeletedCallback = std::move(aCallback);
-  XRE_GetAsyncIOEventTarget()->Dispatch(NewNonOwningRunnableMethod(
-      "gmp::GMPProcessParent::DoDelete", this, &GMPProcessParent::DoDelete));
-}
-
-void GMPProcessParent::DoDelete() {
-  MOZ_ASSERT(XRE_GetAsyncIOEventTarget()->IsOnCurrentThread());
-
-  if (mDeletedCallback) {
-    mDeletedCallback->Run();
-  }
-
-  Destroy();
 }
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)

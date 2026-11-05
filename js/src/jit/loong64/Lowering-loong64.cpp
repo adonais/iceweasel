@@ -1151,6 +1151,8 @@ bool MWasmTernarySimd128::canRelaxBitselect() { return false; }
 bool MWasmBinarySimd128::canPmaddubsw() { return false; }
 
 bool MWasmBinarySimd128::canTestBits() { return false; }
+
+bool MWasmReplaceLaneSimd128::canMoveLane() { return true; }
 #endif
 
 bool MWasmBinarySimd128::specializeForConstantRhs() {
@@ -1346,13 +1348,27 @@ void LIRGenerator::visitWasmReplaceLaneSimd128(MWasmReplaceLaneSimd128* ins) {
   LAllocation lhs = useRegisterAtStart(ins->lhs());
   if (ins->rhs()->type() == MIRType::Int64) {
     auto* lir = new (alloc())
-        LWasmReplaceInt64LaneSimd128(lhs, useInt64Register(ins->rhs()));
+        LWasmReplaceInt64LaneSimd128(lhs, useInt64RegisterOrZero(ins->rhs()));
     defineReuseInput(lir, ins, 0);
   } else {
     LAllocation rhsAlloc = useRegisterOrZero(ins->rhs());
     auto* lir = new (alloc()) LWasmReplaceLaneSimd128(lhs, rhsAlloc);
     defineReuseInput(lir, ins, 0);
   }
+#else
+  MOZ_CRASH("No SIMD");
+#endif
+}
+
+void LIRGenerator::visitWasmMoveLaneSimd128(MWasmMoveLaneSimd128* ins) {
+#ifdef ENABLE_JIT_SIMD
+  MDefinition* lhs = ins->lhs();
+  MDefinition* rhs = ins->rhs();
+  auto* lir = new (alloc()) LWasmMoveLaneSimd128(
+      useRegisterAtStart(lhs), willHaveDifferentLIRNodes(lhs, rhs)
+                                   ? useRegister(rhs)
+                                   : useRegisterAtStart(rhs));
+  defineReuseInput(lir, ins, 0);
 #else
   MOZ_CRASH("No SIMD");
 #endif

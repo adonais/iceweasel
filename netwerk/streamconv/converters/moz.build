@@ -31,3 +31,11 @@ LOCAL_INCLUDES += [
 DIRS += [
     "/third_party/zstd",
 ]
+
+SOURCE_HEADERS += [
+    "mozTXTToHTMLConv.h",
+    "nsDirIndex.h",
+    "nsDirIndexParser.h",
+    "nsIndexedToHTML.h",
+    "nsMultiMixedConv.h",
+]

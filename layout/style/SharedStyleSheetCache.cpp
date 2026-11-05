@@ -36,9 +36,9 @@ SharedStyleSheetCache::~SharedStyleSheetCache() {
   UnregisterWeakMemoryReporter(this);
 }
 
-void SharedStyleSheetCache::LoadCompleted(SharedStyleSheetCache* aCache,
-                                          StyleSheetLoadData& aData,
-                                          nsresult aStatus) {
+void SharedStyleSheetCache::LoadCompleted(
+    SharedStyleSheetCache* aCache, StyleSheetLoadData& aData, nsresult aStatus,
+    css::Loader::TriggeringPendingLoad aPendingLoad) {
   // If aStatus is a failure we need to mark this data failed.  We also need to
   // mark any ancestors of a failing data as failed and any sibling of a
   // failing data as failed.  Note that SheetComplete is never called on a
@@ -63,6 +63,9 @@ void SharedStyleSheetCache::LoadCompleted(SharedStyleSheetCache* aCache,
   // load from a non-deferred one, and the load fails right away. In that case,
   // it's not sound to try to fire events synchronously.
   const bool canFireEvents = [&] {
+    if (aPendingLoad == css::Loader::TriggeringPendingLoad::Yes) {
+      return false;
+    }
     for (auto* data = &aData; data; data = data->mParentData) {
       if (!data->mMustNotify) {
         return false;

@@ -164,6 +164,10 @@ let propNameAllowlist = [
   // shorthand string), so it isn't referenced via var() in CSS.
   { propName: "--card-icon-bg", isFromDevTools: false },
 
+  // This variable defines the carousel's small layout and is read from JS in
+  // CarouselNav.jsx, so it isn't referenced via var() in CSS.
+  { propName: "--carousel-layout", isFromDevTools: false },
+
   // These variables are used in JS in viewer.mjs (PDF.js).
   {
     propName: "--scale-round-x",

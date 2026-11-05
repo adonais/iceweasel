@@ -5,6 +5,9 @@
 
 #include "OSKeyStore.h"
 
+#include <memory>
+
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Base64.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/Promise.h"
@@ -64,9 +67,9 @@ OSKeyStore::OSKeyStore() : mKs(nullptr) {
   mKs.reset(new CredentialManagerSecret());
 #elif defined(MOZ_WIDGET_GTK)
   if (NS_SUCCEEDED(MaybeLoadLibSecret())) {
-    mKs.reset(new LibSecret());
+    mKs = std::make_unique<LibSecret>();
   } else {
-    mKs.reset(new NSSKeyStore());
+    mKs = std::make_unique<NSSKeyStore>();
   }
 #else
   mKs.reset(new NSSKeyStore());
@@ -256,11 +259,16 @@ nsresult GetPromise(JSContext* aCx, /* out */ RefPtr<Promise>& aPromise) {
   return NS_OK;
 }
 
+static bool InShutdown() {
+  return AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown);
+}
+
 void BackgroundGenerateSecret(const nsACString& aLabel,
                               RefPtr<Promise>& aPromise,
                               RefPtr<OSKeyStore> self) {
   nsAutoCString recovery;
-  nsresult rv = self->GenerateSecret(aLabel, recovery);
+  nsresult rv = InShutdown() ? NS_ERROR_ILLEGAL_DURING_SHUTDOWN
+                             : self->GenerateSecret(aLabel, recovery);
   nsAutoString recoveryString;
   if (NS_SUCCEEDED(rv)) {
     CopyUTF8toUTF16(recovery, recoveryString);
@@ -313,7 +321,8 @@ void BackgroundSecretAvailable(const nsACString& aLabel,
                                RefPtr<Promise>& aPromise,
                                RefPtr<OSKeyStore> self) {
   bool available = false;
-  nsresult rv = self->SecretAvailable(aLabel, &available);
+  nsresult rv = InShutdown() ? NS_ERROR_ILLEGAL_DURING_SHUTDOWN
+                             : self->SecretAvailable(aLabel, &available);
   nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
       "BackgroundSecreteAvailableOSKSResolve",
       [rv, aPromise = std::move(aPromise), available = available]() {
@@ -362,7 +371,8 @@ void BackgroundRecoverSecret(const nsACString& aLabel,
                              const nsACString& aRecoveryPhrase,
                              RefPtr<Promise>& aPromise,
                              RefPtr<OSKeyStore> self) {
-  nsresult rv = self->RecoverSecret(aLabel, aRecoveryPhrase);
+  nsresult rv = InShutdown() ? NS_ERROR_ILLEGAL_DURING_SHUTDOWN
+                             : self->RecoverSecret(aLabel, aRecoveryPhrase);
   nsCOMPtr<nsIRunnable> runnable(
       NS_NewRunnableFunction("BackgroundRecoverSecreteOSKSResolve",
                              [rv, aPromise = std::move(aPromise)]() {
@@ -411,7 +421,8 @@ OSKeyStore::AsyncRecoverSecret(const nsACString& aLabel,
 
 void BackgroundDeleteSecret(const nsACString& aLabel, RefPtr<Promise>& aPromise,
                             RefPtr<OSKeyStore> self) {
-  nsresult rv = self->DeleteSecret(aLabel);
+  nsresult rv = InShutdown() ? NS_ERROR_ILLEGAL_DURING_SHUTDOWN
+                             : self->DeleteSecret(aLabel);
   nsCOMPtr<nsIRunnable> runnable(
       NS_NewRunnableFunction("BackgroundDeleteSecreteOSKSResolve",
                              [rv, aPromise = std::move(aPromise)]() {
@@ -461,7 +472,8 @@ static void BackgroundEncryptBytes(const nsACString& aLabel,
                                    RefPtr<Promise>& aPromise,
                                    RefPtr<OSKeyStore> self) {
   nsAutoCString ciphertext;
-  nsresult rv = self->EncryptBytes(aLabel, aInBytes, ciphertext);
+  nsresult rv = InShutdown() ? NS_ERROR_ILLEGAL_DURING_SHUTDOWN
+                             : self->EncryptBytes(aLabel, aInBytes, ciphertext);
   nsAutoString ctext;
   CopyUTF8toUTF16(ciphertext, ctext);
 
@@ -519,8 +531,9 @@ void BackgroundDecryptBytes(const nsACString& aLabel,
                             RefPtr<OSKeyStore> self) {
   uint8_t* plaintext = nullptr;
   uint32_t plaintextLen = 0;
-  nsresult rv = self->DecryptBytes(aLabel, aEncryptedBase64Text, &plaintextLen,
-                                   &plaintext);
+  nsresult rv = InShutdown() ? NS_ERROR_ILLEGAL_DURING_SHUTDOWN
+                             : self->DecryptBytes(aLabel, aEncryptedBase64Text,
+                                                  &plaintextLen, &plaintext);
   nsTArray<uint8_t> plain;
   if (plaintext) {
     MOZ_ASSERT(plaintextLen > 0);
@@ -580,7 +593,9 @@ void BackgroundGetRecoveryPhrase(const nsACString& aLabel,
                                  RefPtr<Promise>& aPromise,
                                  const RefPtr<OSKeyStore>& self) {
   nsAutoCString recoveryPhrase;
-  nsresult rv = self->RetrieveRecoveryPhrase(aLabel, recoveryPhrase);
+  nsresult rv = InShutdown()
+                    ? NS_ERROR_ILLEGAL_DURING_SHUTDOWN
+                    : self->RetrieveRecoveryPhrase(aLabel, recoveryPhrase);
   nsAutoString exportedRecoveryPhrase;
   if (NS_SUCCEEDED(rv)) {
     CopyUTF8toUTF16(recoveryPhrase, exportedRecoveryPhrase);

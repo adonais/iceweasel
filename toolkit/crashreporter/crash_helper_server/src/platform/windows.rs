@@ -4,7 +4,7 @@
 
 use anyhow::Result;
 use crash_helper_common::ProcessHandle;
-use std::ffi::CStr;
+use std::ffi::OsStr;
 
 pub(crate) const PROXY_RENDEZ_VOUS: bool = true;
 
@@ -12,7 +12,7 @@ pub(crate) const PROXY_RENDEZ_VOUS: bool = true;
 // process in the first place.
 pub(crate) unsafe fn daemonize() {}
 
-pub(crate) fn get_client_handle(handle: &CStr) -> Result<Option<ProcessHandle>> {
+pub(crate) fn get_client_handle(handle: &OsStr) -> Result<Option<ProcessHandle>> {
     let handle = ProcessHandle::deserialize(handle)?;
     Ok(Some(handle))
 }

@@ -791,7 +791,7 @@ const listen = (serv, envport) => {
     }
   }
   return new Promise(resolve => {
-    serv.listen(portSelection, "0.0.0.0", 2000, () => {
+    serv.listen(portSelection, "127.0.0.1", 2000, () => {
       resolve(serv.address().port);
     });
   });

@@ -105,6 +105,7 @@ const SUPPORTED_HEADERS = [
   "Set-Cookie",
   "Set-Cookie2",
   "SourceMap",
+  "Speculation-Rules",
   "Strict-Transport-Security",
   "TE",
   "Timing-Allow-Origin",

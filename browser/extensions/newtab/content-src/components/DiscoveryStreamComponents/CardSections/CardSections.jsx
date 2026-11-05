@@ -293,7 +293,8 @@ function CardSection({
     }
   };
 
-  // @experiment(remove) { bug 2078816 }
+  // @experiment(remove-conditional) { bug 2078816 }
+  // Keep for spaces-thematic-v1.
   const handleWidgetInteraction = widgetName => {
     const prefName = `widgets.${widgetName}.interaction`;
     if (prefs[prefName] === false) {
@@ -577,7 +578,8 @@ function CardSection({
 
       const rec = displaySections[dataIndex];
 
-      // @experiment(remove) { bug 2078816 }
+      // @experiment(remove-conditional) { bug 2078816 }
+      // Keep for spaces-thematic-v1.
       if (rec?.type === "widget") {
         const Widget = WIDGET_ROW_COMPONENTS[rec.widgetId];
         cards.push(

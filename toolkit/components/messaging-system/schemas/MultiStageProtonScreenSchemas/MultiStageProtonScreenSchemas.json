@@ -14,6 +14,18 @@
       "type": "boolean",
       "description": "If true, hides a series of dots that would show up at the bottom of the screen, indicating which screen the user is on. Defaults to false and will already be hidden if there's only one screen."
     },
+    "auto_dismiss": {
+      "type": "object",
+      "description": "If present, the message is dismissed automatically once this screen has been shown for the given time. The countdown only runs while the page is visible, and starts over when the page becomes visible again. A card-stack message with transitions enabled plays its exit animation before it is dismissed. Screens are not dismissed automatically by default.",
+      "properties": {
+        "after": {
+          "type": "number",
+          "minimum": 0,
+          "description": "The time in milliseconds the screen is shown for before the message is dismissed."
+        }
+      },
+      "required": ["after"]
+    },
     "anchors": {
       "type": "array",
       "description": "An array of anchor objects. Each anchor object represents a single element on the page that the callout should be anchored to. The callout will be anchored to the first visible element in the array.",
@@ -1213,9 +1225,14 @@
           "type": "object",
           "description": "CSS overrides of the tile container. Any CSS properties starting with '--' are also allowed."
         },
+        "layout": {
+          "type": "string",
+          "description": "Optional. Currently for single-select tiles only. Visual layout for the tile's items; 'carousel' lays the items out in a single row, centered on the selected item, with pill navigation above. The row has two sizes: in a modal at least 800px wide the selected card is enlarged and its neighbours peek in at a smaller size, and below that every card takes the smaller size and the selection is marked by its outline alone.",
+          "enum": ["carousel"]
+        },
         "pill_nav_label": {
           "$ref": "#/$defs/localizableThing",
-          "description": "Accessible name for the optional carousel pill navigation."
+          "description": "Optional. Currently for single-select tiles only, and only applies when 'layout' is 'carousel'. Accessible name for the carousel pill navigation."
         },
         "data": {
           "type": "array",

@@ -110,7 +110,7 @@ describe("aichat container tab behavior", () => {
   });
 
   afterEach(async () => {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     await BrowserTestUtils.closeWindow(win);
     await SpecialPowers.popPrefEnv();
     mockEngineManager.cleanupMocks();

@@ -102,9 +102,11 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
 if CONFIG["MOZ_WAYLAND"]:
     EXPORTS.mozilla.webrender += [
         "RenderCompositorNative.h",
+        "RenderWaylandTextureHost.h",
     ]
     SOURCES += [
         "RenderCompositorNative.cpp",
+        "RenderWaylandTextureHost.cpp",
     ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("android", "gtk"):
@@ -136,3 +138,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
 
 COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]
+
+SOURCE_HEADERS += [
+    "RenderCompositorRecordedFrame.h",
+]

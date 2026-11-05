@@ -82,9 +82,13 @@ class nsMathMLChar {
   // not a virtual destructor: this class is not intended to be subclassed
   ~nsMathMLChar();
 
+  // aIsArtifact should be true if this character is drawn implicitly due to
+  // the MathML element (e.g. a square root sign), rather than being the
+  // element's own text content (e.g. a stretchy operator). Such characters are
+  // purely visual, so they are marked as artifacts in tagged PDF output.
   void Display(mozilla::nsDisplayListBuilder* aBuilder, nsIFrame* aForFrame,
                const mozilla::nsDisplayListSet& aLists, uint32_t aIndex,
-               const nsRect* aSelectedRect = nullptr);
+               bool aIsArtifact, const nsRect* aSelectedRect = nullptr);
 
   void PaintForeground(nsIFrame* aForFrame, gfxContext& aRenderingContext,
                        imgDrawingParams& aImgParams, nsPoint aPt,

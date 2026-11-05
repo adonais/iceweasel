@@ -84,8 +84,7 @@ nsHttpChannelAuthProvider::Init(nsIHttpAuthenticableChannel* channel) {
   nsresult rv = mAuthChannel->GetURI(getter_AddRefs(mURI));
   if (NS_FAILED(rv)) return rv;
 
-  rv = mAuthChannel->GetIsSSL(&mUsingSSL);
-  if (NS_FAILED(rv)) return rv;
+  mUsingSSL = mURI->SchemeIs("https");
 
   nsCOMPtr<nsIProxiedChannel> proxied(channel);
   if (proxied) {

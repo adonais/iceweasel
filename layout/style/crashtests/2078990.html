@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<style>
+@font-face { font-family: F; src: url("about:newtab"); }
+#x { font-family: F; width: 1ex; }
+</style>
+<div style="display:none"><div id="x"><span>a</span></div></div>
+<script>
+window.onload = () => {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      getSelection().selectAllChildren(document.getElementById("x"));
+      document.documentElement.className = "";
+    });
+  });
+};
+</script>
+</html>

@@ -20,6 +20,7 @@ HOST_SOURCES += [
     "ExplicitOperatorBoolChecker.cpp",
     "FinalCycleCollectingIsupportsChecker.cpp",
     "GlobalVariableInitializationChecker.cpp",
+    "IncorrectStdForwardUsageChecker.cpp",
     "IntToEnumCastChecker.cpp",
     "JSHandleRootedTypedefChecker.cpp",
     "KnownLiveChecker.cpp",

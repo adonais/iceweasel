@@ -30,3 +30,7 @@ if CONFIG["OS_TARGET"] == "WINNT" and CONFIG["CC_TYPE"] in ("gcc", "clang"):
 
 BROWSER_CHROME_MANIFESTS += ["browser/browser.toml"]
 XPCSHELL_TESTS_MANIFESTS += ["unit/xpcshell.toml"]
+
+SOURCE_HEADERS += [
+    "TestUrisToValidate.h",
+]

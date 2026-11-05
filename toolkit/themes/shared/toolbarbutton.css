@@ -73,8 +73,6 @@ toolbarbutton {
   @media (-moz-platform: macos) {
     --toolbarbutton-badge-font-size: 9px;
     line-height: 1.11;
-    /* Prefer pixels over rem spacing in chrome */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     padding-top: 1px;
 
     toolbar[mode="icons"] > *|* > & {

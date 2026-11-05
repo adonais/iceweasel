@@ -167,8 +167,7 @@ Result<nsCOMPtr<nsISupports>, nsresult> BodyStartWriteStream(
                                        aDirectoryMetadata, Client::DOMCACHE,
                                        tmpFile.get()));
 
-  const auto privateBody = aDirectoryMetadata.mIsPrivate;
-  if (privateBody) {
+  if (aDirectoryMetadata.ShouldEncrypt()) {
     MOZ_DIAGNOSTIC_ASSERT(aMaybeCipherKey);
 
     fileStream = MakeRefPtr<quota::EncryptingOutputStream<CipherStrategy>>(
@@ -241,8 +240,7 @@ Result<MovingNotNull<nsCOMPtr<nsIInputStream>>, nsresult> BodyOpen(
                                       aDirectoryMetadata, Client::DOMCACHE,
                                       finalFile.get()));
 
-  auto privateBody = aDirectoryMetadata.mIsPrivate;
-  if (privateBody) {
+  if (aDirectoryMetadata.ShouldEncrypt()) {
     MOZ_DIAGNOSTIC_ASSERT(aMaybeCipherKey);
 
     fileInputStream = new quota::DecryptingInputStream<CipherStrategy>(

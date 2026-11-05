@@ -463,6 +463,32 @@ add_task(async function update_move_into_root_folder_rejects() {
   );
 });
 
+add_task(async function update_move_into_non_folder_rejects() {
+  let target = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "http://example.com/target",
+  });
+  let bm = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "http://example.com/",
+  });
+
+  await Assert.rejects(
+    PlacesUtils.bookmarks.update({
+      guid: bm.guid,
+      parentGuid: target.guid,
+      index: PlacesUtils.bookmarks.DEFAULT_INDEX,
+    }),
+    /parentGuid must be a folder/,
+    "Should reject when attempting to move a bookmark into a bookmark"
+  );
+  Assert.equal(
+    (await PlacesUtils.bookmarks.fetch(bm.guid)).parentGuid,
+    PlacesUtils.bookmarks.unfiledGuid,
+    "The bookmark should not have been moved"
+  );
+});
+
 add_task(async function update_move() {
   let parent = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,

@@ -12,6 +12,7 @@
 namespace mozilla::dom {
 
 class WebTransport;
+class WebTransportChild;
 class WebTransportSendGroup;
 class WebTransportDatagramDuplexStream;
 class OutgoingDatagramStreamAlgorithms;
@@ -29,7 +30,7 @@ class WebTransportDatagramsWritable final : public WritableStream {
 
   static already_AddRefed<WebTransportDatagramsWritable> Create(
       JSContext* aCx, nsIGlobalObject* aGlobal, WebTransport* aTransport,
-      WebTransportDatagramDuplexStream* aDatagrams, double aHighWaterMark,
+      WebTransportDatagramDuplexStream* aDatagrams,
       WebTransportSendGroup* aSendGroup, int64_t aSendOrder, ErrorResult& aRv);
 
   JSObject* WrapObject(JSContext* aCx,
@@ -40,6 +41,18 @@ class WebTransportDatagramsWritable final : public WritableStream {
 
   int64_t SendOrder() const { return mSendOrder; }
   void SetSendOrder(int64_t aSendOrder);
+
+  void OnDatagramReady(uint64_t aDatagramId);
+
+  // Whether the session was already connected (child actor set) when this
+  // writable's algorithms were created.
+  bool IsConnected() const;
+
+  void SetChild(WebTransportChild* aChild);
+
+  // Resolves this writable's withheld write promise, if any, so the
+  // WritableStream is not left waiting on it once the session is torn down.
+  void Cleanup();
 
  private:
   ~WebTransportDatagramsWritable() override;

@@ -24,22 +24,50 @@ class TestCompileDBBackends(BackendTester):
         expected_db = [
             {
                 "directory": topobjdir,
-                "command": f"clang -o /dev/null -c -ferror-limit=0 {topsrcdir}/bar.c",
+                "arguments": [
+                    "clang",
+                    "-o",
+                    "/dev/null",
+                    "-c",
+                    "-ferror-limit=0",
+                    f"{topsrcdir}/bar.c",
+                ],
                 "file": f"{topsrcdir}/bar.c",
             },
             {
                 "directory": topobjdir,
-                "command": f"clang -o /dev/null -c -ferror-limit=0 {topsrcdir}/foo.c",
+                "arguments": [
+                    "clang",
+                    "-o",
+                    "/dev/null",
+                    "-c",
+                    "-ferror-limit=0",
+                    f"{topsrcdir}/foo.c",
+                ],
                 "file": f"{topsrcdir}/foo.c",
             },
             {
                 "directory": topobjdir,
-                "command": f"clang++ -o /dev/null -c -ferror-limit=0 {topsrcdir}/baz.cpp",
+                "arguments": [
+                    "clang++",
+                    "-o",
+                    "/dev/null",
+                    "-c",
+                    "-ferror-limit=0",
+                    f"{topsrcdir}/baz.cpp",
+                ],
                 "file": f"{topsrcdir}/baz.cpp",
             },
             {
                 "directory": topobjdir,
-                "command": f"clang++ -o /dev/null -c -ferror-limit=0 {topsrcdir}/qux.cpp",
+                "arguments": [
+                    "clang++",
+                    "-o",
+                    "/dev/null",
+                    "-c",
+                    "-ferror-limit=0",
+                    f"{topsrcdir}/qux.cpp",
+                ],
                 "file": f"{topsrcdir}/qux.cpp",
             },
         ]
@@ -54,6 +82,23 @@ class TestCompileDBBackends(BackendTester):
         compile_commands_path = os.path.join(env.topobjdir, "compile_commands.json")
 
         self.perform_check(compile_commands_path, env.topsrcdir, env.topobjdir)
+
+    def test_database_quoted_defines(self):
+        """Ensure string-valued defines are emitted as single, unquoted
+        arguments, so that tools don't need to parse shell quoting."""
+
+        env = self._consume("database-defines", CompileDBBackend)
+        compile_commands_path = os.path.join(env.topobjdir, "compile_commands.json")
+
+        with open(compile_commands_path) as fh:
+            compile_db = json.load(fh)
+
+        self.assertEqual(len(compile_db), 1)
+        defines = [a for a in compile_db[0]["arguments"] if a.startswith("-D")]
+        self.assertEqual(
+            defines,
+            ['-DMOZ_APP_NAME="firefox"', '-DMOZ_APP_DISPLAYNAME="Mozilla Firefox"'],
+        )
 
     def test_clangd(self):
         """Ensure we can generate a `compile_commands.json` and that is correct.

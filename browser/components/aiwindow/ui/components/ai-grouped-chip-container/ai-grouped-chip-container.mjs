@@ -3,7 +3,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
-import { CONTEXT_MENTION_TYPE } from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs";
+import {
+  CONTEXT_MENTION_TYPE,
+  getTabGroupMentionId,
+  parseTabGroupMentionId,
+} from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs";
 import { html, repeat } from "chrome://global/content/vendor/lit.all.mjs";
 
 // eslint-disable-next-line import/no-unassigned-import
@@ -20,6 +24,7 @@ export class AIGroupedChipContainer extends MozLitElement {
     // Each host opens links itself, so it names the event it listens for.
     openLinkEvent: { type: String },
     isPanelOpen: { type: Boolean, state: true },
+    chipsLabel: { type: String },
   };
 
   constructor() {
@@ -27,6 +32,7 @@ export class AIGroupedChipContainer extends MozLitElement {
     this.chips = [];
     this.openLinkEvent = "AIChatContent:OpenLink";
     this.isPanelOpen = false;
+    this.chipsLabel = "smart-window-context-chips-tag-count";
   }
 
   // Keep this mousedown from reaching panel-list's document-level light-dismiss
@@ -47,8 +53,19 @@ export class AIGroupedChipContainer extends MozLitElement {
   }
 
   #onItemSelected(event) {
-    const url = event.detail?.id;
-    if (url) {
+    const { id: url, type } = event.detail ?? {};
+    if (type == CONTEXT_MENTION_TYPE.TAB_GROUP) {
+      const groupId = parseTabGroupMentionId(url);
+      if (groupId) {
+        this.dispatchEvent(
+          new CustomEvent("AIChatContent:OpenTabGroup", {
+            bubbles: true,
+            composed: true,
+            detail: { groupId },
+          })
+        );
+      }
+    } else if (url) {
       this.dispatchEvent(
         new CustomEvent(this.openLinkEvent, {
           bubbles: true,
@@ -84,7 +101,7 @@ export class AIGroupedChipContainer extends MozLitElement {
     const chipsGroups = [
       {
         items: this.chips.map(w => ({
-          id: w.url,
+          id: w.url ?? getTabGroupMentionId(w.groupId),
           type: w.type,
           label: w.label,
           icon: w.iconSrc,
@@ -116,7 +133,7 @@ export class AIGroupedChipContainer extends MozLitElement {
         </span>
         <span
           class="grouped-chips__label"
-          data-l10n-id="smart-window-context-chips-tag-count"
+          data-l10n-id=${this.chipsLabel}
           data-l10n-args=${JSON.stringify({ tags: this.chips.length })}
         ></span>
         <img

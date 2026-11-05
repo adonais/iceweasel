@@ -218,7 +218,7 @@ bool ImageAccessible::IsLongDescIndex(uint8_t aIndex) const {
 // imgINotificationObserver
 
 void ImageAccessible::Notify(imgIRequest* aRequest, int32_t aType,
-                             const nsIntRect* aData) {
+                             const nsIntRect* /*aData*/) {
   if (aType != imgINotificationObserver::FRAME_COMPLETE &&
       aType != imgINotificationObserver::LOAD_COMPLETE &&
       aType != imgINotificationObserver::DECODE_COMPLETE) {

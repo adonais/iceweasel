@@ -19,7 +19,6 @@
   padding: 2px 4px;
   /* checkbox can be 13px, 14px or 16px depending on the platform */
   line-height: 16px;
-  user-select: none;
   cursor: default;
 }
 

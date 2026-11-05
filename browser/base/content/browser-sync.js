@@ -26,7 +26,6 @@ ChromeUtils.defineESModuleGetters(this, {
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   MenuMessage: "resource:///modules/asrouter/MenuMessage.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  Referrals: "moz-src:///browser/components/referrals/Referrals.sys.mjs",
   SyncedTabs: "resource://services-sync/SyncedTabs.sys.mjs",
   SyncedTabsManagement: "resource://services-sync/SyncedTabs.sys.mjs",
   Weave: "resource://services-sync/main.sys.mjs",
@@ -1991,9 +1990,6 @@ var gSync = {
         break;
       case "PanelUI-fxa-menu-vpn-button":
         this.openVPNLink(button);
-        break;
-      case "PanelUI-fxa-menu-share-firefox":
-        this.openShareFirefoxLink();
         break;
       case "PanelUI-fxa-menu-sendtab-sign-in-button":
         this.signInToSync(button);
@@ -4081,16 +4077,6 @@ var gSync = {
       descriptionId: "appmenuitem-vpn-description5",
     });
 
-    // Share Firefox checks
-    let shareFirefoxPanelEl = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-fxa-menu-share-firefox"
-    );
-    shareFirefoxPanelEl.hidden = !Services.prefs.getBoolPref(
-      "browser.referrals.enabled",
-      false
-    );
-
     let privacyToolsSeparatorEl = PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-privacy-tools-separator"
@@ -4156,11 +4142,6 @@ var gSync = {
       this._ctaURL(VPN_NEW_USER_URL, "new-user-global"),
       this._ctaURL(VPN_EXISTING_USER_URL, "existing-user-global")
     );
-  },
-
-  openShareFirefoxLink() {
-    Referrals.openReferralsTab(window, "accounts_menu");
-    PanelUI.hide();
   },
 
   /**

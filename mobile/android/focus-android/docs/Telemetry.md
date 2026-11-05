@@ -38,7 +38,7 @@ As part of the event ping the most recent state of the user's setting is sent (d
 
 ### Events
 
-The event ping contains a list of events ([see event format on readthedocs.io](https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/telemetry/collection/events.html)) for the following actions:
+The event ping contains a list of events ({doc}`see event format </toolkit/components/telemetry/obsolete/collection/events>`) for the following actions:
 
 #### Sessions
 

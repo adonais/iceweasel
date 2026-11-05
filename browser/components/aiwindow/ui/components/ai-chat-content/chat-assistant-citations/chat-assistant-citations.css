@@ -26,7 +26,6 @@
   gap: var(--space-xsmall);
 
   ai-website-chip::part(chip):hover {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-color: var(--citations-background-color-hover);
   }
 

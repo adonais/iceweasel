@@ -10,6 +10,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -40,11 +41,9 @@ class LoginExceptionDaoTest {
     }
 
     @Test
-    fun testAddingLoginException() {
-        val exception =
-            LoginExceptionEntity(origin = "mozilla.org").also {
-                it.id = loginExceptionDao.insertLoginException(it)
-            }
+    fun testAddingLoginException() = runTest {
+        val exception = LoginExceptionEntity(origin = "mozilla.org")
+        exception.id = loginExceptionDao.insertLoginException(exception)
 
         val loginExceptionsList = loginExceptionDao.getLoginExceptionsList()
 
@@ -53,16 +52,12 @@ class LoginExceptionDaoTest {
     }
 
     @Test
-    fun testRemovingLoginException() {
-        val exception1 =
-            LoginExceptionEntity(origin = "mozilla.org").also {
-                it.id = loginExceptionDao.insertLoginException(it)
-            }
+    fun testRemovingLoginException() = runTest {
+        val exception1 = LoginExceptionEntity(origin = "mozilla.org")
+        exception1.id = loginExceptionDao.insertLoginException(exception1)
 
-        val exception2 =
-            LoginExceptionEntity(origin = "firefox.com").also {
-                it.id = loginExceptionDao.insertLoginException(it)
-            }
+        val exception2 = LoginExceptionEntity(origin = "firefox.com")
+        exception2.id = loginExceptionDao.insertLoginException(exception2)
 
         loginExceptionDao.deleteLoginException(exception1)
 

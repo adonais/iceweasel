@@ -249,6 +249,19 @@ FxAccountsClient.prototype = {
   },
 
   /**
+   * List all the subscriptions for the user.
+   *
+   * @param accessToken
+   *        An OAuth access token with the subscriptions scope
+   * @return Promise
+   */
+  async activeSubscriptions(accessToken) {
+    return this._request("/oauth/subscriptions/active", "GET", {
+      accessToken,
+    });
+  },
+
+  /**
    * Retrieves an OAuth authorization code.
    *
    * @param String sessionTokenHex

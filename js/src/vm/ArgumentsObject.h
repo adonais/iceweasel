@@ -487,9 +487,7 @@ class MappedArgumentsObject : public ArgumentsObject {
  public:
   static const JSClass class_;
 
-  JSFunction& callee() const {
-    return getFixedSlotTyped(CALLEE_SLOT).toObject().as<JSFunction>();
-  }
+  JSFunction& callee() const;
 
   bool hasOverriddenCallee() const { return hasFlags(CALLEE_OVERRIDDEN_BIT); }
 

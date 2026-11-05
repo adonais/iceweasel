@@ -20,6 +20,8 @@ export class SidebarTabList extends FxviewTabListBase {
     // Panel is open, assume we always want to react to updates.
     this.updatesPaused = false;
     this.multiSelect = true;
+    this.inTree = false;
+    this.level = 1;
   }
 
   static queries = {
@@ -30,12 +32,15 @@ export class SidebarTabList extends FxviewTabListBase {
   };
 
   static properties = {
+    inTree: { type: Boolean },
+    level: { type: Number },
     mediumView: { type: Boolean, reflect: true, attribute: "medium-view" },
     inactiveWindow: {
       type: Boolean,
       reflect: true,
       attribute: "inactive-window",
     },
+    rowsDraggable: { type: Boolean },
   };
 
   /**
@@ -129,6 +134,7 @@ export class SidebarTabList extends FxviewTabListBase {
         .closeRequested=${tabItem.closeRequested}
         .containerObj=${tabItem.containerObj}
         .dateTimeFormat=${this.dateTimeFormat}
+        draggable=${!!this.rowsDraggable}
         .fxaDeviceId=${ifDefined(tabItem.fxaDeviceId)}
         .favicon=${tabItem.icon}
         .guid=${tabItem.guid}
@@ -138,7 +144,12 @@ export class SidebarTabList extends FxviewTabListBase {
         .inactiveWindow=${this.inactiveWindow}
         .primaryL10nArgs=${ifDefined(tabItem.primaryL10nArgs)}
         .primaryL10nId=${tabItem.primaryL10nId}
-        role="listitem"
+        role=${this.inTree ? "treeitem" : "listitem"}
+        aria-level=${ifDefined(this.inTree ? this.level : undefined)}
+        aria-posinset=${ifDefined(this.inTree ? i + 1 : undefined)}
+        aria-setsize=${ifDefined(
+          this.inTree ? this.tabItems.length : undefined
+        )}
         .searchQuery=${ifDefined(this.searchQuery)}
         .secondaryActionClass=${ifDefined(
           this.secondaryActionClass ?? tabItem.secondaryActionClass
@@ -171,6 +182,29 @@ export class SidebarTabList extends FxviewTabListBase {
         href="chrome://browser/content/sidebar/sidebar-tab-list.css"
       />`,
     ];
+  }
+
+  render() {
+    if (!this.inTree || (this.searchQuery && !this.tabItems.length)) {
+      return super.render();
+    }
+    return html`
+      ${this.stylesheets()}
+      <div
+        id="fxview-tab-list"
+        class="fxview-tab-list"
+        role=${this.level > 1 ? "group" : "tree"}
+        @keydown=${this.handleFocusElementInRow}
+      >
+        <virtual-list
+          .activeIndex=${this.activeIndex}
+          .items=${this.tabItems}
+          .template=${this.itemTemplate}
+          .getItemHeight=${this.getItemHeight}
+        ></virtual-list>
+      </div>
+      <slot name="menu"></slot>
+    `;
   }
 }
 customElements.define("sidebar-tab-list", SidebarTabList);

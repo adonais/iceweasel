@@ -26,6 +26,7 @@
 #include "jit/shared/Assembler-shared.h"
 #include "jit/TrampolineNatives.h"
 #include "js/AllocPolicy.h"
+#include "js/GCVector.h"
 #include "js/ProfilingFrameIterator.h"
 #include "js/TypeDecls.h"
 #include "js/UniquePtr.h"
@@ -147,6 +148,9 @@ class JitRuntime {
   // Thunk that invalides an (Ion compiled) caller on the Ion stack.
   WriteOnceData<uint32_t> invalidatorOffset_{0};
 
+  // Shared handler for Baseline debug-mode OSR.
+  WriteOnceData<uint32_t> baselineDebugModeOSRHandlerOffset_{0};
+
   // Thunk that calls the GC pre barrier.
   WriteOnceData<uint32_t> valuePreBarrierOffset_{0};
   WriteOnceData<uint32_t> stringPreBarrierOffset_{0};
@@ -180,6 +184,11 @@ class JitRuntime {
   mozilla::EnumeratedArray<DebugTrapHandlerKind, WriteOnceData<JitCode*>,
                            size_t(DebugTrapHandlerKind::Count)>
       debugTrapHandlers_;
+
+  // Return sites in JitCode belonging to recompiled baseline scripts that have
+  // pending live frames.
+  MainThreadData<JS::GCVector<DebugModeOSRReturnSite, 0, SystemAllocPolicy>>
+      debugModeOSRReturnSites_;
 
   // BaselineInterpreter state.
   BaselineInterpreter baselineInterpreter_;
@@ -269,6 +278,7 @@ class JitRuntime {
 
   void generateBailoutHandler(MacroAssembler& masm, Label* bailoutTail);
   void generateInvalidator(MacroAssembler& masm, Label* bailoutTail);
+  void generateBaselineDebugModeOSRHandler(MacroAssembler& masm);
   uint32_t generatePreBarrier(JSContext* cx, MacroAssembler& masm,
                               MIRType type);
   void generateIonGenericCallStub(MacroAssembler& masm,
@@ -409,6 +419,10 @@ class JitRuntime {
     return trampolineCode(invalidatorOffset_);
   }
 
+  TrampolinePtr getBaselineDebugModeOSRHandler() const {
+    return trampolineCode(baselineDebugModeOSRHandlerOffset_);
+  }
+
   EnterJitCode enterJit() const {
     return JS_DATA_TO_FUNC_PTR(EnterJitCode,
                                trampolineCode(enterJITOffset_).value);
@@ -525,6 +539,16 @@ class JitRuntime {
   void ionLazyLinkListAdd(JSRuntime* rt, js::jit::IonCompileTask* task);
 
   void handleGrowSlotsForPureCall(JSContext* cx);
+
+  [[nodiscard]] bool reserveDebugModeOSRReturnSites(JSContext* cx,
+                                                    size_t count);
+  void addDebugModeOSRReturnSite(BaselineScript* baselineScript,
+                                 const RetAddrEntry& retAddrEntry);
+  void releaseDebugModeOSRReturnSite(DebugModeOSRReturnSite* site);
+  DebugModeOSRReturnSite* lookupDebugModeOSRReturnSite(
+      const uint8_t* returnAddress);
+
+  static void TraceDebugModeOSRReturnSites(JSTracer* trc);
 };
 
 }  // namespace jit

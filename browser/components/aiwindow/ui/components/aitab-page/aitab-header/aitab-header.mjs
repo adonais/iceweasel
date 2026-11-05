@@ -65,6 +65,7 @@ export class AITabHeader extends MozLitElement {
     return html`<ai-grouped-chip-container
       class="aitab-references"
       .chips=${chips}
+      .chipsLabel=${"smart-window-aitab-sources-count"}
       openLinkEvent="AITab:OpenLink"
     ></ai-grouped-chip-container>`;
   }

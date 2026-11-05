@@ -4,6 +4,52 @@
 
 const { logTest, logTask } = require("./utils/profiling");
 
+async function startProfiler(context, commands) {
+  try {
+    context.log.info("Custom profiler start!");
+    if (context.options.browser === "firefox") {
+      await commands.profiler.start();
+    } else if (context.options.browser === "chrome") {
+      await commands.trace.start();
+    }
+  } catch (err) {
+    context.log.error(
+      `Failed to start the custom profiler: ${err.stack || err}`
+    );
+  }
+}
+
+async function stopProfiler(context, commands) {
+  const results = commands.measure.result;
+  if (!results?.length || !results[results.length - 1].url) {
+    context.log.warn(
+      "Skipping custom profiler stop because measure.stop produced no result"
+    );
+    return;
+  }
+
+  // Browsertime derives the profile's output directory from
+  // result[0].browserScripts.pageinfo.url (getBrowsertimeResultsPath in
+  // utils/profiling.js), so swap the just-measured result into result[0]
+  // for the duration of the stop to file each profile under its own page.
+  const savedResult = results[0];
+  results[0] = results[results.length - 1];
+  try {
+    context.log.info("Custom profiler stop!");
+    if (context.options.browser === "firefox") {
+      await commands.profiler.stop();
+    } else if (context.options.browser === "chrome") {
+      await commands.trace.stop();
+    }
+  } catch (err) {
+    context.log.error(
+      `Failed to stop the custom profiler: ${err.stack || err}`
+    );
+  } finally {
+    results[0] = savedResult;
+  }
+}
+
 async function get_command_function(cmd, commands) {
   /*
   Converts a string such as `measure.start` into the actual
@@ -60,6 +106,12 @@ module.exports = logTest(
     let page_cycles = context.options.browsertime.page_cycles;
     let post_startup_delay = context.options.browsertime.post_startup_delay;
     let input_cmds = context.options.browsertime.commands;
+    const customProfilingEnabled =
+      context.options.browsertime.expose_profiler === "true" &&
+      ((context.options.browser === "firefox" &&
+        context.options.firefox?.geckoProfilerRecordingType === "custom") ||
+        (context.options.browser === "chrome" &&
+          context.options.chrome?.timelineRecordingType === "custom"));
 
     context.log.info(
       "Waiting for %d ms (post_startup_delay)",
@@ -69,6 +121,8 @@ module.exports = logTest(
 
     // unpack commands from python
     let cmds = input_cmds.split(";;;");
+
+    let measuredCount = commands.measure.result?.length || 0;
 
     for (let count = 0; count < page_cycles; count++) {
       await logTask(context, "cycle " + count, async function () {
@@ -87,6 +141,12 @@ module.exports = logTest(
 
           let [func, parent_mod] = await get_command_function(cmd, commands);
 
+          // Start the profiler before measure.start so that a navigation it
+          // performs (the measure.start(url) form) is captured too.
+          if (customProfilingEnabled && cmd === "measure.start") {
+            await startProfiler(context, commands);
+          }
+
           try {
             await func.call(parent_mod, ...args);
           } catch (e) {
@@ -94,6 +154,17 @@ module.exports = logTest(
               `Exception found while running \`commands.${cmd}(${args})\`: `
             );
             context.log.info(e.stack);
+          }
+
+          if (customProfilingEnabled && cmd === "measure.stop") {
+            if ((commands.measure.result?.length || 0) > measuredCount) {
+              measuredCount = commands.measure.result.length;
+              await stopProfiler(context, commands);
+            } else {
+              context.log.warn(
+                "Skipping custom profiler stop because measure.stop failed"
+              );
+            }
           }
         }
 

@@ -966,9 +966,6 @@ class nsDisplayListBuilder {
     static_assert(size_t(DisplayItemType::TYPE_MAX) ==
                       size_t(DisplayListArenaObjectId::CLIPCHAIN),
                   "");
-    static_assert(size_t(DisplayItemType::TYPE_MAX) + 1 ==
-                      size_t(DisplayListArenaObjectId::LISTNODE),
-                  "");
 #undef DECLARE_DISPLAY_ITEM_TYPE
     return Allocate(aSize, DisplayListArenaObjectId(size_t(aType)));
   }
@@ -1746,6 +1743,7 @@ class nsDisplayListBuilder {
       if (mBuilderToReset) {
         mBuilderToReset->mLinkURI.Truncate(0);
         mBuilderToReset->mLinkDest.Truncate(0);
+        mBuilderToReset->mLinkReferenceFrame = nullptr;
       }
     }
 
@@ -1872,6 +1870,11 @@ class nsDisplayListBuilder {
   const ActiveScrolledRoot* mFilterASR;
   nsCString mLinkURI;   // URI of link currently being emitted, if any.
   nsCString mLinkDest;  // Local destination name of link, if any.
+  // Bounds of the frame for the link currently being emitted, relative to
+  // mLinkReferenceFrame.
+  nsRect mLinkBounds;
+  // Reference frame for mLinkBounds.
+  const nsIFrame* mLinkReferenceFrame = nullptr;
 
   // Optimized versions for non-retained display list.
   LayoutDeviceIntRegion mWindowDraggingRegion;
@@ -2945,8 +2948,10 @@ class nsDisplayItem {
   RefPtr<const ActiveScrolledRoot> mActiveScrolledRoot;
   RefPtr<const DisplayItemClipChain> mClipChain;
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
  public:
+  nsDisplayItem* mNext = nullptr;
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   bool IsMergedItem() const {
     return mItemFlags.contains(ItemFlag::MergedItem);
   }
@@ -3025,45 +3030,90 @@ class nsPaintedDisplayItem : public nsDisplayItem {
   HitTestInfo mHitTestInfo;
 };
 
-template <typename T>
-struct MOZ_HEAP_CLASS LinkedListNode {
-  explicit LinkedListNode(T aValue) : mNext(nullptr), mValue(aValue) {}
-  LinkedListNode* mNext;
-  T mValue;
-};
-
-template <typename T>
-struct LinkedListIterator {
+class nsDisplayListIterator {
+ public:
   using iterator_category = std::forward_iterator_tag;
   using difference_type = std::ptrdiff_t;
-  using value_type = T;
-  using pointer = T*;
-  using reference = T&;
-  using Node = LinkedListNode<T>;
+  using value_type = nsDisplayItem*;
 
-  explicit LinkedListIterator(Node* aNode = nullptr) : mNode(aNode) {}
+  explicit nsDisplayListIterator(nsDisplayItem* aNode = nullptr)
+      : mNode(aNode) {}
 
-  bool HasNext() const { return mNode != nullptr; }
-
-  LinkedListIterator<T>& operator++() {
+  nsDisplayListIterator& operator++() {
     MOZ_ASSERT(mNode);
     mNode = mNode->mNext;
     return *this;
   }
 
-  bool operator==(const LinkedListIterator<T>&) const = default;
+  bool operator==(const nsDisplayListIterator&) const = default;
 
-  const T operator*() const {
+  const nsDisplayItem* operator*() const {
     MOZ_ASSERT(mNode);
-    return mNode->mValue;
+    return mNode;
   }
 
-  T operator*() {
+  nsDisplayItem* operator*() {
     MOZ_ASSERT(mNode);
-    return mNode->mValue;
+    return mNode;
   }
 
-  Node* mNode;
+ private:
+  nsDisplayItem* mNode;
+};
+
+/**
+ * Iterator over items taken out of an nsDisplayList, see
+ * nsDisplayList::TakeItems(). Each item is unlinked when reached, so it can be
+ * destroyed or appended to another list. Must be consumed entirely.
+ */
+class MOZ_STACK_CLASS nsDisplayListUnlinkingIterator {
+ public:
+  explicit nsDisplayListUnlinkingIterator(nsDisplayItem* aNode = nullptr)
+      : mNode(aNode) {
+    Unlink();
+  }
+
+  nsDisplayListUnlinkingIterator(nsDisplayListUnlinkingIterator&& aOther)
+      : mNode(std::exchange(aOther.mNode, nullptr)),
+        mNext(std::exchange(aOther.mNext, nullptr)) {}
+
+  nsDisplayListUnlinkingIterator(const nsDisplayListUnlinkingIterator&) =
+      delete;
+  nsDisplayListUnlinkingIterator& operator=(
+      const nsDisplayListUnlinkingIterator&) = delete;
+
+  ~nsDisplayListUnlinkingIterator() {
+    MOZ_ASSERT(!mNode, "Taken display items left unconsumed");
+  }
+
+  nsDisplayListUnlinkingIterator begin() { return std::move(*this); }
+  nsDisplayListUnlinkingIterator end() const {
+    return nsDisplayListUnlinkingIterator();
+  }
+
+  nsDisplayListUnlinkingIterator& operator++() {
+    MOZ_ASSERT(mNode);
+    mNode = mNext;
+    Unlink();
+    return *this;
+  }
+
+  bool operator==(const nsDisplayListUnlinkingIterator& aOther) const {
+    return mNode == aOther.mNode;
+  }
+
+  nsDisplayItem* operator*() const {
+    MOZ_ASSERT(mNode);
+    return mNode;
+  }
+
+ private:
+  void Unlink() {
+    mNext = mNode ? std::exchange(mNode->mNext, nullptr) : nullptr;
+  }
+
+  nsDisplayItem* mNode;
+  nsDisplayItem* mNext;
 };
 
 /**
@@ -3075,13 +3125,10 @@ struct LinkedListIterator {
  * the items while they do the downward traversal, so overall they're still
  * linear time. We have optimized for efficient AppendToTop() of both
  * items and lists, with minimal codesize.
- *
- * Internal linked list nodes are allocated using arena allocator.
  * */
 class nsDisplayList {
  public:
-  using Node = LinkedListNode<nsDisplayItem*>;
-  using iterator = LinkedListIterator<nsDisplayItem*>;
+  using iterator = nsDisplayListIterator;
   using const_iterator = iterator;
 
   iterator begin() { return iterator(mBottom); }
@@ -3089,33 +3136,20 @@ class nsDisplayList {
   const_iterator begin() const { return iterator(mBottom); }
   const_iterator end() const { return iterator(nullptr); }
 
-  explicit nsDisplayList(nsDisplayListBuilder* aBuilder) : mBuilder(aBuilder) {}
-
-  nsDisplayList() = delete;
+  nsDisplayList() = default;
   nsDisplayList(const nsDisplayList&) = delete;
   nsDisplayList& operator=(const nsDisplayList&) = delete;
 
   virtual ~nsDisplayList() {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    if (!mAllowNonEmptyDestruction) {
-      MOZ_RELEASE_ASSERT(IsEmpty(), "Nonempty list left over?");
-    }
-#endif
-
-    DeallocateNodes();
+    MOZ_DIAGNOSTIC_ASSERT(IsEmpty(), "Nonempty list left over?");
   }
 
   nsDisplayList(nsDisplayList&& aOther)
-      : mBottom(aOther.mBottom),
-        mTop(aOther.mTop),
-        mLength(aOther.mLength),
-        mBuilder(aOther.mBuilder) {
+      : mBottom(aOther.mBottom), mTop(aOther.mTop), mLength(aOther.mLength) {
     aOther.SetEmpty();
   }
 
   nsDisplayList& operator=(nsDisplayList&& aOther) {
-    MOZ_RELEASE_ASSERT(mBuilder == aOther.mBuilder);
-
     if (this != &aOther) {
       MOZ_RELEASE_ASSERT(IsEmpty());
       mBottom = std::move(aOther.mBottom);
@@ -3133,16 +3167,13 @@ class nsDisplayList {
     if (!aItem) {
       return;
     }
-
-    auto* next = Allocate(aItem);
-    MOZ_ASSERT(next);
+    MOZ_ASSERT(!aItem->mNext, "Item is already in a list");
 
     if (IsEmpty()) {
-      mBottom = next;
-      mTop = next;
+      mBottom = mTop = aItem;
     } else {
-      mTop->mNext = next;
-      mTop = next;
+      mTop->mNext = aItem;
+      mTop = aItem;
     }
 
     mLength++;
@@ -3171,8 +3202,6 @@ class nsDisplayList {
    */
   void AppendToTop(nsDisplayList* aList) {
     MOZ_ASSERT(aList != this);
-    MOZ_RELEASE_ASSERT(mBuilder == aList->mBuilder);
-
     if (aList->IsEmpty()) {
       return;
     }
@@ -3183,35 +3212,16 @@ class nsDisplayList {
       std::swap(mLength, aList->mLength);
     } else {
       MOZ_ASSERT(mTop && mTop->mNext == nullptr);
-      mTop->mNext = aList->mBottom;
-      mTop = aList->mTop;
-      mLength += aList->mLength;
-
-      aList->SetEmpty();
-    }
-  }
-
-  /**
-   * Clears the display list.
-   */
-  void Clear() {
-    DeallocateNodes();
-    SetEmpty();
-  }
-
-  /**
-   * Creates a shallow copy of this display list to |aDestination|.
-   */
-  void CopyTo(nsDisplayList* aDestination) const {
-    for (auto* item : *this) {
-      aDestination->AppendToTop(item);
+      mTop->mNext = std::exchange(aList->mBottom, nullptr);
+      mTop = std::exchange(aList->mTop, nullptr);
+      mLength += std::exchange(aList->mLength, 0);
     }
   }
 
   /**
    * Calls the function |aFn| for each display item in the display list.
    */
-  void ForEach(const std::function<void(nsDisplayItem*)>& aFn) {
+  void ForEach(const FunctionRef<void(nsDisplayItem*)>& aFn) {
     for (auto* item : *this) {
       aFn(item);
     }
@@ -3224,14 +3234,12 @@ class nsDisplayList {
   /**
    * @return the item at the bottom of the list, or null if the list is empty
    */
-  nsDisplayItem* GetBottom() const {
-    return mBottom ? mBottom->mValue : nullptr;
-  }
+  nsDisplayItem* GetBottom() const { return mBottom; }
 
   /**
    * @return the item at the top of the list, or null if the list is empty
    */
-  nsDisplayItem* GetTop() const { return mTop ? mTop->mValue : nullptr; }
+  nsDisplayItem* GetTop() const { return mTop; }
 
   bool IsEmpty() const { return mBottom == nullptr; }
 
@@ -3287,13 +3295,14 @@ class nsDisplayList {
     }
   }
 
-  nsDisplayList TakeItems() {
-    // This std::move makes this a defined empty list, see assignment operator.
-    nsDisplayList list = std::move(*this);
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    list.mAllowNonEmptyDestruction = true;
-#endif
-    return list;
+  /**
+   * Empties the list, returning an iterator over its former items, meant to be
+   * used in a range-based for loop.
+   */
+  nsDisplayListUnlinkingIterator TakeItems() {
+    nsDisplayItem* bottom = mBottom;
+    SetEmpty();
+    return nsDisplayListUnlinkingIterator(bottom);
   }
 
   nsDisplayItem* RemoveBottom() {
@@ -3301,11 +3310,8 @@ class nsDisplayList {
       return nullptr;
     }
 
-    nsDisplayItem* bottom = mBottom->mValue;
-
-    auto next = mBottom->mNext;
-    Deallocate(mBottom);
-    mBottom = next;
+    nsDisplayItem* bottom = mBottom;
+    mBottom = std::exchange(bottom->mNext, nullptr);
 
     if (!mBottom) {
       // No bottom item means no items at all.
@@ -3415,43 +3421,15 @@ class nsDisplayList {
   nsRect GetBuildingRect() const;
 
  private:
-  inline Node* Allocate(nsDisplayItem* aItem) {
-    void* ptr =
-        mBuilder->Allocate(sizeof(Node), DisplayListArenaObjectId::LISTNODE);
-    return new (ptr) Node(aItem);
-  }
-
-  inline void Deallocate(Node* aNode) {
-    aNode->~Node();
-    mBuilder->Destroy(DisplayListArenaObjectId::LISTNODE, aNode);
-  }
-
-  void DeallocateNodes() {
-    Node* current = mBottom;
-    Node* next = nullptr;
-
-    while (current) {
-      next = current->mNext;
-      Deallocate(current);
-      current = next;
-    }
-  }
-
-  inline void SetEmpty() {
+  void SetEmpty() {
     mBottom = nullptr;
     mTop = nullptr;
     mLength = 0;
   }
 
-  Node* mBottom = nullptr;
-  Node* mTop = nullptr;
+  nsDisplayItem* mBottom = nullptr;
+  nsDisplayItem* mTop = nullptr;
   size_t mLength = 0;
-  nsDisplayListBuilder* mBuilder = nullptr;
-
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  // This checks that the invariant of display lists owning their items is held.
-  bool mAllowNonEmptyDestruction = false;
-#endif
 };
 
 /**
@@ -3493,16 +3471,6 @@ class nsDisplayListSet {
    * @return a list where one should place all other content
    */
   nsDisplayList* Content() const { return mLists[5]; }
-
-  /**
-   * Clears all the display lists in the set.
-   */
-  void Clear() {
-    for (auto* list : mLists) {
-      MOZ_ASSERT(list);
-      list->Clear();
-    }
-  }
 
   /**
    * Deletes all the display items in the set.
@@ -3547,16 +3515,11 @@ class nsDisplayListSet {
   /**
    * Calls the function |aFn| for each display item in the display list set.
    */
-  void ForEach(const std::function<void(nsDisplayItem*)>& aFn) const {
+  void ForEach(const FunctionRef<void(nsDisplayItem*)>& aFn) const {
     for (auto* list : mLists) {
       list->ForEach(aFn);
     }
   }
-
-  /**
-   * Creates a shallow copy of this display list set to |aDestination|.
-   */
-  void CopyTo(const nsDisplayListSet& aDestination) const;
 
   /**
    * Move all display items in our lists to top of the corresponding lists in
@@ -3583,10 +3546,7 @@ class nsDisplayListSet {
 struct nsDisplayListCollection : public nsDisplayListSet {
   explicit nsDisplayListCollection(nsDisplayListBuilder* aBuilder)
       : nsDisplayListSet(&mLists[0], &mLists[1], &mLists[2], &mLists[3],
-                         &mLists[4], &mLists[5]),
-        mLists{nsDisplayList{aBuilder}, nsDisplayList{aBuilder},
-               nsDisplayList{aBuilder}, nsDisplayList{aBuilder},
-               nsDisplayList{aBuilder}, nsDisplayList{aBuilder}} {}
+                         &mLists[4], &mLists[5]) {}
 
   /**
    * Sort all lists by content order.
@@ -3606,11 +3566,11 @@ struct nsDisplayListCollection : public nsDisplayListSet {
   void SerializeWithCorrectZOrder(nsDisplayList* aOutResultList,
                                   nsIContent* aContent);
 
- private:
   // This class is only used on stack, so we don't have to worry about leaking
   // it.  Don't let us be heap-allocated!
-  void* operator new(size_t sz) noexcept(true);
+  void* operator new(size_t sz) noexcept(true) = delete;
 
+ private:
   // Self contained allocation of the memory for our lists, which we pass
   // pointers to to our nsDisplayListSet base class for it to store in it's
   // `mLists` std::array.
@@ -3628,8 +3588,7 @@ struct nsDisplayListCollection : public nsDisplayListSet {
  */
 class RetainedDisplayList : public nsDisplayList {
  public:
-  explicit RetainedDisplayList(nsDisplayListBuilder* aBuilder)
-      : nsDisplayList(aBuilder) {}
+  RetainedDisplayList() = default;
 
   RetainedDisplayList(RetainedDisplayList&& aOther)
       : nsDisplayList(std::move(aOther)), mDAG(std::move(aOther.mDAG)) {}
@@ -4840,7 +4799,6 @@ class nsDisplayWrapList : public nsPaintedDisplayItem {
 
   nsDisplayWrapList(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
       : nsPaintedDisplayItem(aBuilder, aFrame),
-        mList(aBuilder),
         mOverrideZIndex(0),
         mHasZIndexOverride(false) {
     MOZ_COUNT_CTOR(nsDisplayWrapList);
@@ -4859,7 +4817,6 @@ class nsDisplayWrapList : public nsPaintedDisplayItem {
   nsDisplayWrapList(nsDisplayListBuilder* aBuilder,
                     const nsDisplayWrapList& aOther)
       : nsPaintedDisplayItem(aBuilder, aOther),
-        mList(aBuilder),
         mListPtr(&mList),
         mMergedFrames(aOther.mMergedFrames.Clone()),
         mBounds(aOther.mBounds),
@@ -5079,33 +5036,6 @@ class nsDisplayWrapper final : public nsDisplayWrapList {
   NS_DISPLAY_ALLOW_CLONING()
   friend class nsDisplayListBuilder;
   friend class nsDisplayWrapList;
-};
-
-/**
- * We call WrapDisplayList on the in-flow lists: BorderBackground(),
- * BlockBorderBackgrounds() and Content().
- * We call WrapDisplayItem on each item of Outlines(), PositionedDescendants(),
- * and Floats(). This is done to support special wrapping processing for frames
- * that may not be in-flow descendants of the current frame.
- */
-class nsDisplayItemWrapper {
- public:
-  // This is never instantiated directly (it has pure virtual methods), so no
-  // need to count constructors and destructors.
-
-  bool WrapBorderBackground() { return true; }
-  virtual nsDisplayItem* WrapList(nsDisplayListBuilder* aBuilder,
-                                  nsIFrame* aFrame, nsDisplayList* aList) = 0;
-  virtual nsDisplayItem* WrapItem(nsDisplayListBuilder* aBuilder,
-                                  nsDisplayItem* aItem) = 0;
-
-  nsresult WrapLists(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                     const nsDisplayListSet& aIn, const nsDisplayListSet& aOut);
-  nsresult WrapListsInPlace(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                            const nsDisplayListSet& aLists);
-
- protected:
-  nsDisplayItemWrapper() = default;
 };
 
 /**

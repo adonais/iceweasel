@@ -62,9 +62,9 @@ should get familiar with.
 [ipdl]: /ipc/ipdl.md
 [marionette]: /remote/marionette/index.md
 [mochitest]: /testing/mochitest-plain/index.md
-[nspr]: https://firefox-source-docs.mozilla.org/nspr/about_nspr.html?highlight=nspr
-[nss]: https://firefox-source-docs.mozilla.org/security/nss/legacy/faq/index.html
-[psm]: https://firefox-source-docs.mozilla.org/security/nss/legacy/faq/index.html?highlight=psm
+[nspr]: /nspr/about_nspr.md
+[nss]: /security/nss/index.md
+[psm]: /security/nss/index.md
 [web-platform]: /web-platform/index.md
 [webidl]: /toolkit/components/extensions/webextensions/webidl_bindings.md
 [xpcshell]: /testing/xpcshell/index.md

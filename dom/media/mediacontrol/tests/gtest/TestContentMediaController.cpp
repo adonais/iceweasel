@@ -4,6 +4,8 @@
 
 #include "ContentMediaController.h"
 #include "gtest/gtest.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/dom/AudioFocusInterrupt.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 
 using namespace mozilla::dom;
@@ -27,12 +29,16 @@ class FakeContentReceiver final : public ContentMediaControlKeyReceiver {
 
   void ClearKeys() { mReceivedKeys.Clear(); }
 
-  void SuspendForInterrupt() override { mSuspended = true; }
+  void SuspendForInterrupt(AudioSessionInterruptKind aKind) override {
+    mSuspended = true;
+    mSuspendKind = mozilla::Some(aKind);
+  }
   void ResumeFromInterrupt() override { mResumed = true; }
 
   bool mIsPlaying = false;
   bool mSuspended = false;
   bool mResumed = false;
+  mozilla::Maybe<AudioSessionInterruptKind> mSuspendKind;
 
  private:
   ~FakeContentReceiver() = default;
@@ -138,6 +144,11 @@ TEST(ContentMediaController, AudioFocusInterruptSuspendsBothBuckets)
       << "Interrupt suspend should reach controllable receiver";
   EXPECT_TRUE(uncontrollable->mSuspended)
       << "Interrupt suspend should reach uncontrollable receiver";
+  for (const auto& receiver : {controllable, uncontrollable}) {
+    EXPECT_EQ(receiver->mSuspendKind,
+              mozilla::Some(AudioSessionInterruptKind::Transient))
+        << "Suspend interrupt should be transient";
+  }
 }
 
 TEST(ContentMediaController, AudioFocusInterruptResumesBothBuckets)
@@ -174,6 +185,56 @@ TEST(ContentMediaController, AudioFocusInterruptTogglesInterruptedFlag)
   controller->HandleAudioFocusInterrupt(AudioFocusInterruptAction::Resume);
   EXPECT_FALSE(controller->IsAudioInterruptedByPlatform())
       << "Resume interrupt should clear the interrupted flag";
+}
+
+TEST(ContentMediaController,
+     AudioFocusInterruptSuspendPermanentlyReachesBothBuckets)
+{
+  RefPtr<ContentMediaController> controller =
+      new ContentMediaController(FAKE_BC_ID);
+  RefPtr<FakeContentReceiver> controllable = new FakeContentReceiver();
+  RefPtr<FakeContentReceiver> uncontrollable = new FakeContentReceiver();
+  ScopedReceiver scopedControllable(controller, controllable,
+                                    ControlType::eControllable);
+  ScopedReceiver scopedUncontrollable(controller, uncontrollable,
+                                      ControlType::eUncontrollable);
+
+  controller->HandleAudioFocusInterrupt(
+      AudioFocusInterruptAction::SuspendPermanently);
+
+  for (const auto& receiver : {controllable, uncontrollable}) {
+    EXPECT_EQ(receiver->mSuspendKind,
+              mozilla::Some(AudioSessionInterruptKind::Permanent))
+        << "A permanent suspend should reach every receiver as permanent";
+    EXPECT_FALSE(receiver->mResumed)
+        << "A permanent suspend should not resume any receiver";
+  }
+  EXPECT_FALSE(controller->IsAudioInterruptedByPlatform())
+      << "A permanent suspend should leave the interrupted flag clear";
+}
+
+TEST(ContentMediaController,
+     AudioFocusInterruptSuspendPermanentlyClearsEarlierSuspend)
+{
+  RefPtr<ContentMediaController> controller =
+      new ContentMediaController(FAKE_BC_ID);
+  RefPtr<FakeContentReceiver> receiver = new FakeContentReceiver();
+  ScopedReceiver scopedReceiver(controller, receiver,
+                                ControlType::eControllable);
+
+  controller->HandleAudioFocusInterrupt(AudioFocusInterruptAction::Suspend);
+  ASSERT_TRUE(controller->IsAudioInterruptedByPlatform());
+
+  controller->HandleAudioFocusInterrupt(
+      AudioFocusInterruptAction::SuspendPermanently);
+  EXPECT_FALSE(controller->IsAudioInterruptedByPlatform())
+      << "A permanent suspend after a suspend should clear the interrupted "
+         "flag";
+  EXPECT_EQ(receiver->mSuspendKind,
+            mozilla::Some(AudioSessionInterruptKind::Permanent))
+      << "A permanent suspend should reach a receiver already suspended";
+  EXPECT_FALSE(receiver->mResumed)
+      << "A permanent suspend should not resume the receiver";
 }
 
 TEST(ContentMediaController, UserPauseDoesNotSuspendUncontrollable)

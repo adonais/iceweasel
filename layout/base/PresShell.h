@@ -430,12 +430,23 @@ class PresShell final : public nsStubDocumentObserver,
    */
   MOZ_CAN_RUN_SCRIPT_BOUNDARY bool DoFlushLayout(bool aInterruptible);
 
+  enum class MobileViewportManagerUpdate : uint8_t {
+    // The pres shell is initializing. Nothing is laid out yet, so don't reflow.
+    PresShellInit,
+    // Something that decides which mobile viewport manager the document needs
+    // changed (e.g. RDM was toggled). Reflows if the manager gets replaced.
+    ManagerTypeMayChange,
+    // As above, and the layout viewport size may have changed too (e.g. the
+    // viewport size override), so reflow even if the manager stays the same.
+    LayoutViewportSizeMayChange,
+  };
+
   /**
    * Note that the assumptions that determine whether we need a mobile viewport
    * manager may have changed.
    */
   MOZ_CAN_RUN_SCRIPT void MaybeRecreateMobileViewportManager(
-      bool aAfterInitialization);
+      MobileViewportManagerUpdate aUpdate);
 
   /**
    * Returns true if this document uses mobile viewport sizing (including

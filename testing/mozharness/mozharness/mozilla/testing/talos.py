@@ -742,6 +742,15 @@ class Talos(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
             extract_dirs=extract_dirs, suite_categories=["common", "talos"]
         )
 
+    def query_python_constraints(self):
+        return [
+            os.path.abspath(
+                os.path.join(
+                    self.talos_path, "..", "config", "requirements-mozbase.txt"
+                )
+            )
+        ]
+
     def create_virtualenv(self, **kwargs):
         """VirtualenvMixin.create_virtualenv() assuemes we're using
         self.config['virtualenv_modules']. Since we are installing

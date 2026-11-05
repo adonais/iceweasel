@@ -12,7 +12,10 @@ import { BridgedEngine } from "resource://services-sync/bridged_engine.sys.mjs";
 import { CryptoWrapper } from "resource://services-sync/record.sys.mjs";
 import { Utils } from "resource://services-sync/util.sys.mjs";
 
-import { SCORE_INCREMENT_XLARGE } from "resource://services-sync/constants.sys.mjs";
+import {
+  MASTER_PASSWORD_LOCKED,
+  SCORE_INCREMENT_XLARGE,
+} from "resource://services-sync/constants.sys.mjs";
 
 const lazy = {};
 
@@ -21,6 +24,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Log: "resource://gre/modules/Log.sys.mjs",
   RustAutofillAddressesAdapter:
     "resource://autofill/RustAutofillAddressStorage.sys.mjs",
+  RustAutofillCreditCardsAdapter:
+    "resource://autofill/RustAutofillCreditCardStorage.sys.mjs",
+  RustAutofillStore: "resource://autofill/RustAutofillStore.sys.mjs",
   formAutofillStorage: "resource://autofill/FormAutofillStorage.sys.mjs",
   setupLoggerForTarget: "resource://gre/modules/AppServicesTracing.sys.mjs",
 });
@@ -484,4 +490,95 @@ CreditCardsEngine.prototype = {
 Object.setPrototypeOf(
   CreditCardsEngine.prototype,
   FormAutofillEngine.prototype
+);
+
+/**
+ * The credit cards engine backed by the Rust autofill store, used instead of
+ * CreditCardsEngine when `...creditCards.storage.rust.active` is set. The
+ * addresses version documents the reasoning; it is the same here.
+ *
+ * Two things differ from addresses. Sync carries cc-number in the clear inside
+ * the payload it encrypts, while the store keeps it encrypted under its own
+ * key; the store's EncryptorDecryptor converts it in both directions. And that
+ * key is NSS's, so a sync with the Primary Password locked is skipped rather
+ * than left to prompt; see _sync.
+ */
+export function BridgedCreditCardsEngine(service) {
+  BridgedEngine.call(this, "CreditCards", service);
+}
+
+BridgedCreditCardsEngine.prototype = {
+  _trackerObj: FormAutofillTracker,
+
+  syncPriority: 5,
+
+  // Tells the Rust-backed engine apart from the JS one in sync telemetry.
+  overrideTelemetryName: "rust-creditcards",
+
+  get prefName() {
+    return "creditcards";
+  },
+
+  async initialize() {
+    await SyncEngine.prototype.initialize.call(this);
+    await lazy.formAutofillStorage.initialize();
+
+    lazy.setupLoggerForTarget("autofill", this._log);
+
+    const rust = lazy.RustAutofillCreditCardsAdapter.getInstance();
+    this._bridge = await rust.bridgedEngine();
+    // The engine version in meta/global, which has to match CreditCardsEngine
+    // and application-services' sync15 DEFAULT_ENGINES. A higher one wipes the
+    // server and stops every other client syncing credit cards. It is not
+    // CREDIT_CARD_SCHEMA_VERSION, the version each record carries.
+    this._bridge.storageVersion = CreditCardsEngine.prototype.version;
+    this._bridge.allowSkippedRecord = true;
+    this._bridge.getSyncId = async () => this._bridge.syncId();
+
+    this._log.info("Got a bridged credit cards engine!");
+  },
+
+  /**
+   * Skip the sync rather than let it put a Primary Password prompt up.
+   *
+   * Every outgoing card decrypts its number, and this store's key is NSS's, so
+   * a locked token would reach the store's authenticator and prompt -- during
+   * a sync the user did not ask for. Recording the locked state is what makes
+   * the scheduler back off and retry, as RustPasswordEngine does for the same
+   * reason; addresses need none of this, not being encrypted.
+   *
+   * The token is global, so this stops the other engines too, which is the
+   * behaviour logins already has.
+   */
+  async _sync() {
+    if (lazy.RustAutofillStore.primaryPasswordLocked) {
+      this._log.info(
+        "Skipping credit cards sync because the Primary Password is locked."
+      );
+      this.service.status.login = MASTER_PASSWORD_LOCKED;
+      return;
+    }
+    await super._sync();
+  },
+
+  /**
+   * @see BridgedAddressesEngine.resetLastSync
+   */
+  async resetLastSync() {
+    await this._bridge.reset();
+  },
+
+  /**
+   * The bridge applied these inside Rust, so no write went through the adapter
+   * and nothing announced them.
+   */
+  async _processIncoming(newitems) {
+    await BridgedEngine.prototype._processIncoming.call(this, newitems);
+    const rust = lazy.RustAutofillCreditCardsAdapter.getInstance();
+    await rust.notifySyncApplied();
+  },
+};
+Object.setPrototypeOf(
+  BridgedCreditCardsEngine.prototype,
+  BridgedEngine.prototype
 );

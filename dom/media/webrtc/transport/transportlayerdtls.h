@@ -163,7 +163,7 @@ class TransportLayerDtls final : public TransportLayer {
   static void TimerCallback(nsITimer* timer, void* arg);
 
   SECStatus CheckDigest(const DtlsDigest& digest,
-                        UniqueCERTCertificate& cert) const;
+                        const SECItem& peer_cert_der) const;
 
   void RecordHandshakeCompletionTelemetry(const char* aResult);
   void RecordStartedHandshakeTelemetry();

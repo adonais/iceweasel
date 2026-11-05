@@ -83,6 +83,8 @@ firefox_ui_tests_config_options = (
 
 
 class FirefoxUIFunctionalTests(TestingMixin, VCSToolsScript, CodeCoverageMixin):
+    python_constraints = "requirements-marionette.txt"
+
     def __init__(
         self,
         config_options=None,

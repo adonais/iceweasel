@@ -22,7 +22,7 @@ class XRNativeOriginLocalFloor : public XRNativeOrigin {
   gfx::PointDouble3D GetPosition() override;
 
  private:
-  ~XRNativeOriginLocalFloor() = default;
+  ~XRNativeOriginLocalFloor();
   RefPtr<gfx::VRDisplayClient> mDisplay;
   gfx::PointDouble3D mInitialPosition;
   gfx::Matrix4x4 mStandingTransform;

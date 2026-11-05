@@ -20,7 +20,7 @@ bool AccAttributes::GetAttribute(nsAtom* aAttrName,
   return false;
 }
 
-void AccAttributes::StringFromValueAndName(nsAtom* aAttrName,
+void AccAttributes::StringFromValueAndName(nsAtom* /*aAttrName*/,
                                            const AttrValueType& aValue,
                                            nsAString& aValueString) {
   aValueString.Truncate();
@@ -63,7 +63,7 @@ void AccAttributes::StringFromValueAndName(nsAtom* aAttrName,
       [&aValueString](const Color& val) {
         StyleInfo::FormatColor(val.mValue, aValueString);
       },
-      [&aValueString](const DeleteEntry& val) {
+      [&aValueString](const DeleteEntry& /*val*/) {
         aValueString.Append(u"-delete-entry-");
       },
       [&aValueString](const UniquePtr<nsString>& val) {
@@ -78,7 +78,7 @@ void AccAttributes::StringFromValueAndName(nsAtom* aAttrName,
         }
       },
       [&aValueString](const uint64_t& val) { aValueString.AppendInt(val); },
-      [&aValueString](const UniquePtr<AccGroupInfo>& val) {
+      [&aValueString](const UniquePtr<AccGroupInfo>& /*val*/) {
         aValueString.Assign(u"AccGroupInfo{...}");
       },
       [&aValueString](const UniquePtr<gfx::Matrix4x4>& val) {
@@ -222,7 +222,7 @@ void AccAttributes::CopyTo(AccAttributes* aDest, bool aOnlyMissing) const {
         [&iter, &aDest](const RefPtr<nsAtom>& val) {
           aDest->mData.InsertOrUpdate(iter.Key(), AsVariant(val));
         },
-        [](const nsTArray<int32_t>& val) {
+        [](const nsTArray<int32_t>& /*val*/) {
           // We don't copy arrays.
           MOZ_ASSERT_UNREACHABLE(
               "Trying to copy an AccAttributes containing an array");
@@ -236,7 +236,7 @@ void AccAttributes::CopyTo(AccAttributes* aDest, bool aOnlyMissing) const {
         [&iter, &aDest](const Color& val) {
           aDest->mData.InsertOrUpdate(iter.Key(), AsVariant(val));
         },
-        [](const DeleteEntry& val) {
+        [](const DeleteEntry& /*val*/) {
           // We don't copy DeleteEntry.
           MOZ_ASSERT_UNREACHABLE(
               "Trying to copy an AccAttributes containing a DeleteEntry");
@@ -244,7 +244,7 @@ void AccAttributes::CopyTo(AccAttributes* aDest, bool aOnlyMissing) const {
         [&iter, &aDest](const UniquePtr<nsString>& val) {
           aDest->SetAttributeStringCopy(iter.Key(), *val);
         },
-        [](const RefPtr<AccAttributes>& val) {
+        [](const RefPtr<AccAttributes>& /*val*/) {
           // We don't copy nested AccAttributes.
           MOZ_ASSERT_UNREACHABLE(
               "Trying to copy an AccAttributes containing an AccAttributes");
@@ -252,24 +252,24 @@ void AccAttributes::CopyTo(AccAttributes* aDest, bool aOnlyMissing) const {
         [&iter, &aDest](const uint64_t& val) {
           aDest->mData.InsertOrUpdate(iter.Key(), AsVariant(val));
         },
-        [](const UniquePtr<AccGroupInfo>& val) {
+        [](const UniquePtr<AccGroupInfo>& /*val*/) {
           MOZ_ASSERT_UNREACHABLE(
               "Trying to copy an AccAttributes containing an AccGroupInfo");
         },
-        [](const UniquePtr<gfx::Matrix4x4>& val) {
+        [](const UniquePtr<gfx::Matrix4x4>& /*val*/) {
           MOZ_ASSERT_UNREACHABLE(
               "Trying to copy an AccAttributes containing a matrix");
         },
-        [](const UniquePtr<nsRect>& val) {
+        [](const UniquePtr<nsRect>& /*val*/) {
           MOZ_ASSERT_UNREACHABLE(
               "Trying to copy an AccAttributes containing a nsrect");
         },
-        [](const nsTArray<uint64_t>& val) {
+        [](const nsTArray<uint64_t>& /*val*/) {
           // We don't copy arrays.
           MOZ_ASSERT_UNREACHABLE(
               "Trying to copy an AccAttributes containing an array");
         },
-        [](const nsTArray<TextOffsetAttribute>& val) {
+        [](const nsTArray<TextOffsetAttribute>& /*val*/) {
           // We don't copy arrays.
           MOZ_ASSERT_UNREACHABLE(
               "Trying to copy an AccAttributes containing an array");
@@ -277,7 +277,7 @@ void AccAttributes::CopyTo(AccAttributes* aDest, bool aOnlyMissing) const {
         [&iter, &aDest](const WritingMode& val) {
           aDest->mData.InsertOrUpdate(iter.Key(), AsVariant(val));
         },
-        [](const nsTArray<RefPtr<nsAtom>>& val) {
+        [](const nsTArray<RefPtr<nsAtom>>& /*val*/) {
           // We don't copy arrays.
           MOZ_ASSERT_UNREACHABLE(
               "Trying to copy an AccAttributes containing an array");

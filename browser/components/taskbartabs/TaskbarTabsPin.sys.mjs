@@ -30,31 +30,34 @@ export const TaskbarTabsPin = {
    * @param {imgIContainer} aIcon - The icon to show with this Taskbar Tab.
    * @param {object} [aDetails] - Additional options for this pin.
    * @param {DOMWindow} [aDetails.window] - The window to associate any UI with.
-   * @returns {Promise} Resolves once finished.
+   * @returns {Promise<{shortcut: ?string, rejected: boolean}>} The path to the
+   * created shortcut, and whether the user or system rejected the pin request.
    */
   async pinTaskbarTab(aTaskbarTab, aIcon, { window = null } = {}) {
     lazy.logConsole.info("Pinning Taskbar Tab to the taskbar.");
 
     let shortcut = null;
+    let rejected = false;
     try {
       let iconPath = await createTaskbarIcon(aTaskbarTab, aIcon);
 
       shortcut = await createShortcut(aTaskbarTab, iconPath, window);
 
       if (AppConstants.platform === "win" && !lazy.TaskbarTabsUtils.isMSIX()) {
-        await lazy.ShellService.pinShortcutToTaskbar(
+        let pinResult = await lazy.ShellService.pinShortcutToTaskbar(
           aTaskbarTab.id,
           "Programs",
           shortcut
         );
+        rejected = pinResult === Ci.nsIWindowsShellService.REJECTED;
       }
-      Glean.webApp.pin.record({ result: "Success" });
+      Glean.webApp.pin.record({ result: rejected ? "Rejected" : "Success" });
     } catch (e) {
       lazy.logConsole.error(`An error occurred while pinning: ${e.message}`);
       Glean.webApp.pin.record({ result: e.name ?? "Unknown exception" });
     }
 
-    return shortcut;
+    return { shortcut, rejected };
   },
 
   /**

@@ -110,6 +110,7 @@ import org.mozilla.geckoview.OverscrollEdgeEffect;
 import org.mozilla.geckoview.PageExtractionController;
 import org.mozilla.geckoview.PanZoomController;
 import org.mozilla.geckoview.PdfViewerController;
+import org.mozilla.geckoview.PictureInPictureController;
 import org.mozilla.geckoview.RuntimeSettings;
 import org.mozilla.geckoview.ScreenLength;
 import org.mozilla.geckoview.SessionAccessibility;
@@ -1312,12 +1313,14 @@ package org.mozilla.geckoview {
     method @AnyThread @NonNull public SessionPdfFileSaver getPdfFileSaver();
     method @AnyThread @NonNull public PdfViewerController.SessionEditor getPdfViewerEditor();
     method @Nullable @UiThread public GeckoSession.PermissionDelegate getPermissionDelegate();
+    method @Nullable @UiThread public PictureInPictureController.SessionPictureInPicture.Delegate getPictureInPictureDelegate();
     method @AnyThread @Nullable public GeckoSession.PrintDelegate getPrintDelegate();
     method @Nullable @UiThread public GeckoSession.ProgressDelegate getProgressDelegate();
     method @AnyThread @Nullable public GeckoSession.PromptDelegate getPromptDelegate();
     method @Nullable @UiThread public GeckoSession.ScrollDelegate getScrollDelegate();
     method @AnyThread @Nullable public GeckoSession.SelectionActionDelegate getSelectionActionDelegate();
     method @AnyThread @NonNull public PageExtractionController.SessionPageExtractor getSessionPageExtractor();
+    method @AnyThread @NonNull public PictureInPictureController.SessionPictureInPicture getSessionPictureInPicture();
     method @AnyThread @Nullable public TranslationsController.SessionTranslation getSessionTranslation();
     method @AnyThread @NonNull public GeckoSessionSettings getSettings();
     method @UiThread public void getSurfaceBounds(@NonNull Rect);
@@ -1359,6 +1362,7 @@ package org.mozilla.geckoview {
     method @UiThread public void setMediaSessionDelegate(@Nullable MediaSession.Delegate);
     method @UiThread public void setNavigationDelegate(@Nullable GeckoSession.NavigationDelegate);
     method @UiThread public void setPermissionDelegate(@Nullable GeckoSession.PermissionDelegate);
+    method @UiThread public void setPictureInPictureDelegate(@Nullable PictureInPictureController.SessionPictureInPicture.Delegate);
     method @UiThread public void setPrintDelegate(@Nullable GeckoSession.PrintDelegate);
     method @AnyThread public void setPriorityHint(int);
     method @UiThread public void setProgressDelegate(@Nullable GeckoSession.ProgressDelegate);
@@ -2180,6 +2184,7 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoSessionSettings.Builder contextId(@Nullable String);
     method @NonNull public GeckoSessionSettings.Builder displayMode(int);
     method @NonNull public GeckoSessionSettings.Builder fullAccessibilityTree(boolean);
+    method @NonNull public GeckoSessionSettings.Builder pictureInPictureToken(@NonNull String);
     method @NonNull public GeckoSessionSettings.Builder screenId(int);
     method @NonNull public GeckoSessionSettings.Builder suspendMediaWhenInactive(boolean);
     method @NonNull public GeckoSessionSettings.Builder usePrivateMode(boolean);
@@ -2289,7 +2294,6 @@ package org.mozilla.geckoview {
     method @UiThread public void setDelegate(@Nullable IPProtectionController.Delegate);
     method @UiThread public void setGpiProvider(@Nullable IPProtectionController.GpiProvider);
     method @HandlerThread @NonNull public GeckoResult<Void> uninit();
-    field public static final int SERVICE_STATE_OPTED_OUT = 3;
     field public static final int SERVICE_STATE_READY = 4;
     field public static final int SERVICE_STATE_UNAUTHENTICATED = 2;
     field public static final int SERVICE_STATE_UNAVAILABLE = 1;
@@ -2583,6 +2587,21 @@ package org.mozilla.geckoview {
 
   public static class PdfViewerController.SessionEditor {
     method @HandlerThread @NonNull public GeckoResult<Void> addSignature(@NonNull String);
+  }
+
+  public class PictureInPictureController {
+    ctor public PictureInPictureController();
+  }
+
+  public static class PictureInPictureController.SessionPictureInPicture {
+    method @NonNull @UiThread public GeckoResult<Void> exit();
+    method @HandlerThread @NonNull public GeckoResult<Void> request();
+    method @UiThread public void setKeepActive(boolean);
+  }
+
+  public static interface PictureInPictureController.SessionPictureInPicture.Delegate {
+    method @UiThread default public void onEnterPictureInPicture(@NonNull GeckoSession, @NonNull String);
+    method @UiThread default public void onExitPictureInPicture(@NonNull GeckoSession);
   }
 
   @UiThread public class ProfilerController {

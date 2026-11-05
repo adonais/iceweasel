@@ -4,9 +4,11 @@
 
 #include <initializer_list>
 
+#include "jit/BaselineDebugModeOSR.h"
 #include "jit/JitFrames.h"
 #include "jit/JitRuntime.h"
 #include "jit/MacroAssembler.h"
+#include "jit/SharedICRegisters.h"
 #include "vm/JitActivation.h"
 #include "vm/JSContext.h"
 #include "vm/Stack.h"  // js::ResumeFrameArgs
@@ -448,3 +450,55 @@ void JitRuntime::generateEnterJitResumeShared(MacroAssembler& masm,
                             /* isResumingGenerator = */ true));
 }
 #endif  // !JS_CODEGEN_ARM64
+
+void JitRuntime::generateBaselineDebugModeOSRHandler(MacroAssembler& masm) {
+  AutoCreatedBy acb(masm, "JitRuntime::generateBaselineDebugModeOSRHandler");
+
+  baselineDebugModeOSRHandlerOffset_ = startTrampolineCode(masm);
+
+  LiveRegisterSet regs(RegisterSet::Volatile());
+  masm.PushRegsInMask(regs);
+
+  AllocatableGeneralRegisterSet scratchRegs(GeneralRegisterSet::Volatile());
+  Register returnAddress = scratchRegs.takeAny();
+  Register baselineFrame = scratchRegs.takeAny();
+  Register scratch = scratchRegs.takeAny();
+
+#ifdef JS_HW_SHADOW_STACK
+  // The patched call from the DebugModeOSR return site to the per-script
+  // epilogue pushes a return address entry through which we never return.
+  masm.addToShadowStackPtr(Imm32(sizeof(uintptr_t)), scratch);
+#endif
+
+  const size_t registerDumpSize =
+      MacroAssembler::PushRegsInMaskSizeInBytes(regs);
+  MOZ_ASSERT(registerDumpSize <= INT32_MAX);
+  // The per-script epilogue leaves the patched call's return address here.
+  Address resumeAddrSlot(masm.getStackPointer(), int32_t(registerDumpSize));
+
+  masm.loadPtr(resumeAddrSlot, returnAddress);
+  // The DebugModeOSRReturnSite address is before the patched call.
+  masm.subPtr(Imm32(Assembler::PatchWrite_NearCallSize()), returnAddress);
+  masm.loadBaselineFramePtr(FramePointer, baselineFrame);
+
+  using Fn = uint8_t* (*)(BaselineFrame*, const uint8_t*);
+  masm.setupUnalignedABICall(scratch);
+  masm.passABIArg(baselineFrame);
+  masm.passABIArg(returnAddress);
+  masm.callWithABI<Fn, BaselineDebugModeOSRResumeAddr>();
+
+  masm.storePtr(ReturnReg, resumeAddrSlot);
+  masm.PopRegsInMask(regs);
+
+#ifdef JS_CODEGEN_X86
+  // ABINonArgReturnVolatileReg holds the Baseline return value's tag on x86.
+  constexpr Register resumeAddress = ICStubReg;
+#else
+  constexpr Register resumeAddress = ABINonArgReturnVolatileReg;
+#endif
+  static_assert(resumeAddress != ReturnReg &&
+                resumeAddress != JSReturnReg_Type &&
+                resumeAddress != JSReturnReg_Data);
+  masm.pop(resumeAddress);
+  masm.jump(resumeAddress);
+}

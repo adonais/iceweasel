@@ -189,9 +189,6 @@ support-files = [
 ["test_a_text.html"]
 
 ["test_allowMedia.html"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt",
-]
 
 ["test_anchor_href_cache_invalidation.html"]
 

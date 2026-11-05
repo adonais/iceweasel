@@ -5,7 +5,7 @@
 //! Noise responder handshake
 
 use crate::{
-    ec::{sec1_ec2_key_to_der, P256_X962_LENGTH},
+    ec::{ec2_pubkey_to_uncompressed_sec1, sec1_ec2_key_to_der, P256_X962_LENGTH},
     handshake::{HandshakeType, TAG_LEN},
     Channel, Error, Result, SymmetricState,
 };
@@ -59,17 +59,15 @@ impl Responder {
     /// [0]: https://fidoalliance.org/specs/fido-v2.3-ps-20260226/fido-client-to-authenticator-protocol-v2.3-ps-20260226.html#hybrid-qr-initiated
     pub fn new_qr_initiated(
         psk: &[u8; 32],
-        peer_identity: &[u8; P256_X962_LENGTH],
+        peer_identity: &PublicKey,
         message: &[u8],
     ) -> Result<Self> {
-        let peer_der = sec1_ec2_key_to_der(peer_identity)?;
-        let peer_key = import_ec_public_key_from_spki(&peer_der)?;
-
+        let peer_bytes = ec2_pubkey_to_uncompressed_sec1(peer_identity)?;
         let mut ss = SymmetricState::initialize_symmetric(HandshakeType::KNpsk0);
         ss.mix_hash(&[1]);
-        ss.mix_hash(peer_identity);
+        ss.mix_hash(&peer_bytes);
 
-        Self::new(ss, psk, None, Some(&peer_key), message)
+        Self::new(ss, psk, None, Some(peer_identity), message)
     }
 
     /// Complete a caBLE [state-assisted transaction][0] (`NKpsk0`) as the responding party
@@ -90,7 +88,7 @@ impl Responder {
     ) -> Result<Self> {
         let mut ss = SymmetricState::initialize_symmetric(HandshakeType::NKpsk0);
         ss.mix_hash(&[0]);
-        ss.mix_hash(&local_identity.public.key_data()?);
+        ss.mix_hash(&ec2_pubkey_to_uncompressed_sec1(&local_identity.public)?);
 
         Self::new(ss, psk, Some(local_identity), None, message)
     }
@@ -134,10 +132,7 @@ impl Responder {
         }
 
         let ephemeral_key = ecdh_keygen(&EcCurve::P256)?;
-        let ephemeral_key_bytes = ephemeral_key.public.key_data()?;
-        if ephemeral_key_bytes.len() != P256_X962_LENGTH {
-            return Err(Error::Internal);
-        }
+        let ephemeral_key_bytes = ec2_pubkey_to_uncompressed_sec1(&ephemeral_key.public)?;
 
         ss.mix_hash(&ephemeral_key_bytes);
         ss.mix_key(&ephemeral_key_bytes, Mode::Encrypt)?;

@@ -242,7 +242,7 @@ class IPProtectionWidget {
     let { documentGlobal } = event.target;
     if (this.#panels.has(documentGlobal)) {
       let panel = this.#panels.get(documentGlobal);
-      panel.showing(event.target);
+      event.detail.addBlocker(panel.showing(event.target));
     }
   }
 

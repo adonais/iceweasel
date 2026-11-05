@@ -15,7 +15,6 @@ interface WebTransportSendStream : WritableStream {
 /* https://w3c.github.io/webtransport/#send-stream-stats */
 
 dictionary WebTransportSendStreamStats {
-  DOMHighResTimeStamp timestamp;
   unsigned long long bytesWritten;
   unsigned long long bytesSent;
   unsigned long long bytesAcknowledged;
@@ -31,7 +30,6 @@ interface WebTransportReceiveStream : ReadableStream {
 /* https://w3c.github.io/webtransport/#receive-stream-stats */
 
 dictionary WebTransportReceiveStreamStats {
-  DOMHighResTimeStamp timestamp;
   unsigned long long bytesReceived;
   unsigned long long bytesRead;
 };

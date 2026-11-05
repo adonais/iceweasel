@@ -109,6 +109,7 @@ export const PROFILE_THEMES_MAP = new Map([
       dataL10nTitle: "profiles-yellow-theme-title",
       downloadURL:
         "https://addons.mozilla.org/firefox/downloads/file/4552782/profiles_yellow-1.0.xpi",
+      version: "1.0",
       colors: {
         light: {
           chromeColor: "rgb(255, 230, 153)",
@@ -130,6 +131,7 @@ export const PROFILE_THEMES_MAP = new Map([
       dataL10nTitle: "profiles-orange-theme-title",
       downloadURL:
         "https://addons.mozilla.org/firefox/downloads/file/4552788/profiles_orange-1.0.xpi",
+      version: "1.0",
       colors: {
         light: {
           chromeColor: "rgb(255, 205, 158)",
@@ -151,6 +153,7 @@ export const PROFILE_THEMES_MAP = new Map([
       dataL10nTitle: "profiles-red-theme-title",
       downloadURL:
         "https://addons.mozilla.org/firefox/downloads/file/4552785/profiles_red-1.0.xpi",
+      version: "1.0",
       colors: {
         light: {
           chromeColor: "rgb(255, 195, 201)",
@@ -172,6 +175,7 @@ export const PROFILE_THEMES_MAP = new Map([
       dataL10nTitle: "profiles-pink-theme-title",
       downloadURL:
         "https://addons.mozilla.org/firefox/downloads/file/4552787/profiles_pink-1.0.xpi",
+      version: "1.0",
       colors: {
         light: {
           chromeColor: "rgb(255, 194, 219)",
@@ -193,6 +197,7 @@ export const PROFILE_THEMES_MAP = new Map([
       dataL10nTitle: "profiles-purple-theme-title",
       downloadURL:
         "https://addons.mozilla.org/firefox/downloads/file/4552786/profiles_purple-1.0.xpi",
+      version: "1.0",
       colors: {
         light: {
           chromeColor: "rgb(247, 202, 255)",
@@ -214,6 +219,7 @@ export const PROFILE_THEMES_MAP = new Map([
       dataL10nTitle: "profiles-violet-theme-title",
       downloadURL:
         "https://addons.mozilla.org/firefox/downloads/file/4552784/profiles_violet-1.0.xpi",
+      version: "1.0",
       colors: {
         light: {
           chromeColor: "rgb(221, 207, 255)",
@@ -235,6 +241,7 @@ export const PROFILE_THEMES_MAP = new Map([
       dataL10nTitle: "profiles-blue-theme-title",
       downloadURL:
         "https://addons.mozilla.org/firefox/downloads/file/4551961/profiles_blue-1.0.xpi",
+      version: "1.0",
       colors: {
         light: {
           chromeColor: "rgb(171, 223, 255)",
@@ -256,6 +263,7 @@ export const PROFILE_THEMES_MAP = new Map([
       dataL10nTitle: "profiles-green-theme-title",
       downloadURL:
         "https://addons.mozilla.org/firefox/downloads/file/4552789/profiles_green-1.0.xpi",
+      version: "1.0",
       colors: {
         light: {
           chromeColor: "rgb(181, 240, 181)",
@@ -277,6 +285,7 @@ export const PROFILE_THEMES_MAP = new Map([
       dataL10nTitle: "profiles-cyan-theme-title",
       downloadURL:
         "https://addons.mozilla.org/firefox/downloads/file/4552790/profiles_cyan-1.0.xpi",
+      version: "1.0",
       colors: {
         light: {
           chromeColor: "rgb(166, 236, 244)",
@@ -348,6 +357,7 @@ class SelectableProfileServiceClass extends EventEmitter {
   #isEnabled = false;
   // This is a rough number of the current profiles. It is not always correct.
   #cachedProfileCount = null;
+  #shutdownBlocker = null;
 
   // The preferences that must be permanently stored in the database and kept
   // consistent amongst profiles.
@@ -588,6 +598,12 @@ class SelectableProfileServiceClass extends EventEmitter {
       return;
     }
 
+    this.#shutdownBlocker = () => this.uninit();
+    ProfilesDatastoreService.shutdown.addBlocker(
+      "SelectableProfileService: waiting for pending operations",
+      this.#shutdownBlocker
+    );
+
     const resetProfilePath = Services.env.get("SELECTABLE_PROFILE_RESET_PATH");
     if (resetProfilePath) {
       await this.#updateProfilePath(
@@ -643,6 +659,8 @@ class SelectableProfileServiceClass extends EventEmitter {
         Services.prefs.setBoolPref(PROFILES_CREATED_PREF_NAME, false);
 
         this.#connection = null;
+        ProfilesDatastoreService.shutdown.removeBlocker(this.#shutdownBlocker);
+        this.#shutdownBlocker = null;
         this.updateEnabledState();
 
         Glean.profiles.active.set(false);
@@ -725,6 +743,15 @@ class SelectableProfileServiceClass extends EventEmitter {
   }
 
   async uninit() {
+    if (this.#initPromise) {
+      await this.#initPromise.catch(() => {});
+    }
+
+    if (this.#shutdownBlocker) {
+      ProfilesDatastoreService.shutdown.removeBlocker(this.#shutdownBlocker);
+      this.#shutdownBlocker = null;
+    }
+
     if (!this.#initialized) {
       return;
     }
@@ -1060,7 +1087,12 @@ class SelectableProfileServiceClass extends EventEmitter {
       if (themeEntry?.downloadURL) {
         let themeInstall = await lazy.AddonManager.getInstallForURL(
           themeEntry.downloadURL,
-          { telemetryInfo }
+          {
+            id: themeId,
+            telemetryInfo,
+            type: "theme",
+            version: themeEntry.version,
+          }
         );
         await themeInstall.install();
         theme = await lazy.AddonManager.getAddonByID(themeId);
@@ -2178,18 +2210,18 @@ export class CommandLineHandler {
    * @returns {boolean} True if the arguments matched the expected form.
    */
   openUrls(args) {
-    // Arguments are expected to be in pairs of "-url" "<url>".
+    // Arguments are expected to be URL flag and URL pairs.
     if (args.length % 2 != 0) {
       return false;
     }
 
     for (let i = 0; i < args.length; i += 2) {
-      if (args[i] != "-url") {
+      if (args[i] != "-url" && args[i] != "-url-background") {
         return false;
       }
     }
 
-    // Now the arguments are verified to only be "-url" arguments we can pass
+    // Now the arguments are verified to only be URL arguments we can pass
     // them directly to the only handler for those arguments.
     let workingDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
     let cmdLine = Cu.createCommandLine(
@@ -2212,6 +2244,10 @@ export class CommandLineHandler {
   }
 
   async redirectCommandLine(args) {
+    let shouldActivate =
+      !args.length ||
+      args.length % 2 != 0 ||
+      args.some((arg, index) => index % 2 == 0 && arg != "-url-background");
     let defaultPath = await this.findDefaultProfilePath();
 
     if (defaultPath) {
@@ -2226,7 +2262,11 @@ export class CommandLineHandler {
       // existing instance of this profile (this even works for the current
       // instance on macOS which is the only platform we call this for).
       try {
-        SelectableProfileService.sendCommandLine(defaultPath, args, true);
+        SelectableProfileService.sendCommandLine(
+          defaultPath,
+          args,
+          shouldActivate
+        );
 
         return;
       } catch (e) {
@@ -2235,7 +2275,10 @@ export class CommandLineHandler {
     }
 
     // Fall back to re-launching.
-    SelectableProfileService.execProcess(["-foreground", ...args]);
+    SelectableProfileService.execProcess([
+      ...(shouldActivate ? ["-foreground"] : []),
+      ...args,
+    ]);
   }
 
   handle(cmdLine) {

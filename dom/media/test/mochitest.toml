@@ -806,7 +806,6 @@ tags = "cloneelementvisually"
 ["test_cloneElementVisually_resource_change.html"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Bug 1559308 - lower frequency intermittent
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1909908
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1909908
 ]
 tags = "cloneelementvisually os_integration"
@@ -931,8 +930,6 @@ skip-if = [
   "os == 'android' && is_emulator", # Times out on android-em, Bug 1613946
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1110922
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1110922
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && mda_gpu", # Bug 1929426
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && socketprocess_e10s", # Bug 1929426
 ]
 
 ["test_replay_metadata.html"]
@@ -992,8 +989,6 @@ skip-if = [
 ]
 
 
-["test_unsupported_mkv.html"]
-
 ["test_videoPlaybackQuality_totalFrames.html"]
 skip-if = [
   "os == 'win'", # bug 1374189
@@ -1005,6 +1000,14 @@ skip-if = [
 tags = "os_integration"
 skip-if = [
   "true", # Bug 1970241
+]
+
+["test_video_pixel_crop_picture_rect.html"]
+scheme = "https"
+support-files = ["vp8-pixel-crop-rows.webm"]
+skip-if = [
+  "os == 'android'", # WebCodecs isn't enabled yet on Android
+  "os == 'win'", # in-content decoding cannot initialize gfx devices under win32k lockdown
 ]
 
 ["test_video_to_canvas.html"]

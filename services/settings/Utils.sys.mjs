@@ -49,6 +49,9 @@ ChromeUtils.defineLazyGetter(lazy, "isRunningTests", () => {
   return false;
 });
 
+const REMOTE_ACTIVITY_DISABLED =
+  Services.env.get("MOZ_REMOTE_SETTINGS_DISABLED") === "1";
+
 // Overriding the server URL is normally disabled on Beta and Release channels,
 // except under some conditions.
 ChromeUtils.defineLazyGetter(lazy, "allowServerURL", () => {
@@ -119,6 +122,9 @@ export var Utils = {
   log,
 
   get shouldSkipRemoteActivity() {
+    if (REMOTE_ACTIVITY_DISABLED) {
+      return true;
+    }
     if (
       (lazy.isRunningTests || Cu.isInAutomation) &&
       this.SERVER_URL == "data:,#remote-settings-dummy/v1"

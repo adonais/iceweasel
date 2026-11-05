@@ -54,7 +54,7 @@ class FakePayloadTypeSuggester : public PayloadTypeSuggester {
 
     // There's only one PT picker, but multiple recorders.
     RTCErrorOr<PayloadType> suggested_result =
-        pt_picker_.SuggestMapping(codec, &recorder, pick_from_top_of_range);
+        pt_picker_.SuggestMapping(codec, pick_from_top_of_range);
 
     if (suggested_result.ok()) {
       pt_picker_.AddMapping(suggested_result.value(), codec);

@@ -1397,6 +1397,7 @@ void ServoStyleSet::UpdateStylist() {
   Servo_StyleSet_FlushStyleSheets(mRawData.get(), root, snapshots,
                                   &nonDocumentStyles);
   mStylistState = StylistState::NotDirty;
+  mDocument->StylistUpdated();
 }
 
 void ServoStyleSet::MaybeGCRuleTree() {

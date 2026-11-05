@@ -81,10 +81,12 @@ FilterPrimitiveDescription SVGFEDisplacementMapElement::GetPrimitiveDescription(
     return FilterPrimitiveDescription(AsVariant(std::move(atts)));
   }
 
-  float scale = aInstance->GetPrimitiveNumber(SVGLength::Axis::XY,
-                                              &mNumberAttributes[SCALE]);
+  float scaleX = aInstance->GetPrimitiveNumber(SVGLength::Axis::X,
+                                               &mNumberAttributes[SCALE]);
+  float scaleY = aInstance->GetPrimitiveNumber(SVGLength::Axis::Y,
+                                               &mNumberAttributes[SCALE]);
   DisplacementMapAttributes atts;
-  atts.mScale = scale;
+  atts.mScale = Size{scaleX, scaleY};
   atts.mXChannel = SVGChannel(mEnumAttributes[CHANNEL_X].GetAnimValue());
   atts.mYChannel = SVGChannel(mEnumAttributes[CHANNEL_Y].GetAnimValue());
   return FilterPrimitiveDescription(AsVariant(std::move(atts)));

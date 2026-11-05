@@ -49,7 +49,8 @@ internal val WALLET_SCHEMES: Array<String> =
  * @property title The title of the dialog.
  * @property message The message body of the dialog.
  * @property showCheckbox Whether to show the "always open" checkbox.
- * @property sourceUrl The original URL that triggered the redirect.
+ * @property sourceUrl The URL of the page the redirect was requested from, or [destinationUrl] when the redirect was
+ *   not requested from a page.
  * @property destinationUrl The URL that will be opened in the external app.
  * @property firefoxUrl The URL that would be opened if staying in Firefox.
  * @property uniqueIdentifier The unique identifier for the app/intent.
@@ -125,6 +126,7 @@ class AppLinksFeature(
                                 appIntent = it.appIntent,
                                 fallbackUrl = it.fallbackUrl,
                                 appName = it.appName,
+                                sourceUrl = it.sourceUrl,
                             )
                             store.dispatch(ContentAction.ConsumeAppIntentAction(sessionState.id))
                         }
@@ -147,6 +149,7 @@ class AppLinksFeature(
         appIntent: Intent?,
         fallbackUrl: String?,
         appName: String?,
+        sourceUrl: String?,
     ) {
         if (appIntent == null) return
 
@@ -171,6 +174,7 @@ class AppLinksFeature(
             isPrivate = isPrivate,
             isWallet = isWallet,
             fragmentManager = fragmentManager,
+            sourceUrl = sourceUrl ?: url,
         )
     }
 
@@ -244,13 +248,13 @@ class AppLinksFeature(
         isPrivate: Boolean,
         isWallet: Boolean,
         fragmentManager: FragmentManager?,
+        sourceUrl: String,
     ) {
         if (fragmentManager == null) {
             return
         }
 
         val packageName = appIntent.component?.packageName ?: appIntent.getPackage() ?: ""
-        val sourceUrl = sessionState.content.url
         getOrCreateDialog(isPrivate, isWallet, url, appName, packageName, sourceUrl, fallbackUrl)
             .apply {
                 onConfirmRedirect = { isCheckboxTicked ->

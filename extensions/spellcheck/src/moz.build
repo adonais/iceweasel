@@ -24,3 +24,9 @@ EXPORTS.mozilla += [
     "mozInlineSpellChecker.h",
     "mozSpellChecker.h",
 ]
+
+SOURCE_HEADERS += [
+    "mozEnglishWordUtils.h",
+    "mozInlineSpellWordUtil.h",
+    "mozPersonalDictionary.h",
+]

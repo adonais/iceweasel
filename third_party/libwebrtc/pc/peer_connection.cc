@@ -296,6 +296,10 @@ RTCError ValidateIceCandidatePoolSize(
 // If the result of creating a modified configuration doesn't pass the above
 // `operator==` test or a call to `ValidateConfiguration()`, then the function
 // will return an error. Otherwise, the return value will be the new config.
+// Properties left out of the copy list can not be modified after construction:
+//   - bundle_policy and rtcp_mux_policy, per RFC 8829 section 4.1.18.
+//   - always_negotiate_data_channels, similar to bundle_policy.
+//   - certificates.
 RTCErrorOr<PeerConnectionInterface::RTCConfiguration> ApplyConfiguration(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     const PeerConnectionInterface::RTCConfiguration& existing_configuration) {
@@ -1677,6 +1681,20 @@ bool PeerConnection::AddIceCandidate(const IceCandidate* ice_candidate) {
 
 void PeerConnection::AddIceCandidate(std::unique_ptr<IceCandidate> candidate,
                                      std::function<void(RTCError)> callback) {
+  AddIceCandidate(
+      std::move(candidate),
+      [callback = std::move(callback)](
+          RTCError result,
+          absl::AnyInvocable<void() &&> operation_complete_callback) mutable {
+        callback(std::move(result));
+        std::move(operation_complete_callback)();
+      });
+}
+
+void PeerConnection::AddIceCandidate(
+    std::unique_ptr<IceCandidate> candidate,
+    absl::AnyInvocable<void(RTCError, absl::AnyInvocable<void() &&>) &&>
+        callback) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   // Traced before chaining, so the order is the one the application called in.
   const bool trace_candidate = tracer_ != nullptr && candidate != nullptr;
@@ -1686,7 +1704,9 @@ void PeerConnection::AddIceCandidate(std::unique_ptr<IceCandidate> candidate,
   sdp_handler_->AddIceCandidate(
       std::move(candidate),
       [this, safety = signaling_thread_safety_.flag(),
-       callback = std::move(callback), trace_candidate](RTCError result) {
+       callback = std::move(callback), trace_candidate](
+          RTCError result,
+          absl::AnyInvocable<void() &&> operation_complete_callback) mutable {
         RTC_DCHECK_RUN_ON(signaling_thread());
         if (safety->alive()) {
           ClearStatsCache();
@@ -1698,7 +1718,8 @@ void PeerConnection::AddIceCandidate(std::unique_ptr<IceCandidate> candidate,
             }
           }
         }
-        callback(result);
+        std::move(callback)(std::move(result),
+                            std::move(operation_complete_callback));
       });
 }
 
@@ -3229,7 +3250,7 @@ PeerConnection::InitializeUnDemuxablePacketHandler() {
   };
 }
 
-bool PeerConnection::CanAttemptDtlsStunPiggybacking() {
+bool PeerConnection::CanAttemptDtlsStunPiggybacking() const {
   return dtls_enabled_ && SSLStreamAdapter::IsBoringSsl() &&
          env_.field_trials().IsEnabled("WebRTC-IceHandshakeDtls");
 }

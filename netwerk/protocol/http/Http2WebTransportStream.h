@@ -52,7 +52,7 @@ class Http2WebTransportStream final : public WebTransportStreamBase {
 
   StreamId WebTransportStreamId() const override;
   uint64_t GetStreamId() const override;
-  void SendStopSending(uint8_t aErrorCode) override;
+  void SendStopSending(uint64_t aErrorCode) override;
   void SendFin() override;
   void Reset(uint64_t aErrorCode) override;
   already_AddRefed<nsIWebTransportSendStreamStats> GetSendStreamStats()

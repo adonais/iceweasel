@@ -87,11 +87,14 @@ void PacketRouter::RegisterNotifyBweCallback(
   notify_bwe_callback_ = std::move(callback);
 }
 
-void PacketRouter::ConfigureForRtcpFeedback(bool set_transport_seq,
-                                            bool send_rtp_packets_as_ect1) {
+void PacketRouter::SetGenerateTransportSequenceNumbers(bool generate) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  set_transport_seq_ = set_transport_seq;
-  send_rtp_packets_as_ect1_ = send_rtp_packets_as_ect1;
+  set_transport_seq_ = generate;
+}
+
+void PacketRouter::SetSendPacketsAsEct1(bool send_as_ect1) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  send_rtp_packets_as_ect1_ = send_as_ect1;
 }
 
 void PacketRouter::AddSendRtpModuleToMap(RtpRtcpInterface* rtp_module,

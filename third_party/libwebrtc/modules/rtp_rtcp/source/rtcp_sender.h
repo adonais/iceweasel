@@ -29,7 +29,6 @@
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "api/video/video_bitrate_allocation.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -172,8 +171,6 @@ class RTCPSender final {
 
   void SetTargetBitrate(unsigned int target_bitrate)
       RTC_LOCKS_EXCLUDED(mutex_rtcp_sender_);
-  void SetVideoBitrateAllocation(const VideoBitrateAllocation& bitrate)
-      RTC_LOCKS_EXCLUDED(mutex_rtcp_sender_);
   void SendCombinedRtcpPacket(
       std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets)
       RTC_LOCKS_EXCLUDED(mutex_rtcp_sender_);
@@ -293,16 +290,8 @@ class RTCPSender final {
 
   RtcpNackStats nack_stats_ RTC_GUARDED_BY(mutex_rtcp_sender_);
 
-  VideoBitrateAllocation video_bitrate_allocation_
-      RTC_GUARDED_BY(mutex_rtcp_sender_);
-  bool send_video_bitrate_allocation_ RTC_GUARDED_BY(mutex_rtcp_sender_);
-
   std::map<int8_t, int> rtp_clock_rates_khz_ RTC_GUARDED_BY(mutex_rtcp_sender_);
   int8_t last_payload_type_ RTC_GUARDED_BY(mutex_rtcp_sender_);
-
-  std::optional<VideoBitrateAllocation> CheckAndUpdateLayerStructure(
-      const VideoBitrateAllocation& bitrate) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_rtcp_sender_);
 
   void SetFlag(uint32_t type, bool is_volatile)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_rtcp_sender_);

@@ -141,6 +141,7 @@ nsDocShellLoadState::nsDocShellLoadState(
   mInheritPrincipal = aLoadState.InheritPrincipal();
   mPrincipalIsExplicit = aLoadState.PrincipalIsExplicit();
   mNotifiedBeforeUnloadListeners = aLoadState.NotifiedBeforeUnloadListeners();
+  mPageSwapFired = aLoadState.PageSwapFired();
   mForceAllowDataURI = aLoadState.ForceAllowDataURI();
   mIsExemptFromHTTPSFirstMode = aLoadState.IsExemptFromHTTPSFirstMode();
   mOriginalFrameSrc = aLoadState.OriginalFrameSrc();
@@ -341,6 +342,7 @@ nsDocShellLoadState::nsDocShellLoadState(const nsDocShellLoadState& aOther)
       mInheritPrincipal(aOther.mInheritPrincipal),
       mPrincipalIsExplicit(aOther.mPrincipalIsExplicit),
       mNotifiedBeforeUnloadListeners(aOther.mNotifiedBeforeUnloadListeners),
+      mPageSwapFired(aOther.mPageSwapFired),
       mPrincipalToInherit(aOther.mPrincipalToInherit),
       mPartitionedPrincipalToInherit(aOther.mPartitionedPrincipalToInherit),
       mForceAllowDataURI(aOther.mForceAllowDataURI),
@@ -1616,6 +1618,7 @@ DocShellLoadStateInit nsDocShellLoadState::Serialize(
   loadState.InheritPrincipal() = mInheritPrincipal;
   loadState.PrincipalIsExplicit() = mPrincipalIsExplicit;
   loadState.NotifiedBeforeUnloadListeners() = mNotifiedBeforeUnloadListeners;
+  loadState.PageSwapFired() = mPageSwapFired;
   loadState.ForceAllowDataURI() = mForceAllowDataURI;
   loadState.IsExemptFromHTTPSFirstMode() = mIsExemptFromHTTPSFirstMode;
   loadState.OriginalFrameSrc() = mOriginalFrameSrc;

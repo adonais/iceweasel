@@ -410,26 +410,6 @@ bool CodeGeneratorX86Shared::generateOutOfLineCode() {
   return !masm.oom();
 }
 
-void CodeGeneratorX86Shared::emitBailoutOOL(LSnapshot* snapshot) {
-  masm.push(Imm32(snapshot->snapshotOffset()));
-  jumpToDeoptLabel();
-}
-
-void CodeGeneratorX86Shared::bailoutIf(Assembler::Condition condition,
-                                       LSnapshot* snapshot) {
-  encode(snapshot);
-
-  // All bailout code is associated with the bytecodeSite of the block we are
-  // bailing out from.
-  InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  auto* ool = new (alloc()) LambdaOutOfLineCode(
-      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
-  addOutOfLineCode(ool,
-                   new (alloc()) BytecodeSite(tree, tree->script()->code()));
-
-  masm.j(condition, ool->entry());
-}
-
 void CodeGeneratorX86Shared::bailoutIf(Assembler::DoubleCondition condition,
                                        LSnapshot* snapshot) {
   MOZ_ASSERT(Assembler::NaNCondFromDoubleCondition(condition) ==
@@ -3221,6 +3201,53 @@ void CodeGenerator::visitWasmReplaceLaneSimd128(LWasmReplaceLaneSimd128* ins) {
       break;
     default:
       MOZ_CRASH("ReplaceLane SimdOp not implemented");
+  }
+#else
+  MOZ_CRASH("No SIMD");
+#endif
+}
+
+void CodeGenerator::visitWasmMoveLaneSimd128(LWasmMoveLaneSimd128* ins) {
+#ifdef ENABLE_JIT_SIMD
+  FloatRegister lhs = ToFloatRegister(ins->lhs());
+  FloatRegister rhs = ToFloatRegister(ins->rhs());
+  FloatRegister dest = ToFloatRegister(ins->output());
+  uint32_t laneIndex = ins->mir()->laneIndex();
+  uint32_t srcLaneIndex = ins->mir()->srcLaneIndex();
+
+  switch (ins->mir()->simdOp()) {
+    case wasm::SimdOp::I16x8ReplaceLane: {
+      if (srcLaneIndex == laneIndex) {
+        masm.vpblendw(1 << laneIndex, rhs, lhs, dest);
+        break;
+      }
+      // Broadcast the dword holding the source lane, then shift the lane into
+      // the other half of each dword if the halves differ.
+      ScratchSimd128Scope scratch(masm);
+      masm.vpshufd((srcLaneIndex / 2) * 0x55, rhs, scratch);
+      if ((laneIndex & 1) > (srcLaneIndex & 1)) {
+        masm.vpslld(Imm32(16), scratch, scratch);
+      } else if ((laneIndex & 1) < (srcLaneIndex & 1)) {
+        masm.vpsrld(Imm32(16), scratch, scratch);
+      }
+      masm.vpblendw(1 << laneIndex, scratch, lhs, dest);
+      break;
+    }
+    case wasm::SimdOp::I32x4ReplaceLane:
+      masm.vinsertps(masm.vinsertpsMask(srcLaneIndex, laneIndex), rhs, lhs,
+                     dest);
+      break;
+    case wasm::SimdOp::I64x2ReplaceLane:
+      if (srcLaneIndex == laneIndex) {
+        masm.vpblendw(laneIndex ? 0xF0 : 0x0F, rhs, lhs, dest);
+      } else if (laneIndex) {
+        masm.vmovlhps(rhs, lhs, dest);
+      } else {
+        masm.vmovhlps(rhs, lhs, dest);
+      }
+      break;
+    default:
+      MOZ_CRASH("MoveLane SimdOp not implemented");
   }
 #else
   MOZ_CRASH("No SIMD");

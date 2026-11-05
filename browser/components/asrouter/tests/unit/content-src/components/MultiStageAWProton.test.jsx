@@ -224,6 +224,61 @@ describe("MultiStageAboutWelcomeProton module", () => {
       assert.ok(wrapper.find(".section-secondary").exists());
     });
 
+    it("should render the front card layer only for card-stack screens", () => {
+      const cardStack = mount(
+        <MultiStageProtonScreen
+          content={{ position: "card-stack", title: "test title" }}
+        />
+      );
+      assert.ok(cardStack.find("main > .card-stack-front").exists());
+
+      const split = mount(
+        <MultiStageProtonScreen
+          content={{ position: "split", title: "test title" }}
+        />
+      );
+      assert.notOk(split.find(".card-stack-front").exists());
+    });
+
+    it("should render one back card per remaining card-stack screen, up to two", () => {
+      const countBackCards = (order, totalNumberOfScreens) => {
+        const wrapper = mount(
+          <MultiStageProtonScreen
+            content={{ position: "card-stack", title: "test title" }}
+            order={order}
+            totalNumberOfScreens={totalNumberOfScreens}
+          />
+        );
+        assert.ok(wrapper.find("main > .card-stack-front").exists());
+        return (
+          wrapper.find("main > .card-stack-layer-1").length +
+          wrapper.find("main > .card-stack-layer-2").length
+        );
+      };
+
+      assert.equal(countBackCards(0, 4), 2);
+      assert.equal(countBackCards(0, 3), 2);
+      assert.equal(countBackCards(1, 3), 1);
+      assert.equal(countBackCards(2, 3), 0);
+      assert.equal(countBackCards(0, 1), 0);
+    });
+
+    it("should mark only the initially shown card-stack screen as the initial card", () => {
+      const isInitialCard = props =>
+        mount(
+          <MultiStageProtonScreen
+            content={{ position: "card-stack", title: "test title" }}
+            {...props}
+          />
+        )
+          .find("main")
+          .prop("initial-card") === "";
+
+      assert.ok(isInitialCard({ isFirstScreen: true, previousOrder: -1 }));
+      assert.notOk(isInitialCard({ isFirstScreen: true, previousOrder: 1 }));
+      assert.notOk(isInitialCard({ isFirstScreen: false, previousOrder: 0 }));
+    });
+
     it("should set data-theme from activeThemeId for card-stack screens", () => {
       const wrapper = mount(
         <MultiStageProtonScreen
@@ -2274,6 +2329,127 @@ describe("MultiStageAboutWelcomeProton module", () => {
       );
 
       wrapper.unmount();
+    });
+  });
+
+  describe("Auto dismiss", () => {
+    let finishStub;
+    let telemetryStub;
+    let visibilityStub;
+
+    const mountScreen = autoDismiss =>
+      mount(
+        <MultiStageProtonScreen
+          content={{ title: "Last card" }}
+          autoDismiss={autoDismiss}
+          messageId="test-auto-dismiss"
+        />
+      );
+
+    const setVisibility = state => {
+      visibilityStub.value(state);
+      document.dispatchEvent(new Event("visibilitychange"));
+    };
+
+    beforeEach(() => {
+      finishStub = sandbox.stub();
+      window.AWFinish = finishStub;
+      telemetryStub = sandbox.stub(MultiStageUtils, "sendActionTelemetry");
+      visibilityStub = sandbox
+        .stub(document, "visibilityState")
+        .value("visible");
+    });
+
+    afterEach(() => {
+      delete window.AWFinish;
+    });
+
+    it("should not dismiss a screen without auto_dismiss", () => {
+      const wrapper = mountScreen(undefined);
+
+      clock.tick(60000);
+      sinon.assert.notCalled(finishStub);
+      sinon.assert.notCalled(telemetryStub);
+
+      wrapper.unmount();
+    });
+
+    ["6000", -1, 2 ** 31].forEach(time => {
+      it(`should ignore an invalid time of ${time}`, () => {
+        const wrapper = mountScreen({ after: time });
+
+        clock.tick(60000);
+        sinon.assert.notCalled(finishStub);
+
+        wrapper.unmount();
+      });
+    });
+
+    it("should dismiss once the configured time has passed", () => {
+      const wrapper = mountScreen({ after: 6000 });
+
+      clock.tick(5999);
+      sinon.assert.notCalled(finishStub);
+
+      clock.tick(1);
+      sinon.assert.calledOnce(finishStub);
+      sinon.assert.calledOnceWithExactly(
+        telemetryStub,
+        "test-auto-dismiss",
+        "auto_dismiss",
+        "AUTO_DISMISS"
+      );
+
+      wrapper.unmount();
+    });
+
+    it("should only dismiss once", () => {
+      const wrapper = mountScreen({ after: 6000 });
+
+      clock.tick(6000);
+      document.dispatchEvent(new Event("visibilitychange"));
+      clock.tick(6000);
+      sinon.assert.calledOnce(finishStub);
+      sinon.assert.calledOnce(telemetryStub);
+
+      wrapper.unmount();
+    });
+
+    it("should restart the countdown when the page becomes visible again", () => {
+      const wrapper = mountScreen({ after: 6000 });
+
+      clock.tick(5000);
+      setVisibility("hidden");
+      clock.tick(60000);
+      sinon.assert.notCalled(finishStub);
+
+      setVisibility("visible");
+      clock.tick(5999);
+      sinon.assert.notCalled(finishStub);
+
+      clock.tick(1);
+      sinon.assert.calledOnce(finishStub);
+
+      wrapper.unmount();
+    });
+
+    it("should not start the countdown while the page is hidden", () => {
+      visibilityStub.value("hidden");
+      const wrapper = mountScreen({ after: 6000 });
+
+      clock.tick(60000);
+      sinon.assert.notCalled(finishStub);
+
+      wrapper.unmount();
+    });
+
+    it("should stop the countdown when the screen unmounts", () => {
+      const wrapper = mountScreen({ after: 6000 });
+
+      clock.tick(5000);
+      wrapper.unmount();
+      clock.tick(60000);
+      sinon.assert.notCalled(finishStub);
     });
   });
 });

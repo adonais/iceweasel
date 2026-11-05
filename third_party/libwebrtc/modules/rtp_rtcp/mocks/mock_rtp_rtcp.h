@@ -23,7 +23,6 @@
 #include "api/rtp_headers.h"
 #include "api/transport/network_types.h"
 #include "api/units/time_delta.h"
-#include "api/video/video_bitrate_allocation.h"
 #include "modules/include/module_fec_types.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -185,10 +184,6 @@ class MockRtpRtcpInterface : public RtpRtcpInterface {
                uint16_t last_received_seq_num,
                bool decodability_flag,
                bool buffering_allowed),
-              (override));
-  MOCK_METHOD(void,
-              SetVideoBitrateAllocation,
-              (const VideoBitrateAllocation&),
               (override));
   MOCK_METHOD(RTPSender*, RtpSender, (), (override));
   MOCK_METHOD(const RTPSender*, RtpSender, (), (const, override));

@@ -252,7 +252,7 @@ class BufferSurface {
   // Set when underlying surface memory was changed.
   bool mTextureIsDirty = false;
 
-  mozilla::gfx::ColorRange mColorRange = mozilla::gfx::ColorRange::LIMITED;
+  mozilla::gfx::ColorRange mColorRange = mozilla::gfx::ColorRange::FULL;
   mozilla::gfx::YUVColorSpace mColorSpace =
       mozilla::gfx::YUVColorSpace::Default;
   mozilla::gfx::ColorSpace2 mColorPrimaries =

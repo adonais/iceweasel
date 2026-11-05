@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 
 /* package */ final class ServiceUtils {
   private static final String DEFAULT_ISOLATED_CONTENT_SERVICE_NAME_SUFFIX = "0";
+  private static final String ISOLATED_GMPLUGIN_SERVICE_NAME = "isolatedGmplugin";
 
   private ServiceUtils() {}
 
@@ -61,6 +62,11 @@ import androidx.annotation.NonNull;
 
     // Non-content services do not require any unique IDs
     return buildSvcName(type);
+  }
+
+  /** Obtain the name of the class for the GMP plugin service that runs in an isolated process. */
+  public static String buildIsolatedGmpSvcName() {
+    return GeckoChildProcessServices.class.getName() + "$" + ISOLATED_GMPLUGIN_SERVICE_NAME;
   }
 
   /**

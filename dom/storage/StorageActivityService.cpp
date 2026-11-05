@@ -282,7 +282,7 @@ StorageActivityService::MoveOriginInTime(nsIPrincipal* aPrincipal,
     return rv;
   }
 
-  mActivities.InsertOrUpdate(origin, aWhen / PR_USEC_PER_SEC);
+  mActivities.InsertOrUpdate(origin, aWhen);
   return NS_OK;
 }
 

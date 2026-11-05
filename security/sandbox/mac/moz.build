@@ -20,3 +20,10 @@ SOURCES += [
 DEFINES["MOZ_GPU_PROCESS_BUNDLEID"] = '"%s"' % CONFIG["MOZ_GPU_PROCESS_BUNDLEID"]
 
 Library("mozsandbox")
+
+SOURCE_HEADERS += [
+    "SandboxPolicyGPU.h",
+    "SandboxPolicyHWInference.h",
+    "SandboxPolicyPGO.h",
+    "SandboxPolicySocket.h",
+]

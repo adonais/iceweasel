@@ -1689,13 +1689,6 @@ describe("ASRouter", () => {
 
       assert.isNull(result);
     });
-    it("should have messageImpressions in the message context", () => {
-      assert.propertyVal(
-        Router._getMessagesContext(),
-        "messageImpressions",
-        Router.state.messageImpressions
-      );
-    });
     it("should forward trigger param info", async () => {
       const trigger = {
         triggerId: "foo",
@@ -2197,13 +2190,6 @@ describe("ASRouter", () => {
       assert.calledWithExactly(start);
       assert.calledOnce(stopAndAccumulate);
       assert.calledWithExactly(stopAndAccumulate, fakeTimerId);
-    });
-    it("should have previousSessionEnd in the message context", () => {
-      assert.propertyVal(
-        Router._getMessagesContext(),
-        "previousSessionEnd",
-        100
-      );
     });
     it("should record the Reach event if found any", async () => {
       let messages = [

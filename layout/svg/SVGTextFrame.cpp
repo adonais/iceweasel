@@ -19,6 +19,7 @@
 #include "SVGLengthList.h"
 #include "SVGNumberList.h"
 #include "SVGPaintServerFrame.h"
+#include "TextDrawTarget.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxFont.h"
@@ -33,6 +34,7 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/SVGUtils.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/dom/SVGRect.h"
 #include "mozilla/dom/SVGTextContentElementBinding.h"
@@ -42,6 +44,8 @@
 #include "mozilla/dom/Text.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PatternHelpers.h"
+#include "mozilla/layers/StackingContextHelper.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 #include "nsBidiPresUtils.h"
 #include "nsBlockFrame.h"
 #include "nsCaret.h"
@@ -2788,28 +2792,30 @@ void SVGTextDrawPathCallbacks::StrokeGeometry() {
 // ----------------------------------------------------------------------------
 // Display list item
 
-class DisplaySVGText final : public DisplaySVGItem {
- public:
-  DisplaySVGText(nsDisplayListBuilder* aBuilder, SVGTextFrame* aFrame)
-      : DisplaySVGItem(aBuilder, aFrame) {
-    MOZ_COUNT_CTOR(DisplaySVGText);
-  }
+bool DisplaySVGText::ShouldBeActive(
+    mozilla::wr::DisplayListBuilder& aBuilder,
+    mozilla::wr::IpcResourceUpdateQueue& aResources,
+    const mozilla::layers::StackingContextHelper& aSc,
+    mozilla::layers::RenderRootStateManager* aManager,
+    nsDisplayListBuilder* aDisplayListBuilder) {
+  auto* frame = static_cast<SVGTextFrame*>(mFrame);
+  return frame
+      ->CreateWebRenderCommands(aBuilder, aResources, aSc, aManager,
+                                aDisplayListBuilder, this, /*aDryRun=*/true)
+      .isOk();
+}
 
-  MOZ_COUNTED_DTOR_FINAL(DisplaySVGText)
-
-  NS_DISPLAY_DECL_NAME("DisplaySVGText", TYPE_SVG_TEXT)
-
-  nsDisplayItemGeometry* AllocateGeometry(
-      nsDisplayListBuilder* aBuilder) override {
-    return new nsDisplayItemGenericGeometry(this, aBuilder);
-  }
-
-  nsRect GetComponentAlphaBounds(
-      nsDisplayListBuilder* aBuilder) const override {
-    bool snap;
-    return GetBounds(aBuilder, &snap);
-  }
-};
+WebRenderCommandsResult DisplaySVGText::CreateWebRenderCommands(
+    mozilla::wr::DisplayListBuilder& aBuilder,
+    mozilla::wr::IpcResourceUpdateQueue& aResources,
+    const mozilla::layers::StackingContextHelper& aSc,
+    mozilla::layers::RenderRootStateManager* aManager,
+    nsDisplayListBuilder* aDisplayListBuilder) {
+  auto* frame = static_cast<SVGTextFrame*>(mFrame);
+  return frame->CreateWebRenderCommands(aBuilder, aResources, aSc, aManager,
+                                        aDisplayListBuilder, this,
+                                        /*aDryRun=*/false);
+}
 
 // ---------------------------------------------------------------------
 // nsQueryFrame methods
@@ -3302,6 +3308,228 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
 
     run = it.Next();
   }
+}
+
+WebRenderCommandsResult SVGTextFrame::CreateWebRenderCommands(
+    wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
+    const layers::StackingContextHelper& aSc,
+    layers::RenderRootStateManager* aManager,
+    nsDisplayListBuilder* aDisplayListBuilder, DisplaySVGText* aItem,
+    bool aDryRun) {
+  if (!StaticPrefs::gfx_webrender_svg_text()) {
+    return Err("WebRender SVG text is disabled");
+  }
+  if (!PrincipalChildList().FirstChild() || IsSubtreeDirty()) {
+    return Err("text is not laid out");
+  }
+  if (HasAnyStateBits(NS_FRAME_IS_NONDISPLAY | NS_STATE_SVG_CLIPPATH_CHILD)) {
+    return Err("non-display text");
+  }
+  const float epsilon = 0.0001;
+  if (std::abs(mLengthAdjustScaleFactor) < epsilon) {
+    return Err("zero length adjust scale");
+  }
+  if (GetWritingMode().IsVertical() &&
+      std::abs(mLengthAdjustScaleFactor - 1.0f) > epsilon) {
+    // lengthAdjust: spacingAndGlyphs scales only the inline axis, so the run
+    // transform is a non-uniform scale. Sideways vertical glyphs reach
+    // WebRender pre-transposed through the glyph flags, and WebRender applies
+    // the run transform after that transpose, which puts the scale on the
+    // glyph's cross axis.
+    return Err("length adjust scale on vertical text");
+  }
+
+  nsPresContext* presContext = PresContext();
+  const int32_t auPerDevPx = presContext->AppUnitsPerDevPixel();
+
+  // Same setup as PaintSVG: the text frames paint in device pixels, offset by
+  // the item's position relative to the reference frame.
+  nsPoint offset = aItem->ToReferenceFrame() - GetPosition();
+  gfxMatrix currentMatrix = gfxMatrix::Translation(
+      nsLayoutUtils::PointToGfxPoint(offset, auPerDevPx));
+
+  RefPtr<nsCaret> caret = presContext->PresShell()->GetActiveCaret();
+  nsIFrame* caretFrame = caret->GetPaintGeometry();
+
+  SVGContextPaint* outerContextPaint =
+      SVGContextPaint::GetContextPaint(GetContent());
+
+  // The font size WebRender rasterizes at is the CSS font size scaled by the
+  // run transform and by the stacking context's scale.
+  constexpr float kWebRenderFontSizeLimit = 320.0f;
+  const gfx::MatrixScales inheritedScale = aSc.GetInheritedScale();
+  const float scScale = std::max(inheritedScale.xScale, inheritedScale.yScale);
+
+  // First pass: static checks that do not depend on the fonts, so that the
+  // common failure cases do not pay for a text painting pass.
+  TextRenderedRunIterator checkIt(
+      this, TextRenderedRunIterator::RenderedRunFilter::VisibleFrames);
+  for (TextRenderedRun run = checkIt.Current(); run.mFrame;
+       run = checkIt.Next()) {
+    nsTextFrame* frame = run.mFrame;
+    const nsStyleSVG* style = frame->StyleSVG();
+
+    if (!style->mFill.kind.IsNone() && !style->mFill.kind.IsColor()) {
+      return Err("text fill is not a plain color");
+    }
+    bool paintSVGGlyphs;
+    if (ShouldRenderAsPath(frame, outerContextPaint, paintSVGGlyphs)) {
+      // ShouldRenderAsPath rejects translucent fills because Skia would
+      // double blend overlapping glyphs. WebRender text has the same behavior
+      // as HTML text with a translucent color, which is accepted here.
+      // Decorations are excluded: nsTextFrame paints them with the fill color
+      // but without fill-opacity.
+      bool onlyTranslucentFill =
+          StaticPrefs::gfx_webrender_svg_text_fill_opacity() &&
+          style->mFill.kind.IsColor() && !style->HasStroke() &&
+          !frame->StyleText()->HasTextShadow() &&
+          !frame->Style()->HasTextDecorationLines();
+      if (!onlyTranslucentFill) {
+        return Err("text is rendered as a path");
+      }
+    }
+    if (frame->StyleText()->HasTextShadow()) {
+      return Err("text-shadow is not supported");
+    }
+    if (frame->StyleText()->mTextRendering ==
+        StyleTextRendering::Geometricprecision) {
+      return Err("text-rendering: geometricPrecision is not supported");
+    }
+    if (frame == caretFrame) {
+      return Err("caret painting is not supported");
+    }
+    if (frame->IsSelected()) {
+      return Err("selected text is not supported");
+    }
+    // Opacity on <tspan> and other intermediate ancestors is applied by
+    // grouping in the blob path, which has no WebRender equivalent here.
+    for (nsIFrame* ancestor = frame->GetParent(); ancestor != this;
+         ancestor = ancestor->GetParent()) {
+      if (ancestor->StyleEffects()->mOpacity < 1.0f) {
+        return Err("opacity on an intermediate ancestor is not supported");
+      }
+    }
+
+    float fontSize = frame->StyleFont()->mFont.size.ToCSSPixels();
+    float devPxPerCSSPx = presContext->CSSToDevPixelScale().scale;
+    float runScale = std::max(1.0f, std::abs(run.mLengthAdjustScaleFactor));
+    if (fontSize * devPxPerCSSPx * runScale * scScale >
+        kWebRenderFontSizeLimit) {
+      return Err("font size exceeds the WebRender glyph rasterization limit");
+    }
+  }
+
+  // Everything from here on emits WebRender commands. They are recorded under
+  // a save point so that a failure reported by the text drawer, or a dry run,
+  // can discard them.
+  aBuilder.Save();
+  bool ok = true;
+
+  {
+    bool snap;
+    nsRect itemBounds = aItem->GetBounds(aDisplayListBuilder, &snap);
+    RefPtr<layout::TextDrawTarget> textDrawer = new layout::TextDrawTarget(
+        aBuilder, aResources, aSc, aManager, aItem, itemBounds,
+        /* aCallerDoesSaveRestore = */ true);
+    if (!textDrawer->IsValid()) {
+      aBuilder.Restore();
+      return Err("text draw target is invalid");
+    }
+    gfxContext context(textDrawer);
+    imgDrawingParams imgParams(aDisplayListBuilder->GetImageDecodeFlags());
+    const float inheritedOpacity = aBuilder.GetInheritedOpacity();
+
+    // initialMatrix maps device pixels back to CSS pixels for paint servers;
+    // only solid colors are accepted here so it only needs to be invertible.
+    gfxMatrix initialMatrix;
+
+    TextRenderedRunIterator it(
+        this, TextRenderedRunIterator::RenderedRunFilter::VisibleFrames);
+    for (TextRenderedRun run = it.Current(); run.mFrame && ok;
+         run = it.Next()) {
+      nsTextFrame* frame = run.mFrame;
+
+      auto contextPaint = MakeRefPtr<SVGContextPaint>(
+          textDrawer, initialMatrix, frame, outerContextPaint, imgParams);
+      DrawMode drawMode = contextPaint->GetDrawMode();
+      if (drawMode == DrawMode(0)) {
+        continue;
+      }
+      // GLYPH_STROKE can still be set here: it covers any stroke paint other
+      // than "none", including a stroke that paints nothing because its width
+      // or its opacity is zero. Those are the only strokes that get this far,
+      // since ShouldRenderAsPath sends the rest down the path rendering route
+      // which the checks above reject. nsTextFrame strokes glyphs only for
+      // -webkit-text-stroke, so an SVG stroke is ignored below, exactly as it
+      // is when the blob image path paints a zero width stroke.
+
+      nscoord startEdge, endEdge;
+      run.GetClipEdges(startEdge, endEdge);
+
+      gfxMatrix runTransform = run.GetTransformFromUserSpaceForPainting(
+                                   presContext, startEdge, endEdge) *
+                               currentMatrix;
+      if (runTransform.IsSingular()) {
+        continue;
+      }
+
+      // The text frame is painted at the origin of a reference frame that
+      // carries the run transform, so glyph positions reach WebRender
+      // untransformed and WebRender applies the scale and rotation.
+      wr::WrTransformInfo transformInfo;
+      transformInfo.transform =
+          wr::ToLayoutTransform(gfx::Matrix4x4::From2D(ToMatrix(runTransform)));
+      wr::StackingContextParams params;
+      params.mTransformPtr = &transformInfo;
+      params.reference_frame_kind = wr::WrReferenceFrameKind::Transform;
+      params.clip =
+          wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
+      params.prim_flags = aItem->BackfaceIsHidden()
+                              ? wr::PrimitiveFlags{0}
+                              : wr::PrimitiveFlags::IS_BACKFACE_VISIBLE;
+
+      LayoutDeviceRect runBounds =
+          LayoutDeviceRect::FromAppUnits(frame->InkOverflowRect(), auPerDevPx);
+      runBounds.Inflate(1);
+
+      Maybe<wr::WrSpatialId> spatialId = aBuilder.PushStackingContext(
+          params, wr::ToLayoutRect(LayoutDeviceRect()),
+          wr::RasterSpace::Screen());
+      {
+        Maybe<wr::SpaceAndClipChainHelper> spaceHelper;
+        if (spatialId) {
+          spaceHelper.emplace(aBuilder, *spatialId);
+        }
+        textDrawer->SetBounds(runBounds);
+        context.SetMatrix(gfx::Matrix());
+
+        nsTextFrame::PaintTextParams textParams(&context);
+        textParams.framePt = Point();
+        textParams.dirtyRect = runBounds;
+        textParams.contextPaint = contextPaint;
+        textParams.state = nsTextFrame::PaintTextParams::PaintText;
+        frame->PaintText(textParams, startEdge, endEdge, nsPoint(),
+                         /* aIsSelected = */ false, imgParams,
+                         inheritedOpacity);
+        textDrawer->TerminateShadows();
+      }
+      aBuilder.PopStackingContext(spatialId.isSome());
+    }
+
+    ok = !textDrawer->CheckHasUnsupportedFeatures();
+  }
+
+  if (!ok) {
+    aBuilder.Restore();
+    return Err("text drawer could not emit all glyph commands");
+  }
+  if (aDryRun) {
+    aBuilder.Restore();
+    return Ok();
+  }
+
+  aBuilder.ClearSave();
+  return Ok();
 }
 
 nsIFrame* SVGTextFrame::GetFrameForPoint(const gfxPoint& aPoint) {

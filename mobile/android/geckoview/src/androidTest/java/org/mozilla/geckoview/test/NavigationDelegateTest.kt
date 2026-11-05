@@ -336,34 +336,32 @@ class NavigationDelegateTest : BaseSessionTest() {
             WebRequestError.ERROR_SECURITY_BAD_CERT,
         )
 
-        if (!sessionRule.env.isFission) { // todo: Bug 1673954
-            mainSession.waitForJS("document.addCertException(false)")
-            mainSession.delegateDuringNextWait(
-                object : ProgressDelegate, NavigationDelegate, ContentDelegate {
-                    @AssertCalled(count = 1, order = [1])
-                    override fun onPageStart(session: GeckoSession, url: String) {
-                        assertThat("URI should be " + uri, url, equalTo(uri))
-                    }
-
-                    @AssertCalled(count = 1, order = [2])
-                    override fun onSecurityChange(
-                        session: GeckoSession,
-                        securityInfo: ProgressDelegate.SecurityInformation,
-                    ) {
-                        assertThat("Should be exception", securityInfo.isException, equalTo(true))
-                        assertThat("Should not be secure", securityInfo.isSecure, equalTo(false))
-                    }
-
-                    @AssertCalled(count = 1, order = [3])
-                    override fun onPageStop(session: GeckoSession, success: Boolean) {
-                        assertThat("Load should succeed", success, equalTo(true))
-                        sessionRule.removeAllCertOverrides()
-                    }
+        mainSession.waitForJS("document.addCertException(false)")
+        mainSession.delegateDuringNextWait(
+            object : ProgressDelegate, NavigationDelegate, ContentDelegate {
+                @AssertCalled(count = 1, order = [1])
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    assertThat("URI should be " + uri, url, equalTo(uri))
                 }
-            )
-            mainSession.evaluateJS("location.reload()")
-            mainSession.waitForPageStop()
-        }
+
+                @AssertCalled(count = 1, order = [2])
+                override fun onSecurityChange(
+                    session: GeckoSession,
+                    securityInfo: ProgressDelegate.SecurityInformation,
+                ) {
+                    assertThat("Should be exception", securityInfo.isException, equalTo(true))
+                    assertThat("Should not be secure", securityInfo.isSecure, equalTo(false))
+                }
+
+                @AssertCalled(count = 1, order = [3])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    assertThat("Load should succeed", success, equalTo(true))
+                    sessionRule.removeAllCertOverrides()
+                }
+            }
+        )
+        mainSession.evaluateJS("location.reload()")
+        mainSession.waitForPageStop()
     }
 
     @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
@@ -596,9 +594,6 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test
     fun bypassHTTPSOnlyError() {
-        // Bug 1849060. Hit debug assertion with fission
-        assumeThat(sessionRule.env.isFission and sessionRule.env.isDebugBuild, equalTo(false))
-
         sessionRule.runtime.settings.setAllowInsecureConnections(GeckoRuntimeSettings.HTTPS_ONLY)
 
         val host =
@@ -3567,8 +3562,6 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test
     fun textDirectiveUserActivation() {
-        sessionRule.setPrefsUntilTestEnd(mapOf("dom.text_fragments.enabled" to true))
-
         val session0 = sessionRule.createOpenSession()
         session0.load(Loader().uri(createTestUrl(HELLO_HTML_PATH)))
         session0.waitForPageStop()
@@ -3595,8 +3588,6 @@ class NavigationDelegateTest : BaseSessionTest() {
     fun textDirectiveUserActivationExternalLoad() {
         // External app links (LOAD_FLAGS_EXTERNAL) are always user-initiated, so
         // text fragment directives should be allowed to scroll.
-        sessionRule.setPrefsUntilTestEnd(mapOf("dom.text_fragments.enabled" to true))
-
         val session = sessionRule.createOpenSession()
         session.load(
             Loader().uri(createTestUrl(TRANSLATIONS_ES + "#:~:text=moverse")).flags(GeckoSession.LOAD_FLAGS_EXTERNAL)

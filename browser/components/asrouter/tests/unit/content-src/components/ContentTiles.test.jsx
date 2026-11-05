@@ -877,6 +877,7 @@ describe("ContentTiles component", () => {
 
   const CAROUSEL_TILE = {
     type: "single-select",
+    layout: "carousel",
     selected: "test1",
     data: [
       {
@@ -895,7 +896,13 @@ describe("ContentTiles component", () => {
   };
 
   it("should select and scroll the card when a pill is chosen", () => {
-    const scrollIntoView = sandbox.stub(Element.prototype, "scrollIntoView");
+    const scrollToStub = sandbox.stub(Element.prototype, "scrollTo");
+    // Run a single frame of the centring animation, which would otherwise
+    // schedule itself for the lifetime of the test run.
+    sandbox
+      .stub(window, "requestAnimationFrame")
+      .onFirstCall()
+      .callsFake(callback => callback(window.performance.now()));
 
     wrapper = mount(
       <ContentTiles
@@ -912,7 +919,7 @@ describe("ContentTiles component", () => {
       "test2",
       "single-select-0"
     );
-    assert.calledWithMatch(scrollIntoView, { inline: "center" });
+    assert.called(scrollToStub);
     assert.notCalled(handleAction);
     wrapper.unmount();
   });
@@ -930,6 +937,118 @@ describe("ContentTiles component", () => {
     assert.deepEqual(wrapper.find("CarouselNav").prop("navLabel"), {
       raw: "Highlights",
     });
+    wrapper.unmount();
+  });
+
+  const mountCarousel = () =>
+    mount(
+      <ContentTiles
+        content={{ tiles: CAROUSEL_TILE }}
+        setActiveSingleSelectSelection={setActiveSingleSelectSelection}
+        activeSingleSelectSelections={{ "single-select-0": "test1" }}
+        handleAction={handleAction}
+      />
+    );
+
+  it("should centre the card without animating when motion is reduced", () => {
+    const scrollToStub = sandbox.stub(Element.prototype, "scrollTo");
+    sandbox.stub(window, "matchMedia").returns({ matches: true });
+    const rafStub = sandbox
+      .stub(window, "requestAnimationFrame")
+      .callsFake(callback => callback(window.performance.now()));
+
+    wrapper = mountCarousel();
+
+    assert.calledOnce(rafStub);
+    assert.calledWithMatch(scrollToStub, { behavior: "auto" });
+    wrapper.unmount();
+  });
+
+  it("should re-centre the card when the row is resized", async () => {
+    const scrollToStub = sandbox.stub(Element.prototype, "scrollTo");
+    sandbox
+      .stub(window, "requestAnimationFrame")
+      .callsFake(callback => callback(window.performance.now() + 1000));
+    let notifyResize;
+    sandbox.stub(window, "ResizeObserver").callsFake(function (callback) {
+      notifyResize = callback;
+      this.observe = () => {};
+      this.disconnect = () => {};
+    });
+
+    wrapper = mountCarousel();
+    scrollToStub.resetHistory();
+
+    notifyResize();
+    assert.notCalled(scrollToStub);
+
+    const scroller = wrapper.find("fieldset.carousel").getDOMNode();
+    sandbox
+      .stub(scroller, "getBoundingClientRect")
+      .returns({ left: 0, width: 500, height: 200 });
+    const card = wrapper.find("label.carousel-card").at(0).getDOMNode();
+    sandbox
+      .stub(card, "getAnimations")
+      .returns([{ finished: Promise.resolve() }]);
+
+    notifyResize();
+    await Promise.resolve();
+    assert.called(scrollToStub);
+    wrapper.unmount();
+  });
+
+  it("should not observe or glide until a card is selected", () => {
+    const scrollToStub = sandbox.stub(Element.prototype, "scrollTo");
+    const observeStub = sandbox.stub();
+    sandbox.stub(window, "ResizeObserver").callsFake(function () {
+      this.observe = observeStub;
+      this.disconnect = () => {};
+    });
+
+    wrapper = mount(
+      <ContentTiles
+        content={{ tiles: CAROUSEL_TILE }}
+        setActiveSingleSelectSelection={setActiveSingleSelectSelection}
+        handleAction={handleAction}
+      />
+    );
+
+    assert.notCalled(observeStub);
+    assert.notCalled(scrollToStub);
+    wrapper.unmount();
+  });
+
+  it("should stop gliding once the card has had its full duration", () => {
+    const scrollToStub = sandbox.stub(Element.prototype, "scrollTo");
+    sandbox.stub(window, "matchMedia").returns({ matches: false });
+    sandbox
+      .stub(window, "requestAnimationFrame")
+      .callsFake(callback => callback(window.performance.now() + 1000));
+
+    wrapper = mountCarousel();
+
+    assert.calledWithMatch(scrollToStub, { behavior: "auto" });
+    wrapper.unmount();
+  });
+
+  it("should drop the pill icons when the row reports the small layout", () => {
+    const realGetComputedStyle = window.getComputedStyle;
+    sandbox.stub(window, "getComputedStyle").callsFake(el => {
+      const style = realGetComputedStyle(el);
+      return {
+        ...style,
+        getPropertyValue: prop =>
+          prop === "--carousel-layout" ? "small" : style.getPropertyValue(prop),
+      };
+    });
+
+    wrapper = mountCarousel();
+    wrapper.update();
+
+    assert.isTrue(wrapper.find("CarouselNav").prop("compact"));
+    assert.isUndefined(
+      wrapper.find("moz-segmented-control-item").at(0).prop("iconsrc")
+    );
     wrapper.unmount();
   });
 

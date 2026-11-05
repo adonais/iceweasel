@@ -31,17 +31,7 @@ class AudioSinkWrapper : public MediaSink {
   AudioSinkWrapper(AbstractThread* aOwnerThread,
                    MediaQueue<AudioData>& aAudioQueue, SinkCreator aFunc,
                    double aVolume, double aPlaybackRate, bool aPreservesPitch,
-                   RefPtr<AudioDeviceInfo> aAudioDevice)
-      : mOwnerThread(aOwnerThread),
-        mAsyncInitTaskQueue(CreateAsyncInitTaskQueue()),
-        mSinkCreator(std::move(aFunc)),
-        mReuseStreamOnSeek(StaticPrefs::media_audio_reuse_stream_on_seek()),
-        mAudioDevice(std::move(aAudioDevice)),
-        mParams(aVolume, aPlaybackRate, aPreservesPitch),
-        mAudioQueue(aAudioQueue),
-        mRetrySinkTime(TimeStamp::Now()) {
-    MOZ_ASSERT(mAsyncInitTaskQueue);
-  }
+                   RefPtr<AudioDeviceInfo> aAudioDevice);
 
   RefPtr<EndedPromise> OnEnded(TrackType aType) override;
   media::TimeUnit GetEndTime(TrackType aType) const override;

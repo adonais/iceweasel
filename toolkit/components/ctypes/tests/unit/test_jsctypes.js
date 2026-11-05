@@ -392,21 +392,17 @@ function run_test() {
   // Test loading a library with a unicode name (bug 589413). Note that nsIFile
   // implementations are not available in some harnesses; if not, the harness
   // should take care of the copy for us.
-  let unicodefile = do_get_file(CTYPES_UNICODE_LIB, true);
-  let copy = libfile.copyTo instanceof Function;
-  if (copy) {
-    libfile.copyTo(null, unicodefile.leafName);
+  let unicodefile;
+  if (libfile.copyTo instanceof Function) {
+    unicodefile = do_get_tempdir();
+    libfile.copyTo(unicodefile, CTYPES_UNICODE_LIB);
+    unicodefile.append(CTYPES_UNICODE_LIB);
+  } else {
+    unicodefile = do_get_file(CTYPES_UNICODE_LIB, true);
   }
   library = ctypes.open(unicodefile.path);
   run_void_tests(library);
   library.close();
-  if (copy) {
-    // Tolerate remove() failure because Firefox may have the DLL open
-    // for examination.
-    try {
-      unicodefile.remove(false);
-    } catch (e) {}
-  }
 }
 
 function run_abstract_class_tests() {

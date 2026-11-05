@@ -31,10 +31,10 @@ index 6a73bccea3..1a69c2d5ef 100644
      // Timing frame info: all important timestamps for a full lifetime of a
      // single 'timing frame'.
 diff --git a/modules/rtp_rtcp/source/rtcp_receiver.cc b/modules/rtp_rtcp/source/rtcp_receiver.cc
-index 73d037121f..7cd601bb0a 100644
+index 38ca837235..7b6e4b453d 100644
 --- a/modules/rtp_rtcp/source/rtcp_receiver.cc
 +++ b/modules/rtp_rtcp/source/rtcp_receiver.cc
-@@ -319,10 +319,12 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
+@@ -318,10 +318,12 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
  }
  
  void RTCPReceiver::RemoteRTCPSenderInfo(uint32_t* packet_count,
@@ -63,10 +63,10 @@ index 09fc0cdced..c98342dcfb 100644
    std::optional<TimeDelta> AverageRtt() const;
    std::optional<TimeDelta> LastRtt() const;
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-index af800a3daf..5b651c84a8 100644
+index 3af914436e..c433b47ace 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-@@ -548,8 +548,10 @@ void ModuleRtpRtcpImpl2::GetSendStreamDataCounters(
+@@ -547,8 +547,10 @@ void ModuleRtpRtcpImpl2::GetSendStreamDataCounters(
  
  // Received RTCP report.
  void ModuleRtpRtcpImpl2::RemoteRTCPSenderInfo(uint32_t* packet_count,
@@ -80,10 +80,10 @@ index af800a3daf..5b651c84a8 100644
  
  std::vector<ReportBlockData> ModuleRtpRtcpImpl2::GetLatestReportBlockData()
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.h b/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
-index 771a19c88a..4ec4174b51 100644
+index 6fd20a6c71..4d2200981f 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
-@@ -233,7 +233,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
+@@ -232,7 +232,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
        StreamDataCounters* rtx_counters) const override;
  
    void RemoteRTCPSenderInfo(uint32_t* packet_count,
@@ -94,10 +94,10 @@ index 771a19c88a..4ec4174b51 100644
    // A snapshot of the most recent Report Block with additional data of
    // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index 114c302c21..d2a3c72603 100644
+index a2dc2fe17e..ac2f1b0b19 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-@@ -401,9 +401,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
+@@ -400,9 +400,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
        StreamDataCounters* rtx_counters) const = 0;
  
  

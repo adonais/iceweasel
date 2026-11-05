@@ -10,7 +10,6 @@
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/dom/BrowserChild.h"
-#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/ipc/BackgroundUtils.h"
@@ -100,25 +99,14 @@ WorkerLoadInfoData::WorkerLoadInfoData()
       mIsThirdPartyContext(true),
       mSecureContext(eNotSet) {}
 
-nsresult WorkerLoadInfo::SetPrincipalsAndCSPOnMainThread(
+nsresult WorkerLoadInfo::SetPrincipalsOnMainThread(
     nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal,
-    nsILoadGroup* aLoadGroup, nsIContentSecurityPolicy* aCsp) {
+    nsILoadGroup* aLoadGroup) {
   AssertIsOnMainThread();
   MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(aLoadGroup, aPrincipal));
 
   mPrincipal = aPrincipal;
   mPartitionedPrincipal = aPartitionedPrincipal;
-
-  mCSP = aCsp;
-
-  if (mCSP) {
-    Result<UniquePtr<OffThreadCSPContext>, nsresult> ctx =
-        OffThreadCSPContext::CreateFromCSP(aCsp);
-    if (NS_WARN_IF(ctx.isErr())) {
-      return ctx.unwrapErr();
-    }
-    mCSPContext = ctx.unwrap();
-  }
 
   mLoadGroup = aLoadGroup;
 
@@ -127,17 +115,40 @@ nsresult WorkerLoadInfo::SetPrincipalsAndCSPOnMainThread(
   StoragePrincipalHelper::GetRegularPrincipalOriginAttributes(
       aLoadGroup, mOriginAttributes);
 
-  nsresult rv = PrincipalToPrincipalInfo(aPrincipal, mPrincipalInfo.get());
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(PrincipalToPrincipalInfo(aPrincipal, mPrincipalInfo.get()));
 
   if (aPrincipal->Equals(aPartitionedPrincipal)) {
     *mPartitionedPrincipalInfo = *mPrincipalInfo;
   } else {
     mPartitionedPrincipalInfo = MakeUnique<PrincipalInfo>();
-    rv = PrincipalToPrincipalInfo(aPartitionedPrincipal,
-                                  mPartitionedPrincipalInfo.get());
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(PrincipalToPrincipalInfo(aPartitionedPrincipal,
+                                     mPartitionedPrincipalInfo.get()));
   }
+
+  return NS_OK;
+}
+
+nsresult WorkerLoadInfo::SetPolicyContainerOnMainThread(
+    PolicyContainer* aPolicyContainer) {
+  AssertIsOnMainThread();
+
+  mPolicyContainer = aPolicyContainer;
+  mPolicyContainerArgs.reset();
+  mCSPContext = nullptr;
+
+  if (!mPolicyContainer) {
+    return NS_OK;
+  }
+
+  mozilla::ipc::PolicyContainerArgs policyContainerArgs;
+  PolicyContainer::ToArgs(mPolicyContainer, policyContainerArgs);
+  mPolicyContainerArgs.emplace(std::move(policyContainerArgs));
+
+  if (mPolicyContainerArgs->csp().isSome()) {
+    mozilla::ipc::CSPInfo cspInfo(*mPolicyContainerArgs->csp());
+    mCSPContext = MakeUnique<OffThreadCSPContext>(std::move(cspInfo));
+  }
+
   return NS_OK;
 }
 
@@ -222,28 +233,30 @@ nsresult WorkerLoadInfo::GetPrincipalsAndLoadGroupFromChannel(
   return NS_OK;
 }
 
-nsresult WorkerLoadInfo::SetPrincipalsAndCSPFromChannel(nsIChannel* aChannel) {
+nsresult WorkerLoadInfo::SetPrincipalsAndPolicyContainerFromChannel(
+    nsIChannel* aChannel) {
   AssertIsOnMainThread();
 
   nsCOMPtr<nsIPrincipal> principal;
   nsCOMPtr<nsIPrincipal> partitionedPrincipal;
   nsCOMPtr<nsILoadGroup> loadGroup;
-  nsresult rv = GetPrincipalsAndLoadGroupFromChannel(
+  MOZ_TRY(GetPrincipalsAndLoadGroupFromChannel(
       aChannel, getter_AddRefs(principal), getter_AddRefs(partitionedPrincipal),
-      getter_AddRefs(loadGroup));
-  NS_ENSURE_SUCCESS(rv, rv);
+      getter_AddRefs(loadGroup)));
+
+  MOZ_TRY(
+      SetPrincipalsOnMainThread(principal, partitionedPrincipal, loadGroup));
 
   // Workers themselves can have their own CSP - Workers of an opaque origin
-  // however inherit the CSP of the document that spawned the worker.
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  // however inherit the Policy-Container/CSP of the document that spawned the
+  // worker.
+  RefPtr<PolicyContainer> policyContainer;
   if (CSP_ShouldResponseInheritCSP(aChannel)) {
     nsCOMPtr<nsILoadInfo> loadinfo = aChannel->LoadInfo();
-    nsCOMPtr<nsIPolicyContainer> policyContainer =
-        loadinfo->GetPolicyContainer();
-    csp = PolicyContainer::GetCSP(policyContainer);
+    nsCOMPtr<nsIPolicyContainer> pc = loadinfo->GetPolicyContainer();
+    policyContainer = PolicyContainer::Cast(pc);
   }
-  return SetPrincipalsAndCSPOnMainThread(principal, partitionedPrincipal,
-                                         loadGroup, csp);
+  return SetPolicyContainerOnMainThread(policyContainer);
 }
 
 bool WorkerLoadInfo::FinalChannelPrincipalIsValid(nsIChannel* aChannel) {
@@ -339,7 +352,7 @@ bool WorkerLoadInfo::ProxyReleaseMainThreadObjects(
   SwapToISupportsArray(mPartitionedPrincipal, doomed);
   SwapToISupportsArray(mLoadingPrincipal, doomed);
   SwapToISupportsArray(mChannel, doomed);
-  SwapToISupportsArray(mCSP, doomed);
+  SwapToISupportsArray(mPolicyContainer, doomed);
   SwapToISupportsArray(mLoadGroup, doomed);
   SwapToISupportsArray(mInterfaceRequestor, doomed);
   // Before adding anything here update kDoomedCount above!

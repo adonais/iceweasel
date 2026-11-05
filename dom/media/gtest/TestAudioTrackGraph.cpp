@@ -4518,6 +4518,12 @@ TEST(TestAudioTrackGraph, IOThreadDispatchDuringShutdown)
   // reference, and before the next test might ForceSetCubebContext() to
   // destroy our cubeb.
   (void)WaitFor(destroyPromise).unwrap()[0];
+  // Flush the I/O thread's graph dispatch, then process what it queued on the
+  // main thread.
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchAndSpinEventLoopUntilComplete(
+      "TestAudioTrackGraph, IOThreadDispatchDuringShutdown"_ns,
+      ipc::IOThread::Get()->GetEventTarget(),
+      NS_NewRunnableFunction(__func__, [] {})));
   ProcessEventQueue();
 }
 

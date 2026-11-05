@@ -132,3 +132,23 @@ XPIDL_SOURCES += [
 ]
 
 XPIDL_MODULE = "dom_indexeddb"
+
+SOURCE_HEADERS += [
+    "ActorsParentCommon.h",
+    "DatabaseFileInfo.h",
+    "DatabaseFileManager.h",
+    "DatabaseFileManagerImpl.h",
+    "DBSchema.h",
+    "FileInfo.h",
+    "FileInfoImpl.h",
+    "FileInfoManager.h",
+    "IDBGetAllOptions.h",
+    "IndexedDatabaseInlines.h",
+    "IndexedDBCipherKeyManager.h",
+    "IndexedDBCommon.h",
+    "NotifyUtils.h",
+    "ProfilerHelpers.h",
+    "ReportInternalError.h",
+    "SchemaUpgrades.h",
+    "ScriptErrorHelper.h",
+]

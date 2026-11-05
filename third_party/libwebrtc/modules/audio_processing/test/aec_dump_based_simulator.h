@@ -62,7 +62,6 @@ class AecDumpBasedSimulator final : public AudioProcessingSimulator {
   void PrepareProcessStreamCall(const webrtc::audioproc::Stream& msg);
   void PrepareReverseProcessStreamCall(
       const webrtc::audioproc::ReverseStream& msg);
-  void VerifyProcessStreamBitExactness(const webrtc::audioproc::Stream& msg);
   void MaybeOpenCallOrderFile();
   enum InterfaceType {
     kFixedInterface,

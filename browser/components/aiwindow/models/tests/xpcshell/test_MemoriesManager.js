@@ -30,8 +30,8 @@ const { MemoryStore } = ChromeUtils.importESModule(
 const { AIWindow } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs"
 );
-const { AIWindowAccountAuth } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs"
+const { AuthProvider } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs"
 );
 const { EveryWindow } = ChromeUtils.importESModule(
   "resource:///modules/EveryWindow.sys.mjs"
@@ -441,7 +441,7 @@ add_task(async function test_shouldEnableMemoriesFromSchedulers_firstrunGate() {
   try {
     sb.stub(AIWindow, "isAIWindowEnabled").returns(true);
     sb.stub(AIWindow, "isAIWindowActive").returns(true);
-    sb.stub(AIWindowAccountAuth, "hasToSConsent").get(() => true);
+    sb.stub(AuthProvider, "hasToSConsent").get(() => true);
     sb.stub(EveryWindow, "readyWindows").get(() => [{}]);
 
     Services.prefs.setBoolPref(PREF_GENERATE_MEMORIES_FROM_HISTORY, true);

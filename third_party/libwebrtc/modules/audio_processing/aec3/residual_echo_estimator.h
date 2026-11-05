@@ -13,6 +13,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <span>
 
 #include "api/audio/echo_canceller3_config.h"
@@ -100,6 +101,8 @@ class ResidualEchoEstimator {
   ReverbModel echo_reverb_;
   NeuralResidualEchoEstimator* neural_residual_echo_estimator_;
   MlReeState ml_ree_state_ = MlReeState::kUninitialized;
+  bool has_logged_neural_echo_estimator_status_ = false;
+  int64_t linear_mode_blocks_until_neural_estimator_init_ = 0;
 };
 
 }  // namespace webrtc

@@ -4,9 +4,9 @@
 
 #include "NotificationController.h"
 
-#include "CssAltContent.h"
 #include "DocAccessible-inl.h"
 #include "DocAccessibleChild.h"
+#include "HTMLListAccessible.h"
 #include "LocalAccessible-inl.h"
 #include "TextLeafAccessible.h"
 #include "TextUpdater.h"
@@ -18,6 +18,7 @@
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/glean/AccessibleMetrics.h"
 #include "nsAccessibilityService.h"
+#include "nsCoreUtils.h"
 #include "nsEventShell.h"
 #include "nsIContentInlines.h"
 
@@ -816,6 +817,18 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       continue;
     }
 
+    if (containerNode->IsGeneratedContentContainerForMarker()) {
+      // This is the text of a bullet. Unlike most TextLeafAccessibles which are
+      // backed by a DOM text node, an HTMLListBulletAccessible is backed by the
+      // ::marker element and gets its text differently.
+      if (LocalAccessible* bullet = mDocument->GetAccessible(containerNode)) {
+        nsAutoString text;
+        HTMLListBulletAccessible::ComputeText(containerNode->AsContent(), text);
+        TextUpdater::Run(mDocument, bullet->AsTextLeaf(), text);
+      }
+      continue;
+    }
+
     nsIFrame* textFrame = textNode->GetPrimaryFrame();
     if (!textFrame) {
       MOZ_ASSERT(!textAcc,
@@ -836,9 +849,10 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       // Remove the TextLeafAccessible if:
       // 1. The rendered text is empty; or
       // 2. The text is invisible, semantically irrelevant whitespace before a
-      // hard line break.
+      // hard line break, and there is no CSS alt text.
       if (text.mString.IsEmpty() ||
-          nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(textFrame)) {
+          (nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(textFrame) &&
+           !nsCoreUtils::GetCssAltContent(textNode))) {
 #ifdef A11Y_LOG
         if (logging::IsEnabled(logging::eTree | logging::eText)) {
           logging::MsgBegin("TREE", "text node lost its content; doc: %p",
@@ -868,7 +882,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       }
 #endif
 
-      if (CssAltContent(textNode)) {
+      if (nsCoreUtils::GetCssAltContent(textNode)) {
         // A11y doesn't care about the text rendered by layout if there is CSS
         // content alt text. We skip this here rather than when the update is
         // queued because the TextLeafAccessible might not exist yet and we

@@ -148,6 +148,11 @@ promise_test(async t => {
   const writer = writable.getWriter();
 
   await writer.ready;
+  // Per spec the outgoing datagrams writable is set up with no explicit
+  // highWaterMark (Streams default of 1); outgoingMaxBufferedDatagrams sizes the
+  // datagram queue and is enforced by writeDatagrams withholding the write
+  // promise, not via the queuing-strategy highWaterMark. So desiredSize is 1.
+  // https://w3c.github.io/webtransport/#writedatagrams
   assert_equals(writer.desiredSize, 1, 'writer is ready to write');
 }, 'WebTransportDatagramsWritable writer.ready works correctly');
 
@@ -177,10 +182,30 @@ promise_test(async t => {
 
   const sendGroupFromWt1 = wt1.createSendGroup();
 
-  assert_throws_dom('InvalidStateError', () => {
+  assert_throws_js(TypeError, () => {
     wt2.datagrams.createWritable({ sendGroup: sendGroupFromWt1 });
-  }, 'createWritable should throw InvalidStateError when sendGroup is from different transport');
-}, 'createWritable throws InvalidStateError when sendGroup is from different transport');
+  }, 'createWritable should throw TypeError when sendGroup is from different transport');
+}, 'createWritable throws TypeError when sendGroup is from different transport');
+
+promise_test(async t => {
+  const wt1 = new WebTransport(webtransport_url('echo.py'));
+  wt1.closed.catch(() => {});
+  t.add_cleanup(() => wt1.close());
+  await wt1.ready;
+
+  const wt2 = new WebTransport(webtransport_url('echo.py'));
+  wt2.closed.catch(() => {});
+  await wt2.ready;
+  wt2.close();
+  await wt2.closed;
+
+  const sendGroupFromWt1 = wt1.createSendGroup();
+
+  // The sendGroup check comes before the state check.
+  assert_throws_js(TypeError, () => {
+    wt2.datagrams.createWritable({ sendGroup: sendGroupFromWt1 });
+  }, 'createWritable should throw TypeError, not InvalidStateError');
+}, 'createWritable checks the sendGroup before the transport state');
 
 promise_test(async t => {
   // NOTE: aioquic doesn't handle sending large datagrams well, and doesn't expose
@@ -208,3 +233,33 @@ promise_test(async t => {
   const jsonObject = JSON.parse(datagramStr);
   assert_equals(jsonObject['length'], maxSize);
 }, 'WebTransportDatagramsWritable can write max-size datagrams');
+
+promise_test(async t => {
+  const wt = new WebTransport(webtransport_url('echo.py'));
+  wt.closed.catch(() => {});
+  await wt.ready;
+
+  const writer = wt.datagrams.createWritable().getWriter();
+  wt.close();
+
+  await writer.closed;
+  await wt.closed;
+}, 'WebTransportDatagramsWritable is closed when the transport is closed');
+
+promise_test(async t => {
+  const wt = new WebTransport(webtransport_url('server-connection-close.py'));
+  add_completion_callback(() => wt.close());
+  await wt.ready;
+
+  const writer = wt.datagrams.createWritable().getWriter();
+
+  const streams_reader = wt.incomingBidirectionalStreams.getReader();
+  const { value: bidi } = await streams_reader.read();
+  bidi.writable.getWriter().write(new Uint8Array([65])).catch(() => {});
+
+  // Sadly we cannot use promise_rejects_dom as the error constructor is
+  // WebTransportError rather than DOMException.
+  const e = await wt.closed.catch(e => e);
+  assert_true(e instanceof WebTransportError);
+  await promise_rejects_exactly(t, e, writer.closed, 'writer.closed');
+}, 'WebTransportDatagramsWritable is errored when the connection fails');

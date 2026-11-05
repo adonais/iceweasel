@@ -30,18 +30,16 @@ OmxDecoderModule* OmxDecoderModule::Create() {
   return nullptr;
 }
 
-already_AddRefed<MediaDataDecoder> OmxDecoderModule::CreateVideoDecoder(
-    const CreateDecoderParams& aParams) {
-  RefPtr<OmxDataDecoder> decoder = new OmxDataDecoder(
-      aParams.mConfig, aParams.mImageContainer, aParams.mTrackingId);
-  return decoder.forget();
-}
-
-already_AddRefed<MediaDataDecoder> OmxDecoderModule::CreateAudioDecoder(
-    const CreateDecoderParams& aParams) {
-  RefPtr<OmxDataDecoder> decoder =
-      new OmxDataDecoder(aParams.mConfig, nullptr, aParams.mTrackingId);
-  return decoder.forget();
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+OmxDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
+  RefPtr<MediaDataDecoder> decoder;
+  if (aParams.IsVideo()) {
+    decoder = new OmxDataDecoder(aParams.mConfig, aParams.mImageContainer,
+                                 aParams.mTrackingId);
+  } else if (aParams.IsAudio()) {
+    decoder = new OmxDataDecoder(aParams.mConfig, nullptr, aParams.mTrackingId);
+  }
+  return CreateDecoderPromiseFrom(decoder.forget(), aParams);
 }
 
 media::DecodeSupportSet OmxDecoderModule::SupportsMimeType(

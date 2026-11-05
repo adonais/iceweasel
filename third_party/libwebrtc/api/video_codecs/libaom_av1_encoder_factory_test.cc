@@ -25,6 +25,7 @@ namespace {
 using ::testing::Eq;
 using ::testing::IsEmpty;
 using ::testing::NotNull;
+using ::testing::UnorderedElementsAre;
 
 using Capabilities = VideoEncoderFactoryInterface::Capabilities;
 using PredictionConstraints = Capabilities::PredictionConstraints;
@@ -32,6 +33,7 @@ using BufferSpaceType = PredictionConstraints::BufferSpaceType;
 using InputConstraints = Capabilities::InputConstraints;
 using BitrateControl = Capabilities::BitrateControl;
 using RateControlMode = VideoEncoderFactoryInterface::RateControlMode;
+using CbrSetting = VideoEncoderFactoryInterface::CbrSetting;
 using Performance = Capabilities::Performance;
 using FrameType = VideoEncoderInterface::FrameType;
 using StaticEncoderSettings =
@@ -78,11 +80,9 @@ TEST(LibaomAv1EncoderFactory, ReportsCorrectCapabilities) {
   EXPECT_EQ(scaling_factors[5].denominator, 2);
 
   // Supported Frame Types
-  const std::vector<FrameType>& frame_types = pc.supported_frame_types();
-  ASSERT_EQ(frame_types.size(), 3u);
-  EXPECT_EQ(frame_types[0], FrameType::kKeyframe);
-  EXPECT_EQ(frame_types[1], FrameType::kStartFrame);
-  EXPECT_EQ(frame_types[2], FrameType::kDeltaFrame);
+  EXPECT_THAT(pc.supported_frame_types(),
+              UnorderedElementsAre(FrameType::kKeyframe, FrameType::kStartFrame,
+                                   FrameType::kDeltaFrame));
 
   // Input Constraints
   const InputConstraints& ic = capabilities.input_constraints();
@@ -109,10 +109,12 @@ TEST(LibaomAv1EncoderFactory, ReportsCorrectCapabilities) {
   EXPECT_EQ(bc.min_qp(), 0);
   EXPECT_EQ(bc.max_qp(), 255);
 
-  const std::vector<RateControlMode>& rc_modes = bc.rc_modes();
-  ASSERT_EQ(rc_modes.size(), 2u);
-  EXPECT_EQ(rc_modes[0], RateControlMode::kCbr);
-  EXPECT_EQ(rc_modes[1], RateControlMode::kCqp);
+  EXPECT_THAT(bc.rc_modes(), UnorderedElementsAre(RateControlMode::kCbr,
+                                                  RateControlMode::kCqp));
+
+  EXPECT_THAT(bc.supported_cbr_settings(),
+              UnorderedElementsAre(CbrSetting::kBufferSizes,
+                                   CbrSetting::kMaxIntraBitrateFactor));
 
   // Performance
   const Performance& perf = capabilities.performance();

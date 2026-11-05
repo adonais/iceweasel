@@ -97,8 +97,10 @@ def test_install_existing_target_folder(tmpdir, get_installer):
 
 
 @pytest.mark.skipif(not mozinfo.isMac, reason="DMG installer only on macOS")
-def test_install_dmg_detach_retry(tmpdir, get_installer):
+def test_install_dmg_detach_retry(tmpdir, get_installer, monkeypatch):
     """Test that DMG detach retries on EBUSY errors."""
+    for var in ("DMG_TOOL", "HFS_TOOL", "MOZ_FETCHES_DIR"):
+        monkeypatch.delenv(var, raising=False)
     original_check_call = subprocess.check_call
     detach_call_count = 0
 
@@ -117,6 +119,19 @@ def test_install_dmg_detach_retry(tmpdir, get_installer):
         assert installdir == tmpdir.realpath().join("Firefox Stub.app").strpath
 
         assert detach_call_count == 3
+
+
+@pytest.mark.skipif(
+    not all(mozinstall.mozinstall._find_dmg_tools()),
+    reason="Needs the libdmg-hfsplus dmg and hfsplus tools",
+)
+def test_install_dmg_extract(tmpdir, get_installer):
+    """Test that a DMG can be installed by extracting it without mounting it."""
+    dest = tmpdir.join("dest")
+    dest.mkdir()
+    installdir = mozinstall.install(get_installer("dmg"), dest.strpath)
+    assert installdir == dest.realpath().join("Firefox Stub.app").strpath
+    assert dest.listdir() == [dest.join("Firefox Stub.app")]
 
 
 if __name__ == "__main__":

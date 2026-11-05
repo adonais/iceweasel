@@ -144,7 +144,7 @@ class PermissionsPolicy final : public nsISupports, public nsWrapperCache {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  nsINode* GetParentObject() const { return mParentNode; }
+  nsINode* GetParentObject() const { return mPolicyOwnerNode; }
 
   // WebIDL explosed methods.
 
@@ -188,6 +188,9 @@ class PermissionsPolicy final : public nsISupports, public nsWrapperCache {
   bool AllowsFeatureInternal(const nsAString& aFeatureName,
                              nsIPrincipal* aOrigin) const;
 
+  bool GetFeatureValueForOrigin(const nsAString& aFeatureName,
+                                nsIPrincipal* aOrigin) const;
+
   // Inherits a single denied feature from the parent context.
   void SetInheritedDeniedFeature(const nsAString& aFeatureName);
 
@@ -197,7 +200,7 @@ class PermissionsPolicy final : public nsISupports, public nsWrapperCache {
   // aFeatureName.
   bool HasDeclaredFeature(const nsAString& aFeatureName) const;
 
-  nsINode* mParentNode;
+  nsINode* mPolicyOwnerNode;
 
   // This is set in sub-contexts when the parent blocks some feature for the
   // current context.

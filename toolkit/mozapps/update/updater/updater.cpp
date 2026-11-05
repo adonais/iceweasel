@@ -52,6 +52,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <chrono>
+#include <memory>
 #include <time.h>
 
 #include <sys/stat.h>
@@ -63,6 +64,7 @@
 #ifdef XP_MACOSX
 #  include "UpdateSettingsUtil.h"
 #  include "updaterfileutils_osx.h"
+#  include <sys/xattr.h>
 #endif  // XP_MACOSX
 
 #include "mozilla/CmdLineAndEnvUtils.h"
@@ -2790,12 +2792,7 @@ static void LaunchCallbackApp(const NS_tchar* workingDir, int argc,
 #endif
 }
 
-#ifndef XP_MACOSX
 static void WriteUpdateTelemetry(const NS_tchar* aInstallDir) {
-  NS_tchar path[MAXPATHLEN];
-  NS_tsnprintf(path, sizeof(path) / sizeof(path[0]),
-               NS_T("%s/update_telemetry.json"), aInstallDir);
-
   auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
                    std::chrono::system_clock::now().time_since_epoch())
                    .count();
@@ -2803,12 +2800,22 @@ static void WriteUpdateTelemetry(const NS_tchar* aInstallDir) {
   snprintf(content, sizeof(content) / sizeof(content[0]),
            "{\"install_timestamp\":\"%lld\"}", (long long)nowMs);
 
+#ifdef XP_MACOSX
+  if (setxattr(aInstallDir, "org.mozilla.update-telemetry", content,
+               strlen(content), 0, 0) != 0) {
+    LOG(("Failed to set org.mozilla.update-telemetry xattr: %d", errno));
+  }
+#else
+  NS_tchar path[MAXPATHLEN];
+  NS_tsnprintf(path, sizeof(path) / sizeof(path[0]),
+               NS_T("%s/update_telemetry.json"), aInstallDir);
+
   AutoFile file(CreateAndOpenFile(path, true));
   if (file != nullptr) {
     fwrite(content, strlen(content), 1, file);
   }
-}
 #endif
+}
 
 static bool WriteToFile(const NS_tchar* aFilename, const char* aStatus) {
   LOG(("Writing status to file: %s", aStatus));
@@ -3285,9 +3292,7 @@ static int ProcessReplaceRequest() {
 #endif
 
   gSucceeded = true;
-#ifndef XP_MACOSX
   WriteUpdateTelemetry(gInstallDirPath);
-#endif
 
   return 0;
 }
@@ -3486,11 +3491,9 @@ static void UpdateThreadFunc(void* param) {
         LOG(("Couldn't set access/modification time on application bundle."));
       }
 #endif
-#ifndef XP_MACOSX
       if (!sStagedUpdate) {
         WriteUpdateTelemetry(gInstallDirPath);
       }
-#endif
       LOG(("succeeded"));
     }
     WriteStatusFile(rv);
@@ -5319,7 +5322,7 @@ int add_dir_entries(const NS_tchar* dirpath, ActionList* list) {
             rv = UPDATER_QUOTED_PATH_MEM_ERROR;
             break;
           }
-          action.reset(new RemoveFile());
+          action = std::make_unique<RemoveFile>();
           rv = action->Parse(quotedpath);
           free(quotedpath);
           if (!rv) {
@@ -5338,7 +5341,7 @@ int add_dir_entries(const NS_tchar* dirpath, ActionList* list) {
             break;
           }
 
-          action.reset(new RemoveDir());
+          action = std::make_unique<RemoveDir>();
           rv = action->Parse(quotedpath);
           free(quotedpath);
           if (!rv) {

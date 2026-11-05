@@ -21,9 +21,6 @@ class ArchlinuxBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         packages = [p for p in packages if p != "watchman"]
         self.pacman_install(*packages)
 
-    def upgrade_mercurial(self, current):
-        self.pacman_install("mercurial")
-
     def pacman_install(self, *packages):
         def is_installed(package):
             pacman_query = subprocess.run(

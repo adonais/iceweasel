@@ -4,18 +4,6 @@
 
 const lazy = {};
 
-ChromeUtils.defineLazyGetter(lazy, "gBrandBundle", function () {
-  return Services.strings.createBundle(
-    "chrome://branding/locale/brand.properties"
-  );
-});
-
-ChromeUtils.defineLazyGetter(lazy, "gNavigatorBundle", function () {
-  return Services.strings.createBundle(
-    "chrome://browser/locale/browser.properties"
-  );
-});
-
 ChromeUtils.defineLazyGetter(lazy, "gFluentStrings", function () {
   return new Localization(["branding/brand.ftl", "browser/browser.ftl"], true);
 });
@@ -49,13 +37,6 @@ export class EncryptedMediaParent extends JSWindowActorParent {
       return Services.prefs.getBoolPref("media.gmp-widevinecdm.visible");
     }
     return true;
-  }
-
-  getMessageWithBrandName(aNotificationId) {
-    let msgId = "emeNotifications." + aNotificationId + ".message";
-    return lazy.gNavigatorBundle.formatStringFromName(msgId, [
-      lazy.gBrandBundle.GetStringFromName("brandShortName"),
-    ]);
   }
 
   async receiveMessage(aMessage) {
@@ -99,7 +80,6 @@ export class EncryptedMediaParent extends JSWindowActorParent {
     let notificationId;
     let buttonCallback;
     let supportPage;
-    // Notification message can be either a string or a DOM fragment.
     let notificationMessage;
     switch (status) {
       case "available":
@@ -119,16 +99,18 @@ export class EncryptedMediaParent extends JSWindowActorParent {
         buttonCallback = () => {
           this.ensureEMEEnabled(browser, keySystem);
         };
-        notificationMessage = lazy.gNavigatorBundle.GetStringFromName(
-          "emeNotifications.drmContentDisabled.message2"
-        );
+        notificationMessage = {
+          "l10n-id": "eme-notifications-drm-content-disabled-message",
+        };
         supportPage = "drm-content";
         break;
 
       case "cdm-not-installed":
         this.handledMessages.add(status);
         notificationId = "drmContentCDMInstalling";
-        notificationMessage = this.getMessageWithBrandName(notificationId);
+        notificationMessage = {
+          "l10n-id": "eme-notifications-drm-content-cdm-installing-message",
+        };
         break;
 
       case "cdm-not-supported":
@@ -160,12 +142,8 @@ export class EncryptedMediaParent extends JSWindowActorParent {
       buttons.push({ supportPage });
     }
     if (buttonCallback) {
-      let msgPrefix = "emeNotifications." + notificationId + ".";
-      let manageLabelId = msgPrefix + "button.label";
-      let manageAccessKeyId = msgPrefix + "button.accesskey";
       buttons.push({
-        label: lazy.gNavigatorBundle.GetStringFromName(manageLabelId),
-        accessKey: lazy.gNavigatorBundle.GetStringFromName(manageAccessKeyId),
+        "l10n-id": "eme-notifications-drm-content-disabled-button",
         callback: buttonCallback,
       });
     }

@@ -10,6 +10,7 @@ ChromeUtils.defineESModuleGetters(this, {
   Region: "resource://gre/modules/Region.sys.mjs",
   RegionTestUtils: "resource://testing-common/RegionTestUtils.sys.mjs",
   TelemetryController: "resource://gre/modules/TelemetryController.sys.mjs",
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
   updateAppInfo: "resource://testing-common/AppInfo.sys.mjs",
 });
 
@@ -154,20 +155,20 @@ add_task(
   {
     skip_if: () => AppConstants.MOZ_BUILD_APP != "browser",
   },
-  async function testRandomizationId() {
+  async function testLegacyRandomizationId() {
     // Should generate an id if none is set
     await Services.prefs.clearUserPref("app.normandy.user_id");
     Assert.ok(
-      NormandyTestUtils.isUuid(ClientEnvironmentBase.randomizationId),
-      "randomizationId should be available"
+      NormandyTestUtils.isUuid(ClientEnvironmentBase.legacyRandomizationId),
+      "legacyRandomizationId should be available"
     );
 
     // Should read the right preference
     await Services.prefs.setStringPref("app.normandy.user_id", "fake id");
     Assert.equal(
-      ClientEnvironmentBase.randomizationId,
+      ClientEnvironmentBase.legacyRandomizationId,
       "fake id",
-      "randomizationId should read from preferences"
+      "legacyRandomizationId should read from preferences"
     );
   }
 );
@@ -187,4 +188,107 @@ add_task(async function test_formFactor() {
   } else {
     equal(env.formFactor, "desktop");
   }
+});
+
+add_task(async function testTelemetry() {
+  // setup
+  Services.prefs.setBoolPref("privacy.reduceTimerPrecision", true);
+  Services.prefs.setBoolPref("toolkit.telemetry.archive.enabled", true);
+  do_get_profile(true);
+  await TelemetryController.testReset();
+
+  await TelemetryController.submitExternalPing("testfoo", { foo: 1 });
+  await TelemetryController.submitExternalPing("testbar", { bar: 2 });
+  const lastPingTime = Date.now();
+  await TestUtils.waitForCondition(() => Date.now() > lastPingTime);
+  await TelemetryController.submitExternalPing("testfoo", { foo: 3 });
+
+  // Test it can access telemetry
+  const telemetry = await ClientEnvironmentBase.telemetry;
+  equal(typeof telemetry, "object", "Telemetry is accesible");
+
+  // Test it reads different types of telemetry
+  equal(
+    telemetry.testfoo.payload.foo,
+    3,
+    "telemetry filters pull the latest ping from a type"
+  );
+  equal(
+    telemetry.testbar.payload.bar,
+    2,
+    "telemetry filters pull from submitted telemetry pings"
+  );
+
+  await TelemetryController.testShutdown();
+  Services.prefs.clearUserPref("privacy.reduceTimerPrecision");
+  Services.prefs.clearUserPref("toolkit.telemetry.archive.enabled");
+});
+
+add_task(async function testDistribution() {
+  // distribution id defaults to "default"
+  equal(
+    ClientEnvironmentBase.distribution,
+    "default",
+    "distribution has a default value"
+  );
+
+  // distribution id is read from a preference
+  Services.prefs
+    .getDefaultBranch(null)
+    .setCharPref("distribution.id", "funnelcake");
+  equal(
+    ClientEnvironmentBase.distribution,
+    "funnelcake",
+    "distribution is read from preferences"
+  );
+  Services.prefs
+    .getDefaultBranch(null)
+    .setCharPref("distribution.id", "default");
+});
+
+add_task(async function testSync() {
+  equal(
+    ClientEnvironmentBase.syncMobileDevices,
+    0,
+    "syncMobileDevices defaults to zero"
+  );
+  equal(
+    ClientEnvironmentBase.syncDesktopDevices,
+    0,
+    "syncDesktopDevices defaults to zero"
+  );
+  equal(
+    ClientEnvironmentBase.syncTotalDevices,
+    0,
+    "syncTotalDevices defaults to zero"
+  );
+  Services.prefs.setIntPref("services.sync.clients.devices.mobile", 5);
+  Services.prefs.setIntPref("services.sync.clients.devices.desktop", 4);
+  equal(
+    ClientEnvironmentBase.syncMobileDevices,
+    5,
+    "syncMobileDevices is read when set"
+  );
+  equal(
+    ClientEnvironmentBase.syncDesktopDevices,
+    4,
+    "syncDesktopDevices is read when set"
+  );
+  equal(
+    ClientEnvironmentBase.syncTotalDevices,
+    9,
+    "syncTotalDevices is read when set"
+  );
+  Services.prefs.clearUserPref("services.sync.clients.devices.mobile");
+  Services.prefs.clearUserPref("services.sync.clients.devices.desktop");
+});
+
+add_task(async function testDoNotTrack() {
+  // doNotTrack defaults to false
+  ok(!ClientEnvironmentBase.doNotTrack, "doNotTrack has a default value");
+
+  // doNotTrack is read from a preference
+  Services.prefs.setBoolPref("privacy.donottrackheader.enabled", true);
+  ok(ClientEnvironmentBase.doNotTrack, "doNotTrack is read from preferences");
+  Services.prefs.clearUserPref("privacy.donottrackheader.enabled");
 });

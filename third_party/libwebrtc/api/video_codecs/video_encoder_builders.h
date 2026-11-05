@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <optional>
+#include <set>
 #include <variant>
 #include <vector>
 
@@ -67,7 +68,8 @@ class StaticEncoderSettingsBuilder {
           rc_mode);
   StaticEncoderSettingsBuilder& CqpRcMode();
   StaticEncoderSettingsBuilder& CbrRcMode(TimeDelta max_buffer_size,
-                                          TimeDelta target_buffer_size);
+                                          TimeDelta target_buffer_size,
+                                          double max_intra_bitrate_factor);
   StaticEncoderSettingsBuilder& MaxNumberOfThreads(int max_number_of_threads);
 
   VideoEncoderFactoryInterface::StaticEncoderSettings Build();
@@ -90,7 +92,7 @@ class PredictionConstraintsBuilder {
   PredictionConstraintsBuilder& ScalingFactors(
       std::vector<Rational> scaling_factors);
   PredictionConstraintsBuilder& SupportedFrameTypes(
-      std::vector<VideoEncoderInterface::FrameType> supported_frame_types);
+      std::set<VideoEncoderInterface::FrameType> supported_frame_types);
 
   VideoEncoderFactoryInterface::Capabilities::PredictionConstraints Build();
 

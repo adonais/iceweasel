@@ -75,6 +75,15 @@ add_task(async function test_website_confirmation_select_all() {
         "Button shows 'Select all' when some unchecked"
       );
 
+      const waitForToggleAll = () =>
+        new Promise(resolve => {
+          confirmation.addEventListener(
+            "ai-website-confirmation:toggle-all",
+            resolve,
+            { once: true }
+          );
+        });
+
       // Click select all
       let eventPromise = new Promise(resolve => {
         confirmation.addEventListener(
@@ -85,9 +94,15 @@ add_task(async function test_website_confirmation_select_all() {
           }
         );
       });
+      let toggleAllPromise = waitForToggleAll();
 
       selectAllButton.click();
       const event = await eventPromise;
+      Assert.equal(
+        (await toggleAllPromise).detail.allSelected,
+        true,
+        "Toggle all event reports a select all"
+      );
 
       // All should be checked now
       Assert.ok(
@@ -117,14 +132,53 @@ add_task(async function test_website_confirmation_select_all() {
           }
         );
       });
+      toggleAllPromise = waitForToggleAll();
 
       selectAllButton.click();
       await eventPromise;
+      Assert.equal(
+        (await toggleAllPromise).detail.allSelected,
+        false,
+        "Toggle all event reports a deselect all"
+      );
 
       // All should be unchecked now
       Assert.ok(
         confirmation.tabs.every(tab => !tab.checked),
         "All tabs are unchecked after deselect all"
+      );
+    });
+  });
+});
+
+add_task(async function test_website_confirmation_toggle_all_no_tabs() {
+  await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      const confirmation = content.document.getElementById(
+        "test-confirmation-empty"
+      );
+      const toggleButton =
+        confirmation.shadowRoot.querySelectorAll("moz-button")[1];
+
+      Assert.equal(
+        toggleButton.getAttribute("data-l10n-id"),
+        "smart-window-confirm-select-all",
+        "Button shows 'Select all' when there are no tabs"
+      );
+
+      const toggleAllPromise = new Promise(resolve => {
+        confirmation.addEventListener(
+          "ai-website-confirmation:toggle-all",
+          resolve,
+          { once: true }
+        );
+      });
+      toggleButton.click();
+
+      Assert.equal(
+        (await toggleAllPromise).detail.allSelected,
+        true,
+        "Toggle all event matches the 'Select all' label"
       );
     });
   });

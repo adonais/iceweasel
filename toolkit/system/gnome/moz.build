@@ -27,3 +27,9 @@ LOCAL_INCLUDES += [
 
 CXXFLAGS += CONFIG["GLIB_CFLAGS"]
 CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
+
+SOURCE_HEADERS += [
+    "nsAlertsIconListener.h",
+    "nsGIOService.h",
+    "nsSystemAlertsService.h",
+]

@@ -4,10 +4,14 @@
 
 package mozilla.components.support.utils
 
+import android.text.SpannableString
+import android.text.Spanned
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.support.ktx.util.URLStringUtils
 import mozilla.components.support.ktx.util.URLStringUtils.isSearchTerm
 import mozilla.components.support.ktx.util.URLStringUtils.isURLLike
+import mozilla.components.support.ktx.util.URLStringUtils.toLosslessDisplayUrl
+import mozilla.components.support.ktx.util.URLStringUtils.toLosslessEditableUrl
 import mozilla.components.support.ktx.util.URLStringUtils.toNormalizedURL
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -39,6 +43,14 @@ class URLStringUtilsTest {
             "https://www.mozilla.org/en-US/internet-health/",
             toNormalizedURL("https://www.mozilla.org/en-US/internet-health/"),
         )
+    }
+
+    @Test
+    fun `toNormalizedURL encodes only the spaces after the authority of HTTP and HTTPS URLs`() {
+        assertEquals("http://example.com/a%20b?q=c%20d#e%20f", toNormalizedURL("example.com/a b?q=c d#e f"))
+        assertEquals("https://example.com/a%20b%2520", toNormalizedURL("https://example.com/a b%2520"))
+        assertEquals("http://some words", toNormalizedURL("some words"))
+        assertEquals("custom:a b", toNormalizedURL("custom:a b"))
     }
 
     @Test
@@ -137,6 +149,58 @@ class URLStringUtilsTest {
 
         // Examples from issues
         assertTrue(isURLLike("https://abc--cba.com/")) // #7096
+    }
+
+    @Test
+    fun `HTTP paths queries and fragments accept spaces without changing host classification`() {
+        listOf(
+                "http://example.com/a b",
+                "https://example.com/?q=hello world",
+                "https://example.com/#section one",
+                "example.com/?q=hello world",
+                "example.com/a#section one",
+                "127.0.0.1/a b",
+                "localhost:8000/a b",
+                "127.0.0.1:8000/a b",
+                "[::1]:8000/a b",
+                "example.com:8000/a b",
+                "my.app:443/a b",
+                "https://例え.テスト/日本 語?q=한 글#café au lait",
+                "https://example.com/a%2Fb/%2520?q=a+b%2Bc d",
+                "example.com/r?u=https://other.example/a b",
+                "https://example.com/r?u=https://other.example/a b",
+            )
+            .forEach { input ->
+                assertTrue(input, isURLLike(input))
+                assertFalse(input, isSearchTerm(input))
+            }
+        listOf(
+                "some ordinary words",
+                "intranet/a b",
+                "example.com/a b",
+                "example.unknown/a b",
+                "例え.テスト/日本 語",
+                "node.js/express tutorial",
+                "3.5/5 stars",
+                "vue.js/nuxt setup",
+                "example.com some words",
+                "https://exa mple.com/a",
+                "https://example.com some words/a",
+                "example.com some words?q=test",
+                "example.com some words?u=https://other.example",
+                "site:example.com/a b",
+                "my.app:open data/a b",
+                "tel:12345 67890",
+                "javascript:alert('a b')",
+                "data:text/plain,a b",
+                "file:///a b",
+                "https://example.com/a\tb",
+                "https://example.com/a\nb",
+            )
+            .forEach { input ->
+                assertFalse(input, isURLLike(input))
+                assertTrue(input, isSearchTerm(input))
+            }
     }
 
     @Test
@@ -275,5 +339,89 @@ class URLStringUtilsTest {
         assertTrue(URLStringUtils.isValidSearchQueryUrl("example.com/search/?q=%s"))
         assertTrue(URLStringUtils.isValidSearchQueryUrl(" example.com/search/?q=%s "))
         assertFalse(URLStringUtils.isValidSearchQueryUrl("htps://example.com/search/?q=%s"))
+    }
+
+    @Test
+    fun losslessFormattingMatchesFirefoxDesktopReferenceOutputs() {
+        val stream = requireNotNull(javaClass.getResourceAsStream("/url-editing/firefox-desktop.tsv"))
+        stream.bufferedReader().useLines { lines ->
+            lines
+                .filter { it.isNotEmpty() && !it.startsWith('#') }
+                .forEach { line ->
+                    val (source, expected) = line.split('\t')
+                    assertEquals(source, expected, toLosslessEditableUrl(source))
+                    assertEquals(source, expected.replace(" ", "%20"), toLosslessDisplayUrl(source))
+                }
+        }
+    }
+
+    @Test
+    fun losslessFormattingKeepsDelimitersNestedEscapesAndPlusSigns() {
+        listOf("/a%5Cb", "?next=https%3A%2F%2Fother.example%2Fa%3Fx%3D1%26y%3D2").forEach { suffix ->
+            val url = "https://example.com$suffix"
+            assertEquals(url, toLosslessEditableUrl(url))
+        }
+        val nestedEscape = toLosslessEditableUrl("https://example.com/%25%33%42")
+        assertEquals("https://example.com/%253B", nestedEscape)
+        assertEquals(nestedEscape, toLosslessEditableUrl(nestedEscape))
+        assertEquals(
+            "https://example.com/a+b?q=a+b%2Bc d",
+            toLosslessEditableUrl("https://example.com/a+b?q=a+b%2Bc%20d"),
+        )
+    }
+
+    @Test
+    fun losslessFormattingEncodesLiteralInvisibleCharactersButKeepsJoiners() {
+        assertEquals("https://example.com/a%20%20 b%20", toLosslessEditableUrl("https://example.com/a   b "))
+        assertEquals(
+            "https://example.com/a%E2%80%AEb%F0%9F%9B%A1",
+            toLosslessEditableUrl("https://example.com/a\u202Eb\uD83D\uDEE1"),
+        )
+        assertEquals(
+            "https://example.com/a\u200Cb\u200Dc",
+            toLosslessEditableUrl("https://example.com/a%E2%80%8Cb%E2%80%8Dc"),
+        )
+    }
+
+    @Test
+    fun losslessFormattingNeverChangesAnAuthorityOrANonHttpUrl() {
+        listOf("about:reader?url=https%3A%2F%2Fexample.com", "data:text/plain,%41", "javascript:%41").forEach {
+            assertEquals(it, toLosslessEditableUrl(it))
+        }
+        assertEquals("https://example.com", toLosslessEditableUrl("https://example.com"))
+        assertEquals(
+            "https://%41:%42@xn--e1afmkfd.xn--p1ai/A",
+            toLosslessEditableUrl("https://%41:%42@xn--e1afmkfd.xn--p1ai/%41"),
+        )
+    }
+
+    @Test
+    fun losslessFormattingOnlyGuardsOnNestedReservedEscapesInTheTail() {
+        assertEquals(
+            "https://%2540:%252F@example.com/A",
+            toLosslessEditableUrl("https://%2540:%252F@example.com/%41"),
+        )
+        assertEquals(
+            "https://%2540@example.com/%252F/%41",
+            toLosslessEditableUrl("https://%2540@example.com/%252F/%41"),
+        )
+    }
+
+    @Test
+    fun toDisplayUrlAppliesLosslessFormattingAndKeepsSpans() {
+        assertEquals(
+            "example.com/тест%20file",
+            URLStringUtils.toDisplayUrl("https://example.com/%D1%82%D0%B5%D1%81%D1%82%20file").toString(),
+        )
+
+        val marked = SpannableString("https://example.com/%D1%82%D0%B5%D1%81%D1%82")
+        val span = Any()
+        marked.setSpan(span, "https://".length, "https://example.com".length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+
+        val displayed = URLStringUtils.toDisplayUrl(marked)
+        assertEquals("example.com/тест", displayed.toString())
+        val spanned = displayed as Spanned
+        assertEquals(0, spanned.getSpanStart(span))
+        assertEquals("example.com".length, spanned.getSpanEnd(span))
     }
 }

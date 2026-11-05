@@ -15,11 +15,7 @@ class TRRQuery : public AHostResolver {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TRRQuery, override)
 
  public:
-  TRRQuery(nsHostResolver* aHostResolver, nsHostRecord* aHostRecord)
-      : mHostResolver(aHostResolver),
-        mRecord(aHostRecord),
-        mTrrLock("TRRQuery.mTrrLock") {}
-
+  TRRQuery(nsHostResolver* aHostResolver, nsHostRecord* aHostRecord);
   nsresult DispatchLookup(TRR* pushedTRR = nullptr);
 
   void Cancel(nsresult aStatus);
@@ -70,7 +66,7 @@ class TRRQuery : public AHostResolver {
   nsresult DispatchByTypeLookup(TRR* pushedTRR = nullptr);
 
  private:
-  ~TRRQuery() = default;
+  ~TRRQuery();
 
   void MarkSendingTRR(TRR* trr, TrrType rectype) MOZ_REQUIRES(mTrrLock);
   void PrepareQuery(TrrType aRecType, nsTArray<RefPtr<TRR>>& aRequestsToSend);

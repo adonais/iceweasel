@@ -13,6 +13,15 @@ export const URL_TOKEN_REGEX = /§url_token:\s*([A-Z0-9_]+_\d+)§/g;
 const EXACT_URL_TOKEN_REGEX = new RegExp(`^${URL_TOKEN_REGEX.source}$`);
 
 /**
+ * Matches the candidate URLs tokenizeText replaces. A match starts at any
+ * http:// or https:// and runs until whitespace or a delimiter. There is no
+ * \b, so "xhttps://..." is also caught. The lookahead ends the match just
+ * before the next scheme, so a bad URL can't swallow a valid one that follows
+ * it.
+ */
+export const URL_REGEX = /https?:\/\/(?:(?!https?:\/\/)[^\s<>"'`§])*/gi;
+
+/**
  * Tokenizes URLs to send to an LLM
  */
 export class UrlTokenizer {
@@ -93,9 +102,18 @@ export class UrlTokenizer {
         // Go ahead and handle URL tokens for more complicated URLs that
         // aren't probably supported in the chat interface, but would be useful
         // to disambiguate from the HTTP(s) varieties.
-        baseToken +=
-          // e.g. "ftp:" -> "FTP"
-          parsedUrl.protocol.toUpperCase().replace(":", "");
+
+        if (
+          parsedUrl.protocol == "about:" &&
+          parsedUrl.pathname == "smartpage"
+        ) {
+          // Give smart pages better looking URL to better hint the LLM
+          baseToken = "SAVED_PAGE";
+        } else {
+          baseToken +=
+            // e.g. "ftp:" -> "FTP"
+            parsedUrl.protocol.toUpperCase().replace(":", "");
+        }
       }
 
       // Convert the hostname into a token.
@@ -160,27 +178,20 @@ export class UrlTokenizer {
     if (!text) {
       return text;
     }
-    // A match starts at any http:// or https:// and runs until whitespace or a
-    // delimiter. There is no \b, so "xhttps://..." is also caught. The
-    // lookahead ends the match just before the next scheme, so a bad URL
-    // can't swallow a valid one that follows it.
-    return text.replace(
-      /https?:\/\/(?:(?!https?:\/\/)[^\s<>"'`§])*/gi,
-      match => {
-        // Keep trailing sentence punctuation like "." or ")" outside the token,
-        // except a ")" that closes a "(" in the URL, as in "Function_(math)".
-        let url = match.replace(/[.,;:!?)\]}]+$/, "");
-        let unclosed = url.split("(").length - url.split(")").length;
-        while (unclosed-- > 0 && match[url.length] == ")") {
-          url += ")";
-        }
-        const trailing = match.slice(url.length);
-        // If it doesn't parse, drop the scheme and keep the rest as plain text.
-        return URL.parse(url)
-          ? this.formatToken(url) + trailing
-          : match.slice(match.indexOf("//") + 2);
+    return text.replace(URL_REGEX, match => {
+      // Keep trailing sentence punctuation like "." or ")" outside the token,
+      // except a ")" that closes a "(" in the URL, as in "Function_(math)".
+      let url = match.replace(/[.,;:!?)\]}]+$/, "");
+      let unclosed = url.split("(").length - url.split(")").length;
+      while (unclosed-- > 0 && match[url.length] == ")") {
+        url += ")";
       }
-    );
+      const trailing = match.slice(url.length);
+      // If it doesn't parse, drop the scheme and keep the rest as plain text.
+      return URL.parse(url)
+        ? this.formatToken(url) + trailing
+        : match.slice(match.indexOf("//") + 2);
+    });
   }
 
   /**

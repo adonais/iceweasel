@@ -5,10 +5,13 @@
 #ifndef DOM_MEDIA_WEBRTC_SDP_SDPMEDIASECTION_H_
 #define DOM_MEDIA_WEBRTC_SDP_SDPMEDIASECTION_H_
 
+#include <algorithm>
+#include <cctype>
 #include <ostream>
 #include <string>
 #include <vector>
 
+#include "mozilla/Maybe.h"
 #include "sdp/SdpAttributeList.h"
 #include "sdp/SdpEnum.h"
 
@@ -20,9 +23,54 @@ class SdpConnection;
 
 class SdpMediaSection {
  public:
-  enum MediaType { kAudio, kVideo, kText, kApplication, kMessage };
-  // don't add to enum to avoid warnings about unhandled enum values
-  static const size_t kMediaTypes = static_cast<size_t>(kMessage) + 1;
+  // Don't add to enum without updating kMediaTypes to avoid warnings about
+  // unhandled enum values
+  enum MediaType { kAudio, kVideo, kText, kApplication, kMessage, kUnknown };
+
+  struct UnknownMediaTypeData {
+    std::string name;
+    std::string formatString;
+
+    // Use MediaTypeInfo::MatchesTypeOf or MediaTypeInfo::IdenticalTo, which
+    // spell out which parts are being compared.
+    bool operator==(const UnknownMediaTypeData& aOther) const = delete;
+  };
+
+  struct MediaTypeInfo {
+    MediaType type;
+    // Unknown media types should be reproduced
+    Maybe<UnknownMediaTypeData> unknown = Nothing();
+
+    // There is more than one useful notion of equivalence here, so callers
+    // have to say which one they mean.
+    bool operator==(const MediaTypeInfo& aOther) const = delete;
+
+    // Compares the media type alone. The format list is a separate subfield of
+    // the m= line, not part of the media type.
+    bool MatchesTypeOf(const MediaTypeInfo& aOther) const {
+      // Media type names are case-insensitive, and the name of an unknown
+      // media type is kept in the case it was received in.
+      const auto lowerCaseName = [](const UnknownMediaTypeData& aData) {
+        std::string name = aData.name;
+        std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+        return name;
+      };
+      return type == aOther.type &&
+             unknown.map(lowerCaseName) == aOther.unknown.map(lowerCaseName);
+    }
+
+    // Compares the media type and, for an unknown media type, the format list
+    // that goes with it. The format list is kept verbatim because we cannot
+    // parse it, so it is compared verbatim too.
+    bool IdenticalTo(const MediaTypeInfo& aOther) const {
+      const auto formatString = [](const UnknownMediaTypeData& aData) {
+        return aData.formatString;
+      };
+      return MatchesTypeOf(aOther) &&
+             unknown.map(formatString) == aOther.unknown.map(formatString);
+    }
+  };
+  static const size_t kMediaTypes = static_cast<size_t>(kUnknown) + 1;
 
   enum Protocol {
     kRtpAvp,             // RTP/AVP [RFC4566]
@@ -70,6 +118,7 @@ class SdpMediaSection {
   explicit SdpMediaSection(size_t level) : mLevel(level) {}
 
   virtual MediaType GetMediaType() const = 0;
+  virtual MediaTypeInfo GetMediaTypeInfo() const = 0;
   virtual unsigned int GetPort() const = 0;
   virtual void SetPort(unsigned int port) = 0;
   virtual unsigned int GetPortCount() const = 0;
@@ -135,6 +184,8 @@ class SdpMediaSection {
   const SdpFmtpAttributeList::Parameters* FindFmtp(const std::string& pt) const;
   void SetFmtp(const SdpFmtpAttributeList::Fmtp& fmtp);
   void RemoveFmtp(const std::string& pt);
+  // Removes fmtp and rtcp-fb entries for payload types not in GetFormats().
+  void RemoveUnlistedPayloadTypeAttributes();
   const SdpRtpmapAttributeList::Rtpmap* FindRtpmap(const std::string& pt) const;
   const SdpSctpmapAttributeList::Sctpmap* GetSctpmap() const;
   uint32_t GetSctpPort() const;
@@ -161,8 +212,8 @@ inline std::ostream& operator<<(std::ostream& os, const SdpMediaSection& ms) {
 }
 
 inline std::ostream& operator<<(std::ostream& os,
-                                const SdpMediaSection::MediaType t) {
-  switch (t) {
+                                const SdpMediaSection::MediaTypeInfo t) {
+  switch (t.type) {
     case SdpMediaSection::kAudio:
       return os << "audio";
     case SdpMediaSection::kVideo:
@@ -173,6 +224,11 @@ inline std::ostream& operator<<(std::ostream& os,
       return os << "application";
     case SdpMediaSection::kMessage:
       return os << "message";
+    case SdpMediaSection::kUnknown: {
+      if (t.unknown) {
+        return os << t.unknown.value().name;
+      }
+    }
   }
   MOZ_ASSERT(false, "Unknown MediaType");
   return os << "?";

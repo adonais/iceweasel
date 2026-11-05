@@ -48,6 +48,19 @@ add_task(async function test_fill_creditCard_but_cancel_login() {
   );
 
   await Services.fog.testFlushAllChildren();
+  if (RUST_CREDIT_CARD_STORE) {
+    // Re-authentication is a step of its own for this store, so a decline
+    // aborts before anything is read and there is no decrypt to report. What
+    // the user did is reported by promptShownOsReauth either way.
+    const prompts = Glean.formautofill.promptShownOsReauth.testGetValue() ?? [];
+    is(prompts.at(-1).extra.trigger, "autofill", "Recorded for the fill");
+    is(
+      prompts.at(-1).extra.result,
+      "fail_user_canceled",
+      "Recorded as a decline"
+    );
+    return;
+  }
   let testEvents = Glean.creditcard.osKeystoreDecrypt.testGetValue();
   is(testEvents.length, 1, "Event was recorded");
   is(testEvents[0].extra.trigger, "formautofill_cc", "Trigger was correct");

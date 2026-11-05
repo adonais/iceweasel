@@ -49,6 +49,9 @@ interface PushManager {
 //      unfortunately can't be gated by prefs).
 [SecureContext]
 interface mixin PushManagerAttribute {
-  [SameObject, Throws, Pref="dom.push.window_pushmanager.enabled"]
+  // XXX: Currently this can't have SameObject since the constructor runs JS in
+  // Push.sys.mjs (we can add it if we move the push implementation to C++,
+  // see bug 1252660).
+  [Throws, Pref="dom.push.window_pushmanager.enabled"]
   readonly attribute PushManager pushManager;
 };

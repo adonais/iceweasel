@@ -45,8 +45,8 @@ struct DeleteEntry {
   DeleteEntry() : mValue(true) {}
   bool mValue;
 
-  bool operator==(const DeleteEntry& aOther) const { return true; }
-  bool operator!=(const DeleteEntry& aOther) const { return false; }
+  bool operator==(const DeleteEntry& /*aOther*/) const { return true; }
+  bool operator!=(const DeleteEntry& /*aOther*/) const { return false; }
 };
 
 /**

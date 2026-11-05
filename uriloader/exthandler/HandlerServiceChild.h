@@ -12,10 +12,10 @@ namespace mozilla {
 class HandlerServiceChild final : public mozilla::dom::PHandlerServiceChild {
  public:
   NS_INLINE_DECL_REFCOUNTING(HandlerServiceChild, final)
-  HandlerServiceChild() {}
+  HandlerServiceChild() = default;
 
  private:
-  virtual ~HandlerServiceChild() {}
+  virtual ~HandlerServiceChild() = default;
 };
 
 }  // namespace mozilla

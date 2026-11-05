@@ -25,6 +25,8 @@
 #include <sys/un.h>
 #include <sys/uio.h>
 
+#include <memory>
+
 #include "base/command_line.h"
 #include "base/eintr_wrapper.h"
 #include "base/logging.h"
@@ -162,8 +164,8 @@ void ChannelPosix::Init(Mode mode) {
 }
 
 bool ChannelPosix::EnqueueHelloMessage() {
-  mozilla::UniquePtr<Message> msg(
-      new Message(MSG_ROUTING_NONE, HELLO_MESSAGE_TYPE));
+  mozilla::UniquePtr<Message> msg =
+      std::make_unique<Message>(MSG_ROUTING_NONE, HELLO_MESSAGE_TYPE);
   if (!msg->WriteInt(base::GetCurrentProcId())) {
     CloseLocked();
     return false;

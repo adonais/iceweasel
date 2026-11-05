@@ -18,6 +18,7 @@
 
 #include "GLSLANG/ShaderLang.h"
 #include "common/angleutils.h"
+#include "common/hash_containers.h"
 #include "common/utilities.h"
 #include "libANGLE/ImageIndex.h"
 #include "libANGLE/angletypes.h"
@@ -340,6 +341,16 @@ void GetUniform(const gl::ProgramExecutable *executable,
                 GLenum entryPointType,
                 const DefaultUniformBlockMap *defaultUniformBlocks);
 
+// Remove `[*]` from uniform names
+std::string RemoveArraySubscripts(const std::string &uniformName);
+
+// Maps sampler-in-struct uniform names to extracted sampler names, matching the transformation done
+// by the translator (RewriteStructSamplers).  Indices must have already been stripped from the
+// uniformName.
+std::string GetExtractedStructSamplerName(
+    const std::string uniformNameWithoutIndices,
+    angle::HashMap<std::string, size_t> *extractedSamplerIndices);
+
 const angle::Format &GetFormatFromFormatType(GLenum format, GLenum type);
 
 angle::Result ComputeStartVertex(ContextImpl *contextImpl,
@@ -544,7 +555,7 @@ class ResetBaseVertexBaseInstance : angle::NonCopyable
 
 angle::FormatID ConvertToSRGB(angle::FormatID formatID);
 angle::FormatID ConvertToLinear(angle::FormatID formatID);
-bool IsOverridableLinearFormat(angle::FormatID formatID);
+bool IsOverridableLinearOrSRGBFormat(angle::FormatID formatID);
 
 template <bool swizzledLuma = true>
 const gl::ColorGeneric AdjustBorderColor(const angle::ColorGeneric &borderColorGeneric,
@@ -569,7 +580,7 @@ GLint LimitToIntAnd(const LargerInt physicalDeviceValue, const uint64_t cap)
 bool TextureHasAnyRedefinedLevels(const gl::CubeFaceArray<gl::TexLevelMask> &redefinedLevels);
 bool IsTextureLevelRedefined(const gl::CubeFaceArray<gl::TexLevelMask> &redefinedLevels,
                              gl::TextureType textureType,
-                             gl::LevelIndex level);
+                             gl::OwnerLevel level);
 
 enum class TextureLevelDefinition
 {
@@ -591,14 +602,13 @@ bool TextureRedefineLevel(const TextureLevelAllocation levelAllocation,
                           const TextureLevelDefinition levelDefinition,
                           bool immutableFormat,
                           uint32_t levelCount,
-                          const uint32_t layerIndex,
-                          const gl::ImageIndex &index,
-                          gl::LevelIndex imageFirstAllocatedLevel,
+                          const gl::OwnerImageIndex &index,
+                          gl::OwnerLevel imageFirstAllocatedLevel,
                           gl::CubeFaceArray<gl::TexLevelMask> *redefinedLevels);
 
-void TextureRedefineGenerateMipmapLevels(gl::LevelIndex baseLevel,
-                                         gl::LevelIndex maxLevel,
-                                         gl::LevelIndex firstGeneratedLevel,
+void TextureRedefineGenerateMipmapLevels(gl::OwnerLevel baseLevel,
+                                         gl::OwnerLevel maxLevel,
+                                         gl::OwnerLevel firstGeneratedLevel,
                                          gl::CubeFaceArray<gl::TexLevelMask> *redefinedLevels);
 
 enum class ImageMipLevels
@@ -631,6 +641,12 @@ inline size_t PackSampleCount(int32_t sampleCount)
     ASSERT(1 <= sampleCount && sampleCount <= 16);
     ASSERT(gl::isPow2(sampleCount));
     return gl::ScanForward(static_cast<uint32_t>(sampleCount));
+}
+
+inline GLuint GetMultiviewAdjustedDivisor(int numViews, GLuint divisor)
+{
+    uint64_t adjusted = static_cast<uint64_t>(numViews) * static_cast<uint64_t>(divisor);
+    return static_cast<GLuint>(std::min<uint64_t>(adjusted, std::numeric_limits<GLuint>::max()));
 }
 
 }  // namespace rx

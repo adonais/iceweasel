@@ -3,8 +3,6 @@
 
 "use strict";
 
-const novaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
-
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -19,30 +17,34 @@ registerCleanupFunction(async () => {
 });
 
 async function mouseOverSidebarToExpand() {
+  // Mouse events during a view transition target the root element.
+  await SidebarController.waitUntilStable();
   // Disable non-test mouse events
   window.windowUtils.disableNonTestMouseEvents(true);
 
-  EventUtils.synthesizeMouse(SidebarController.sidebarContainer, 1, 150, {
-    type: "mousemove",
-  });
-
-  await BrowserTestUtils.waitForMutationCondition(
+  // Stay clear of the launcher splitter, which overlaps the inner edge.
+  const { width } = SidebarController.sidebarContainer.getBoundingClientRect();
+  EventUtils.synthesizeMouse(
     SidebarController.sidebarContainer,
-    { attributes: true },
-    async () => {
-      await SidebarController.waitUntilStable();
-      return (
-        SidebarController.sidebarContainer.hasAttribute(
-          "sidebar-launcher-expanded"
-        ) &&
-        SidebarController.sidebarMain.expanded &&
-        SidebarController._state.launcherExpanded &&
-        window.getComputedStyle(SidebarController.sidebarContainer).position ===
-          "absolute"
-      );
-    },
-    { msg: "The sidebar launcher is expanded" }
+    width / 2,
+    150,
+    {
+      type: "mousemove",
+    }
   );
+
+  await TestUtils.waitForCondition(async () => {
+    await SidebarController.waitUntilStable();
+    return (
+      SidebarController.sidebarContainer.hasAttribute(
+        "sidebar-launcher-expanded"
+      ) &&
+      SidebarController.sidebarMain.expanded &&
+      SidebarController._state.launcherExpanded &&
+      window.getComputedStyle(SidebarController.sidebarContainer).position ===
+        "absolute"
+    );
+  }, "The sidebar launcher is expanded");
 
   info("The sidebar launcher is expanded on mouse over");
 
@@ -50,6 +52,7 @@ async function mouseOverSidebarToExpand() {
 }
 
 async function mouseOutSidebarToCollapse() {
+  await SidebarController.waitUntilStable();
   // Disable non-test mouse events
   window.windowUtils.disableNonTestMouseEvents(true);
 
@@ -57,24 +60,16 @@ async function mouseOutSidebarToCollapse() {
     type: "mousemove",
   });
 
-  await BrowserTestUtils.waitForMutationCondition(
-    SidebarController.sidebarContainer,
-    { attributes: true },
-    async () => {
-      await SidebarController.waitUntilStable();
-      return (
-        !SidebarController.sidebarContainer.hasAttribute(
-          "sidebar-launcher-expanded"
-        ) &&
-        !SidebarController.sidebarMain.expanded &&
-        !SidebarController._state.launcherExpanded &&
-        (novaEnabled ||
-          window.getComputedStyle(SidebarController.sidebarContainer)
-            .position === "relative")
-      );
-    },
-    { msg: "The sidebar launcher is collapsed" }
-  );
+  await TestUtils.waitForCondition(async () => {
+    await SidebarController.waitUntilStable();
+    return (
+      !SidebarController.sidebarContainer.hasAttribute(
+        "sidebar-launcher-expanded"
+      ) &&
+      !SidebarController.sidebarMain.expanded &&
+      !SidebarController._state.launcherExpanded
+    );
+  }, "The sidebar launcher is collapsed");
 
   info("The sidebar launcher is collapsed on mouse out");
 
@@ -123,9 +118,6 @@ add_task(async function test_enable_expand_on_hover() {
       ) &&
       !SidebarController._state.launcherExpanded &&
       SidebarController.sidebarRevampVisibility === "expand-on-hover" &&
-      (novaEnabled ||
-        window.getComputedStyle(SidebarController.sidebarContainer).position ===
-          "relative") &&
       panel.expandOnHoverInput.checked,
     { msg: "Expand on hover has been enabled" }
   );

@@ -84,6 +84,36 @@ class PrintHelper {
     return this.getTestPageUrlHTTPS("simplifyArticleSample.html");
   }
 
+  /**
+   * Silently print aBrowser to PDF in memory.
+   *
+   * @param {MozBrowser} aBrowser - the browser to print.
+   * @param {Function} [aConfigureSettings] - called with the nsIPrintSettings
+   *   before printing, to customize them.
+   * @returns {Promise<Uint8Array>} the contents of the PDF.
+   */
+  static async printToPDF(aBrowser, aConfigureSettings) {
+    let storageStream = Cc["@mozilla.org/storagestream;1"].createInstance(
+      Ci.nsIStorageStream
+    );
+    storageStream.init(4096, 0xffffffff);
+
+    let settings = Cc["@mozilla.org/gfx/printsettings-service;1"]
+      .getService(Ci.nsIPrintSettingsService)
+      .createNewPrintSettings();
+    settings.printerName = DEFAULT_PRINTER_NAME;
+    settings.outputFormat = Ci.nsIPrintSettings.kOutputFormatPDF;
+    settings.outputDestination = Ci.nsIPrintSettings.kOutputDestinationStream;
+    settings.outputStream = storageStream.getOutputStream(0);
+    aConfigureSettings?.(settings);
+
+    await aBrowser.browsingContext.print(settings);
+
+    return new Uint8Array(
+      NetUtil.readInputStream(storageStream.newInputStream(0))
+    );
+  }
+
   static createMockPaper(paperProperties = {}) {
     return Object.assign(
       {

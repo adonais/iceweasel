@@ -192,6 +192,7 @@ void ProfileBufferCollector::CollectNativeLeafAddr(void* aAddr) {
 
 void ProfileBufferCollector::CollectJitReturnAddr(void* aAddr) {
   mBuf.AddEntry(ProfileBufferEntry::JitReturnAddr(aAddr));
+  mHasCollectedJitReturnAddr = true;
 }
 
 void ProfileBufferCollector::CollectWasmOrSyncJITFrame(

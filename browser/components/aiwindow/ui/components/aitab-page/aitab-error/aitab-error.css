@@ -24,7 +24,7 @@
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   gap: 40px;
 
-  @container aitab-page (width < 600px) {
+  @media (width < 600px) {
     flex-direction: column;
     gap: var(--space-large);
   }

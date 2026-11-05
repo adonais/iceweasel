@@ -1019,6 +1019,10 @@ void LIRGenerator::visitWasmReplaceLaneSimd128(MWasmReplaceLaneSimd128* ins) {
   MOZ_CRASH("replace-lane SIMD NYI");
 }
 
+void LIRGenerator::visitWasmMoveLaneSimd128(MWasmMoveLaneSimd128* ins) {
+  MOZ_CRASH("move-lane SIMD NYI");
+}
+
 void LIRGenerator::visitWasmScalarToSimd128(MWasmScalarToSimd128* ins) {
   MOZ_CRASH("scalar-to-SIMD NYI");
 }

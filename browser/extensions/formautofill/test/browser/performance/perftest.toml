@@ -15,8 +15,6 @@ prefs = [
   "extensions.formautofill.useml=true",
   # Keep ML eligibility enabled when the test replaces the native backend with WASM.
   "extensions.formautofill.useml.nativeOnnxAvailable=true",
-  # Measure the first complete inference instead of the product's prefetch-only use.
-  "extensions.formautofill.useml.successful=true",
   # Ignoring the blocklist is necessary to run tests in CI on old Mesa versions.
   "gfx.webgpu.ignore-blocklist=true",
 ]

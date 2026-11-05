@@ -7,6 +7,7 @@
 
 // Keep others in (case-insensitive) order:
 #include "SVGAnimatedTransformList.h"
+#include "SVGGradientFrame.h"
 #include "SVGMarkerFrame.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
@@ -18,11 +19,13 @@
 #include "mozilla/SVGContextPaint.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUtils.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/dom/SVGGraphicsElement.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Helpers.h"
+#include "mozilla/layers/StackingContextHelper.h"
 #include "nsGkAtoms.h"
 #include "nsLayoutUtils.h"
 
@@ -561,7 +564,7 @@ void SVGGeometryFrame::Render(gfxContext* aContext,
   aContext->SetMatrixDouble(aTransform);
 
   if (HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD)) {
-    // We don't complicate this code with GetAsSimplePath since the cost of
+    // We don't complicate this code with GetAsSimpleShape since the cost of
     // masking will dwarf Path creation overhead anyway.
     RefPtr<Path> path = element->GetOrBuildPath(drawTarget, fillRule);
     if (path) {
@@ -572,11 +575,14 @@ void SVGGeometryFrame::Render(gfxContext* aContext,
     return;
   }
 
-  SVGGeometryElement::SimplePath simplePath;
+  SVGGeometryElement::SimpleShape shape;
   RefPtr<Path> path;
 
-  element->GetAsSimplePath(&simplePath);
-  if (!simplePath.IsPath()) {
+  // DrawTarget has dedicated methods for rects and lines. Other shapes go
+  // through a Path.
+  element->GetAsSimpleShape(&shape);
+  if (!shape.IsRect() && !shape.IsLine()) {
+    shape.Reset();
     path = element->GetOrBuildPath(drawTarget, fillRule);
     if (!path) {
       return;
@@ -593,8 +599,9 @@ void SVGGeometryFrame::Render(gfxContext* aContext,
 
     if (fillPattern.GetPattern()) {
       DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER, aaMode);
-      if (simplePath.IsRect()) {
-        drawTarget->FillRect(simplePath.AsRect(), fillPattern, drawOptions);
+      if (shape.IsRect()) {
+        drawTarget->FillRect(shape.AsRect().ToUnknownRect(), fillPattern,
+                             drawOptions);
       } else if (path) {
         drawTarget->Fill(path, fillPattern, drawOptions);
       }
@@ -613,7 +620,7 @@ void SVGGeometryFrame::Render(gfxContext* aContext,
         if (!path) {
           return;
         }
-        simplePath.Reset();
+        shape.Reset();
       }
       // We need to transform the path back into the appropriate ancestor
       // coordinate system, and paint it it that coordinate system, in order
@@ -635,12 +642,13 @@ void SVGGeometryFrame::Render(gfxContext* aContext,
         return;
       }
       DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER, aaMode);
-      if (simplePath.IsRect()) {
-        drawTarget->StrokeRect(simplePath.AsRect(), strokePattern,
+      if (shape.IsRect()) {
+        drawTarget->StrokeRect(shape.AsRect().ToUnknownRect(), strokePattern,
                                strokeOptions, drawOptions);
-      } else if (simplePath.IsLine()) {
-        drawTarget->StrokeLine(simplePath.Point1(), simplePath.Point2(),
-                               strokePattern, strokeOptions, drawOptions);
+      } else if (shape.IsLine()) {
+        drawTarget->StrokeLine(shape.Point1().ToUnknownPoint(),
+                               shape.Point2().ToUnknownPoint(), strokePattern,
+                               strokeOptions, drawOptions);
       } else {
         drawTarget->Stroke(path, strokePattern, strokeOptions, drawOptions);
       }
@@ -686,44 +694,130 @@ bool SVGGeometryFrame::IsInvisible() const {
   return true;
 }
 
+// Whether aMatrix maps a rect to a parallelogram that is not a rectangle.
+static bool HasSkew(const Matrix& aMatrix) {
+  // The images of the x and y axes are not orthogonal.
+  double x1 = aMatrix._11, y1 = aMatrix._12, x2 = aMatrix._21, y2 = aMatrix._22;
+  double dot = x1 * x2 + y1 * y2;
+  return dot * dot > 1e-8 * (x1 * x1 + y1 * y1) * (x2 * x2 + y2 * y2);
+}
+
 WebRenderCommandsResult SVGGeometryFrame::CreateWebRenderCommands(
     mozilla::wr::DisplayListBuilder& aBuilder,
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const mozilla::layers::StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder, DisplaySVGGeometry* aItem,
-    bool aDryRun) {
+    bool aDryRun, const Matrix& aTransform) {
   MOZ_ASSERT(StyleVisibility()->IsVisible());
 
   SVGGeometryElement* element = static_cast<SVGGeometryElement*>(GetContent());
 
-  SVGGeometryElement::SimplePath simplePath;
-  element->GetAsSimplePath(&simplePath);
+  SVGGeometryElement::SimpleShape shape;
+  element->GetAsSimpleShape(&shape);
 
-  if (!simplePath.IsRect()) {
-    return Err("path is not a simple rect");
+  if (!shape.IsRoundedRect()) {
+    return Err("shape is not a rect or an ellipse");
+  }
+
+  // Rounded corners and borders are rendered by WebRender from axis aligned
+  // cached images; under a rotation or a skew their edges come out blurry, so
+  // only plain rect fills are drawn in that case.
+  const Matrix transform = aTransform * aSc.GetInheritedTransform();
+  const bool axisAligned = !transform.HasNonAxisAlignedTransform();
+
+  // WebRender anti-aliases each edge separately, which bleeds past the acute
+  // corners that a skew gives to a rect.
+  if (!axisAligned && HasSkew(transform)) {
+    return Err("shape under a skew");
+  }
+
+  if (!shape.IsRect()) {
+    if (!StaticPrefs::gfx_webrender_svg_shapes_ellipses()) {
+      return Err("shape is not a simple rect");
+    }
+    // WebRender always anti-aliases rounded corners.
+    if (HasCrispEdges()) {
+      return Err("rounded shape with shape-rendering: crispEdges");
+    }
+    if (!axisAligned) {
+      return Err("rounded shape under a rotation or skew");
+    }
   }
 
   const nsStyleSVG* style = StyleSVG();
   MOZ_ASSERT(style);
 
-  if (!style->mFill.kind.IsColor()) {
-    return Err("fill is not a plain color");
-  }
+  SVGContextPaint* contextPaint =
+      SVGContextPaint::GetContextPaint(GetContent());
 
-  switch (style->mFill.kind.tag) {
-    case StyleSVGPaintKind::Tag::Color:
-      break;
-    default:
+  const bool hasFill = !style->mFill.kind.IsNone();
+  SVGGradientFrame* fillGradient = nullptr;
+  if (hasFill && !style->mFill.kind.IsColor()) {
+    if (!StaticPrefs::gfx_webrender_svg_shapes_gradients() ||
+        !style->mFill.kind.IsPaintServer()) {
       return Err("fill is not a plain color");
+    }
+    fillGradient = do_QueryFrame(
+        SVGObserverUtils::GetAndObservePaintServer(this, &nsStyleSVG::mFill));
+    if (!fillGradient) {
+      return Err("fill paint server is not a gradient");
+    }
   }
 
-  if (!style->mStroke.kind.IsNone()) {
-    return Err("stroke is not supported");
+  // Stroke parameters, resolved up front so that the dry run rejects the same
+  // shapes as the real run.
+  const bool hasStroke = SVGUtils::HasStroke(this, contextPaint);
+  SVGContentUtils::AutoStrokeOptions strokeOptions;
+  if (hasStroke) {
+    if (!StaticPrefs::gfx_webrender_svg_shapes_strokes()) {
+      return Err("stroke is not supported");
+    }
+    if (!axisAligned) {
+      return Err("stroke under a rotation or skew");
+    }
+    if (!style->mStroke.kind.IsColor()) {
+      return Err("stroke is not a plain color");
+    }
+    if (SVGUtils::GetNonScalingStrokeTransform(this)) {
+      return Err("vector-effect: non-scaling-stroke is not supported");
+    }
+    SVGContentUtils::GetStrokeOptions(&strokeOptions, element, Style(),
+                                      contextPaint);
+    if (strokeOptions.mDashPattern) {
+      return Err("dashed strokes are not supported");
+    }
+    if (shape.IsRect() && strokeOptions.mLineJoin == JoinStyle::BEVEL) {
+      return Err("stroke-linejoin: bevel is not supported");
+    }
+    if (shape.IsRect() &&
+        strokeOptions.mLineJoin == JoinStyle::MITER_OR_BEVEL &&
+        strokeOptions.mMiterLimit < M_SQRT2) {
+      // A miter limit below sqrt(2) turns the right angle joins of a rect
+      // into bevels.
+      return Err("stroke-miterlimit below sqrt(2) is not supported");
+    }
+    if (HasCrispEdges()) {
+      // WebRender borders are always anti-aliased.
+      return Err("stroke with shape-rendering: crispEdges is not supported");
+    }
+  } else if (shape.IsLine()) {
+    // A line without a stroke draws nothing, but the item is still kept in
+    // the blob to keep this code simple.
+    return Err("line without a stroke");
   }
 
-  if (StyleEffects()->HasMixBlendMode()) {
-    // FIXME: not implemented
+  if (shape.IsLine()) {
+    CSSPoint p1 = shape.Point1();
+    CSSPoint p2 = shape.Point2();
+    if (p1.x != p2.x && p1.y != p2.y) {
+      return Err("line is not axis aligned");
+    }
+  }
+
+  // The blend itself is performed by the enclosing nsDisplayBlendMode item.
+  if (StyleEffects()->HasMixBlendMode() &&
+      !StaticPrefs::gfx_webrender_svg_shapes_blend()) {
     return Err("mix-blend-mode is not supported");
   }
 
@@ -732,47 +826,243 @@ WebRenderCommandsResult SVGGeometryFrame::CreateWebRenderCommands(
     return Err("markers are not supported");
   }
 
-  if (!aDryRun) {
-    auto appUnitsPerDevPx = PresContext()->AppUnitsPerDevPixel();
-    float scale = (float)AppUnitsPerCSSPixel() / (float)appUnitsPerDevPx;
+  if (fillGradient && !fillGradient->GetWebRenderGradient(this, 1.0f)) {
+    return Err("gradient is not expressible with WebRender");
+  }
 
-    auto rect = simplePath.AsRect();
-    rect.Scale(scale);
+  if (aDryRun) {
+    return Ok();
+  }
 
-    auto offset = LayoutDevicePoint::FromAppUnits(
-        aItem->ToReferenceFrame() - GetPosition(), appUnitsPerDevPx);
-    rect.MoveBy(offset.x, offset.y);
+  auto appUnitsPerDevPx = PresContext()->AppUnitsPerDevPixel();
+  const CSSToLayoutDeviceScale cssToDev = PresContext()->CSSToDevPixelScale();
+  auto offset = LayoutDevicePoint::FromAppUnits(
+      aItem->ToReferenceFrame() - GetPosition(), appUnitsPerDevPx);
 
-    auto wrRect = wr::ToLayoutRect(rect);
+  // Converts a rect from this frame's user space to device space relative to
+  // the reference frame.
+  auto toDevice = [&](const CSSRect& aRect) {
+    return wr::ToLayoutRect(aRect * cssToDev + offset);
+  };
 
-    SVGContextPaint* contextPaint =
-        SVGContextPaint::GetContextPaint(GetContent());
-    // At the moment this code path doesn't support strokes so it fine to
-    // combine the rectangle's opacity (which has to be applied on the result)
-    // of (filling + stroking) with the fill opacity.
+  // When the shape has both a fill and a stroke, CanOptimizeOpacity is false
+  // and the element opacity is applied by an enclosing nsDisplayOpacity, so
+  // folding it into the colors here is only done when there is a single
+  // paint component.
+  float elemOpacity = 1.0f;
+  if (SVGUtils::CanOptimizeOpacity(this)) {
+    elemOpacity = StyleEffects()->mOpacity;
+  }
 
-    float elemOpacity = 1.0f;
-    if (SVGUtils::CanOptimizeOpacity(this)) {
-      elemOpacity = StyleEffects()->mOpacity;
+  const bool backfaceVisible = !aItem->BackfaceIsHidden();
+  const bool antialias = ShouldAntiAlias();
+
+  // Fills the shape with a solid color. A rounded shape is a WebRender border
+  // whose curve the border shader already anti-aliases, and it keeps the
+  // device pixel snapping that makes its cached corner textures composite
+  // exactly, so only the rect case carries the anti-aliasing flag.
+  auto pushSolidFill = [&](wr::ColorF aColor) {
+    wr::LayoutRect wrRect = toDevice(shape.AsRect());
+    if (shape.IsRect()) {
+      aBuilder.PushRect(wrRect, wrRect, backfaceVisible, antialias, false,
+                        aColor);
+    } else {
+      aBuilder.PushRoundedRect(wrRect, wrRect, backfaceVisible,
+                               wr::ToLayoutSize(shape.Radii() * cssToDev),
+                               aColor);
+    }
+  };
+
+  // Fills the shape with a gradient. Rounded shapes clip the gradient with a
+  // rounded rect clip.
+  auto pushGradientFill = [&](const SVGGradientFrame::WebRenderGradient& aG) {
+    wr::LayoutRect wrRect = toDevice(shape.AsRect());
+    Maybe<wr::SpaceAndClipChainHelper> clipHelper;
+    if (!shape.IsRect()) {
+      wr::ComplexClipRegion region;
+      region.rect = wrRect;
+      region.radii = wr::EmptyBorderRadius();
+      wr::LayoutSize r = wr::ToLayoutSize(shape.Radii() * cssToDev);
+      region.radii.top_left = r;
+      region.radii.top_right = r;
+      region.radii.bottom_left = r;
+      region.radii.bottom_right = r;
+      region.inset = wr::EmptyLayoutSideOffsets();
+      region.mode = wr::ClipMode::Clip;
+      wr::WrClipId clipId = aBuilder.DefineRoundedRectClip(Nothing(), region);
+      wr::WrClipChainId chain = aBuilder.DefineClipChain(
+          {&clipId, 1}, aBuilder.CurrentClipChainIdIfNotRoot());
+      clipHelper.emplace(aBuilder, chain);
     }
 
+    // WebRender gradient points are relative to the item's origin.
+    CSSPoint origin = shape.AsRect().TopLeft();
+    auto toItemVector = [&](const CSSPoint& aPoint) {
+      return wr::ToLayoutVector2D((aPoint - origin) * cssToDev);
+    };
+    wr::LayoutSize tileSize{wrRect.width(), wrRect.height()};
+    wr::LayoutSize tileSpacing{0.0f, 0.0f};
+    if (aG.mIsLinear) {
+      aBuilder.PushLinearGradient(
+          wrRect, wrRect, backfaceVisible, toItemVector(aG.mStart),
+          toItemVector(aG.mEnd), aG.mStops, aG.mExtendMode, tileSize,
+          tileSpacing, antialias, wr::AlphaMode::Unpremultiplied);
+    } else {
+      aBuilder.PushRadialGradient(
+          wrRect, wrRect, backfaceVisible, toItemVector(aG.mCenter),
+          wr::ToLayoutSize(aG.mRadii * cssToDev), aG.mStops, aG.mExtendMode,
+          tileSize, tileSpacing, antialias, wr::AlphaMode::Unpremultiplied);
+    }
+  };
+
+  auto paintFill = [&]() {
+    if (!hasFill) {
+      return;
+    }
     float fillOpacity = SVGUtils::GetOpacity(style->mFillOpacity, contextPaint);
     float opacity = elemOpacity * fillOpacity;
+    if (opacity <= 0.0f) {
+      return;
+    }
+
+    if (fillGradient) {
+      Maybe<SVGGradientFrame::WebRenderGradient> gradient =
+          fillGradient->GetWebRenderGradient(this, opacity);
+      if (!gradient) {
+        return;
+      }
+      if (gradient->mSolidColor) {
+        if (gradient->mSolidColor->a > 0.0f) {
+          pushSolidFill(wr::ToColorF(*gradient->mSolidColor));
+        }
+      } else {
+        pushGradientFill(*gradient);
+      }
+      return;
+    }
 
     auto color = wr::ToColorF(
-        ToDeviceColor(StyleSVG()->mFill.kind.AsColor().CalcColor(this)));
+        ToDeviceColor(style->mFill.kind.AsColor().CalcColor(this)));
     color.a *= opacity;
+    pushSolidFill(color);
+  };
 
-    // shape-rendering: crispEdges / optimizeSpeed disables anti-aliasing, the
-    // same way it does for the gfxContext path in Render().
-    const bool antialiased = SVGUtils::ToAntialiasMode(
-                                 style->mShapeRendering) != AntialiasMode::NONE;
-    aBuilder.PushRect(wrRect, wrRect, !aItem->BackfaceIsHidden(), antialiased,
-                      false, color);
+  auto paintStroke = [&]() {
+    if (!hasStroke) {
+      return;
+    }
+    float strokeOpacity =
+        SVGUtils::GetOpacity(style->mStrokeOpacity, contextPaint);
+    auto color = wr::ToColorF(
+        ToDeviceColor(style->mStroke.kind.AsColor().CalcColor(this)));
+    color.a *= elemOpacity * strokeOpacity;
+    if (color.a <= 0.0f) {
+      return;
+    }
+
+    const CSSCoord w = strokeOptions.mLineWidth;
+    const CSSCoord halfW = w / 2;
+
+    if (shape.IsLine()) {
+      // An axis aligned line is a rectangle of thickness w. Square caps
+      // extend it by half the width at each end; round caps do the same and
+      // round the corners.
+      CSSPoint p1 = shape.Point1();
+      CSSPoint p2 = shape.Point2();
+      CSSRect rect(std::min(p1.x, p2.x), std::min(p1.y, p2.y),
+                   std::abs(p2.x - p1.x), std::abs(p2.y - p1.y));
+      const bool horizontal = rect.height == 0;
+      if (horizontal) {
+        rect.Inflate(0, halfW);
+      } else {
+        rect.Inflate(halfW, 0);
+      }
+      if (strokeOptions.mLineCap != CapStyle::BUTT) {
+        if (horizontal) {
+          rect.Inflate(halfW, 0);
+        } else {
+          rect.Inflate(0, halfW);
+        }
+      }
+      if (rect.IsEmpty()) {
+        return;
+      }
+      wr::LayoutRect wrRect = toDevice(rect);
+      if (strokeOptions.mLineCap == CapStyle::ROUND) {
+        aBuilder.PushRoundedRect(
+            wrRect, wrRect, backfaceVisible,
+            wr::ToLayoutSize(CSSSize(halfW, halfW) * cssToDev), color);
+      } else {
+        aBuilder.PushRect(wrRect, wrRect, backfaceVisible, antialias, false,
+                          color);
+      }
+      return;
+    }
+
+    // The stroke of a rounded rect is a border of width w around the rect
+    // inflated by w / 2. Its outer corner radius is the shape's radius plus
+    // half the stroke width. Sharp corners follow stroke-linejoin: miter
+    // joins stay square, round joins get a radius of half the stroke width.
+    CSSRect outer = shape.AsRect();
+    outer.Inflate(halfW);
+    CSSSize radii = shape.Radii();
+    if (radii.width > 0 || radii.height > 0) {
+      radii.width += halfW;
+      radii.height += halfW;
+    } else if (strokeOptions.mLineJoin == JoinStyle::ROUND) {
+      radii = CSSSize(halfW, halfW);
+    }
+
+    wr::LayoutRect wrRect = toDevice(outer);
+    LayoutDeviceCoord dw = w * cssToDev;
+    wr::LayoutSideOffsets widths = {dw, dw, dw, dw};
+    wr::LayoutSize r = wr::ToLayoutSize(radii * cssToDev);
+    wr::BorderRadius wrRadii = {r, r, r, r, 1.0f, 1.0f, 1.0f, 1.0f};
+    wr::BorderSide side = {color, wr::BorderStyle::Solid};
+    wr::BorderSide sides[4] = {side, side, side, side};
+    aBuilder.PushBorder(wrRect, wrRect, backfaceVisible, widths,
+                        Range<const wr::BorderSide>(sides, 4), wrRadii,
+                        wr::EmptyLayoutSideOffsets(), wr::AntialiasBorder::Yes,
+                        antialias);
+  };
+
+  uint32_t paintOrder = style->mPaintOrder;
+  if (!paintOrder) {
+    paintFill();
+    paintStroke();
+  } else {
+    while (paintOrder) {
+      auto component = StylePaintOrder(paintOrder & kPaintOrderMask);
+      switch (component) {
+        case StylePaintOrder::Fill:
+          paintFill();
+          break;
+        case StylePaintOrder::Stroke:
+          paintStroke();
+          break;
+        default:
+          break;
+      }
+      paintOrder >>= kPaintOrderShift;
+    }
   }
 
   return Ok();
 }
+
+bool SVGGeometryFrame::HasCrispEdges() const {
+  switch (StyleSVG()->mShapeRendering) {
+    case StyleShapeRendering::Optimizespeed:
+    case StyleShapeRendering::Crispedges:
+      return true;
+    default:
+      return false;
+  }
+}
+
+// shape-rendering: crispEdges / optimizeSpeed disables anti-aliasing, the same
+// way it does for the gfxContext path in Render().
+bool SVGGeometryFrame::ShouldAntiAlias() const { return !HasCrispEdges(); }
 
 void SVGGeometryFrame::PaintMarkers(gfxContext& aContext,
                                     const gfxMatrix& aTransform,

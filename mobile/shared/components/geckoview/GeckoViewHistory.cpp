@@ -237,7 +237,7 @@ NS_IMPL_ISUPPORTS(OnVisitedCallback, nsIGeckoViewEventCallback)
 NS_IMETHODIMP
 GeckoViewHistory::VisitURI(nsIWidget* aWidget, nsIURI* aURI,
                            nsIURI* aLastVisitedURI, uint32_t aFlags,
-                           uint64_t aBrowserId) {
+                           uint64_t aBrowserId, uint32_t aUserContextId) {
   AssertIsOnMainThread();
   if (!aURI) {
     return NS_OK;

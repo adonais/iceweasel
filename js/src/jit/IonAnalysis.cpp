@@ -2042,7 +2042,7 @@ bool LinearSum::add(MDefinition* term, int32_t scale) {
   }
 
   AutoEnterOOMUnsafeRegion oomUnsafe;
-  if (!terms_.append(LinearTerm(term, scale))) {
+  if (!terms_.emplaceBack(term, scale)) {
     oomUnsafe.crash("LinearSum::add");
   }
 

@@ -2134,7 +2134,13 @@ class EngineObserverTest {
                 scope = this,
             )
         val intent: Intent = mock()
-        observer.onLaunchIntentRequest(url = url, appIntent = intent, fallbackUrl = null, appName = null)
+        observer.onLaunchIntentRequest(
+            url = url,
+            appIntent = intent,
+            fallbackUrl = null,
+            appName = null,
+            sourceUrl = "https://www.example.org",
+        )
         testScheduler.advanceUntilIdle()
 
         captureActionsMiddleware.assertFirstAction(ContentAction.UpdateAppIntentAction::class) { action ->
@@ -2143,6 +2149,7 @@ class EngineObserverTest {
             assertEquals(intent, action.appIntent.appIntent)
             assertNull(action.appIntent.appName)
             assertNull(action.appIntent.fallbackUrl)
+            assertEquals("https://www.example.org", action.appIntent.sourceUrl)
         }
     }
 

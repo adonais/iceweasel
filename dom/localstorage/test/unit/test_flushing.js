@@ -5,8 +5,8 @@
 /* eslint-disable mozilla/no-arbitrary-setTimeout */
 
 /**
- * This test is mainly to verify that the flush operation detaches the shadow
- * database in the event of early return due to error. See bug 1559029.
+ * This test is mainly to verify that a flush failing for one origin doesn't
+ * prevent flushing other origins. See bug 1559029.
  */
 
 add_task(async function testSteps() {

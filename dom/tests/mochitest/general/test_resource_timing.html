@@ -26,6 +26,11 @@ SpecialPowers.pushPrefEnv({"set": [
 var subwindow = null;
 
 function start() {
+  // Images served from the image cache don't create resource timing entries.
+  SpecialPowers.Cc["@mozilla.org/image/tools;1"]
+    .getService(SpecialPowers.Ci.imgITools)
+    .getImgCacheForDocument(document)
+    .clearCache(false);
   subwindow = window.open("resource_timing_main_test.html");
 }
 

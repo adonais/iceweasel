@@ -203,6 +203,15 @@ WaylandBufferHolder::WaylandBufferHolder(BufferSurface* aSurface,
       mWLBuffer, mUID, mPID);
 }
 
+WaylandBufferHolder::~WaylandBufferHolder() {
+  LOGWAYLAND(
+      "WaylandBufferHolder::~WaylandBufferHolder wl_buffer [%p] "
+      "UID %d PID %d",
+      mWLBuffer, mUID, mPID);
+
+  MozClearPointer(mWLBuffer, wl_buffer_destroy);
+}
+
 bool WaylandBufferHolder::Matches(BufferSurface* aSurface) const {
   return mUID == aSurface->GetUID() && mPID == aSurface->GetPID();
 }

@@ -16,7 +16,7 @@ ARG DOCKER_IMAGE_PACKAGES
 
 RUN /usr/local/sbin/setup_packages.sh $TASKCLUSTER_ROOT_URL $DOCKER_IMAGE_PACKAGES && \
     apt-get update && \
-    apt-get install librsvg2-common flatpak ostree appstream-util appstream-compose && \
+    apt-get install librsvg2-common flatpak dbus ostree appstream-util appstream-compose && \
     /usr/local/sbin/clean_packages.sh $DOCKER_IMAGE_PACKAGES
 
 # The docker version in fxci workers doesn't support the close_range system call

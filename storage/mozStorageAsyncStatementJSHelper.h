@@ -36,13 +36,9 @@ class AsyncStatementParamsHolder final : public nsISupports {
  public:
   NS_DECL_ISUPPORTS
 
-  explicit AsyncStatementParamsHolder(AsyncStatementParams* aParams)
-      : mParams(aParams) {}
+  explicit AsyncStatementParamsHolder(AsyncStatementParams* aParams);
 
-  AsyncStatementParams* Get() const {
-    MOZ_ASSERT(mParams);
-    return mParams;
-  }
+  AsyncStatementParams* Get() const;
 
  private:
   virtual ~AsyncStatementParamsHolder();

@@ -68,7 +68,7 @@ it runs the following checks in order, stopping at the first failure:
 1. **Bundle** — if newtab source or bundle output files are staged, runs
    `./mach newtab bundle` and blocks the commit if the output files differ
    from what is staged.
-2. **Lint** — runs [mozlint](https://firefox-source-docs.mozilla.org/code-quality/lint/usage.html)
+2. **Lint** — runs {doc}`mozlint </code-quality/lint/usage>`
    on staged files and blocks the commit if there are errors.
 3. **Tests** — optionally runs unit tests (configurable, disabled by default).
 

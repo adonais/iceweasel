@@ -40,7 +40,16 @@ add_task(async function test_trash_button_when_pref_enabled() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: FORM_URL },
     async browser => {
+      Services.fog.testResetFOG();
       await openPopupOn(browser, "#organization");
+      const shownEvents = Glean.autocomplete.dropdownShown.testGetValue();
+      is(shownEvents?.length, 1, "One dropdown shown event is recorded");
+      is(
+        shownEvents[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
+
       const items = getDisplayedPopupItems(browser);
 
       const rowItem = items[0].querySelector("autocomplete-row-item");
@@ -78,6 +87,24 @@ add_task(async function test_trash_button_when_pref_enabled() {
       );
 
       await closePopup(browser);
+      const closedEvents = Glean.autocomplete.dropdownClosed.testGetValue();
+      is(closedEvents?.length, 1, "One dropdown closed event is recorded");
+      is(
+        closedEvents[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
+      is(
+        closedEvents[0].extra.close_reason,
+        "dismissed",
+        "Blurring the field records a dismissed close"
+      );
+      ok(closedEvents[0].extra.flow_id, "The event carries a flow id");
+      is(
+        closedEvents[0].extra.flow_id,
+        shownEvents[0].extra.flow_id,
+        "The closed event's flow id matches the shown event for the same dropdown"
+      );
     }
   );
   await SpecialPowers.popPrefEnv();
@@ -90,6 +117,36 @@ async function selectFirstRow(browser, item) {
     "Wait for the first row to become active"
   );
 }
+
+add_task(async function test_selecting_an_address_records_dropdown_closed() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: FORM_URL },
+    async browser => {
+      await openPopupOn(browser, "#organization");
+      await selectFirstRow(browser, getDisplayedPopupItems(browser)[0]);
+
+      Services.fog.testResetFOG();
+      await BrowserTestUtils.synthesizeKey("VK_RETURN", {}, browser);
+      await TestUtils.waitForCondition(
+        () => !browser.autoCompletePopup.popupOpen,
+        "Wait for the dropdown to close after selecting the address"
+      );
+
+      const closedEvents = Glean.autocomplete.dropdownClosed.testGetValue();
+      is(closedEvents?.length, 1, "One dropdown closed event is recorded");
+      is(
+        closedEvents[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
+      is(
+        closedEvents[0].extra.close_reason,
+        "selected",
+        "Picking an address records a selected close"
+      );
+    }
+  );
+});
 
 // The Lit render lags the row's selected attribute, so the button can still be
 // hidden when the row is already active. Wait it out before clicking, or the
@@ -153,12 +210,39 @@ add_task(async function test_delete_confirms_without_device_sign_in() {
         }
       );
 
+      Services.fog.testResetFOG();
       await clickTrashButton(rowItem);
+      const clickEvents = Glean.autocomplete.recordInteraction.testGetValue();
+      is(clickEvents?.length, 1, "One interaction event is recorded");
+      is(
+        clickEvents[0].extra.interaction_type,
+        "delete",
+        "The trash button records a delete interaction"
+      );
+      is(
+        clickEvents[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
       await dialogClosed;
       await TestUtils.waitForCondition(
         () => browser.autoCompletePopup.popupOpen,
         "Wait for the dropdown to come back after the confirmation"
       );
+
+      const events = Glean.autocomplete.recordDialogInteraction.testGetValue();
+      is(events?.length, 1, "One dialog interaction event is recorded");
+      is(
+        events[0].extra.interaction_type,
+        "cancel",
+        "Cancelling the dialog records a cancel interaction"
+      );
+      is(
+        events[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
+      is(events[0].extra.update_type, "delete", "The update type is delete");
 
       is(verifyCalls, 0, "Removing an address does not ask for device sign in");
       ok(sawDialog, "The confirmation dialog was shown");
@@ -203,7 +287,40 @@ add_task(async function test_delete_removes_the_address() {
       await openPopupOn(browser, "#organization");
       const rowCount = getDisplayedPopupItems(browser).length;
 
+      Services.fog.testResetFOG();
+      // Confirm deletion of address
       await withStorageChange("remove", () => activateDelete(browser));
+
+      const events = Glean.autocomplete.recordInteraction.testGetValue();
+      is(events?.length, 1, "One interaction event is recorded");
+      is(
+        events[0].extra.interaction_type,
+        "delete",
+        "The trash button records a delete interaction"
+      );
+      is(
+        events[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
+      const dialogEvents =
+        Glean.autocomplete.recordDialogInteraction.testGetValue();
+      is(dialogEvents?.length, 1, "One dialog interaction event is recorded");
+      is(
+        dialogEvents[0].extra.interaction_type,
+        "confirm",
+        "Accepting the dialog records a confirm interaction"
+      );
+      is(
+        dialogEvents[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
+      is(
+        dialogEvents[0].extra.update_type,
+        "delete",
+        "The update type is delete"
+      );
 
       const remaining = await getAddresses();
       is(remaining.length, 1, "Confirming the removal deleted one address");

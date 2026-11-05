@@ -204,10 +204,6 @@ this.browserAction = class extends ExtensionAPIPersistent {
       showInPrivateBrowsing: extension.privateBrowsingAllowed,
       disallowSubView: true,
 
-      // Don't attempt to load properties from the built-in widget string
-      // bundle.
-      localized: false,
-
       // Build a custom widget that looks like a `unified-extensions-item`
       // custom element.
       onBuild: document => {

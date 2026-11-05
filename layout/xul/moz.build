@@ -48,3 +48,13 @@ LOCAL_INCLUDES += [
     "/dom/base",
     "/dom/xul",
 ]
+
+SOURCE_HEADERS += [
+    "MiddleCroppingLabelFrame.h",
+    "nsRepeatService.h",
+    "nsScrollbarButtonFrame.h",
+    "nsScrollbarFrame.h",
+    "nsSliderFrame.h",
+    "nsSplitterFrame.h",
+    "SimpleXULLeafFrame.h",
+]

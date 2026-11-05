@@ -129,7 +129,8 @@ const char* const kEventTypes[] = {
     // tree.xml)
     "OpenStateChange", "popupshown", "popuphiding", "DOMMenuInactive",
     "DOMMenuItemActive", "DOMMenuItemInactive", "DOMMenuBarActive",
-    "DOMMenuBarInactive", "scroll", "DOMTitleChanged"};
+    "DOMMenuBarInactive", "scroll", "MozScrolledAreaChanged",
+    "DOMTitleChanged"};
 
 nsresult RootAccessible::AddEventListeners() {
   // EventTarget interface allows to register event listeners to
@@ -236,6 +237,12 @@ RootAccessible::HandleEvent(Event* aDOMEvent) {
       // 2. Since this doesn't necessarily touch layout, we are not
       //    guaranteed to have a WillRefresh tick any time soon.
       document->HandleScroll(origTargetNode);
+    } else if (eventType.EqualsLiteral("MozScrolledAreaChanged")) {
+      // The initial cache push omits scroll position if the document
+      // wasn't scrollable at creation. If the doc becomes scrollable
+      // during reflow, we'll get this event and should update. This
+      // can happen without a bounds change or style change.
+      document->QueueCacheUpdate(document, CacheDomain::ScrollPosition);
     } else {
       // Root accessible exists longer than any of its descendant documents so
       // that we are guaranteed notification is processed before root accessible

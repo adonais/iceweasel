@@ -10,10 +10,6 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-const { SmartTabGroupingManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs"
-);
-
 async function assertButtonHiddenOnContent(win, reason) {
   // The Ask button and the group-tabs button toggle together, so waiting for
   // the Ask button to show means the immersive view has been left; only then is
@@ -95,6 +91,33 @@ describe("Auto Tab Grouping toolbar button", () => {
       );
     });
 
+    it("follows supportedLocales while a window is open", async () => {
+      win = await openGroupingWindowWithTabs();
+      const button = win.document.getElementById(
+        "smartwindow-group-tabs-button"
+      );
+      Assert.ok(!button.hidden, "Group tabs button is shown in en-US");
+
+      try {
+        Services.prefs.setCharPref(
+          "browser.smartwindow.autoTabGrouping.supportedLocales",
+          "fr"
+        );
+        Assert.ok(
+          button.hidden,
+          "Dropping the app locale from the list hides the button"
+        );
+      } finally {
+        Services.prefs.clearUserPref(
+          "browser.smartwindow.autoTabGrouping.supportedLocales"
+        );
+      }
+      Assert.ok(
+        !button.hidden,
+        "Adding the app locale back shows the button again"
+      );
+    });
+
     it("is hidden in a classic window", async () => {
       await SpecialPowers.pushPrefEnv({
         set: [["browser.smartwindow.autoTabGrouping.enabled", true]],
@@ -132,30 +155,13 @@ describe("Auto Tab Grouping toolbar button", () => {
     });
 
     describe("when the app locale is unsupported", () => {
-      let isAllowedDescriptor;
-
-      beforeEach(() => {
-        isAllowedDescriptor = Object.getOwnPropertyDescriptor(
-          SmartTabGroupingManager,
-          "isAllowed"
-        );
-        Object.defineProperty(SmartTabGroupingManager, "isAllowed", {
-          configurable: true,
-          get: () => false,
-        });
-      });
-
-      afterEach(() => {
-        Object.defineProperty(
-          SmartTabGroupingManager,
-          "isAllowed",
-          isAllowedDescriptor
-        );
-      });
-
       it("stays hidden even with the feature pref on", async () => {
         await SpecialPowers.pushPrefEnv({
-          set: [["browser.smartwindow.autoTabGrouping.enabled", true]],
+          set: [
+            ["browser.smartwindow.autoTabGrouping.enabled", true],
+            // Tests run in en-US, which this list leaves out.
+            ["browser.smartwindow.autoTabGrouping.supportedLocales", "fr"],
+          ],
         });
 
         win = await openAIWindow();

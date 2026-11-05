@@ -116,8 +116,9 @@ export class AutofillStorageMigrator {
    *
    * @param {object} [options]
    * @param {boolean} [options.dryRun=false] Copy only to measure it: reports
-   *   the run, returns false whatever the outcome, and records _testVersion so
-   *   the same generation never measures twice. Spends no attempt budget.
+   *   the run, empties the target again, returns false whatever the outcome,
+   *   and records _testVersion so the same generation never measures twice.
+   *   Spends no attempt budget.
    * @param {boolean} [options.wipe=true] Empty the target first. See #migrate.
    * @returns {Promise<boolean>} Whether the copy completed. Always false for a
    *   dry run.
@@ -129,6 +130,11 @@ export class AutofillStorageMigrator {
           return false;
         }
         await this.#migrateAndReport({ wipe });
+        // Measured, not read: put the target back the way it was found. Safe to
+        // empty because nothing is serving from it -- the dry run only runs
+        // while rust.enabled is off -- and the run is recorded on its own pref,
+        // so a later real migration still does its own copy.
+        await this.wipe();
         const { testVersionPref, testVersion } = this.config;
         Services.prefs.setIntPref(testVersionPref, testVersion);
         return false;
@@ -301,7 +307,8 @@ export class AutofillStorageMigrator {
       // without one answers a raw read instead and has no tombstones to give --
       // raw because a store may hide a stored field on read, and copying from
       // the filtered read would write that field out of existence here.
-      const raw = source._data ?? (await source.getAll({ rawData: true }));
+      const raw =
+        source._data ?? (await source.getAll({ rawData: true, prompt: false }));
       const records = raw.filter(record => !record.deleted);
       const tombstones = raw
         .filter(record => record.deleted)
@@ -344,7 +351,12 @@ export class AutofillStorageMigrator {
       // What the target already holds decides how each record gets there. A
       // wipe leaves nothing, so everything is an insert.
       const heldRecords = new Map(
-        wipe ? [] : (await target.getAll()).map(record => [record.guid, record])
+        wipe
+          ? []
+          : (await target.getAll({ prompt: false })).map(record => [
+              record.guid,
+              record,
+            ])
       );
       const held = new Set(heldRecords.keys());
       const fresh = exportable.filter(record => !held.has(record.guid));
@@ -425,7 +437,7 @@ export class AutofillStorageMigrator {
 
       // Only a store that caches its count has anything to prime.
       await target.refreshCount?.();
-      const stored = await target.getAll();
+      const stored = await target.getAll({ prompt: false });
       targetTotal = stored.length;
       divergences = await this.#verify(source, target, stored);
 
@@ -499,6 +511,9 @@ export class AutofillStorageMigrator {
    * those differ whenever the derivation has changed -- most often with the app
    * locale -- and a field neither has a column for was never carried at all.
    *
+   * cc-number is handed out as a mask, which each store builds its own way, so
+   * it is compared by the number each store decrypts for the record instead.
+   *
    * @param {object} source The store copied from.
    * @param {object} target The store copied into.
    * @param {Array<object>} stored What the target holds after the copy.
@@ -510,11 +525,25 @@ export class AutofillStorageMigrator {
     const byGUID = new Map(stored.map(record => [record.guid, record]));
     const divergences = [];
 
-    for (const record of await source.getAll()) {
-      const copy = byGUID.get(record.guid);
+    for (let record of await source.getAll({ prompt: false })) {
+      let copy = byGUID.get(record.guid);
       if (!copy) {
         // A record that never arrived is a count mismatch, not a divergence.
         continue;
+      }
+      // Only a credit card store holds cc-number, so this is what keeps the
+      // other collections from being asked to decrypt one.
+      if (this.isStoredField("cc-number")) {
+        // Shallow copies, so the cleartext does not outlive this iteration. A
+        // source that cannot read its own number has nothing to check the
+        // copy's against, so neither side is compared.
+        const sent = await this.#numberOf(source, record);
+        let kept;
+        if (sent !== undefined) {
+          kept = await this.#numberOf(target, copy);
+        }
+        record = { ...record, "cc-number": sent };
+        copy = { ...copy, "cc-number": kept };
       }
       // The union of both key sets, so a field the copy dropped and one it
       // invented are both caught, and only the fields the target is answerable
@@ -551,6 +580,27 @@ export class AutofillStorageMigrator {
       );
     }
     return divergences;
+  }
+
+  /**
+   * The cleartext card number a store holds for one of its records.
+   *
+   * @param {object} store
+   * @param {object} record A record the store handed out.
+   * @returns {Promise<?string|undefined>} The number, null if the record has
+   *   none, or undefined if it cannot be read.
+   */
+  async #numberOf(store, record) {
+    try {
+      return (
+        (await store.decryptField(record, "cc-number", {
+          trigger: "formautofill_migration",
+        })) || null
+      );
+    } catch (e) {
+      this.logger.error("Could not read back a card number", e);
+      return undefined;
+    }
   }
 }
 
@@ -616,8 +666,7 @@ export class CreditCardStorageMigrator extends AutofillStorageMigrator {
     return lazy.isStoredCreditCardField(field);
   }
 
-  // The number is masked on one side and encrypted on both, so neither of its
-  // two fields compares as a string.
+  // An absent expiry is 0 on one side and missing on the other.
   fieldDiffers(field, a, b) {
     return lazy.creditCardFieldDiffers(field, a, b);
   }

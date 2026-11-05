@@ -132,6 +132,8 @@ support-files = [
 
 ["browser_visituri_restriction_origin.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && verify-standalone",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && verify-standalone",
 ]
+
+["browser_visituri_userContextId.js"]
+support-files = ["empty_page.html"]

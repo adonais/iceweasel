@@ -44,7 +44,8 @@ void ComputeFrequencyResponse_C(
   }
 
   const size_t num_render_channels = H[0].size();
-  RTC_DCHECK_EQ(H.size(), H2->capacity());
+  RTC_DCHECK_GE(H.size(), num_partitions);
+  RTC_DCHECK_GE(H2->size(), num_partitions);
   for (size_t p = 0; p < num_partitions; ++p) {
     RTC_DCHECK_EQ(kFftLengthBy2Plus1, (*H2)[p].size());
     for (size_t ch = 0; ch < num_render_channels; ++ch) {
@@ -68,7 +69,8 @@ void ComputeFrequencyResponse_Neon(
   }
 
   const size_t num_render_channels = H[0].size();
-  RTC_DCHECK_EQ(H.size(), H2->capacity());
+  RTC_DCHECK_GE(H.size(), num_partitions);
+  RTC_DCHECK_GE(H2->size(), num_partitions);
   for (size_t p = 0; p < num_partitions; ++p) {
     RTC_DCHECK_EQ(kFftLengthBy2Plus1, (*H2)[p].size());
     auto& H2_p = (*H2)[p];
@@ -102,7 +104,8 @@ void ComputeFrequencyResponse_Sse2(
   }
 
   const size_t num_render_channels = H[0].size();
-  RTC_DCHECK_EQ(H.size(), H2->capacity());
+  RTC_DCHECK_GE(H.size(), num_partitions);
+  RTC_DCHECK_GE(H2->size(), num_partitions);
   // constexpr __mmmask8 kMaxMask = static_cast<__mmmask8>(256u);
   for (size_t p = 0; p < num_partitions; ++p) {
     RTC_DCHECK_EQ(kFftLengthBy2Plus1, (*H2)[p].size());
@@ -509,7 +512,7 @@ void AdaptiveFirFilter::HandleEchoPathChange() {
 }
 
 void AdaptiveFirFilter::SetSizePartitions(size_t size, bool immediate_effect) {
-  RTC_DCHECK_EQ(max_size_partitions_, H_.capacity());
+  RTC_DCHECK_EQ(max_size_partitions_, H_.size());
   RTC_DCHECK_LE(size, max_size_partitions_);
 
   target_size_partitions_ = std::min(max_size_partitions_, size);
@@ -596,7 +599,7 @@ void AdaptiveFirFilter::Adapt(const RenderBuffer& render_buffer,
 
 void AdaptiveFirFilter::ComputeFrequencyResponse(
     std::vector<std::array<float, kFftLengthBy2Plus1>>* H2) const {
-  RTC_DCHECK_GE(max_size_partitions_, H2->capacity());
+  RTC_DCHECK_GE(H2->capacity(), max_size_partitions_);
 
   H2->resize(current_size_partitions_);
 
@@ -649,8 +652,8 @@ void AdaptiveFirFilter::AdaptAndUpdateSize(const RenderBuffer& render_buffer,
 // the corresponding values in an externally stored impulse response estimate.
 void AdaptiveFirFilter::ConstrainAndUpdateImpulseResponse(
     std::vector<float>* impulse_response) {
-  RTC_DCHECK_EQ(GetTimeDomainLength(max_size_partitions_),
-                impulse_response->capacity());
+  RTC_DCHECK_GE(impulse_response->capacity(),
+                GetTimeDomainLength(max_size_partitions_));
   impulse_response->resize(GetTimeDomainLength(current_size_partitions_));
   std::array<float, kFftLength> h;
   impulse_response->resize(GetTimeDomainLength(current_size_partitions_));

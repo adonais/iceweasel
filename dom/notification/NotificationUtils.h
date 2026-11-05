@@ -94,7 +94,7 @@ nsresult PersistNotification(nsIPrincipal* aPrincipal,
 nsresult UnpersistNotification(nsIPrincipal* aPrincipal, const nsString& aId);
 Result<nsCOMPtr<nsIAlertNotification>, nsresult> CreateAlertForNotification(
     const IPCNotificationOptions& aOptions, nsIPrincipal& aPrincipal,
-    Maybe<IPCImage>&& aIcon);
+    imgIContainer* aIcon);
 
 // Common nsIAlertCallbacks handling between DWP and non-DWP notifications.
 class NotificationCallbacksCommon : public nsIAlertCallbacks {

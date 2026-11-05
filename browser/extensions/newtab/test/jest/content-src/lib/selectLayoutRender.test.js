@@ -866,7 +866,7 @@ describe("selectLayoutRender", () => {
       "widgets.crossword.enabled": true,
     };
 
-    const renderSections = () => {
+    const renderSections = (prefs = WIDGET_FIRST_PREFS) => {
       const layout = {
         responsiveLayouts: [
           {
@@ -924,7 +924,7 @@ describe("selectLayoutRender", () => {
       });
       const { layoutRender } = selectLayoutRender({
         state: store.getState().DiscoveryStream,
-        prefs: WIDGET_FIRST_PREFS,
+        prefs,
       });
       return layoutRender[0].components[0].data.sections;
     };
@@ -947,6 +947,56 @@ describe("selectLayoutRender", () => {
         "ad2",
       ]);
       expect([first.data[1].pos, first.data[5].pos]).toEqual([1, 5]);
+    });
+
+    it("puts the widget first under the thematic spaces variant too", () => {
+      const [first] = renderSections({
+        ...WIDGET_FIRST_PREFS,
+        "pageLayouts.variant": "spaces-thematic-v1",
+      });
+      expect(first.data[0]).toEqual(
+        expect.objectContaining({ type: "widget", widgetId: "crossword" })
+      );
+    });
+
+    it("puts each space's own widget first in that space's top section", () => {
+      const [first, second] = renderSections({
+        ...WIDGET_FIRST_PREFS,
+        "pageLayouts.variant": "spaces-thematic-v1",
+        "widgets.system.pictureOfTheDay.enabled": true,
+        "widgets.pictureOfTheDay.enabled": true,
+        trainhopConfig: {
+          spaces: {
+            order: ["home", "other"],
+            default: "home",
+            spaces: {
+              home: {
+                label: "Home",
+                sections: ["first"],
+                firstSlotWidget: "pictureOfTheDay",
+              },
+              other: {
+                label: "Other",
+                sections: ["second"],
+                firstSlotWidget: "crossword",
+              },
+            },
+          },
+        },
+      });
+      expect(first.data[0]).toEqual(
+        expect.objectContaining({ type: "widget", widgetId: "pictureOfTheDay" })
+      );
+      expect(second.data[0]).toEqual(
+        expect.objectContaining({ type: "widget", widgetId: "crossword" })
+      );
+      expect(second.data.slice(1, 6).map(item => item.id)).toEqual([
+        "ad3",
+        "second-0",
+        "second-1",
+        "second-2",
+        "ad4",
+      ]);
     });
   });
 });

@@ -87,7 +87,8 @@ add_task(async function test_createTable_already_created() {
 
 add_task(async function test_attach_createTable_tableExists_indexExists() {
   var msc = getOpenedDatabase();
-  var file = do_get_file("storage_attach.sqlite", true);
+  var file = do_get_profile();
+  file.append("storage_attach.sqlite");
   var msc2 = getDatabase(file);
   msc.executeSimpleSQL("ATTACH DATABASE '" + file.path + "' AS sample");
 

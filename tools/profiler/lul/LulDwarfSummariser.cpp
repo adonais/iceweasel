@@ -505,6 +505,168 @@ void Summariser::Rule(uintptr_t aAddress, int aNewReg, LExprHow how,
     mCurrRules.mFPexpr = LExpr(NODEREF, DW_REG_MIPS_FP, 0);
   }
 
+#elif defined(GP_ARCH_loongarch64)
+  // -------------- loongarch64 ----------- //
+  //
+  // Now, can we add the rule to our summary?  This depends on whether
+  // the registers and the overall expression are representable.  This
+  // is the heart of the summarisation process.
+  switch (aNewReg) {
+    case DW_REG_CFA:
+      // This is a rule that defines the CFA.  The only forms we can
+      // represent are: = SP+offset, FP+offset, S0+offset.
+      if (how != NODEREF) {
+        reason1 = "rule for DW_REG_CFA: invalid |how|";
+        goto cant_summarise;
+      }
+      if (oldReg != DW_REG_LOONGARCH_FP && oldReg != DW_REG_LOONGARCH_SP &&
+          oldReg != DW_REG_LOONGARCH_S0) {
+        reason1 = "rule for DW_REG_CFA: invalid |oldReg|";
+        goto cant_summarise;
+      }
+      mCurrRules.mCfaExpr = LExpr(how, oldReg, offset);
+      break;
+
+    case DW_REG_LOONGARCH_RA:
+    case DW_REG_LOONGARCH_SP:
+    case DW_REG_LOONGARCH_FP:
+    case DW_REG_LOONGARCH_S0: {
+      // This is a new rule for SP, FP, S0 or RA.
+      switch (how) {
+        case NODEREF:
+        case DEREF:
+          // Check the old register is one we're tracking.
+          if (!registerIsTracked((DW_REG_NUMBER)oldReg) &&
+              oldReg != DW_REG_CFA) {
+            reason1 = "rule for RA/SP/FP/S0: uses untracked reg";
+            goto cant_summarise;
+          }
+          break;
+        case PFXEXPR: {
+          // Check that the prefix expression only mentions tracked registers.
+          const vector<PfxInstr>* pfxInstrs = mSecMap->GetPfxInstrs();
+          reason2 = checkPfxExpr(pfxInstrs, offset);
+          if (reason2) {
+            reason1 = "rule for RA/SP/FP/S0: ";
+            goto cant_summarise;
+          }
+          break;
+        }
+        default:
+          goto cant_summarise;
+      }
+      LExpr expr = LExpr(how, oldReg, offset);
+      switch (aNewReg) {
+        case DW_REG_LOONGARCH_RA:
+          mCurrRules.mRAexpr = expr;
+          break;
+        case DW_REG_LOONGARCH_SP:
+          mCurrRules.mSPexpr = expr;
+          break;
+        case DW_REG_LOONGARCH_FP:
+          mCurrRules.mFPexpr = expr;
+          break;
+        case DW_REG_LOONGARCH_S0:
+          mCurrRules.mS0expr = expr;
+          break;
+        default:
+          MOZ_CRASH("impossible value for aNewReg");
+      }
+      break;
+    }
+    default:
+      // Leave |reason1| and |reason2| unset here, for the reasons
+      // explained in the analogous point in the ARM case just above.
+      goto cant_summarise;
+  }
+
+  if (mCurrRules.mSPexpr.mHow == UNKNOWN) {
+    mCurrRules.mSPexpr = LExpr(NODEREF, DW_REG_CFA, 0);
+  }
+  if (mCurrRules.mFPexpr.mHow == UNKNOWN) {
+    mCurrRules.mFPexpr = LExpr(NODEREF, DW_REG_LOONGARCH_FP, 0);
+  }
+  if (mCurrRules.mS0expr.mHow == UNKNOWN) {
+    mCurrRules.mS0expr = LExpr(NODEREF, DW_REG_LOONGARCH_S0, 0);
+  }
+
+#elif defined(GP_ARCH_riscv64)
+  // -------------- riscv64 ----------- //
+  //
+  // Now, can we add the rule to our summary?  This depends on whether
+  // the registers and the overall expression are representable.  This
+  // is the heart of the summarisation process.
+  switch (aNewReg) {
+    case DW_REG_CFA:
+      // This is a rule that defines the CFA.  The only forms we can
+      // represent are: = SP+offset or = FP+offset.
+      if (how != NODEREF) {
+        reason1 = "rule for DW_REG_CFA: invalid |how|";
+        goto cant_summarise;
+      }
+      if (oldReg != DW_REG_RISCV_FP && oldReg != DW_REG_RISCV_SP) {
+        reason1 = "rule for DW_REG_CFA: invalid |oldReg|";
+        goto cant_summarise;
+      }
+      mCurrRules.mCfaExpr = LExpr(how, oldReg, offset);
+      break;
+
+    case DW_REG_RISCV_RA:
+    case DW_REG_RISCV_SP:
+    case DW_REG_RISCV_FP: {
+      // This is a new rule for SP, FP or RA.
+      switch (how) {
+        case NODEREF:
+        case DEREF:
+          // Check the old register is one we're tracking.
+          if (!registerIsTracked((DW_REG_NUMBER)oldReg) &&
+              oldReg != DW_REG_CFA) {
+            reason1 = "rule for RA/SP/FP: uses untracked reg";
+            goto cant_summarise;
+          }
+          break;
+        case PFXEXPR: {
+          // Check that the prefix expression only mentions tracked registers.
+          const vector<PfxInstr>* pfxInstrs = mSecMap->GetPfxInstrs();
+          reason2 = checkPfxExpr(pfxInstrs, offset);
+          if (reason2) {
+            reason1 = "rule for RA/SP/FP: ";
+            goto cant_summarise;
+          }
+          break;
+        }
+        default:
+          goto cant_summarise;
+      }
+      LExpr expr = LExpr(how, oldReg, offset);
+      switch (aNewReg) {
+        case DW_REG_RISCV_RA:
+          mCurrRules.mRAexpr = expr;
+          break;
+        case DW_REG_RISCV_SP:
+          mCurrRules.mSPexpr = expr;
+          break;
+        case DW_REG_RISCV_FP:
+          mCurrRules.mFPexpr = expr;
+          break;
+        default:
+          MOZ_CRASH("impossible value for aNewReg");
+      }
+      break;
+    }
+    default:
+      // Leave |reason1| and |reason2| unset here, for the reasons
+      // explained in the analogous point in the ARM case just above.
+      goto cant_summarise;
+  }
+
+  if (mCurrRules.mSPexpr.mHow == UNKNOWN) {
+    mCurrRules.mSPexpr = LExpr(NODEREF, DW_REG_CFA, 0);
+  }
+  if (mCurrRules.mFPexpr.mHow == UNKNOWN) {
+    mCurrRules.mFPexpr = LExpr(NODEREF, DW_REG_RISCV_FP, 0);
+  }
+
 #else
 
 #  error "Unsupported arch"
@@ -523,6 +685,24 @@ cant_summarise:
                    NameOf_LExprHow(how), (unsigned int)oldReg,
                    (long long int)offset);
     mLog(buf);
+  }
+}
+
+void Summariser::UndefineRule(uintptr_t aAddress, int aReg) {
+  aAddress += mTextBias;
+  if (mCurrAddr < aAddress) {
+    // Flush the existing summary first.
+    mSecMap->AddRuleSet(&mCurrRules, mCurrAddr, aAddress - mCurrAddr);
+    if (DEBUG_SUMMARISER) {
+      mLog("LUL  ");
+      mCurrRules.Print(mCurrAddr, aAddress - mCurrAddr, mLog);
+      mLog("\n");
+    }
+    mCurrAddr = aAddress;
+  }
+  LExpr* const expr = mCurrRules.ExprForRegno(static_cast<DW_REG_NUMBER>(aReg));
+  if (expr) {
+    *expr = LExpr();
   }
 }
 

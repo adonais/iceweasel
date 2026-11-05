@@ -3,12 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsNativeCharsetUtils.h"
-#include "nsIPrefService.h"
 #include "nsServiceManagerUtils.h"
+#include "mozilla/StaticPrefs_network.h"
 
 #include "nsAuthSASL.h"
-
-static const char kNegotiateAuthSSPI[] = "network.auth.use-sspi";
 
 nsAuthSASL::nsAuthSASL() { mSASLReady = false; }
 
@@ -21,8 +19,6 @@ NS_IMETHODIMP
 nsAuthSASL::Init(const nsACString& serviceName, uint32_t serviceFlags,
                  const nsAString& domain, const nsAString& username,
                  const nsAString& password) {
-  nsresult rv;
-
   NS_ASSERTION(!username.IsEmpty(), "SASL requires a username");
   NS_ASSERTION(domain.IsEmpty() && password.IsEmpty(),
                "unexpected credentials");
@@ -34,19 +30,23 @@ nsAuthSASL::Init(const nsACString& serviceName, uint32_t serviceFlags,
 
   // Find out whether we should be trying SSPI or not
   const char* authType = "kerb-gss";
-
-  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-  if (prefs) {
-    bool val;
-    rv = prefs->GetBoolPref(kNegotiateAuthSSPI, &val);
-    if (NS_SUCCEEDED(rv) && val) authType = "kerb-sspi";
+#ifdef XP_WIN
+  if (mozilla::StaticPrefs::network_auth_use_sspi()) {
+    authType = "kerb-sspi";
   }
+#endif
 
   MOZ_ALWAYS_TRUE(mInnerModule = nsIAuthModule::CreateInstance(authType));
 
-  mInnerModule->Init(serviceName, serviceFlags, u""_ns, u""_ns, u""_ns);
+  return mInnerModule->Init(serviceName, serviceFlags, u""_ns, u""_ns, u""_ns);
+}
 
-  return NS_OK;
+NS_IMETHODIMP
+nsAuthSASL::InitAsync(const nsACString& aServiceName, uint32_t aServiceFlags,
+                      const nsAString& aDomain, const nsAString& aUsername,
+                      const nsAString& aPassword,
+                      nsIAuthModuleInitCallback* aCallback) {
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP

@@ -10,6 +10,7 @@ prefs = [
   "browser.urlbar.trustPanel.featureGate=false",
   "sidebar.revamp=false",
   "browser.tabs.groups.alternateMenu=true",
+  "browser.toolbars.tab-groups.enabled=true",
 ]
 
 ["browser_1003588_no_specials_in_panel.js"]
@@ -223,7 +224,6 @@ skip-if = [
 ["browser_993322_widget_notoolbar.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && swgl && verify-standalone",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86' && opt && verify-standalone",
   "os == 'win' && os_version == '11.26200' && arch == 'x86' && opt && verify-standalone",
 ]
 
@@ -271,6 +271,8 @@ support-files = ["file_embedded_document.html"]
 ["browser_currentset_post_reset.js"]
 
 ["browser_customization_context_menus.js"]
+
+["browser_customize_telemetry.js"]
 
 ["browser_customizemode_contextmenu_menubuttonstate.js"]
 
@@ -349,9 +351,6 @@ tags = "fullscreen"
 ["browser_panelUINotifications_novaUpdateBanner.js"]
 
 ["browser_panel_keyboard_navigation.js"]
-skip-if = [
-  "nova", # Bug 2058027
-]
 
 ["browser_panel_locationSpecific.js"]
 

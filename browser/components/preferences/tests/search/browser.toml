@@ -1,29 +1,14 @@
 [DEFAULT]
-dupe-manifest=true
-prefs = [
-  "browser.settings-redesign.enabled=false",
-]
 support-files = [
   "head.js",
 ]
 tags = "os_integration"
 
-["browser_localSearchShortcuts_xul.js"]
-fail-if = [
-  "a11y_checks", # Bug 1854636 clicked treechildren#engineChildren may not be focusable
-]
+["browser_localSearchShortcuts.js"]
 
-["browser_searchChangedEngine_xul.js"]
+["browser_searchChangedEngine.js"]
 
 ["browser_searchDefaultEngine.js"]
-
-["browser_searchFindMoreLink.js"]
-
-["browser_searchRestoreDefaults.js"]
-
-["browser_searchScroll.js"]
-support-files = [
-  "head.js","!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js"]
 
 ["browser_searchShowSuggestionsFirst.js"]
 
@@ -32,13 +17,17 @@ fail-if = [
   "a11y_checks", # Bug 1854636 clicked treechildren#engineChildren may not be focusable
 ]
 
+["browser_search_engineList_enterprise.js"]
+
+["browser_search_engine_reorder.js"]
+
 ["browser_search_firefoxSuggest.js"]
 
 ["browser_search_quickactions.js"]
 
 ["browser_search_searchTerms.js"]
 
-["browser_search_userEngineDialog_xul.js"]
+["browser_search_userEngineDialog.js"]
 
 ["browser_searchsuggestions.js"]
 

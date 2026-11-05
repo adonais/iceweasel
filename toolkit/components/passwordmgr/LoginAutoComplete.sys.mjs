@@ -166,6 +166,7 @@ class LoginAutocompleteItem extends AutocompleteItem {
             actions: [
               {
                 label: lazy.l10n.formatValueSync("autocomplete-edit-password"),
+                type: "edit",
                 fillMessageName: "PasswordManager:OpenPreferences",
                 fillMessageData: {
                   loginGuid: login.guid,
@@ -176,6 +177,7 @@ class LoginAutocompleteItem extends AutocompleteItem {
                 label: lazy.l10n.formatValueSync(
                   "autocomplete-delete-password"
                 ),
+                type: "delete",
                 fillMessageName: "PasswordManager:DeleteLogin",
                 fillMessageData: {
                   loginGuid: login.guid,

@@ -343,7 +343,8 @@ nsresult SVGElement::BindToTree(BindContext& aContext, nsINode& aParent) {
         [self = RefPtr<SVGElement>(this)]() {
           nsAutoString nonce;
           self->GetNonce(nonce);
-          self->SetAttr(kNameSpaceID_None, nsGkAtoms::nonce, u""_ns, true);
+          self->SetAttr(kNameSpaceID_None, nsGkAtoms::nonce, u""_ns, true,
+                        IsKnownNewAttr::No);
           self->SetNonce(nonce);
         }));
   }
@@ -385,6 +386,11 @@ bool SVGElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                                 const nsAString& aValue,
                                 nsIPrincipal* aMaybeScriptedPrincipal,
                                 nsAttrValue& aResult) {
+  if (!aAttribute->IsStatic()) {
+    return SVGElementBase::ParseAttribute(aNamespaceID, aAttribute, aValue,
+                                          aMaybeScriptedPrincipal, aResult);
+  }
+
   nsresult rv = NS_OK;
   bool foundMatch = false;
   bool didSetResult = false;
@@ -2017,7 +2023,7 @@ void SVGElement::SetStringBaseValue(uint8_t aAttrEnum,
   NS_ASSERTION(aAttrEnum < info.mCount, "aAttrEnum out of range");
 
   SetAttr(info.mInfos[aAttrEnum].mNamespaceID, info.mInfos[aAttrEnum].mName,
-          aValue, true);
+          aValue, true, IsKnownNewAttr::No);
 }
 
 SVGElement::StringListAttributesInfo SVGElement::GetStringListInfo() {

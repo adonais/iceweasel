@@ -22,6 +22,7 @@
 #include "scoped_ptrs_smime.h"
 #include "secasn1.h"
 #include "secerr.h"
+#include "secitem.h"
 #include "secoid.h"
 #include "secpkcs7.h"
 #include "smime.h"
@@ -873,6 +874,60 @@ TEST_F(SMimeTest, CmsDecoderUpdateAfterFailureIsInert) {
                   sizeof(kValidSignature)));
   }
   EXPECT_EQ(nullptr, NSS_CMSDecoder_Finish(dcx));
+}
+
+// sigd->digests is indexed by the position of the matching entry in
+// sigd->digestAlgorithms, so registering algorithms without a value must still
+// reserve their slots.
+TEST_F(SMimeTest, DigestValueAlignsWithDigestAlgorithms) {
+  ScopedNSSCMSMessage msg(NSS_CMSMessage_Create(nullptr));
+  ASSERT_TRUE(msg);
+  NSSCMSSignedData* sigd = NSS_CMSSignedData_Create(msg.get());
+  ASSERT_NE(nullptr, sigd);
+
+  for (SECOidTag alg : {SEC_OID_SHA256, SEC_OID_SHA384, SEC_OID_SHA512}) {
+    ASSERT_EQ(SECSuccess, NSS_CMSSignedData_SetDigestValue(sigd, alg, nullptr));
+  }
+
+  uint8_t hash[64] = {0xab};
+  SECItem digest = {siBuffer, hash, sizeof(hash)};
+  ASSERT_EQ(SECSuccess,
+            NSS_CMSSignedData_SetDigestValue(sigd, SEC_OID_SHA512, &digest));
+
+  EXPECT_EQ(nullptr, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA256));
+  EXPECT_EQ(nullptr, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA384));
+  EXPECT_TRUE(SECITEM_ItemsAreEqual(
+      &digest, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA512)));
+}
+
+// digestAlgorithms is a SET OF and gets reordered into DER order before
+// encoding; the digests must be carried along with it, including the entries
+// that have no value yet.
+TEST_F(SMimeTest, DigestsFollowDigestAlgorithmsWhenSorted) {
+  ScopedNSSCMSMessage msg(NSS_CMSMessage_Create(nullptr));
+  ASSERT_TRUE(msg);
+  NSSCMSSignedData* sigd = NSS_CMSSignedData_Create(msg.get());
+  ASSERT_NE(nullptr, sigd);
+
+  uint8_t hash512[64] = {0x51};
+  uint8_t hash384[48] = {0x38};
+  SECItem digest512 = {siBuffer, hash512, sizeof(hash512)};
+  SECItem digest384 = {siBuffer, hash384, sizeof(hash384)};
+
+  ASSERT_EQ(SECSuccess,
+            NSS_CMSSignedData_SetDigestValue(sigd, SEC_OID_SHA512, &digest512));
+  ASSERT_EQ(SECSuccess,
+            NSS_CMSSignedData_SetDigestValue(sigd, SEC_OID_SHA256, nullptr));
+  ASSERT_EQ(SECSuccess,
+            NSS_CMSSignedData_SetDigestValue(sigd, SEC_OID_SHA384, &digest384));
+
+  ASSERT_EQ(SECSuccess, NSS_CMSSignedData_Encode_BeforeStart(sigd));
+
+  EXPECT_EQ(nullptr, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA256));
+  EXPECT_TRUE(SECITEM_ItemsAreEqual(
+      &digest384, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA384)));
+  EXPECT_TRUE(SECITEM_ItemsAreEqual(
+      &digest512, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA512)));
 }
 
 }  // namespace nss_test

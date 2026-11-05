@@ -549,7 +549,7 @@ RefPtr<NotificationPermissionPromise> EnsureValidNotificationPermission(
 
 Result<nsCOMPtr<nsIAlertNotification>, nsresult> CreateAlertForNotification(
     const IPCNotificationOptions& aOptions, nsIPrincipal& aPrincipal,
-    Maybe<IPCImage>&& aIcon) {
+    imgIContainer* aIcon) {
   // Step 4.3 the show steps, which are almost all about processing `tag` and
   // then displaying the notification. Both are handled by
   // nsIAlertsService::ShowAlert. The below is all about constructing the
@@ -585,13 +585,7 @@ Result<nsCOMPtr<nsIAlertNotification>, nsresult> CreateAlertForNotification(
                       aOptions.lang(), aOptions.dataSerialized(), principal,
                       principal->GetIsInPrivateBrowsing(), requireInteraction,
                       aOptions.silent(), aOptions.vibrate()));
-
-  if (aIcon) {
-    if (nsCOMPtr<imgIContainer> image =
-            nsContentUtils::IPCImageToImage(*aIcon)) {
-      alert->SetImage(image);
-    }
-  }
+  alert->SetImage(aIcon);
 
   if (StaticPrefs::dom_webnotifications_actions_enabled()) {
     nsTArray<RefPtr<nsIAlertAction>> actions;

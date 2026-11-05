@@ -886,14 +886,6 @@ Maybe<IntRect> CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
   mContext->OMSetBlendState(mAttachments->mPremulBlendState, sBlendFactor,
                             0xFFFFFFFF);
 
-  if (mAttachments->mSyncObject) {
-    if (!mAttachments->mSyncObject->Synchronize()) {
-      // It's timeout here. Since the timeout is related to the driver-removed,
-      // skip this frame.
-      return Nothing();
-    }
-  }
-
   return Some(rect);
 }
 

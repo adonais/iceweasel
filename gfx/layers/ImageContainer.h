@@ -118,6 +118,10 @@ class Image {
     return gfx::IntRect(GetOrigin().x, GetOrigin().y, GetSize().width,
                         GetSize().height);
   }
+  // Returns the size of the pixel buffer addressed by this image, or Nothing()
+  // if the image is invalid or its picture rect is empty, has a negative
+  // origin, or extends past the buffer.
+  virtual Maybe<gfx::IntSize> GetAddressableSize() const;
   virtual gfx::ColorDepth GetColorDepth() const {
     return gfx::ColorDepth::COLOR_8;
   }
@@ -835,23 +839,16 @@ struct PlanarYCbCrData {
                            : gfx::IntSize(0, 0);
   }
 
-  // Returns the uncropped Y size when the picture rect is non-empty, has a
-  // non-negative origin, and both endpoints fit in int32_t.
-  Maybe<gfx::IntSize> GetCheckedYDataSize() const;
+  struct PlaneSizes {
+    gfx::IntSize mY;
+    gfx::IntSize mCbCr;
+  };
 
-  // The total uncropped size of data in the Y channel. Falls back to the raw
-  // picture rect endpoint when GetCheckedYDataSize() rejects the rect.
-  // TODO: Bug 2072459
-  gfx::IntSize YDataSize() const {
-    return GetCheckedYDataSize().valueOr(
-        gfx::IntSize(mPictureRect.XMost(), mPictureRect.YMost()));
-  }
-
-  // The total uncropped size of data in the Cb/Cr channels.
-  gfx::IntSize CbCrDataSize() const {
-    return mCbCrStride > 0 ? gfx::ChromaSize(YDataSize(), mChromaSubsampling)
-                           : gfx::IntSize(0, 0);
-  }
+  // Returns the uncropped Y and chroma sizes when the picture rect is
+  // non-empty, has a non-negative origin, and both endpoints fit in int32_t,
+  // or Nothing() otherwise. The chroma size is empty when mCbCrStride <= 0,
+  // as for monochrome data. The backing buffers are not validated.
+  Maybe<PlaneSizes> GetPlaneSizes() const;
 
   static Maybe<PlanarYCbCrData> From(const SurfaceDescriptorBuffer&);
   static Maybe<PlanarYCbCrData> From(const VideoData::YCbCrBuffer&);
@@ -877,20 +874,24 @@ std::ostream& operator<<(std::ostream& aOut, const PlanarYCbCrData& aData);
  *
  * mYSkip, mCbSkip, mCrSkip are added to support various output
  * formats from hardware decoder. They are per-pixel skips in the
- * source image.
+ * source image: the number of samples skipped between adjacent samples
+ * in a row, such as the other channels' samples in an interleaved
+ * format. Planar data has skips of 0. Rows start a stride apart, so
+ * any padding after the row data follows from the stride and the
+ * width, not from the skip.
  *
- * For example when image width is 640, mYStride is 670, mYSkip is 2,
+ * For example when image width is 200, mYStride is 670, mYSkip is 2,
  * the mYChannel buffer looks like:
  *
- * |<----------------------- mYStride ----------------------------->|
- * |<----------------- YDataSize().width ---------->|
- *  0   3   6   9   12  15  18  21                639             669
+ * |<-------------------------- mYStride -------------------------->|
+ * |<----------------- row data ----------------->|
+ *  0  3  6  9  12 15 18 21                    599               669
  * |----------------------------------------------------------------|
- * |Y___Y___Y___Y___Y___Y___Y___Y...                |%%%%%%%%%%%%%%%|
- * |Y___Y___Y___Y___Y___Y___Y___Y...                |%%%%%%%%%%%%%%%|
- * |Y___Y___Y___Y___Y___Y___Y___Y...                |%%%%%%%%%%%%%%%|
- * |            |<->|
- *                mYSkip
+ * |Y__Y__Y__Y__Y__Y__Y__Y__...                Y__|%%%%%%%%%%%%%%%%%|
+ * |Y__Y__Y__Y__Y__Y__Y__Y__...                Y__|%%%%%%%%%%%%%%%%%|
+ * |Y__Y__Y__Y__Y__Y__Y__Y__...                Y__|%%%%%%%%%%%%%%%%%|
+ *   ^^
+ *   mYSkip
  */
 class PlanarYCbCrImage : public Image {
  public:
@@ -935,6 +936,8 @@ class PlanarYCbCrImage : public Image {
   gfx::IntSize GetSize() const override { return mSize; }
 
   gfx::IntPoint GetOrigin() const override { return mOrigin; }
+
+  Maybe<gfx::IntSize> GetAddressableSize() const override;
 
   PlanarYCbCrImage();
 
@@ -1012,6 +1015,7 @@ class NVImage final : public Image {
   // Methods inherited from layers::Image.
   gfx::IntSize GetSize() const override;
   gfx::IntRect GetPictureRect() const override;
+  Maybe<gfx::IntSize> GetAddressableSize() const override;
   already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override;
   nsresult BuildSurfaceDescriptorBuffer(
       SurfaceDescriptorBuffer& aSdBuffer, BuildSdbFlags aFlags,

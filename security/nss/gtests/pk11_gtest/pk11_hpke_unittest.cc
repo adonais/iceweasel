@@ -14,6 +14,7 @@
 #include "secerr.h"
 #include "sechash.h"
 #include "util.h"
+#include "pk11_import.h"
 
 extern std::string g_source_dir;
 
@@ -48,12 +49,12 @@ class HpkeTest {
       EXPECT_TRUE(expected.empty());
       return;
     }
-    SECStatus rv = PK11_ExtractKeyValue(actual);
+    SECStatus rv = nss_test::ExtractKeyValue(actual);
     EXPECT_EQ(SECSuccess, rv);
     if (rv != SECSuccess) {
       return;
     }
-    SECItem* rawkey = PK11_GetKeyData(actual);
+    SECItem* rawkey = nss_test::GetKeyData(actual);
     CheckEquality(expected, rawkey);
   }
 
@@ -62,12 +63,12 @@ class HpkeTest {
       EXPECT_EQ(!!expected, !!actual);
       return;
     }
-    SECStatus rv = PK11_ExtractKeyValue(expected);
+    SECStatus rv = nss_test::ExtractKeyValue(expected);
     EXPECT_EQ(SECSuccess, rv);
     if (rv != SECSuccess) {
       return;
     }
-    SECItem* raw = PK11_GetKeyData(expected);
+    SECItem* raw = nss_test::GetKeyData(expected);
     ASSERT_NE(nullptr, raw);
     ASSERT_NE(nullptr, raw->data);
     std::vector<uint8_t> expected_vec(raw->data, raw->data + raw->len);
@@ -560,7 +561,7 @@ class TestVectors : public HpkeTest, public ::testing::Test {
       SECItem item = {siBuffer, toUcharPtr(sk_data.data()),
                       static_cast<unsigned int>(sk_data.size())};
       SECKEYPrivateKey* sk = nullptr;
-      SECStatus rv = PK11_ImportDERPrivateKeyInfoAndReturnKey(
+      SECStatus rv = nss_test::ImportDERPrivateKeyInfoAndReturnKey(
           slot.get(), &item, nullptr, nullptr, false, false, KU_ALL, &sk,
           nullptr);
       if (rv != SECSuccess) {
@@ -589,9 +590,9 @@ class TestVectors : public HpkeTest, public ::testing::Test {
       if (!vec.psk.empty()) {
         SECItem psk_item = {siBuffer, toUcharPtr(vec.psk.data()),
                             static_cast<unsigned int>(vec.psk.size())};
-        PK11SymKey* psk_key =
-            PK11_ImportSymKey(slot.get(), CKM_HKDF_KEY_GEN, PK11_OriginUnwrap,
-                              CKA_WRAP, &psk_item, nullptr);
+        PK11SymKey* psk_key = nss_test::ImportSymKey(
+            slot.get(), CKM_HKDF_KEY_GEN, PK11_OriginUnwrap, CKA_WRAP,
+            &psk_item, nullptr);
         EXPECT_NE(nullptr, psk_key);
         psk.reset(psk_key);
       }
@@ -807,6 +808,9 @@ TEST_P(ModeParameterizedTest, BadEncapsulatedPubKey) {
 }
 
 TEST_P(ModeParameterizedTest, ContextExportImportEncrypt) {
+  if (PK11_IsFIPS()) {
+    GTEST_SKIP() << "FIPS tokens can't export an unwrapped context";
+  }
   std::vector<uint8_t> msg = {'s', 'e', 'c', 'r', 'e', 't'};
   std::vector<uint8_t> aad = {'a', 'a', 'd'};
 
@@ -821,6 +825,9 @@ TEST_P(ModeParameterizedTest, ContextExportImportEncrypt) {
 }
 
 TEST_P(ModeParameterizedTest, ContextExportImportExport) {
+  if (PK11_IsFIPS()) {
+    GTEST_SKIP() << "FIPS tokens can't export an unwrapped context";
+  }
   ScopedHpkeContext sender;
   ScopedHpkeContext receiver;
   ScopedPK11SymKey sender_export;
@@ -873,6 +880,51 @@ TEST_P(ModeParameterizedTest, ExportSenderContext) {
             PK11_HPKE_ExportContext(sender.get(), nullptr, &tmp_exported));
   EXPECT_EQ(nullptr, tmp_exported);
   EXPECT_EQ(SEC_ERROR_NOT_A_RECIPIENT, PORT_GetError());
+}
+
+// Lengths too large for PK11_AEADOp are rejected before the input is read, so
+// a small buffer with an oversized length is enough to exercise the check.
+TEST_P(ModeParameterizedTest, OversizedInput) {
+  std::vector<uint8_t> msg = {'s', 'e', 'c', 'r', 'e', 't'};
+  std::vector<uint8_t> aad = {'a', 'a', 'd'};
+  uint8_t buf[32] = {0};
+
+  ScopedHpkeContext sender;
+  ScopedHpkeContext receiver;
+  SetUpEphemeralContexts(sender, receiver, std::get<0>(GetParam()),
+                         std::get<1>(GetParam()), std::get<2>(GetParam()),
+                         std::get<3>(GetParam()));
+
+  const unsigned int kOversizedLens[] = {0xfffffff0, 0xffffffff, 0x80000000,
+                                         0x7ffffff0};
+  for (unsigned int len : kOversizedLens) {
+    SECItem big_item = {siBuffer, buf, len};
+    SECItem* tmp_out = nullptr;
+    EXPECT_EQ(SECFailure,
+              PK11_HPKE_Seal(sender.get(), nullptr, &big_item, &tmp_out));
+    EXPECT_EQ(SEC_ERROR_INPUT_LEN, PORT_GetError());
+    EXPECT_EQ(nullptr, tmp_out);
+    if (len > 0x7fffffff) {
+      EXPECT_EQ(SECFailure,
+                PK11_HPKE_Open(receiver.get(), nullptr, &big_item, &tmp_out));
+      EXPECT_EQ(SEC_ERROR_INPUT_LEN, PORT_GetError());
+      EXPECT_EQ(nullptr, tmp_out);
+
+      // Oversized AAD. The input is long enough to hold a tag.
+      SECItem small_item = {siBuffer, buf, sizeof(buf)};
+      EXPECT_EQ(SECFailure,
+                PK11_HPKE_Seal(sender.get(), &big_item, &small_item, &tmp_out));
+      EXPECT_EQ(SEC_ERROR_INPUT_LEN, PORT_GetError());
+      EXPECT_EQ(nullptr, tmp_out);
+      EXPECT_EQ(SECFailure, PK11_HPKE_Open(receiver.get(), &big_item,
+                                           &small_item, &tmp_out));
+      EXPECT_EQ(SEC_ERROR_INPUT_LEN, PORT_GetError());
+      EXPECT_EQ(nullptr, tmp_out);
+    }
+  }
+
+  // The contexts remain usable and in sync.
+  SealOpen(sender, receiver, msg, aad, nullptr);
 }
 
 TEST_P(ModeParameterizedTest, ContextUnwrapBadKey) {
@@ -994,7 +1046,7 @@ TEST_F(ModeParameterizedTest, InvalidReceiverKeyType) {
   ScopedSECKEYPublicKey pub_key;
   ScopedSECKEYPrivateKey priv_key(
       PK11_GenerateKeyPair(slot.get(), CKM_RSA_PKCS_KEY_PAIR_GEN, &rsa_param,
-                           &pub_tmp, PR_FALSE, PR_FALSE, nullptr));
+                           &pub_tmp, PR_FALSE, PK11_IsFIPS(), nullptr));
   ASSERT_NE(nullptr, priv_key);
   ASSERT_NE(nullptr, pub_tmp);
   pub_key.reset(pub_tmp);
@@ -1016,8 +1068,8 @@ TEST_F(ModeParameterizedTest, InvalidReceiverKeyType) {
   memcpy(ecParams.data + 2, oidData->oid.data, oidData->oid.len);
 
   priv_key.reset(PK11_GenerateKeyPair(slot.get(), CKM_EC_KEY_PAIR_GEN,
-                                      &ecParams, &pub_tmp, PR_FALSE, PR_FALSE,
-                                      nullptr));
+                                      &ecParams, &pub_tmp, PR_FALSE,
+                                      PK11_IsFIPS(), nullptr));
   ASSERT_NE(nullptr, priv_key);
   ASSERT_NE(nullptr, pub_tmp);
   pub_key.reset(pub_tmp);

@@ -93,7 +93,7 @@ const archOptions =
            suffix: `ldp x29, x30, \\[sp\\], #16`
        },
        arm: {
-           encoding: `${HEX}{8}\\s+${HEX}{8}`,
+           encoding: `${HEX}{8}`,
            // The move from r9 to fp is writing the callee's wasm instance into
            // the frame for debug checks -- see WasmFrame.h.
            prefix: `str fp, \\[sp, #-4\\]!

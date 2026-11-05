@@ -70,7 +70,7 @@ class UtilityProcessParent final
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
  private:
-  UtilityProcessHost* mHost;
+  RefPtr<UtilityProcessHost> mHost;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest{};
 
   ~UtilityProcessParent();

@@ -87,6 +87,17 @@ class Benchmark:
 
         return ThreadingHTTPServer((self.host, int(self.port)), CustomHandler)
 
+    def get_source_path_mapping(self):
+        """Map the URLs of the benchmark server to the directory it serves.
+
+        profiler-edit uses this to embed the benchmark's JS sources and their
+        source maps into the profile, after the server has been stopped.
+        """
+        return {
+            "urlPrefix": f"http://{self.host}:{self.port}/",
+            "localPath": str(pathlib.Path(self.bench_dir).resolve()),
+        }
+
     def stop_http_server(self):
         try:
             if self.httpd:

@@ -181,6 +181,41 @@ describe("PinnableSitesList component", () => {
     );
   });
 
+  it("keeps button disabled until the pin attempt resolves", async () => {
+    let resolvePin;
+    handleAction.returns(
+      new Promise(resolve => {
+        resolvePin = resolve;
+      })
+    );
+    const wrapper = mount(
+      <PinnableSitesList
+        tile={TILE}
+        messageId="TEST_MSG"
+        handleAction={handleAction}
+      />
+    );
+    wrapper.find(".pinnable-sites-pin-button").first().simulate("click");
+    wrapper.update();
+
+    assert.equal(
+      wrapper.find(".pinnable-sites-pin-button").first().prop("disabled"),
+      true,
+      "button disabled while waiting on the OS pin prompt"
+    );
+
+    // The user declined the OS pin prompt.
+    resolvePin(false);
+    await handleAction.firstCall.returnValue;
+    wrapper.update();
+
+    assert.equal(
+      wrapper.find(".pinnable-sites-pin-button").first().prop("disabled"),
+      false,
+      "button re-enabled after the pin is declined"
+    );
+  });
+
   it("re-enables button when pin fails (result === false)", async () => {
     handleAction.resolves(false);
     const wrapper = mount(

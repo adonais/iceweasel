@@ -29,6 +29,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "startDownloadsInTmpDir",
+  "browser.download.start_downloads_in_tmp_dir",
+  false
+);
+
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gDownloadPlatform",
@@ -715,16 +722,19 @@ export var DownloadIntegration = {
     // this is a permanently downloaded file or a temporary download to be
     // opened read-only with an external application.
     try {
+      // Private downloads opened with an external app are only marked read-only
+      // when they are stored in the OS temporary directory, so that helper apps
+      // prompt to save modified versions elsewhere. Files in the Downloads
+      // folder or in a user-chosen directory stay writable, since the user can
+      // find and manage them.
+      // Note: for simplicity this intentionally ignores a browsing context's
+      // `downloadFolderOverride`, which is only used by automation
+      // (WebDriver BiDi).
       let isTemporaryDownload =
-        aDownload.launchWhenSucceeded && aDownload.source.isPrivate;
-      // Permanently downloaded files are made accessible by other users on
-      // this system, while temporary downloads are marked as read-only.
-      let unixMode;
-      if (isTemporaryDownload) {
-        unixMode = 0o400;
-      } else {
-        unixMode = 0o666;
-      }
+        aDownload.launchWhenSucceeded &&
+        aDownload.source.isPrivate &&
+        lazy.startDownloadsInTmpDir;
+      let unixMode = isTemporaryDownload ? 0o400 : 0o666;
       // On Unix, the umask of the process is respected.
       await IOUtils.setPermissions(aDownload.target.path, unixMode);
     } catch (ex) {

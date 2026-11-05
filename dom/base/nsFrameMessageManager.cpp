@@ -28,6 +28,7 @@
 #include "js/Utility.h"  // JS::FreePolicy
 #include "js/Wrapper.h"
 #include "js/experimental/JSStencil.h"
+#include "js/loader/LoadedScript.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "mozilla/AlreadyAddRefed.h"
@@ -1009,6 +1010,14 @@ void nsMessageManagerScriptExecutor::LoadScriptInternal(
         cx, JS::InstantiateGlobalStencil(cx, instantiateOptions, stencil));
 
     if (script) {
+      // Create a ScriptFetchInfo for this script, this info can be used to get
+      // the baseURL of the script when resolving a module specifier.
+      nsCOMPtr<nsIURI> uri;
+      if (NS_SUCCEEDED(
+              NS_NewURI(getter_AddRefs(uri), NS_ConvertUTF16toUTF8(aURL)))) {
+        ScriptLoader::AssociateFetchInfoWithSystemClassicScript(script, uri);
+      }
+
       if (aRunInUniqueScope) {
         JS::Rooted<JSObject*> scope(cx);
         bool ok = js::ExecuteInFrameScriptEnvironment(cx, aMessageManager,

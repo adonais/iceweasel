@@ -1,0 +1,52 @@
+# Runtime constraints from internal-PyPI installation baselines (bug 1994226).
+aiohappyeyeballs==2.6.1
+aioquic==1.2.0
+aiosignal==1.4.0
+ansicon==1.89.0; sys_platform == 'win32'
+arsenic==21.8
+attrs==25.4.0
+autobahn==21.2.1
+automat==20.2.0
+blessed==1.19.1
+browsermob-proxy==0.8.0
+cffi==1.16.0
+chardet==4.0.0
+charset-normalizer==2.0.12
+constantly==15.1.0
+cryptography==42.0.8
+distro==1.4.0
+frozenlist==1.8.0
+hyperlink==21.0.0
+idna==3.3
+incremental==17.5.0
+ipaddr==2.2.0
+jinxed==1.2.0; sys_platform == 'win32'
+jsonschema==2.5.1
+mock==1.0.1
+multidict==6.7.0
+passlib==1.7.4
+pyasn1==0.4.8
+pyasn1-modules==0.2.8
+pycparser==2.22
+pylsqpack==0.3.18
+pyopenssl==24.2.1
+pyyaml==6.0.2
+redo==2.0.4
+service-identity==24.1.0
+simplejson==3.20.1
+six==1.16.0
+structlog==20.2.0
+toml==0.10.2
+tomlkit==0.12.3
+twisted==21.2.0
+txaio==21.2.1
+typing-extensions==4.9.0; python_version < '3.13'
+urllib3==1.26.17
+vcversioner==2.16.0.0
+wcwidth==0.1.7
+xdg==5.1.1
+yarl==1.22.0
+zope-interface==5.2.0
+
+# Keep this available to workers whose package catalog only contains 0.4.0.
+propcache @ https://files.pythonhosted.org/packages/5b/5a/bc7b4a4ef808fa59a816c17b20c4bef6884daebbdf627ff2a161da67da19/propcache-0.4.1-py3-none-any.whl#sha256=af2a6052aeb6cf17d3e46ee169099044fd8224cbaf75c76a2ef596e8163e2237

@@ -70,6 +70,8 @@ security.ui.protectionspopup:
     type: event
     description: >
       User interaction by click events in the protections panel.
+      Also recorded when Enhanced Tracking Protection is switched back on
+      from the Trust Panel's ETP toggle.
     bugs: &security_ui_protectionspopup_click_bugs
       - https://bugzil.la/1560327
       - https://bugzil.la/1602015
@@ -79,6 +81,8 @@ security.ui.protectionspopup:
       - https://bugzil.la/1739287
       - https://bugzil.la/1787249
       - https://bugzil.la/1798669
+      - https://bugzil.la/2066763
+      - https://bugzil.la/2069505
     data_reviews: &security_ui_protectionspopup_click_data_reviews
       - https://bugzil.la/1560327
       - https://bugzil.la/1602015
@@ -88,6 +92,8 @@ security.ui.protectionspopup:
       - https://bugzil.la/1739287
       - https://bugzil.la/1787249
       - https://bugzil.la/1798669
+      - https://bugzil.la/2066763
+      - https://bugzil.la/2069505
     notification_emails: &security_ui_protectionspopup_click_emails
       - emz@mozilla.com
       - tihuang@mozilla.com
@@ -98,6 +104,8 @@ security.ui.protectionspopup:
     type: event
     description: >
       User interaction by click events in the protections panel.
+      Also recorded when Enhanced Tracking Protection is deliberately
+      disabled from the Trust Panel's ETP toggle.
     bugs: *security_ui_protectionspopup_click_bugs
     data_reviews: *security_ui_protectionspopup_click_data_reviews
     notification_emails: *security_ui_protectionspopup_click_emails
@@ -107,6 +115,8 @@ security.ui.protectionspopup:
     type: event
     description: >
       User interaction by click events in the protections panel.
+      Also recorded when the social media trackers detail subview is opened from
+      the Trust Panel's tracker list.
     bugs: *security_ui_protectionspopup_click_bugs
     data_reviews: *security_ui_protectionspopup_click_data_reviews
     notification_emails: *security_ui_protectionspopup_click_emails
@@ -116,6 +126,8 @@ security.ui.protectionspopup:
     type: event
     description: >
       User interaction by click events in the protections panel.
+      Also recorded when the cross-site tracking cookies detail subview is opened from
+      the Trust Panel's tracker list.
     bugs: *security_ui_protectionspopup_click_bugs
     data_reviews: *security_ui_protectionspopup_click_data_reviews
     notification_emails: *security_ui_protectionspopup_click_emails
@@ -125,6 +137,8 @@ security.ui.protectionspopup:
     type: event
     description: >
       User interaction by click events in the protections panel.
+      Also recorded when the tracking content detail subview is opened from
+      the Trust Panel's tracker list.
     bugs: *security_ui_protectionspopup_click_bugs
     data_reviews: *security_ui_protectionspopup_click_data_reviews
     notification_emails: *security_ui_protectionspopup_click_emails
@@ -134,6 +148,8 @@ security.ui.protectionspopup:
     type: event
     description: >
       User interaction by click events in the protections panel.
+      Also recorded when the fingerprinters detail subview is opened from
+      the Trust Panel's tracker list.
     bugs: *security_ui_protectionspopup_click_bugs
     data_reviews: *security_ui_protectionspopup_click_data_reviews
     notification_emails: *security_ui_protectionspopup_click_emails
@@ -143,6 +159,8 @@ security.ui.protectionspopup:
     type: event
     description: >
       User interaction by click events in the protections panel.
+      Also recorded when the cryptominers detail subview is opened from
+      the Trust Panel's tracker list.
     bugs: *security_ui_protectionspopup_click_bugs
     data_reviews: *security_ui_protectionspopup_click_data_reviews
     notification_emails: *security_ui_protectionspopup_click_emails

@@ -77,6 +77,7 @@ add_task(async function test_button_moved() {
   let sidebarButton = document.getElementById("sidebar-button");
   let sidebarContainer = document.getElementById("sidebar-container");
   let sidebarBox = document.getElementById("sidebar-box");
+  ok(sidebarContainer.hidden, "Sidebar launcher has not been hidden.");
 
   await startCustomizing();
   is(gBrowser.tabs.length, 2, "Should have 2 tabs");
@@ -99,7 +100,7 @@ add_task(async function test_button_moved() {
   await finishedCustomizing;
 
   ok(sidebarButton, "Sidebar button has not been removed.");
-  ok(!sidebarContainer.hidden, "Sidebar launcher has not been hidden.");
+  ok(sidebarContainer.hidden, "Sidebar launcher stays visible.");
   ok(!sidebarBox.hidden, "Sidebar panel has not been hidden.");
 
   CustomizableUI.reset();

@@ -1,8 +1,7 @@
 # Firefox-local: include moz-overrides.h in the translation units that use
 # exceptions, so the library builds with -fno-exceptions (see moz-overrides.h,
-# kept across vendoring). In parakeet_capi.cpp the project headers move below
-# the system headers, because moz-overrides.h redefines `throw`/`try`/`catch`
-# and must not be in effect while the system headers are parsed.
+# kept across vendoring). The project headers in parakeet_capi.cpp precede the
+# standard headers, so the override is included after the standard headers.
 #
 --- a/src/ctc_decoder.cpp
 +++ b/src/ctc_decoder.cpp
@@ -10,6 +9,46 @@
  #include <cstring>
  #include <stdexcept>
  #include <string>
++#include "moz-overrides.h"
+ 
+ namespace pk {
+ 
+--- a/src/diarization.cpp
++++ b/src/diarization.cpp
+@@ -9,6 +9,7 @@
+ #include <cmath>
+ #include <new>
+ #include <stdexcept>
++#include "moz-overrides.h"
+ 
+ namespace pk {
+ 
+--- a/src/diarization_encoder.cpp
++++ b/src/diarization_encoder.cpp
+@@ -7,6 +7,7 @@
+ #include <algorithm>
+ #include <cmath>
+ #include <stdexcept>
++#include "moz-overrides.h"
+ #include <string>
+ #include <vector>
+ 
+--- a/src/diarization_head.cpp
++++ b/src/diarization_head.cpp
+@@ -4,6 +4,7 @@
+ #include "ggml.h"
+ #include <cstring>
+ #include <stdexcept>
++#include "moz-overrides.h"
+ #include <string>
+ 
+ namespace pk {
+--- a/src/diarization_streaming.cpp
++++ b/src/diarization_streaming.cpp
+@@ -8,6 +8,7 @@
+ #include <cstring>
+ #include <limits>
+ #include <stdexcept>
 +#include "moz-overrides.h"
  
  namespace pk {
@@ -36,30 +75,50 @@
  int PromptCfg::resolve_index_or_throw(const std::string& target_lang) const {
 --- a/src/parakeet_capi.cpp
 +++ b/src/parakeet_capi.cpp
-@@ -1,11 +1,4 @@
- #include "parakeet_capi.h"
--#include "parakeet.h"     // pk::Decoder
--#include "model.hpp"      // pk::Model
--#include "streaming.hpp"  // pk::StreamingSession
--#include "mel.hpp"        // pk::MelFrontend
--
--#include "transcription.hpp"  // pk::Transcription, pk::Word
--
- #include <cstdio>
- #include <cstdlib>
- #include <cstring>
-@@ -14,7 +7,14 @@
+@@ -26,6 +26,7 @@
  #include <new>
  #include <string>
  #include <vector>
-+#include "parakeet.h"     // pk::Decoder
-+#include "model.hpp"      // pk::Model
-+#include "streaming.hpp"  // pk::StreamingSession
-+#include "mel.hpp"        // pk::MelFrontend
- 
-+#include "transcription.hpp"  // pk::Transcription, pk::Word
 +#include "moz-overrides.h"
-+
+ 
  // ABI version. Bump on breaking changes.
  // v3: target_lang variants (transcribe_path_lang / transcribe_pcm_lang /
- //     stream_begin_lang / transcribe_pcm_batch_json_lang /
+--- a/src/scene_stream.cpp
++++ b/src/scene_stream.cpp
+@@ -6,6 +6,7 @@
+ 
+ #include <algorithm>
+ #include <stdexcept>
++#include "moz-overrides.h"
+ 
+ namespace pk {
+ 
+--- a/src/sound_stream.cpp
++++ b/src/sound_stream.cpp
+@@ -7,6 +7,7 @@
+ #include <cmath>
+ #include <numeric>
+ #include <stdexcept>
++#include "moz-overrides.h"
+ 
+ namespace pk {
+ 
+@@ -30,7 +31,7 @@
+ SoundStream::SoundStream(SoundScorer scorer, int n_classes, const SoundOpts& o)
+     : scorer_(std::move(scorer)), n_classes_(n_classes), o_(o) {
+     const std::string err = validate_sound_opts(o, n_classes);
+-    if (!err.empty()) throw std::invalid_argument(err);
++    if (!err.empty()) abort_with_suppression();
+     hop_n_ = std::llround(o.hop_sec * kRate);
+     win_n_ = std::llround(o.window_sec * kRate);
+     next_end_ = hop_n_;
+--- a/src/tdt.cpp
++++ b/src/tdt.cpp
+@@ -5,6 +5,7 @@
+ #include <cmath>
+ #include <stdexcept>
+ #include <utility>
++#include "moz-overrides.h"
+ 
+ namespace pk {
+ 

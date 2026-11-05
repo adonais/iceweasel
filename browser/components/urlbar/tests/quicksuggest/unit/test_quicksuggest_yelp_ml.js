@@ -366,6 +366,32 @@ add_task(async function searchString() {
   );
 });
 
+// `MLSuggest.makeSuggestions()` should not be called when the search string is
+// empty.
+add_task(async function searchStringLengthThreshold() {
+  let searchStrings = [];
+  gMakeSuggestionsStub.callsFake(str => {
+    searchStrings.push(str);
+    return null;
+  });
+
+  let controller = UrlbarTestUtils.mockChildController();
+  for (let searchString of ["", " ", "x", " X ", "xx"]) {
+    await controller.startQuery(
+      createContext(searchString, {
+        providers: [UrlbarProviderQuickSuggest.name],
+        isPrivate: false,
+      })
+    );
+  }
+
+  Assert.deepEqual(
+    searchStrings,
+    ["x", "x", "xx"],
+    "MLSuggest should be called only for non-empty search strings"
+  );
+});
+
 // The metadata cache should be populated from the "coffee" Rust suggestion when
 // it's present in remote settings.
 add_task(async function cache_fromRust() {

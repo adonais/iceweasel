@@ -56,19 +56,12 @@ interface nsIShellService : nsISupports
   const long BACKGROUND_SPAN      = 6;
 
     /**
-     * Sets the desktop background image using either the HTML <IMG>
-     * element supplied or the background image of the element supplied.
+     * Sets the desktop background to the provided image file.
      *
-     * @param aImageElement Either a HTML <IMG> element or an element with
-     *                      a background image from which to source the
-     *                      background image.
-     * @param aPosition     How to place the image on the desktop
-     * @param aImageName    The image name. Equivalent to the leaf name of the
-     *                      location.href.
+     * @param aFile       The file containing the image.
+     * @param aPosition   How to place the image on the desktop
      */
-  void setDesktopBackground(in Element aElement,
-                            in long aPosition,
-                            in ACString aImageName);
+  void setDesktopBackgroundFile(in nsIFile aFile, in long aPosition);
 
   /**
    * The desktop background color, visible when no background image is

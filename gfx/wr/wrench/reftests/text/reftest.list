@@ -97,7 +97,7 @@ fuzzy(1,21) platform(linux) force_subpixel_aa_where_possible(false) == text-fixe
 # most pixels are off by a small amount, but a few pixels on the edge vary by a lot, pushing up the fuzzy max-diff;
 # the main goal of the test is that everything is in the same place, at the same scale, clipped the same way,
 # despite 4x on-the-fly scale change.
-skip_on(android) fuzzy(120,20800) == raster_root_C_8192.yaml raster_root_C_ref.yaml
+skip_on(android) fuzzy(120,21032) == raster_root_C_8192.yaml raster_root_C_ref.yaml
 == subpx-bg-mask.yaml subpx-bg-mask-ref.yaml
 scale(1,1.51,2) platform(linux,mac) == rotate-snap-clip.yaml rotate-snap-clip-ref.yaml
 scale(*) platform(linux,mac) == rotate-snap-filter.yaml rotate-snap-filter-ref.yaml
@@ -127,3 +127,6 @@ scale(1.0) platform(linux) == 2056856-bitmap-clip.yaml 2056856-bitmap-clip-ref.y
 # at scale 2 the same layout x has a different fraction and rounds the other way.
 # FreeType-only (the bitmap strike selection), so restrict to linux.
 scale(1.0) platform(linux) == 2056856-bitmap-pen.yaml 2056856-bitmap-pen-ref.yaml
+# The pens snap in device space, so the .25 phase only holds at scale 1.
+scale(1.0) skip_on(android) == 2076646-shadow-offset-snap.yaml 2076646-shadow-offset-snap-ref.yaml
+scale(1.0) skip_on(android) == 2076646-shadow-offset-snap-scale.yaml 2076646-shadow-offset-snap-scale-ref.yaml

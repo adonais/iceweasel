@@ -1,7 +1,9 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import gzip
 import os
+import shutil
 from pathlib import Path
 
 from mozlog import get_proxy_logger
@@ -10,13 +12,25 @@ from .symbolication import get_extracted_symbols, symbolicate_profile_file
 
 LOG = get_proxy_logger("profiler")
 
+# profiler-edit reads the whole profile into one JavaScript string, which V8
+# limits to 2^29 - 24 characters.
+MAX_SYMBOLICATABLE_PROFILE_SIZE = 2**29 - 24
+
+
+def _gzip_file(in_path, out_path):
+    with open(in_path, "rb") as f_in, gzip.open(out_path, "wb") as f_out:
+        shutil.copyfileobj(f_in, f_out, 1024 * 1024)
+
 
 def symbolicate_profile_json(profile_path, symbol_dir=None):
     """Symbolicate a profile, replacing it with a gzipped symbolicated profile.
 
     Symbolicated profiles are always gzipped, whatever the input's compression,
     so the result is named ".json.gz". The profile therefore moves when it was
-    not already named that way, and callers should use the returned path.
+    not already named that way, and callers should use the returned path. The
+    move happens even when symbolication fails, in which case the unsymbolicated
+    profile is gzipped instead, so that harnesses can name the artifact before
+    symbolication has run.
 
     Args:
         profile_path (path): The profile to symbolicate.
@@ -24,8 +38,7 @@ def symbolicate_profile_json(profile_path, symbol_dir=None):
             it is looked up with get_extracted_symbols().
 
     Returns:
-        Path: Where the symbolicated profile ended up, or profile_path
-            unchanged when symbolication failed.
+        Path: Where the profile ended up.
     """
     profile_path = Path(profile_path)
     stat = profile_path.stat()
@@ -48,20 +61,41 @@ def symbolicate_profile_json(profile_path, symbol_dir=None):
     # from being picked up as an artifact or by the glob below.
     out_path = final_path.with_name(f".{final_path.name}.sym.json.gz")
 
-    LOG.info(f"Symbolicating {profile_path.name} ({stat.st_size} bytes)...")
     try:
-        if not symbolicate_profile_file(profile_path, out_path, symbol_dir):
+        # Do a best-effort check before the symbolicate_profile_file call to catch
+        # too-big profiles. We hit this code both for compressed and for uncompressed
+        # profiles, and this check won't catch compressed profiles that uncompress
+        # to a too-large size, but that's fine - we'll just run profiler-edit and
+        # handle failure normally.
+        if stat.st_size > MAX_SYMBOLICATABLE_PROFILE_SIZE:
+            LOG.warning(
+                f"Not symbolicating {profile_path.name}: its {stat.st_size} bytes "
+                "are too large for profiler-edit."
+            )
+            symbolicated = False
+        else:
+            LOG.info(f"Symbolicating {profile_path.name} ({stat.st_size} bytes)...")
+            symbolicated = symbolicate_profile_file(profile_path, out_path, symbol_dir)
+
+        if symbolicated:
+            sym_size = out_path.stat().st_size
+            os.replace(out_path, final_path)
+            LOG.info(
+                f"Successfully symbolicated {profile_path.name} -> {final_path.name}: "
+                f"{stat.st_size} bytes -> {sym_size} bytes"
+            )
+        elif final_path != profile_path:
+            LOG.warning(
+                f"Gzipping {profile_path.name} unsymbolicated as {final_path.name}."
+            )
+            _gzip_file(profile_path, out_path)
+            os.replace(out_path, final_path)
+        else:
             LOG.warning(f"Not replacing {profile_path.name}: symbolication failed.")
             return profile_path
 
-        sym_size = out_path.stat().st_size
-        os.replace(out_path, final_path)
         if final_path != profile_path:
             profile_path.unlink()
-        LOG.info(
-            f"Successfully symbolicated {profile_path.name} -> {final_path.name}: "
-            f"{stat.st_size} bytes -> {sym_size} bytes"
-        )
     finally:
         out_path.unlink(missing_ok=True)
 

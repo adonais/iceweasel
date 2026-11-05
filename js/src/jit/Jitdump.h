@@ -11,6 +11,8 @@
    https://github.com/torvalds/linux/blob/f2906aa863381afb0015a9eb7fefad885d4e5a56/tools/perf/Documentation/jitdump-specification.txt
 */
 
+#include <cstdint>
+
 namespace js {
 namespace jit {
 

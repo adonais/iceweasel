@@ -39,6 +39,13 @@
                 android:process=":gmplugin{{ tag }}">
         </service>
         <service
+                android:name="org.mozilla.gecko.process.GeckoChildProcessServices$isolatedGmplugin"
+                android:enabled="true"
+                android:exported="false"
+                android:isolatedProcess="true"
+                android:process=":isolatedGmplugin{{ tag }}">
+        </service>
+        <service
                 android:name="org.mozilla.gecko.process.GeckoChildProcessServices$socket"
                 android:enabled="true"
                 android:exported="false"

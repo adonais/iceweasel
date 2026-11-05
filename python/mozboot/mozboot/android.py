@@ -657,7 +657,12 @@ def ensure_android_packages(
     if os_name == "macosx" and os_arch == "arm64":
         # Support for Apple Silicon is still in nightly
         args.append("--channel=3")
-    args.extend(packages)
+    if sys.platform.startswith("win"):
+        # sdkmanager.bat is a batch wrapper around the Android CLI, and cmd.exe
+        # splits unquoted arguments on ';'. The wrapper accepts '/' instead.
+        args.extend(package.replace(";", "/") for package in packages)
+    else:
+        args.extend(packages)
 
     # sdkmanager needs JAVA_HOME
     ensure_java(os_name, os_arch)

@@ -751,16 +751,30 @@ bool ToStringPolicy::staticAdjustInputs(TempAllocator& alloc,
                                         MInstruction* ins) {
   MOZ_ASSERT(ins->isToString());
 
-  MIRType type = ins->getOperand(0)->type();
-  if (type == MIRType::Object || type == MIRType::Symbol ||
-      type == MIRType::BigInt) {
-    ins->replaceOperand(0, BoxAt(alloc, ins, ins->getOperand(0)));
-    return true;
+  MDefinition* in = ins->getOperand(0);
+  switch (in->type()) {
+    case MIRType::Null:
+    case MIRType::Undefined:
+    case MIRType::Boolean:
+    case MIRType::Int32:
+    case MIRType::Double:
+    case MIRType::String:
+    case MIRType::Value:
+      return true;
+    case MIRType::Float32:
+      // TODO remove the following line once 966957 has landed
+      EnsureOperandNotFloat32(alloc, ins, 0);
+      return true;
+    case MIRType::Object:
+    case MIRType::Symbol:
+    case MIRType::BigInt:
+      break;
+    default:
+      MOZ_RELEASE_ASSERT(IsMagicType(in->type()));
+      break;
   }
 
-  // TODO remove the following line once 966957 has landed
-  EnsureOperandNotFloat32(alloc, ins, 0);
-
+  ins->replaceOperand(0, BoxAt(alloc, ins, in));
   return true;
 }
 

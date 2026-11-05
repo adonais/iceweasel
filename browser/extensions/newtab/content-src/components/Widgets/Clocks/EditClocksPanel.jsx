@@ -14,17 +14,17 @@ export function EditClocksPanel({
   onRemoveClock,
   onClose,
 }) {
-  const backButtonRef = useRef(null);
+  const panelRef = useRef(null);
 
-  // Focus the back button when the panel opens. Double-rAF so this fires
-  // one frame after closeContextMenu's blur, which is scheduled in the
-  // same event handler when opening from the context menu.
+  // Focus the panel, not a button, so no focus ring shows on open. Double-rAF
+  // so this fires one frame after closeContextMenu's blur, which is scheduled
+  // in the same event handler when opening from the context menu.
   useEffect(() => {
     let outerId = 0;
     let innerId = 0;
     outerId = requestAnimationFrame(() => {
       innerId = requestAnimationFrame(() => {
-        backButtonRef.current?.focus?.();
+        panelRef.current?.focus?.();
       });
     });
     return () => {
@@ -44,6 +44,8 @@ export function EditClocksPanel({
     <section
       className="clocks-panel clocks-edit-panel"
       aria-labelledby="clocks-edit-title"
+      tabIndex={-1}
+      ref={panelRef}
       onKeyDown={e => {
         if (e.key === "Escape") {
           onClose();
@@ -59,7 +61,6 @@ export function EditClocksPanel({
             iconSrc={arrowIconSrc}
             data-l10n-id="newtab-clock-widget-button-back"
             onClick={onClose}
-            ref={backButtonRef}
           />
           <h3
             id="clocks-edit-title"

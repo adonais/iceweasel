@@ -4,7 +4,9 @@
 
 import io
 import sys
+import threading
 import traceback
+from concurrent.futures import Future
 from pathlib import Path
 
 from mozunit import main
@@ -223,6 +225,32 @@ def test_simple_exception_output_integration(run_mach):
 
     assert result == 1
     assert "Simple test message" in stdout
+
+
+_original_wait = threading.Event.wait
+
+
+def _bounded_wait(event, timeout=None):
+    if timeout is None:
+        assert _original_wait(event, 5)
+        return True
+    return _original_wait(event, timeout)
+
+
+def test_telemetry_init_error(get_mach, monkeypatch):
+    monkeypatch.setattr(threading.Event, "wait", _bounded_wait)
+    m = get_mach(Path("basic.py"))
+    m._telemetry_future = Future()
+    m._telemetry_future.set_exception(RuntimeError("Telemetry init failed"))
+
+    stderr = io.StringIO()
+    result = m.run(["cmd_foo"], stdout=io.StringIO(), stderr=stderr)
+
+    assert result == 0
+    assert stderr.getvalue() == (
+        "Warning: failed to initialize mach telemetry: "
+        "RuntimeError('Telemetry init failed')\n"
+    )
 
 
 if __name__ == "__main__":

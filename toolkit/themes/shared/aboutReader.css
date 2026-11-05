@@ -968,7 +968,6 @@ div[name="customtheme"] {
   text-align: var(--text-alignment);
   word-spacing: var(--word-spacing);
   letter-spacing: var(--letter-spacing);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-font-weight-tokens */
   font-weight: var(--font-weight);
 
   .header {

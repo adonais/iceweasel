@@ -95,6 +95,46 @@ const REMOTE_SETTINGS_RECORDS = [
     ],
   },
 
+  // empty keyword, matched in the zero prefix view
+  {
+    type: "dynamic-suggestions",
+    suggestion_type: "eee",
+    score: 0.9,
+    attachment: [
+      {
+        keywords: [""],
+        data: {
+          result: {
+            payload: {
+              title: "eee title",
+              url: "https://example.com/eee",
+            },
+          },
+        },
+      },
+    ],
+  },
+
+  // one-character keyword
+  {
+    type: "dynamic-suggestions",
+    suggestion_type: "fff",
+    score: 0.9,
+    attachment: [
+      {
+        keywords: ["f"],
+        data: {
+          result: {
+            payload: {
+              title: "fff title",
+              url: "https://example.com/fff",
+            },
+          },
+        },
+      },
+    ],
+  },
+
   {
     type: QuickSuggestTestUtils.RS_TYPE.WIKIPEDIA,
     attachment: [QuickSuggestTestUtils.wikipediaRemoteSettings()],
@@ -135,11 +175,25 @@ const EXPECTED_DDD_RESULT = makeExpectedResult({
   suggestionType: "ddd",
 });
 
+const EXPECTED_EEE_RESULT = makeExpectedResult({
+  title: "eee title",
+  url: "https://example.com/eee",
+  telemetryType: "eee",
+  suggestionType: "eee",
+});
+
+const EXPECTED_FFF_RESULT = makeExpectedResult({
+  title: "fff title",
+  url: "https://example.com/fff",
+  telemetryType: "fff",
+  suggestionType: "fff",
+});
+
 add_setup(async function () {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: REMOTE_SETTINGS_RECORDS,
     prefs: [
-      ["quicksuggest.dynamicSuggestionTypes", "aaa,bbb,ccc,ddd"],
+      ["quicksuggest.dynamicSuggestionTypes", "aaa,bbb,ccc,ddd,eee,fff"],
       ["suggest.quicksuggest.all", true],
       ["suggest.quicksuggest.sponsored", true],
       ["quicksuggest.ampTopPickCharThreshold", 0],
@@ -213,6 +267,69 @@ add_task(async function basic() {
   ];
 
   await doQueries(queries);
+});
+
+// Dynamic suggestions should be able to be matched by search strings shorter
+// than two characters, including the empty search string of the zero prefix
+// view.
+add_task(async function shortSearchStrings() {
+  await doQueries([
+    {
+      query: "",
+      expected: [EXPECTED_EEE_RESULT],
+    },
+    {
+      query: " ",
+      expected: [EXPECTED_EEE_RESULT],
+    },
+    {
+      query: "f",
+      expected: [EXPECTED_FFF_RESULT],
+    },
+    {
+      query: " f",
+      expected: [EXPECTED_FFF_RESULT],
+    },
+    {
+      query: "x",
+      expected: [],
+    },
+  ]);
+});
+
+// Suggestions matched by the empty search string should be shown in the zero
+// prefix view even though `UrlbarProviderTopSites` is also active there.
+add_task(async function zeroPrefixWithTopSites() {
+  UrlbarPrefs.set("suggest.topsites", false);
+  await check_results({
+    context: createContext("", {
+      providers: [UrlbarProviderQuickSuggest.name, "UrlbarProviderTopSites"],
+      isPrivate: false,
+    }),
+    matches: [EXPECTED_EEE_RESULT],
+  });
+  UrlbarPrefs.clear("suggest.topsites");
+});
+
+// Ensure the priority is as expected in the case of either zero prefix or
+// non-empty search query.
+add_task(function priority() {
+  let provider = ProvidersManager.getInstanceForSap("urlbar").getProvider(
+    UrlbarProviderQuickSuggest.name
+  );
+  Assert.equal(
+    provider.getPriority(createContext("", { isPrivate: false })),
+    1,
+    "Zero prefix"
+  );
+  Assert.equal(
+    provider.getPriority(createContext("x", { isPrivate: false })),
+    0,
+    "Non-empty search query"
+  );
+  let context = createContext("", { isPrivate: false });
+  context.restrictSource = UrlbarShared.RESULT_SOURCE.SEARCH;
+  Assert.equal(provider.getPriority(context), 0, "Restrict source");
 });
 
 // When only one dynamic suggestion type is enabled, only its result should be

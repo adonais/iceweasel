@@ -255,7 +255,7 @@ libdmg-hfsplus:
     fetch:
         type: git
         repo: https://github.com/mozilla/libdmg-hfsplus/
-        revision: d6287b5afc2406b398de42f74eba432f2123b937
+        revision: e18579b391950589b9ed16ee630c54ce4319bb29
 
 hfsplus-tools:
     description: hfstools-plus source code
@@ -290,12 +290,12 @@ rust-size:
         revision: ab659d93b1faba95307df952aefe3fbed3583669
 
 rust-analyzer-linux64:
-    description: rust-analyzer 2026-08-10.1
+    description: rust-analyzer 2026-10-12
     fetch:
         type: static-url
-        url: https://github.com/rust-lang/rust-analyzer/releases/download/2026-08-10.1/rust-analyzer-x86_64-unknown-linux-gnu.gz
-        sha256: d42908a7dc7b89250ae881a0919e477296843665c98574ecc8fe16ba60cecefb
-        size: 14805784
+        url: https://github.com/rust-lang/rust-analyzer/releases/download/2026-10-12/rust-analyzer-x86_64-unknown-linux-gnu.gz
+        sha256: 040cab4e2abc490fadd95c3f6cbc60b941a78761dbc3acf0ec66fd7a97f31db3
+        size: 14939384
         artifact-name: rust-analyzer.gz
 
 gn:
@@ -356,13 +356,6 @@ android-ndk-rs:
         # Example: https://github.com/rust-mobile/cargo-apk/issues/74
         repo: https://github.com/jamienicol/android-ndk-rs
         revision: abddf7b2a3f491637440e0418087f68fb4a401c1
-
-clang-14:
-    description: clang 14.0.5 source code
-    fetch:
-        type: git
-        repo: https://github.com/llvm/llvm-project
-        revision: 4bc1d0b51c8e488d78ab69c8b19cfbcd1f7db6a4
 
 clang-19:
     description: clang 19.1.7 source code
@@ -484,7 +477,7 @@ fix-stacks:
     fetch:
         type: git
         repo: https://github.com/mozilla/fix-stacks/
-        revision: 1fb1bcc8cb4dd65fbe342853954651563a0a88e7
+        revision: 0cabeccc13b8254962599b81d5bcc658e9730baf
 
 upload-symbols-linux64:
     description: upload-symbols command-line client
@@ -573,17 +566,6 @@ nodejs-12-linux64:
         strip-components: 1
         add-prefix: node/
 
-nodejs-22-linux64-arm64:
-    description: nodejs 22 for arm64 linux
-    fetch:
-        type: static-url
-        url: https://nodejs.org/dist/v22.16.0/node-v22.16.0-linux-arm64.tar.xz
-        sha256: eab80cb88f8fda1e65f5e8d0420c9809bdb320b03fd34976ab7161b6e703b910
-        size: 29126496
-        artifact-name: nodejs.tar.zst
-        strip-components: 1
-        add-prefix: node/
-
 nodejs-22-macosx64:
     description: nodejs 22 for x64 macOS
     fetch:
@@ -591,17 +573,6 @@ nodejs-22-macosx64:
         url: https://nodejs.org/dist/v22.16.0/node-v22.16.0-darwin-x64.tar.xz
         sha256: 5c34638f2c0e3f3aaa7b3a94b58304765a169730da1896ebba8515ea4d987a9c
         size: 26966604
-        artifact-name: nodejs.tar.zst
-        strip-components: 1
-        add-prefix: node/
-
-nodejs-22-macosx64-arm64:
-    description: nodejs 22 for arm64 macOS
-    fetch:
-        type: static-url
-        url: https://nodejs.org/dist/v22.16.0/node-v22.16.0-darwin-arm64.tar.xz
-        sha256: aaf7fc3c936f1b359bc312b63638e41f258689ac2303966ad932cda18c54ea00
-        size: 24867980
         artifact-name: nodejs.tar.zst
         strip-components: 1
         add-prefix: node/
@@ -617,46 +588,57 @@ nodejs-22-win32:
         strip-components: 1
         add-prefix: node/
 
-nodejs-22-win64:
-    description: nodejs 22 for x64 Windows
-    fetch:
-        type: static-url
-        url: https://nodejs.org/dist/v22.16.0/node-v22.16.0-win-x64.zip
-        sha256: 21c2d9735c80b8f86dab19305aa6a9f6f59bbc808f68de3eef09d5832e3bfbbd
-        size: 35466975
-        artifact-name: nodejs.tar.zst
-        strip-components: 1
-        add-prefix: node/
-
-nodejs-22-win-arm64:
-    description: nodejs 22 for arm64 Windows
-    fetch:
-        type: static-url
-        url: https://nodejs.org/dist/v22.16.0/node-v22.16.0-win-arm64.zip
-        sha256: 31e885dcd06355f67b4be8cca86464270d83d0f5b8d4e3d4369c16ed22a5f4fa
-        size: 31373500
-        artifact-name: nodejs.tar.zst
-        strip-components: 1
-        add-prefix: node/
-
-nodejs-22-source:
-    description: nodejs 22 source
-    fetch:
-        type: static-url
-        url: https://nodejs.org/dist/v22.16.0/node-v22.16.0.tar.gz
-        sha256: 108f250ff79cc103b464b3ef41fa60f4866e4e6c962117171adaac7325ebdab2
-        size: 100514588
-        artifact-name: nodejs.tar.zst
-        strip-components: 1
-        add-prefix: node/
-
 nodejs-24-linux64:
     description: nodejs 24 for x64 linux
     fetch:
         type: static-url
-        url: https://nodejs.org/dist/v24.15.0/node-v24.15.0-linux-x64.tar.xz
-        sha256: 472655581fb851559730c48763e0c9d3bc25975c59d518003fc0849d3e4ba0f6
-        size: 31164460
+        url: https://nodejs.org/dist/v24.21.0/node-v24.21.0-linux-x64.tar.xz
+        sha256: fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6
+        size: 31890184
+        artifact-name: nodejs.tar.zst
+        strip-components: 1
+        add-prefix: node/
+
+nodejs-24-linux64-arm64:
+    description: nodejs 24 for arm64 linux
+    fetch:
+        type: static-url
+        url: https://nodejs.org/dist/v24.21.0/node-v24.21.0-linux-arm64.tar.xz
+        sha256: 6ad1325edbdb5649c379b75a237147a666c95d4f9ae8d340fef2d1575d289ad2
+        size: 30843004
+        artifact-name: nodejs.tar.zst
+        strip-components: 1
+        add-prefix: node/
+
+nodejs-24-macosx64-arm64:
+    description: nodejs 24 for arm64 macOS
+    fetch:
+        type: static-url
+        url: https://nodejs.org/dist/v24.21.0/node-v24.21.0-darwin-arm64.tar.xz
+        sha256: 6239d4cf92d864487ec8cd3615038f7b67e7f58b77b21cd2f09ea9fbd68065fe
+        size: 27386080
+        artifact-name: nodejs.tar.zst
+        strip-components: 1
+        add-prefix: node/
+
+nodejs-24-win64:
+    description: nodejs 24 for x64 Windows
+    fetch:
+        type: static-url
+        url: https://nodejs.org/dist/v24.21.0/node-v24.21.0-win-x64.zip
+        sha256: 158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541
+        size: 37618919
+        artifact-name: nodejs.tar.zst
+        strip-components: 1
+        add-prefix: node/
+
+nodejs-24-win-arm64:
+    description: nodejs 24 for arm64 Windows
+    fetch:
+        type: static-url
+        url: https://nodejs.org/dist/v24.21.0/node-v24.21.0-win-arm64.zip
+        sha256: 8779b1bde1d39f8d420e3b57aa657b39891af434d3de44a919044cec06785921
+        size: 33679608
         artifact-name: nodejs.tar.zst
         strip-components: 1
         add-prefix: node/
@@ -810,11 +792,11 @@ xmlstarlet-1.6.1:
         artifact-name: xmlstarlet.deb
 
 uv:
-    description: uv 0.11.28 source code
+    description: uv 0.13.4 source code
     fetch:
         type: git
         repo: https://github.com/astral-sh/uv
-        revision: ebf0f43d7c4267876fc256f5fce75982c33f4399
+        revision: 7456b60bc6bc348e13e06e3691bf08e78d3aef54
 
 dxc-src:
     description: Source code for mozilla's DXC fork
@@ -833,12 +815,12 @@ jj:
         revision: 2508982cde5c7e4db0933e0b6469f9e778e71e28
 
 searchfox-cli:
-    description: searchfox-cli 0.19.0 source code
+    description: searchfox-cli 0.20.5 source code
     fetch:
         type: static-url
-        url: https://crates.io/api/v1/crates/searchfox-cli/0.19.0/download
-        sha256: 25612ec327e523e8e253f009a55157eae079431bdc8a93d1015c59dada4f6b3f
-        size: 26768
+        url: https://crates.io/api/v1/crates/searchfox-cli/0.20.5/download
+        sha256: e77e5334075599c4263b973effbb42d63769cb4cdd0dc6c1a8b5a39662e3ef65
+        size: 26871
         artifact-name: searchfox-cli.tar.zst
         strip-components: 1
         add-prefix: searchfox-cli/
@@ -855,34 +837,34 @@ socorro-cli:
         add-prefix: socorro-cli/
 
 stmo-cli:
-    description: stmo-cli 0.9.1 source code
+    description: stmo-cli 0.12.0 source code
     fetch:
         type: static-url
-        url: https://crates.io/api/v1/crates/stmo-cli/0.9.1/download
-        sha256: c76a2f976d24294c145a8d7a22ee9e7e048b054d29d397c43d5007144badd7e8
-        size: 88219
+        url: https://crates.io/api/v1/crates/stmo-cli/0.12.0/download
+        sha256: fa6b363ab846d1f637eb158fe90386378d1e5aa7c509e034c4e108963155bb86
+        size: 110603
         artifact-name: stmo-cli.tar.zst
         strip-components: 1
         add-prefix: stmo-cli/
 
 treeherder-cli:
-    description: treeherder-cli 0.2.16 source code
+    description: treeherder-cli 0.3.1 source code
     fetch:
         type: static-url
-        url: https://crates.io/api/v1/crates/treeherder-cli/0.2.16/download
-        sha256: 918230aacff5e5b71a42290a2d2d8ad82480b7c3dca565cfe4abd63abafde6ff
-        size: 126790
+        url: https://crates.io/api/v1/crates/treeherder-cli/0.3.1/download
+        sha256: a44fbca9fa66907d2aa9f8491a923a7402e5619e55a508b3269ea74b77f96cd2
+        size: 141088
         artifact-name: treeherder-cli.tar.zst
         strip-components: 1
         add-prefix: treeherder-cli/
 
 webspec-index:
-    description: webspec-index 0.12.0 source code
+    description: webspec-index 0.14.0 source code
     fetch:
         type: static-url
-        url: https://crates.io/api/v1/crates/webspec-index/0.12.0/download
-        sha256: 1a82dc18333061cf11092ebf7f8f509ca36ae682b525ed3e8701c9b9c8f8ad2f
-        size: 184601
+        url: https://crates.io/api/v1/crates/webspec-index/0.14.0/download
+        sha256: fb284978424cd61eca5b3343056353d362354d0088c08dcaec2878028ab00555
+        size: 1249963
         artifact-name: webspec-index.tar.zst
         strip-components: 1
         add-prefix: webspec-index/
@@ -892,7 +874,7 @@ firefox-profiler:
     fetch:
         type: git
         repo: https://github.com/firefox-devtools/profiler
-        revision: 3f9a08b126dff1494286a500ec47cbc5496232c3
+        revision: d019001a67a2d34ca2276ece14e9a60a29e671ef
 
 # See https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads
 # We can't catch regressions from these updates in CI. Testing should focus on

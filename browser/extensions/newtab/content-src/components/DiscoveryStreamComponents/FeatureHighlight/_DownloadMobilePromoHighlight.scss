@@ -51,7 +51,7 @@
 
     // Bug 1967304 - Alignment for caret arrow
     &.inset-inline-end {
-      inset-inline-start: calc(var(--arrow-size) * -2); // stylelint-disable-line declaration-property-value-disallowed-list
+      inset-inline-start: calc(var(--arrow-size) * -2);
 
       &::after {
         inset-inline-start: calc(var(--space-xxlarge) - 14px); // stylelint-disable-line declaration-property-value-disallowed-list

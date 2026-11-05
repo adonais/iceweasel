@@ -44,7 +44,6 @@ support-files = [
 
 ["browser_aboutDialog_distribution.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix && verify-standalone",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix && verify-standalone",
 ]
 

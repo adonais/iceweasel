@@ -80,6 +80,10 @@ class Http3SessionStub final : public Http3SessionBase {
     return false;
   }
 
+  void SetDatagramMaxBufferedDatagrams(
+      uint64_t aSessionId, uint32_t aMaxBufferedDatagrams) override {}
+
+  void SetDatagramMaxAge(uint64_t aSessionId, double aMaxAge) override {}
   bool GetWebTransportSessionStats(
       uint64_t aSessionId,
       mozilla::dom::WebTransportStatsData& aStats) override {
@@ -88,13 +92,14 @@ class Http3SessionStub final : public Http3SessionBase {
 
   void SendDatagram(Http3WebTransportSession* aSession,
                     nsTArray<uint8_t>& aData, uint64_t aTrackingId,
-                    uint64_t aSendGroupId, int64_t aSendOrder) override {}
+                    uint64_t aSendGroupId, int64_t aSendOrder,
+                    TimeStamp aTimestamp) override {}
 
   uint64_t MaxDatagramSize(uint64_t aSessionId) override { return 0; }
 
   nsresult ExportWebTransportKeyingMaterial(
       uint64_t aSessionId, const nsTArray<uint8_t>& aLabel,
-      const nsTArray<uint8_t>& aContext,
+      const nsTArray<uint8_t>& aContext, uint32_t aOutputLength,
       nsTArray<uint8_t>& aKeyingMaterial) override {
     return NS_OK;
   }
@@ -119,7 +124,7 @@ class Http3SessionStub final : public Http3SessionBase {
                                uint64_t aErrorCode) override {}
 
   void StreamStopSending(Http3WebTransportStream* aStream,
-                         uint8_t aErrorCode) override {}
+                         uint64_t aErrorCode) override {}
 
   void SetSendOrder(Http3StreamBase* aStream, int64_t aSendOrder) override {}
 

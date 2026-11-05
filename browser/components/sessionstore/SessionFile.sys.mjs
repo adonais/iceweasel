@@ -23,9 +23,13 @@ const lazy = XPCOMUtils.declareLazy({
   RunState: "moz-src:///browser/components/sessionstore/RunState.sys.mjs",
   SessionStore:
     "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
+  SessionWriteError:
+    "moz-src:///browser/components/sessionstore/SessionWriter.sys.mjs",
   SessionWriter:
     "moz-src:///browser/components/sessionstore/SessionWriter.sys.mjs",
 });
+
+const DEK_NAME_SESSIONSTORE = "sessionstore";
 
 const PREF_UPGRADE_BACKUP = "browser.sessionstore.upgradeBackup.latestBuildID";
 const PREF_MAX_UPGRADE_BACKUPS =
@@ -34,51 +38,23 @@ const PREF_MAX_UPGRADE_BACKUPS =
 const PREF_MAX_SERIALIZE_BACK = "browser.sessionstore.max_serialize_back";
 const PREF_MAX_SERIALIZE_FWD = "browser.sessionstore.max_serialize_forward";
 
-export var SessionFile = {
-  /**
-   * Read the contents of the session file, asynchronously.
-   *
-   * Resolves to the parsed session, along with `fileStates`: what we observed
-   * of each candidate file while looking for one to load, keyed by the names
-   * used in `Paths.loadOrder`. Values are "present" (the read did not report
-   * the file missing), "absent", "not_examined" (an earlier file loaded first,
-   * so we never looked) or "not_configured" (no upgrade backup was ever
-   * taken). It describes the search, not the contents of the profile
-   * directory, and is only complete when nothing could be loaded.
-   */
-  read() {
-    return SessionFileInternal.read();
-  },
-  /**
-   * Write the contents of the session file, asynchronously.
-   *
-   * @param aData - May get changed on shutdown.
-   */
-  write(aData) {
-    return SessionFileInternal.write(aData);
-  },
-  /**
-   * Wipe the contents of the session file, asynchronously.
-   */
-  wipe() {
-    return SessionFileInternal.wipe();
-  },
-
-  /**
-   * Return the paths to the files used to store, backup, etc.
-   * the state of the file.
-   */
-  get Paths() {
-    return SessionFileInternal.Paths;
-  },
-};
-
-Object.freeze(SessionFile);
-
 const profileDir = PathUtils.profileDir;
 
-var SessionFileInternal = {
-  Paths: Object.freeze({
+// The ID of the latest version of Gecko for which we have an upgrade backup
+// or |undefined| if no upgrade backup was ever written.
+function getLatestUpgradeBackupID() {
+  try {
+    return Services.prefs.getCharPref(PREF_UPGRADE_BACKUP);
+  } catch (ex) {
+    return undefined;
+  }
+}
+
+export class SessionFile {
+  /**
+   * The paths to the files used to store, backup, etc. the state of the file.
+   */
+  static Paths = Object.freeze({
     // The path to the latest version of sessionstore written during a clean
     // shutdown. After startup, it is renamed `cleanBackup`.
     clean: PathUtils.join(profileDir, "sessionstore.jsonlz4"),
@@ -135,7 +111,7 @@ var SessionFileInternal = {
     // upgrade backup has ever been performed. This file does not
     // contain any information more sensitive than |clean|.
     get upgradeBackup() {
-      let latestBackupID = SessionFileInternal.latestUpgradeBackupID;
+      let latestBackupID = getLatestUpgradeBackupID();
       if (!latestBackupID) {
         return "";
       }
@@ -163,54 +139,59 @@ var SessionFileInternal = {
       // that can be loaded (`cleanBackup`) or, if available, to the
       // backup performed during the latest upgrade.
       let order = ["clean", "recovery", "recoveryBackup", "cleanBackup"];
-      if (SessionFileInternal.latestUpgradeBackupID) {
+      if (getLatestUpgradeBackupID()) {
         // We have an upgradeBackup
         order.push("upgradeBackup");
       }
       return order;
     },
-  }),
+  });
 
   // Number of attempted calls to `write`.
   // Note that we may have _attempts > _successes + _failures,
   // if attempts never complete.
   // Used for error reporting.
-  _attempts: 0,
+  static #attempts = 0;
 
   // Number of successful calls to `write`.
   // Used for error reporting.
-  _successes: 0,
+  static #successes = 0;
 
   // Number of failed calls to `write`.
   // Used for error reporting.
-  _failures: 0,
+  static #failures = 0;
+
+  // Number of failed calls to `write` since the last successful one.
+  static #consecutiveFailures = 0;
+
+  // "success", or "<step>:<cause>" for the last failed write. Used so that a
+  // write failing the same way repeatedly is only reported once.
+  static #lastWriteOutcome = null;
 
   // `true` once we have initialized SessionWriter.
-  _initialized: false,
+  static #initialized = false;
 
   // A string that will be set to the session file name part that was read from
   // disk. It will be available _after_ a session file read() is done.
-  _readOrigin: null,
+  static #readOrigin = null;
 
   // `true` if the old, uncompressed, file format was used to read from disk, as
   // a fallback mechanism.
-  _usingOldExtension: false,
+  static #usingOldExtension = false;
 
-  // The ID of the latest version of Gecko for which we have an upgrade backup
-  // or |undefined| if no upgrade backup was ever written.
-  get latestUpgradeBackupID() {
-    try {
-      return Services.prefs.getCharPref(PREF_UPGRADE_BACKUP);
-    } catch (ex) {
-      return undefined;
-    }
-  },
-
-  async _readInternal(useOldExtension) {
+  /**
+   * Try each session backup file in priority order, returning the first
+   * one that parses successfully.
+   *
+   * @param {boolean} useOldExtension - If true, look for uncompressed
+   *   legacy files (.js/.bak) instead of the current .jsonlz4/.baklz4.
+   * @returns {Promise<{ result: object|undefined, fileStates: Record<string, string> }>}
+   */
+  static async #readInternal(useOldExtension) {
     let result;
-    this._usingOldExtension = useOldExtension;
+    SessionFile.#usingOldExtension = useOldExtension;
 
-    let loadOrder = this.Paths.loadOrder;
+    let loadOrder = SessionFile.Paths.loadOrder;
     /** @type {Record<string, string>} */
     let fileStates = {};
     for (let key of loadOrder) {
@@ -230,13 +211,24 @@ var SessionFileInternal = {
         let path;
         let startMs = Date.now();
 
+        // Always attempt decryption: encrypted files written while the
+        // encryption pref was on must be readable even when it is off, and
+        // unencrypted/legacy files pass through untouched.
         let options = {};
+        if (
+          Services.prefs.getBoolPref(
+            "browser.sessionstore.encryption.available",
+            false
+          )
+        ) {
+          options.decrypt = DEK_NAME_SESSIONSTORE;
+        }
         if (useOldExtension) {
-          path = this.Paths[key]
+          path = SessionFile.Paths[key]
             .replace("jsonlz4", "js")
             .replace("baklz4", "bak");
         } else {
-          path = this.Paths[key];
+          path = SessionFile.Paths[key];
           options.decompress = true;
         }
         let source = await IOUtils.readUTF8(path, options);
@@ -301,7 +293,22 @@ var SessionFileInternal = {
         lazy.sessionStoreLogger.debug(`Successful file read of ${key} file`);
         break;
       } catch (ex) {
-        if (DOMException.isInstance(ex) && ex.name == "NotFoundError") {
+        let isDecryptionError =
+          DOMException.isInstance(ex) &&
+          ex.message?.includes("could not decrypt");
+
+        if (isDecryptionError) {
+          lazy.sessionStoreLogger.error(
+            `Decryption error when reading session file: ${key}`,
+            ex
+          );
+          corrupted = true;
+          Glean.sessionRestore.backupCanBeLoadedSessionFile.record({
+            can_load: "false",
+            path_key: key,
+            loadfail_reason: `Decryption error`,
+          });
+        } else if (DOMException.isInstance(ex) && ex.name == "NotFoundError") {
           exists = false;
           Glean.sessionRestore.backupCanBeLoadedSessionFile.record({
             can_load: "false",
@@ -377,14 +384,14 @@ var SessionFileInternal = {
       }
     }
     return { result, fileStates };
-  },
+  }
 
   /**
    * Combine the file states observed by the two format passes, keeping the
    * strongest observation for each key: a file seen in either format counts as
    * present, and a file looked for in either format counts as examined.
    */
-  _mergeFileStates(first, second) {
+  static #mergeFileStates(first, second) {
     /** @type {Record<string, string>} */
     let merged = {};
     for (let key of Object.keys(first)) {
@@ -397,18 +404,28 @@ var SessionFileInternal = {
       }
     }
     return merged;
-  },
+  }
 
-  // Find the correct session file and read it.
-  async read() {
+  /**
+   * Read the contents of the session file, asynchronously.
+   *
+   * Resolves to the parsed session, along with `fileStates`: what we observed
+   * of each candidate file while looking for one to load, keyed by the names
+   * used in `Paths.loadOrder`. Values are "present" (the read did not report
+   * the file missing), "absent", "not_examined" (an earlier file loaded first,
+   * so we never looked) or "not_configured" (no upgrade backup was ever
+   * taken). It describes the search, not the contents of the profile
+   * directory, and is only complete when nothing could be loaded.
+   */
+  static async read() {
     // Load session files with lz4 compression.
-    let { result, fileStates } = await this._readInternal(false);
+    let { result, fileStates } = await SessionFile.#readInternal(false);
     if (!result) {
       // No result? Probably because of migration, let's
       // load uncompressed session files.
-      let r = await this._readInternal(true);
+      let r = await SessionFile.#readInternal(true);
       result = r.result;
-      fileStates = this._mergeFileStates(fileStates, r.fileStates);
+      fileStates = SessionFile.#mergeFileStates(fileStates, r.fileStates);
     }
 
     let noFilesFound = !Object.values(fileStates).some(
@@ -431,25 +448,25 @@ var SessionFileInternal = {
         useOldExtension: false,
       };
     }
-    this._readOrigin = result.origin;
+    SessionFile.#readOrigin = result.origin;
 
     return { ...result, noFilesFound, fileStates };
-  },
+  }
 
   // Initialize SessionWriter and return it as a resolved promise.
-  getWriter() {
-    if (!this._initialized) {
-      if (!this._readOrigin) {
+  static #getWriter() {
+    if (!SessionFile.#initialized) {
+      if (!SessionFile.#readOrigin) {
         return Promise.reject(
-          "SessionFileInternal.getWriter() called too early! Please read the session file from disk first."
+          "SessionFile.#getWriter() called too early! Please read the session file from disk first."
         );
       }
 
-      this._initialized = true;
+      SessionFile.#initialized = true;
       lazy.SessionWriter.init(
-        this._readOrigin,
-        this._usingOldExtension,
-        this.Paths,
+        SessionFile.#readOrigin,
+        SessionFile.#usingOldExtension,
+        SessionFile.Paths,
         {
           maxUpgradeBackups: Services.prefs.getIntPref(
             PREF_MAX_UPGRADE_BACKUPS,
@@ -468,9 +485,14 @@ var SessionFileInternal = {
     }
 
     return Promise.resolve(lazy.SessionWriter);
-  },
+  }
 
-  write(aData) {
+  /**
+   * Write the contents of the session file, asynchronously.
+   *
+   * @param aData - May get changed on shutdown.
+   */
+  static write(aData) {
     if (lazy.RunState.isClosed) {
       return Promise.reject(new Error("SessionFile is closed"));
     }
@@ -486,9 +508,12 @@ var SessionFileInternal = {
     let performShutdownCleanup =
       isFinalWrite && !lazy.SessionStore.willAutoRestore;
 
-    this._attempts++;
+    SessionFile.#attempts++;
+    Glean.sessionRestore.writeAttempts.add(1);
     let options = { isFinalWrite, performShutdownCleanup };
-    let write = this.getWriter().then(writer => writer.write(aData, options));
+    let write = SessionFile.#getWriter().then(writer =>
+      writer.write(aData, options)
+    );
 
     // Wait until the write is done.
     let promise = write.then(
@@ -505,7 +530,8 @@ var SessionFileInternal = {
           );
         }
 
-        this._successes++;
+        SessionFile.#successes++;
+        SessionFile.#recordWriteSuccess();
         if (msg.result.upgradeBackup) {
           // We have just completed a backup-on-upgrade, store the information
           // in preferences.
@@ -517,12 +543,8 @@ var SessionFileInternal = {
       },
       err => {
         // Catch and report any errors.
-        lazy.sessionStoreLogger.error(
-          "Could not write session state file ",
-          err,
-          err.stack
-        );
-        this._failures++;
+        SessionFile.#failures++;
+        SessionFile.#recordWriteFailure(err, isFinalWrite);
         // By not doing anything special here we ensure that |promise| cannot
         // be rejected anymore. The shutdown/cleanup code at the end of the
         // function will thus always be executed.
@@ -537,9 +559,9 @@ var SessionFileInternal = {
       {
         fetchState: () => ({
           options,
-          attempts: this._attempts,
-          successes: this._successes,
-          failures: this._failures,
+          attempts: SessionFile.#attempts,
+          successes: SessionFile.#successes,
+          failures: SessionFile.#failures,
         }),
       }
     );
@@ -558,13 +580,75 @@ var SessionFileInternal = {
         );
       }
     });
-  },
+  }
 
-  async wipe() {
-    const writer = await this.getWriter();
+  static #recordWriteSuccess() {
+    Glean.sessionRestore.writeOutcome.success.add(1);
+    if (SessionFile.#consecutiveFailures) {
+      lazy.sessionStoreLogger.warn(
+        `Wrote session state file after ${SessionFile.#consecutiveFailures} consecutive failed writes`
+      );
+    }
+    SessionFile.#consecutiveFailures = 0;
+    SessionFile.#lastWriteOutcome = "success";
+  }
+
+  /**
+   * Counts a failed write and, unless it failed the same way as the previous
+   * write, logs and records the details. A failed final write is always
+   * recorded.
+   *
+   * @param {*} err The rejection from SessionWriter.write, normally a
+   *   SessionWriteError.
+   * @param {boolean} isFinalWrite
+   */
+  static #recordWriteFailure(err, isFinalWrite) {
+    SessionFile.#consecutiveFailures++;
+
+    let isWriteError = err instanceof lazy.SessionWriteError;
+    /** @type {SessionWriteStep|"unknown"} */
+    let step = isWriteError ? err.step : "unknown";
+    let error = isWriteError ? err.cause : err;
+    let sessionWritten = isWriteError && err.sessionWritten;
+    // IOUtils appends the nsresult name to its error messages, which is more
+    // specific than the DOMException name.
+    let cause =
+      /\((NS_ERROR_[A-Z0-9_]+)\)$/.exec(error?.message)?.[1] ??
+      (error?.name || typeof error);
+
+    Glean.sessionRestore.writeOutcome[
+      sessionWritten ? "session_written_backup_failed" : "failed"
+    ].add(1);
+
+    let outcome = `${step}:${cause}`;
+    if (outcome == SessionFile.#lastWriteOutcome && !isFinalWrite) {
+      return;
+    }
+    SessionFile.#lastWriteOutcome = outcome;
+
+    lazy.sessionStoreLogger.error(
+      `Could not write session state file at step ${step} (${cause}), ` +
+        `isFinalWrite: ${isFinalWrite}, consecutive failures: ${SessionFile.#consecutiveFailures}, ` +
+        `attempts: ${SessionFile.#attempts}, successes: ${SessionFile.#successes}, failures: ${SessionFile.#failures}`,
+      error
+    );
+
+    Glean.sessionRestore.writeFailure.record({
+      step,
+      cause,
+      session_written: sessionWritten,
+      is_final_write: isFinalWrite,
+    });
+  }
+
+  /**
+   * Wipe the contents of the session file, asynchronously.
+   */
+  static async wipe() {
+    const writer = await SessionFile.#getWriter();
     await writer.wipe();
     // After a wipe, we need to make sure to re-initialize upon the next read(),
     // because the state variables as sent to the writer have changed.
-    this._initialized = false;
-  },
-};
+    SessionFile.#initialized = false;
+  }
+}

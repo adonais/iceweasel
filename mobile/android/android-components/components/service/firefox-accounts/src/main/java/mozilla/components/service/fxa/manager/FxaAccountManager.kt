@@ -351,8 +351,9 @@ open class FxaAccountManager(
      * @param pairingUrl Optional pairing URL in case a pairing flow is being initiated.
      * @param entrypoint an enum representing the feature entrypoint requesting the URL. the entrypoint is used in
      *   telemetry.
-     * @param authScopes The oAuth scopes being requested, if none are provided we default to the scopes provided when
-     *   constructing [FxaAccountManager]
+     * @param authScopes The OAuth scopes being requested. When sync decoupling is enabled
+     *   ([SyncConfig.syncDecouplingEnabled], this parameter gets ignored. Otherwise, if none are provided we default to
+     *   the scopes provided when constructing [FxaAccountManager]
      * @param service The name fo the service being enabled. This may change the UX shown by the FxA content servers.
      * @return An authentication url which is to be presented to the user.
      */
@@ -360,9 +361,12 @@ open class FxaAccountManager(
         pairingUrl: String? = null,
         entrypoint: FxAEntryPoint,
         authScopes: Set<String> = scopes,
-        service: String = "",
+        service: String,
     ): String? =
         withContext(coroutineContext) {
+            // When sync decoupling is enabled, we need to send empty scopes.
+            // see https://bugzilla.mozilla.org/show_bug.cgi?id=2066516#c4
+            val authScopes = authScopes.orEmptyIf { syncConfig?.syncDecouplingEnabled == true }
             val event =
                 if (pairingUrl != null) {
                     Event.Account.BeginPairingFlow(pairingUrl, service, entrypoint, authScopes)
@@ -458,6 +462,10 @@ open class FxaAccountManager(
         }
     }
 
+    /** @return an empty Set if [condition] evaluates to true */
+    private inline fun Set<String>.orEmptyIf(condition: () -> Boolean): Set<String> =
+        this.takeIf { !condition() }.orEmpty()
+
     /** Pumps the state machine until all events are processed and their side-effects resolve. */
     private suspend fun processQueue(event: Event) {
         logger.debug("processQueue: event: '$event'")
@@ -527,7 +535,6 @@ open class FxaAccountManager(
                 FxaEvent.WebChannelPasswordChange(jsonPayload = event.jsonPayload)
             // This is the one ProgressEvent that's considered a "public event" in app-services
             is Event.Progress.AuthData -> FxaEvent.CompleteOAuthFlow(event.authData.code, event.authData.state)
-            else -> null
         }
 
     /**

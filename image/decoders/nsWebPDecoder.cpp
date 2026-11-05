@@ -5,10 +5,13 @@
 
 #include "nsWebPDecoder.h"
 
+#include <cmath>
+
 #include "ImageLogging.h"  // Must appear first
 #include "RasterImage.h"
 #include "SurfacePipeFactory.h"
 #include "gfxPlatform.h"
+#include "mozilla/StaticPrefs_image.h"
 #include "mozilla/TelemetryHistogramEnums.h"
 
 using namespace mozilla::gfx;
@@ -41,7 +44,7 @@ nsWebPDecoder::~nsWebPDecoder() {
           ("[this=%p] nsWebPDecoder::~nsWebPDecoder", this));
   if (mDecoder) {
     WebPIDelete(mDecoder);
-    WebPFreeDecBuffer(&mBuffer);
+    WebPFreeDecBuffer(&mConfig.output);
   }
 }
 
@@ -218,30 +221,63 @@ nsresult nsWebPDecoder::CreateFrame(const OrientedIntRect& aFrameRect) {
     PostHasTransparency();
   }
 
-  if (!WebPInitDecBuffer(&mBuffer)) {
-    MOZ_LOG(
-        sWebPLog, LogLevel::Error,
-        ("[this=%p] nsWebPDecoder::CreateFrame -- WebPInitDecBuffer failed\n",
-         this));
+  if (!WebPInitDecoderConfig(&mConfig)) {
+    MOZ_LOG(sWebPLog, LogLevel::Error,
+            ("[this=%p] nsWebPDecoder::CreateFrame -- WebPInitDecoderConfig "
+             "failed\n",
+             this));
     return NS_ERROR_FAILURE;
   }
 
   switch (SurfaceFormat::OS_RGBA) {
     case SurfaceFormat::B8G8R8A8:
-      mBuffer.colorspace = MODE_BGRA;
+      mConfig.output.colorspace = MODE_BGRA;
       break;
     case SurfaceFormat::A8R8G8B8:
-      mBuffer.colorspace = MODE_ARGB;
+      mConfig.output.colorspace = MODE_ARGB;
       break;
     case SurfaceFormat::R8G8B8A8:
-      mBuffer.colorspace = MODE_RGBA;
+      mConfig.output.colorspace = MODE_RGBA;
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("Unknown OS_RGBA");
       return NS_ERROR_FAILURE;
   }
 
-  mDecoder = WebPINewDecoder(&mBuffer);
+  // Animated frames are positioned in full-size coordinates. The lossy
+  // rescaler scales colour and alpha separately before we premultiply, which
+  // bleeds the colour of transparent pixels into their neighbours.
+  OrientedIntSize inputSize = Size();
+  OrientedIntRect frameRect = aFrameRect;
+  if (ExplicitOutputSize() && !HasAnimation() &&
+      mFormat != SurfaceFormat::OS_RGBA &&
+      StaticPrefs::image_webp_scaled_decoding_enabled()) {
+    UnorientedIntSize fullSize = GetOrientation().ToUnoriented(Size());
+    UnorientedIntSize targetSize = GetOrientation().ToUnoriented(OutputSize());
+    float minFactor =
+        std::max(1.0f, StaticPrefs::image_webp_scaled_decoding_min_factor());
+
+    // Float so that an absurd pref value cannot overflow int32_t.
+    float scaledWidth = std::ceil(float(targetSize.width) * minFactor);
+    float scaledHeight = std::ceil(float(targetSize.height) * minFactor);
+
+    // The rescaler visits every source pixel whatever the output size, so it
+    // only pays off below half size.
+    if (scaledWidth >= 1.0f && scaledHeight >= 1.0f &&
+        scaledWidth * 2.0f <= float(fullSize.width) &&
+        scaledHeight * 2.0f <= float(fullSize.height)) {
+      const UnorientedIntSize scaledSize{int32_t(scaledWidth),
+                                         int32_t(scaledHeight)};
+      mConfig.options.use_scaling = 1;
+      mConfig.options.scaled_width = scaledSize.width;
+      mConfig.options.scaled_height = scaledSize.height;
+
+      inputSize = GetOrientation().ToOriented(scaledSize);
+      frameRect = OrientedIntRect(OrientedIntPoint(0, 0), inputSize);
+    }
+  }
+
+  mDecoder = WebPIDecode(nullptr, 0, &mConfig);
   if (!mDecoder) {
     MOZ_LOG(sWebPLog, LogLevel::Error,
             ("[this=%p] nsWebPDecoder::CreateFrame -- create decoder error\n",
@@ -262,12 +298,12 @@ nsresult nsWebPDecoder::CreateFrame(const OrientedIntRect& aFrameRect) {
 
   Maybe<AnimationParams> animParams;
   if (!IsFirstFrameDecode()) {
-    animParams.emplace(aFrameRect.ToUnknownRect(), mTimeout, mCurrentFrame,
+    animParams.emplace(frameRect.ToUnknownRect(), mTimeout, mCurrentFrame,
                        mBlend, mDisposal);
   }
 
   Maybe<SurfacePipe> pipe = SurfacePipeFactory::CreateSurfacePipe(
-      this, Size(), OutputSize(), aFrameRect, inFormat, mFormat, animParams,
+      this, inputSize, OutputSize(), frameRect, inFormat, mFormat, animParams,
       mTransform, pipeFlags);
   if (!pipe) {
     MOZ_LOG(sWebPLog, LogLevel::Error,
@@ -275,7 +311,7 @@ nsresult nsWebPDecoder::CreateFrame(const OrientedIntRect& aFrameRect) {
     return NS_ERROR_FAILURE;
   }
 
-  mFrameRect = aFrameRect;
+  mFrameRect = frameRect;
   mPipe = std::move(*pipe);
   return NS_OK;
 }
@@ -295,7 +331,7 @@ void nsWebPDecoder::EndFrame() {
 
   PostFrameStop(opacity);
   WebPIDelete(mDecoder);
-  WebPFreeDecBuffer(&mBuffer);
+  WebPFreeDecBuffer(&mConfig.output);
   mDecoder = nullptr;
   mLastRow = 0;
   ++mCurrentFrame;

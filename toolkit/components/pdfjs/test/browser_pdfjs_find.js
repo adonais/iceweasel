@@ -208,6 +208,60 @@ add_task(async function test_findbar_in_pdf_with_wrapped_sound() {
   );
 });
 
+add_task(async function test_find_again_shows_findbar_in_pdf() {
+  registerCleanupFunction(() => gBrowser.clearLastFindValue());
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async firstBrowser => {
+      await waitForPdfJS(firstBrowser, TEST_PDF_URL);
+      const firstFindbar = await gBrowser.getFindBar(
+        gBrowser.getTabForBrowser(firstBrowser)
+      );
+      await doFind(firstFindbar, "Mozilla", waitForPdfJSResult);
+
+      await BrowserTestUtils.withNewTab(
+        { gBrowser, url: "about:blank" },
+        async browser => {
+          await waitForPdfJS(browser, TEST_PDF_URL);
+          const tab = gBrowser.getTabForBrowser(browser);
+          ok(!gBrowser.isFindBarInitialized(tab), "No findbar yet");
+
+          const resultPromise = BrowserTestUtils.waitForEvent(
+            tab,
+            "TabFindInitialized"
+          ).then(() => waitForPdfJSResult(gBrowser.getCachedFindBar(tab)));
+          browser.focus();
+          EventUtils.synthesizeKey("g", { accelKey: true });
+          const { result } = await resultPromise;
+          is(result, Ci.nsITypeAheadFind.FIND_FOUND, "Find Again found it");
+
+          const findbar = gBrowser.getCachedFindBar(tab);
+          ok(!findbar.hidden, "Find Again shows the findbar");
+          is(findbar._findField.value, "Mozilla", "The findbar has the query");
+          is(
+            document.activeElement,
+            findbar._findField,
+            "The find field is focused"
+          );
+
+          EventUtils.synthesizeKey("KEY_Escape");
+          ok(findbar.hidden, "Escape closes the findbar");
+          const findAgainPromise = BrowserTestUtils.waitForEvent(
+            findbar,
+            "findagain"
+          );
+          EventUtils.synthesizeKey("g", { accelKey: true });
+          await findAgainPromise;
+          ok(!findbar.hidden, "Find Again reopens the closed findbar");
+
+          await waitForPdfJSClose(browser);
+        }
+      );
+      await waitForPdfJSClose(firstBrowser);
+    }
+  );
+});
+
 add_task(async function test_findbar_in_pdf_after_adopt() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },

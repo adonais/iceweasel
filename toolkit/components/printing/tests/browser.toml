@@ -58,11 +58,12 @@ support-files = [
 
 ["browser_print_frame.js"]
 
+["browser_print_image_output.js"]
+support-files = ["file_print_images.html"]
+
 ["browser_print_in_container.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && ccov",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov",
-  "os == 'win' && os_version == '11.26100' && debug && verify",
   "os == 'win' && os_version == '11.26200' && debug && verify",
 ]
 
@@ -78,6 +79,9 @@ support-files = [
   "page_size_zero.html",
   "page_size_zero_width.html",
 ]
+
+["browser_print_page_size_output.js"]
+support-files = ["page_size_mixed.html"]
 
 ["browser_print_paper_sizes.js"]
 

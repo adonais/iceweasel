@@ -72,6 +72,18 @@ MOZ_COLD MOZ_NEVER_INLINE void EnsureBufferSpaceShouldNeverHappen(
 
 nsHtml5String TryAtomizeForSingleDigit();
 
+inline nsHtml5String AtomizeAttributeValueOrNewString() {
+  nsHtml5AtomTable* attributeInterner =
+      attributeName->isUseAtom() ? interner : nullptr;
+  if (strBufLen && attributeInterner) {
+    RefPtr<nsAtom> atom = attributeInterner->GetAtom(
+        nsDependentSubstring(strBuf, strBuf + strBufLen));
+    return nsHtml5String::FromAtom(atom.forget());
+  }
+  return nsHtml5Portability::newStringFromBuffer(
+      strBuf, 0, strBufLen, tokenHandler, attributeInterner);
+}
+
 bool TemplatePushedOrHeadPopped();
 
 void RememberGt(int32_t aPos);

@@ -51,6 +51,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/ReferrerInfo.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/URLSearchParams.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WorkerError.h"
@@ -107,6 +108,7 @@
 #include "nsXPCOM.h"
 #include "nsZipArchive.h"
 #include "private/pprio.h"
+#include "xpcpublic.h"
 
 // Undefine the macro of CreateFile to avoid FileCreatorHelper#CreateFile being
 // replaced by FileCreatorHelper#CreateFileW.
@@ -168,6 +170,26 @@ static void AddLoadFlags(nsIRequest* request, nsLoadFlags newFlags) {
   request->GetLoadFlags(&flags);
   flags |= newFlags;
   request->SetLoadFlags(flags);
+}
+
+// Returns the window whose event loop a sync XHR from aGlobal must block. For
+// content script sandboxes, this is the window set as the sandboxPrototype.
+static nsPIDOMWindowInner* GetWindowForSyncLoop(nsIGlobalObject* aGlobal) {
+  if (!aGlobal) {
+    return nullptr;
+  }
+  if (nsPIDOMWindowInner* window = aGlobal->GetAsInnerWindow()) {
+    return window;
+  }
+  JS::Rooted<JSObject*> scope(RootingCx(), aGlobal->GetGlobalJSObject());
+  if (!scope) {
+    return nullptr;
+  }
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(scope)) {
+    return nullptr;
+  }
+  return xpc::SandboxWindowOrNull(scope, jsapi.cx());
 }
 
 // We are in a sync event loop.
@@ -3287,9 +3309,11 @@ void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
 
     mFlagSyncLooping = true;
 
-    if (GetOwnerWindow()) {
+    nsCOMPtr<nsPIDOMWindowInner> window =
+        GetWindowForSyncLoop(GetRelevantGlobal());
+    if (window && window->GetOuterWindow()) {
       if (nsCOMPtr<nsPIDOMWindowOuter> topWindow =
-              GetOwnerWindow()->GetOuterWindow()->GetInProcessTop()) {
+              window->GetOuterWindow()->GetInProcessTop()) {
         if (nsCOMPtr<nsPIDOMWindowInner> topInner =
                 topWindow->GetCurrentInnerWindow()) {
           suspendedDoc = topWindow->GetExtantDoc();

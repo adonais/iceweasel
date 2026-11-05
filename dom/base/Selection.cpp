@@ -9,6 +9,7 @@
 #include "Selection.h"
 
 #include <algorithm>
+#include <memory>
 
 #include "ErrorList.h"
 #include "LayoutConstants.h"
@@ -4784,7 +4785,7 @@ void Selection::SetColors(const nsAString& aForegroundColor,
     return;
   }
 
-  mCustomColors.reset(new SelectionCustomColors);
+  mCustomColors = std::make_unique<SelectionCustomColors>();
 
   constexpr auto currentColorStr = u"currentColor"_ns;
   constexpr auto transparentStr = u"transparent"_ns;

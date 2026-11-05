@@ -25,3 +25,10 @@ UNIFIED_SOURCES += [
 
 if CONFIG["FUZZING_JS_FUZZILLI"]:
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "DeadObjectProxy.h",
+    "DOMProxy.h",
+    "Proxy.h",
+    "ScriptedProxyHandler.h",
+]

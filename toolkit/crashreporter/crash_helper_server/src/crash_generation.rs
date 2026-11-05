@@ -37,12 +37,13 @@ use num_traits::FromPrimitive;
 use std::{
     collections::HashMap,
     convert::TryInto,
-    ffi::{c_void, CString, OsStr, OsString},
+    ffi::{CString, OsStr, OsString, c_void},
     fs::File,
     io::{Seek, SeekFrom, Write},
     mem::size_of,
     path::{Path, PathBuf},
     sync::{Mutex, OnceLock},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 pub(crate) struct CrashReport {
@@ -156,9 +157,6 @@ impl CrashGenerator {
         minidump_path: &Path,
         process_type: ProcessType,
     ) -> Option<CString> {
-        let mut extra_path = PathBuf::from(minidump_path);
-        extra_path.set_extension("extra");
-
         let (error, extra_annotations) = extra_data
             .map(|d| (d.error.clone(), d.annotations.clone()))
             .unwrap_or_default();
@@ -166,12 +164,16 @@ impl CrashGenerator {
         let annotations = retrieve_annotations(process, process_type);
         let annotations = [
             STATIC_ANNOTATIONS.get().cloned().context("MissingStaticAnnotations"),
+            Ok(self.crash_time_annotations()),
             global_annotations.context("MissingMainProcessAnnotations"),
             annotations.context("MissingChildProcessAnnotations"),
             Ok(extra_annotations),
         ]
         .into_iter()
         .fold(HashMap::new(), fold_annotations);
+
+        let mut extra_path = PathBuf::from(minidump_path);
+        extra_path.set_extension("extra");
         let extra_file_written = write_extra_file(annotations, &extra_path).is_ok();
 
         if !extra_file_written {
@@ -201,6 +203,28 @@ impl CrashGenerator {
             AsRawProcessHandle::as_raw_handle(&self.main_process_handle),
             CrashAnnotation::Count as usize,
         )
+    }
+
+    fn crash_time_annotations(&self) -> Vec<CAnnotation> {
+        // Add a unique identifier for this crash event.
+        let crash_event_id = uuid::Uuid::new_v4()
+            .as_hyphenated()
+            .encode_lower(&mut uuid::Uuid::encode_buffer())
+            .to_string();
+
+        // This is unlikely to fail, but in the odd case use 0 as a crash time,
+        // it will stick out like a sore thumb among the other crash reports so
+        // we'll notice.
+        let crash_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or(Duration::from_secs(0u64))
+            .as_secs()
+            .to_string();
+
+        vec![
+            make_annotation(CrashAnnotation::CrashEventID, &crash_event_id),
+            make_annotation(CrashAnnotation::CrashTime, &crash_time),
+        ]
     }
 }
 
@@ -356,21 +380,7 @@ fn retrieve_annotations(
         return Ok(vec![]);
     }
 
-    let mut annotations = mozannotation_server::retrieve_annotations(process, CrashAnnotation::Count as usize)?;
-
-    // Add a unique identifier for this crash event.
-    let crash_event_id = uuid::Uuid::new_v4()
-        .as_hyphenated()
-        .encode_lower(&mut uuid::Uuid::encode_buffer())
-        .to_string();
-    annotations.push(CAnnotation {
-        id: CrashAnnotation::CrashEventID as u32,
-        data: AnnotationData::String(
-            CString::new(crash_event_id).context("uuid contains nul byte")?,
-        ),
-    });
-
-    Ok(annotations)
+    Ok(mozannotation_server::retrieve_annotations(process, CrashAnnotation::Count as usize)?)
 }
 
 /// Helper function to merge a vector of annotations retrieved from a process memory into

@@ -76,7 +76,7 @@ export class FfiConverterOptionalString extends FfiConverterArrayBuffer {
 /**
  * The list of possible submission methods for search engine urls.
  */
-export const JsonEngineMethod = Object.freeze({
+export const JsonEngineMethod = Object.freeze(/** @lends JsonEngineMethod */ {
     /**
      * POST
      */
@@ -1049,7 +1049,7 @@ export class FfiConverterTypeJSONEngineUrls extends FfiConverterArrayBuffer {
 /**
  * The list of acceptable classifications for a search engine.
  */
-export const SearchEngineClassification = Object.freeze({
+export const SearchEngineClassification = Object.freeze(/** @lends SearchEngineClassification */ {
     /**
      * GENERAL
      */
@@ -2174,10 +2174,789 @@ export class FfiConverterTypeRefinedSearchConfig extends FfiConverterArrayBuffer
 }
 
 /**
+ * The list of acceptable classifications for a search engine in
+ * search-config-v3.
+ */
+export const SearchEngineClassificationV3 = Object.freeze(/** @lends SearchEngineClassificationV3 */ {
+    /**
+     * AI
+     */
+    AI: 3,
+    /**
+     * GENERAL
+     */
+    GENERAL: 2,
+    /**
+     * UNKNOWN
+     */
+    UNKNOWN: 1,
+});
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeSearchEngineClassificationV3 extends FfiConverterArrayBuffer {
+    static #validValues = Object.values(SearchEngineClassificationV3)
+
+    static read(dataStream) {
+        // Use sequential indices (1-based) for the wire format to match the Rust scaffolding
+        switch (dataStream.readInt32()) {
+            case 1:
+                return SearchEngineClassificationV3.AI
+            case 2:
+                return SearchEngineClassificationV3.GENERAL
+            case 3:
+                return SearchEngineClassificationV3.UNKNOWN
+            default:
+                throw new UniFFITypeError("Unknown SearchEngineClassificationV3 variant");
+        }
+    }
+
+    static write(dataStream, value) {
+        // Use sequential indices (1-based) for the wire format to match the Rust scaffolding
+        if (value === SearchEngineClassificationV3.AI) {
+            dataStream.writeInt32(1);
+            return;
+        }
+        if (value === SearchEngineClassificationV3.GENERAL) {
+            dataStream.writeInt32(2);
+            return;
+        }
+        if (value === SearchEngineClassificationV3.UNKNOWN) {
+            dataStream.writeInt32(3);
+            return;
+        }
+        throw new UniFFITypeError("Unknown SearchEngineClassificationV3 variant");
+    }
+
+    static computeSize(value) {
+        return 4;
+    }
+
+    static checkType(value) {
+      // Check that the value is a valid enum variant
+      if (!this.#validValues.includes(value)) {
+          throw new UniFFITypeError(`${value} is not a valid value for SearchEngineClassificationV3`);
+      }
+    }
+}
+/**
+ * SearchEnginePartnerDetails
+ */
+export class SearchEnginePartnerDetails {
+    constructor(
+        {
+            code, 
+            telemetrySuffix
+        } = {
+            code: undefined, 
+            telemetrySuffix: undefined
+        }
+    ) {
+        try {
+            FfiConverterOptionalString.checkType(code)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("code");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalString.checkType(telemetrySuffix)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("telemetrySuffix");
+            }
+            throw e;
+        }
+        /**
+         * The partner code to use.
+         * @type {?string}
+         */
+        this.code = code;
+        /**
+         * The telemetry suffix to use.
+         * @type {?string}
+         */
+        this.telemetrySuffix = telemetrySuffix;
+    }
+
+    equals(other) {
+        return (
+            this.code == other.code
+            && this.telemetrySuffix == other.telemetrySuffix
+        )
+    }
+}
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeSearchEnginePartnerDetails extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        return new SearchEnginePartnerDetails({
+            code: FfiConverterOptionalString.read(dataStream),
+            telemetrySuffix: FfiConverterOptionalString.read(dataStream),
+        });
+    }
+    static write(dataStream, value) {
+        FfiConverterOptionalString.write(dataStream, value.code);
+        FfiConverterOptionalString.write(dataStream, value.telemetrySuffix);
+    }
+
+    static computeSize(value) {
+        let totalSize = 0;
+        totalSize += FfiConverterOptionalString.computeSize(value.code);
+        totalSize += FfiConverterOptionalString.computeSize(value.telemetrySuffix);
+        return totalSize
+    }
+
+    static checkType(value) {
+        super.checkType(value);
+        if (!(value instanceof SearchEnginePartnerDetails)) {
+            throw new UniFFITypeError(`Expected 'SearchEnginePartnerDetails', found '${typeof value}'`);
+        }
+        try {
+            FfiConverterOptionalString.checkType(value.code);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".code");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalString.checkType(value.telemetrySuffix);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".telemetrySuffix");
+            }
+            throw e;
+        }
+    }
+}
+// Export the FFIConverter object to make external types work.
+export class FfiConverterMapStringTypeSearchEnginePartnerDetails extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        const len = dataStream.readInt32();
+        const map = new Map();
+        for (let i = 0; i < len; i++) {
+            const key = FfiConverterString.read(dataStream);
+            const value = FfiConverterTypeSearchEnginePartnerDetails.read(dataStream);
+            map.set(key, value);
+        }
+
+        return map;
+    }
+
+     static write(dataStream, map) {
+        dataStream.writeInt32(map.size);
+        for (const [key, value] of map) {
+            FfiConverterString.write(dataStream, key);
+            FfiConverterTypeSearchEnginePartnerDetails.write(dataStream, value);
+        }
+    }
+
+    static computeSize(map) {
+        // The size of the length
+        let size = 4;
+        for (const [key, value] of map) {
+            size += FfiConverterString.computeSize(key);
+            size += FfiConverterTypeSearchEnginePartnerDetails.computeSize(value);
+        }
+        return size;
+    }
+
+    static checkType(map) {
+        for (const [key, value] of map) {
+            try {
+                FfiConverterString.checkType(key);
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("(key)");
+                }
+                throw e;
+            }
+
+            try {
+                FfiConverterTypeSearchEnginePartnerDetails.checkType(value);
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart(`[${key}]`);
+                }
+                throw e;
+            }
+        }
+    }
+}
+// Export the FFIConverter object to make external types work.
+export class FfiConverterOptionalMapStringTypeSearchEnginePartnerDetails extends FfiConverterArrayBuffer {
+    static checkType(value) {
+        if (value !== undefined && value !== null) {
+            FfiConverterMapStringTypeSearchEnginePartnerDetails.checkType(value)
+        }
+    }
+
+    static read(dataStream) {
+        const code = dataStream.readUint8(0);
+        switch (code) {
+            case 0:
+                return null
+            case 1:
+                return FfiConverterMapStringTypeSearchEnginePartnerDetails.read(dataStream)
+            default:
+                throw new UniFFIError(`Unexpected code: ${code}`);
+        }
+    }
+
+    static write(dataStream, value) {
+        if (value === null || value === undefined) {
+            dataStream.writeUint8(0);
+            return;
+        }
+        dataStream.writeUint8(1);
+        FfiConverterMapStringTypeSearchEnginePartnerDetails.write(dataStream, value)
+    }
+
+    static computeSize(value) {
+        if (value === null || value === undefined) {
+            return 1;
+        }
+        return 1 + FfiConverterMapStringTypeSearchEnginePartnerDetails.computeSize(value)
+    }
+}
+/**
+ * A search-config-v3 definition for an individual search engine to be
+ * presented to the user.
+ */
+export class SearchEngineDefinitionV3 {
+    constructor(
+        {
+            aliases, 
+            charset, 
+            classification, 
+            identifier, 
+            isNewUntil, 
+            name, 
+            optional, 
+            partner, 
+            urls, 
+            orderHint, 
+            deprecated
+        } = {
+            aliases: undefined, 
+            charset: undefined, 
+            classification: undefined, 
+            identifier: undefined, 
+            isNewUntil: undefined, 
+            name: undefined, 
+            optional: undefined, 
+            partner: undefined, 
+            urls: undefined, 
+            orderHint: undefined, 
+            deprecated: undefined
+        }
+    ) {
+        try {
+            FfiConverterSequenceString.checkType(aliases)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("aliases");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(charset)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("charset");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeSearchEngineClassificationV3.checkType(classification)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("classification");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(identifier)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("identifier");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalString.checkType(isNewUntil)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("isNewUntil");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(name)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("name");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterBoolean.checkType(optional)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("optional");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalMapStringTypeSearchEnginePartnerDetails.checkType(partner)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("partner");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeSearchEngineUrls.checkType(urls)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("urls");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalUInt32.checkType(orderHint)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("orderHint");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterBoolean.checkType(deprecated)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("deprecated");
+            }
+            throw e;
+        }
+        /**
+         * A list of aliases for this engine.
+         * @type {Array.<string>}
+         */
+        this.aliases = aliases;
+        /**
+         * The character set this engine uses for queries.
+         * @type {string}
+         */
+        this.charset = charset;
+        /**
+         * The classification of search engine according to the main search types.
+         * @type {SearchEngineClassificationV3[keyof SearchEngineClassificationV3]}
+         */
+        this.classification = classification;
+        /**
+         * The identifier of the search engine. This is used as an internal
+         * identifier, e.g. for saving the user's settings for the engine. It is
+         * also used to form the base telemetry id and may be extended by telemetrySuffix.
+         * @type {string}
+         */
+        this.identifier = identifier;
+        /**
+         * Indicates the date until which the engine variant or subvariant is considered new
+         * (format: YYYY-MM-DD).
+         * @type {?string}
+         */
+        this.isNewUntil = isNewUntil;
+        /**
+         * The user visible name of the search engine.
+         * @type {string}
+         */
+        this.name = name;
+        /**
+         * This search engine is presented as an option that the user may enable.
+         * The application should not include these in the default list of the
+         * user's engines. If not supported, it should filter them out.
+         * @type {boolean}
+         */
+        this.optional = optional;
+        /**
+         * The partner details for the engine.
+         * The key is the search access point to use, e.g. `default`, `newtab`,
+         * `context`, `widget`, `topsite` (this list may be incomplete, see the
+         * search-config v3 schema for a full list).
+         * @type {?Map}
+         */
+        this.partner = partner;
+        /**
+         * The URLs associated with the search engine.
+         * @type {SearchEngineUrls}
+         */
+        this.urls = urls;
+        /**
+         * A hint to the order that this engine should be in the engine list. This
+         * is derived from the `engineOrders` section of the search configuration.
+         * The higher the number, the nearer to the front it should be.
+         * If the number is not specified, other methods of sorting may be relied
+         * upon (e.g. alphabetical).
+         * @type {?number}
+         */
+        this.orderHint = orderHint;
+        /**
+         * Whether the search engine has been deprecated. If this is true, then
+         * the engine will be removed from the configuration soon. The client should
+         * not display the configuration engine but may copy the engine details to a
+         * user-installed engine.
+         * @type {boolean}
+         */
+        this.deprecated = deprecated;
+    }
+
+    equals(other) {
+        return (
+            this.aliases == other.aliases
+            && this.charset == other.charset
+            && this.classification == other.classification
+            && this.identifier == other.identifier
+            && this.isNewUntil == other.isNewUntil
+            && this.name == other.name
+            && this.optional == other.optional
+            && this.partner == other.partner
+            && this.urls.equals(other.urls)
+            && this.orderHint == other.orderHint
+            && this.deprecated == other.deprecated
+        )
+    }
+}
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeSearchEngineDefinitionV3 extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        return new SearchEngineDefinitionV3({
+            aliases: FfiConverterSequenceString.read(dataStream),
+            charset: FfiConverterString.read(dataStream),
+            classification: FfiConverterTypeSearchEngineClassificationV3.read(dataStream),
+            identifier: FfiConverterString.read(dataStream),
+            isNewUntil: FfiConverterOptionalString.read(dataStream),
+            name: FfiConverterString.read(dataStream),
+            optional: FfiConverterBoolean.read(dataStream),
+            partner: FfiConverterOptionalMapStringTypeSearchEnginePartnerDetails.read(dataStream),
+            urls: FfiConverterTypeSearchEngineUrls.read(dataStream),
+            orderHint: FfiConverterOptionalUInt32.read(dataStream),
+            deprecated: FfiConverterBoolean.read(dataStream),
+        });
+    }
+    static write(dataStream, value) {
+        FfiConverterSequenceString.write(dataStream, value.aliases);
+        FfiConverterString.write(dataStream, value.charset);
+        FfiConverterTypeSearchEngineClassificationV3.write(dataStream, value.classification);
+        FfiConverterString.write(dataStream, value.identifier);
+        FfiConverterOptionalString.write(dataStream, value.isNewUntil);
+        FfiConverterString.write(dataStream, value.name);
+        FfiConverterBoolean.write(dataStream, value.optional);
+        FfiConverterOptionalMapStringTypeSearchEnginePartnerDetails.write(dataStream, value.partner);
+        FfiConverterTypeSearchEngineUrls.write(dataStream, value.urls);
+        FfiConverterOptionalUInt32.write(dataStream, value.orderHint);
+        FfiConverterBoolean.write(dataStream, value.deprecated);
+    }
+
+    static computeSize(value) {
+        let totalSize = 0;
+        totalSize += FfiConverterSequenceString.computeSize(value.aliases);
+        totalSize += FfiConverterString.computeSize(value.charset);
+        totalSize += FfiConverterTypeSearchEngineClassificationV3.computeSize(value.classification);
+        totalSize += FfiConverterString.computeSize(value.identifier);
+        totalSize += FfiConverterOptionalString.computeSize(value.isNewUntil);
+        totalSize += FfiConverterString.computeSize(value.name);
+        totalSize += FfiConverterBoolean.computeSize(value.optional);
+        totalSize += FfiConverterOptionalMapStringTypeSearchEnginePartnerDetails.computeSize(value.partner);
+        totalSize += FfiConverterTypeSearchEngineUrls.computeSize(value.urls);
+        totalSize += FfiConverterOptionalUInt32.computeSize(value.orderHint);
+        totalSize += FfiConverterBoolean.computeSize(value.deprecated);
+        return totalSize
+    }
+
+    static checkType(value) {
+        super.checkType(value);
+        if (!(value instanceof SearchEngineDefinitionV3)) {
+            throw new UniFFITypeError(`Expected 'SearchEngineDefinitionV3', found '${typeof value}'`);
+        }
+        try {
+            FfiConverterSequenceString.checkType(value.aliases);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".aliases");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.charset);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".charset");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeSearchEngineClassificationV3.checkType(value.classification);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".classification");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.identifier);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".identifier");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalString.checkType(value.isNewUntil);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".isNewUntil");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.name);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".name");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterBoolean.checkType(value.optional);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".optional");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalMapStringTypeSearchEnginePartnerDetails.checkType(value.partner);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".partner");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeSearchEngineUrls.checkType(value.urls);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".urls");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalUInt32.checkType(value.orderHint);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".orderHint");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterBoolean.checkType(value.deprecated);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".deprecated");
+            }
+            throw e;
+        }
+    }
+}
+// Export the FFIConverter object to make external types work.
+export class FfiConverterSequenceTypeSearchEngineDefinitionV3 extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        const len = dataStream.readInt32();
+        const arr = [];
+        for (let i = 0; i < len; i++) {
+            arr.push(FfiConverterTypeSearchEngineDefinitionV3.read(dataStream));
+        }
+        return arr;
+    }
+
+    static write(dataStream, value) {
+        dataStream.writeInt32(value.length);
+        value.forEach((innerValue) => {
+            FfiConverterTypeSearchEngineDefinitionV3.write(dataStream, innerValue);
+        })
+    }
+
+    static computeSize(value) {
+        // The size of the length
+        let size = 4;
+        for (const innerValue of value) {
+            size += FfiConverterTypeSearchEngineDefinitionV3.computeSize(innerValue);
+        }
+        return size;
+    }
+
+    static checkType(value) {
+        if (!Array.isArray(value)) {
+            throw new UniFFITypeError(`${value} is not an array`);
+        }
+        value.forEach((innerValue, idx) => {
+            try {
+                FfiConverterTypeSearchEngineDefinitionV3.checkType(innerValue);
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart(`[${idx}]`);
+                }
+                throw e;
+            }
+        })
+    }
+}
+/**
+ * Details of the search engines to display to the user, generated as a result
+ * of processing the search configuration v3.
+ */
+export class RefinedSearchConfigV3 {
+    constructor(
+        {
+            engines, 
+            appDefaultEngineId, 
+            appPrivateDefaultEngineId
+        } = {
+            engines: undefined, 
+            appDefaultEngineId: undefined, 
+            appPrivateDefaultEngineId: undefined
+        }
+    ) {
+        try {
+            FfiConverterSequenceTypeSearchEngineDefinitionV3.checkType(engines)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("engines");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalString.checkType(appDefaultEngineId)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("appDefaultEngineId");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalString.checkType(appPrivateDefaultEngineId)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("appPrivateDefaultEngineId");
+            }
+            throw e;
+        }
+        /**
+         * A sorted list of engines. Clients may use the engine in the order that
+         * this list is specified, or they may implement their own order if they
+         * have other requirements.
+         * 
+         * The application default engines should not be assumed from this order in
+         * case of future changes.
+         * 
+         * The sort order is:
+         * 
+         * * Application Default Engine
+         * * Application Default Engine for Private Mode (if specified & different)
+         * * Engines sorted by descending `SearchEngineDefinitionV3.orderHint`
+         * * Any other engines in alphabetical order (locale based comparison)
+         * @type {Array.<SearchEngineDefinitionV3>}
+         */
+        this.engines = engines;
+        /**
+         * The identifier of the engine that should be used for the application
+         * default engine. If this is undefined, an error has occurred, and the
+         * application should either default to the first engine in the engines
+         * list or otherwise handle appropriately.
+         * @type {?string}
+         */
+        this.appDefaultEngineId = appDefaultEngineId;
+        /**
+         * If specified, the identifier of the engine that should be used for the
+         * application default engine in private browsing mode.
+         * Only desktop uses this currently.
+         * @type {?string}
+         */
+        this.appPrivateDefaultEngineId = appPrivateDefaultEngineId;
+    }
+
+    equals(other) {
+        return (
+            this.engines == other.engines
+            && this.appDefaultEngineId == other.appDefaultEngineId
+            && this.appPrivateDefaultEngineId == other.appPrivateDefaultEngineId
+        )
+    }
+}
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeRefinedSearchConfigV3 extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        return new RefinedSearchConfigV3({
+            engines: FfiConverterSequenceTypeSearchEngineDefinitionV3.read(dataStream),
+            appDefaultEngineId: FfiConverterOptionalString.read(dataStream),
+            appPrivateDefaultEngineId: FfiConverterOptionalString.read(dataStream),
+        });
+    }
+    static write(dataStream, value) {
+        FfiConverterSequenceTypeSearchEngineDefinitionV3.write(dataStream, value.engines);
+        FfiConverterOptionalString.write(dataStream, value.appDefaultEngineId);
+        FfiConverterOptionalString.write(dataStream, value.appPrivateDefaultEngineId);
+    }
+
+    static computeSize(value) {
+        let totalSize = 0;
+        totalSize += FfiConverterSequenceTypeSearchEngineDefinitionV3.computeSize(value.engines);
+        totalSize += FfiConverterOptionalString.computeSize(value.appDefaultEngineId);
+        totalSize += FfiConverterOptionalString.computeSize(value.appPrivateDefaultEngineId);
+        return totalSize
+    }
+
+    static checkType(value) {
+        super.checkType(value);
+        if (!(value instanceof RefinedSearchConfigV3)) {
+            throw new UniFFITypeError(`Expected 'RefinedSearchConfigV3', found '${typeof value}'`);
+        }
+        try {
+            FfiConverterSequenceTypeSearchEngineDefinitionV3.checkType(value.engines);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".engines");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalString.checkType(value.appDefaultEngineId);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".appDefaultEngineId");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalString.checkType(value.appPrivateDefaultEngineId);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".appPrivateDefaultEngineId");
+            }
+            throw e;
+        }
+    }
+}
+
+/**
  * The list of possible update channels for a user's build.
  * Use `default` for a self-build or an unknown channel.
  */
-export const SearchUpdateChannel = Object.freeze({
+export const SearchUpdateChannel = Object.freeze(/** @lends SearchUpdateChannel */ {
     /**
      * NIGHTLY
      */
@@ -2272,7 +3051,7 @@ export class FfiConverterTypeSearchUpdateChannel extends FfiConverterArrayBuffer
 /**
  * The list of possible application names that are currently supported.
  */
-export const SearchApplicationName = Object.freeze({
+export const SearchApplicationName = Object.freeze(/** @lends SearchApplicationName */ {
     /**
      * FIREFOX_ANDROID
      */
@@ -2357,7 +3136,7 @@ export class FfiConverterTypeSearchApplicationName extends FfiConverterArrayBuff
 /**
  * SearchDeviceType
  */
-export const SearchDeviceType = Object.freeze({
+export const SearchDeviceType = Object.freeze(/** @lends SearchDeviceType */ {
     /**
      * SMARTPHONE
      */
@@ -2677,6 +3456,540 @@ export class FfiConverterTypeSearchUserEnvironment extends FfiConverterArrayBuff
 }
 
 /**
+ * The list of possible update channels for a user's build, for
+ * search-config-v3. Use `default` for a self-build or an unknown channel.
+ */
+export const SearchUpdateChannelV3 = Object.freeze(/** @lends SearchUpdateChannelV3 */ {
+    /**
+     * NIGHTLY
+     */
+    NIGHTLY: 1,
+    /**
+     * AURORA
+     */
+    AURORA: 2,
+    /**
+     * BETA
+     */
+    BETA: 3,
+    /**
+     * RELEASE
+     */
+    RELEASE: 4,
+    /**
+     * ESR
+     */
+    ESR: 5,
+    /**
+     * DEFAULT
+     */
+    DEFAULT: 6,
+});
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeSearchUpdateChannelV3 extends FfiConverterArrayBuffer {
+    static #validValues = Object.values(SearchUpdateChannelV3)
+
+    static read(dataStream) {
+        // Use sequential indices (1-based) for the wire format to match the Rust scaffolding
+        switch (dataStream.readInt32()) {
+            case 1:
+                return SearchUpdateChannelV3.NIGHTLY
+            case 2:
+                return SearchUpdateChannelV3.AURORA
+            case 3:
+                return SearchUpdateChannelV3.BETA
+            case 4:
+                return SearchUpdateChannelV3.RELEASE
+            case 5:
+                return SearchUpdateChannelV3.ESR
+            case 6:
+                return SearchUpdateChannelV3.DEFAULT
+            default:
+                throw new UniFFITypeError("Unknown SearchUpdateChannelV3 variant");
+        }
+    }
+
+    static write(dataStream, value) {
+        // Use sequential indices (1-based) for the wire format to match the Rust scaffolding
+        if (value === SearchUpdateChannelV3.NIGHTLY) {
+            dataStream.writeInt32(1);
+            return;
+        }
+        if (value === SearchUpdateChannelV3.AURORA) {
+            dataStream.writeInt32(2);
+            return;
+        }
+        if (value === SearchUpdateChannelV3.BETA) {
+            dataStream.writeInt32(3);
+            return;
+        }
+        if (value === SearchUpdateChannelV3.RELEASE) {
+            dataStream.writeInt32(4);
+            return;
+        }
+        if (value === SearchUpdateChannelV3.ESR) {
+            dataStream.writeInt32(5);
+            return;
+        }
+        if (value === SearchUpdateChannelV3.DEFAULT) {
+            dataStream.writeInt32(6);
+            return;
+        }
+        throw new UniFFITypeError("Unknown SearchUpdateChannelV3 variant");
+    }
+
+    static computeSize(value) {
+        return 4;
+    }
+
+    static checkType(value) {
+      // Check that the value is a valid enum variant
+      if (!this.#validValues.includes(value)) {
+          throw new UniFFITypeError(`${value} is not a valid value for SearchUpdateChannelV3`);
+      }
+    }
+}
+
+/**
+ * The list of possible application names that are supported by
+ * search-config-v3.
+ */
+export const SearchApplicationNameV3 = Object.freeze(/** @lends SearchApplicationNameV3 */ {
+    /**
+     * FIREFOX_ANDROID
+     */
+    FIREFOX_ANDROID: 1,
+    /**
+     * FIREFOX_IOS
+     */
+    FIREFOX_IOS: 2,
+    /**
+     * FOCUS_ANDROID
+     */
+    FOCUS_ANDROID: 3,
+    /**
+     * FOCUS_IOS
+     */
+    FOCUS_IOS: 4,
+    /**
+     * FIREFOX_WIN
+     */
+    FIREFOX_WIN: 5,
+    /**
+     * FIREFOX_MACOSX
+     */
+    FIREFOX_MACOSX: 6,
+    /**
+     * FIREFOX_LINUX
+     */
+    FIREFOX_LINUX: 7,
+    /**
+     * UNKNOWN
+     */
+    UNKNOWN: 8,
+});
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeSearchApplicationNameV3 extends FfiConverterArrayBuffer {
+    static #validValues = Object.values(SearchApplicationNameV3)
+
+    static read(dataStream) {
+        // Use sequential indices (1-based) for the wire format to match the Rust scaffolding
+        switch (dataStream.readInt32()) {
+            case 1:
+                return SearchApplicationNameV3.FIREFOX_ANDROID
+            case 2:
+                return SearchApplicationNameV3.FIREFOX_IOS
+            case 3:
+                return SearchApplicationNameV3.FOCUS_ANDROID
+            case 4:
+                return SearchApplicationNameV3.FOCUS_IOS
+            case 5:
+                return SearchApplicationNameV3.FIREFOX_WIN
+            case 6:
+                return SearchApplicationNameV3.FIREFOX_MACOSX
+            case 7:
+                return SearchApplicationNameV3.FIREFOX_LINUX
+            case 8:
+                return SearchApplicationNameV3.UNKNOWN
+            default:
+                throw new UniFFITypeError("Unknown SearchApplicationNameV3 variant");
+        }
+    }
+
+    static write(dataStream, value) {
+        // Use sequential indices (1-based) for the wire format to match the Rust scaffolding
+        if (value === SearchApplicationNameV3.FIREFOX_ANDROID) {
+            dataStream.writeInt32(1);
+            return;
+        }
+        if (value === SearchApplicationNameV3.FIREFOX_IOS) {
+            dataStream.writeInt32(2);
+            return;
+        }
+        if (value === SearchApplicationNameV3.FOCUS_ANDROID) {
+            dataStream.writeInt32(3);
+            return;
+        }
+        if (value === SearchApplicationNameV3.FOCUS_IOS) {
+            dataStream.writeInt32(4);
+            return;
+        }
+        if (value === SearchApplicationNameV3.FIREFOX_WIN) {
+            dataStream.writeInt32(5);
+            return;
+        }
+        if (value === SearchApplicationNameV3.FIREFOX_MACOSX) {
+            dataStream.writeInt32(6);
+            return;
+        }
+        if (value === SearchApplicationNameV3.FIREFOX_LINUX) {
+            dataStream.writeInt32(7);
+            return;
+        }
+        if (value === SearchApplicationNameV3.UNKNOWN) {
+            dataStream.writeInt32(8);
+            return;
+        }
+        throw new UniFFITypeError("Unknown SearchApplicationNameV3 variant");
+    }
+
+    static computeSize(value) {
+        return 4;
+    }
+
+    static checkType(value) {
+      // Check that the value is a valid enum variant
+      if (!this.#validValues.includes(value)) {
+          throw new UniFFITypeError(`${value} is not a valid value for SearchApplicationNameV3`);
+      }
+    }
+}
+
+/**
+ * The list of possible device types for search-config-v3.
+ */
+export const SearchDeviceTypeV3 = Object.freeze(/** @lends SearchDeviceTypeV3 */ {
+    /**
+     * SMARTPHONE
+     */
+    SMARTPHONE: 1,
+    /**
+     * TABLET
+     */
+    TABLET: 2,
+    /**
+     * NONE
+     */
+    NONE: 3,
+});
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeSearchDeviceTypeV3 extends FfiConverterArrayBuffer {
+    static #validValues = Object.values(SearchDeviceTypeV3)
+
+    static read(dataStream) {
+        // Use sequential indices (1-based) for the wire format to match the Rust scaffolding
+        switch (dataStream.readInt32()) {
+            case 1:
+                return SearchDeviceTypeV3.SMARTPHONE
+            case 2:
+                return SearchDeviceTypeV3.TABLET
+            case 3:
+                return SearchDeviceTypeV3.NONE
+            default:
+                throw new UniFFITypeError("Unknown SearchDeviceTypeV3 variant");
+        }
+    }
+
+    static write(dataStream, value) {
+        // Use sequential indices (1-based) for the wire format to match the Rust scaffolding
+        if (value === SearchDeviceTypeV3.SMARTPHONE) {
+            dataStream.writeInt32(1);
+            return;
+        }
+        if (value === SearchDeviceTypeV3.TABLET) {
+            dataStream.writeInt32(2);
+            return;
+        }
+        if (value === SearchDeviceTypeV3.NONE) {
+            dataStream.writeInt32(3);
+            return;
+        }
+        throw new UniFFITypeError("Unknown SearchDeviceTypeV3 variant");
+    }
+
+    static computeSize(value) {
+        return 4;
+    }
+
+    static checkType(value) {
+      // Check that the value is a valid enum variant
+      if (!this.#validValues.includes(value)) {
+          throw new UniFFITypeError(`${value} is not a valid value for SearchDeviceTypeV3`);
+      }
+    }
+}
+/**
+ * The user's environment that is used for filtering the search configuration v3.
+ */
+export class SearchUserEnvironmentV3 {
+    constructor(
+        {
+            locale, 
+            region, 
+            updateChannel, 
+            distributionId, 
+            experiment, 
+            appName, 
+            version, 
+            deviceType
+        } = {
+            locale: undefined, 
+            region: undefined, 
+            updateChannel: undefined, 
+            distributionId: undefined, 
+            experiment: undefined, 
+            appName: undefined, 
+            version: undefined, 
+            deviceType: undefined
+        }
+    ) {
+        try {
+            FfiConverterString.checkType(locale)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("locale");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(region)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("region");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeSearchUpdateChannelV3.checkType(updateChannel)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("updateChannel");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(distributionId)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("distributionId");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(experiment)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("experiment");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeSearchApplicationNameV3.checkType(appName)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("appName");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(version)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("version");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeSearchDeviceTypeV3.checkType(deviceType)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("deviceType");
+            }
+            throw e;
+        }
+        /**
+         * The current locale of the application that the user is using.
+         * @type {string}
+         */
+        this.locale = locale;
+        /**
+         * The home region that the user is currently identified as being within.
+         * On desktop & android there is a 14 day lag after detecting a region
+         * change before the home region changes. TBD: iOS?
+         * @type {string}
+         */
+        this.region = region;
+        /**
+         * The update channel of the user's build.
+         * @type {SearchUpdateChannelV3[keyof SearchUpdateChannelV3]}
+         */
+        this.updateChannel = updateChannel;
+        /**
+         * The distribution id for the user's build.
+         * @type {string}
+         */
+        this.distributionId = distributionId;
+        /**
+         * The search related experiment id that the user is included within. On
+         * desktop this is the `searchConfiguration.experiment` variable.
+         * @type {string}
+         */
+        this.experiment = experiment;
+        /**
+         * The application name that the user is using.
+         * @type {SearchApplicationNameV3[keyof SearchApplicationNameV3]}
+         */
+        this.appName = appName;
+        /**
+         * The application version that the user is using.
+         * @type {string}
+         */
+        this.version = version;
+        /**
+         * The device type that the user is using.
+         * @type {SearchDeviceTypeV3[keyof SearchDeviceTypeV3]}
+         */
+        this.deviceType = deviceType;
+    }
+
+    equals(other) {
+        return (
+            this.locale == other.locale
+            && this.region == other.region
+            && this.updateChannel == other.updateChannel
+            && this.distributionId == other.distributionId
+            && this.experiment == other.experiment
+            && this.appName == other.appName
+            && this.version == other.version
+            && this.deviceType == other.deviceType
+        )
+    }
+}
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeSearchUserEnvironmentV3 extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        return new SearchUserEnvironmentV3({
+            locale: FfiConverterString.read(dataStream),
+            region: FfiConverterString.read(dataStream),
+            updateChannel: FfiConverterTypeSearchUpdateChannelV3.read(dataStream),
+            distributionId: FfiConverterString.read(dataStream),
+            experiment: FfiConverterString.read(dataStream),
+            appName: FfiConverterTypeSearchApplicationNameV3.read(dataStream),
+            version: FfiConverterString.read(dataStream),
+            deviceType: FfiConverterTypeSearchDeviceTypeV3.read(dataStream),
+        });
+    }
+    static write(dataStream, value) {
+        FfiConverterString.write(dataStream, value.locale);
+        FfiConverterString.write(dataStream, value.region);
+        FfiConverterTypeSearchUpdateChannelV3.write(dataStream, value.updateChannel);
+        FfiConverterString.write(dataStream, value.distributionId);
+        FfiConverterString.write(dataStream, value.experiment);
+        FfiConverterTypeSearchApplicationNameV3.write(dataStream, value.appName);
+        FfiConverterString.write(dataStream, value.version);
+        FfiConverterTypeSearchDeviceTypeV3.write(dataStream, value.deviceType);
+    }
+
+    static computeSize(value) {
+        let totalSize = 0;
+        totalSize += FfiConverterString.computeSize(value.locale);
+        totalSize += FfiConverterString.computeSize(value.region);
+        totalSize += FfiConverterTypeSearchUpdateChannelV3.computeSize(value.updateChannel);
+        totalSize += FfiConverterString.computeSize(value.distributionId);
+        totalSize += FfiConverterString.computeSize(value.experiment);
+        totalSize += FfiConverterTypeSearchApplicationNameV3.computeSize(value.appName);
+        totalSize += FfiConverterString.computeSize(value.version);
+        totalSize += FfiConverterTypeSearchDeviceTypeV3.computeSize(value.deviceType);
+        return totalSize
+    }
+
+    static checkType(value) {
+        super.checkType(value);
+        if (!(value instanceof SearchUserEnvironmentV3)) {
+            throw new UniFFITypeError(`Expected 'SearchUserEnvironmentV3', found '${typeof value}'`);
+        }
+        try {
+            FfiConverterString.checkType(value.locale);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".locale");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.region);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".region");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeSearchUpdateChannelV3.checkType(value.updateChannel);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".updateChannel");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.distributionId);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".distributionId");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.experiment);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".experiment");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeSearchApplicationNameV3.checkType(value.appName);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".appName");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.version);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".version");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeSearchDeviceTypeV3.checkType(value.deviceType);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".deviceType");
+            }
+            throw e;
+        }
+    }
+}
+
+/**
  * SearchApiError
  */
 export class SearchApiError extends Error {}
@@ -2746,14 +4059,6 @@ export { FfiConverterTypeRemoteSettingsService };
  */
 export class SearchEngineSelectorInterface {
     /**
-     * Clears the search configuration from memory if it is known that it is
-     * not required for a time, e.g. if the configuration will only be re-filtered
-     * after an app/environment update.
-     */
-    clearSearchConfig() {
-      throw Error("clearSearchConfig not implemented");
-    }
-    /**
      * Filters the search configuration with the user's given environment,
      * and returns the set of engines and parameters that should be presented
      * to the user.
@@ -2763,6 +4068,17 @@ export class SearchEngineSelectorInterface {
     filterEngineConfiguration(
         userEnvironment) {
       throw Error("filterEngineConfiguration not implemented");
+    }
+    /**
+     * Filters the search configuration with the user's given environment,
+     * and returns the set of engines and parameters that should be presented
+     * to the user.
+     * @param {SearchUserEnvironmentV3} userEnvironment
+     * @returns {RefinedSearchConfigV3}
+     */
+    filterEngineConfigurationV3(
+        userEnvironment) {
+      throw Error("filterEngineConfigurationV3 not implemented");
     }
     /**
      * setConfigOverrides
@@ -2785,12 +4101,23 @@ export class SearchEngineSelectorInterface {
       throw Error("setSearchConfig not implemented");
     }
     /**
+     * Sets the search configuration from the given string. If the configuration
+     * string is unchanged since the last update, the cached configuration is
+     * reused to avoid unnecessary reprocessing. This helps optimize performance,
+     * particularly during test runs where the same configuration may be used
+     * repeatedly.
+     * @param {string} configuration
+     */
+    setSearchConfigV3(
+        configuration) {
+      throw Error("setSearchConfigV3 not implemented");
+    }
+    /**
      * Sets the RemoteSettingsService to use. The selector will create the
      * relevant remote settings client(s) from the service.
      * 
      * # Params:
      * - `service`: The remote settings service instance for the application.
-     * - `options`: The remote settings options to be passed to the client(s).
      * - `apply_engine_overrides`: Whether or not to apply overrides from
      * `search-config-v2-overrides` to the selected engines. Should be false unless the
      * application supports the click URL feature.
@@ -2801,6 +4128,18 @@ export class SearchEngineSelectorInterface {
         service, 
         applyEngineOverrides) {
       throw Error("useRemoteSettingsServer not implemented");
+    }
+    /**
+     * Sets the RemoteSettingsService to use. The selector will create the
+     * relevant remote settings client(s) from the service.
+     * 
+     * # Params:
+     * - `service`: The remote settings service instance for the application.
+     * @param {RemoteSettingsService} service
+     */
+    useRemoteSettingsServerV3(
+        service) {
+      throw Error("useRemoteSettingsServerV3 not implemented");
     }
 
 }
@@ -2831,29 +4170,11 @@ export class SearchEngineSelector extends SearchEngineSelectorInterface {
     static init() {
        
         const result = UniFFIScaffolding.callSync(
-            216, // uniffi_search_fn_constructor_searchengineselector_new
+            230, // uniffi_search_fn_constructor_searchengineselector_new
         )
         return handleRustResult(
             result,
             FfiConverterTypeSearchEngineSelector.lift.bind(FfiConverterTypeSearchEngineSelector),
-            null,
-        )
-    }
-
-    /**
-     * Clears the search configuration from memory if it is known that it is
-     * not required for a time, e.g. if the configuration will only be re-filtered
-     * after an app/environment update.
-     */
-    clearSearchConfig() {
-       
-        const result = UniFFIScaffolding.callSync(
-            217, // uniffi_search_fn_method_searchengineselector_clear_search_config
-            FfiConverterTypeSearchEngineSelector.lowerReceiver(this),
-        )
-        return handleRustResult(
-            result,
-            (result) => undefined,
             null,
         )
     }
@@ -2870,13 +4191,36 @@ export class SearchEngineSelector extends SearchEngineSelectorInterface {
        
         FfiConverterTypeSearchUserEnvironment.checkType(userEnvironment);
         const result = UniFFIScaffolding.callSync(
-            218, // uniffi_search_fn_method_searchengineselector_filter_engine_configuration
+            231, // uniffi_search_fn_method_searchengineselector_filter_engine_configuration
             FfiConverterTypeSearchEngineSelector.lowerReceiver(this),
             FfiConverterTypeSearchUserEnvironment.lower(userEnvironment),
         )
         return handleRustResult(
             result,
             FfiConverterTypeRefinedSearchConfig.lift.bind(FfiConverterTypeRefinedSearchConfig),
+            FfiConverterTypeSearchApiError.lift.bind(FfiConverterTypeSearchApiError),
+        )
+    }
+
+    /**
+     * Filters the search configuration with the user's given environment,
+     * and returns the set of engines and parameters that should be presented
+     * to the user.
+     * @param {SearchUserEnvironmentV3} userEnvironment
+     * @returns {RefinedSearchConfigV3}
+     */
+    filterEngineConfigurationV3(
+        userEnvironment) {
+       
+        FfiConverterTypeSearchUserEnvironmentV3.checkType(userEnvironment);
+        const result = UniFFIScaffolding.callSync(
+            232, // uniffi_search_fn_method_searchengineselector_filter_engine_configuration_v3
+            FfiConverterTypeSearchEngineSelector.lowerReceiver(this),
+            FfiConverterTypeSearchUserEnvironmentV3.lower(userEnvironment),
+        )
+        return handleRustResult(
+            result,
+            FfiConverterTypeRefinedSearchConfigV3.lift.bind(FfiConverterTypeRefinedSearchConfigV3),
             FfiConverterTypeSearchApiError.lift.bind(FfiConverterTypeSearchApiError),
         )
     }
@@ -2890,7 +4234,7 @@ export class SearchEngineSelector extends SearchEngineSelectorInterface {
        
         FfiConverterString.checkType(overrides);
         const result = UniFFIScaffolding.callSync(
-            219, // uniffi_search_fn_method_searchengineselector_set_config_overrides
+            233, // uniffi_search_fn_method_searchengineselector_set_config_overrides
             FfiConverterTypeSearchEngineSelector.lowerReceiver(this),
             FfiConverterString.lower(overrides),
         )
@@ -2914,7 +4258,31 @@ export class SearchEngineSelector extends SearchEngineSelectorInterface {
        
         FfiConverterString.checkType(configuration);
         const result = UniFFIScaffolding.callSync(
-            220, // uniffi_search_fn_method_searchengineselector_set_search_config
+            234, // uniffi_search_fn_method_searchengineselector_set_search_config
+            FfiConverterTypeSearchEngineSelector.lowerReceiver(this),
+            FfiConverterString.lower(configuration),
+        )
+        return handleRustResult(
+            result,
+            (result) => undefined,
+            FfiConverterTypeSearchApiError.lift.bind(FfiConverterTypeSearchApiError),
+        )
+    }
+
+    /**
+     * Sets the search configuration from the given string. If the configuration
+     * string is unchanged since the last update, the cached configuration is
+     * reused to avoid unnecessary reprocessing. This helps optimize performance,
+     * particularly during test runs where the same configuration may be used
+     * repeatedly.
+     * @param {string} configuration
+     */
+    setSearchConfigV3(
+        configuration) {
+       
+        FfiConverterString.checkType(configuration);
+        const result = UniFFIScaffolding.callSync(
+            235, // uniffi_search_fn_method_searchengineselector_set_search_config_v3
             FfiConverterTypeSearchEngineSelector.lowerReceiver(this),
             FfiConverterString.lower(configuration),
         )
@@ -2931,7 +4299,6 @@ export class SearchEngineSelector extends SearchEngineSelectorInterface {
      * 
      * # Params:
      * - `service`: The remote settings service instance for the application.
-     * - `options`: The remote settings options to be passed to the client(s).
      * - `apply_engine_overrides`: Whether or not to apply overrides from
      * `search-config-v2-overrides` to the selected engines. Should be false unless the
      * application supports the click URL feature.
@@ -2945,10 +4312,34 @@ export class SearchEngineSelector extends SearchEngineSelectorInterface {
         FfiConverterTypeRemoteSettingsService.checkType(service);
         FfiConverterBoolean.checkType(applyEngineOverrides);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            221, // uniffi_search_fn_method_searchengineselector_use_remote_settings_server
+            236, // uniffi_search_fn_method_searchengineselector_use_remote_settings_server
             FfiConverterTypeSearchEngineSelector.lowerReceiver(this),
             FfiConverterTypeRemoteSettingsService.lower(service),
             FfiConverterBoolean.lower(applyEngineOverrides),
+        )
+        return handleRustResult(
+            result,
+            (result) => undefined,
+            null,
+        )
+    }
+
+    /**
+     * Sets the RemoteSettingsService to use. The selector will create the
+     * relevant remote settings client(s) from the service.
+     * 
+     * # Params:
+     * - `service`: The remote settings service instance for the application.
+     * @param {RemoteSettingsService} service
+     */
+    useRemoteSettingsServerV3(
+        service) {
+       
+        FfiConverterTypeRemoteSettingsService.checkType(service);
+        const result = UniFFIScaffolding.callSync(
+            237, // uniffi_search_fn_method_searchengineselector_use_remote_settings_server_v3
+            FfiConverterTypeSearchEngineSelector.lowerReceiver(this),
+            FfiConverterTypeRemoteSettingsService.lower(service),
         )
         return handleRustResult(
             result,
@@ -2981,11 +4372,11 @@ export class FfiConverterTypeSearchEngineSelector extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readPointer(19));
+        return this.lift(dataStream.readPointer(20));
     }
 
     static write(dataStream, value) {
-        dataStream.writePointer(19, this.lower(value));
+        dataStream.writePointer(20, this.lower(value));
     }
 
     static computeSize(value) {

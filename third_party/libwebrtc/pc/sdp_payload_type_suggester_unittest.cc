@@ -13,16 +13,21 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "api/jsep.h"
 #include "api/payload_type.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_error.h"
+#include "api/test/rtc_error_matchers.h"
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
+#include "p2p/base/p2p_constants.h"
 #include "pc/session_description.h"
 #include "test/create_test_environment.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -98,6 +103,71 @@ TEST_F(SdpPayloadTypeSuggesterTest,
       suggester_.SuggestPayloadType(kAudioMid1, local_other_codec);
   ASSERT_TRUE(other_pt.ok());
   EXPECT_NE(other_pt.value(), remote_opus_pt);
+}
+
+// Payload types that were only ever used by a remote description that has
+// since been replaced have to become available again. The picker reserves a
+// payload type the first time it sees it and never releases it, so a peer that
+// renegotiates often runs out of the 61 dynamic payload types and can no
+// longer create an offer.
+TEST_F(SdpPayloadTypeSuggesterTest, PayloadTypesAreReclaimedWhenNoLongerUsed) {
+  // A remote offer that uses every dynamic payload type.
+  std::unique_ptr<SessionDescription> first_offer =
+      std::make_unique<SessionDescription>();
+  AddAudioSection(first_offer.get());
+  std::vector<Codec> codecs;
+  int codec_index = 0;
+  for (auto [first_pt, last_pt] : {std::pair{35, 63}, std::pair{96, 127}}) {
+    for (int pt = first_pt; pt <= last_pt; ++pt) {
+      codecs.push_back(CreateAudioCodec(
+          PayloadType(pt), absl::StrCat("codec", codec_index++), 8000, 1));
+    }
+  }
+  first_offer->contents()[0].media_description()->set_codecs(codecs);
+  ASSERT_TRUE(
+      suggester_.Update(first_offer.get(), /* local= */ false, SdpType::kOffer)
+          .ok());
+
+  // The remote endpoint stops offering all of them.
+  std::unique_ptr<SessionDescription> second_offer =
+      std::make_unique<SessionDescription>();
+  AddAudioSection(second_offer.get());
+  second_offer->contents()[0].media_description()->set_codecs(
+      {CreateAudioCodec(PayloadType(96), kOpusCodecName, 48000, 2)});
+  ASSERT_TRUE(
+      suggester_.Update(second_offer.get(), /* local= */ false, SdpType::kOffer)
+          .ok());
+
+  // The payload types that are no longer in use should be available again.
+  Codec local_codec = CreateAudioCodec(PayloadType::NotSet(), "lyra", 8000, 1);
+  EXPECT_THAT(suggester_.SuggestPayloadType(kAudioMid1, local_codec),
+              IsRtcOk());
+}
+
+TEST_F(SdpPayloadTypeSuggesterTest,
+       RedefinitionAcrossSectionsInSameBundleGroupIsRejected) {
+  std::unique_ptr<SessionDescription> offer =
+      std::make_unique<SessionDescription>();
+  auto audio1 = std::make_unique<AudioContentDescription>();
+  audio1->set_rtcp_mux(true);
+  audio1->set_codecs({CreateAudioCodec(PayloadType(96), "opus", 48000, 2)});
+  offer->AddContent("a1", MediaProtocolType::kRtp, /* rejected= */ false,
+                    std::move(audio1));
+
+  auto audio2 = std::make_unique<AudioContentDescription>();
+  audio2->set_rtcp_mux(true);
+  audio2->set_codecs({CreateAudioCodec(PayloadType(96), "isac", 16000, 1)});
+  offer->AddContent("a2", MediaProtocolType::kRtp, /* rejected= */ false,
+                    std::move(audio2));
+
+  ContentGroup bundle_group(GROUP_TYPE_BUNDLE);
+  bundle_group.AddContentName("a1");
+  bundle_group.AddContentName("a2");
+  offer->AddGroup(bundle_group);
+
+  RTCError error =
+      suggester_.Update(offer.get(), /* local= */ false, SdpType::kOffer);
+  EXPECT_THAT(error, IsRtcErrorWithType(RTCErrorType::INVALID_MODIFICATION));
 }
 
 }  // namespace

@@ -38,8 +38,6 @@
 
     <color name="colorErase">@color/photonMagenta70</color>
 
-    <color name="colorCrashAccent">@color/photonBlue40</color>
-
     <!-- Toolbar -->
 
     <color name="images_removal_warning_background_color">#353852</color>

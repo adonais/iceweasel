@@ -245,8 +245,6 @@ export class SidebarCustomize extends SidebarPage {
       ${this.stylesheet()}
       <link rel="stylesheet" href="chrome://browser/content/sidebar/sidebar-customize.css"></link>
       <div class="sidebar-panel">
-        <sidebar-panel-header data-l10n-id="sidebar-menu-customize-header" data-l10n-attrs="heading" view="viewCustomizeSidebar">
-        </sidebar-panel-header>
         <div class="sidebar-panel-scrollable-content">
           <moz-fieldset class="customize-group no-end-margin" data-l10n-id="sidebar-settings2">
             <moz-checkbox

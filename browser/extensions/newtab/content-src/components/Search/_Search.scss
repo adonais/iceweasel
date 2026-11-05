@@ -20,12 +20,12 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
     margin-block-end: 0;
   }
 
-  @media (height <=700px) {
+  @media (height <= #{$break-point-sticky-search}) {
     padding: 0;
     margin-block-start: 0;
   }
 
-  @media (height > 700px) {
+  @media (height > #{$break-point-sticky-search}) {
     padding: 0;
   }
 
@@ -241,7 +241,7 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
     pointer-events: none;
   }
 
-  @media (height > 700px) {
+  @media (height > #{$break-point-sticky-search}) {
     .search-wrapper {
       position: sticky;
       inset-block-start: 0;
@@ -253,7 +253,7 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
   }
 }
 
-@media (height > 700px) {
+@media (height > #{$break-point-sticky-search}) {
   // Full-bleed backdrop drawn via pseudo-element on .nova-outer-wrapper
   // (which has no containment) so position: fixed anchors to the viewport.
   // Mounting the pseudo on .search-wrapper instead doesn't work because
@@ -283,6 +283,9 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
 // search sticks.
 .nova-outer-wrapper.search-has-own-row {
   --search-card-overhang: #{$search-card-overhang};
+  // How far the card reaches above the input, past the search engine button's
+  // row and the gaps around it.
+  --search-card-overhang-block-start: calc(var(--space-small) + var(--size-item-xlarge) + var(--space-medium));
 
   moz-urlbar {
     --urlbar-card-display: none;
@@ -294,7 +297,7 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
     content: '';
     position: absolute;
     position-anchor: --newtab-search-anchor;
-    inset-block-start: calc(anchor(start) - (var(--space-small) + var(--size-item-xlarge) + var(--space-medium)));
+    inset-block-start: calc(anchor(start) - var(--search-card-overhang-block-start));
     inset-block-end: calc(anchor(end) - var(--space-xlarge));
     inset-inline-start: calc(anchor(start) - var(--search-card-overhang));
     inset-inline-end: calc(anchor(end) - var(--search-card-overhang));
@@ -306,7 +309,7 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
 
   // Once the search sticks, the stuck backdrop is the card, and the button row
   // above the input has scrolled out of the viewport.
-  @media (height > 700px) {
+  @media (height > #{$break-point-sticky-search}) {
     &.stuck-search {
       .urlbar {
         --urlbar-button-row-visibility: hidden;
@@ -319,7 +322,7 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
   }
 }
 
-@media (height > 700px) {
+@media (height > #{$break-point-sticky-search}) {
   .activity-stream .fixed-search {
     .search-wrapper {
       $search-height: $search-height-new;

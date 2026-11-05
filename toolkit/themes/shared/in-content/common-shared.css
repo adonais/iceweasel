@@ -30,15 +30,6 @@
   }
 }
 
-@media (prefers-color-scheme: dark) and (not (forced-colors)) {
-  /* For dialogs, use a different background colour. We don't do
-   * this in forced colors mode, as we should be using system colours then.
-   */
-  :root[dialogroot] {
-    --background-color-canvas: var(--color-gray-80);
-  }
-}
-
 @media (forced-colors) {
   :host(.anonymous-content-host),
   :root {

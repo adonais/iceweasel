@@ -256,6 +256,7 @@ void gfxPlatformGtk::InitPlatformHardwareVideoConfig() {
   FeatureState& featureZeroCopy =
       gfxConfig::GetFeature(Feature::HW_DECODED_VIDEO_ZERO_COPY);
 
+  featureZeroCopy.Reset();
   featureZeroCopy.EnableByDefault();
   uint32_t state =
       StaticPrefs::media_ffmpeg_vaapi_force_surface_zero_copy_AtStartup();

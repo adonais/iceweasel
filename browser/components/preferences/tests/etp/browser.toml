@@ -1,25 +1,25 @@
 [DEFAULT]
-dupe-manifest = true
-prefs = [
-  "browser.settings-redesign.enabled=false",
-]
 support-files = [
   "head.js",
 ]
 tags = "os_integration"
 
-["browser_contentblocking.js"]
-
 ["browser_contentblocking_categories.js"]
-
-["browser_contentblocking_standard_tcp_section.js"]
 
 ["browser_cookie_exceptions_addRemove.js"]
 
 ["browser_cookies_exceptions.js"]
 
+["browser_etp_advanced.js"]
+
+["browser_etp_customize_1.js"]
+
+["browser_etp_customize_2.js"]
+
+["browser_etp_customize_3.js"]
+
+["browser_etp_customize_4.js"]
+
 ["browser_etp_exceptions_dialog.js"]
 
-["browser_statePartitioning_PBM_strings.js"]
-
-["browser_statePartitioning_strings.js"]
+["browser_etp_status.js"]

@@ -16,7 +16,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/bbec1b95ddb5e0096
  5 files changed, 26 insertions(+), 6 deletions(-)
 
 diff --git a/modules/audio_coding/BUILD.gn b/modules/audio_coding/BUILD.gn
-index f6a74d289c..986834c6f5 100644
+index 1f910eb0e8..43d4c7ff57 100644
 --- a/modules/audio_coding/BUILD.gn
 +++ b/modules/audio_coding/BUILD.gn
 @@ -339,7 +339,7 @@ rtc_library("webrtc_opus_wrapper") {
@@ -61,10 +61,10 @@ index 83dc72ba53..dbcc162510 100644
        }
      }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index 2d0a55247c..b35159f190 100644
+index 0f599c5a0c..ac7adc4a26 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
-@@ -624,6 +624,20 @@ if (is_ios || is_mac) {
+@@ -623,6 +623,20 @@ if (is_ios || is_mac) {
          "CoreGraphics.framework",
          "CoreVideo.framework",
        ]
@@ -86,7 +86,7 @@ index 2d0a55247c..b35159f190 100644
  
      if (!build_with_mozilla) {
 diff --git a/test/BUILD.gn b/test/BUILD.gn
-index 84fff436e5..48d78154ff 100644
+index 3c9baafe9e..f2abed9bf9 100644
 --- a/test/BUILD.gn
 +++ b/test/BUILD.gn
 @@ -499,6 +499,12 @@ rtc_source_set("test_support") {

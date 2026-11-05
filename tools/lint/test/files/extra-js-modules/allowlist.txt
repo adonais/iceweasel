@@ -1,0 +1,7 @@
+# Test allowlist.
+!sub/Generated.sys.mjs
+sub/Allowed.sys.mjs
+sub/final/AllowedPP.sys.mjs
+sub/globbed/Globbed.sys.mjs
+sub/nested/AllowedNested.sys.mjs
+sub/Stale.sys.mjs

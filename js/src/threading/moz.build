@@ -39,3 +39,14 @@ else:
 
 if CONFIG["FUZZING_JS_FUZZILLI"]:
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "ConditionVariable.h",
+    "CpuCount.h",
+    "ExclusiveData.h",
+    "LockGuard.h",
+    "Mutex.h",
+    "ProtectedData.h",
+    "Thread.h",
+    "ThreadId.h",
+]

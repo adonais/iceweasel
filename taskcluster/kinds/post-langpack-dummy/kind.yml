@@ -11,9 +11,6 @@ transforms:
 kind-dependencies:
     - release-beetmover-signed-langpacks
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     firefox-promote:
         name: post-langpack-dummy

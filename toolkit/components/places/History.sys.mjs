@@ -65,6 +65,8 @@
  *  as argument may hold `nsIURI` or `string` values for property `referrer`,
  *  but `VisitInfo` objects returned by this module always hold `URL`
  *  values.
+ * @property {number} [userContextId]
+ *  The userContextId of the visit. Missing or 0 means the default container.
  */
 
 /**
@@ -812,6 +814,7 @@ function convertForUpdatePlaces(pageInfo) {
       referrerURI: inVisit.referrer
         ? lazy.PlacesUtils.toURI(inVisit.referrer)
         : undefined,
+      userContextId: inVisit.userContextId,
     };
     info.visits.push(visit);
   }

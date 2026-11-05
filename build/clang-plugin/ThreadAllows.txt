@@ -33,6 +33,10 @@ Parakeet
 # the HWInference process. Needs to be a dedicated thread because some
 # scheduling guarantees are necessary.
 SpeechIPC
+# Used by `nsWindow` to query the virtual desktop of Windows windows. The query
+# can hang forever, so the thread is abandoned at shutdown rather than joined.
+# (See bug 2080829.)
+WinWorkspaceID
 
 ######
 # Thunderbird-only thread names

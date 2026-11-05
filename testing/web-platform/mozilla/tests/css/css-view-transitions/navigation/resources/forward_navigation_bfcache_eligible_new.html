@@ -1,0 +1,9 @@
+<!doctype html>
+<style>@view-transition { navigation: auto; }</style>
+<script>
+const bc = new BroadcastChannel(new URLSearchParams(location.search).get('channel'));
+addEventListener('pagereveal', e => {
+  bc.postMessage(e.viewTransition ? 'transition' : 'null');
+});
+</script>
+<div style="width: 100px; height: 100px; background: blue; view-transition-name: box"></div>

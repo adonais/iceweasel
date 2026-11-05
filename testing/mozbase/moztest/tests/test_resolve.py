@@ -611,6 +611,47 @@ def test_resolve_metadata_tag_entry(resolver):
     assert [t["file_relpath"] for t in tests] == ["kiwi/browser_devtools.js"]
 
 
+WPT_TAG_FILES = {
+    "list-commas.ini": "prefs: [a:b]\ntags: [inc-origin-init, indexedDB]\n",
+    "scalar.ini": "tags: indexedDB\n",
+    "multiline.ini": "tags: [inc-origin-init,\n       indexedDB]\nleak-threshold: [default:1]\n",
+    "nested.ini": "[test.html]\n  tags: [nested]\n",
+    "nested-and-root.ini": "tags: [root]\n[test.html]\n  tags: [nested]\n",
+    "space-before-colon.ini": "tags : [a]\n",
+    "none.ini": "prefs: [a:b]\n",
+    "comment-list.ini": "tags: [a, b]  # bug 123\n",
+    "comment-scalar.ini": "tags: foo # explanation\n",
+    "comment-multiline.ini": "tags: [a, # first\n       b] # second\n",
+    "comment-bracket.ini": "tags: [a,\n  # see bug ] for details\n  b]\n",
+}
+
+WPT_TAG_EXPECTED = {
+    "list-commas.ini": ("inc-origin-init", "indexedDB"),
+    "scalar.ini": ("indexedDB",),
+    "multiline.ini": ("inc-origin-init", "indexedDB"),
+    "nested.ini": (),
+    "nested-and-root.ini": ("root",),
+    "space-before-colon.ini": ("a",),
+    "none.ini": (),
+    "comment-list.ini": ("a", "b"),
+    "comment-scalar.ini": ("foo",),
+    "comment-multiline.ini": ("a", "b"),
+    "comment-bracket.ini": ("a", "b"),
+}
+
+
+def test_extract_wpt_tags(resolver, tmpdir):
+    """Test that wpt metadata tags are read in every accepted syntax."""
+    resolver._extract_tags_from_file.cache_clear()
+
+    for name, content in WPT_TAG_FILES.items():
+        path = tmpdir.join(name)
+        path.write(content)
+        assert resolver._extract_tags_from_file(str(path)) == WPT_TAG_EXPECTED[name]
+
+    assert resolver._extract_tags_from_file(str(tmpdir.join("missing.ini"))) == ()
+
+
 def test_ancestor_manifest_defaults(resolver, topsrcdir, defaults):
     """Test that defaults from ancestor manifests are found."""
     tests = list(resolver._resolve(paths=["carrot/test_included.js"]))

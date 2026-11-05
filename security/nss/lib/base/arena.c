@@ -49,8 +49,6 @@
  * In debug builds, the following calls are available:
  *
  *  nssArena_verifyPointer
- *  nssArena_registerDestructor
- *  nssArena_deregisterDestructor
  */
 
 struct NSSArenaStr {
@@ -186,118 +184,6 @@ struct arena_destructor_node {
     void (*destructor)(void *argument);
     void *arg;
 };
-
-/*
- * nssArena_registerDestructor
- *
- * This routine stores a pointer to a callback and an arbitrary
- * pointer-sized argument in the arena, at the current point in
- * the mark stack.  If the arena is destroyed, or an "earlier"
- * mark is released, then this destructor will be called at that
- * time.  Note that the destructor will be called with the arena
- * locked, which means the destructor may free memory in that
- * arena, but it may not allocate or cause to be allocated any
- * memory.  This callback facility was included to support our
- * debug-version pointer-tracker feature; overuse runs counter to
- * the the original intent of arenas.  This routine returns a
- * PRStatus value; if successful, it will return PR_SUCCESS.  If
- * unsuccessful, it will set an error on the error stack and
- * return PR_FAILURE.
- *
- * The error may be one of the following values:
- *  NSS_ERROR_INVALID_ARENA
- *  NSS_ERROR_NO_MEMORY
- *
- * Return value:
- *  PR_SUCCESS
- *  PR_FAILURE
- */
-
-NSS_IMPLEMENT PRStatus
-nssArena_registerDestructor(NSSArena *arena, void (*destructor)(void *argument),
-                            void *arg)
-{
-    struct arena_destructor_node *it;
-
-#ifdef NSSDEBUG
-    if (PR_SUCCESS != nssArena_verifyPointer(arena)) {
-        return PR_FAILURE;
-    }
-#endif /* NSSDEBUG */
-
-    it = nss_ZNEW(arena, struct arena_destructor_node);
-    if ((struct arena_destructor_node *)NULL == it) {
-        return PR_FAILURE;
-    }
-
-    it->prev = arena->last_destructor;
-    arena->last_destructor->next = it;
-    arena->last_destructor = it;
-    it->destructor = destructor;
-    it->arg = arg;
-
-    if ((nssArenaMark *)NULL != arena->last_mark) {
-        arena->last_mark->prev_destructor = it->prev;
-        arena->last_mark->next_destructor = it->next;
-    }
-
-    return PR_SUCCESS;
-}
-
-NSS_IMPLEMENT PRStatus
-nssArena_deregisterDestructor(NSSArena *arena,
-                              void (*destructor)(void *argument), void *arg)
-{
-    struct arena_destructor_node *it;
-
-#ifdef NSSDEBUG
-    if (PR_SUCCESS != nssArena_verifyPointer(arena)) {
-        return PR_FAILURE;
-    }
-#endif /* NSSDEBUG */
-
-    for (it = arena->first_destructor; it; it = it->next) {
-        if ((it->destructor == destructor) && (it->arg == arg)) {
-            break;
-        }
-    }
-
-    if ((struct arena_destructor_node *)NULL == it) {
-        nss_SetError(NSS_ERROR_NOT_FOUND);
-        return PR_FAILURE;
-    }
-
-    if (it == arena->first_destructor) {
-        arena->first_destructor = it->next;
-    }
-
-    if (it == arena->last_destructor) {
-        arena->last_destructor = it->prev;
-    }
-
-    if ((struct arena_destructor_node *)NULL != it->prev) {
-        it->prev->next = it->next;
-    }
-
-    if ((struct arena_destructor_node *)NULL != it->next) {
-        it->next->prev = it->prev;
-    }
-
-    {
-        nssArenaMark *m;
-        for (m = arena->first_mark; m; m = m->next) {
-            if (m->next_destructor == it) {
-                m->next_destructor = it->next;
-            }
-            if (m->prev_destructor == it) {
-                m->prev_destructor = it->prev;
-            }
-        }
-    }
-
-    nss_ZFreeIf(it);
-    return PR_SUCCESS;
-}
 
 static void
 nss_arena_call_destructor_chain(struct arena_destructor_node *it)

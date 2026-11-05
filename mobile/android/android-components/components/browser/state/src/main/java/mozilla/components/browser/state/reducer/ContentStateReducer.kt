@@ -51,6 +51,12 @@ internal object ContentStateReducer {
                             } else {
                                 it.previewImageUrl
                             },
+                        isPdf =
+                            if (isUrlSame(it.url, action.url)) {
+                                it.isPdf
+                            } else {
+                                false
+                            },
                         webAppManifest =
                             if (!isInScope(it.webAppManifest, action.url)) {
                                 null

@@ -2,32 +2,34 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   ActionsProviderQuickActions:
     "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
+  Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   ScreenshotsUtils:
     "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
+  AUS: {
+    service: "@mozilla.org/updates/update-service;1",
+    iid: Ci.nsIApplicationUpdateService,
+  },
+  gFluentStrings: () =>
+    new Localization(
+      [
+        "branding/brand.ftl",
+        "browser/browser.ftl",
+        "toolkit/branding/brandings.ftl",
+      ],
+      true
+    ),
 });
-
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-
-if (AppConstants.MOZ_UPDATER) {
-  XPCOMUtils.defineLazyServiceGetter(
-    lazy,
-    "AUS",
-    "@mozilla.org/updates/update-service;1",
-    Ci.nsIApplicationUpdateService
-  );
-}
 
 let openUrlFun = url => (_queryContext, controller) =>
   openUrl(url, controller.browserWindow);
@@ -67,17 +69,6 @@ let unmutedAudioTabs = () =>
     )
   );
 
-ChromeUtils.defineLazyGetter(lazy, "gFluentStrings", function () {
-  return new Localization(
-    [
-      "branding/brand.ftl",
-      "browser/browser.ftl",
-      "toolkit/branding/brandings.ftl",
-    ],
-    true
-  );
-});
-
 const DEFAULT_ACTIONS = {
   addons: {
     l10nCommands: ["quickactions-cmd-addons3"],
@@ -103,9 +94,16 @@ const DEFAULT_ACTIONS = {
     icon: "chrome://browser/skin/forget.svg",
     label: "quickactions-clearrecenthistory",
     onPick: (_queryContext, controller) => {
-      controller.browserWindow.document
-        .getElementById("Tools:Sanitize")
-        .doCommand();
+      let win = controller.browserWindow;
+      // The command is disabled where clearing isn't available, for example
+      // in permanent private browsing.
+      if (
+        !win.document.getElementById("Tools:Sanitize").hasAttribute("disabled")
+      ) {
+        lazy.Sanitizer.showUI(win, undefined, {
+          entryPoint: lazy.Sanitizer.DIALOG_ENTRY_POINTS.QUICK_ACTION,
+        });
+      }
     },
   },
   manageai: {

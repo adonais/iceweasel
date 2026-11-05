@@ -169,6 +169,15 @@ inline T_Wrap<T_Rhs*, T_Sbx> memcpy(rlbox_sandbox<T_Sbx>& sandbox,
 
   static_assert(!std::is_const_v<T_Rhs>, "Destination is const");
 
+  constexpr bool is_src_tainted = detail::rlbox_is_tainted_or_vol_v<T_Lhs>;
+  constexpr bool is_num_tainted =
+    detail::rlbox_is_tainted_or_vol_v<T_Num> ||
+    detail::rlbox_is_tainted_boolean_hint_v<T_Num>;
+  // The combination of an untainted source and a tainted num is bad, so we
+  // should disallow this
+  static_assert(!(!is_src_tainted && is_num_tainted),
+                "Using a tainted size for an untainted source is not allowed");
+
   auto num_val = detail::unwrap_value(num);
   detail::dynamic_check(num_val <= sandbox.get_total_memory(),
                         "Called memcpy for memory larger than the sandbox");
@@ -215,6 +224,15 @@ inline T_Wrap<T_Rhs*, T_Sbx> strncpy(rlbox_sandbox<T_Sbx>& sandbox,
 
   static_assert(!std::is_const_v<T_Rhs>, "Destination is const");
 
+  constexpr bool is_src_tainted = detail::rlbox_is_tainted_or_vol_v<T_Lhs>;
+  constexpr bool is_num_tainted =
+    detail::rlbox_is_tainted_or_vol_v<T_Num> ||
+    detail::rlbox_is_tainted_boolean_hint_v<T_Num>;
+  // The combination of an untainted source and a tainted num is bad, so we
+  // should disallow this
+  static_assert(!(!is_src_tainted && is_num_tainted),
+                "Using a tainted size for an untainted source is not allowed");
+
   auto num_val = detail::unwrap_value(num);
   detail::dynamic_check(num_val <= sandbox.get_total_memory(),
                         "Called strncpy for memory larger than the sandbox");
@@ -240,15 +258,29 @@ inline T_Wrap<T_Rhs*, T_Sbx> strncpy(rlbox_sandbox<T_Sbx>& sandbox,
  * @brief Compare data in sandbox memory area.
  */
 template<typename T_Sbx, typename T_Rhs, typename T_Lhs, typename T_Num>
-inline tainted_int_hint memcmp(rlbox_sandbox<T_Sbx>& sandbox,
-                               T_Rhs&& dest,
-                               T_Lhs&& src,
-                               T_Num&& num)
+inline tainted_int_hint memcmp(
+  rlbox_sandbox<T_Sbx>& sandbox,
+  // Note params have to be references as memcmp can pass tainted_volatile
+  // objects which have private constructors
+  T_Rhs&& dest,
+  T_Lhs&& src,
+  T_Num&& num)
 {
-  static_assert(
-    detail::rlbox_is_tainted_or_vol_v<detail::remove_cv_ref_t<T_Rhs>> ||
-      detail::rlbox_is_tainted_or_vol_v<detail::remove_cv_ref_t<T_Lhs>>,
-    "memcmp called on non wrapped type");
+  constexpr bool is_src_tainted =
+    detail::rlbox_is_tainted_or_vol_v<detail::remove_cv_ref_t<T_Lhs>>;
+  constexpr bool is_dest_tainted =
+    detail::rlbox_is_tainted_or_vol_v<detail::remove_cv_ref_t<T_Rhs>>;
+  static_assert(is_dest_tainted || is_src_tainted,
+                "memcmp called on non wrapped type");
+
+  using TNumNoCVRef = detail::remove_cv_ref_t<T_Num>;
+  constexpr bool is_num_tainted =
+    detail::rlbox_is_tainted_or_vol_v<TNumNoCVRef> ||
+    detail::rlbox_is_tainted_boolean_hint_v<TNumNoCVRef>;
+  // The combination of an untainted source and a tainted num is bad, so we
+  // should disallow this
+  static_assert(!(!is_src_tainted && is_num_tainted),
+                "Using a tainted size for an untainted source is not allowed");
 
   auto num_val = detail::unwrap_value(num);
   detail::dynamic_check(num_val <= sandbox.get_total_memory(),
@@ -261,7 +293,7 @@ inline tainted_int_hint memcmp(rlbox_sandbox<T_Sbx>& sandbox,
   const void* src_start = detail::unwrap_value(src);
 
   // if src is also a tainted/tainted-volatile pointer apply the same check
-  if constexpr (detail::rlbox_is_tainted_or_vol_v<T_Lhs>) {
+  if constexpr (is_src_tainted) {
     detail::check_sandbox_pointer_range_is_contained<T_Sbx>(src_start, num_val);
   }
 
@@ -301,8 +333,8 @@ tainted<T*, T_Sbx> copy_memory_or_grant_access(rlbox_sandbox<T_Sbx>& sandbox,
                 "copy_memory_or_grant_access called on tainted type. Tainted "
                 "data is already accessible to the sandbox. ");
 
-  // overflow ok
-  size_t source_size = num * sizeof(T);
+  size_t source_size = detail::checked_multiply(
+    num, sizeof(T), "Source size computation overflow");
 
   // sandbox can grant access if it includes the following line
   // using can_grant_deny_access = void;
@@ -347,7 +379,8 @@ tainted<T*, T_Sbx> copy_memory_or_grant_access(rlbox_sandbox<T_Sbx>& sandbox,
  * @param free_source_on_copy If the source buffer was copied, this variable
  * controls whether copy_memory_or_deny_access should call delete on the src.
  * This calls delete[] if num > 1.
- * @param copied out parameter indicating if the source was copied or transfered
+ * @param copied out parameter indicating if the source was copied or
+ * transferred
  */
 template<typename T_Sbx,
          typename T,
@@ -366,8 +399,8 @@ T* copy_memory_or_deny_access(rlbox_sandbox<T_Sbx>& sandbox,
                 "copy_memory_or_deny_access not supported on this type as "
                 "there may be ABI differences");
 
-  // overflow ok
-  size_t source_size = num * sizeof(T);
+  size_t source_size = detail::checked_multiply(
+    num, sizeof(T), "Source size computation overflow");
 
   // sandbox can grant access if it includes the following line
   // using can_grant_deny_access = void;
@@ -390,7 +423,11 @@ T* copy_memory_or_deny_access(rlbox_sandbox<T_Sbx>& sandbox,
   tainted<T*, T_Sbx> src_tainted = src;
   char* src_raw = src_tainted.copy_and_verify_buffer_address(
     [](uintptr_t val) { return reinterpret_cast<char*>(val); }, num);
-  std::memcpy(copy, src_raw, source_size);
+  if (src_raw) {
+    std::memcpy(copy, src_raw, source_size);
+  } else {
+    std::memset(copy, 0, source_size);
+  }
   if (free_source_on_copy) {
     sandbox.free_in_sandbox(src);
   }

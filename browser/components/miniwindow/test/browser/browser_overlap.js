@@ -69,11 +69,7 @@ add_task(async function test_second_mini_window_avoids_the_first() {
     "the second mini window opened clear of the first"
   );
 
-  for (let mini of [...MiniWindowManager._miniwindows]) {
-    mini.close();
-  }
-
-  await waitForNoMiniWindowsOpen();
+  await closeAllMiniWindows();
   removeTestTabs();
 });
 
@@ -113,7 +109,8 @@ add_task(async function test_many_windows_fill_corners_without_overlapping() {
       gBrowser,
       `https://example.com/?fill=${i}`
     );
-    wins.push(await popTabForTest(tab, smallCropInfo(tab.linkedBrowser)));
+    let win = await popTabForTest(tab, smallCropInfo(tab.linkedBrowser));
+    wins.push(win);
   }
 
   let rects = wins.map(outerRect);
@@ -141,9 +138,6 @@ add_task(async function test_many_windows_fill_corners_without_overlapping() {
     "the first four windows fill the four screen corners"
   );
 
-  for (let mini of [...MiniWindowManager._miniwindows]) {
-    mini.close();
-  }
-  await waitForNoMiniWindowsOpen();
+  await closeAllMiniWindows();
   removeTestTabs();
 });

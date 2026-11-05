@@ -619,7 +619,7 @@ funcPrefixes = [
 [[labels]]
 name = "Intersection observers"
 funcPrefixes = [
-  "nsRefreshDriver::UpdateIntersectionObservations",
+  "mozilla::dom::Document::UpdateIntersections", # https://share.firefox.dev/4dL9UBm
   "blink::LocalFrameView::RunIntersectionObserverSteps",
   "WebCore::IntersectionObserver::updateObservations",
 ]
@@ -659,12 +659,12 @@ funcPrefixes = [
 ]
 
 [[labels]]
-name = "set CSS2Properties.*"
-# Catch-all for any setter on CSS2Properties / CSSStyleDeclaration; not a
+name = "set CSSStyleProperties.*"
+# Catch-all for any setter on CSSStyleProperties / CSSStyleDeclaration; not a
 # per-property setter, so does not fit the dom_setter template.
 funcPrefixes = [
-  "mozilla::dom::CSS2Properties_Binding::set_",
-  "mozilla::dom::CSS2Properties_Binding::SetPropertyValue",
+  "mozilla::dom::CSSStyleProperties_Binding::set_",
+  "mozilla::dom::CSSStyleProperties_Binding::SetPropertyValue",
   "blink::V8CSSStyleDeclaration::NamedPropertySetterCallback",
   "WebCore::setJSCSSStyleDeclaration_propertyValueForCamelCasedIDLAttribute",
 ]

@@ -35,7 +35,7 @@ bool g_EGLValidationEnabled = true;
 {
     egl::Thread *thread = static_cast<egl::Thread *>(ptr);
     ASSERT(thread);
-    ANGLE_SCOPED_GLOBAL_EGL_AND_EGL_SYNC_LOCK();
+    ANGLE_SCOPED_GLOBAL_LOCK();
     // ReleaseThread() and makeCurrent() inside will perform:
     // - destroy Context if it was already marked for destruction;
     // - invalidate Context if Display was already terminated by app;
@@ -123,7 +123,7 @@ void SetCurrentThreadTLS(Thread *thread)
     gCurrentThread = thread;
 }
 #else
-thread_local Thread *gCurrentThread = nullptr;
+constinit thread_local Thread *gCurrentThread = nullptr;
 #endif
 
 gl::Context *GetGlobalLastContext()

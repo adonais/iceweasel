@@ -1071,11 +1071,11 @@ void WaylandSurface::SetViewPortSourceRectLocked(
     mViewportSourceRect = DesktopRect(-1, -1, -1, -1);
   }
 
-  wp_viewport_set_source(mViewport.get(),
-                         wl_fixed_from_double(mViewportSourceRect.x),
-                         wl_fixed_from_double(mViewportSourceRect.y),
-                         wl_fixed_from_double(mViewportSourceRect.width),
-                         wl_fixed_from_double(mViewportSourceRect.height));
+  const wl_fixed_t x = wl_fixed_from_double(mViewportSourceRect.x);
+  const wl_fixed_t y = wl_fixed_from_double(mViewportSourceRect.y);
+  const wl_fixed_t xMost = wl_fixed_from_double(mViewportSourceRect.XMost());
+  const wl_fixed_t yMost = wl_fixed_from_double(mViewportSourceRect.YMost());
+  wp_viewport_set_source(mViewport.get(), x, y, xMost - x, yMost - y);
   mSurfaceNeedsCommit = true;
 }
 
@@ -1523,12 +1523,11 @@ void WaylandSurface::SetColorRepresentationLocked(
   if (!colorRepresentation) {
     return;
   }
-
   LOGWAYLAND(
       "WaylandSurface::SetColorRepresentationLocked() color coefficients %s "
-      "full range %d",
-      BufferSurface::GetWLColorCoeficientsName(aWLColorCoeficients),
-      aFullRange);
+      "full range %d aWPChromaLocation %d",
+      BufferSurface::GetWLColorCoeficientsName(aWLColorCoeficients), aFullRange,
+      aWPChromaLocation);
 
   MOZ_DIAGNOSTIC_ASSERT(!mColorRepresentationSurface);
   mColorRepresentationSurface = WUniquePtr<wp_color_representation_surface_v1>(

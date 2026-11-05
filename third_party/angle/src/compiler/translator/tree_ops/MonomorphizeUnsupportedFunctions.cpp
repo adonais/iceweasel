@@ -199,9 +199,11 @@ const TFunction *MonomorphizeFunction(TSymbolTable *symbolTable,
         if (nextReplacedArg >= replacedArguments->size() ||
             paramIndex != (*replacedArguments)[nextReplacedArg].argumentIndex)
         {
-            TVariable *substituteArgument =
-                new TVariable(symbolTable, originalParam->name(), &originalParam->getType(),
-                              originalParam->symbolType());
+            TVariable *substituteArgument = new TVariable(
+                symbolTable,
+                originalParam->symbolType() == SymbolType::Empty ? kEmptyImmutableString
+                                                                 : originalParam->name(),
+                &originalParam->getType(), originalParam->symbolType());
             // Not replaced, add an identical parameter.
             substituteFunction->addParameter(substituteArgument);
             (*argumentMapOut)[originalParam->uniqueId()] = new TIntermSymbol(substituteArgument);
@@ -458,9 +460,8 @@ class UpdateFunctionsDefinitionsTraverser final : public TIntermTraverser
         const FunctionData &data = mFunctionMap.at(function);
 
         // If nothing to do, leave it be.
-        if (data.monomorphizedDefinitions.empty())
+        if (data.monomorphizedDefinitions.empty() && (data.isOriginalUsed || function->isMain()))
         {
-            ASSERT(data.isOriginalUsed || function->isMain());
             return;
         }
 
@@ -489,9 +490,8 @@ class UpdateFunctionsDefinitionsTraverser final : public TIntermTraverser
         const FunctionData &data = mFunctionMap.at(function);
 
         // If nothing to do, leave it be.
-        if (data.monomorphizedDefinitions.empty())
+        if (data.monomorphizedDefinitions.empty() && (data.isOriginalUsed || function->isMain()))
         {
-            ASSERT(data.isOriginalUsed || function->isMain());
             return false;
         }
 

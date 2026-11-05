@@ -165,11 +165,9 @@ bool RenderCompositorANGLE::Initialize(nsACString& aError) {
     }
   }
 
-  mSyncObject = layers::SyncObjectHost::CreateSyncObjectHost(mDevice);
-  if (!mSyncObject->Init()) {
-    // Some errors occur. Clear the mSyncObject here.
-    // Then, there will be no texture synchronization.
-    aError.Assign("RcANGLE(create SyncObject failed)"_ns);
+  mSyncObject = RenderThread::Get()->SingletonGLSyncObject();
+  if (!mSyncObject) {
+    aError.Assign("RcANGLE(no SyncObject)"_ns);
     return false;
   }
 
@@ -439,15 +437,6 @@ bool RenderCompositorANGLE::BeginFrame() {
     return false;
   }
 
-  if (RenderThread::Get()->SyncObjectNeeded() && mSyncObject) {
-    if (!mSyncObject->Synchronize(/* aFallible */ true)) {
-      // It's timeout or other error. Handle the device-reset here.
-      RenderThread::Get()->HandleDeviceReset(
-          gfx::DeviceResetDetectPlace::WR_SYNC_OBJRCT,
-          gfx::DeviceResetReason::UNKNOWN);
-      return false;
-    }
-  }
   return true;
 }
 

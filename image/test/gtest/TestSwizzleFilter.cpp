@@ -17,7 +17,7 @@ using namespace mozilla::image;
 template <typename Func>
 void WithSwizzleFilter(const IntSize& aSize, SurfaceFormat aInputFormat,
                        SurfaceFormat aOutputFormat, bool aPremultiplyAlpha,
-                       Func aFunc) {
+                       Func&& aFunc) {
   RefPtr<image::Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
 

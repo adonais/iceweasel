@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://gre/modules/launchonlogin/WindowsLaunchOnLogin.sys.mjs",
 });
 
-const STARTUP_PANE = SRD_PREF_VALUE ? "paneHome" : "paneGeneral";
+const STARTUP_PANE = "paneHome";
 
 add_task(async function test_check_uncheck_checkbox() {
   await ExperimentAPI.ready();

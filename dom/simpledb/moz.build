@@ -39,3 +39,11 @@ IPDL_SOURCES += [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "ActorsChild.h",
+    "NotifyUtils.h",
+    "SDBRequest.h",
+    "SDBResults.h",
+    "SimpleDBCommon.h",
+]

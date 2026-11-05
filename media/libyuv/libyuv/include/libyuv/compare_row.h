@@ -76,6 +76,13 @@ extern "C" {
 #define HAS_SUMSQUAREERROR_NEON_DOTPROD
 #endif
 
+// The following are available for WebAssembly SIMD128:
+#if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
+#define HAS_HAMMINGDISTANCE_WASMSIMD
+#define HAS_SUMSQUAREERROR_WASMSIMD
+#define HAS_HASHDJB2_WASMSIMD
+#endif
+
 uint32_t HammingDistance_C(const uint8_t* src_a,
                            const uint8_t* src_b,
                            int count);
@@ -97,6 +104,9 @@ uint32_t HammingDistance_NEON(const uint8_t* src_a,
 uint32_t HammingDistance_NEON_DotProd(const uint8_t* src_a,
                                       const uint8_t* src_b,
                                       int count);
+uint32_t HammingDistance_WASMSIMD(const uint8_t* src_a,
+                                  const uint8_t* src_b,
+                                  int count);
 uint32_t SumSquareError_C(const uint8_t* src_a,
                           const uint8_t* src_b,
                           int count);
@@ -115,12 +125,16 @@ uint32_t SumSquareError_NEON(const uint8_t* src_a,
 uint32_t SumSquareError_NEON_DotProd(const uint8_t* src_a,
                                      const uint8_t* src_b,
                                      int count);
+uint32_t SumSquareError_WASMSIMD(const uint8_t* src_a,
+                                 const uint8_t* src_b,
+                                 int count);
 
 uint32_t HashDjb2_C(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_SSE41(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_AVX2(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_AVX512BW(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_NEON(const uint8_t* src, int count, uint32_t seed);
+uint32_t HashDjb2_WASMSIMD(const uint8_t* src, int count, uint32_t seed);
 
 #ifdef __cplusplus
 }  // extern "C"

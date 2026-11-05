@@ -1,7 +1,7 @@
 {%- if enum_.is_flat -%}
 
 {{ enum_.js_docstring }}
-export const {{ enum_.name }} = Object.freeze({
+export const {{ enum_.name }} = Object.freeze(/** @lends {{ enum_.name }} */ {
     {%- for variant in enum_.variants %}
     {{ variant.js_docstring|indent(4) }}
     {{ variant.name }}: {{ variant.discr.js_lit }},

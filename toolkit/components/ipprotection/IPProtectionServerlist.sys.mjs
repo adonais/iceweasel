@@ -216,9 +216,9 @@ class Country {
  */
 export class IPProtectionServerlistBase extends EventTarget {
   /**
-   * @type {Country[] | null}
+   * @type {Country[]}
    */
-  __list = null;
+  __list = [];
 
   constructor() {
     super();
@@ -238,12 +238,22 @@ export class IPProtectionServerlistBase extends EventTarget {
     );
   }
   #handleEvent(_event) {
-    if (lazy.IPProtectionService.state === lazy.IPProtectionStates.READY) {
+    this.#refreshWhenReady();
+  }
+
+  async initOnStartupCompleted() {
+    this.#refreshWhenReady();
+  }
+
+  // Not before startup has completed: the source may not be readable yet.
+  #refreshWhenReady() {
+    if (
+      lazy.IPPStartupCache.isStartupCompleted &&
+      lazy.IPProtectionService.state === lazy.IPProtectionStates.READY
+    ) {
       this.maybeFetchList(true);
     }
   }
-
-  async initOnStartupCompleted() {}
 
   /**
    * Tries to refresh the list from the underlining source.
@@ -349,13 +359,6 @@ export class RemoteSettingsServerlist extends IPProtectionServerlistBase {
   #bucket = null;
   #runningPromise = null;
 
-  constructor() {
-    super();
-    this.__list = IPProtectionServerlistBase.dataToList(
-      lazy.IPPStartupCache.locationList
-    );
-  }
-
   async initOnStartupCompleted() {
     super.initOnStartupCompleted();
     this.bucket.on("sync", async () => {
@@ -377,7 +380,6 @@ export class RemoteSettingsServerlist extends IPProtectionServerlistBase {
         await this.bucket.get()
       );
 
-      lazy.IPPStartupCache.storeLocationList(this.__list);
       this.dispatchEvent(new Event(LIST_CHANGED_EVENT));
       return true;
     };

@@ -250,6 +250,38 @@ For example, if there was a new `StockTicketWidget` UI component that happened t
 
 It helps to understand when the translations are captured. The train-hop XPI is built through ShipIt off a chosen Nightly revision, and during that build the current `firefox-l10n` translations are pulled in and frozen into the XPI. Nothing is fetched afterwards, since when Firefox loads the XPI it only registers the packaged files. So a locale's translations track `firefox-l10n` as it stands at XPI build time, independent of the Nightly revision: if a translation lands later, rebuilding the XPI picks it up.
 
+### English-only strings (`newtabPreview.ftl`)
+
+Some New Tab features only ship to English locales (en-US, en-CA, en-GB), so their strings don't need to be translated. Putting those strings in `newtab.ftl` would send them to localizers for no reason, and hardcoding them directly in the markup skips Fluent entirely, which is not ideal, as we need to use Fluent string IDs. This is where [preview files](/browser/how_to/add_preview_strings.md) come in. Instead, use `browser/locales-preview/newtabPreview.ftl`.
+
+Though `browser/locales-preview/` directory was usually meant to house temporary placeholders for strings that were under active development, we can have a permanent place in it for strings that are not meant to be translated, but have a Fluent ID we could utilize in our codebase.
+
+Files in `browser/locales-preview/` are never sent for translation. The English file is used for every locale, so a German Firefox shows German for strings in `newtab.ftl` and English for strings in `newtabPreview.ftl`, on the same page.
+
+#### How it reaches users
+
+The file is packaged in two places:
+
+1. **Firefox itself (omni.ja)**, through `browser/locales/jar.mn`, which copies preview files into every locale. This covers the built-in New Tab.
+2. **The train-hop XPI**, through `browser/extensions/newtab/webext-glue/moz.build`, which copies the English file into every locale folder of the XPI (`locales/<locale>/preview/newtabPreview.ftl`). This covers train-hops, including to Beta and Release builds that were built before a given string existed.
+
+The New Tab pages load the file with `<link rel="localization" href="preview/newtabPreview.ftl">`, next to `newtab.ftl`.
+
+#### Why every locale needs a copy
+
+Fluent only uses a locale if *every* file the page asks for exists in that locale. If one file is missing, Fluent doesn't fill the gap from English. It drops the locale and shows the whole page in the next fallback locale, usually en-US.
+
+The two files don't need to share any string IDs. Fluent searches all of a page's files when it looks up an ID. The files only need to *exist* for the locale.
+
+If you ever remove the preview file, or add another file to the New Tab pages, it has to be present for every locale in the XPI, or localized users will lose their translations.
+
+#### Adding an English-only string
+
+1. Add the string to `browser/locales-preview/newtabPreview.ftl`. Use an ID that isn't already in `newtab.ftl`, since the same ID in both files would conflict.
+2. Use the ID in the New Tab markup as usual, for example `data-l10n-id="newtab-my-feature-title"`. The New Tab pages already load the file.
+3. For a document other than the New Tab page (for example about:preferences), that document has to load the file too, with `MozXULElement.insertFTLIfNeeded("preview/newtabPreview.ftl")` or a `<link rel="localization">`.
+4. If the feature later needs translations, move the string to `newtab.ftl` and follow the usual localization process for new strings.
+
 # Train-hop compatibility automated testing
 
 As of [bug 1983857](https://bugzilla.mozilla.org/show_bug.cgi?id=1983857), we have jobs running on most pushes to `autoland` and `main` that do the following:

@@ -138,7 +138,8 @@ td[data-d3-cell="actions"] > div {
 }
 
 td[data-d3-cell="value"] > pre,
-#metrics-table-settings-timeline-example > pre {
+#metrics-table-settings-timeline-example > pre,
+#submitted-ping-info pre {
   background-color: var(--background-color-box);
   padding: 5px;
   border-radius: var(--border-radius-small);
@@ -187,4 +188,14 @@ td[data-d3-cell="value"] svg,
 pre.withChart {
   max-width: 500px;
   overflow: scroll;
+}
+
+#submitted-ping-info {
+  display: flex;
+  flex-direction: row;
+}
+
+#submitted-ping-info > * {
+  flex: 0 0 auto;
+  margin: 5px;
 }

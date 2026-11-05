@@ -638,6 +638,7 @@ bool Pass::testConstraint(const Rule & r, Machine & m) const
 
 void SlotMap::collectGarbage(Slot * &aSlot)
 {
+    if (m_size == 0 || m_size > MAX_SLOTS) return;
     for(Slot **s = begin(), *const *const se = end() - 1; s != se; ++s) {
         Slot *& slot = *s;
         if(slot && (slot->isDeleted() || slot->isCopied()))

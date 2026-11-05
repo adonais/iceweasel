@@ -827,6 +827,16 @@ JS_PUBLIC_API JSObject* JS::GetRealmIteratorPrototype(JSContext* cx) {
   return GlobalObject::getOrCreateIteratorPrototype(cx, cx->global());
 }
 
+JS_PUBLIC_API JSObject* JS::GetRealmMapIteratorPrototype(JSContext* cx) {
+  CHECK_THREAD(cx);
+  return GlobalObject::getOrCreateMapIteratorPrototype(cx, cx->global());
+}
+
+JS_PUBLIC_API JSObject* JS::GetRealmSetIteratorPrototype(JSContext* cx) {
+  CHECK_THREAD(cx);
+  return GlobalObject::getOrCreateSetIteratorPrototype(cx, cx->global());
+}
+
 JS_PUBLIC_API JSObject* JS::GetRealmAsyncIteratorPrototype(JSContext* cx) {
   CHECK_THREAD(cx);
   return GlobalObject::getOrCreateAsyncIteratorPrototype(cx, cx->global());

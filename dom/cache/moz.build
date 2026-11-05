@@ -108,3 +108,10 @@ MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
 XPCSHELL_TESTS_MANIFESTS += [
     "test/xpcshell/xpcshell.toml",
 ]
+
+SOURCE_HEADERS += [
+    "CacheCipherKeyManager.h",
+    "FileUtilsImpl.h",
+    "NotifyUtils.h",
+    "QuotaClientImpl.h",
+]

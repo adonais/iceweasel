@@ -15,14 +15,6 @@ const { PasswordRulesParser } = ChromeUtils.importESModule(
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
 );
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
-Services.prefs.setBoolPref(
-  "toolkit.telemetry.testing.overrideProductsCheck",
-  true
-);
 
 const IMPROVED_RULES_COLLECTION = "password-rules";
 
@@ -36,6 +28,11 @@ function getRulesForRecord(records, baseOrigin) {
   }
   return rules;
 }
+
+add_setup(() => {
+  do_get_profile;
+  Services.fog.initializeFOG();
+});
 
 add_task(async function test_verify_password_rules() {
   const testCases = [
@@ -400,18 +397,11 @@ add_task(async function test_generatePassword_idn_rule() {
 });
 
 add_task(async function test_improved_password_rules_telemetry() {
+  Services.fog.testResetFOG();
   // Force password generation to be enabled.
   Services.prefs.setBoolPref("signon.generation.available", true);
   Services.prefs.setBoolPref("signon.generation.enabled", true);
   Services.prefs.setBoolPref("signon.improvedPasswordRules.enabled", true);
-
-  const IMPROVED_PASSWORD_GENERATION_HISTOGRAM =
-    "PWMGR_NUM_IMPROVED_GENERATED_PASSWORDS";
-
-  // Clear out the previous pings from this test
-  let snapshot = TelemetryTestUtils.getAndClearHistogram(
-    IMPROVED_PASSWORD_GENERATION_HISTOGRAM
-  );
 
   // TEST_ORIGIN emulates the browsingContext.currentWindowGlobal.documentURI variable in LoginManagerParent
   // and so it should always be a correctly formed URI when working with
@@ -422,22 +412,23 @@ add_task(async function test_improved_password_rules_telemetry() {
   let PRMP = new PasswordRulesManagerParent();
 
   // Generate a password with custom rules,
-  // so we should send a ping to the custom rules bucket (position 1).
   let generatedPassword = await PRMP.generatePassword(TEST_ORIGIN);
   Assert.ok(generatedPassword, "A password was generated");
 
-  TelemetryTestUtils.assertHistogram(snapshot, 1, 1);
+  Assert.equal(
+    1,
+    Glean.pwmgr.numImprovedGeneratedPasswords.true.testGetValue()
+  );
 
   TEST_ORIGIN = Services.io.newURI("https://otherexample.com");
   // Generate a password with default rules,
-  // so we should send a ping to the default rules bucket (position 0).
-  snapshot = TelemetryTestUtils.getAndClearHistogram(
-    IMPROVED_PASSWORD_GENERATION_HISTOGRAM
-  );
   generatedPassword = await PRMP.generatePassword(TEST_ORIGIN);
   Assert.ok(generatedPassword, "A password was generated");
 
-  TelemetryTestUtils.assertHistogram(snapshot, 0, 1);
+  Assert.equal(
+    1,
+    Glean.pwmgr.numImprovedGeneratedPasswords.false.testGetValue()
+  );
 });
 
 function checkCharacters(password, _characters) {

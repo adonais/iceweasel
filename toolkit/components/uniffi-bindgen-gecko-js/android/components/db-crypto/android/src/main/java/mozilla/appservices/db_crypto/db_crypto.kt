@@ -730,6 +730,10 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_db_crypto_checksum_func_create_key(
     ): Int
+    external fun uniffi_db_crypto_checksum_func_create_managed_encdec(
+    ): Int
+    external fun uniffi_db_crypto_checksum_func_create_static_key_manager(
+    ): Int
     external fun uniffi_db_crypto_checksum_method_encryptordecryptor_decrypt(
     ): Int
     external fun uniffi_db_crypto_checksum_method_encryptordecryptor_encrypt(
@@ -798,6 +802,10 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_db_crypto_fn_func_create_key(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_db_crypto_fn_func_create_managed_encdec(`keyManager`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_db_crypto_fn_func_create_static_key_manager(`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
     external fun ffi_db_crypto_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun ffi_db_crypto_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -2673,6 +2681,38 @@ public object FfiConverterTypeDbCryptoApiError : FfiConverterRustBuffer<DbCrypto
     UniffiLib.uniffi_db_crypto_fn_func_create_key(
     
         _status)
+}
+    )
+    }
+    
+
+        /**
+         * Similar to create_static_key_manager above, create a
+         * ManagedEncryptorDecryptor by passing in a KeyManager
+         */ fun `createManagedEncdec`(`keyManager`: KeyManager): EncryptorDecryptor {
+            return FfiConverterTypeEncryptorDecryptor.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_db_crypto_fn_func_create_managed_encdec(
+    
+        
+        FfiConverterTypeKeyManager.lower(`keyManager`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Utility function to create a StaticKeyManager to be used for the time
+         * being until support lands for [trait implementation of an UniFFI
+         * interface](https://mozilla.github.io/uniffi-rs/next/proc_macro/index.html#structs-implementing-traits)
+         * in UniFFI.
+         */ fun `createStaticKeyManager`(`key`: kotlin.String): KeyManager {
+            return FfiConverterTypeKeyManager.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_db_crypto_fn_func_create_static_key_manager(
+    
+        
+        FfiConverterString.lower(`key`),_status)
 }
     )
     }

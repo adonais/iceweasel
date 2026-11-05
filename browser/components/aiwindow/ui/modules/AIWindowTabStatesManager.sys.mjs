@@ -558,7 +558,13 @@ export class AIWindowTabStatesManager {
 
     const tabState = this.#tabStates.get(tab) ?? {};
     if (saved?.conversationId) {
-      tabState.state = { ...(tabState.state ?? {}), ...saved };
+      const conversation = tabState.state?.conversation;
+      tabState.state = {
+        ...(tabState.state ?? {}),
+        ...saved,
+        conversation:
+          conversation?.id === saved.conversationId ? conversation : null,
+      };
       this.#tabStates.set(tab, tabState);
     }
     return tabState;
@@ -1119,13 +1125,11 @@ export class AIWindowTabStatesManager {
           !isSidebarOpen &&
           shouldKeepSidebarOpen
         ) {
-          lazy.AIWindowUI.openSidebar(
-            this.#window,
-            tabState.state.conversation
-          );
           tabState = this.#getTabState(tab, {
             input: EMPTY_SMARTBAR_INPUT_STATE,
           });
+          await this.#openSidebarForTab(tab, tabState);
+          return;
         }
 
         if (!isAiWindowUrl && lazy.AIWindowUI.isSidebarOpen(this.#window)) {

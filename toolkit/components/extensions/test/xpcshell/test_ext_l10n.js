@@ -1,24 +1,12 @@
 "use strict";
 
-const { FileUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/FileUtils.sys.mjs"
-);
-
 add_setup(async function setup() {
   // Add a test .ftl file
   // (Note: other tests do this by patching L10nRegistry.load() but in
   // this test L10nRegistry is also loaded in the extension process --
   // just adding a new resource is easier than trying to patch
   // L10nRegistry in all processes)
-  let dir = FileUtils.getDir("TmpD", ["l10ntest"]);
-  dir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-
-  await IOUtils.writeUTF8(
-    PathUtils.join(dir.path, "test.ftl"),
-    "key = value\n"
-  );
-
-  let target = Services.io.newFileURI(dir);
+  let target = Services.io.newFileURI(do_get_file("data/l10n"));
   let resProto = Services.io
     .getProtocolHandler("resource")
     .QueryInterface(Ci.nsIResProtocolHandler);
@@ -50,7 +38,7 @@ add_task(async function test_l10n_dom() {
       async () => {
         try {
           await document.l10n.ready;
-          let result = await document.l10n.formatValue("key");
+          let result = await document.l10n.formatValue("test-l10n-key");
           browser.test.sendMessage("result", { success: true, result });
         } catch (err) {
           browser.test.sendMessage("result", {
@@ -125,7 +113,7 @@ add_task(async function test_l10n_manifest() {
       manifest: {
         l10n_resources: ["test.ftl"],
         page_action: {
-          default_title: "__MSG_key__",
+          default_title: "__MSG_test-l10n-key__",
         },
       },
     });
@@ -156,7 +144,7 @@ add_task(async function test_l10n_manifest() {
   title = await runTest();
   equal(
     title,
-    "__MSG_key__",
+    "__MSG_test-l10n-key__",
     "Manifest key not localized in unprivileged extension"
   );
 

@@ -84,6 +84,13 @@ class CustomTabRobot {
         }
     }
 
+    fun verifyPageTitle(expectedTitle: String) {
+        val title = mDevice.findObject(UiSelector().resourceId(customTabTitleId).text(expectedTitle))
+        if (!title.waitForExists(waitingTime)) {
+            Assert.fail("Expected title: $expectedTitle, actual title: ${customTabTitle.text}")
+        }
+    }
+
     fun clickLinkMatchingText(expectedText: String) {
         mDevice.findObject(UiSelector().textContains(expectedText)).waitForExists(waitingTime)
         mDevice.findObject(UiSelector().textContains(expectedText)).also { it.click() }
@@ -120,5 +127,9 @@ private val shareButton = onView(withContentDescription("Share link"))
 
 private val closeCustomTabButton =
     onView(withContentDescription(customtabsR.string.mozac_feature_customtabs_exit_button))
+
+private val customTabTitleId = "$packageName:id/mozac_browser_toolbar_title_view"
+
+private val customTabTitle = mDevice.findObject(UiSelector().resourceId(customTabTitleId))
 
 private val customTabUrl = mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_url_view"))

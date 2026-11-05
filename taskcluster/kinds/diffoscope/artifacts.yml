@@ -15,6 +15,9 @@ task-defaults:
         # due to #if/#else branches.
         - sed -i '/^\/\/@line /d' {a,b}/"$RESOURCE_DIR"/browser/defaults/preferences/firefox.js
         - sed -i '/^\/\/@line /d' {a,b}/"$RESOURCE_DIR"/greprefs.js
+        # bug 1950310 - dom.ipc.processLaunch.useMacPlists is only set in macOS
+        # artifact builds, so remove its line if present.
+        - sed -i '/dom\.ipc\.processLaunch\.useMacPlists/d' b/"$RESOURCE_DIR"/greprefs.js
         # bug 2036424 - telemetry.fog.artifact_build isn't stable between
         # artifact and not-artifact builds, so remove its line if present.
         - sed -i '/telemetry\.fog\.artifact\_build/d' b/"$RESOURCE_DIR"/greprefs.js

@@ -183,8 +183,6 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1980013
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1980013
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1980013
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1980013
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && verify", # can be too slow in chaos mode to trigger dblclick events
   "os == 'win'", # Bug 1977557 and Bug 1977558
 ]
 
@@ -192,8 +190,6 @@ skip-if = [
 skip-if = [
   "a11y_checks",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 2012028, Frequently failing on all linux variants
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1980013
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && verify", # can be too slow in chaos mode to trigger dblclick events
   "os == 'win'", # Bug 1977557 and Bug 1977558
 ]
 
@@ -203,8 +199,6 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1980013
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1980013
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1980013
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1980013
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && verify", # can be too slow in chaos mode to trigger dblclick events
   "os == 'win'", # Bug 1977557 and Bug 1977558
 ]
 
@@ -257,9 +251,6 @@ skip-if = [
 ["browser_viewport_zoom_toggle.js"]
 
 ["browser_window_close.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 2016837
-]
 
 ["browser_window_sizing.js"]
 

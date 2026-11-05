@@ -54,6 +54,7 @@ MOZ_DEFINE_ENUM_WITH_BASE(AccType, uint8_t,
    */
   eApplicationType,
   eHTMLLinkType,
+  eHTMLListBulletType,
   eHTMLOptGroupType,
   eImageMapType,
   eMenuPopupType,

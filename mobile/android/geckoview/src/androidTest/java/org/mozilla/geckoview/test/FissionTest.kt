@@ -39,27 +39,6 @@ class FissionTest : BaseSessionTest() {
     }
 
     @Test
-    fun fissionDisabledByEnvironment() {
-        assumeThat(sessionRule.env.isFission, equalTo(false))
-
-        // Check preference with Gecko
-        val fissionAutostart = sessionRule.getPrefs("fission.autostart")
-        assertFalse(fissionAutostart[0] as Boolean)
-
-        // Check preference with GeckoView
-        assertNull(
-            "Default will have no value since we are relying on Gecko.",
-            sessionRule.runtime.settings.fissionEnabled,
-        )
-
-        // Verify fission is off
-        assertFalse(
-            "Fission is not running.",
-            sessionRule.isFissionRunning,
-        )
-    }
-
-    @Test
     fun testFissionSettingsBuilder() {
         val settingFissionEnabled = GeckoRuntimeSettings.Builder().fissionEnabled(true).build()
         assertTrue(

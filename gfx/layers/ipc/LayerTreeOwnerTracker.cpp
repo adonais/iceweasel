@@ -9,9 +9,12 @@
 #include "mozilla/StaticPtr.h"              // for StaticAutoPtr
 #include "mozilla/gfx/GPUChild.h"           // for GPUChild
 #include "mozilla/gfx/GPUProcessManager.h"  // for GPUProcessManager
+#include "mozilla/layers/LayerTreeLog.h"
 
 namespace mozilla {
 namespace layers {
+
+LazyLogModule gLayerTreeLog("LayerTree");
 
 static StaticAutoPtr<LayerTreeOwnerTracker> sSingleton;
 
@@ -30,6 +33,8 @@ LayerTreeOwnerTracker* LayerTreeOwnerTracker::Get() { return sSingleton; }
 void LayerTreeOwnerTracker::Map(LayersId aLayersId,
                                 base::ProcessId aProcessId) {
   MutexAutoLock lock(mLayerIdsLock);
+
+  LAYERTREE_LOG("Map layer tree {:x} to pid {}", aLayersId, aProcessId);
 
   // Add the mapping to the list
   const auto i = mLayerIds.insert({aLayersId, aProcessId});
@@ -51,6 +56,7 @@ void LayerTreeOwnerTracker::Unmap(LayersId aLayersId,
     return;
   }
 
+  LAYERTREE_LOG("Unmap layer tree {:x} from pid {}", aLayersId, aProcessId);
   mLayerIds.erase(i);
 }
 

@@ -4,8 +4,8 @@ This folder contains an experiment to add TypeScript to Gecko. The type checking
 
 ```
 cd devtools/client/performance-new
-yarn install
-yarn test
+npm ci
+npm test
 ```
 
 Also, the types should work with editor integration. VS Code works with TypeScript by default, and should pick up the types here.

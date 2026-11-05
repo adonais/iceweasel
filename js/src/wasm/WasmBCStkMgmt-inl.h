@@ -20,7 +20,12 @@
 #ifndef wasm_wasm_baseline_stk_mgmt_inl_h
 #define wasm_wasm_baseline_stk_mgmt_inl_h
 
+#include "wasm/WasmBCStk.h"
+
 #include <bit>
+#include <cstdint>
+
+#include "wasm/WasmBCClass.h"
 
 namespace js {
 namespace wasm {

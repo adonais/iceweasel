@@ -125,7 +125,7 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   RefPtr<FcPattern> mFontPattern;
 
 #ifdef MOZ_FONTATIONS
-  void InitSkrifaFont(FcPattern* aPattern);
+  void InitSkrifaFontFace() override;
 #endif
 
   // FTFace - initialized when needed. Once mFTFaceInitialized is true,

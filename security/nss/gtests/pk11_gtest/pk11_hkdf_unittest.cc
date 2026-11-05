@@ -6,17 +6,15 @@
 
 #include <memory>
 #include "gtest/gtest.h"
+#include "json_reader.h"
 #include "nss.h"
 #include "nss_scoped_ptrs.h"
 #include "pk11pub.h"
 #include "secerr.h"
 #include "sechash.h"
-#include "util.h"
 
-#include "testvectors/hkdf-sha1-vectors.h"
-#include "testvectors/hkdf-sha256-vectors.h"
-#include "testvectors/hkdf-sha384-vectors.h"
-#include "testvectors/hkdf-sha512-vectors.h"
+#include "testvectors_base/test-structs.h"
+#include "pk11_import.h"
 
 namespace nss_test {
 
@@ -37,10 +35,61 @@ static const HkdfTestType kHkdfTestTypesAll[] = {
     HkdfTestType::hkdfData,
 };
 
-class Pkcs11HkdfTest
-    : public ::testing::TestWithParam<
-          std::tuple<HkdfTestVector, HkdfTestType, CK_MECHANISM_TYPE>> {
+class Pkcs11HkdfTest : public ::testing::TestWithParam<HkdfTestType> {
  protected:
+  void Run(const std::string& name, const std::string& algorithm,
+           CK_MECHANISM_TYPE hash_mech) {
+    WycheproofHeader(name, algorithm, "hkdf_test_schema_v1.json",
+                     [this, hash_mech](JsonReader& r) {
+                       RunGroup(r, GetParam(), hash_mech);
+                     });
+  }
+
+ private:
+  void RunGroup(JsonReader& r, HkdfTestType test_type,
+                CK_MECHANISM_TYPE hash_mech) {
+    std::vector<HkdfTestVector> tests;
+
+    while (r.NextItem()) {
+      std::string n = r.ReadLabel();
+      if (n == "") {
+        break;
+      }
+
+      if (n == "keySize" || n == "source") {
+        r.SkipValue();
+      } else if (n == "type") {
+        ASSERT_EQ("HkdfTest", r.ReadString());
+      } else if (n == "tests") {
+        WycheproofReadTests(r, &tests, ReadTestAttr, false);
+      } else {
+        FAIL() << "unknown label in group: " << n;
+      }
+    }
+
+    for (auto& t : tests) {
+      std::cout << "Running test " << t.id << std::endl;
+      RunTest(t, test_type, hash_mech);
+    }
+  }
+
+  static void ReadTestAttr(HkdfTestVector& t, const std::string& n,
+                           JsonReader& r) {
+    if (n == "ikm") {
+      t.ikm = r.ReadHex();
+    } else if (n == "salt") {
+      t.salt = r.ReadHex();
+    } else if (n == "info") {
+      t.info = r.ReadHex();
+    } else if (n == "okm") {
+      t.okm = r.ReadHex();
+    } else if (n == "size") {
+      t.size = static_cast<uint32_t>(r.ReadInt());
+    } else {
+      FAIL() << "unknown test key: " << n;
+    }
+  }
+
   CK_MECHANISM_TYPE Pk11MechToVendorMech(CK_MECHANISM_TYPE pk11_mech) {
     switch (pk11_mech) {
       case CKM_SHA_1:
@@ -57,6 +106,12 @@ class Pkcs11HkdfTest
     }
   }
 
+  static size_t HashLength(CK_MECHANISM_TYPE hash_mech) {
+    size_t len = HASH_ResultLenByOidTag(PK11_MechanismToAlgtag(hash_mech));
+    EXPECT_NE(0U, len) << "Unknown hash mech";
+    return len;
+  }
+
   ScopedPK11SymKey ImportKey(SECItem& ikm_item, bool import_as_data) {
     ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
     if (!slot) {
@@ -70,20 +125,20 @@ class Pkcs11HkdfTest
                                    PK11_OriginUnwrap, CKA_SIGN, &ikm_item,
                                    nullptr));
     } else {
-      ikm.reset(PK11_ImportSymKey(slot.get(), CKM_GENERIC_SECRET_KEY_GEN,
-                                  PK11_OriginUnwrap, CKA_SIGN, &ikm_item,
-                                  nullptr));
+      ikm.reset(nss_test::ImportSymKey(slot.get(), CKM_GENERIC_SECRET_KEY_GEN,
+                                       PK11_OriginUnwrap, CKA_SIGN, &ikm_item,
+                                       nullptr));
     }
     return ikm;
   }
 
-  void RunWycheproofTest(const HkdfTestVector& vec, HkdfTestType test_type,
-                         CK_MECHANISM_TYPE hash_mech) {
+  void RunTest(const HkdfTestVector& vec, HkdfTestType test_type,
+               CK_MECHANISM_TYPE hash_mech) {
     std::string msg = "Test #" + std::to_string(vec.id) + " failed";
-    std::vector<uint8_t> vec_ikm = hex_string_to_bytes(vec.ikm);
-    std::vector<uint8_t> vec_okm = hex_string_to_bytes(vec.okm);
-    std::vector<uint8_t> vec_info = hex_string_to_bytes(vec.info);
-    std::vector<uint8_t> vec_salt = hex_string_to_bytes(vec.salt);
+    std::vector<uint8_t> vec_ikm(vec.ikm);
+    std::vector<uint8_t> vec_okm(vec.okm);
+    std::vector<uint8_t> vec_info(vec.info);
+    std::vector<uint8_t> vec_salt(vec.salt);
     SECItem ikm_item = {siBuffer, vec_ikm.data(),
                         static_cast<unsigned int>(vec_ikm.size())};
     SECItem okm_item = {siBuffer, vec_okm.data(),
@@ -156,10 +211,18 @@ class Pkcs11HkdfTest
     ScopedPK11SymKey okm = ScopedPK11SymKey(
         PK11_Derive(ikm.get(), derive_mech, &params_item,
                     CKM_GENERIC_SECRET_KEY_GEN, CKA_DERIVE, vec.size));
-    if (vec.valid) {
+    // In FIPS mode HMAC keys, here the salt, must be at least half the hash
+    // length. An empty salt is only replaced when it isn't passed as a key.
+    bool saltIsKey = test_type == HkdfTestType::saltDerive ||
+                     test_type == HkdfTestType::saltDeriveDataKey;
+    bool shortSalt = PK11_IsFIPS() &&
+                     vec_salt.size() < HashLength(hash_mech) / 2 &&
+                     (saltIsKey || !vec_salt.empty());
+    if (vec.valid && !shortSalt) {
       ASSERT_NE(nullptr, okm.get()) << msg;
-      ASSERT_EQ(SECSuccess, PK11_ExtractKeyValue(okm.get())) << msg;
-      ASSERT_EQ(0, SECITEM_CompareItem(&okm_item, PK11_GetKeyData(okm.get())))
+      ASSERT_EQ(SECSuccess, nss_test::ExtractKeyValue(okm.get())) << msg;
+      ASSERT_EQ(0,
+                SECITEM_CompareItem(&okm_item, nss_test::GetKeyData(okm.get())))
           << msg;
     } else {
       ASSERT_EQ(nullptr, okm.get()) << msg;
@@ -167,32 +230,17 @@ class Pkcs11HkdfTest
   }
 };
 
-TEST_P(Pkcs11HkdfTest, WycheproofVectors) {
-  RunWycheproofTest(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                    std::get<2>(GetParam()));
+TEST_P(Pkcs11HkdfTest, Sha1) { Run("hkdf_sha1", "HKDF-SHA-1", CKM_SHA_1); }
+TEST_P(Pkcs11HkdfTest, Sha256) {
+  Run("hkdf_sha256", "HKDF-SHA-256", CKM_SHA256);
+}
+TEST_P(Pkcs11HkdfTest, Sha384) {
+  Run("hkdf_sha384", "HKDF-SHA-384", CKM_SHA384);
+}
+TEST_P(Pkcs11HkdfTest, Sha512) {
+  Run("hkdf_sha512", "HKDF-SHA-512", CKM_SHA512);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    HkdfSha1, Pkcs11HkdfTest,
-    ::testing::Combine(::testing::ValuesIn(kHkdfSha1WycheproofVectors),
-                       ::testing::ValuesIn(kHkdfTestTypesAll),
-                       ::testing::Values(CKM_SHA_1)));
-
-INSTANTIATE_TEST_SUITE_P(
-    HkdfSha256, Pkcs11HkdfTest,
-    ::testing::Combine(::testing::ValuesIn(kHkdfSha256WycheproofVectors),
-                       ::testing::ValuesIn(kHkdfTestTypesAll),
-                       ::testing::Values(CKM_SHA256)));
-
-INSTANTIATE_TEST_SUITE_P(
-    HkdfSha384, Pkcs11HkdfTest,
-    ::testing::Combine(::testing::ValuesIn(kHkdfSha384WycheproofVectors),
-                       ::testing::ValuesIn(kHkdfTestTypesAll),
-                       ::testing::Values(CKM_SHA384)));
-
-INSTANTIATE_TEST_SUITE_P(
-    HkdfSha512, Pkcs11HkdfTest,
-    ::testing::Combine(::testing::ValuesIn(kHkdfSha512WycheproofVectors),
-                       ::testing::ValuesIn(kHkdfTestTypesAll),
-                       ::testing::Values(CKM_SHA512)));
+INSTANTIATE_TEST_SUITE_P(Wycheproof, Pkcs11HkdfTest,
+                         ::testing::ValuesIn(kHkdfTestTypesAll));
 }  // namespace nss_test

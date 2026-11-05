@@ -1,4 +1,4 @@
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" class="reftest-wait">
 <head>
 </head>
 <body>
@@ -64,6 +64,7 @@ function doe() {
    document.getElementById("mw_c").appendChild(document.getElementById("mw_d"));
    document.getElementById("mw_e").appendChild(document.getElementById("mw_f"));
    document.getElementById("mw_g").appendChild(document.getElementById("mw_b"));
+   document.documentElement.removeAttribute("class");
 }
 </script>
 </body>

@@ -14,6 +14,8 @@ interface HTMLTemplateElement : HTMLElement {
   [HTMLConstructor] constructor();
 
   readonly attribute DocumentFragment content;
+  [CEReactions, Pref="dom.template-for.enabled"]
+  attribute DOMString htmlFor;
   [CEReactions]
   attribute DOMString shadowRootMode;
   [CEReactions, SetterThrows]

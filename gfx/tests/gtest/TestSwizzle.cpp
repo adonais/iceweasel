@@ -62,13 +62,11 @@ constexpr SwizzleArch kSwizzleArchs[] = {
 };
 
 static uint8_t RefPremultiply(uint8_t aColor, uint8_t aAlpha) {
-  uint32_t t = uint32_t(aColor) * aAlpha + 0xFF;
-  return uint8_t((t + (t >> 8)) >> 8);
+  return (uint32_t(aColor) * aAlpha + 127) / 255;
 }
 
 static uint8_t RefUnpremultiply(uint8_t aColor, uint8_t aAlpha) {
-  uint32_t q = aAlpha ? (0xFF00FFu / aAlpha) : 0u;
-  return uint8_t((uint32_t(aColor) * q) >> 16);
+  return aAlpha ? (uint32_t(aColor) * 255 + aAlpha / 2) / aAlpha : 0;
 }
 
 // Generate the expected pixel for testing with the given
@@ -676,6 +674,88 @@ TEST(Moz2D, UnpremultiplyRow)
     } else {
       EXPECT_NE(arch, SwizzleArch::eAny);
       EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
+  }
+}
+
+TEST(Moz2D, AlphaConversionRounding)
+{
+  constexpr int32_t width = 257;
+  constexpr int32_t stride = width * 4;
+  uint8_t src[stride], dst[stride], expected[stride], restored[stride];
+  uint8_t packed[stride];
+  const SurfaceFormat formats[] = {
+      SurfaceFormat::B8G8R8A8, SurfaceFormat::R8G8B8A8,
+      SurfaceFormat::A8R8G8B8, SurfaceFormat::B8G8R8X8,
+      SurfaceFormat::R8G8B8X8, SurfaceFormat::X8R8G8B8};
+
+  for (auto op : {SwizzleOp::Premultiply, SwizzleOp::Unpremultiply}) {
+    for (uint32_t alpha = 0; alpha <= 255; ++alpha) {
+      for (int32_t x = 0; x < width; ++x) {
+        uint32_t limit = op == SwizzleOp::Premultiply ? 256 : alpha + 1;
+        src[4 * x] = (x & 255) % limit;
+        src[4 * x + 1] = (255 - (x & 255)) % limit;
+        src[4 * x + 2] = ((x & 255) ^ 0x55) % limit;
+        src[4 * x + 3] = alpha;
+      }
+      for (auto sourceFormat :
+           {SurfaceFormat::B8G8R8A8, SurfaceFormat::R8G8B8A8,
+            SurfaceFormat::A8R8G8B8}) {
+        SCOPED_TRACE(testing::Message() << "source=" << int(sourceFormat));
+        for (int32_t x = 0; x < width; ++x) {
+          GeneratePixel(SwizzleOp::Copy, sourceFormat, src[4 * x],
+                        src[4 * x + 1], src[4 * x + 2], alpha, packed + 4 * x);
+        }
+        for (auto format : formats) {
+          if (op == SwizzleOp::Unpremultiply &&
+              (format == SurfaceFormat::B8G8R8X8 ||
+               format == SurfaceFormat::R8G8B8X8 ||
+               format == SurfaceFormat::X8R8G8B8)) {
+            continue;
+          }
+          for (int32_t x = 0; x < width; ++x) {
+            GeneratePixel(op, format, src[4 * x], src[4 * x + 1],
+                          src[4 * x + 2], alpha, expected + 4 * x);
+          }
+          for (auto arch : kSwizzleArchs) {
+            SCOPED_TRACE(testing::Message()
+                         << "op=" << int(op) << " alpha=" << alpha
+                         << " format=" << int(format) << " arch=" << int(arch));
+            auto row = RowFnFor(op, sourceFormat, format, arch);
+            if (!row) {
+              EXPECT_NE(arch, SwizzleArch::eAny);
+              EXPECT_NE(arch, SwizzleArch::eFallback);
+              continue;
+            }
+            row(packed, dst, width);
+            ASSERT_TRUE(ArrayEqual(dst, expected));
+            memcpy(dst, packed, stride);
+            row(dst, dst, width);
+            ASSERT_TRUE(ArrayEqual(dst, expected));
+            bool converted =
+                op == SwizzleOp::Premultiply
+                    ? PremultiplyData(packed, stride, sourceFormat, dst, stride,
+                                      format, IntSize(width, 1), arch)
+                    : UnpremultiplyData(packed, stride, sourceFormat, dst,
+                                        stride, format, IntSize(width, 1),
+                                        arch);
+            if (converted) {
+              ASSERT_TRUE(ArrayEqual(dst, expected));
+            } else {
+              EXPECT_NE(arch, SwizzleArch::eAny);
+              EXPECT_NE(arch, SwizzleArch::eFallback);
+            }
+            if (op == SwizzleOp::Unpremultiply) {
+              auto inverse =
+                  RowFnFor(SwizzleOp::Premultiply, format, sourceFormat, arch);
+              if (inverse) {
+                inverse(dst, restored, width);
+                ASSERT_TRUE(ArrayEqual(restored, packed));
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -55,6 +55,11 @@ class HTMLAnchorElement final : public nsGenericHTMLElement,
   void GetLinkTargetImpl(nsAString& aTarget) override;
   already_AddRefed<nsIURI> GetHrefURI() const override;
 
+  bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
+                      const nsAString& aValue,
+                      nsIPrincipal* aMaybeScriptedPrincipal,
+                      nsAttrValue& aResult) override;
+
   void BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                      const nsAttrValue* aValue, bool aNotify) override;
   void AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,

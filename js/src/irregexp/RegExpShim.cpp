@@ -212,13 +212,22 @@ Isolate::~Isolate() {
 /* static */
 const void* ExternalReference::TopOfRegexpStack(Isolate* isolate) {
   return reinterpret_cast<const void*>(
-      isolate->regexp_stack()->memory_top_address_address());
+      isolate->regexp_stack()->thread_local_address() +
+      regexp::Stack::kMemoryTopOffset);
 }
 
 /* static */
 const void* ExternalReference::RegexpStackPointer(Isolate* isolate) {
   return reinterpret_cast<const void*>(
-      isolate->regexp_stack()->stack_pointer_address());
+      isolate->regexp_stack()->thread_local_address() +
+      regexp::Stack::kStackPointerOffset);
+}
+
+/* static */
+const void* ExternalReference::RegexpStackLimit(Isolate* isolate) {
+  return reinterpret_cast<const void*>(
+      isolate->regexp_stack()->thread_local_address() +
+      regexp::Stack::kLimitOffset);
 }
 
 /* static */

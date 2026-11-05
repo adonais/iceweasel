@@ -534,11 +534,7 @@ class StorageModule extends RootBiDiModule {
             lazy.pprint`Expected partition "userContext" to be a string, got ${userContext}`
           );
 
-          if (!lazy.UserContextManager.hasUserContextId(userContext)) {
-            throw new lazy.error.NoSuchUserContextError(
-              `User Context with id ${userContext} was not found`
-            );
-          }
+          this._assertUserContextId(userContext);
         }
         break;
       }

@@ -488,6 +488,13 @@ dictionary ReadUTF8Options {
    * the caller.
    */
   boolean decompress = false;
+  /**
+   * If non-empty, decrypt the file contents using the Keystore DEK
+   * named by this string. A file that lacks the encryption header is returned
+   * unchanged (pass-through), so this is safe to set unconditionally on reads.
+   * However, it is incompatible with offset and maxBytes.
+   */
+  UTF8String decrypt = "";
 };
 
 /**
@@ -566,6 +573,11 @@ dictionary WriteOptions {
    * If true, compress the data with LZ4-encoding before writing to the file.
    */
   boolean compress = false;
+  /**
+   * If non-empty, encrypt the data using the Keystore DEK named
+   * by this string, before writing it to the file.
+   */
+  UTF8String encrypt = "";
 };
 
 /**

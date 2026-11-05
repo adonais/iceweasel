@@ -145,3 +145,16 @@ DEFINES['SQLITE_ENABLE_CARRAY'] = 1
 
 # The percentile extension is part of the amalgamation but disabled by default.
 DEFINES['SQLITE_ENABLE_PERCENTILE'] = 1
+
+# SQLite is in the public domain, so the credit is a courtesy.
+LICENSES += ['sqlite']
+LICENSES['sqlite'].title = 'SQLite Public Domain Dedication'
+LICENSES['sqlite'].acknowledgement = (
+    'The <a href="https://www.sqlite.org/">sqlite</a> database engine '
+    '(D. Richard Hipp and team)'
+)
+
+LICENSED_UNDER += ['sqlite']
+
+# We use sqlite's built-in normalization to sanitize SQL statements for reporting.
+DEFINES['SQLITE_ENABLE_NORMALIZE'] = 1

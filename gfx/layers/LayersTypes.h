@@ -55,6 +55,8 @@ struct LayersId final {
   // Allow explicit cast to a uint64_t for now
   explicit operator uint64_t() const { return mId; }
 
+  friend uint64_t format_as(const LayersId& aId) { return aId.mId; }
+
   // Implement some operators so this class can be used as a key in
   // stdlib classes.
   auto operator<=>(const LayersId& aOther) const = default;
@@ -141,7 +143,6 @@ enum class TextureType : int8_t {
   Unknown = 0,
   D3D11,
   MacIOSurface,
-  AndroidNativeWindow,
   AndroidHardwareBuffer,
   DMABUF,
   EGLImage,

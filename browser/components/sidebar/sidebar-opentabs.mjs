@@ -408,28 +408,22 @@ export class SidebarOpenTabs extends SidebarPage {
         href="chrome://browser/content/sidebar/sidebar-opentabs.css"
       />
       <div class="sidebar-panel">
-        <sidebar-panel-header
-          data-l10n-id="sidebar-menu-open-tabs-header"
-          data-l10n-attrs="heading"
-          view="viewOpenTabsSidebar"
-        >
-          <div class="options-container">
-            <moz-input-search
-              data-l10n-id="firefoxview-search-text-box-tabs"
-              data-l10n-attrs="placeholder"
-              @MozInputSearch:search=${this.onSearchQuery}
-            ></moz-input-search>
-            <moz-button
-              class="menu-button"
-              @click=${this.openMenu}
-              data-l10n-id="sidebar-options-menu-button"
-              aria-haspopup="menu"
-              aria-expanded="false"
-              type="icon ghost"
-              iconsrc="chrome://global/skin/icons/more.svg"
-            ></moz-button>
-          </div>
-        </sidebar-panel-header>
+        <div class="options-container">
+          <moz-input-search
+            data-l10n-id="firefoxview-search-text-box-tabs"
+            data-l10n-attrs="placeholder"
+            @MozInputSearch:search=${this.onSearchQuery}
+          ></moz-input-search>
+          <moz-button
+            class="menu-button"
+            @click=${this.openMenu}
+            data-l10n-id="sidebar-options-menu-button"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            type="icon ghost"
+            iconsrc="chrome://global/skin/icons/more.svg"
+          ></moz-button>
+        </div>
         <div class="sidebar-panel-scrollable-content">
           ${this.searchQuery
             ? this.#searchResultsTemplate()

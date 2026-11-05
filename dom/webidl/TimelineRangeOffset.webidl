@@ -11,5 +11,6 @@
 
 dictionary TimelineRangeOffset {
   UTF8String? rangeName;
+  [Pref="layout.css.typed-om.enabled"]
   CSSNumericValue offset;
 };

@@ -49,12 +49,16 @@
 #endif
       <menuseparator id="context-sep-navigation"/>
       <menuitem id="context-viewsource-goToLine"
+                data-l10n-id="view-source-context-go-to-line"
+                intended-duplicate-accesskey="context-copylink context-copyemail"
                 />
       <menuitem id="context-viewsource-wrapLongLines"
                 type="checkbox"
+                data-l10n-id="view-source-context-wrap-long-lines-2"
                 />
       <menuitem id="context-viewsource-highlightSyntax"
                 type="checkbox"
+                data-l10n-id="view-source-context-highlight-syntax-2"
                 />
       <menuseparator id="context-sep-viewsource-commands"/>
       <menuitem id="spell-no-suggestions"
@@ -108,6 +112,7 @@
       <menuitem id="context-openlinksmartwindow"
                 class="context-menu-open-link"
                 data-l10n-id="main-context-menu-open-link-new-smart-window"
+                intended-duplicate-accesskey="context-searchselect context-setDesktopBackground context-video-saveimage"
                 />
       <menuitem id="context-previewlink"
                 data-l10n-id="main-context-menu-preview-link"
@@ -139,7 +144,8 @@
       <menu id="context-sendlinktodevice"
             class="sync-ui-item"
             data-l10n-id="main-context-menu-link-send-to-device"
-            hidden="true">
+            hidden="true"
+            intended-duplicate-accesskey="context-translate-selection spell-undo-add-to-dictionary">
             <menupopup id="context-sendlinktodevice-popup"/>
       </menu>
       <menuseparator id="context-sep-sendlinktodevice" class="sync-ui-item"
@@ -262,6 +268,7 @@
                 />
       <menuitem id="context-visual-search"
                 hidden="true"
+                intended-duplicate-accesskey="context-viewpartialsource-selection"
                 />
       <menuseparator id="context-sep-setbackground"/>
       <menuitem id="context-setDesktopBackground"
@@ -294,33 +301,40 @@
       <menuseparator id="passwordmgr-items-separator"/>
       <menuitem id="context-undo"
                 data-l10n-id="text-action-undo"
-                command="cmd_undo"/>
+                command="cmd_undo"
+                intended-duplicate-accesskey="context-stripOnShareLink"/>
       <menuitem id="context-redo"
                 data-l10n-id="text-action-redo"
-                command="cmd_redo"/>
+                command="cmd_redo"
+                intended-duplicate-accesskey="context-print-selection"/>
       <menuseparator id="context-sep-redo"/>
       <menuitem id="context-cut"
                 data-l10n-id="text-action-cut"
-                command="cmd_cut"/>
+                command="cmd_cut"
+                intended-duplicate-accesskey="context-openlinkintab context-openlinkincontainertab"/>
       <menuitem id="context-copy"
                 data-l10n-id="text-action-copy"
                 command="cmd_copy"/>
       <menuitem id="context-paste"
                 data-l10n-id="text-action-paste"
-                command="cmd_paste"/>
+                command="cmd_paste"
+                intended-duplicate-accesskey="context-openlinkprivate"/>
       <menuitem id="context-paste-no-formatting"
                 data-l10n-id="text-action-paste-no-formatting"
-                command="cmd_pasteNoFormatting"/>
+                command="cmd_pasteNoFormatting"
+                intended-duplicate-accesskey="context-openlinkinsplitview"/>
       <menuitem id="context-delete"
                 data-l10n-id="text-action-delete"
-                command="cmd_delete"/>
+                command="cmd_delete"
+                intended-duplicate-accesskey="context-openlink"/>
       <menuitem id="context-selectall"
                 data-l10n-id="text-action-select-all"
-                command="cmd_selectAll"/>
+                command="cmd_selectAll"
+                intended-duplicate-accesskey="spell-add-dictionaries-main"/>
       <menuitem id="context-pdfjs-comment-selection"
-                data-l10n-id="text-action-comment-selection-1"/>
+                data-l10n-id="text-action-comment-selection-2"/>
       <menuitem id="context-pdfjs-highlight-selection"
-                data-l10n-id="text-action-highlight-selection"/>
+                data-l10n-id="text-action-highlight-selection-2"/>
       <menuitem id="context-reveal-password"
                 type="checkbox"
                 data-l10n-id="main-context-menu-reveal-password"/>
@@ -328,29 +342,35 @@
                 data-l10n-id="main-context-menu-print-selection-2"/>
       <menuseparator id="context-sep-selectall"/>
       <menuitem id="context-copy-link-to-highlight"
-                data-l10n-id="text-action-copy-link-to-highlight"
+                data-l10n-id="text-action-copy-link-to-highlight-2"
                 />
       <menuitem id="context-copy-clean-link-to-highlight"
-                data-l10n-id="text-action-copy-clean-link-to-highlight"
+                data-l10n-id="text-action-copy-clean-link-to-highlight-2"
+                intended-duplicate-accesskey="context-savelink"
                 />
       <menuitem id="context-remove-highlight"
-                data-l10n-id="text-action-remove-highlight"
+                data-l10n-id="text-action-remove-highlight-2"
+                intended-duplicate-accesskey="context-copy-link-to-highlight"
                 />
       <menuseparator id="context-sep-highlights"/>
 
       <menuitem id="context-pdfjs-undo"
                 data-l10n-id="text-action-undo"/>
       <menuitem id="context-pdfjs-redo"
-                data-l10n-id="text-action-redo"/>
+                data-l10n-id="text-action-redo"
+                intended-duplicate-accesskey="context-print-selection"/>
       <menuseparator id="context-sep-pdfjs-redo"/>
       <menuitem id="context-pdfjs-cut"
-                data-l10n-id="text-action-cut"/>
+                data-l10n-id="text-action-cut"
+                intended-duplicate-accesskey="context-take-screenshot"/>
       <menuitem id="context-pdfjs-copy"
                 data-l10n-id="text-action-copy"/>
       <menuitem id="context-pdfjs-paste"
-                data-l10n-id="text-action-paste"/>
+                data-l10n-id="text-action-paste"
+                intended-duplicate-accesskey="context-savepage"/>
       <menuitem id="context-pdfjs-delete"
-                data-l10n-id="text-action-delete"/>
+                data-l10n-id="text-action-delete"
+                intended-duplicate-accesskey="context-bidi-page-direction-toggle"/>
       <menuitem id="context-pdfjs-select-all"
                 data-l10n-id="text-action-select-all"/>
       <menuseparator id="context-sep-pdfjs-select-all"/>
@@ -378,7 +398,8 @@
       <menu id="context-ask-chat"/>
       <menuitem id="context-create-aitab"
                 data-l10n-id="main-context-menu-create-aitab"
-                hidden="true"/>
+                hidden="true"
+                intended-duplicate-accesskey="context-copy context-pdfjs-copy context-media-showcontrols context-media-hidecontrols"/>
 
       <menuseparator id="frame-sep"/>
       <menu id="frame" data-l10n-id="main-context-menu-frame">
@@ -431,7 +452,8 @@
                 data-l10n-id="text-action-spell-add-dictionaries"
                 />
       <menu id="spell-dictionaries"
-            data-l10n-id="text-action-spell-dictionaries">
+            data-l10n-id="text-action-spell-dictionaries"
+            intended-duplicate-accesskey="context-copylink context-copyemail">
           <menupopup id="spell-dictionaries-menu">
               <menuseparator id="spell-language-separator"/>
               <menuitem id="spell-add-dictionaries"
@@ -456,7 +478,7 @@
       <menuitem id="context-inspect-a11y"
                 hidden="true"
                 data-l10n-id="main-context-menu-inspect-a11y-properties2"
-                intended-duplicate-accesskey=""
+                intended-duplicate-accesskey="context-copyimage-contents"
                 />
       <menuitem id="context-inspect"
                 hidden="true"

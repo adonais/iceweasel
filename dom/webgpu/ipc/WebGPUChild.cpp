@@ -83,10 +83,9 @@ void wgpu_child_resolve_request_adapter_promise(
   }
 }
 
-void wgpu_child_resolve_request_device_promise(WGPUWebGPUChildPtr aChild,
-                                               RawId aDeviceId, RawId aQueueId,
-                                               const WGPULimits* aLimits,
-                                               const nsCString* aError) {
+void wgpu_child_resolve_request_device_promise(
+    WGPUWebGPUChildPtr aChild, RawId aDeviceId, RawId aQueueId,
+    const WGPULimits* aLimits, const ffi::WGPUFfiRequestDeviceError* aError) {
   auto* c = static_cast<WebGPUChild*>(aChild);
   auto pending_promise = c->DequeueRequestDevicePromise();
 
@@ -106,10 +105,20 @@ void wgpu_child_resolve_request_device_promise(WGPUWebGPUChildPtr aChild,
     device->SetLabel(pending_promise.label);
     promise::MaybeResolve(std::move(pending_promise.promise),
                           std::move(device));
-  } else {
-    promise::MaybeRejectWithOperationError(std::move(pending_promise.promise),
-                                           nsCString(*aError));
+    return;
   }
+
+  switch (aError->ty) {
+    case ffi::WGPUFfiRequestDeviceErrorType_TypeError:
+      promise::MaybeRejectWithTypeError(std::move(pending_promise.promise),
+                                        nsCString(*aError->message));
+      return;
+    case ffi::WGPUFfiRequestDeviceErrorType_OperationError:
+      promise::MaybeRejectWithOperationError(std::move(pending_promise.promise),
+                                             nsCString(*aError->message));
+      return;
+  }
+  MOZ_CRASH("invalid WGPUFfiRequestDeviceErrorType");
 }
 
 void wgpu_child_resolve_pop_error_scope_promise(

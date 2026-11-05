@@ -113,9 +113,39 @@ LOCAL_INCLUDES += [
     "/third_party/sqlite3/src",
 ]
 
+# sqlite3_normalized_sql is guarded in sqlite3.h.
+DEFINES["SQLITE_ENABLE_NORMALIZE"] = 1
+
 if CONFIG["MOZ_FOLD_LIBS"]:
     DEFINES["MOZ_FOLD_LIBS"] = True
 
 CXXFLAGS += CONFIG["SQLITE_CFLAGS"]
 
 SPHINX_TREES["/storage"] = "docs"
+
+SOURCE_HEADERS += [
+    "BaseVFS.h",
+    "FileSystemModule.h",
+    "IStorageBindingParamsInternal.h",
+    "mozStorageArgValueArray.h",
+    "mozStorageAsyncStatement.h",
+    "mozStorageAsyncStatementExecution.h",
+    "mozStorageAsyncStatementJSHelper.h",
+    "mozStorageBindingParams.h",
+    "mozStorageBindingParamsArray.h",
+    "mozStorageConnection.h",
+    "mozStorageError.h",
+    "mozStoragePrivateHelpers.h",
+    "mozStorageResultSet.h",
+    "mozStorageRow.h",
+    "mozStorageService.h",
+    "mozStorageSQLFunctions.h",
+    "mozStorageStatement.h",
+    "mozStorageStatementData.h",
+    "mozStorageStatementJSHelper.h",
+    "ObfuscatingVFS.h",
+    "QuotaVFS.h",
+    "StorageBaseStatementInternal.h",
+    "VacuumManager.h",
+    "variantToSQLiteT_impl.h",
+]

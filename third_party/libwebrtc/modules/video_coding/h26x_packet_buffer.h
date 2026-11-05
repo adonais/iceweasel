@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "modules/video_coding/packet_buffer.h"
 
 namespace webrtc {
@@ -35,9 +34,8 @@ class H26xPacketBuffer {
   // |h264_idr_only_keyframes_allowed| is ignored if H.265 is used.
   explicit H26xPacketBuffer(bool h264_idr_only_keyframes_allowed);
 
-  ABSL_MUST_USE_RESULT InsertResult
-  InsertPacket(std::unique_ptr<Packet> packet);
-  ABSL_MUST_USE_RESULT InsertResult InsertPadding(uint16_t unwrapped_seq_num);
+  [[nodiscard]] InsertResult InsertPacket(std::unique_ptr<Packet> packet);
+  [[nodiscard]] InsertResult InsertPadding(uint16_t unwrapped_seq_num);
 
   // Out of band supplied codec parameters for H.264.
   void SetSpropParameterSets(const std::string& sprop_parameter_sets);

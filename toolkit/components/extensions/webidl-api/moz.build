@@ -76,3 +76,14 @@ FINAL_LIBRARY = "xul"
 PYTHON_UNITTEST_MANIFESTS += ["test/python.toml"]
 
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "ExtensionAPIAddRemoveListener.h",
+    "ExtensionAPICallAsyncFunction.h",
+    "ExtensionAPICallFunctionNoReturn.h",
+    "ExtensionAPICallSyncFunction.h",
+    "ExtensionAPIGetProperty.h",
+    "ExtensionAPIRequest.h",
+    "ExtensionAPIRequestForwarder.h",
+    "ExtensionEventListener.h",
+]

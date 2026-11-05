@@ -18,6 +18,14 @@ enum FromParser {
   FROM_PARSER_XSLT = 1 << 3
 };
 
+// Whether the element was created by its node document's parser: the network
+// parser, document.write() or XSLT, but not the fragment parser.
+inline bool IsFromDocumentParser(FromParser aFromParser) {
+  return aFromParser == FROM_PARSER_NETWORK ||
+         aFromParser == FROM_PARSER_DOCUMENT_WRITE ||
+         aFromParser == FROM_PARSER_XSLT;
+}
+
 }  // namespace mozilla::dom
 
 #endif  // mozilla_dom_FromParser_h

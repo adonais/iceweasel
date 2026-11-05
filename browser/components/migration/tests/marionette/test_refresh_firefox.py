@@ -1012,3 +1012,100 @@ class TestSelectableProfileFirefoxRefresh(TestFirefoxRefresh):
             self.checkSession()
             self.checkStartupMigrationStateCleared()
             self.checkRefreshPromptDisabled()
+
+
+class TestFirefoxRefreshEncryptedSession(TestFirefoxRefresh):
+    """Refresh a profile whose session store data is encrypted.
+
+    The migrator has to carry the lockstore keys and the enabled pref into
+    the new profile so the encrypted session can be decrypted there,
+    converted and written back, encrypted only if the new profile's build
+    supports it.
+    """
+
+    _availablePref = "browser.sessionstore.encryption.available"
+    _enabledPref = "browser.sessionstore.encryption.enabled"
+    # Header IOUtils writes in front of encrypted files.
+    _encryptedFileMagic = b"mozEnc0\x00"
+
+    # Inherited test that does not involve session data.
+    testFxANoSync = None
+
+    def enableSessionEncryption(self):
+        # SessionStartup locks the available pref at startup so that only its
+        # default value is honoured. Unlock it so the user values set here
+        # take effect for the rest of this session and the source session is
+        # written encrypted. Both values are saved to prefs.js, but the
+        # migrator only picks up the enabled one.
+        self.runCode(
+            """
+          Services.prefs.unlockPref(arguments[0]);
+          Services.prefs.setBoolPref(arguments[0], true);
+          Services.prefs.setBoolPref(arguments[1], true);
+        """,
+            script_args=(self._availablePref, self._enabledPref),
+        )
+
+    def createProfileData(self):
+        self.enableSessionEncryption()
+        super().createProfileData()
+
+    def doReset(self):
+        cleanup = super().doReset()
+        self._sourceProfilePath = cleanup.desktop_backup_path
+        self._resetProfilePath = cleanup.reset_profile_path
+        return cleanup
+
+    def readSessionFileHeader(self, profileDir):
+        # SessionWriter moves sessionstore.jsonlz4 to the backups directory
+        # on its first write, so accept either location.
+        candidates = [
+            os.path.join(profileDir, "sessionstore.jsonlz4"),
+            os.path.join(profileDir, "sessionstore-backups", "previous.jsonlz4"),
+        ]
+        for path in candidates:
+            if os.path.exists(path):
+                with open(path, "rb") as f:
+                    return path, f.read(len(self._encryptedFileMagic))
+        self.fail(f"No session file found in {profileDir}")
+
+    def checkSessionFilesEncrypted(self):
+        path, header = self.readSessionFileHeader(self._sourceProfilePath)
+        self.assertEqual(
+            header, self._encryptedFileMagic, f"{path} should be encrypted"
+        )
+
+        available = self.runCode(
+            "return Services.prefs.getBoolPref(arguments[0]);",
+            script_args=(self._availablePref,),
+        )
+        path, header = self.readSessionFileHeader(self._resetProfilePath)
+        if available:
+            self.assertEqual(
+                header, self._encryptedFileMagic, f"{path} should be encrypted"
+            )
+        else:
+            self.assertNotEqual(
+                header, self._encryptedFileMagic, f"{path} should be plaintext"
+            )
+
+    def checkEncryptionPrefsMigrated(self):
+        [available_has_user_value, enabled] = self.runCode(
+            """
+          return [
+            Services.prefs.prefHasUserValue(arguments[0]),
+            Services.prefs.getBoolPref(arguments[1]),
+          ];
+        """,
+            script_args=(self._availablePref, self._enabledPref),
+        )
+        self.assertFalse(
+            available_has_user_value, "available pref should not be migrated"
+        )
+        self.assertTrue(enabled, "enabled pref should have been migrated")
+
+    def checkProfile(self, has_migrated=False, expect_sync_user=True):
+        if has_migrated:
+            self.checkSessionFilesEncrypted()
+            self.checkEncryptionPrefsMigrated()
+        super().checkProfile(has_migrated, expect_sync_user)

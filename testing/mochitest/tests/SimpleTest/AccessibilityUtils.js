@@ -837,8 +837,13 @@ this.AccessibilityUtils = (function () {
         (role === Ci.nsIAccessibleRole.ROLE_RADIOBUTTON &&
           node.getRootNode().host?.localName === "moz-visual-picker-item") ||
         // Sidebar lists also use a roving tabindex.
-        (role === Ci.nsIAccessibleRole.ROLE_SUMMARY &&
+        ((role === Ci.nsIAccessibleRole.ROLE_SUMMARY ||
+          role === Ci.nsIAccessibleRole.ROLE_OUTLINEITEM) &&
           node.getRootNode().host?.localName === "sidebar-bookmark-list") ||
+        (role === Ci.nsIAccessibleRole.ROLE_OUTLINEITEM &&
+          node.getRootNode().host?.localName === "moz-card" &&
+          node.getRootNode().host.getRootNode().host?.localName ===
+            "sidebar-history") ||
         shouldIgnoreTabIndex(node))
     );
   }
@@ -1319,7 +1324,13 @@ this.AccessibilityUtils = (function () {
       // descendant, even if the test author targeted them at an interactive
       // element. For example, if there's a button with an image inside it,
       // node might be the image.
-      const acc = findInteractiveAccessible(node);
+      let acc = findInteractiveAccessible(node);
+      if (!acc) {
+        // Force refresh tick to find interactive accessible
+        forceRefreshDriverTick(node);
+        acc = findInteractiveAccessible(node);
+      }
+
       if (!acc) {
         if (isAccessibleGridcell(node) || isInaccessibleXulTreecol(node)) {
           return;

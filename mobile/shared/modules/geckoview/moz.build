@@ -22,6 +22,7 @@ EXTRA_JS_MODULES += [
     "GeckoViewModule.sys.mjs",
     "GeckoViewNavigation.sys.mjs",
     "GeckoViewPageExtractor.sys.mjs",
+    "GeckoViewPictureInPicture.sys.mjs",
     "GeckoViewProcessHangMonitor.sys.mjs",
     "GeckoViewProgress.sys.mjs",
     "GeckoViewPushController.sys.mjs",

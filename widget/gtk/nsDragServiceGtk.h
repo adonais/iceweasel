@@ -57,13 +57,9 @@ class nsDragSessionGtk : public nsDragSessionSource {
                          guint aTime = 0)
         : DragTask(aType, aWindow, aWindowPoint, aTime),
           mDragContext(aDragContext) {};
-    virtual ~DragTaskGtk() = default;
+    virtual ~DragTaskGtk();
 
-    void Reset() override {
-      mType = eDragTaskNone;
-      mWindow = nullptr;
-      mDragContext = nullptr;
-    }
+    void Reset() override;
     uintptr_t GetContextID() override {
       return reinterpret_cast<uintptr_t>(mDragContext.get());
     }

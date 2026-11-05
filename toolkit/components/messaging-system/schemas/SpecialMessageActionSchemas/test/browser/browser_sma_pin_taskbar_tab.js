@@ -10,7 +10,7 @@ const { TaskbarTabs } = ChromeUtils.importESModule(
 add_task(async function test_PIN_TASKBAR_TAB_success() {
   const stub = sinon
     .stub(TaskbarTabs, "findOrCreateTaskbarTab")
-    .resolves({ created: true });
+    .resolves({ created: true, pin: Promise.resolve({ rejected: false }) });
 
   const action = {
     type: "PIN_TASKBAR_TAB",
@@ -40,7 +40,7 @@ add_task(async function test_PIN_TASKBAR_TAB_success() {
 add_task(async function test_PIN_TASKBAR_TAB_already_pinned() {
   const stub = sinon
     .stub(TaskbarTabs, "findOrCreateTaskbarTab")
-    .resolves({ created: false });
+    .resolves({ created: false, pin: Promise.resolve({ rejected: false }) });
 
   const action = {
     type: "PIN_TASKBAR_TAB",
@@ -60,6 +60,64 @@ add_task(async function test_PIN_TASKBAR_TAB_already_pinned() {
   );
 
   stub.restore();
+});
+
+add_task(async function test_PIN_TASKBAR_TAB_rejected_new() {
+  const stub = sinon.stub(TaskbarTabs, "findOrCreateTaskbarTab").resolves({
+    created: true,
+    taskbarTab: { id: "abc" },
+    pin: Promise.resolve({ rejected: true }),
+  });
+  const removeStub = sinon.stub(TaskbarTabs, "removeTaskbarTab").resolves();
+
+  const action = {
+    type: "PIN_TASKBAR_TAB",
+    data: {
+      url: EXAMPLE_URL,
+      name: "Example",
+      iconUrl: "https://example.com/icon.png",
+    },
+  };
+
+  const result = await SMATestUtils.executeAndValidateAction(action);
+
+  Assert.equal(result, false, "returns false when the user declines the pin");
+  Assert.ok(
+    removeStub.calledOnceWith("abc"),
+    "removes the Taskbar Tab created for the declined pin"
+  );
+
+  stub.restore();
+  removeStub.restore();
+});
+
+add_task(async function test_PIN_TASKBAR_TAB_rejected_existing() {
+  const stub = sinon.stub(TaskbarTabs, "findOrCreateTaskbarTab").resolves({
+    created: false,
+    taskbarTab: { id: "abc" },
+    pin: Promise.resolve({ rejected: true }),
+  });
+  const removeStub = sinon.stub(TaskbarTabs, "removeTaskbarTab").resolves();
+
+  const action = {
+    type: "PIN_TASKBAR_TAB",
+    data: {
+      url: EXAMPLE_URL,
+      name: "Example",
+      iconUrl: "https://example.com/icon.png",
+    },
+  };
+
+  const result = await SMATestUtils.executeAndValidateAction(action);
+
+  Assert.equal(result, false, "returns false when the user declines the pin");
+  Assert.ok(
+    removeStub.notCalled,
+    "does not remove a Taskbar Tab that existed before this action"
+  );
+
+  stub.restore();
+  removeStub.restore();
 });
 
 add_task(async function test_PIN_TASKBAR_TAB_error() {
@@ -90,7 +148,7 @@ add_task(async function test_PIN_TASKBAR_TAB_error() {
 add_task(async function test_PIN_TASKBAR_TAB_builds_manifest() {
   const stub = sinon
     .stub(TaskbarTabs, "findOrCreateTaskbarTab")
-    .resolves({ created: true });
+    .resolves({ created: true, pin: Promise.resolve({ rejected: false }) });
 
   const action = {
     type: "PIN_TASKBAR_TAB",

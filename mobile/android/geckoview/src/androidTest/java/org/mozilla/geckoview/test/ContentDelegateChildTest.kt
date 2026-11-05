@@ -524,6 +524,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                 ) {}
             }
         )
+        mainSession.waitForRoundTrip()
 
         sendRightClickUp(50f, 50f)
 
@@ -559,6 +560,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                 }
             }
         )
+        mainSession.waitUntilCalled(ContentDelegate::class, "onContextMenu")
     }
 
     @WithDisplay(width = 100, height = 100)
@@ -602,6 +604,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                 }
             }
         )
+        mainSession.waitUntilCalled(ContentDelegate::class, "onContextMenu")
 
         sendRightClickUp(50f, 50f)
 
@@ -616,6 +619,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                 ) {}
             }
         )
+        mainSession.waitForRoundTrip()
     }
 
     @WithDisplay(width = 100, height = 100)

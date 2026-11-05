@@ -130,38 +130,13 @@ FramebufferStatus CheckAttachmentCompleteness(const Context *context,
 
 FramebufferStatus CheckAttachmentSampleCounts(const Context *context,
                                               GLsizei currAttachmentSamples,
-                                              GLsizei samples,
-                                              bool colorAttachment)
+                                              GLsizei samples)
 {
     if (currAttachmentSamples != samples)
     {
-        if (colorAttachment)
-        {
-            // APPLE_framebuffer_multisample, which EXT_draw_buffers refers to, requires that
-            // all color attachments have the same number of samples for the FBO to be complete.
-            return FramebufferStatus::Incomplete(
-                GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE,
-                err::kFramebufferIncompleteMultisampleInconsistentSampleCounts);
-        }
-        else
-        {
-            // CHROMIUM_framebuffer_mixed_samples allows a framebuffer to be considered complete
-            // when its depth or stencil samples are a multiple of the number of color samples.
-            if (!context->getExtensions().framebufferMixedSamplesCHROMIUM)
-            {
-                return FramebufferStatus::Incomplete(
-                    GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE,
-                    err::kFramebufferIncompleteMultisampleInconsistentSampleCounts);
-            }
-
-            if ((currAttachmentSamples % std::max(samples, 1)) != 0)
-            {
-                return FramebufferStatus::Incomplete(
-                    GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE,
-                    err::
-                        kFramebufferIncompleteMultisampleDepthStencilSampleCountDivisibleByColorSampleCount);
-            }
-        }
+        return FramebufferStatus::Incomplete(
+            GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE,
+            err::kFramebufferIncompleteMultisampleInconsistentSampleCounts);
     }
 
     return FramebufferStatus::Complete();
@@ -169,7 +144,6 @@ FramebufferStatus CheckAttachmentSampleCounts(const Context *context,
 
 FramebufferStatus CheckAttachmentSampleCompleteness(const Context *context,
                                                     const FramebufferAttachment &attachment,
-                                                    bool colorAttachment,
                                                     Optional<int> *samples,
                                                     Optional<bool> *fixedSampleLocations,
                                                     Optional<int> *renderToTextureSamples)
@@ -211,9 +185,8 @@ FramebufferStatus CheckAttachmentSampleCompleteness(const Context *context,
                 FramebufferAttachment::kDefaultRenderToTextureSamples ||
             currRenderToTextureSamples != FramebufferAttachment::kDefaultRenderToTextureSamples)
         {
-            FramebufferStatus sampleCountStatus =
-                CheckAttachmentSampleCounts(context, currRenderToTextureSamples,
-                                            renderToTextureSamples->value(), colorAttachment);
+            FramebufferStatus sampleCountStatus = CheckAttachmentSampleCounts(
+                context, currRenderToTextureSamples, renderToTextureSamples->value());
             if (!sampleCountStatus.isComplete())
             {
                 return sampleCountStatus;
@@ -233,8 +206,8 @@ FramebufferStatus CheckAttachmentSampleCompleteness(const Context *context,
             currRenderToTextureSamples == FramebufferAttachment::kDefaultRenderToTextureSamples)
         {
 
-            FramebufferStatus sampleCountStatus = CheckAttachmentSampleCounts(
-                context, attachment.getSamples(), samples->value(), colorAttachment);
+            FramebufferStatus sampleCountStatus =
+                CheckAttachmentSampleCounts(context, attachment.getSamples(), samples->value());
             if (!sampleCountStatus.isComplete())
             {
                 return sampleCountStatus;
@@ -820,7 +793,7 @@ void Framebuffer::onDestroy(const Context *context)
 {
     if (isDefault())
     {
-        std::ignore = unsetSurfaces(context);
+        unsetSurfaces(context);
     }
 
     for (auto &attachment : mState.mColorAttachments)
@@ -846,9 +819,9 @@ void Framebuffer::onDestroy(const Context *context)
     mImpl->destroy(context);
 }
 
-egl::Error Framebuffer::setSurfaces(const Context *context,
-                                    egl::Surface *surface,
-                                    egl::Surface *readSurface)
+void Framebuffer::setSurfaces(const Context *context,
+                              egl::Surface *surface,
+                              egl::Surface *readSurface)
 {
     // This has to be a default framebuffer.
     ASSERT(isDefault());
@@ -905,10 +878,8 @@ egl::Error Framebuffer::setSurfaces(const Context *context,
     if (surface)
     {
         mCachedStatus = FramebufferStatus::Complete();
-        ANGLE_TRY(surface->getImplementation()->attachToFramebuffer(context, this));
+        surface->getImplementation()->attachToFramebuffer(context, this);
     }
-
-    return egl::NoError();
 }
 
 void Framebuffer::setReadSurface(const Context *context, egl::Surface *readSurface)
@@ -933,7 +904,7 @@ void Framebuffer::setReadSurface(const Context *context, egl::Surface *readSurfa
     }
 }
 
-egl::Error Framebuffer::unsetSurfaces(const Context *context)
+void Framebuffer::unsetSurfaces(const Context *context)
 {
     // This has to be a default framebuffer.
     ASSERT(isDefault());
@@ -958,7 +929,7 @@ egl::Error Framebuffer::unsetSurfaces(const Context *context)
             mDirtyBits.set(DIRTY_BIT_STENCIL_ATTACHMENT);
         }
 
-        ANGLE_TRY(surface->getImplementation()->detachFromFramebuffer(context, this));
+        surface->getImplementation()->detachFromFramebuffer(this);
 
         ASSERT(mCachedStatus.value().status == GL_FRAMEBUFFER_COMPLETE);
         mCachedStatus = FramebufferStatus::Incomplete(GL_FRAMEBUFFER_UNDEFINED_OES,
@@ -974,7 +945,6 @@ egl::Error Framebuffer::unsetSurfaces(const Context *context)
 
     mState.mDefaultFramebufferReadAttachment.detach(context, mState.mFramebufferSerial);
     mState.mDefaultFramebufferReadAttachmentInitialized = false;
-    return egl::NoError();
 }
 
 angle::Result Framebuffer::setLabel(const Context *context, const std::string &label)
@@ -1306,9 +1276,8 @@ FramebufferStatus Framebuffer::checkStatusWithGLFrontEnd(const Context *context)
                     err::kFramebufferIncompleteDepthStencilInColorBuffer);
             }
 
-            FramebufferStatus attachmentSampleCompleteness =
-                CheckAttachmentSampleCompleteness(context, colorAttachment, true, &samples,
-                                                  &fixedSampleLocations, &renderToTextureSamples);
+            FramebufferStatus attachmentSampleCompleteness = CheckAttachmentSampleCompleteness(
+                context, colorAttachment, &samples, &fixedSampleLocations, &renderToTextureSamples);
             if (!attachmentSampleCompleteness.isComplete())
             {
                 return attachmentSampleCompleteness;
@@ -1401,9 +1370,8 @@ FramebufferStatus Framebuffer::checkStatusWithGLFrontEnd(const Context *context)
                 err::kFramebufferIncompleteAttachmentNoDepthBitsInDepthBuffer);
         }
 
-        FramebufferStatus attachmentSampleCompleteness =
-            CheckAttachmentSampleCompleteness(context, depthAttachment, false, &samples,
-                                              &fixedSampleLocations, &renderToTextureSamples);
+        FramebufferStatus attachmentSampleCompleteness = CheckAttachmentSampleCompleteness(
+            context, depthAttachment, &samples, &fixedSampleLocations, &renderToTextureSamples);
         if (!attachmentSampleCompleteness.isComplete())
         {
             return attachmentSampleCompleteness;
@@ -1456,9 +1424,8 @@ FramebufferStatus Framebuffer::checkStatusWithGLFrontEnd(const Context *context)
                 err::kFramebufferIncompleteAttachmentNoStencilBitsInStencilBuffer);
         }
 
-        FramebufferStatus attachmentSampleCompleteness =
-            CheckAttachmentSampleCompleteness(context, stencilAttachment, false, &samples,
-                                              &fixedSampleLocations, &renderToTextureSamples);
+        FramebufferStatus attachmentSampleCompleteness = CheckAttachmentSampleCompleteness(
+            context, stencilAttachment, &samples, &fixedSampleLocations, &renderToTextureSamples);
         if (!attachmentSampleCompleteness.isComplete())
         {
             return attachmentSampleCompleteness;
@@ -1598,10 +1565,10 @@ FramebufferStatus Framebuffer::checkStatusWithGLFrontEnd(const Context *context)
             err::kFramebufferIncompleteMultisampleNonFixedSamplesWithRenderbuffers);
     }
 
-    // The WebGL conformance tests implicitly define that all framebuffer
-    // attachments must be unique. For example, the same level of a texture can
-    // not be attached to two different color attachments.
-    if (context->isWebGL() || context->isHardenedContext())
+    // The WebGL conformance tests implicitly define that all framebuffer attachments must be
+    // unique. For example, the same level of a texture can not be attached to two different color
+    // attachments. The same restriction is applied to hardened contexts.
+    if (context->isHardenedContext())
     {
         if (!mState.colorAttachmentsAreUniqueImages())
         {

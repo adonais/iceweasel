@@ -4,10 +4,21 @@
 
 "use strict";
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  ProfileKekPassword: "resource://gre/modules/ProfileKekPassword.sys.mjs",
+});
+
 document.addEventListener("dialogaccept", resetPassword);
 
 async function resetPassword(event) {
   event.preventDefault();
+
+  // The primary password is about to be reset, so the profile KEK needs to be
+  // as well, to prevent future prompts asking for a no longer existing
+  // password. Allowed to reject, like token.reset() after it, because a reset
+  // that cannot be done safely must not go ahead.
+  await lazy.ProfileKekPassword.discard();
 
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token

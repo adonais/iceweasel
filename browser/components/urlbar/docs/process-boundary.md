@@ -63,8 +63,7 @@ replaces the commands of a row that is already shown.
 
 DOM nodes and events never cross. The engagement data sent to the parent drops
 `details.element` and `details.event`, so a provider's `onEngagement()` sees
-`null` for both on the message path. `onBeforeSelection()` receives no element
-there either.
+`null` for both on the message path.
 
 ## Loads
 
@@ -115,6 +114,6 @@ result's `id` instead, as `acknowledgeFeedback()` and
 `updateResultMenuCommands()` do.
 
 A provider that needs the chrome window reads `controller.browserWindow`, which
-the parent resolves from the actor. `controller.input.window` doesn't exist on
-the message path. The results that were visible at engagement time come with the
-engagement data rather than from the view, since the parent's view has none.
+the parent resolves from the actor. The results that were visible at engagement
+time come with the engagement data rather than from the view, since the parent's
+view has none.

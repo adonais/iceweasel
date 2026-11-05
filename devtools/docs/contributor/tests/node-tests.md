@@ -19,7 +19,7 @@ The definition of those try jobs can be found at [taskcluster/kinds/source-test/
 
 The definition also contains the list of files that will trigger the node test jobs. Currently the the devtools tests run when any file is modified under `devtools/client` or `devtools/shared`.
 
-You will need yarn to be installed in order to run the DevTools tests. See [https://yarnpkg.com/getting-started](https://yarnpkg.com/getting-started).
+You will need npm to be installed in order to run the DevTools tests. It is bundled with Node.js, see [https://nodejs.org/en/download](https://nodejs.org/en/download).
 
 To run the DevTools tests, use the mach command `devtools-node-test`:
 
@@ -59,10 +59,10 @@ A snapshot failure will show up as follows:
 It should also mention the command you can run to update the snapshots:
 
 ```
-Inspect your code changes or run `yarn run test-ci -u` to update them.
+Inspect your code changes or run `npm run test-ci -- -u` to update them.
 ```
 
-For example, if you need to update snapshots in a specific panel, first locate the package.json corresponding to the node test folder of the panel. In theory it should be under `devtools/client/{panelname}/test/node/` but it might be slightly different depending on each panel. Then run `yarn run test-ci -u` in this folder and add the snapshot changes to your commit.
+For example, if you need to update snapshots in a specific panel, first locate the package.json corresponding to the node test folder of the panel. In theory it should be under `devtools/client/{panelname}/test/node/` but it might be slightly different depending on each panel. Then run `npm run test-ci -- -u` in this folder and add the snapshot changes to your commit.
 
 ## TypeScript
 
@@ -78,7 +78,7 @@ In order to fix a failure, you should run the script:
 
 ```
 > cd devtools/client/debugger/
-> yarn && node bin/bundle.js
+> npm ci && node bin/bundle.js
 ```
 
 And commit the changes, either in the commit which updated the bundle dependencies, or in a separate commit in order to keep things separated.

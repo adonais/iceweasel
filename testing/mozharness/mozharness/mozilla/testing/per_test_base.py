@@ -12,6 +12,8 @@ import sys
 
 import mozinfo
 
+TEST_SUMMARY_FILENAME = "summary.jsonl"
+
 
 class SingleTestMixin:
     """Utility functions for per-test testing like test verification and per-test coverage."""
@@ -27,8 +29,7 @@ class SingleTestMixin:
         # Use self._map_test_path_to_source(test_machine_path, source_path) to add a mapping.
         self.test_src_path = {}
         self.per_test_log_index = 1
-        # Path of the testsummary log for the harness run currently being set up.
-        self.test_summary_file = None
+        self.test_summary_started = False
 
     def _map_test_path_to_source(self, test_machine_path, source_path):
         test_machine_path = test_machine_path.replace(os.sep, posixpath.sep)
@@ -595,8 +596,8 @@ class SingleTestMixin:
 
     def get_indexed_logs(self, dir, test_suite):
         """
-        Per-test tasks need distinct file names for the raw, errorsummary and
-        testsummary logs on each run.
+        Per-test tasks need distinct file names for the raw and errorsummary
+        logs on each run.
         """
         index = ""
         if self.verify_enabled or self.per_test_coverage:
@@ -606,30 +607,20 @@ class SingleTestMixin:
         error_summary_file = os.path.join(
             dir, "%s%s_errorsummary.log" % (test_suite, index)
         )
-        test_summary_file = os.path.join(
-            dir, "%s%s_testsummary.jsonl" % (test_suite, index)
-        )
-        self.test_summary_file = test_summary_file
-        return raw_log_file, error_summary_file, test_summary_file
+        return raw_log_file, error_summary_file
 
-    def append_test_summary(self, dir):
+    def query_test_summary_file(self, dir, suite_definition):
         """
-        Append the last harness run's testsummary log to the task's summary.jsonl.
+        Path of the task's summary.jsonl if the suite definition opts in with
+        `test_summary`, else None.
 
-        Each harness invocation truncates the file it was given, so the per-run
-        logs are concatenated into a single fixed-name artifact. Suites that do
-        not pass --log-testsummary produce no file, in which case this is a no-op.
+        Every harness run of the task appends to the same file, so the first
+        call starts it over.
         """
-        part = self.test_summary_file
-        self.test_summary_file = None
-        if not part or not os.path.exists(part):
-            return
-        with open(part, encoding="utf-8") as fh:
-            contents = fh.read()
-        os.remove(part)
-        if not contents:
-            return
-        if not contents.endswith("\n"):
-            contents += "\n"
-        with open(os.path.join(dir, "summary.jsonl"), "a", encoding="utf-8") as fh:
-            fh.write(contents)
+        if not suite_definition.get("test_summary"):
+            return None
+        path = os.path.join(dir, TEST_SUMMARY_FILENAME)
+        if not self.test_summary_started:
+            self.test_summary_started = True
+            open(path, "w", encoding="utf-8").close()
+        return path

@@ -21,7 +21,6 @@ def warnings_as_errors(warnings_as_errors):
 set_config("WARNINGS_AS_ERRORS", warnings_as_errors)
 
 not_clang_cl = depends(c_compiler)(lambda c: c.type != "clang-cl")
-not_clang = depends(c_compiler)(lambda c: c.type != "clang")
 not_clang_based = depends(c_compiler)(lambda c: c.type not in ("clang", "clang-cl"))
 
 # GCC/Clang warnings:

@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "ImageContainer.h"
+#include "YCbCrTestHelpers.h"
 #include "YCbCrUtils.h"
 #include "gtest/gtest.h"
 #include "nsTArray.h"
@@ -37,11 +38,6 @@ Color RGB2YUV(const Color& aRGBColor) {
   const double v = r * 0.5 + g * -0.418688 + b * -0.081312 + 128;
 
   return Color(round(y), round(u), round(v));
-}
-
-int32_t CeilingOfHalf(int32_t aValue) {
-  MOZ_ASSERT(aValue >= 0);
-  return aValue / 2 + (aValue % 2);
 }
 
 already_AddRefed<layers::PlanarYCbCrImage> CreateI420Image(
@@ -273,6 +269,42 @@ void IsColorMatched(const Color& aColor, uint8_t* aRGBX, size_t aSize,
     ASSERT_EQ(b, aRGBX[i + 2]);  // B
     if (aAlphaValue) {
       ASSERT_EQ(*aAlphaValue, aRGBX[i + 3]);  // A
+    }
+  }
+}
+
+TEST(YCbCrUtils, RejectsEmptyPictureRects)
+{
+  const gfx::IntRect pictureRects[] = {gfx::IntRect(0, 0, 0, 2),
+                                       gfx::IntRect(0, 0, 2, 0)};
+  const gfx::ColorDepth colorDepths[] = {
+      gfx::ColorDepth::COLOR_8, gfx::ColorDepth::COLOR_10,
+      gfx::ColorDepth::COLOR_12, gfx::ColorDepth::COLOR_16};
+  uint16_t y[4] = {};
+  uint16_t cb[4] = {};
+  uint16_t cr[4] = {};
+  std::array<uint8_t, 16> output;
+  output.fill(0xA5);
+  const auto unchanged = output;
+
+  layers::PlanarYCbCrData data;
+  data.mYChannel = reinterpret_cast<uint8_t*>(y);
+  data.mCbChannel = reinterpret_cast<uint8_t*>(cb);
+  data.mCrChannel = reinterpret_cast<uint8_t*>(cr);
+  data.mYStride = data.mCbCrStride = 4;
+
+  for (auto depth : colorDepths) {
+    data.mColorDepth = depth;
+    for (const auto& rect : pictureRects) {
+      data.mPictureRect = rect;
+      EXPECT_EQ(gfx::ConvertYCbCrToRGB(data, gfx::SurfaceFormat::B8G8R8X8,
+                                       gfx::IntSize(2, 2), output.data(), 8),
+                NS_ERROR_INVALID_ARG);
+      EXPECT_EQ(output, unchanged);
+      EXPECT_EQ(gfx::ConvertYCbCrToRGB32(data, gfx::SurfaceFormat::B8G8R8X8,
+                                         output.data(), 8, nullptr),
+                NS_ERROR_INVALID_ARG);
+      EXPECT_EQ(output, unchanged);
     }
   }
 }

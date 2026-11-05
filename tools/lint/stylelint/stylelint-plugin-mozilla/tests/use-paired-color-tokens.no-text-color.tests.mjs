@@ -131,6 +131,15 @@ testRule({
       code: ".a { background-color: var(--button-background-color-ghost); --button-text-color-ghost: currentColor; }",
       description: "Defining the paired text token itself counts as well.",
     },
+    {
+      code: '.a { background-image: url("chrome://global/skin/icon.svg"); }',
+      description: "An image reads no token and paints no surface color.",
+    },
+    {
+      code: ".a { background-color: var(--lwt-accent-color); background-image: image(var(--sidebar-background-color)); }",
+      description:
+        "A background-color is the surface of a block that sets both.",
+    },
   ],
   reject: [
     {
@@ -150,6 +159,27 @@ testRule({
         "--panel-text-color"
       ),
       description: "The background shorthand paints a surface too.",
+      line: 1,
+      column: 6,
+    },
+    {
+      code: ".a { background-image: image(var(--sidebar-background-color)); }",
+      message: messages.noTextColor(
+        "--sidebar-background-color",
+        "--sidebar-text-color"
+      ),
+      description: "A flat color layered with image() paints a surface.",
+      line: 1,
+      column: 6,
+    },
+    {
+      code: ".a { background-color: var(--panel-background-color); background-image: url(x.svg); }",
+      message: messages.noTextColor(
+        "--panel-background-color",
+        "--panel-text-color"
+      ),
+      description:
+        "A background-color is the surface of a block that sets both.",
       line: 1,
       column: 6,
     },

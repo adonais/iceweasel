@@ -88,4 +88,32 @@ export var WindowsInstallsInfo = {
 
     return paths;
   },
+
+  /**
+   * Reads `installation_telemetry.json`, which the Windows installer writes to
+   * the installation directory to record how it was run.
+   *
+   * @param {nsIFile} [file] Optional, the file to read. Defaults to the one in
+   *        this application's installation directory.
+   * @returns {Promise<object|null>} The parsed contents, or null if the file
+   *          doesn't exist, as for MSIX packages and unarchived installs.
+   * @rejects If the file exists but can't be read or parsed.
+   */
+  async readInstallationTelemetry(file) {
+    if (!file) {
+      file = Services.dirsvc.get("GreD", Ci.nsIFile);
+      file.append("installation_telemetry.json");
+    }
+
+    let bytes;
+    try {
+      bytes = await IOUtils.read(file.path);
+    } catch (ex) {
+      if (ex.name == "NotFoundError") {
+        return null;
+      }
+      throw ex;
+    }
+    return JSON.parse(new TextDecoder("utf-16").decode(bytes));
+  },
 };

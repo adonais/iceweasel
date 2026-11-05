@@ -371,7 +371,8 @@ void TErrorResult<CleanupPolicy>::SerializeErrorResult(
         "Cannot serialize an ErrorResult representing a Javascript exception");
   }
 
-  WriteParam(aWriter, mResult);
+  // Bypass ParamTraits<nsresult>, which rejects our internal error codes.
+  aWriter->WriteUInt32(static_cast<uint32_t>(mResult));
   if (IsErrorWithMessage()) {
     MOZ_ASSERT(mResult == NS_ERROR_INTERNAL_ERRORRESULT_TYPEERROR ||
                mResult == NS_ERROR_INTERNAL_ERRORRESULT_RANGEERROR);
@@ -399,8 +400,14 @@ bool TErrorResult<CleanupPolicy>::DeserializeErrorResult(
   AssertInOwningThread();
 
   nsresult result;
-  if (!ReadParam(aReader, &result)) {
+  if (!aReader->ReadUInt32(reinterpret_cast<uint32_t*>(&result))) {
     return false;
+  }
+
+  if (NS_ERROR_GET_MODULE(result) != NS_ERROR_MODULE_ERRORRESULT) {
+    ClearUnionData();
+    AssignErrorCode(result);
+    return true;
   }
 
   switch (result) {
@@ -452,9 +459,8 @@ bool TErrorResult<CleanupPolicy>::DeserializeErrorResult(
     }
 
     default:
-      ClearUnionData();
-      AssignErrorCode(result);
-      return true;
+      // Unknown NS_ERROR_MODULE_ERRORRESULT error.
+      return false;
   }
 }
 

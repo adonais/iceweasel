@@ -56,3 +56,9 @@ if CONFIG['JS_CODEGEN_X64'] or CONFIG['JS_CODEGEN_X86']:
 LICENSED_UNDER += [
     "mit",
 ]
+
+SOURCE_HEADERS += [
+	"ZycoreExportConfig.h",
+	"ZydisAPI.h",
+	"ZydisExportConfig.h",
+]

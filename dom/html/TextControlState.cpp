@@ -1286,8 +1286,10 @@ static constexpr size_t kMaxCountOfCacheToReuse = 25;
 static AutoTArray<void*, kMaxCountOfCacheToReuse>* sReleasedInstances = nullptr;
 static bool sHasShutDown = false;
 
-TextControlState::TextControlState(TextControlElement* aOwningElement)
+TextControlState::TextControlState(TextControlElement* aOwningElement,
+                                   const nsAString& aInitialValue)
     : mTextCtrlElement(aOwningElement),
+      mValue(aInitialValue),
       mEverInited(false),
       mEditorInitialized(false),
       mSelectionCached(true)
@@ -1300,15 +1302,14 @@ TextControlState::TextControlState(TextControlElement* aOwningElement)
 }
 
 TextControlState* TextControlState::Construct(
-    TextControlElement* aOwningElement) {
+    TextControlElement* aOwningElement, const nsAString& aInitialValue) {
   void* mem;
   if (sReleasedInstances && !sReleasedInstances->IsEmpty()) {
     mem = sReleasedInstances->PopLastElement();
   } else {
     mem = moz_xmalloc(sizeof(TextControlState));
   }
-
-  return new (mem) TextControlState(aOwningElement);
+  return new (mem) TextControlState(aOwningElement, aInitialValue);
 }
 
 TextControlState::~TextControlState() {

@@ -525,7 +525,6 @@
       height: auto;
       width: 75px;
       -moz-context-properties: fill;
-      // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list
       fill: light-dark(#DADBDF, #3B3B43);
     }
   }

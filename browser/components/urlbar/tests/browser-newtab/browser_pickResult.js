@@ -68,7 +68,7 @@ add_task(async function closeTabRightAfterEnter() {
   });
   let sandbox = sinon.createSandbox();
   let receiveMessageSpy = sandbox.spy(UrlbarParent.prototype, "receiveMessage");
-  let openSpy = sandbox.spy(window, "openTrustedLinkIn");
+  let openSpy = sandbox.spy(URILoadingHelper, "openTrustedLinkIn");
 
   let keySent = BrowserTestUtils.synthesizeKey(
     "KEY_Enter",

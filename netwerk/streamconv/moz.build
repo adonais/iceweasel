@@ -20,3 +20,7 @@ SOURCES += [
 XPIDL_MODULE = "necko_strconv"
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "nsStreamConverterService.h",
+]

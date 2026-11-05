@@ -64,6 +64,9 @@ if CONFIG["MOZ_WEBMIDI_MIDIR_IMPL"]:
     UNIFIED_SOURCES += [
         "midirMIDIPlatformService.cpp",
     ]
+    SOURCE_HEADERS += [
+        "midirMIDIPlatformService.h",
+    ]
 
     if CONFIG["OS_TARGET"] == "Linux":
         OS_LIBS += ["asound"]  # Required by midir
@@ -76,3 +79,8 @@ LOCAL_INCLUDES += [
 
 MOCHITEST_MANIFESTS += ["tests/mochitest.toml"]
 BROWSER_CHROME_MANIFESTS += ["tests/browser.toml"]
+
+SOURCE_HEADERS += [
+    "MIDILog.h",
+    "TestMIDIPlatformService.h",
+]

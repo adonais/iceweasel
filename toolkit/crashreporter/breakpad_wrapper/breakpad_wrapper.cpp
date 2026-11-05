@@ -24,7 +24,7 @@ using breakpad_pid = pid_t;
 #  include "windows/handler/exception_handler.h"
 using breakpad_char = wchar_t;
 using breakpad_string = std::wstring;
-using breakpad_init_type = wchar_t*;
+using breakpad_init_type = HANDLE;
 using breakpad_pid = DWORD;
 using ExtraCrashData = void;
 #elif defined(XP_MACOSX)
@@ -118,11 +118,9 @@ extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
                                             const breakpad_char* aMinidumpPath,
                                             BreakpadContext* aContext) {
   breakpad_string minidumpPath(aMinidumpPath);
-  breakpad_string breakpadData(aBreakpadData);
 
   CrashGenerationServer* server = new CrashGenerationServer(
-      breakpadData,
-      /* pipe_sec_attrs */ nullptr,
+      aBreakpadData,
       /* connect_callback */ nullptr,
       /* connect_context */ nullptr, onClientDumpRequestCallback,
       reinterpret_cast<void*>(aContext),

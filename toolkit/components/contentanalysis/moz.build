@@ -71,3 +71,11 @@ DEFINES["GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER"] = True
 FINAL_LIBRARY = "xul"
 
 TEST_DIRS += ["tests"]
+
+SOURCE_HEADERS += [
+    "ContentAnalysisBackend.h",
+    "ContentAnalysisRuleParser.h",
+    "ContentAnalysisShared.h",
+    "ExternalAgentBackend.h",
+    "WasmModuleBackend.h",
+]

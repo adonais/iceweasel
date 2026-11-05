@@ -155,6 +155,9 @@ class CommonBackend(BuildBackend):
             kind="host-library" if is_host else "library",
             manifest_path=mozpath.normsep(lib.cargo_file),
             names=(lib.lib_name,),
+            outputs=(
+                mozpath.relpath(lib.import_path.full_path, self.environment.topobjdir),
+            ),
             features=lib.features or (),
             cargo_profile_suffix=profile_suffix,
             cargo_crate_type=lib.cargo_crate_type,

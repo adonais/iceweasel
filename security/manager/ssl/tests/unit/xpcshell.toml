@@ -4,6 +4,7 @@ tags = "psm condprof"
 firefox-appdir = "browser"
 prefs = [
   "security.pki.certificate_transparency.mode=1",
+  "security.utility_pkcs11_module_process.enabled=true",
 ]
 skip-if = [
   "msix", # Bug 1809477
@@ -65,7 +66,10 @@ run-if = [
 tags = "remote-settings blocklist psm"
 
 ["test_broken_fips.js"]
-prefs = ["security.storage.encryption.sqlite.enabled=false"]
+prefs = [
+  "security.storage.encryption.sqlite.enabled=false",
+  "security.utility_pkcs11_module_process.enabled=false",
+]
 # FIPS has never been a thing on Android, so the workaround doesn't
 # exist on that platform.
 # FIPS still works on Linux, so this test doesn't make any sense there.
@@ -98,8 +102,7 @@ run-sequentially = ["true"] # hardcoded ports
 
 ["test_cert_expiration_canary.js"]
 run-if = [
-  "false",
-  #"nightly_build",
+  "nightly_build",
 ]
 
 ["test_cert_keyUsage.js"]
@@ -196,7 +199,6 @@ run-if = [
 ]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && condprof",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && condprof",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt && condprof",
 ]
 
@@ -415,5 +417,6 @@ skip-if = [
 ["test_sts_preloadlist_selfdestruct.js"]
 
 ["test_trust_anchors.js"]
+prefs = ["security.utility_pkcs11_module_process.enabled=false"]
 
 ["test_x509.js"]

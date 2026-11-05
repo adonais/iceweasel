@@ -1,4 +1,4 @@
-From 64af00a59b7ba856d7e0c76c30831fcbcb020dd1 Mon Sep 17 00:00:00 2001
+From 9accb1c3cb9baedefbf008141c59e951f04ccf53 Mon Sep 17 00:00:00 2001
 From: Jeff Muizelaar <jrmuizel@gmail.com>
 Date: Wed, 6 May 2020 14:04:42 -0400
 Subject: [PATCH] Don't use ClearView if we previously used dual source
@@ -21,7 +21,7 @@ draw call path. This lets us use ClearView most of the time still.
  6 files changed, 71 insertions(+), 16 deletions(-)
 
 diff --git a/include/platform/autogen/FeaturesD3D_autogen.h b/include/platform/autogen/FeaturesD3D_autogen.h
-index 5d38b6e..6305080 100644
+index 5d38b6eb0..6305080a8 100644
 --- a/include/platform/autogen/FeaturesD3D_autogen.h
 +++ b/include/platform/autogen/FeaturesD3D_autogen.h
 @@ -98,6 +98,12 @@ struct FeaturesD3D : FeatureSetBase
@@ -38,7 +38,7 @@ index 5d38b6e..6305080 100644
          "useSystemMemoryForConstantBuffers",
          FeatureCategory::D3DWorkarounds,
 diff --git a/include/platform/d3d_features.json b/include/platform/d3d_features.json
-index 0997289..7eb7385 100644
+index 09972897e..7eb73858e 100644
 --- a/include/platform/d3d_features.json
 +++ b/include/platform/d3d_features.json
 @@ -106,6 +106,14 @@
@@ -57,7 +57,7 @@ index 0997289..7eb7385 100644
              "name": "use_system_memory_for_constant_buffers",
              "category": "Workarounds",
 diff --git a/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp b/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
-index ff265d9..f3c5ae5 100644
+index ff265d9d0..f3c5ae565 100644
 --- a/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
 +++ b/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
 @@ -426,10 +426,45 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
@@ -111,7 +111,7 @@ index ff265d9..f3c5ae5 100644
              rtvs[numRtvs]     = framebufferRTV.get();
              rtvMasks[numRtvs] = gl_d3d11::GetColorMask(formatInfo) & colorMask;
 diff --git a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
-index d0be62f..6fae418 100644
+index 6615f095c..7f06fc0fc 100644
 --- a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
 +++ b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
 @@ -2119,24 +2119,26 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
@@ -163,10 +163,10 @@ index d0be62f..6fae418 100644
                              (isIntel && capsVersion >= angle::VersionTriple(15, 0, 0) &&
                               capsVersion < angle::VersionTriple(15, 4539, 0)) ||
 diff --git a/util/autogen/angle_features_autogen.cpp b/util/autogen/angle_features_autogen.cpp
-index 2e0c9e2..e75541b 100644
+index 9a7ec97b7..e13b46e7a 100644
 --- a/util/autogen/angle_features_autogen.cpp
 +++ b/util/autogen/angle_features_autogen.cpp
-@@ -138,6 +138,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
+@@ -140,6 +140,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
      {Feature::EmulateAdvancedBlendEquations, "emulateAdvancedBlendEquations"},
      {Feature::EmulateAlphaToCoverage, "emulateAlphaToCoverage"},
      {Feature::EmulateAtan2Float, "emulateAtan2Float"},
@@ -175,10 +175,10 @@ index 2e0c9e2..e75541b 100644
      {Feature::EmulateClipOrigin, "emulateClipOrigin"},
      {Feature::EmulateCopyTexImage2D, "emulateCopyTexImage2D"},
 diff --git a/util/autogen/angle_features_autogen.h b/util/autogen/angle_features_autogen.h
-index 68724b7..3ecac9d 100644
+index 765a104d7..5116c2ed1 100644
 --- a/util/autogen/angle_features_autogen.h
 +++ b/util/autogen/angle_features_autogen.h
-@@ -138,6 +138,7 @@ enum class Feature
+@@ -140,6 +140,7 @@ enum class Feature
      EmulateAdvancedBlendEquations,
      EmulateAlphaToCoverage,
      EmulateAtan2Float,

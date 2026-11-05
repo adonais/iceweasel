@@ -470,9 +470,8 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
     }
   }
 
-  // Enforce using cache in case the geolocation override server is set,
-  // since this server can return only cached values.
-  if (!canUseCache && gs != GeolocationService::sService.get()) {
+  // The override service only supplies a single cached position.
+  if (!canUseCache && gs->IsOverride()) {
     canUseCache = true;
   }
 
@@ -1208,6 +1207,15 @@ Geolocation::GetLocationOSPermission() {
 }
 
 void Geolocation::RequestIfPermitted(nsGeolocationRequest* request) {
+  // The override service never reaches the platform, so the system
+  // geolocation permission does not apply to it.
+  RefPtr<GeolocationService> gs =
+      GeolocationService::GetGeolocationService(mBrowsingContext);
+  if (gs && gs->IsOverride()) {
+    RegisterRequestWithPrompt(request);
+    return;
+  }
+
   auto getPermission = [request = RefPtr{request}](auto aPermission) {
     switch (aPermission) {
       case geolocation::SystemGeolocationPermissionBehavior::

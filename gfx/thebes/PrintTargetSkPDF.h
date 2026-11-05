@@ -7,21 +7,16 @@
 
 #include "PrintTarget.h"
 #include "mozilla/UniquePtr.h"
-#include "nsCOMPtr.h"
-#include "skia/include/core/SkCanvas.h"
-#include "skia/include/core/SkStream.h"
-#include "skia/include/docs/SkPDFDocument.h"
 
-namespace mozilla {
-namespace gfx {
+namespace mozilla::gfx {
+
+class GkSkWStream;
 
 /**
  * Skia PDF printing target.
  */
 class PrintTargetSkPDF final : public PrintTarget {
  public:
-  static already_AddRefed<PrintTargetSkPDF> CreateOrNull(
-      UniquePtr<SkWStream> aStream, const IntSize& aSizeInPoints);
   static already_AddRefed<PrintTargetSkPDF> CreateOrNull(
       nsIOutputStream* aStream, const IntSize& aSizeInPoints);
 
@@ -30,7 +25,7 @@ class PrintTargetSkPDF final : public PrintTarget {
                          uint64_t aInnerWindowId, int32_t aStartPage,
                          int32_t aEndPage) override;
   nsresult EndPrinting() override;
-  void Finish() override;
+  nsresult AbortPrinting() override;
 
   nsresult BeginPage(const IntSize& aSizeInPoints) override;
   nsresult EndPage() override;
@@ -41,29 +36,18 @@ class PrintTargetSkPDF final : public PrintTarget {
   already_AddRefed<DrawTarget> GetReferenceDrawTarget() final;
 
  private:
-  PrintTargetSkPDF(const IntSize& aSize, UniquePtr<SkWStream> aStream);
+  PrintTargetSkPDF(const IntSize& aSize, UniquePtr<GkSkWStream> aStream);
   virtual ~PrintTargetSkPDF();
 
-  // Do not hand out references to this object.  It holds a non-owning
-  // reference to mOStreame, so must not outlive mOStream.
-  sk_sp<SkDocument> mPDFDoc;
+  struct SkPDFDocState;
+  UniquePtr<SkPDFDocState> mState;
+  // Needed for reference DT creation.
+  UniquePtr<SkPDFDocState> mRefState;
 
-  // The stream that the SkDocument outputs to.
-  UniquePtr<SkWStream> mOStream;
-
-  // The current page's SkCanvas and its wrapping DrawTarget:
-  // Canvas is owned by mPDFDoc, which handles its deletion.
-  SkCanvas* mPageCanvas;
+  // Wraps mState->mCanvas for a given page.
   RefPtr<DrawTarget> mPageDT;
-
-  // Members needed to provide a reference DrawTarget:
-  sk_sp<SkDocument> mRefPDFDoc;
-  // Canvas owned by mRefPDFDoc, which handles its deletion.
-  SkCanvas* mRefCanvas;
-  SkDynamicMemoryWStream mRefOStream;
 };
 
-}  // namespace gfx
-}  // namespace mozilla
+}  // namespace mozilla::gfx
 
 #endif /* MOZILLA_GFX_PRINTTARGETSKPDF_H */

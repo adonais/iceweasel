@@ -64,6 +64,7 @@ add_task(async function test_sidebar_expand() {
   await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
   // Vertical tabs are expanded by default
   info("Waiting for sidebar main to be expanded");
+  await SidebarController.waitUntilStable();
   await BrowserTestUtils.waitForMutationCondition(
     SidebarController.sidebarMain,
     { attributes: true, attributeFilter: ["expanded"] },
@@ -75,6 +76,7 @@ add_task(async function test_sidebar_expand() {
 
   EventUtils.synthesizeMouseAtCenter(SidebarController.toolbarButton, {});
   info("Waiting for sidebar main to be collapsed");
+  await SidebarController.waitUntilStable();
   await BrowserTestUtils.waitForMutationCondition(
     SidebarController.sidebarMain,
     { attributes: true, attributeFilter: ["expanded"] },
@@ -85,6 +87,7 @@ add_task(async function test_sidebar_expand() {
   info("Re-expand the sidebar.");
   EventUtils.synthesizeMouseAtCenter(SidebarController.toolbarButton, {});
   info("Waiting for sidebar main to be expanded");
+  await SidebarController.waitUntilStable();
   await BrowserTestUtils.waitForMutationCondition(
     SidebarController.sidebarMain,
     { attributes: true, attributeFilter: ["expanded"] },
@@ -307,6 +310,7 @@ add_task(async function test_customize_icon_click() {
 
 async function testCustomizeToggle(commandID, gleanEvent) {
   await SidebarController.show("viewCustomizeSidebar");
+  await SidebarController.waitUntilStable();
   const customizeComponent =
     SidebarController.browser.contentDocument.querySelector(
       "sidebar-customize"

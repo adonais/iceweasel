@@ -1,0 +1,16 @@
+[DEFAULT]
+prefs = [
+  "browser.newtab.preload=false",
+  "browser.search.suggest.enabled=false",
+  "browser.urlbar.suggest.searches=false",
+  "browser.smartwindow.endpoint=http://localhost:0/v1",
+]
+support-files = [
+  "head.js",
+  "../head.js",
+]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && tsan", # Bug 2057552
+]
+
+["browser_get_page_content_errors.js"]

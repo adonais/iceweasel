@@ -36,6 +36,7 @@ class CompositorBridgeParent;
 class Fence;
 class ShaderProgramOGLsHolder;
 class SurfacePool;
+class SyncObjectHost;
 }  // namespace layers
 namespace wr {
 
@@ -329,6 +330,11 @@ class RenderThread final {
   gl::GLContext* SingletonGL();
   gl::GLContext* SingletonGLForCompositorOGL();
   void ClearSingletonGL();
+  // The sync object of the D3D11 device used by SingletonGL(), if any.
+  layers::SyncObjectHost* SingletonGLSyncObject() const {
+    MOZ_ASSERT(IsInRenderThread());
+    return mSingletonGLSyncObject;
+  }
   RefPtr<layers::SurfacePool> SharedSurfacePool();
   void ClearSharedSurfacePool();
 
@@ -517,6 +523,7 @@ class RenderThread final {
   // An optional shared GLContext to be used for all
   // windows.
   RefPtr<gl::GLContext> mSingletonGL;
+  RefPtr<layers::SyncObjectHost> mSingletonGLSyncObject;
   bool mSingletonGLIsForHardwareWebRender;
 
   RefPtr<layers::SurfacePool> mSurfacePool;

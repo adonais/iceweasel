@@ -159,15 +159,6 @@ reason = "Windows test specific to the x86-64 architecture"
 
 ["test_crashreporter.js"]
 
-["test_crashreporter_appmem.js"]
-# we need to skip this due to bug 838613
-skip-if = [
-  "os == 'android'",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
-]
-
 ["test_crashreporter_crash.js"]
 
 ["test_crashreporter_omnijar_loading.js"]

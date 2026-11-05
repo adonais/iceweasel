@@ -1,0 +1,11 @@
+diff --git a/media/ffvpx/libavutil/hwcontext_vulkan.c b/media/ffvpx/libavutil/hwcontext_vulkan.c
+--- a/media/ffvpx/libavutil/hwcontext_vulkan.c
++++ b/media/ffvpx/libavutil/hwcontext_vulkan.c
+@@ -803,7 +803,6 @@ static const VulkanOptExtension optional_device_exts[] = {
+ #ifdef VK_KHR_internally_synchronized_queues
+     { VK_KHR_INTERNALLY_SYNCHRONIZED_QUEUES_EXTENSION_NAME,   FF_VK_EXT_INTERNAL_QUEUE_SYNC    },
+ #endif
+-    { VK_NV_OPTICAL_FLOW_EXTENSION_NAME,                      FF_VK_EXT_OPTICAL_FLOW           },
+ 
+     /* Imports/exports */
+     { VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,               FF_VK_EXT_EXTERNAL_FD_MEMORY     },

@@ -3633,8 +3633,11 @@ void nsFocusManager::GetSequentialFocusNavigationStartingPoint(
   if (selectionStart) {
     // If there is something focused, we only want to start from the selection
     // if it's a flat tree descendant of the focused content.
+    // However, we don't do this for popover invokers, since it would skip the
+    // popover for forward navigation.
     if (!aFocusedContent ||
-        selectionStart->IsInclusiveFlatTreeDescendantOf(aFocusedContent)) {
+        (selectionStart->IsInclusiveFlatTreeDescendantOf(aFocusedContent) &&
+         !GetAssociatedPopoverFromInvoker(aFocusedContent))) {
       NS_ADDREF(*aStartContent = selectionStart);
       return;
     }

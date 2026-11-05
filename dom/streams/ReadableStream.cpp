@@ -2,6 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <algorithm>
+#include <cstring>
+
 #include "ReadIntoRequest.h"
 #include "ReadableByteStreamControllerAbstract.h"
 #include "ReadableStreamAbstract.h"
@@ -19,6 +22,7 @@
 #include "js/PropertyAndElement.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
+#include "js/experimental/TypedData.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -36,6 +40,7 @@
 #include "mozilla/dom/ReadableStreamControllerBase.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
 #include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
 #include "mozilla/dom/WritableStreamDefaultWriter.h"
@@ -1403,7 +1408,7 @@ void ReadableStream::ErrorNative(JSContext* aCx, JS::Handle<JS::Value> aError,
   // Step 1: If stream.[[controller]] implements ReadableByteStreamController,
   // then perform ! ReadableByteStreamControllerError(stream.[[controller]], e).
   if (mController->IsByte()) {
-    ReadableByteStreamControllerError(mController->AsByte(), aError, aRv);
+    ReadableByteStreamControllerError(aCx, mController->AsByte(), aError, aRv);
     return;
   }
   // Step 2: Otherwise, perform !
@@ -1533,6 +1538,82 @@ void ReadableStream::GetCurrentBYOBRequestView(
 
   // Step 4: Return byobRequest.[[view]].
   byobRequest->GetView(aCx, aView);
+}
+
+// https://streams.spec.whatwg.org/#readablestream-pull-from-bytes
+uint64_t ReadableStream::PullFromBytes(JSContext* aCx,
+                                       Span<const uint8_t> aBytes,
+                                       ErrorResult& aRv) {
+  // Step 1: Assert: stream.[[controller]] implements
+  // ReadableByteStreamController.
+  MOZ_ASSERT(mController->IsByte());
+  RefPtr<ReadableByteStreamController> controller = mController->AsByte();
+
+  // Step 2: Let available be bytes's length.
+  uint64_t available = aBytes.Length();
+
+  // Step 3: Let desiredSize be available.
+  uint64_t desiredSize = available;
+
+  // Step 4: If stream's current BYOB request view is non-null, then set
+  // desiredSize to that view's byte length.
+  JS::Rooted<JSObject*> byobViewObj(aCx);
+  GetCurrentBYOBRequestView(aCx, &byobViewObj, aRv);
+  if (aRv.Failed()) {
+    return 0;
+  }
+  if (byobViewObj) {
+    desiredSize = JS_GetArrayBufferViewByteLength(byobViewObj);
+  }
+
+  // Step 5: Let pullSize be the smaller value of available and desiredSize.
+  uint64_t pullSize = std::min(available, desiredSize);
+
+  // Step 6: Let pulled be the first pullSize bytes of bytes.
+  // Step 7: Remove the first pullSize bytes from bytes.
+  //
+  // Implementation note: pulled is a subspan rather than a copy, and the bytes
+  // are not removed here; our caller handles the bytes we don't consume, since
+  // we hand back pullSize.
+  Span<const uint8_t> pulled = aBytes.First(static_cast<size_t>(pullSize));
+
+  // Step 8: If stream's current BYOB request view is non-null, then:
+  if (byobViewObj) {
+    // ReadableByteStreamControllerRespond() throws a TypeError on a
+    // bytesWritten of 0, which would error the stream. Nothing was pulled, so
+    // leave the BYOB request pending for the next caller instead. The spec
+    // does not cover this case.
+    if (pullSize == 0) {
+      return 0;
+    }
+
+    // Step 8.1: Write pulled into stream's current BYOB request view.
+    ArrayBufferView byobView;
+    MOZ_ALWAYS_TRUE(byobView.Init(byobViewObj));
+    byobView.ProcessData(
+        [&](const Span<uint8_t>& aData, JS::AutoCheckCannotGC&&) {
+          MOZ_ASSERT(pulled.Length() <= aData.Length());
+          memcpy(aData.Elements(), pulled.Elements(), pulled.Length());
+        });
+
+    // Step 8.2: Perform ? ReadableByteStreamControllerRespond(
+    // stream.[[controller]], pullSize).
+    ReadableByteStreamControllerRespond(aCx, controller, pullSize, aRv);
+    return pullSize;
+  }
+
+  // Step 9.1: Set view to the result of creating a Uint8Array from pulled in
+  // stream's relevant Realm.
+  JSObject* outView = Uint8Array::Create(aCx, pulled, aRv);
+  if (aRv.Failed()) {
+    return 0;
+  }
+  JS::Rooted<JSObject*> view(aCx, outView);
+
+  // Step 9.2: Perform ? ReadableByteStreamControllerEnqueue(
+  // stream.[[controller]], view).
+  ReadableByteStreamControllerEnqueue(aCx, controller, view, aRv);
+  return pullSize;
 }
 
 // https://streams.spec.whatwg.org/#readablestream-get-a-reader

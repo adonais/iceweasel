@@ -71,6 +71,8 @@ win32-samply:
     description: "samply toolchain build for 32-bit Windows"
     treeherder:
         symbol: TW32(samply)
+    attributes:
+        local-toolchain: false
     run:
         arguments: ['i686-pc-windows-msvc']
     fetches:
@@ -85,6 +87,18 @@ win64-samply:
         symbol: TW64(samply)
     run:
         arguments: ['x86_64-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows
+            - vs-toolchain
+
+win64-aarch64-samply:
+    description: "samply toolchain build for aarch64 Windows"
+    treeherder:
+        symbol: TWA64(samply)
+    run:
+        arguments: ['aarch64-pc-windows-msvc']
     fetches:
         toolchain:
             - linux64-clang-toolchain

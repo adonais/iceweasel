@@ -1,0 +1,10 @@
+[DEFAULT]
+dupe-manifest=true
+support-files = [
+  "head.js",
+]
+prefs = [
+  "browser.fireButton.enabled=true",
+]
+
+["browser_fireButton.js"]

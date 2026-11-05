@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
@@ -224,6 +224,11 @@ const SUGGEST_PREFS = Object.freeze({
       US: [EN_LOCALES, shouldOnlineBeAvailable],
     },
   },
+  "temporal.featureGate": {
+    defaultValues: {
+      US: [EN_LOCALES, false],
+    },
+  },
   "weather.featureGate": {
     defaultValues: {
       DE: [["de"], true],
@@ -280,6 +285,8 @@ const FEATURES = {
     "moz-src:///browser/components/urlbar/private/SuggestBackendMl.sys.mjs",
   SuggestBackendRust:
     "moz-src:///browser/components/urlbar/private/SuggestBackendRust.sys.mjs",
+  TemporalSuggestions:
+    "moz-src:///browser/components/urlbar/private/TemporalSuggestions.sys.mjs",
   WeatherSuggestions:
     "moz-src:///browser/components/urlbar/private/WeatherSuggestions.sys.mjs",
   WikipediaSuggestions:
@@ -834,7 +841,7 @@ class _QuickSuggest {
    * @param {object} options
    * @param {Array} options.tokens
    *   It is compatible to UrlbarQueryContext.tokens.
-   * @param {Values<typeof lazy.lazy.UrlbarShared.HIGHLIGHT>} [options.highlightType]
+   * @param {Values<typeof lazy.UrlbarShared.HIGHLIGHT>} [options.highlightType]
    * @param {string} [options.fullKeyword]
    *   Full keyword if there is.
    * @param {string} options.title
@@ -950,13 +957,7 @@ class _QuickSuggest {
     //    neccesary across app versions: introducing and initializing new prefs,
     //    removing prefs, or changing the meaning of existing prefs.
 
-    // We use `Preferences` because it lets us access prefs without worrying
-    // about their types and can do so on the default branch. Most of our prefs
-    // are bools but not all.
-    let defaults = new lazy.Preferences({
-      branch: "browser.urlbar.",
-      defaultBranch: true,
-    });
+    let defaults = getDefaultPrefs();
 
     // Before setting defaults, save their original unmodifed values as defined
     // in `firefox.js` so we can restore them if Suggest becomes disabled.
@@ -1011,10 +1012,7 @@ class _QuickSuggest {
       prefsByVariable = { [variable]: prefsByVariable[variable] };
     }
 
-    let defaults = new lazy.Preferences({
-      branch: "browser.urlbar.",
-      defaultBranch: true,
-    });
+    let defaults = getDefaultPrefs();
 
     for (let [v, pref] of Object.entries(prefsByVariable)) {
       let value = lazy.NimbusFeatures.urlbar.getVariable(v);
@@ -1310,6 +1308,23 @@ function userAcceptedSuggestToU() {
  */
 function shouldOnlineBeAvailable() {
   return userAcceptedSuggestToU();
+}
+
+/**
+ * A `Preferences` object for the default `browser.urlbar.` branch.
+ *
+ * We use `Preferences` because it lets us access prefs without worrying about
+ * their types and can do so on the default branch. Most of our prefs are bools
+ * but not all.
+ * This helper is necessary to fix the type.
+ */
+function getDefaultPrefs() {
+  return /** @type {InstanceType<typeof lazy.Preferences> & {get: (name: string) => any, set: (name: string, value: any) => void}} */ (
+    new lazy.Preferences({
+      branch: "browser.urlbar.",
+      defaultBranch: true,
+    })
+  );
 }
 
 function getDismissalKey(result) {

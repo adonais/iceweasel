@@ -35,12 +35,9 @@ class StatementParamsHolder final : public nsISupports {
  public:
   NS_DECL_ISUPPORTS
 
-  explicit StatementParamsHolder(StatementParams* aParams) : mParams(aParams) {}
+  explicit StatementParamsHolder(StatementParams* aParams);
 
-  StatementParams* Get() const {
-    MOZ_ASSERT(mParams);
-    return mParams;
-  }
+  StatementParams* Get() const;
 
  private:
   virtual ~StatementParamsHolder();
@@ -52,12 +49,9 @@ class StatementRowHolder final : public nsISupports {
  public:
   NS_DECL_ISUPPORTS
 
-  explicit StatementRowHolder(StatementRow* aRow) : mRow(aRow) {}
+  explicit StatementRowHolder(StatementRow* aRow);
 
-  StatementRow* Get() const {
-    MOZ_ASSERT(mRow);
-    return mRow;
-  }
+  StatementRow* Get() const;
 
  private:
   virtual ~StatementRowHolder();

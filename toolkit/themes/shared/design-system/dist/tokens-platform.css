@@ -52,7 +52,6 @@
 
     /** panel **/
     --panel-background-color: Field;
-    --panel-border-color: var(--border-color-deemphasized);
     --panel-footer-background-color: color-mix(in srgb, currentColor 17%, transparent);
     --panel-text-color: FieldText;
 
@@ -122,7 +121,6 @@
 
       /** panel **/
       --panel-background-color: Field;
-      --panel-border-color: var(--border-color-deemphasized);
       --panel-text-color: FieldText;
 
       /** popup **/
@@ -137,8 +135,8 @@
 
       /** toolbar **/
       --toolbar-background-color: color-mix(in srgb, -moz-dialog 85%, var(--color-white));
-      --toolbar-field-background-color: light-dark(rgba(0, 0, 0, 0.05), var(--color-black-alpha-30));
       --toolbar-field-background-color-focus: Field;
+      --toolbar-field-background-color: light-dark(rgba(0, 0, 0, 0.05), var(--color-black-alpha-30));
       --toolbar-field-border-color: var(--border-color-transparent);
       --toolbar-field-border-color-focus: color-mix(in srgb, var(--focus-outline-color) 50%, transparent);
       --toolbar-field-text-color: inherit;
@@ -192,7 +190,6 @@
 
       /** panel **/
       --panel-background-color: light-dark(var(--color-white), rgb(66, 65, 77));
-      --panel-border-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
       --panel-footer-background-color: light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent));
       --panel-text-color: light-dark(var(--color-black), rgb(251, 251, 254));
 
@@ -261,7 +258,6 @@
 
         /** panel **/
         --panel-background-color: var(--popup-background-color);
-        --panel-border-color: var(--popup-border-color);
         --panel-text-color: var(--text-color);
 
         /** popup **/
@@ -275,8 +271,8 @@
 
         /** toolbar **/
         --toolbar-background-color: light-dark(rgba(255, 255, 255, 0.4), rgba(0, 0, 0, 0.2));
-        --toolbar-field-background-color: var(--toolbar-background-color);
         --toolbar-field-background-color-focus: var(--background-color-box);
+        --toolbar-field-background-color: light-dark(var(--color-white-alpha-40), var(--color-black-alpha-20));
         --toolbar-field-border-color: light-dark(var(--color-gray-20), var(--color-gray-60));
         --toolbar-field-border-color-focus: var(--focus-outline-color);
         --toolbar-field-text-color: light-dark(var(--color-violet-desaturated-70), var(--color-violet-desaturated-10));
@@ -294,8 +290,8 @@
         /* This gradient is only used for Nova */
         --toolbox-background-gradient: linear-gradient(
           96deg,
-          color-mix(var(--toolbox-background-color-gradient-leading) 50%, transparent) 39.84%,
-          color-mix(var(--toolbox-background-color-gradient-trailing) 50%, transparent) 101.72%
+          color-mix(var(--toolbox-background-gradient-leading) 50%, transparent) 39.84%,
+          color-mix(var(--toolbox-background-gradient-trailing) 50%, transparent) 101.72%
         );
         --toolbox-text-color: var(--text-color);
       }

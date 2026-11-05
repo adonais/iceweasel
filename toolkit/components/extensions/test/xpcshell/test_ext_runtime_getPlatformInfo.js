@@ -4,8 +4,8 @@ function backgroundScript() {
   browser.runtime.getPlatformInfo(info => {
     let validOSs = ["mac", "win", "android", "cros", "linux", "openbsd"];
     let validArchs = [
-      "aarch64",
       "arm",
+      "arm64",
       "ppc64",
       "riscv64",
       "s390x",

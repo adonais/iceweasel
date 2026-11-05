@@ -18,6 +18,7 @@
 #include "LulElfExt.h"
 #include "LulMainInt.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryChecking.h"
@@ -89,6 +90,22 @@ static const char* NameOf_DW_REG(int16_t aReg) {
       return "fp";
     case DW_REG_MIPS_PC:
       return "pc";
+#elif defined(GP_ARCH_loongarch64)
+    case DW_REG_LOONGARCH_RA:
+      return "ra";
+    case DW_REG_LOONGARCH_SP:
+      return "sp";
+    case DW_REG_LOONGARCH_FP:
+      return "fp";
+    case DW_REG_LOONGARCH_S0:
+      return "s0";
+#elif defined(GP_ARCH_riscv64)
+    case DW_REG_RISCV_RA:
+      return "ra";
+    case DW_REG_RISCV_SP:
+      return "sp";
+    case DW_REG_RISCV_FP:
+      return "fp";
 #else
 #  error "Unsupported arch"
 #endif
@@ -151,6 +168,15 @@ void RuleSet::Print(uintptr_t avma, uintptr_t len,
   res += mPCexpr.ShowRule(" PC");
   res += mSPexpr.ShowRule(" SP");
   res += mFPexpr.ShowRule(" FP");
+#elif defined(GP_ARCH_loongarch64)
+  res += mRAexpr.ShowRule(" RA");
+  res += mSPexpr.ShowRule(" SP");
+  res += mFPexpr.ShowRule(" FP");
+  res += mS0expr.ShowRule(" S0");
+#elif defined(GP_ARCH_riscv64)
+  res += mRAexpr.ShowRule(" RA");
+  res += mSPexpr.ShowRule(" SP");
+  res += mFPexpr.ShowRule(" FP");
 #else
 #  error "Unsupported arch"
 #endif
@@ -195,6 +221,22 @@ LExpr* RuleSet::ExprForRegno(DW_REG_NUMBER aRegno) {
       return &mFPexpr;
     case DW_REG_MIPS_PC:
       return &mPCexpr;
+#elif defined(GP_ARCH_loongarch64)
+    case DW_REG_LOONGARCH_RA:
+      return &mRAexpr;
+    case DW_REG_LOONGARCH_SP:
+      return &mSPexpr;
+    case DW_REG_LOONGARCH_FP:
+      return &mFPexpr;
+    case DW_REG_LOONGARCH_S0:
+      return &mS0expr;
+#elif defined(GP_ARCH_riscv64)
+    case DW_REG_RISCV_RA:
+      return &mRAexpr;
+    case DW_REG_RISCV_SP:
+      return &mSPexpr;
+    case DW_REG_RISCV_FP:
+      return &mFPexpr;
 #else
 #  error "Unknown arch"
 #endif
@@ -977,7 +1019,8 @@ size_t LUL::CountMappings() {
 }
 
 // RUNS IN NO-MALLOC CONTEXT
-static TaggedUWord DerefTUW(TaggedUWord aAddr, const StackImage* aStackImg) {
+MOZ_ASAN_IGNORE static TaggedUWord DerefTUW(TaggedUWord aAddr,
+                                            const StackImage* aStackImg) {
   if (!aAddr.Valid()) {
     return TaggedUWord();
   }
@@ -1050,6 +1093,22 @@ static TaggedUWord EvaluateReg(int16_t aReg, const UnwindRegs* aOldRegs,
       return aOldRegs->fp;
     case DW_REG_MIPS_PC:
       return aOldRegs->pc;
+#elif defined(GP_ARCH_loongarch64)
+    case DW_REG_LOONGARCH_RA:
+      return aOldRegs->ra;
+    case DW_REG_LOONGARCH_SP:
+      return aOldRegs->sp;
+    case DW_REG_LOONGARCH_FP:
+      return aOldRegs->fp;
+    case DW_REG_LOONGARCH_S0:
+      return aOldRegs->s0;
+#elif defined(GP_ARCH_riscv64)
+    case DW_REG_RISCV_RA:
+      return aOldRegs->ra;
+    case DW_REG_RISCV_SP:
+      return aOldRegs->sp;
+    case DW_REG_RISCV_FP:
+      return aOldRegs->fp;
 #else
 #  error "Unsupported arch"
 #endif
@@ -1253,6 +1312,17 @@ static void UseRuleSet(/*MOD*/ UnwindRegs* aRegs, const StackImage* aStackImg,
   aRegs->sp = TaggedUWord();
   aRegs->fp = TaggedUWord();
   aRegs->pc = TaggedUWord();
+#elif defined(GP_ARCH_loongarch64)
+  aRegs->ra = TaggedUWord();
+  aRegs->sp = TaggedUWord();
+  aRegs->fp = TaggedUWord();
+  aRegs->s0 = TaggedUWord();
+  aRegs->pc = TaggedUWord();
+#elif defined(GP_ARCH_riscv64)
+  aRegs->ra = TaggedUWord();
+  aRegs->sp = TaggedUWord();
+  aRegs->fp = TaggedUWord();
+  aRegs->pc = TaggedUWord();
 #else
 #  error "Unsupported arch"
 #endif
@@ -1298,6 +1368,15 @@ static void UseRuleSet(/*MOD*/ UnwindRegs* aRegs, const StackImage* aStackImg,
   aRegs->sp = aRS->mSPexpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
   aRegs->fp = aRS->mFPexpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
   aRegs->pc = aRS->mPCexpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
+#elif defined(GP_ARCH_loongarch64)
+  aRegs->ra = aRS->mRAexpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
+  aRegs->sp = aRS->mSPexpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
+  aRegs->fp = aRS->mFPexpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
+  aRegs->s0 = aRS->mS0expr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
+#elif defined(GP_ARCH_riscv64)
+  aRegs->ra = aRS->mRAexpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
+  aRegs->sp = aRS->mSPexpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
+  aRegs->fp = aRS->mFPexpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
 #else
 #  error "Unsupported arch"
 #endif
@@ -1367,6 +1446,27 @@ void LUL::Unwind(/*OUT*/ uintptr_t* aFramePCs,
           (int)regs.fp.Valid(), (unsigned long long int)regs.fp.Value());
       buf[sizeof(buf) - 1] = 0;
       mLog(buf);
+#elif defined(GP_ARCH_loongarch64)
+      SprintfLiteral(
+          buf,
+          "LoopTop: pc %d/%llx  ra %d/%llx  sp %d/%llx  fp %d/%llx"
+          "  s0 %d/%llx\n",
+          (int)regs.pc.Valid(), (unsigned long long int)regs.pc.Value(),
+          (int)regs.ra.Valid(), (unsigned long long int)regs.ra.Value(),
+          (int)regs.sp.Valid(), (unsigned long long int)regs.sp.Value(),
+          (int)regs.fp.Valid(), (unsigned long long int)regs.fp.Value(),
+          (int)regs.s0.Valid(), (unsigned long long int)regs.s0.Value());
+      buf[sizeof(buf) - 1] = 0;
+      mLog(buf);
+#elif defined(GP_ARCH_riscv64)
+      SprintfLiteral(
+          buf, "LoopTop: pc %d/%llx  ra %d/%llx  sp %d/%llx  fp %d/%llx\n",
+          (int)regs.pc.Valid(), (unsigned long long int)regs.pc.Value(),
+          (int)regs.ra.Valid(), (unsigned long long int)regs.ra.Value(),
+          (int)regs.sp.Valid(), (unsigned long long int)regs.sp.Value(),
+          (int)regs.fp.Valid(), (unsigned long long int)regs.fp.Value());
+      buf[sizeof(buf) - 1] = 0;
+      mLog(buf);
 #else
 #  error "Unsupported arch"
 #endif
@@ -1383,6 +1483,12 @@ void LUL::Unwind(/*OUT*/ uintptr_t* aFramePCs,
     TaggedUWord sp = regs.sp;
 #elif defined(GP_ARCH_mips64)
     TaggedUWord ia = regs.pc;
+    TaggedUWord sp = regs.sp;
+#elif defined(GP_ARCH_loongarch64)
+    TaggedUWord ia = (*aFramesUsed == 0 ? regs.pc : regs.ra);
+    TaggedUWord sp = regs.sp;
+#elif defined(GP_ARCH_riscv64)
+    TaggedUWord ia = (*aFramesUsed == 0 ? regs.pc : regs.ra);
     TaggedUWord sp = regs.sp;
 #else
 #  error "Unsupported arch"
@@ -1637,6 +1743,105 @@ void LUL::Unwind(/*OUT*/ uintptr_t* aFramePCs,
         }
       }
     }
+#elif defined(GP_ARCH_loongarch64)
+    TaggedUWord old_fp = regs.fp;
+    if (old_fp.Valid() && old_fp.IsAligned() && last_valid_sp.Valid() &&
+        last_valid_sp.Value() <= old_fp.Value()) {
+      // First, try chase the JS frames. See "[SMDOC] The JS ABIs" for the exact
+      // layout. This pass is needed since the native ABI frame layout does NOT
+      // coincide with JS frame layout on loongarch64.
+      TaggedUWord js_new_fp = DerefTUW(old_fp, aStackImg);
+      if (js_new_fp.Valid() && js_new_fp.IsAligned() &&
+          old_fp.Value() < js_new_fp.Value()) {
+        TaggedUWord old_fp_plus1 = old_fp + TaggedUWord(8);
+        TaggedUWord js_new_ra = DerefTUW(old_fp_plus1, aStackImg);
+        TaggedUWord js_new_sp = old_fp + TaggedUWord(16);
+        if (js_new_ra.Valid() && js_new_sp.Valid()) {
+          regs.fp = js_new_fp;
+          regs.ra = js_new_ra;
+          regs.sp = js_new_sp;
+          (*aFramePointerFramesAcquired)++;
+          continue;
+        }
+      }
+
+      // If JS frame chasing failed, try the native ABI.
+      //
+      // https://raw.githubusercontent.com/loongson/la-abi-specs/refs/heads/release/ladwarf.adoc
+      //
+      // Stack layout:
+      //             |                |
+      //             | previous frame |
+      //             |________________|
+      //    CFA----->|________________|<------ previous sp
+      //             |_______ra_______|
+      //             |_______fp_______|
+      //             |                |
+      //             | current frame  |
+      //             |________________|
+      //             |________________|<------ current sp
+      TaggedUWord old_fp_minus2 = old_fp - TaggedUWord(16);
+      TaggedUWord new_fp = DerefTUW(old_fp_minus2, aStackImg);
+      if (new_fp.Valid() && new_fp.IsAligned() &&
+          old_fp.Value() < new_fp.Value()) {
+        TaggedUWord old_fp_minus1 = old_fp - TaggedUWord(8);
+        TaggedUWord new_ra = DerefTUW(old_fp_minus1, aStackImg);
+        if (new_ra.Valid()) {
+          regs.fp = new_fp;
+          regs.ra = new_ra;
+          regs.sp = old_fp;
+          (*aFramePointerFramesAcquired)++;
+          continue;
+        }
+      }
+    }
+#elif defined(GP_ARCH_riscv64)
+    TaggedUWord old_fp = regs.fp;
+    if (old_fp.Valid() && old_fp.IsAligned() && last_valid_sp.Valid() &&
+        last_valid_sp.Value() <= old_fp.Value()) {
+      // First, try chase the JS frames. See "[SMDOC] The JS ABIs" for the exact
+      // layout. This pass is needed since the native ABI frame layout does NOT
+      // coincide with JS frame layout on riscv64.
+      TaggedUWord js_new_fp = DerefTUW(old_fp, aStackImg);
+      if (js_new_fp.Valid() && js_new_fp.IsAligned() &&
+          old_fp.Value() < js_new_fp.Value()) {
+        TaggedUWord old_fp_plus1 = old_fp + TaggedUWord(8);
+        TaggedUWord js_new_ra = DerefTUW(old_fp_plus1, aStackImg);
+        TaggedUWord js_new_sp = old_fp + TaggedUWord(16);
+        if (js_new_ra.Valid() && js_new_sp.Valid()) {
+          regs.fp = js_new_fp;
+          regs.ra = js_new_ra;
+          regs.sp = js_new_sp;
+          (*aFramePointerFramesAcquired)++;
+          continue;
+        }
+      }
+
+      // If JS frame chasing failed, try the native ABI.
+      //
+      // https://riscv-non-isa.github.io/riscv-elf-psabi-doc/#_frame_pointer_convention
+      //
+      // > After the prologue, the frame pointer register will point to the
+      // Canonical Frame Address or CFA, which is the stack pointer value on
+      // entry to the current procedure. The previous frame pointer and return
+      // address pair will reside just prior to the current stack address held
+      // in `fp`. This puts the return address at `fp - XLEN/8`, and the
+      // previous frame pointer at `fp - 2 * XLEN/8`.
+      TaggedUWord old_fp_minus2 = old_fp - TaggedUWord(16);
+      TaggedUWord new_fp = DerefTUW(old_fp_minus2, aStackImg);
+      if (new_fp.Valid() && new_fp.IsAligned() &&
+          old_fp.Value() < new_fp.Value()) {
+        TaggedUWord old_fp_minus1 = old_fp - TaggedUWord(8);
+        TaggedUWord new_ra = DerefTUW(old_fp_minus1, aStackImg);
+        if (new_ra.Valid()) {
+          regs.fp = new_fp;
+          regs.ra = new_ra;
+          regs.sp = old_fp;
+          (*aFramePointerFramesAcquired)++;
+          continue;
+        }
+      }
+    }
 #endif  // defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_x86_linux) ||
         // defined(GP_PLAT_amd64_android) || defined(GP_PLAT_x86_android) ||
         // defined(GP_PLAT_amd64_freebsd)
@@ -1787,6 +1992,44 @@ static __attribute__((noinline)) bool GetAndCheckStackTrace(
   startRegs.fp = TaggedUWord(block[2]);
   const uintptr_t REDZONE_SIZE = 0;
   uintptr_t start = block[1] - REDZONE_SIZE;
+#elif defined(GP_ARCH_loongarch64)
+  volatile uintptr_t block[5];
+  static_assert(sizeof(block) == 40);
+  __asm__ __volatile__(
+      "pcaddi $t0, 0        \n"
+      "st.d   $ra, %0, 0    \n"
+      "st.d   $sp, %0, 8    \n"
+      "st.d   $fp, %0, 16   \n"
+      "st.d   $s0, %0, 24   \n"
+      "st.d   $t0, %0, 32   \n"
+      :
+      : "r"(block)
+      : "memory", "t0");
+  startRegs.ra = TaggedUWord(block[0]);
+  startRegs.sp = TaggedUWord(block[1]);
+  startRegs.fp = TaggedUWord(block[2]);
+  startRegs.s0 = TaggedUWord(block[3]);
+  startRegs.pc = TaggedUWord(block[4]);
+  const uintptr_t REDZONE_SIZE = 0;
+  uintptr_t start = block[1] - REDZONE_SIZE;
+#elif defined(GP_ARCH_riscv64)
+  volatile uintptr_t block[4];
+  static_assert(sizeof(block) == 32);
+  __asm__ __volatile__(
+      "auipc  t0, 0       \n"
+      "sd     ra, 0(%0)   \n"
+      "sd     sp, 8(%0)   \n"
+      "sd     fp, 16(%0)  \n"
+      "sd     t0, 24(%0)  \n"
+      :
+      : "r"(block)
+      : "memory", "t0");
+  startRegs.ra = TaggedUWord(block[0]);
+  startRegs.sp = TaggedUWord(block[1]);
+  startRegs.fp = TaggedUWord(block[2]);
+  startRegs.pc = TaggedUWord(block[3]);
+  const uintptr_t REDZONE_SIZE = 0;
+  uintptr_t start = block[1] - REDZONE_SIZE;
 #else
 #  error "Unsupported platform"
 #endif
@@ -1807,8 +2050,8 @@ static __attribute__((noinline)) bool GetAndCheckStackTrace(
   stackImg->mStartAvma = start;
   if (nToCopy > 0) {
     MOZ_MAKE_MEM_DEFINED((void*)start, nToCopy);
-    memcpy(&stackImg->mContents[0], (void*)start, nToCopy);
   }
+  stackImg->mContents = reinterpret_cast<uint8_t*>(start);
 
   // Unwind it.
   const int MAX_TEST_FRAMES = 64;

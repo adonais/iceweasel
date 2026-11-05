@@ -64,6 +64,8 @@ macosx64-aarch64-fix-stacks:
 win32-fix-stacks:
     treeherder:
         symbol: TW32(fix-stacks)
+    attributes:
+        local-toolchain: false
     run:
         arguments: ['i686-pc-windows-msvc']
     fetches:
@@ -77,6 +79,17 @@ win64-fix-stacks:
         symbol: TW64(fix-stacks)
     run:
         arguments: ['x86_64-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows-toolchain
+            - vs-toolchain
+
+win64-aarch64-fix-stacks:
+    treeherder:
+        symbol: TWA64(fix-stacks)
+    run:
+        arguments: ['aarch64-pc-windows-msvc']
     fetches:
         toolchain:
             - linux64-clang-toolchain

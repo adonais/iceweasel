@@ -90,8 +90,6 @@ rtc_source_set("common_audio_c_arm_asm") {
   sources = []
   deps = []
   if (target_cpu == "arm") {
-    sources += [ "signal_processing/complex_bit_reverse_arm.S" ]
-
     if (arm_version >= 7) {
       sources += [ "signal_processing/filter_ar_fast_q12_armv7.S" ]
     } else {
@@ -108,7 +106,6 @@ rtc_library("common_audio_c") {
     "ring_buffer.h",
     "signal_processing/auto_corr_to_refl_coef.c",
     "signal_processing/auto_correlation.c",
-    "signal_processing/complex_fft_tables.h",
     "signal_processing/copy_set_operations.c",
     "signal_processing/cross_correlation.c",
     "signal_processing/division_operations.c",
@@ -136,7 +133,6 @@ rtc_library("common_audio_c") {
     "signal_processing/spl_inl.c",
     "signal_processing/spl_sqrt.c",
     "signal_processing/splitting_filter.c",
-    "signal_processing/sqrt_of_one_minus_x_squared.c",
     "signal_processing/vector_operations.c",
     "signal_processing/vector_scaling_operations.c",
     "vad/include/webrtc_vad.h",
@@ -153,8 +149,6 @@ rtc_library("common_audio_c") {
 
   if (target_cpu == "mipsel") {
     sources += [
-      "signal_processing/complex_bit_reverse_mips.c",
-      "signal_processing/complex_fft_mips.c",
       "signal_processing/cross_correlation_mips.c",
       "signal_processing/downsample_fast_mips.c",
       "signal_processing/filter_ar_fast_q12_mips.c",
@@ -165,15 +159,10 @@ rtc_library("common_audio_c") {
     if (mips_dsp_rev > 0) {
       sources += [ "signal_processing/vector_scaling_operations_mips.c" ]
     }
-  } else {
-    sources += [ "signal_processing/complex_fft.c" ]
   }
 
   if (target_cpu != "arm" && target_cpu != "mipsel") {
-    sources += [
-      "signal_processing/complex_bit_reverse.c",
-      "signal_processing/filter_ar_fast_q12.c",
-    ]
+    sources += [ "signal_processing/filter_ar_fast_q12.c" ]
   }
 
   deps = [
@@ -380,7 +369,6 @@ if (rtc_include_tests && !build_with_chromium) {
       "../test:rtc_expect_death",
       "../test:test_support",
       "//testing/gtest",
-      "//third_party/abseil-cpp/absl/base:core_headers",
     ]
   }
 }

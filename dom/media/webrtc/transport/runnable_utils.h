@@ -140,7 +140,7 @@ class runnable_args_memfn_ret
     : public detail::runnable_args_base<detail::ReturnsResult> {
  public:
   template <typename... Arguments>
-  runnable_args_memfn_ret(Ret* ret, Class&& obj, M method, Arguments... args)
+  runnable_args_memfn_ret(Ret* ret, Class&& obj, M method, Arguments&&... args)
       : mReturn(ret),
         mObj(std::forward<Class>(obj)),
         mMethod(method),
@@ -159,6 +159,8 @@ class runnable_args_memfn_ret
   std::decay_t<Class> mObj;
   M mMethod;
   std::tuple<Args...> mArgs;
+  static_assert((std::is_same_v<std::decay_t<Args>, Args> && ...),
+                "runnable args cannot be references");
 };
 
 template <typename R, typename Class, typename M, typename... Args>

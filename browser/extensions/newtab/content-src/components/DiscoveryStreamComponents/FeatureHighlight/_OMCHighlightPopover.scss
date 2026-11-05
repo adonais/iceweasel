@@ -54,7 +54,7 @@
       clip-path: polygon(100% 100%, 100% 2%, 2% 100%);
       // Sub-pixel anti-aliasing nudge so the V's top overlaps the card's
       // bottom gradient border without a hairline gap.
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
+      /* stylelint-disable-next-line declaration-property-value-disallowed-list */
       inset-block-end: calc(var(--space-medium) * -1 + 0.125px);
       inset-inline-start: 50%;
       transform: translateX(-50%) rotate(45deg);

@@ -18,7 +18,7 @@ add_setup(function test_setup() {
   do_get_profile();
   Services.fog.initializeFOG();
 
-  sinon.stub(TaskbarTabsPin, "pinTaskbarTab");
+  sinon.stub(TaskbarTabsPin, "pinTaskbarTab").resolves({});
   sinon.stub(TaskbarTabsPin, "unpinTaskbarTab");
 });
 

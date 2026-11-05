@@ -275,8 +275,8 @@ TEST_F(SframeEncryptorDecryptorTest, DecryptReportsKeyIdErrorForUnknownKey) {
   ASSERT_TRUE(enc_result.ok());
   ciphertext.resize(enc_result.value());
 
-  // Decryptor has no key registered, so unprotect fails with kKeyId. The
-  // parsed key id is not yet surfaced (pending third_party/sframe support).
+  // Decryptor has no key registered, so unprotect fails with kKeyId and
+  // reports the key id parsed from the Sframe header.
   std::vector<uint8_t> plaintext(
       decryptor_->GetMaxPlaintextByteSize(ciphertext.size()));
   auto dec_result = decryptor_->Decrypt(ciphertext, /*additional_data=*/{},
@@ -284,7 +284,7 @@ TEST_F(SframeEncryptorDecryptorTest, DecryptReportsKeyIdErrorForUnknownKey) {
   auto* failure = std::get_if<SframeDecryptFailure>(&dec_result);
   ASSERT_NE(failure, nullptr);
   EXPECT_EQ(failure->type, SframeDecryptErrorType::kKeyId);
-  EXPECT_FALSE(failure->key_id.has_value());
+  EXPECT_EQ(failure->key_id, kKeyId);
 }
 
 }  // namespace

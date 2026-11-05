@@ -1,0 +1,17 @@
+{
+  "label": "bam.barrister.com",
+  "bugs": {
+    "2000604": {
+      "issue": "page-fails-to-load",
+      "matches": ["https://bam.barrister.com/techportal/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "js": ["bug2000604-bam.barrister.com-firebase-undefined-error-stack.js"]
+      }
+    }
+  ]
+}

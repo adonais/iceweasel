@@ -16,14 +16,13 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 
 namespace webrtc {
 namespace test {
 
 // Slash or backslash, depending on platform.
-ABSL_CONST_INIT extern const absl::string_view kPathDelimiter;
+constinit extern const absl::string_view kPathDelimiter;
 
 // Returns the absolute path to the output directory where log files and other
 // test artifacts should be put. The output directory is generally a directory

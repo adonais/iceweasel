@@ -28,7 +28,7 @@
 #include "compiler/translator/tree_ops/RewriteAtomicCounters.h"
 #include "compiler/translator/tree_ops/RewriteDfdy.h"
 #include "compiler/translator/tree_ops/RewriteStructSamplers.h"
-#include "compiler/translator/tree_ops/SeparateStructFromUniformDeclarations.h"
+#include "compiler/translator/tree_ops/UseGeneratedNamesForAnonymousStructs.h"
 #include "compiler/translator/tree_ops/msl/AddExplicitTypeCasts.h"
 #include "compiler/translator/tree_ops/msl/ConvertUnsupportedConstructorsToFunctionCalls.h"
 #include "compiler/translator/tree_ops/msl/FixTypeConstructors.h"
@@ -880,6 +880,13 @@ bool TranslatorMSL::translateImpl(TInfoSinkBase &sink,
     ProgramPreludeConfig ppc(metalShaderTypeFromGLSL(getShaderType()));
     ppc.usesDerivatives = usesDerivatives();
 
+    // The MSL generator prefers every struct to have a name, and is not bound by GLSL's requirement
+    // that anonymous structs match their (lack of) name between shader stages.
+    if (!UseGeneratedNamesForAnonymousStructs(this, root))
+    {
+        return false;
+    }
+
     if (!sh::AddDefaultReturnStatements(this, root))
     {
         return false;
@@ -934,23 +941,22 @@ bool TranslatorMSL::translateImpl(TInfoSinkBase &sink,
         {
             return false;
         }
-    }
 
-    if (aggregateTypesUsedForUniforms > 0)
-    {
-        int removedUniformsCount;
-        if (!RewriteStructSamplers(this, root, &getSymbolTable(), &removedUniformsCount))
+        if (aggregateTypesUsedForUniforms > 0)
+        {
+            if (!RewriteStructSamplers(this, root, &getSymbolTable()))
+            {
+                return false;
+            }
+        }
+
+        // Replace array of array of opaque uniforms with a flattened array.  This is run after
+        // MonomorphizeUnsupportedFunctions and RewriteStructSamplers so that it's not possible for
+        // an array of array of opaque type to be partially subscripted and passed to a function.
+        if (!RewriteArrayOfArrayOfOpaqueUniforms(this, root, &getSymbolTable()))
         {
             return false;
         }
-    }
-
-    // Replace array of array of opaque uniforms with a flattened array.  This is run after
-    // MonomorphizeUnsupportedFunctions and RewriteStructSamplers so that it's not possible for an
-    // array of array of opaque type to be partially subscripted and passed to a function.
-    if (!RewriteArrayOfArrayOfOpaqueUniforms(this, root, &getSymbolTable()))
-    {
-        return false;
     }
 
     if (getShaderVersion() >= 300 ||

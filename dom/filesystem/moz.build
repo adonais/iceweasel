@@ -46,3 +46,9 @@ include("/ipc/chromium/chromium-config.mozbuild")
 LOCAL_INCLUDES += [
     "/dom/base",
 ]
+
+SOURCE_HEADERS += [
+    "GetDirectoryListingTask.h",
+    "GetFileOrDirectoryTask.h",
+    "GetFilesTask.h",
+]

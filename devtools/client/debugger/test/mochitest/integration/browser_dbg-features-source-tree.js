@@ -419,7 +419,7 @@ add_task(async function testSourceTreeOnTheIntegrationTestPage() {
   assertBreakpointHeading(dbg, "query.js?x=1", 0);
   assertTextContentOnLine(dbg, 1, `function query() {`);
   // Note the replacements of " by ' here:
-  assertTextContentOnLine(dbg, 2, `console.log('query x=1');`);
+  assertTextContentOnLine(dbg, 2, `console.log("query x=1");`);
 
   // assert quick open works with queries
   pressKey(dbg, "quickOpen");

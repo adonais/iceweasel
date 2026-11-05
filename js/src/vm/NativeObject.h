@@ -1647,18 +1647,6 @@ class NativeObject : public JSObject {
     return v.isUndefined() ? nullptr : static_cast<T*>(v.toPrivate());
   }
 
-  // Returns the address of a reserved fixed slot that stores a T* as
-  // PrivateValue. Be very careful when using this because the object might be
-  // moved in memory!
-  template <typename T>
-  T** addressOfFixedSlotPrivatePtr(size_t slot) {
-    MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(getClass()));
-    MOZ_ASSERT(slotIsFixed(slot));
-    MOZ_ASSERT(getReservedSlot(slot).isDouble());
-    void* addr = &getFixedSlotRef(slot);
-    return reinterpret_cast<T**>(addr);
-  }
-
   /*
    * Calculate the number of dynamic slots to allocate to cover the properties
    * in an object with the given number of fixed slots and slot span.
@@ -1903,8 +1891,8 @@ class NativeObject : public JSObject {
    * After adding a sparse index to obj, see if it should be converted to use
    * dense elements.
    */
-  static DenseElementResult maybeDensifySparseElements(
-      JSContext* cx, Handle<NativeObject*> obj);
+  static bool maybeDensifySparseElements(JSContext* cx,
+                                         Handle<NativeObject*> obj);
   static bool densifySparseElements(JSContext* cx, Handle<NativeObject*> obj,
                                     uint32_t newInitializedLength);
 

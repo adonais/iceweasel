@@ -1,0 +1,19 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+
+@template
+def Library(name):
+    LIBRARY_NAME = name
+
+
+Library("data")
+
+SOURCES += ["data.S"]
+
+GENERATED_FILES += ["big.dat"]
+
+big = GENERATED_FILES["big.dat"]
+big.script = "convert.py"
+big.inputs = ["little.dat"]
+big.extra_deps = ["!/dist/host/bin/tool"]

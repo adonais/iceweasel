@@ -170,6 +170,19 @@ export class ASRouterParentProcessMessageHandler {
           Services.prefs.getStringPref("extensions.activeThemeID", "")
         );
       }
+      case msg.AW_WAIT_FOR_MIGRATION_CLOSE: {
+        return new Promise(resolve => {
+          const topics = [
+            "MigrationWizard:Closed",
+            "MigrationWizard:Destroyed",
+          ];
+          const observer = () => {
+            topics.forEach(t => Services.obs.removeObserver(observer, t));
+            resolve();
+          };
+          topics.forEach(t => Services.obs.addObserver(observer, t));
+        });
+      }
       default: {
         return Promise.reject(new Error(`Unknown message received: ${name}`));
       }

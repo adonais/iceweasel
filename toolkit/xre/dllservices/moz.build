@@ -39,3 +39,7 @@ TEST_DIRS += [
 ]
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "ModuleEvaluator.h",
+]

@@ -316,8 +316,6 @@ button {
     background-color: var(--button-background-color-menu);
     border-color: var(--button-border-color-menu);
     color: var(--button-text-color-menu);
-    /* We want the button to span the width of the content area. */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     width: -moz-available;
     margin: var(--panel-menuitem-margin);
 

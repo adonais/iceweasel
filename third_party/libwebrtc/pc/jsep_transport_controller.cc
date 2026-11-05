@@ -45,6 +45,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
+#include "p2p/base/p2p_transport_channel.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "p2p/base/port.h"
 #include "p2p/base/port_allocator.h"
@@ -55,6 +56,7 @@
 #include "pc/dtls_srtp_transport.h"
 #include "pc/dtls_transport.h"
 #include "pc/jsep_transport.h"
+#include "pc/media_protocol_names.h"
 #include "pc/rtp_transport.h"
 #include "pc/rtp_transport_internal.h"
 #include "pc/sctp_transport.h"
@@ -71,6 +73,21 @@
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {
+namespace {
+
+bool BundleUsesCryptex(const SessionDescription& description,
+                       const ContentGroup& bundle_group) {
+  for (const std::string& mid : bundle_group.content_names()) {
+    const ContentInfo* content = description.GetContentByName(mid);
+    if (content && !content->rejected &&
+        IsRtpProtocol(content->media_description()->protocol())) {
+      return content->media_description()->cryptex();
+    }
+  }
+  return false;
+}
+
+}  // namespace
 
 JsepTransportController::JsepTransportController(
     const Environment& env,
@@ -159,20 +176,48 @@ RTCError JsepTransportController::SetLocalDescription_n(
     SdpType type,
     const SessionDescription* local_desc,
     const SessionDescription* remote_desc) {
-  // ice_role_ is initialized to ICEROLE_CONTROLLING. Check if we still have the
-  // initialized value and might need to set the role. For a non-offer, we'll
-  // set the ice role to `controlled`. In the case where `type` is kOffer and
-  // the ice_role_ is already 'controlling' we'll still call `SetRole_n()`. That
-  // call will either will be a noop or initialization for the transports.
-  if (ice_role_ == ICEROLE_CONTROLLING) {
+  // Per RFC 8445 Section 6.1.1, the ICE role must remain fixed for the ICE
+  // session unless an ICE restart occurs. Set the role based on the initial
+  // SetLocalDescription (controlling for offer, controlled for answer).
+  // Subsequent descriptions (e.g. renegotiation without ICE restart) must not
+  // modify the existing role. When an ICE restart occurs, re-evaluate the role
+  // for the new ICE session.
+  // Note that ApplyDescription_n() will call DetermineIceRole() which handles
+  // special cases such as when the remote endpoint uses ICE-Lite.
+  if (config_.redetermine_role_on_ice_restart && HasIceRestart_n(local_desc)) {
+    ice_role_initialized_ = false;
+  }
+
+  if (!ice_role_initialized_) {
+    ice_role_initialized_ = true;
     const IceRole role =
         (type == SdpType::kOffer) ? ICEROLE_CONTROLLING : ICEROLE_CONTROLLED;
-    // Note that ApplyDescription_n() will always call DetermineIceRole() where
-    // SetIceRole_n() will be called again such as in the case where the answer
-    // side takes the controlling role. See "Section 5.1.1" below.
     SetIceRole_n(role);
   }
   return ApplyDescription_n(/*local=*/true, type, local_desc, remote_desc);
+}
+
+bool JsepTransportController::HasIceRestart_n(
+    const SessionDescription* local_desc) const {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  for (const ContentInfo& content_info : local_desc->contents()) {
+    const JsepTransport* transport = GetJsepTransportForMid(content_info.mid());
+    const TransportInfo* transport_info =
+        local_desc->GetTransportInfoByName(content_info.mid());
+    if (!transport || !transport->local_description() || !transport_info) {
+      continue;
+    }
+
+    const TransportDescription& old_description =
+        transport->local_description()->transport_desc;
+    const TransportDescription& new_description = transport_info->description;
+    if (IceCredentialsChanged(
+            old_description.ice_ufrag, old_description.ice_pwd,
+            new_description.ice_ufrag, new_description.ice_pwd)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 RTCError JsepTransportController::SetRemoteDescription(
@@ -785,7 +830,9 @@ RTCError JsepTransportController::ApplyDescription_n(
     JsepTransportDescription jsep_description = CreateJsepTransportDescription(
         content_info, transport_info, extension_ids);
     jsep_description.transport_desc.cryptex =
-        content_info.media_description()->cryptex();
+        established_bundle_group
+            ? BundleUsesCryptex(*description, *established_bundle_group)
+            : content_info.media_description()->cryptex();
     if (local) {
       error =
           transport->SetLocalJsepTransportDescription(jsep_description, type);

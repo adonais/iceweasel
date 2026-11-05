@@ -68,3 +68,7 @@ MOCHITEST_MANIFESTS += ["tests/mochitest.toml"]
 FINAL_LIBRARY = "xul"
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "FetchLog.h",
+]

@@ -191,3 +191,8 @@ LOCAL_INCLUDES += [
     "/layout/xul",
     "/layout/xul/tree/",
 ]
+
+SOURCE_HEADERS += [
+    "ContentEventHandler.h",
+    "EventListenerService.h",
+]

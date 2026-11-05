@@ -4,8 +4,6 @@
 
 package org.mozilla.gecko.media;
 
-import android.media.MediaCrypto;
-
 public interface GeckoMediaDrm {
   interface Callbacks {
     void onSessionCreated(int createSessionToken, int promiseId, byte[] sessionId, byte[] request);
@@ -33,8 +31,6 @@ public interface GeckoMediaDrm {
   void closeSession(int promiseId, String sessionId);
 
   void release();
-
-  MediaCrypto getMediaCrypto();
 
   void setServerCertificate(final byte[] cert);
 

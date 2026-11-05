@@ -10,9 +10,12 @@
 #include "DllBlocklist.h"
 #include "LoaderPrivateAPI.h"
 #include "ModuleLoadFrame.h"
+#include "NativeNtBlockSet.h"
 #include "SharedSection.h"
 
 using mozilla::DllBlockInfoFlags;
+using mozilla::freestanding::NativeNtBlockSet;
+using mozilla::freestanding::WritableBuffer;
 
 #define DLL_BLOCKLIST_ENTRY(name, ...) \
   {MOZ_LITERAL_UNICODE_STRING(L##name), __VA_ARGS__},
@@ -25,109 +28,6 @@ using mozilla::DllBlockInfoFlags;
 DLL_BLOCKLIST_DEFINITIONS_BEGIN
 DLL_BLOCKLIST_DEFINITIONS_END
 #endif
-
-using WritableBuffer = mozilla::glue::detail::WritableBuffer<1024>;
-
-class MOZ_STATIC_CLASS MOZ_TRIVIAL_CTOR_DTOR NativeNtBlockSet final {
-  struct NativeNtBlockSetEntry {
-    NativeNtBlockSetEntry() = default;
-    ~NativeNtBlockSetEntry() = default;
-    NativeNtBlockSetEntry(const UNICODE_STRING& aName, uint64_t aVersion,
-                          NativeNtBlockSetEntry* aNext)
-        : mName(aName), mVersion(aVersion), mNext(aNext) {}
-    UNICODE_STRING mName;
-    uint64_t mVersion;
-    NativeNtBlockSetEntry* mNext;
-  };
-
- public:
-  // Constructor and destructor MUST be trivial
-  constexpr NativeNtBlockSet() : mFirstEntry(nullptr) {}
-  ~NativeNtBlockSet() = default;
-
-  void Add(const UNICODE_STRING& aName, uint64_t aVersion);
-  void Write(WritableBuffer& buffer);
-
- private:
-  static NativeNtBlockSetEntry* NewEntry(const UNICODE_STRING& aName,
-                                         uint64_t aVersion,
-                                         NativeNtBlockSetEntry* aNextEntry);
-
- private:
-  NativeNtBlockSetEntry* mFirstEntry;
-  mozilla::nt::SRWLock mLock;
-};
-
-NativeNtBlockSet::NativeNtBlockSetEntry* NativeNtBlockSet::NewEntry(
-    const UNICODE_STRING& aName, uint64_t aVersion,
-    NativeNtBlockSet::NativeNtBlockSetEntry* aNextEntry) {
-  return mozilla::freestanding::RtlNew<NativeNtBlockSetEntry>(aName, aVersion,
-                                                              aNextEntry);
-}
-
-void NativeNtBlockSet::Add(const UNICODE_STRING& aName, uint64_t aVersion) {
-  mozilla::nt::AutoExclusiveLock lock(mLock);
-
-  for (NativeNtBlockSetEntry* entry = mFirstEntry; entry;
-       entry = entry->mNext) {
-    if (::RtlEqualUnicodeString(&entry->mName, &aName, TRUE) &&
-        aVersion == entry->mVersion) {
-      return;
-    }
-  }
-
-  // Not present, add it
-  NativeNtBlockSetEntry* newEntry = NewEntry(aName, aVersion, mFirstEntry);
-  if (newEntry) {
-    mFirstEntry = newEntry;
-  }
-}
-
-void NativeNtBlockSet::Write(WritableBuffer& aBuffer) {
-  // NB: If this function is called, it is long after kernel32 is initialized,
-  // so it is safe to use Win32 calls here.
-  char buf[MAX_PATH];
-
-  // It would be nicer to use RAII here. However, its destructor
-  // might not run if an exception occurs, in which case we would never release
-  // the lock (MSVC warns about this possibility). So we acquire and release
-  // manually.
-  ::AcquireSRWLockExclusive(&mLock);
-
-  MOZ_SEH_TRY {
-    for (auto entry = mFirstEntry; entry; entry = entry->mNext) {
-      int convOk = ::WideCharToMultiByte(CP_UTF8, 0, entry->mName.Buffer,
-                                         entry->mName.Length / sizeof(wchar_t),
-                                         buf, sizeof(buf), nullptr, nullptr);
-      if (!convOk) {
-        continue;
-      }
-
-      // write name[,v.v.v.v];
-      aBuffer.Write(buf, convOk);
-
-      if (entry->mVersion != DllBlockInfo::ALL_VERSIONS) {
-        aBuffer.Write(",", 1);
-        uint16_t parts[4];
-        parts[0] = entry->mVersion >> 48;
-        parts[1] = (entry->mVersion >> 32) & 0xFFFF;
-        parts[2] = (entry->mVersion >> 16) & 0xFFFF;
-        parts[3] = entry->mVersion & 0xFFFF;
-        for (size_t p = 0; p < std::size(parts); ++p) {
-          _ltoa_s(parts[p], buf, sizeof(buf), 10);
-          aBuffer.Write(buf, strlen(buf));
-          if (p != std::size(parts) - 1) {
-            aBuffer.Write(".", 1);
-          }
-        }
-      }
-      aBuffer.Write(";", 1);
-    }
-  }
-  MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {}
-
-  ::ReleaseSRWLockExclusive(&mLock);
-}
 
 static NativeNtBlockSet gBlockSet;
 

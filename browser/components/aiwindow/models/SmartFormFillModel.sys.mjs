@@ -8,6 +8,7 @@ import {
   parseAndExtractJSON,
   renderPrompt,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { AuthProvider } from "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import {
   buildConversation,
@@ -453,7 +454,7 @@ async function generateFormValuesBatch(
   onDispatch?.({ model, promptVersion: version });
 
   const response = await conversation.run({
-    fxAccountToken: await openAIEngine.getFxAccountToken(),
+    token: await AuthProvider.getToken(),
     tools: [],
     inferenceParams: {
       response_format: makeJSONSchemaBlob(
@@ -535,7 +536,7 @@ export const SmartFormFillModel = {
     onDispatch?.({ model, promptVersion: version });
 
     const response = await conversation.run({
-      fxAccountToken: await openAIEngine.getFxAccountToken(),
+      token: await AuthProvider.getToken(),
       tools: [],
       inferenceParams: {
         response_format: makeJSONSchemaBlob(
@@ -608,7 +609,7 @@ export const SmartFormFillModel = {
     onDispatch?.({ model, promptVersion: version });
 
     const response = await conversation.run({
-      fxAccountToken: await openAIEngine.getFxAccountToken(),
+      token: await AuthProvider.getToken(),
       tools: [],
       inferenceParams: {
         response_format: makeJSONSchemaBlob(

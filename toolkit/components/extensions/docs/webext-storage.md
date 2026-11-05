@@ -6,7 +6,7 @@ The implementation lives in the {searchfox}`toolkit/components/extensions/storag
 
 The app-services component [lives on github](https://github.com/mozilla/application-services/blob/main/components/webext-storage).
 There are docs that describe {doc}`how to update/vendor this (and all) external rust code </build/buildsystem/rust>` you might be interested in.
-We use UniFFI to generate JS bindings for the components. More details about UniFFI can be found in [these docs](https://firefox-source-docs.mozilla.org/rust-components/developing-rust-components/uniffi.html).
+We use UniFFI to generate JS bindings for the components. More details about UniFFI can be found in {doc}`these docs </rust-components/developing-rust-components/uniffi>`.
 
 To set the scene, let's look at the parts exposed to WebExtensions first; there are lots of
 moving part there too.

@@ -9,7 +9,8 @@ import kotlinx.coroutines.test.runTest
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.sync.AuthFlowError
 import mozilla.components.concept.sync.OAuthAccount
-import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.SCOPE_IPPROTECTION
+import mozilla.components.feature.ipprotection.auth.fxa.IPProtectionFxaAuthFlow.Companion.SCOPE_IPPROTECTION
+import mozilla.components.feature.ipprotection.storage.FxaAccountStoreSync
 import mozilla.components.feature.ipprotection.store.InternalAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.service.fxa.manager.AccountState
@@ -181,7 +182,8 @@ class FxaAccountStoreSyncTest {
 
     @Test
     fun `WHEN onReady is called with an account THEN WarmingUp is forwarded`() {
-        val (ipProtectionStore, captureMiddleware) = buildStore()
+        val (ipProtectionStore, captureMiddleware) =
+            buildStore(buildIPProtectionState(accountStatus = AccountStatus.Uninitialized))
 
         val sync = FxaAccountStoreSync(syncStore, ipProtectionStore, lazyOf(accountManager), StandardTestDispatcher())
 

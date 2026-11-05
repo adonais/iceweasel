@@ -15,6 +15,19 @@ const TAB_DROP_TYPE = "application/x-moz-tabbrowser-tab";
 const ROW_VARIANT_TAB = "tab";
 const ROW_VARIANT_TAB_GROUP = "tab-group";
 
+/**
+ * A row of a tabs list, with the tab or tab group it stands for.
+ *
+ * @typedef {XULElement & { _tab?: MozTabbrowserTab, _tabGroup?: MozTabbrowserTabGroup }} XulToolbarItem
+ */
+
+/**
+ * A `panelview`, with the `panelmultiview` that PanelMultiView sets on it
+ * while the view is showing.
+ *
+ * @typedef {XULElement & { panelMultiView: XULElement|null }} PanelView
+ */
+
 function setAttributes(element, attrs) {
   for (let [name, value] of Object.entries(attrs)) {
     if (value) {
@@ -32,7 +45,7 @@ function setAttributes(element, attrs) {
  * @returns {MozTabbrowserTab|undefined}
  */
 function getTabFromRow(element) {
-  return element.closest("toolbaritem")?._tab;
+  return /** @type {XulToolbarItem} */ (element.closest("toolbaritem"))?._tab;
 }
 
 /**
@@ -42,7 +55,8 @@ function getTabFromRow(element) {
  * @returns {MozTabbrowserTabGroup|undefined}
  */
 function getTabGroupFromRow(element) {
-  return element.closest("toolbaritem")?._tabGroup;
+  return /** @type {XulToolbarItem} */ (element.closest("toolbaritem"))
+    ?._tabGroup;
 }
 
 /**
@@ -52,7 +66,9 @@ function getTabGroupFromRow(element) {
  * @returns {"tab"|"tab-group"|undefined}
  */
 function getRowVariant(element) {
-  return element.closest("toolbaritem")?.getAttribute("row-variant");
+  return /** @type {"tab"|"tab-group"|undefined} */ (
+    element.closest("toolbaritem")?.getAttribute("row-variant")
+  );
 }
 
 class TabsListBase {
@@ -72,7 +88,7 @@ class TabsListBase {
    * @param {string} opts.className
    * @param {function(MozTabbrowserTab):boolean} opts.filterFn
    * @param {Element} opts.containerNode
-   * @param {Element} [opts.dropIndicator=null]
+   * @param {XULElement} [opts.dropIndicator=null]
    * @param {boolean} opts.onlyHiddenTabs
    */
   constructor({
@@ -90,7 +106,7 @@ class TabsListBase {
       : filterFn;
     /** @type {Element} */
     this.containerNode = containerNode;
-    /** @type {Element|null} */
+    /** @type {XULElement|null} */
     this.dropIndicator = dropIndicator;
 
     if (this.dropIndicator) {
@@ -124,7 +140,7 @@ class TabsListBase {
    * @returns {boolean}
    */
   #ownsEvent(event) {
-    let row = event.target.closest("toolbaritem");
+    let row = /** @type {Element} */ (event.target).closest("toolbaritem");
     return !row || row.parentNode == this.containerNode;
   }
 
@@ -181,10 +197,11 @@ class TabsListBase {
    * @param {XULCommandEvent} event
    */
   #handleCommand(event) {
-    if (event.target.classList.contains("all-tabs-mute-button")) {
-      getTabFromRow(event.target)?.toggleMuteAudio();
-    } else if (event.target.classList.contains("all-tabs-close-button")) {
-      const tab = getTabFromRow(event.target);
+    const target = /** @type {Element} */ (event.target);
+    if (target.classList.contains("all-tabs-mute-button")) {
+      getTabFromRow(target)?.toggleMuteAudio();
+    } else if (target.classList.contains("all-tabs-close-button")) {
+      const tab = getTabFromRow(target);
       if (tab) {
         this.gBrowser.removeTab(tab, {
           metricsContext: lazy.TabMetrics.userTriggeredContext(
@@ -193,14 +210,14 @@ class TabsListBase {
         });
       }
     } else {
-      const rowVariant = getRowVariant(event.target);
+      const rowVariant = getRowVariant(target);
       if (rowVariant == ROW_VARIANT_TAB) {
-        const tab = getTabFromRow(event.target);
+        const tab = getTabFromRow(target);
         if (tab) {
           this._selectTab(tab);
         }
       } else if (rowVariant == ROW_VARIANT_TAB_GROUP) {
-        getTabGroupFromRow(event.target)?.select();
+        getTabGroupFromRow(target)?.select();
       }
     }
   }
@@ -374,7 +391,7 @@ class TabsListBase {
   }
 
   /**
-   * @param {MozTabbrowserTab} tab
+   * @param {MozTabbrowserTab} newTab
    */
   _addTab(newTab) {
     if (!this.filterFn(newTab)) {
@@ -439,6 +456,88 @@ class TabsListBase {
         ?.remove();
     }
   }
+
+  /**
+   * @param {MozTabbrowserTab} _tab
+   * @returns {XulToolbarItem}
+   * @abstract
+   */
+  _createRow(_tab) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+
+  /**
+   * @param {MozTabbrowserTabGroup} _group
+   * @returns {XulToolbarItem}
+   * @abstract
+   */
+  _createGroupRow(_group) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+
+  /**
+   * @param {XulToolbarItem} _row
+   * @param {MozTabbrowserTab} _tab
+   * @abstract
+   */
+  _setRowAttributes(_row, _tab) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+
+  /**
+   * @abstract
+   */
+  _clearDropTarget() {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+
+  /**
+   * @param {DragEvent} _event
+   * @abstract
+   */
+  _onDragStart(_event) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+
+  /**
+   * @param {DragEvent} _event
+   * @abstract
+   */
+  _onDragOver(_event) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+
+  /**
+   * @param {DragEvent} _event
+   * @abstract
+   */
+  _onDragLeave(_event) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+
+  /**
+   * @param {DragEvent} _event
+   * @abstract
+   */
+  _onDragEnd(_event) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+
+  /**
+   * @param {DragEvent} _event
+   * @abstract
+   */
+  _onDrop(_event) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+
+  /**
+   * @param {MouseEvent} _event
+   * @abstract
+   */
+  _onClick(_event) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
 }
 
 const TABS_PANEL_EVENTS = {
@@ -452,8 +551,8 @@ export class TabsPanel extends TabsListBase {
    * @param {string} opts.className
    * @param {function(MozTabbrowserTab):boolean} opts.filterFn
    * @param {Element} opts.containerNode
-   * @param {Element} [opts.dropIndicator=null]
-   * @param {Element} opts.view
+   * @param {XULElement} [opts.dropIndicator=null]
+   * @param {PanelView} opts.view
    * @param {boolean} opts.onlyHiddenTabs
    */
   constructor(opts) {
@@ -463,6 +562,7 @@ export class TabsPanel extends TabsListBase {
     });
     this.view = opts.view;
     this.view.addEventListener(TABS_PANEL_EVENTS.show, this);
+    /** @type {XULElement|null} */
     this.panelMultiView = null;
   }
 
@@ -517,10 +617,11 @@ export class TabsPanel extends TabsListBase {
 
   /**
    * @param {MozTabbrowserTab} tab
-   * @returns {XULElement}
+   * @returns {XulToolbarItem}
    */
   _createRow(tab) {
     let { doc } = this;
+    /** @type {XulToolbarItem} */
     let row = doc.createXULElement("toolbaritem");
     row.setAttribute("class", "all-tabs-item");
     if (this.className) {
@@ -538,6 +639,7 @@ export class TabsPanel extends TabsListBase {
     row._tab = tab;
     this.tabToElement.set(tab, row);
 
+    /** @type {XULElement & { tab?: MozTabbrowserTab }} */
     let button = doc.createXULElement("toolbarbutton");
     button.setAttribute(
       "class",
@@ -600,10 +702,11 @@ export class TabsPanel extends TabsListBase {
 
   /**
    * @param {MozTabbrowserTabGroup} group
-   * @returns {XULElement}
+   * @returns {XulToolbarItem}
    */
   _createGroupRow(group) {
     let { doc } = this;
+    /** @type {XulToolbarItem} */
     let row = doc.createXULElement("toolbaritem");
     row.setAttribute("class", "all-tabs-item all-tabs-group-item");
     row.setAttribute("row-variant", ROW_VARIANT_TAB_GROUP);
@@ -707,7 +810,7 @@ export class TabsPanel extends TabsListBase {
    * @param {MozTabbrowserTab} tab
    */
   _setImageAttributes(row, tab) {
-    let button = row.firstElementChild;
+    let button = /** @type {MozToolbarbutton} */ (row.firstElementChild);
     let image = button.icon;
 
     if (image) {
@@ -746,11 +849,13 @@ export class TabsPanel extends TabsListBase {
   }
 
   /**
-   * @param {DragEvent} event
+   * @param {DragEvent|MouseEvent} event
    * @returns {XulToolbarItem|undefined}
    */
   _getTargetRowFromEvent(event) {
-    return event.target.closest("toolbaritem");
+    return /** @type {XulToolbarItem} */ (
+      /** @type {Element} */ (event.target).closest("toolbaritem")
+    );
   }
 
   /**
@@ -839,7 +944,7 @@ export class TabsPanel extends TabsListBase {
       return;
     }
 
-    let target = event.relatedTarget;
+    let target = /** @type {Node} */ (event.relatedTarget);
     while (target && target != this.containerNode) {
       target = target.parentNode;
     }
@@ -904,14 +1009,16 @@ export class TabsPanel extends TabsListBase {
     this.dropTargetRow = row;
     this.dropTargetDirection = direction;
 
-    const holder = this.dropIndicator.parentNode;
+    const holder = /** @type {Element} */ (this.dropIndicator.parentNode);
     const holderOffset = holder.getBoundingClientRect().top;
 
     // Set top to before/after the target row.
     let top;
     if (this.dropTargetDirection === -1) {
       if (this.dropTargetRow.previousSibling) {
-        const rect = this.dropTargetRow.previousSibling.getBoundingClientRect();
+        const rect = /** @type {Element} */ (
+          this.dropTargetRow.previousSibling
+        ).getBoundingClientRect();
         top = rect.top + rect.height;
       } else {
         const rect = this.dropTargetRow.getBoundingClientRect();
@@ -924,7 +1031,7 @@ export class TabsPanel extends TabsListBase {
 
     // Avoid overflowing the sub view body.
     const indicatorHeight = 12;
-    const subViewBody = holder.parentNode;
+    const subViewBody = /** @type {Element} */ (holder.parentNode);
     const subViewBodyRect = subViewBody.getBoundingClientRect();
     top = Math.min(top, subViewBodyRect.bottom - indicatorHeight);
 

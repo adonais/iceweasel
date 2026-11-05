@@ -86,7 +86,7 @@ keyboard or mouse, then be sure to implement your provider's
 `onEngagement` method.
 
 For help on implementing providers in general, see the address bar's
-[Architecture Overview](https://firefox-source-docs.mozilla.org/browser/urlbar/overview.html#urlbarprovider).
+[Architecture Overview](/browser/urlbar/overview.md#urlbarprovider).
 
 If you are creating the provider in the internal address bar implementation in
 mozilla-central, then don't forget to register it in a `ProvidersManager`

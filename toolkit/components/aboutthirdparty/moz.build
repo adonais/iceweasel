@@ -32,3 +32,8 @@ TEST_DIRS += ["tests/gtest"]
 TEST_DIRS += ["tests/TestShellEx"]
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "AboutThirdPartyUtils.h",
+    "MsiDatabase.h",
+]

@@ -463,7 +463,7 @@ void CookieServiceChild::AddCookieFromDocument(
         principal->GetIsOriginPotentiallyTrustworthy();
 
     for (uint32_t i = 0; i < cookies->Length(); ++i) {
-      RefPtr<Cookie> existingCookie = cookies->ElementAt(i);
+      Cookie* existingCookie = cookies->ElementAt(i);
       if (existingCookie->KeyHash() == aCookie.KeyHash() &&
           existingCookie->Name().Equals(aCookie.Name()) &&
           existingCookie->Host().Equals(aCookie.Host()) &&

@@ -175,7 +175,7 @@ add_task(async function test_inline_mention_reaches_prompt_builder() {
       "Mention URL should match the @mentioned tab"
     );
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await BrowserTestUtils.closeWindow(win);
     sb.restore();
@@ -214,7 +214,7 @@ add_task(async function test_inline_mention_passed_to_model_as_url() {
       `The @mentioned URL should reach the model as its token: ${urlToken})`
     );
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await BrowserTestUtils.closeWindow(win);
   }

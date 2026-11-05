@@ -207,3 +207,85 @@ add_task(async function test_load_serp_and_categorize_and_click_sponsored() {
 
   await BrowserTestUtils.removeTab(tab);
 });
+
+add_task(async function test_click_ad_brand_zone_counts_as_ad() {
+  SearchSERPTelemetry.overrideSearchTelemetryForTests([
+    {
+      ...TEST_PROVIDER_INFO[0],
+      components: [
+        {
+          type: SearchSERPTelemetryUtils.COMPONENTS.AD_BRAND_ZONE,
+          included: {
+            parent: {
+              selector: "#results",
+            },
+          },
+        },
+        {
+          type: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
+          default: true,
+        },
+      ],
+    },
+  ]);
+  await waitForIdle();
+  resetTelemetry();
+
+  let url = getSERPUrl("searchTelemetryDomainCategorizationReporting.html");
+  info("Load a SERP with ads in a brand zone.");
+  let promise = waitForPageWithCategorizedDomains();
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  await promise;
+
+  promise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await BrowserTestUtils.synthesizeMouseAtCenter("a.ad", {}, tab.linkedBrowser);
+  await promise;
+
+  assertSERPTelemetry([
+    {
+      engagements: [
+        {
+          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
+          target: SearchSERPTelemetryUtils.COMPONENTS.AD_BRAND_ZONE,
+        },
+      ],
+      adImpressions: [
+        {
+          component: SearchSERPTelemetryUtils.COMPONENTS.AD_BRAND_ZONE,
+          ads_loaded: "1",
+          ads_visible: "1",
+          ads_hidden: "0",
+        },
+      ],
+    },
+  ]);
+
+  assertCategorizationValues([
+    {
+      organic_category: "3",
+      organic_num_domains: "1",
+      organic_num_inconclusive: "0",
+      organic_num_unknown: "0",
+      sponsored_category: "4",
+      sponsored_num_domains: "2",
+      sponsored_num_inconclusive: "0",
+      sponsored_num_unknown: "0",
+      mappings_version: "1",
+      app_version: APP_MAJOR_VERSION,
+      channel: CHANNEL,
+      region: REGION,
+      partner_code: "ff",
+      provider: "example",
+      tagged: "true",
+      is_shopping_page: "false",
+      num_ads_clicked: "1",
+      num_ads_hidden: "0",
+      num_ads_loaded: "1",
+      num_ads_visible: "1",
+    },
+  ]);
+
+  await BrowserTestUtils.removeTab(tab);
+  SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
+  await waitForIdle();
+});

@@ -1095,15 +1095,22 @@ WakeLockListener::~WakeLockListener() {
 }
 
 void WakeLockListener::SetState(const nsAString& topic, bool aBackground,
-                                bool aInhibit) {
+                                bool aInhibit, bool aCreateNewTask) {
   WAKE_LOCK_LOG(
       "WakeLockListener::SetState() topic %s background %d inhibit %d",
       NS_ConvertUTF16toUTF8(topic).get(), aBackground, aInhibit);
 
   nsRefPtrHashtable<nsStringHashKey, WakeLockTopic>* topicTable =
       aBackground ? &mBackgroundTopics : &mForegroundTopics;
-  RefPtr<WakeLockTopic> topicLock = topicTable->LookupOrInsertWith(
-      topic, [&] { return MakeRefPtr<WakeLockTopic>(topic, aBackground); });
+  RefPtr<WakeLockTopic> topicLock =
+      aCreateNewTask
+          ? topicTable->LookupOrInsertWith(
+                topic,
+                [&] { return MakeRefPtr<WakeLockTopic>(topic, aBackground); })
+          : topicTable->Get(topic);
+  if (!topicLock) {
+    return;
+  }
 
   if (aInhibit) {
     topicLock->InhibitScreensaver();
@@ -1123,7 +1130,8 @@ nsresult WakeLockListener::Callback(const nsAString& topic,
     return NS_OK;
   }
 
-  bool backgroundLock = state.EqualsLiteral("locked-background");
+  bool backgroundLock = state.EqualsLiteral("locked-background") ||
+                        topic.Equals(u"audio-playing"_ns);
   bool shouldLock = state.EqualsLiteral("locked-background") ||
                     state.EqualsLiteral("locked-foreground");
 
@@ -1144,7 +1152,8 @@ nsresult WakeLockListener::Callback(const nsAString& topic,
 
   // If there's a switch between lock types (background / foreground) we need to
   // un-inhibit a complementary one.
-  SetState(topic, !backgroundLock, /* aInhibited */ false);
+  SetState(topic, !backgroundLock, /* aInhibited */ false,
+           /* aCreateNewTask */ false);
 
   // And set requested one accordingly. Uninhibit state doesn't hold
   // foreground/background state so release both.

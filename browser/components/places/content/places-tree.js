@@ -164,6 +164,23 @@
     get disableUserActions() {
       return this.getAttribute("disableUserActions") == "true";
     }
+
+    /**
+     * overriding
+     *
+     * With the noentertoggle attribute, Enter only commits an inline edit and
+     * otherwise reaches the containing panel or dialog.
+     *
+     * @param {KeyboardEvent} event
+     * @returns {boolean} Whether the tree handled the key.
+     */
+    _handleEnter(event) {
+      if (this.hasAttribute("noentertoggle") && !this._editingColumn) {
+        return false;
+      }
+      return super._handleEnter(event);
+    }
+
     /**
      * overriding
      *

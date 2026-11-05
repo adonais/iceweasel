@@ -953,6 +953,154 @@ add_task(async function url_in_search_mode() {
   Services.prefs.clearUserPref("browser.urlbar.unifiedSearchButton.always");
 });
 
+add_task(async function url_search_in_search_mode() {
+  Services.prefs.clearUserPref("keyword.enabled");
+  Services.prefs.setBoolPref("browser.urlbar.unifiedSearchButton.always", true);
+  let engineSearchMode = {
+    engineName: SUGGESTIONS_ENGINE_NAME,
+    isGeneralPurposeEngine: false,
+  };
+
+  let checkUrl = async (query, { uri, title, iconUri, sources }) => {
+    let context = createContext(query, {
+      isPrivate: false,
+      searchMode: engineSearchMode,
+      ...(sources && { sources }),
+    });
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
+          uri,
+          title,
+          iconUri,
+          heuristic: true,
+        }),
+        makeSearchResult(context, {
+          engineName: SUGGESTIONS_ENGINE_NAME,
+          suggestedIndex: 1,
+        }),
+      ],
+    });
+  };
+
+  info("A search is offered for an origin");
+  await checkUrl("mozilla.org", {
+    uri: "http://mozilla.org/",
+    title: "mozilla.org/",
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
+  });
+
+  info("A search is offered for a URL with a path");
+  await checkUrl("mozilla.org/foo", {
+    uri: "http://mozilla.org/foo",
+    title: "mozilla.org/foo",
+    iconUri: "page-icon:http://mozilla.org/",
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
+  });
+
+  info("A search is offered for a URL with a scheme");
+  await checkUrl("https://mozilla.org/foo", {
+    uri: "https://mozilla.org/foo",
+    title: "https://mozilla.org/foo",
+    iconUri: "page-icon:https://mozilla.org/",
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
+  });
+
+  info("A search is offered with historyInSearchMode enabled");
+  Services.prefs.setBoolPref(
+    "browser.urlbar.unifiedSearchButton.historyInSearchMode",
+    true
+  );
+  await checkUrl("mozilla.org/foo", {
+    uri: "http://mozilla.org/foo",
+    title: "mozilla.org/foo",
+    iconUri: "page-icon:http://mozilla.org/",
+  });
+  Services.prefs.clearUserPref(
+    "browser.urlbar.unifiedSearchButton.historyInSearchMode"
+  );
+
+  info("Only the heuristic search is shown for a non-URL");
+  let context = createContext("hello world", {
+    isPrivate: false,
+    searchMode: engineSearchMode,
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        heuristic: true,
+      }),
+    ],
+  });
+
+  info("A URL is searched for when unifiedSearchButton.always is disabled");
+  Services.prefs.clearUserPref("browser.urlbar.unifiedSearchButton.always");
+  context = createContext("mozilla.org/foo", {
+    isPrivate: false,
+    searchMode: engineSearchMode,
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        heuristic: true,
+      }),
+    ],
+  });
+});
+
+add_task(async function url_search_in_search_mode_dedupes_form_history() {
+  Services.prefs.setBoolPref("browser.urlbar.unifiedSearchButton.always", true);
+  Services.prefs.setBoolPref(SUGGEST_ENABLED_PREF, true);
+  let query = "mozilla.org/foo";
+  await UrlbarTestUtils.formHistory.add([
+    { value: query, source: SUGGESTIONS_ENGINE_NAME },
+    { value: `${query}bar`, source: SUGGESTIONS_ENGINE_NAME },
+  ]);
+  registerCleanupFunction(async () => {
+    Services.prefs.clearUserPref("browser.urlbar.unifiedSearchButton.always");
+    Services.prefs.setBoolPref(SUGGEST_ENABLED_PREF, false);
+    await UrlbarTestUtils.formHistory.clear();
+  });
+
+  let context = createContext(query, {
+    isPrivate: false,
+    prohibitRemoteResults: true,
+    searchMode: {
+      engineName: SUGGESTIONS_ENGINE_NAME,
+      isGeneralPurposeEngine: false,
+    },
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
+  });
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
+        uri: `http://${query}`,
+        title: query,
+        iconUri: "page-icon:http://mozilla.org/",
+        heuristic: true,
+      }),
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        suggestedIndex: 1,
+      }),
+      makeFormHistoryResult(context, {
+        suggestion: `${query}bar`,
+        engineName: SUGGESTIONS_ENGINE_NAME,
+      }),
+    ],
+  });
+});
+
 /**
  * Returns an array of code points in the given string.  Each code point is
  * returned as a hexidecimal string.

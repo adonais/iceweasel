@@ -16,13 +16,25 @@
 const { RustAutofillAddressesAdapter } = ChromeUtils.importESModule(
   "resource://autofill/RustAutofillAddressStorage.sys.mjs"
 );
-const { Store } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs"
+const { createAutofillKey, createAutofillStoreWithStaticKeyManager } =
+  ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs"
+  );
+const { initialize: initRustComponents } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustInitRustComponents.sys.mjs"
 );
 
+// The store holds an encryption key even where, as here, nothing is encrypted.
+// A test store gets one of its own rather than the profile's NSS key, but
+// generating it still goes through NSS.
 async function newBridge(name) {
   const dbPath = FileTestUtils.getTempFile(name).path;
-  const adapter = new RustAutofillAddressesAdapter(await Store.init(dbPath));
+  await initRustComponents(PathUtils.profileDir);
+  const store = await createAutofillStoreWithStaticKeyManager(
+    dbPath,
+    createAutofillKey()
+  );
+  const adapter = new RustAutofillAddressesAdapter(store);
   return { adapter, bridge: await adapter.bridgedEngine() };
 }
 

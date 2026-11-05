@@ -43,6 +43,12 @@ TANY(TransposeWx16_Any_AVX2, TransposeWx16_AVX2, TransposeWx16_C, 15)
 #ifdef HAS_TRANSPOSEWX16_LSX
 TANY(TransposeWx16_Any_LSX, TransposeWx16_LSX, TransposeWx16_C, 15)
 #endif
+#ifdef HAS_TRANSPOSEWX8_WASMSIMD
+TANY(TransposeWx8_Any_WASMSIMD, TransposeWx8_WASMSIMD, TransposeWx8_C, 15)
+#endif
+#ifdef HAS_TRANSPOSEWX16_WASMSIMD
+TANY(TransposeWx16_Any_WASMSIMD, TransposeWx16_WASMSIMD, TransposeWx16_C, 15)
+#endif
 #undef TANY
 
 #define TUVANY(NAMEANY, TPOS_SIMD, TPOS_C, MASK)                               \
@@ -70,6 +76,18 @@ TUVANY(TransposeUVWx16_Any_AVX2, TransposeUVWx16_AVX2, TransposeUVWx16_C, 7)
 #endif
 #ifdef HAS_TRANSPOSEUVWX16_LSX
 TUVANY(TransposeUVWx16_Any_LSX, TransposeUVWx16_LSX, TransposeUVWx16_C, 7)
+#endif
+#ifdef HAS_TRANSPOSEUVWX8_WASMSIMD
+TUVANY(TransposeUVWx8_Any_WASMSIMD,
+       TransposeUVWx8_WASMSIMD,
+       TransposeUVWx8_C,
+       7)
+#endif
+#ifdef HAS_TRANSPOSEUVWX16_WASMSIMD
+TUVANY(TransposeUVWx16_Any_WASMSIMD,
+       TransposeUVWx16_WASMSIMD,
+       TransposeUVWx16_C,
+       7)
 #endif
 #undef TUVANY
 

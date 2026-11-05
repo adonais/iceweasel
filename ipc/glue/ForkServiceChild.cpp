@@ -68,8 +68,8 @@ void ForkServiceChild::StartForkServer() {
     return;
   }
 
-  GeckoChildProcessHost* subprocess =
-      new GeckoChildProcessHost(GeckoProcessType_ForkServer, false);
+  RefPtr subprocess =
+      MakeRefPtr<GeckoChildProcessHost>(GeckoProcessType_ForkServer, false);
 
   geckoargs::ChildProcessArgs extraOpts;
   geckoargs::sIPCHandle.Put(std::move(client), extraOpts);
@@ -113,12 +113,7 @@ ForkServiceChild::ForkServiceChild(int aFd, GeckoChildProcessHost* aProcess)
   mTcver = MakeUnique<MiniTransceiver>(aFd);
 }
 
-ForkServiceChild::~ForkServiceChild() {
-  close(mTcver->GetFD());
-  // This can be synchronous during browser shutdown, so do it *after*
-  // causing the fork server to exit by closning the socket:
-  mProcess->Destroy();
-}
+ForkServiceChild::~ForkServiceChild() { close(mTcver->GetFD()); }
 
 Result<Ok, LaunchError> ForkServiceChild::SendForkNewSubprocess(
     geckoargs::ChildProcessArgs&& aArgs, base::LaunchOptions&& aOptions,

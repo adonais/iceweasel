@@ -23,8 +23,144 @@
 #include "mozilla/dom/CSSNumericArray.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSUnitValue.h"
+#include "nsTArray.h"
 
 namespace mozilla::dom {
+
+namespace {
+
+template <typename Operation>
+class SameUnitValueComputation final {
+ public:
+  SameUnitValueComputation(Span<const RefPtr<CSSNumericValue>> aValues,
+                           Operation aOperation) {
+    MOZ_DIAGNOSTIC_ASSERT(!aValues.IsEmpty());
+
+    if (!aValues[0]->IsCSSUnitValue()) {
+      return;
+    }
+
+    auto& firstUnitValue = aValues[0]->GetAsCSSUnitValue();
+    double computedValue = firstUnitValue.Value();
+
+    for (size_t i = 1; i < aValues.Length(); ++i) {
+      if (!aValues[i]->IsCSSUnitValue()) {
+        return;
+      }
+
+      const auto& unitValue = aValues[i]->GetAsCSSUnitValue();
+
+      if (unitValue.Unit() != firstUnitValue.Unit()) {
+        return;
+      }
+
+      computedValue = aOperation(computedValue, unitValue.Value());
+    }
+
+    mCommonUnitValue = &firstUnitValue;
+    mComputedValue = computedValue;
+  }
+
+  bool AllHaveSameUnit() const { return mCommonUnitValue; }
+
+  const StyleNumericType& CommonNumericType() const {
+    MOZ_DIAGNOSTIC_ASSERT(AllHaveSameUnit());
+    return mCommonUnitValue->GetNumericType();
+  }
+
+  const nsACString& CommonUnit() const {
+    MOZ_DIAGNOSTIC_ASSERT(AllHaveSameUnit());
+    return mCommonUnitValue->Unit();
+  }
+
+  double ComputedValue() const {
+    MOZ_DIAGNOSTIC_ASSERT(AllHaveSameUnit());
+    return mComputedValue;
+  }
+
+ private:
+  RefPtr<CSSUnitValue> mCommonUnitValue;
+  double mComputedValue = 0.0;
+};
+
+class ProductUnitValueComputation final {
+ public:
+  explicit ProductUnitValueComputation(
+      Span<const RefPtr<CSSNumericValue>> aValues) {
+    MOZ_DIAGNOSTIC_ASSERT(!aValues.IsEmpty());
+
+    RefPtr<CSSUnitValue> firstNonNumberUnitValue;
+    double computedValue = 1.0;
+
+    for (const auto& value : aValues) {
+      if (!value->IsCSSUnitValue()) {
+        return;
+      }
+
+      auto& unitValue = value->GetAsCSSUnitValue();
+
+      if (!unitValue.Unit().EqualsLiteral("number")) {
+        if (firstNonNumberUnitValue) {
+          return;
+        }
+
+        firstNonNumberUnitValue = &unitValue;
+      }
+
+      computedValue *= unitValue.Value();
+    }
+
+    mOneNonNumberUnitValue = std::move(firstNonNumberUnitValue);
+    mComputedValue = computedValue;
+    mValid = true;
+  }
+
+  bool AllHaveNumberUnit() const { return mValid && !mOneNonNumberUnitValue; }
+
+  bool OneHasNonNumberUnit() const { return mValid && mOneNonNumberUnitValue; }
+
+  const StyleNumericType& OneNonNumberNumericType() const {
+    MOZ_DIAGNOSTIC_ASSERT(OneHasNonNumberUnit());
+    return mOneNonNumberUnitValue->GetNumericType();
+  }
+
+  const nsACString& OneNonNumberUnit() const {
+    MOZ_DIAGNOSTIC_ASSERT(OneHasNonNumberUnit());
+    return mOneNonNumberUnitValue->Unit();
+  }
+
+  double ComputedValue() const {
+    MOZ_DIAGNOSTIC_ASSERT(mValid);
+    return mComputedValue;
+  }
+
+ private:
+  RefPtr<CSSUnitValue> mOneNonNumberUnitValue;
+  double mComputedValue = 0.0;
+  bool mValid = false;
+};
+
+template <typename Operation>
+UniquePtr<StyleNumericType> ComputeNumericType(
+    Span<const RefPtr<CSSNumericValue>> aValues, Operation aOperation,
+    ErrorResult& aRv) {
+  AutoTArray<const StyleNumericType*, 8> numericTypes;
+  numericTypes.SetCapacity(aValues.Length());
+
+  for (const auto& value : aValues) {
+    numericTypes.AppendElement(&value->GetNumericType());
+  }
+
+  auto numericType = MakeUnique<StyleNumericType>();
+  if (!aOperation(&numericTypes, numericType.get())) {
+    aRv.ThrowTypeError("Incompatible types");
+    return nullptr;
+  }
+
+  return numericType;
+}
+
+}  // namespace
 
 CSSNumericValue::CSSNumericValue(nsCOMPtr<nsISupports> aParent,
                                  NumericValueType aNumericValueType)
@@ -98,28 +234,75 @@ JSObject* CSSNumericValue::WrapObject(JSContext* aCx,
 
 // start of CSSNumericValue Web IDL implementation
 
+// Note: Implementing arithmetic operations in Stylo/Rust was considered, but
+// would require recursively converting operands via ToStyleNumericValue().
+// While this can be justified for To() and ToSum(), it would introduce
+// unnecessary conversions for arithmetic operations, which can work directly
+// with the existing DOM numeric values.
+
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-add
 already_AddRefed<CSSNumericValue> CSSNumericValue::Add(
     const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  // Step 1.
+  for (const OwningCSSNumberish& numberish : aValues) {
+    values.AppendElement(CSSNumericValue::Create(mParent, numberish));
+  }
+
+  // Step 2-5.
+  return Add(std::move(values), aRv);
 }
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-sub
 already_AddRefed<CSSNumericValue> CSSNumericValue::Sub(
     const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  // Step 1.
+  for (const OwningCSSNumberish& numberish : aValues) {
+    RefPtr<CSSNumericValue> value = CSSNumericValue::Create(mParent, numberish);
+
+    values.AppendElement(value->Negate());
+  }
+
+  // Step 2.
+  return Add(std::move(values), aRv);
 }
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-mul
 already_AddRefed<CSSNumericValue> CSSNumericValue::Mul(
     const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  // Step 1.
+  for (const OwningCSSNumberish& numberish : aValues) {
+    values.AppendElement(CSSNumericValue::Create(mParent, numberish));
+  }
+
+  // Step 2-6.
+  return Mul(std::move(values), aRv);
 }
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-div
 already_AddRefed<CSSNumericValue> CSSNumericValue::Div(
     const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  // Step 1.
+  for (const OwningCSSNumberish& numberish : aValues) {
+    RefPtr<CSSNumericValue> value = CSSNumericValue::Create(mParent, numberish);
+
+    RefPtr<CSSNumericValue> inverted = value->Invert(aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    values.AppendElement(std::move(inverted));
+  }
+
+  // Step 2.
+  return Mul(std::move(values), aRv);
 }
 
 already_AddRefed<CSSNumericValue> CSSNumericValue::Min(
@@ -312,6 +495,134 @@ void CSSNumericValue::ToCssTextWithProperty(
   }
 }
 
+// Step 2-5 of:
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-add
+already_AddRefed<CSSNumericValue> CSSNumericValue::Add(
+    nsTArray<RefPtr<CSSNumericValue>> aValues, ErrorResult& aRv) {
+  // Step 2.
+  if (IsCSSMathValue() && GetAsCSSMathValue().IsCSSMathSum()) {
+    aValues.InsertElementsAt(
+        0, GetAsCSSMathValue().GetAsCSSMathSum().Values()->GetValues());
+  } else {
+    aValues.InsertElementAt(0, this);
+  }
+
+  SameUnitValueComputation computation(aValues, std::plus<double>{});
+
+  // Step 3.
+  if (computation.AllHaveSameUnit()) {
+    return MakeCSSUnitValue(mParent, computation.CommonNumericType(),
+                            computation.ComputedValue(),
+                            computation.CommonUnit());
+  }
+
+  // Step 4.
+  auto numericType = AddTypes(aValues, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  // Step 5.
+  RefPtr<CSSMathSum> mathSum =
+      CSSMathSum::Create(mParent, std::move(numericType), std::move(aValues));
+  return mathSum.forget();
+}
+
+// https://drafts.css-houdini.org/css-typed-om-1/#cssmath-negate-a-cssnumericvalue
+already_AddRefed<CSSNumericValue> CSSNumericValue::Negate() {
+  // Step 1.
+  if (IsCSSMathValue() && GetAsCSSMathValue().IsCSSMathNegate()) {
+    RefPtr<CSSNumericValue> value =
+        GetAsCSSMathValue().GetAsCSSMathNegate().Value();
+    return value.forget();
+  }
+
+  // Step 2.
+  if (IsCSSUnitValue()) {
+    const auto& unitValue = GetAsCSSUnitValue();
+
+    return MakeCSSUnitValue(mParent, unitValue.GetNumericType(),
+                            -unitValue.Value(), unitValue.Unit());
+  }
+
+  // Step 3.
+  auto numericType = MakeUnique<StyleNumericType>(GetNumericType());
+
+  RefPtr<CSSMathNegate> mathNegate =
+      CSSMathNegate::Create(mParent, std::move(numericType), this);
+  return mathNegate.forget();
+}
+
+// Step 2-6 of:
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-mul
+already_AddRefed<CSSNumericValue> CSSNumericValue::Mul(
+    nsTArray<RefPtr<CSSNumericValue>> aValues, ErrorResult& aRv) {
+  // Step 2.
+  if (IsCSSMathValue() && GetAsCSSMathValue().IsCSSMathProduct()) {
+    aValues.InsertElementsAt(
+        0, GetAsCSSMathValue().GetAsCSSMathProduct().Values()->GetValues());
+  } else {
+    aValues.InsertElementAt(0, this);
+  }
+
+  ProductUnitValueComputation computation(aValues);
+
+  // Step 3.
+  if (computation.AllHaveNumberUnit()) {
+    return MakeCSSUnitValue(mParent, computation.ComputedValue());
+  }
+
+  // Step 4.
+  if (computation.OneHasNonNumberUnit()) {
+    return MakeCSSUnitValue(mParent, computation.OneNonNumberNumericType(),
+                            computation.ComputedValue(),
+                            computation.OneNonNumberUnit());
+  }
+
+  // Step 5.
+  auto numericType = MultiplyTypes(aValues, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  // Step 6.
+  RefPtr<CSSMathProduct> mathProduct = CSSMathProduct::Create(
+      mParent, std::move(numericType), std::move(aValues));
+  return mathProduct.forget();
+}
+
+// https://drafts.css-houdini.org/css-typed-om-1/#cssmath-invert-a-cssnumericvalue
+already_AddRefed<CSSNumericValue> CSSNumericValue::Invert(ErrorResult& aRv) {
+  // Step 1.
+  if (IsCSSMathValue() && GetAsCSSMathValue().IsCSSMathInvert()) {
+    RefPtr<CSSNumericValue> value =
+        GetAsCSSMathValue().GetAsCSSMathInvert().Value();
+    return value.forget();
+  }
+
+  // Step 2.
+  if (IsCSSUnitValue() && GetAsCSSUnitValue().Unit().EqualsLiteral("number")) {
+    const auto& unitValue = GetAsCSSUnitValue();
+
+    // Step 2.1.
+    if (unitValue.Value() == 0.0) {
+      aRv.ThrowRangeError("Cannot divide by zero");
+      return nullptr;
+    }
+
+    // Step 2.2.
+    return MakeCSSUnitValue(mParent, 1.0 / unitValue.Value());
+  }
+
+  // Step 3.
+  auto numericType = MakeUnique<StyleNumericType>(GetNumericType());
+  Servo_NumericType_Invert(numericType.get());
+
+  RefPtr<CSSMathInvert> mathInvert =
+      CSSMathInvert::Create(mParent, std::move(numericType), this);
+  return mathInvert.forget();
+}
+
 StyleNumericValue CSSNumericValue::ToStyleNumericValue() const {
   switch (GetNumericValueType()) {
     case NumericValueType::MathValue: {
@@ -478,6 +789,16 @@ bool CSSNumericValue::EqualNumericValues(const CSSNumericValue& aValue1,
 
   return EqualNumericValues(*value1.GetAsCSSMathInvert().Value(),
                             *value2.GetAsCSSMathInvert().Value());
+}
+
+UniquePtr<StyleNumericType> CSSNumericValue::AddTypes(
+    Span<const RefPtr<CSSNumericValue>> aValues, ErrorResult& aRv) {
+  return ComputeNumericType(aValues, Servo_NumericType_AddTypes, aRv);
+}
+
+UniquePtr<StyleNumericType> CSSNumericValue::MultiplyTypes(
+    Span<const RefPtr<CSSNumericValue>> aValues, ErrorResult& aRv) {
+  return ComputeNumericType(aValues, Servo_NumericType_MultiplyTypes, aRv);
 }
 
 const CSSNumericValue& CSSStyleValue::GetAsCSSNumericValue() const {

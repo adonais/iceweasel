@@ -8,6 +8,7 @@ package mozilla.components.feature.ipprotection.store
 
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
+import mozilla.components.concept.engine.ipprotection.ProxyState
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
@@ -20,8 +21,36 @@ sealed class IPProtectionAction : Action {
     /** Reports a change in whether the user qualifies for IP Protection. */
     data class EligibilityChanged(val eligibility: EligibilityStatus) : IPProtectionAction()
 
-    /** Reports a fresh snapshot from the GeckoView IP protection toolkit. */
-    data class EngineStateChanged(val info: IPProtectionHandler.StateInfo) : IPProtectionAction()
+    /**
+     * Reports a new service state from the GeckoView IP protection toolkit.
+     *
+     * @property serviceState The current [ServiceState].
+     */
+    data class ServiceStateChanged(val serviceState: ServiceState) : IPProtectionAction()
+
+    /**
+     * Reports a new proxy state from the GeckoView IP protection toolkit.
+     *
+     * @property proxyState The current [ProxyState].
+     * @property lastError The error the proxy last failed with, or null.
+     */
+    data class ProxyStateChanged(
+        val proxyState: ProxyState,
+        val lastError: String? = null,
+    ) : IPProtectionAction()
+
+    /**
+     * Reports a new data usage from the GeckoView IP protection toolkit.
+     *
+     * @property remaining Remaining data allowance in bytes.
+     * @property max Maximum data allowance in bytes, or 0 if unlimited.
+     * @property resetTime ISO 8601 string for when the allowance resets, or null if unavailable.
+     */
+    data class UsageChanged(
+        val remaining: Long,
+        val max: Long,
+        val resetTime: String?,
+    ) : IPProtectionAction()
 
     /** Reports a fresh list of available proxy countries from the GeckoView IP protection toolkit. */
     data class CountryListChanged(val countries: List<IPProtectionHandler.Country>) : IPProtectionAction()
@@ -141,9 +170,6 @@ internal sealed class InternalAction : IPProtectionAction() {
 
     /** Reports a change in whether the user qualifies for IP Protection. */
     data class EligibilityChanged(val eligibility: EligibilityStatus) : InternalAction()
-
-    /** Reports a change in new service state that happen from IP Protection. */
-    data class UpdateServiceState(val serviceState: ServiceState) : InternalAction()
 
     /** Puts the auth flow into an intermediary state while an incomplete authentication is occurring. */
     data class AwaitingAuth(val status: AccountStatus) : InternalAction()

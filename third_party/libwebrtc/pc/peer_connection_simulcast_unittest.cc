@@ -631,4 +631,60 @@ TEST_F(PeerConnectionSimulcastTests,
   local->AddAudioTrack("audio");
   EXPECT_TRUE(local->CreateOfferAndSetAsLocal());
 }
+
+// Returns `offer` with the third simulcast layer removed, as an application
+// that munges the offer before applying it would produce.
+std::unique_ptr<SessionDescriptionInterface> RemoveThirdLayer(
+    const SessionDescriptionInterface& offer) {
+  std::string sdp;
+  EXPECT_TRUE(offer.ToString(&sdp));
+  const std::string rid_line = "a=rid:3 send\r\n";
+  size_t pos = sdp.find(rid_line);
+  EXPECT_NE(pos, std::string::npos);
+  sdp.erase(pos, rid_line.size());
+  pos = sdp.find("a=simulcast:send 1;2;3\r\n");
+  EXPECT_NE(pos, std::string::npos);
+  sdp.replace(pos, strlen("a=simulcast:send 1;2;3\r\n"),
+              "a=simulcast:send 1;2\r\n");
+  return CreateSessionDescription(SdpType::kOffer, sdp, nullptr);
+}
+
+// The local description is authoritative for the number of send layers. An
+// application that removes a layer from the offer before applying it gets a
+// sender with the layers that remain, rather than a failure.
+TEST_F(PeerConnectionSimulcastTests, MungedLocalOfferWithFewerLayers) {
+  // Munging allowed: kNumSimulcastLayers.
+  auto local = CreatePeerConnectionWrapper(
+      "WebRTC-NoSdpMangleAllowForTesting/Enabled,1/");
+  auto layers = CreateLayers({"1", "2", "3"}, true);
+  auto transceiver = AddTransceiver(local.get(), layers);
+  std::unique_ptr<SessionDescriptionInterface> munged_offer =
+      RemoveThirdLayer(*local->CreateOffer());
+  ASSERT_THAT(munged_offer, NotNull());
+  ASSERT_TRUE(local->SetLocalDescription(std::move(munged_offer)));
+
+  EXPECT_THAT(transceiver->sender()->GetParameters().encodings, SizeIs(2));
+}
+
+// Rolling back a local offer detaches the sender from the send stream that the
+// offer described. A subsequent offer that describes fewer layers can then be
+// applied, rather than failing against a channel that no longer exists.
+TEST_F(PeerConnectionSimulcastTests,
+       MungedLocalOfferWithFewerLayersAfterRollback) {
+  // Munging allowed: kNumSimulcastLayers.
+  auto local = CreatePeerConnectionWrapper(
+      "WebRTC-NoSdpMangleAllowForTesting/Enabled,1/");
+  auto layers = CreateLayers({"1", "2", "3"}, true);
+  auto transceiver = AddTransceiver(local.get(), layers);
+  ASSERT_TRUE(local->SetLocalDescription(local->CreateOffer()));
+  ASSERT_TRUE(local->SetLocalDescription(local->CreateRollback()));
+
+  std::unique_ptr<SessionDescriptionInterface> munged_offer =
+      RemoveThirdLayer(*local->CreateOffer());
+  ASSERT_THAT(munged_offer, NotNull());
+  ASSERT_TRUE(local->SetLocalDescription(std::move(munged_offer)));
+
+  EXPECT_THAT(transceiver->sender()->GetParameters().encodings, SizeIs(2));
+}
+
 }  // namespace webrtc

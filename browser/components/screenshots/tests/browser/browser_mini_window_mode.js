@@ -267,3 +267,27 @@ add_task(async function test_reselect_button_clears_the_selection() {
     }
   );
 });
+
+add_task(async function test_dragging_to_the_edge_does_not_scroll() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: TEST_PAGE },
+    async browser => {
+      let helper = new ScreenshotsHelper(browser);
+      triggerMiniWindowEntryPoint(browser);
+      await waitForOverlayMode(helper, browser, SELECTION_MODES.MINI_WINDOW);
+
+      let { clientWidth, clientHeight } = await helper.getContentDimensions();
+      await helper.dragOverlay(10, 10, clientWidth - 10, clientHeight - 10);
+
+      let { scrollX, scrollY } = await helper.getContentDimensions();
+      is(scrollX, 0, "the page did not scroll horizontally");
+      is(scrollY, 0, "the page did not scroll vertically");
+
+      ScreenshotsUtils.exit(browser);
+      await TestUtils.waitForCondition(
+        async () => !(await helper.isOverlayInitialized()),
+        "Waiting for the overlay to be torn down"
+      );
+    }
+  );
+});

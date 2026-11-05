@@ -155,3 +155,13 @@ LOCAL_INCLUDES += [
 FINAL_LIBRARY = "xul"
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "nsEnvironment.h",
+    "nsThreadSyncDispatch.h",
+    "nsTimerImpl.h",
+    "ThreadDelay.h",
+    "ThreadEventTarget.h",
+    "TimerThread.h",
+    "TimerThreadMonitor.h",
+]

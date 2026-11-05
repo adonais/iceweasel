@@ -13,7 +13,6 @@ kind-dependencies:
     - signing-apk
 
 task-defaults:
-    run-on-repo-type: [hg]
     description: Runs UI tests for sanity checking startup on Nightly
     task-context:
         from-parameters:
@@ -37,7 +36,6 @@ task-defaults:
               type: directory
         retry-exit-status: [20]
     run:
-        clone-with: hg
         using: run-commands
     run-on-projects: []
     routes:

@@ -22,6 +22,7 @@ import {
   makeJSONSchemaBlob,
   parseAndExtractJSON,
 } from "../Utils.sys.mjs";
+import { AuthProvider } from "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 
 const lazy = {};
@@ -600,7 +601,7 @@ export async function generateInitialMemoriesList(conversation, sources) {
   conversation.setSystemMessage(systemPrompt);
   conversation.addUserMessage(userPrompt);
   const response = await conversation.run({
-    fxAccountToken: await openAIEngine.getFxAccountToken(),
+    token: await AuthProvider.getToken(),
   });
 
   const parsed = parseAndExtractJSON(response, []);
@@ -677,7 +678,7 @@ export async function applyQualityAndSensitivityFilter(
   conversation.setSystemMessage(systemPrompt);
   conversation.addUserMessage(userPrompt);
   const response = await conversation.run({
-    fxAccountToken: await openAIEngine.getFxAccountToken(),
+    token: await AuthProvider.getToken(),
   });
 
   const parsed = parseAndExtractJSON(response, { kept_memories: [] });
@@ -772,7 +773,7 @@ export async function getMergeMemoryCandidates(conversation, memories) {
         },
       }),
     },
-    fxAccountToken: await openAIEngine.getFxAccountToken(),
+    token: await AuthProvider.getToken(),
   });
   const mergedMemoriesOut = parseAndExtractJSON(response, []);
 

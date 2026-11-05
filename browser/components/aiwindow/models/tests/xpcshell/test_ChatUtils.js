@@ -108,8 +108,30 @@ add_task(
     Assert.equal(result.url, "", "Should return empty URL");
     Assert.equal(result.title, "", "Should return empty title");
     Assert.equal(result.description, "", "Should return empty description");
+    Assert.equal(result.pageSlug, "", "Should return empty page slug");
   }
 );
+
+add_task(async function test_getCurrentTabMetadata_page_slug() {
+  const metadataFor = url =>
+    getCurrentTabMetadata([{ type: "currentTab", url, label: "Page" }]);
+
+  Assert.equal(
+    (await metadataFor("about:smartpage?page=heat-pump-quotes")).pageSlug,
+    "heat-pump-quotes",
+    "A smart page URL yields its slug"
+  );
+  Assert.equal(
+    (await metadataFor("https://example.com/?page=heat-pump-quotes")).pageSlug,
+    "",
+    "A web page URL has no slug"
+  );
+  Assert.equal(
+    (await metadataFor("about:smartpage?page=not%20valid")).pageSlug,
+    "",
+    "An invalid smart page name has no slug"
+  );
+});
 
 add_task(
   async function test_getCurrentTabMetadata_constructRealTimeInfoInjectionMessage() {

@@ -1,11 +1,9 @@
 var testnum = 0;
 var factory;
 
-function parserForFile(filename, expectErrors) {
+function parserForFile(file, expectErrors) {
   let parser = null;
   try {
-    let file = do_get_file(filename);
-    Assert.ok(!!file);
     let containedErrors = { value: false };
     parser = factory.createINIParser(file, containedErrors);
     Assert.ok(!!parser);
@@ -275,8 +273,9 @@ function run_test() {
       dump("\nINFO | test #" + ++testnum);
       let filename = testdata[testnum - 1].filename;
       dump(", filename " + filename + "\n");
+      let file = do_get_file(filename);
       let parser = parserForFile(
-        filename,
+        file,
         testdata[testnum - 1].containsErrors ?? false
       );
       checkParserOutput(parser, testdata[testnum - 1].reference);
@@ -285,12 +284,11 @@ function run_test() {
       }
       Assert.ok(parser instanceof Ci.nsIINIParserWriter);
       // write contents out to a new file
-      let newfilename = filename + ".new";
-      let newfile = do_get_file(filename);
-      newfile.leafName += ".new";
+      let newfile = do_get_tempdir();
+      newfile.append(file.leafName + ".new");
       parser.writeFile(newfile);
       // read new file and make sure the contents are the same.
-      parser = parserForFile(newfilename, false);
+      parser = parserForFile(newfile, false);
       checkParserOutput(parser, testdata[testnum - 1].reference);
       // cleanup after the test
       newfile.remove(false);
@@ -308,11 +306,8 @@ function run_test() {
     dump("INFO | test #" + ++testnum + "\n");
 
     // test writing to a new file.
-    var newfile = do_get_file("data/");
+    var newfile = do_get_tempdir();
     newfile.append("nonexistent-file.ini");
-    if (newfile.exists()) {
-      newfile.remove(false);
-    }
     Assert.ok(!newfile.exists());
 
     try {
@@ -339,7 +334,7 @@ function run_test() {
     Assert.ok(newfile.exists());
     checkParserOutput(parser, { section: { key: "value", key2: "" } });
     // read it in again, check for same data.
-    parser = parserForFile("data/nonexistent-file.ini", false);
+    parser = parserForFile(newfile, false);
     checkParserOutput(parser, { section: { key: "value", key2: "" } });
     // cleanup after the test
     newfile.remove(false);
@@ -347,7 +342,7 @@ function run_test() {
     dump("INFO | test #" + ++testnum + "\n");
 
     // test modifying a existing key's value (in an existing section)
-    parser = parserForFile("data/iniparser09.ini", false);
+    parser = parserForFile(do_get_file("data/iniparser09.ini"), false);
     checkParserOutput(parser, { section1: { name1: "value1" } });
 
     Assert.ok(parser instanceof Ci.nsIINIParserWriter);

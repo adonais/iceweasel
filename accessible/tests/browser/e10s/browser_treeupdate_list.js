@@ -50,3 +50,42 @@ addAccessibleTask(
   },
   { iframe: true, remoteIframe: true }
 );
+
+/**
+ * Test removing content from a list item while style is dirty. Computing the
+ * text offset of the removed content requires the text of the bullet.
+ */
+addAccessibleTask(
+  `
+  <style>
+    @counter-style a { system: cyclic; symbols: "a"; speak-as: b; }
+  </style>
+  <style id="b">
+    @counter-style b { system: cyclic; symbols: "b"; }
+  </style>
+  <style id="dirty"></style>
+  <ul>
+    <li id="li" style="list-style-type: a;"><marquee id="marquee"></marquee></li>
+  </ul>
+  `,
+  async function testRemoveWithDirtyStyle(browser) {
+    // Replace counter style b. This evicts it from the counter style cache
+    // and resets the cached speak-as of counter style a, which refers to b.
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("b").textContent =
+        `@counter-style b { system: cyclic; symbols: "c"; }`;
+      content.document.body.offsetTop;
+    });
+    const reordered = waitForEvent(EVENT_REORDER, "li");
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("dirty").remove();
+      content.document.getElementById("marquee").remove();
+    });
+    const li = (await reordered).accessible;
+    testAccessibleTree(li, {
+      role: ROLE_LISTITEM,
+      children: [{ role: ROLE_LISTITEM_MARKER, children: [] }],
+    });
+  },
+  { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
+);

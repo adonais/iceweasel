@@ -268,6 +268,42 @@ add_task(async function test_page_counters() {
           name: "SpeculationRulesTag",
           glean: ["", "speculationRulesTag"],
         },
+        {
+          name: "SpeculationRulesHeader",
+          glean: ["", "speculationRulesHeader"],
+          value: 0,
+        },
+      ],
+    },
+
+    // Check that use counters are incremented for rule sets from the
+    // Speculation-Rules header.
+    {
+      type: "direct",
+      filename: "file_use_counter_speculationrules_header.html",
+      waitForExplicitFinish: true,
+      counters: [
+        {
+          name: "SpeculationRulesHeader",
+          glean: ["", "speculationRulesHeader"],
+        },
+        {
+          name: "SpeculationRulesPrefetch",
+          glean: ["", "speculationRulesPrefetch"],
+        },
+        {
+          name: "SpeculationRulesListSource",
+          glean: ["", "speculationRulesListSource"],
+        },
+        {
+          name: "SpeculationRulesEagernessImmediate",
+          glean: ["", "speculationRulesEagernessImmediate"],
+        },
+        {
+          name: "SpeculationRulesScriptTag",
+          glean: ["", "speculationRulesScriptTag"],
+          value: 0,
+        },
       ],
     },
 

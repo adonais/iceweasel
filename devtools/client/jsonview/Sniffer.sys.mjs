@@ -37,6 +37,15 @@ function getContentDisposition(channel) {
 export class Sniffer {
   getMIMETypeFromContent(request) {
     if (request instanceof Ci.nsIChannel) {
+      let contentType;
+      try {
+        contentType = request.contentType;
+      } catch (e) {
+        // There is no content type when no response was received, e.g. when
+        // the load failed.
+        return "";
+      }
+
       // JSON View is enabled only for top level loads only.
       if (
         gPrefs.gEnabled &&
@@ -47,12 +56,12 @@ export class Sniffer {
         // Check the response content type and if it's a valid type
         // such as application/json or application/manifest+json
         // change it to new internal type consumed by JSON View.
-        if (/^application\/(?:.+\+)?json$/.test(request.contentType)) {
+        if (/^application\/(?:.+\+)?json$/.test(contentType)) {
           return JSON_VIEW_MIME_TYPE;
         }
 
         // Check if this is a JSON Lines content-type (one JSON value per line).
-        let isJsonlines = isJsonlMimeType(request.contentType);
+        let isJsonlines = isJsonlMimeType(contentType);
         if (!isJsonlines) {
           try {
             isJsonlines =
@@ -66,9 +75,9 @@ export class Sniffer {
         if (isJsonlines) {
           return JSONLINES_VIEW_MIME_TYPE;
         }
-      } else if (request.contentType === JSON_VIEW_MIME_TYPE) {
+      } else if (contentType === JSON_VIEW_MIME_TYPE) {
         return "application/json";
-      } else if (request.contentType === JSONLINES_VIEW_MIME_TYPE) {
+      } else if (contentType === JSONLINES_VIEW_MIME_TYPE) {
         return "application/jsonl";
       }
     }

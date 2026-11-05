@@ -1,0 +1,71 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!DOCTYPE HTML>
+<html>
+<!--
+Test that the frame component skips source-map resolution for default locations.
+-->
+<head>
+  <meta charset="utf-8">
+  <title>Frame component default location test</title>
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css">
+</head>
+<body>
+<pre id="test">
+<script src="head.js" type="application/javascript"></script>
+<script type="application/javascript">
+
+'use strict'
+
+window.onload = async function () {
+  try {
+    const ReactDOM = browserRequire("devtools/client/shared/vendor/react-dom");
+    const React = browserRequire("devtools/client/shared/vendor/react");
+    const Frame = React.createFactory(browserRequire("devtools/client/shared/components/Frame"));
+
+    const tests = [
+      { line: 0, column: 0, expectSubscribe: false },
+      { line: 0, column: 1, expectSubscribe: false },
+      { line: 0, column: 2, expectSubscribe: true },
+      { line: 1, column: 0, expectSubscribe: true },
+    ];
+
+    for (const { line, column, expectSubscribe } of tests) {
+      let subscribed = false;
+      const mockSourceMapURLService = {
+        subscribeByLocation() {
+          subscribed = true;
+          return () => {};
+        },
+      };
+
+      const props = {
+        onClick: () => {},
+        frame: {
+          line,
+          column,
+          source: "https://bugzilla.mozilla.org/bundle.js",
+        },
+        sourceMapURLService: mockSourceMapURLService,
+      };
+
+      ReactDOM.render(Frame(props), window.document.body);
+      is(
+        subscribed,
+        expectSubscribe,
+        `subscribeByLocation called as expected for line=${line} column=${column}`
+      );
+      ReactDOM.unmountComponentAtNode(window.document.body);
+    }
+  } catch (e) {
+    ok(false, "Got an error: " + DevToolsUtils.safeErrorString(e));
+  } finally {
+    SimpleTest.finish();
+  }
+};
+</script>
+</pre>
+</body>
+</html>

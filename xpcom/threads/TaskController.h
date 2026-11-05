@@ -281,6 +281,16 @@ class IdleTaskManager : public TaskManager {
   std::atomic<uint64_t> mProcessedTaskCount;
 };
 
+// A task manager implementation for tasks that run only when the main thread
+// has nothing else to do. They lose against everything else, and callers asking
+// whether the main thread has real work can discount them. While an idle task
+// is queued we suspend ourselves, because an idle task is not runnable until
+// the main thread runs out of tasks and asks for a deadline.
+class LowestTaskManager : public TaskManager {
+ public:
+  bool IsSuspended(const MutexAutoLock& aProofOfLock) override;
+};
+
 // The TaskController is the core class of the scheduler. It is used to
 // schedule tasks to be executed, as well as to reprioritize tasks that have
 // already been scheduled. The core functions to do this are AddTask and
@@ -309,6 +319,8 @@ class TaskController {
     mIdleTaskManager = aIdleTaskManager;
   }
   IdleTaskManager* GetIdleTaskManager() { return mIdleTaskManager.get(); }
+
+  LowestTaskManager* GetLowestTaskManager() { return mLowestTaskManager.get(); }
 
   uint64_t RunOutOfMTTasksCount() { return mRunOutOfMTTasksCounter; }
 
@@ -359,19 +371,18 @@ class TaskController {
 
 #ifdef MOZ_MEMORY
   // To be called once during startup.
-  static void SetupIdleMemoryCleanup();
+  static void SetupMemoryCleanup();
 
   // Used internally to update prefs (can't be private, though).
-  void UpdateIdleMemoryCleanupPrefs();
+  void UpdateMemoryCleanupPrefs();
 
-  // If needed, schedule a round of idle processing for moz_jemalloc's
-  // idle purge.
-  void MayScheduleIdleMemoryCleanup();
+  // If needed, schedule a round of purging for moz_jemalloc's lazy purge.
+  void MayScheduleMemoryCleanup();
 
-  // Request idle memory cleanup, e.g. after GC/CC completion.
-  // Unlike MayScheduleIdleMemoryCleanup, this does not check for pending
+  // Request a memory cleanup, e.g. after GC/CC completion.
+  // Unlike MayScheduleMemoryCleanup, this does not check for pending
   // tasks -- the caller knows cleanup is needed regardless.
-  void RequestIdleMemoryCleanup(StaticString aReason);
+  void RequestMemoryCleanup(StaticString aReason);
 #endif
 
  private:
@@ -476,6 +487,9 @@ class TaskController {
   CondVar* mExternalCondVar = nullptr;
   // Idle task manager so we can properly do idle state stuff.
   RefPtr<IdleTaskManager> mIdleTaskManager;
+
+  // Task manager for the tasks that run only if nothing else does.
+  RefPtr<LowestTaskManager> mLowestTaskManager;
 
   // How many times the main thread was empty.
   std::atomic<uint64_t> mRunOutOfMTTasksCounter;

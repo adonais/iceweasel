@@ -85,6 +85,10 @@ class nsVideoFrame : public nsContainerFrame,
   nsIContent* GetCaptionOverlay() const { return mCaptionDiv; }
   nsIContent* GetVideoControls() const;
 
+  // Sets the mPosterImage's src attribute to be the video's poster attribute.
+  // Only valid on frames for video elements, not audio elements.
+  void UpdatePosterSource(bool aNotify);
+
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
@@ -102,11 +106,6 @@ class nsVideoFrame : public nsContainerFrame,
 
   // Get the poster image's size if there is any.
   mozilla::Maybe<nsSize> PosterImageSize() const;
-
-  // Sets the mPosterImage's src attribute to be the video's poster attribute,
-  // if we're the frame for a video element. Only call on frames for video
-  // elements, not for frames for audio elements.
-  void UpdatePosterSource(bool aNotify);
 
   // Notify the mediaElement that the mCaptionDiv was created.
   void UpdateTextTrack();

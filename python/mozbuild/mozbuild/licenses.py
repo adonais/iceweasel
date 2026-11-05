@@ -9,8 +9,10 @@ and by `mach licenses`, which renders about:license from a configured
 tree without a build. Keeping the aggregation here stops the two from drifting.
 """
 
+import ast
 import collections
 import os
+import re
 
 import mozpack.path as mozpath
 import yaml
@@ -21,6 +23,8 @@ from mozbuild.frontend.data import (
     DeclaredLicenseNotice,
     LicenseError,
 )
+
+MARKDOWN_BREAK = re.compile(r"<br\s*/?>$", re.MULTILINE)
 
 CoveringManifest = collections.namedtuple(
     "CoveringManifest", ("path", "license", "license_file")
@@ -193,6 +197,116 @@ def app_license_blocks(context):
     return paths
 
 
+def _literal_strings(node):
+    """The string literals a list or tuple holds, or None if it holds others."""
+    if not isinstance(node, (ast.List, ast.Tuple)):
+        return None
+    if not all(
+        isinstance(element, ast.Constant) and isinstance(element.value, str)
+        for element in node.elts
+    ):
+        return None
+    return [element.value for element in node.elts]
+
+
+def _license_target(node):
+    """Describe an assignment target as (variable, license id, flag).
+
+    `LICENSES["mit"].paths` is ("LICENSES", "mit", "paths") and a bare
+    `LICENSES` is ("LICENSES", None, None). Anything else, a computed id
+    among them, is (None, None, None).
+    """
+    flag = None
+    if isinstance(node, ast.Attribute):
+        flag = node.attr
+        node = node.value
+    license_id = None
+    if isinstance(node, ast.Subscript):
+        key = node.slice
+        if not (isinstance(key, ast.Constant) and isinstance(key.value, str)):
+            return None, None, None
+        license_id = key.value
+        node = node.value
+    elif flag is not None:
+        return None, None, None
+    if isinstance(node, ast.Name) and node.id in ("LICENSES", "LICENSED_UNDER"):
+        return node.id, license_id, flag
+    return None, None, None
+
+
+def declared_coverage(topsrcdir, mozbuild_paths):
+    """Map each LICENSES id to its `spdx` and every path declared under it.
+
+    For callers without a configured tree, such as `mach vendor rust`, so the
+    moz.build files are read from their syntax trees rather than executed:
+    every branch counts, as a path is covered if any configuration covers it.
+    A value that is not a literal is not counted, so a check against the result
+    reports the paths it covers as uncovered rather than passing them unseen.
+
+    `mozbuild_paths` are relative to `topsrcdir`.
+    """
+    spdx = {}
+    coverage = collections.defaultdict(set)
+    for relpath in mozbuild_paths:
+        try:
+            with open(mozpath.join(topsrcdir, relpath), encoding="utf-8") as fh:
+                tree = ast.parse(fh.read(), filename=relpath)
+        except (OSError, SyntaxError, ValueError):
+            continue
+
+        relsrcdir = mozpath.dirname(relpath)
+        referenced = set()
+        referenced_paths = collections.defaultdict(list)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AugAssign):
+                targets = [node.target]
+            elif isinstance(node, ast.Assign):
+                targets = node.targets
+            else:
+                continue
+            for target in targets:
+                variable, license_id, flag = _license_target(target)
+                if variable is None:
+                    continue
+                if license_id is None:
+                    if variable == "LICENSED_UNDER":
+                        referenced.update(_literal_strings(node.value) or ())
+                elif flag == "spdx" and variable == "LICENSES":
+                    if isinstance(node.value, ast.Constant):
+                        spdx[license_id] = node.value.value
+                elif flag == "paths":
+                    paths = _literal_strings(node.value) or ()
+                    if variable == "LICENSES":
+                        coverage[license_id].update(
+                            mozpath.normpath(path) for path in paths
+                        )
+                    else:
+                        referenced_paths[license_id].extend(
+                            mozpath.normpath(mozpath.join(relsrcdir, path))
+                            for path in paths
+                        )
+
+        # As in from_context(): LICENSED_UNDER without paths covers the
+        # directory of the moz.build naming it.
+        for license_id in referenced:
+            coverage[license_id].update(referenced_paths[license_id] or [relsrcdir])
+
+    return {
+        license_id: {"spdx": spdx.get(license_id), "paths": coverage[license_id]}
+        for license_id in spdx.keys() | coverage.keys()
+    }
+
+
+def covering_licenses(directory, coverage):
+    """The ids whose declared paths cover `directory` or one of its parents."""
+    directory = mozpath.normpath(directory)
+    return sorted(
+        license_id
+        for license_id, declared in coverage.items()
+        if mozpath.basedir(directory, declared["paths"])
+    )
+
+
 class LicenseCollection:
     """Collects DeclaredLicenseNotice and DeclaredLicensedPaths objects."""
 
@@ -242,6 +356,9 @@ class LicenseCollection:
             notice["html"] = text_path.endswith(".html")
             with open(text_path, encoding="utf-8") as fh:
                 notice["text"] = fh.read()
+            # A Markdown hard line break would show as a literal tag in <pre>.
+            if text_path.endswith(".md"):
+                notice["text"] = MARKDOWN_BREAK.sub("", notice["text"])
             notice["paths"] = sorted(self._coverage.get(license_id, ()))
             licenses.append(notice)
         return licenses

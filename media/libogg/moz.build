@@ -25,6 +25,8 @@ include('/tools/fuzzing/libfuzzer-config.mozbuild')
 if CONFIG['FUZZING']:
     DEFINES['DISABLE_CRC'] = 1
 
-LICENSED_UNDER += [
-    "xiph",
-]
+# The text is upstream's COPYING, which names the copyright holders.
+LICENSES += ["libogg"]
+LICENSES["libogg"].title = "libogg License"
+
+LICENSED_UNDER += ["libogg"]

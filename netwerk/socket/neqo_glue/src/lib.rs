@@ -40,9 +40,9 @@ use neqo_http3::{
 };
 use neqo_transport::{
     stream_id::StreamType, streams::SendGroupId, CongestionControl, Connection,
-    ConnectionParameters, Error as TransportError, HyStartCssBaseline, Output, OutputBatch,
-    RandomConnectionIdGenerator, SlowStart, Stats as TransportStats, StreamDataLimit, StreamId,
-    Version,
+    ConnectionParameters, DatagramQueueOutcome, Error as TransportError, HyStartCssBaseline,
+    Output, OutputBatch, RandomConnectionIdGenerator, SlowStart, Stats as TransportStats,
+    StreamDataLimit, StreamId, Version,
 };
 use nserror::{
     nsresult, NS_BASE_STREAM_WOULD_BLOCK, NS_ERROR_CONNECTION_REFUSED,
@@ -2043,11 +2043,14 @@ impl WebTransportEventExternal {
         match event {
             WebTransportEvent::Negotiated(n) => Self::Negotiated(n),
             WebTransportEvent::NewSession {
-                stream_id, status, ..
+                stream_id, status, headers
             } => {
-                data.extend_from_slice(b"HTTP/3 ");
-                data.extend_from_slice(status.to_string().as_bytes());
-                data.extend_from_slice(b"\r\n\r\n");
+                if convert_h3_to_h1_headers(&headers, data) != NS_OK {
+                    data.clear();
+                    data.extend_from_slice(b"HTTP/3 ");
+                    data.extend_from_slice(status.to_string().as_bytes());
+                    data.extend_from_slice(b"\r\n\r\n");
+                }
                 Self::Session(stream_id.as_u64())
             }
             WebTransportEvent::SessionClosed {
@@ -2696,29 +2699,41 @@ pub extern "C" fn neqo_http3conn_webtransport_send_datagram(
     session_id: u64,
     data: &mut ThinVec<u8>,
     tracking_id: u64,
+    below_high_water_mark: &mut bool,
     send_group_id: u64,
     send_order: i64,
+    age_us: u64,
 ) -> nsresult {
     let id = if tracking_id == 0 {
         None
     } else {
         Some(tracking_id)
     };
-    // The local neqo2 vendor doesn't yet support per-datagram send group/order
-    // prioritization; accept the params from the C++ side but don't forward
-    // them until neqo grows the corresponding API.
-    let _ = (send_group_id, send_order);
+    // Gecko's TimeStamp and Instant need not share a clock, so the write time
+    // comes across as an age.
+    let now = Instant::now();
+    let written = now
+        .checked_sub(Duration::from_micros(age_us))
+        .unwrap_or(now);
     match conn.conn.webtransport_send_datagram(
         StreamId::from(session_id),
         data,
         id,
-        Instant::now(),
+        written,
+        SendGroupId::new(send_group_id),
+        send_order,
     ) {
-        Ok(_) => NS_OK,
+        Ok(outcome) => {
+            // A queue that had to evict to make room is full, so apply
+            // backpressure regardless of where the high water mark sits.
+            *below_high_water_mark = matches!(outcome, DatagramQueueOutcome::Ok);
+            NS_OK
+        }
         Err(Http3Error::Transport(TransportError::TooMuchData)) => NS_ERROR_NOT_AVAILABLE,
         Err(_) => NS_ERROR_UNEXPECTED,
     }
 }
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_connect_udp_send_datagram(
     conn: &mut NeqoHttp3Conn,
@@ -2761,6 +2776,28 @@ pub extern "C" fn neqo_http3conn_webtransport_max_datagram_size(
             *result = size;
             NS_OK
         })
+}
+
+#[no_mangle]
+pub extern "C" fn neqo_http3conn_webtransport_set_datagram_max_buffered_datagrams(
+    conn: &mut NeqoHttp3Conn,
+    session_id: u64,
+    max_buffered_datagrams: u32,
+) -> nsresult {
+    // Needs neqo's webtransport_set_max_buffered_datagrams.
+    let _ = (conn, session_id, max_buffered_datagrams);
+    NS_OK
+}
+
+#[no_mangle]
+pub extern "C" fn neqo_http3conn_webtransport_set_datagram_max_age(
+    conn: &mut NeqoHttp3Conn,
+    session_id: u64,
+    max_age: f64,
+) -> nsresult {
+    // Needs neqo's webtransport_set_datagram_max_age.
+    let _ = (conn, session_id, max_age);
+    NS_OK
 }
 
 /// # Safety

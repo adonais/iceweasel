@@ -81,7 +81,6 @@ bool FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragmentString(
       aFragment, uri);
   ParsedFragmentDirectiveResult fragmentDirective;
   const bool hasRemovedFragmentDirective =
-      StaticPrefs::dom_text_fragments_enabled() &&
       parse_fragment_directive(&aFragment, &fragmentDirective);
   if (hasRemovedFragmentDirective) {
     TEXT_FRAGMENT_LOG(
@@ -120,7 +119,7 @@ bool FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragmentString(
 
 void FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragment(
     nsCOMPtr<nsIURI>& aURI, nsTArray<TextDirective>* aTextDirectives) {
-  if (!aURI || !StaticPrefs::dom_text_fragments_enabled()) {
+  if (!aURI) {
     return;
   }
   bool hasRef = false;
@@ -358,9 +357,6 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
 void FragmentDirective::HighlightTextDirectives(
     const nsTArray<RefPtr<Range>>& aTextDirectiveRanges) {
   MOZ_ASSERT(mDocument);
-  if (!StaticPrefs::dom_text_fragments_enabled()) {
-    return;
-  }
   auto uri = TextDirectiveUtil::ShouldLog() && mDocument->GetDocumentURI()
                  ? mDocument->GetDocumentURI()->GetSpecOrDefault()
                  : nsCString();
@@ -407,9 +403,6 @@ void FragmentDirective::HighlightTextDirectives(
 
 void FragmentDirective::GetTextDirectiveRanges(
     nsTArray<RefPtr<Range>>& aRanges) const {
-  if (!StaticPrefs::dom_text_fragments_enabled()) {
-    return;
-  }
   auto* presShell = mDocument ? mDocument->GetPresShell() : nullptr;
   if (!presShell) {
     return;
@@ -429,9 +422,6 @@ void FragmentDirective::GetTextDirectiveRanges(
   }
 }
 void FragmentDirective::RemoveAllTextDirectives(ErrorResult& aRv) {
-  if (!StaticPrefs::dom_text_fragments_enabled()) {
-    return;
-  }
   auto* presShell = mDocument ? mDocument->GetPresShell() : nullptr;
   if (!presShell) {
     return;
@@ -450,11 +440,6 @@ already_AddRefed<Promise> FragmentDirective::CreateTextDirectiveForRanges(
       Promise::Create(mDocument->GetRelevantGlobal(), IgnoreErrors());
   if (!resultPromise) {
     return nullptr;
-  }
-  if (!StaticPrefs::dom_text_fragments_enabled()) {
-    TEXT_FRAGMENT_LOG("Creating text fragments is disabled.");
-    resultPromise->MaybeResolve(JS::NullHandleValue);
-    return resultPromise.forget();
   }
   if (aRanges.IsEmpty()) {
     TEXT_FRAGMENT_LOG("No ranges. Nothing to do here...");

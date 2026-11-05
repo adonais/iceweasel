@@ -100,6 +100,7 @@ class RtpReceiveChannelHelper : public Base, public MediaChannelUtil {
         transport_overhead_per_packet_(0),
         num_network_route_changes_(0) {}
   ~RtpReceiveChannelHelper() override = default;
+  void EnableSframe() override {}
   const std::vector<RtpExtension>& recv_extensions() {
     return recv_extensions_;
   }
@@ -281,6 +282,7 @@ class RtpSendChannelHelper : public Base, public MediaChannelUtil {
         transport_overhead_per_packet_(0),
         num_network_route_changes_(0) {}
   ~RtpSendChannelHelper() override = default;
+  void EnableSframe() override {}
   const std::vector<RtpExtension>& send_extensions() {
     return send_extensions_;
   }

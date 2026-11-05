@@ -15,3 +15,34 @@ if CONFIG['OS_ARCH'] == 'Darwin':
 Library('breakpad_common_s')
 
 include('/toolkit/crashreporter/crashreporter.mozbuild')
+
+SOURCE_HEADERS += [
+	"arm_ex_reader.h",
+	"arm_ex_to_module.h",
+	"basictypes.h",
+	"byte_cursor.h",
+	"convert_UTF.h",
+	"dwarf_cfi_to_module.h",
+	"dwarf_cu_to_module.h",
+	"dwarf_line_to_module.h",
+	"dwarf_range_list_handler.h",
+	"language.h",
+	"long_string_dictionary.h",
+	"macros.h",
+	"md5.h",
+	"memory_allocator.h",
+	"memory_range.h",
+	"minidump_type_helper.h",
+	"module.h",
+	"path_helper.h",
+	"scoped_ptr.h",
+	"simple_string_dictionary.h",
+	"stabs_reader.h",
+	"stabs_to_module.h",
+	"stdio_wrapper.h",
+	"string_conversion.h",
+	"symbol_data.h",
+	"test_assembler.h",
+	"unordered.h",
+	"using_std_string.h",
+]

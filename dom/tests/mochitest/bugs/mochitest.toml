@@ -328,7 +328,6 @@ support-files = [
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1781569, Bug 1661132
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1781569
 ]
 
 ["test_toJSON.html"]

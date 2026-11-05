@@ -1,0 +1,16 @@
+EXTRA_PP_JS_MODULES += [
+    "AllowedPP.sys.mjs",
+    "NewPP.sys.mjs",
+]
+
+FINAL_TARGET_FILES.modules += [
+    "NewFinalTarget.sys.mjs",
+]
+
+FINAL_TARGET_PP_FILES.modules["foo"] += [
+    "NewFinalTargetPP.sys.mjs",
+]
+
+FINAL_TARGET_FILES.defaults += [
+    "NotAModule.js",
+]

@@ -9,6 +9,7 @@
 #include "js/Value.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/Span.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/IterableIterator.h"
 #include "mozilla/dom/QueuingStrategyBinding.h"
@@ -184,6 +185,15 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
   void GetCurrentBYOBRequestView(JSContext* aCx,
                                  JS::MutableHandle<JSObject*> aView,
                                  ErrorResult& aRv);
+
+  // https://streams.spec.whatwg.org/#readablestream-pull-from-bytes
+  // Returns the number of bytes actually pulled (<= aBytes.Length()); the
+  // caller is responsible for handling any bytes left over. Meaningful only
+  // when aRv did not fail. 0 with aRv unset means the stream could not take
+  // the bytes yet and the caller should retry on the next pull.
+  MOZ_CAN_RUN_SCRIPT uint64_t PullFromBytes(JSContext* aCx,
+                                            mozilla::Span<const uint8_t> aBytes,
+                                            ErrorResult& aRv);
 
   // The following algorithms can be used on arbitrary ReadableStream instances,
   // including ones that are created by web developers. They can all fail in

@@ -202,6 +202,7 @@ export class Downloader {
       `${Services.uuid.generateUUID().toString().slice(1, -1)}.zip`
     );
     let allSuccess = true;
+    let zipReader = null;
 
     try {
       // 1. Download the zip archive to disk
@@ -219,7 +220,7 @@ export class Downloader {
       });
 
       // 2. Read the zipped content
-      const zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(
+      zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(
         Ci.nsIZipReader
       );
 
@@ -300,6 +301,21 @@ export class Downloader {
         ex
       );
       return false;
+    } finally {
+      try {
+        zipReader?.close();
+      } catch (ex) {
+        lazy.console.warn(
+          `${this.bucketName}/${this.collectionName}: Unable to close the attachment bundle.`,
+          ex
+        );
+      }
+      await IOUtils.remove(tmpZipFilePath).catch(ex =>
+        lazy.console.warn(
+          `${this.bucketName}/${this.collectionName}: Unable to remove the attachment bundle.`,
+          ex
+        )
+      );
     }
 
     return allSuccess;

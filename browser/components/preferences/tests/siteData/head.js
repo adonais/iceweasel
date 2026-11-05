@@ -214,8 +214,15 @@ async function addTestData(data) {
       "string",
       "Passed an origin string into addTestData."
     );
+    let principal =
+      Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+        site.origin
+      );
     if (site.persisted) {
       await SiteDataTestUtils.persist(site.origin);
+      registerCleanupFunction(() =>
+        Services.perms.removeFromPrincipal(principal, "persistent-storage")
+      );
     }
 
     if (site.usage) {
@@ -228,11 +235,6 @@ async function addTestData(data) {
         name: `cookie${cookieID++}`,
       });
     }
-
-    let principal =
-      Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-        site.origin
-      );
 
     hosts.add(principal.baseDomain || principal.host);
   }

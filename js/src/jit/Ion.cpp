@@ -95,6 +95,7 @@ JitRuntime::~JitRuntime() {
   MOZ_ASSERT(ionLazyLinkList_.ref().isEmpty());
 
   MOZ_ASSERT(ionFreeTaskBatch_.ref().empty());
+  MOZ_ASSERT(debugModeOSRReturnSites_.ref().empty());
 
   // By this point, the jitcode global table should be empty.
   MOZ_ASSERT_IF(jitcodeGlobalTable_, jitcodeGlobalTable_->empty());
@@ -167,6 +168,10 @@ bool JitRuntime::generateTrampolines(JSContext* cx) {
   JitSpew(JitSpew_Codegen, "# Emitting invalidator");
   generateInvalidator(masm, &bailoutTail);
   rangeRecorder.recordOffset("Trampoline: Invalidator");
+
+  JitSpew(JitSpew_Codegen, "# Emitting BaselineDebugModeOSR handler");
+  generateBaselineDebugModeOSRHandler(masm);
+  rangeRecorder.recordOffset("Trampoline: BaselineDebugModeOSR");
 
   JitSpew(JitSpew_Codegen, "# Emitting EnterJIT [Normal] trampoline");
   generateEnterJIT(cx, masm, EnterJitMode::Normal);

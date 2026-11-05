@@ -60,26 +60,22 @@ macosx64-aarch64-socorro-cli:
             - linux64-rust-macos-toolchain
             - macosx64-sdk-toolchain
 
-win32-socorro-cli:
-    treeherder:
-        symbol: TW32(socorro-cli)
-    worker:
-        env:
-            EXTRA_PATH: /builds/worker/fetches/nasm
-    run:
-        arguments: ['i686-pc-windows-msvc']
-    fetches:
-        toolchain:
-            - linux64-clang-toolchain
-            - linux64-nasm
-            - linux64-rust-windows-toolchain
-            - vs-toolchain
-
 win64-socorro-cli:
     treeherder:
         symbol: TW64(socorro-cli)
     run:
         arguments: ['x86_64-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows-toolchain
+            - vs-toolchain
+
+win64-aarch64-socorro-cli:
+    treeherder:
+        symbol: TWA64(socorro-cli)
+    run:
+        arguments: ['aarch64-pc-windows-msvc']
     fetches:
         toolchain:
             - linux64-clang-toolchain

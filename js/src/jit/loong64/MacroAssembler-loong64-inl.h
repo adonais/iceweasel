@@ -3884,7 +3884,7 @@ void MacroAssembler::truncSatFloat32x4ToInt32x4(FloatRegister src,
 
   // Normalize NaNs.
   // dest = (0.f for i in LANES if IsNaN(src[i]) else src[i])
-  as_vxor_v(scratch2, scratch2, scratch2);
+  as_vldi(scratch2, 0);
   as_vfcmp_cond_s(CUN, scratch, src, src);
   as_vbitsel_v(dest, src, scratch2, scratch);
 
@@ -3928,7 +3928,7 @@ void MacroAssembler::truncSatFloat64x2ToInt32x4(FloatRegister src,
 
   // Normalize NaNs.
   // dest = (0.d for i in LANES if IsNaN(src[i]) else src[i])
-  as_vxor_v(scratch2, scratch2, scratch2);
+  as_vldi(scratch2, 0);
   as_vfcmp_cond_d(CUN, scratch, src, src);
   as_vbitsel_v(dest, src, scratch2, scratch);
 
@@ -3948,7 +3948,7 @@ void MacroAssembler::truncSatFloat64x2ToInt32x4(FloatRegister src,
   as_vfcmp_cond_d(CLT, scratch2, dest, temp);
   as_vbitsel_v(dest, dest, temp, scratch2);
 
-  as_vxor_v(scratch, scratch, scratch);
+  as_vldi(scratch, 0);
   // dest = (dest[0].i32, dest[1].i32, 0.i32, 0.i32)
   as_vftintrz_w_d(dest, scratch, dest);
 }
@@ -3966,7 +3966,7 @@ void MacroAssembler::unsignedTruncSatFloat64x2ToInt32x4(FloatRegister src,
 
   // Normalize NaNs.
   // dest = (0.d for i in LANES if IsNaN(src[i]) else src[i])
-  as_vxor_v(scratch2, scratch2, scratch2);
+  as_vldi(scratch2, 0);
   as_vfcmp_cond_d(CUN, scratch, src, src);
   as_vbitsel_v(dest, src, scratch2, scratch);
 
@@ -3989,7 +3989,7 @@ void MacroAssembler::unsignedTruncSatFloat64x2ToInt32x4(FloatRegister src,
   // There is no such thing as "vftintrz.wu.d".
   as_vftintrz_lu_d(dest, dest);
 
-  as_vxor_v(scratch, scratch, scratch);
+  as_vldi(scratch, 0);
   as_vpickev_w(dest, scratch, dest);
 }
 
@@ -4006,7 +4006,7 @@ void MacroAssembler::unsignedTruncFloat32x4ToInt32x4Relaxed(
 void MacroAssembler::truncFloat64x2ToInt32x4Relaxed(FloatRegister src,
                                                     FloatRegister dest) {
   ScratchSimd128Scope scratch(*this);
-  as_vxor_v(scratch, scratch, scratch);
+  as_vldi(scratch, 0);
   as_vftintrz_w_d(dest, scratch, src);
 }
 
@@ -4014,7 +4014,7 @@ void MacroAssembler::unsignedTruncFloat64x2ToInt32x4Relaxed(
     FloatRegister src, FloatRegister dest) {
   ScratchSimd128Scope scratch(*this);
   ScratchSimd128Scope2 scratch2(*this);
-  as_vxor_v(scratch, scratch, scratch);
+  as_vldi(scratch, 0);
   as_vftintrz_lu_d(scratch2, src);
   as_vpickev_w(dest, scratch, scratch2);
 }
@@ -4022,7 +4022,7 @@ void MacroAssembler::unsignedTruncFloat64x2ToInt32x4Relaxed(
 void MacroAssembler::convertFloat64x2ToFloat32x4(FloatRegister src,
                                                  FloatRegister dest) {
   ScratchSimd128Scope scratch(*this);
-  as_vxor_v(scratch, scratch, scratch);
+  as_vldi(scratch, 0);
   as_vfcvt_s_d(dest, scratch, src);
 }
 
@@ -4586,7 +4586,7 @@ void MacroAssembler::unsignedTruncSatFloat32x4ToInt32x4(FloatRegister src,
 
   // Normalize NaNs.
   // dest = (0.f for i in LANES if IsNaN(src[i]) else src[i])
-  as_vxor_v(scratch2, scratch2, scratch2);
+  as_vldi(scratch2, 0);
   as_vfcmp_cond_s(CUN, scratch, src, src);
   as_vbitsel_v(dest, src, scratch2, scratch);
 

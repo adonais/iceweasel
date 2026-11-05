@@ -111,6 +111,33 @@
   grid-row: 4;
 }
 
+// Where a centered logo would push .content down a row (see Base.jsx) but the
+// search bar's variant B keeps the logo in the sidebar, the search starts on
+// that row instead, with the card behind it starting where the logo would.
+.nova-enabled.container.search-lowered {
+  > .sticky-search-sentinel {
+    grid-row: 3;
+  }
+
+  > .search-wrapper {
+    grid-row: 3 / span 2;
+  }
+
+  > :is(.sticky-search-sentinel, .search-wrapper) {
+    // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
+    margin-block-start: var(--search-card-overhang-block-start);
+
+    // Minus the search-wrapper's block padding in _Search.scss.
+    @media (height > #{$break-point-sticky-search}) {
+      margin-block-start: calc(var(--search-card-overhang-block-start) - var(--space-xlarge));
+    }
+  }
+
+  .content {
+    grid-row: 5;
+  }
+}
+
 // Spans all three columns, so it reclaims both side gutters and their gaps
 // (324px) at widths where .content is still bounded by them. Capped at the same
 // columns .content is, so the two stay aligned at every width.
@@ -359,7 +386,6 @@
 .nova-enabled
 .content-full-width.side-by-side-content-lead.side-by-side-active.side-by-side-five {
   @include at-band-fits-pair(4) {
-    // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
     grid-template-columns: --col-span(16) --col-span(4);
   }
 }
@@ -367,7 +393,6 @@
 .nova-enabled
 .content-full-width.side-by-side-widgets-lead.side-by-side-active.side-by-side-five {
   @include at-band-fits-pair(4) {
-    // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
     grid-template-columns: --col-span(4) --col-span(16);
   }
 }

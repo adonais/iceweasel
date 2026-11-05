@@ -8,6 +8,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "nsIObserverService.h"
 #include "nsServiceManagerUtils.h"
 #include "nsXULAppAPI.h"
@@ -55,13 +56,17 @@ CaptivePortalService::~CaptivePortalService() {
        XRE_GetProcessType() == GeckoProcessType_Default));
 }
 
+bool CaptivePortalService::IsActive() const {
+  return mStarted && StaticPrefs::network_captive_portal_service_enabled();
+}
+
 nsresult CaptivePortalService::PerformCheck() {
   LOG(
       ("CaptivePortalService::PerformCheck mRequestInProgress:%d "
        "mInitialized:%d mStarted:%d\n",
        mRequestInProgress, mInitialized, mStarted));
   // Don't issue another request if last one didn't complete
-  if (mRequestInProgress || !mInitialized || !mStarted) {
+  if (mRequestInProgress || !mInitialized || !IsActive()) {
     return NS_OK;
   }
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
@@ -102,6 +107,10 @@ nsresult CaptivePortalService::RearmTimer() {
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
     mTimer = nullptr;
     return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  }
+
+  if (!IsActive()) {
+    return NS_OK;
   }
 
   // If we have successfully determined the state, and we have never detected
@@ -153,6 +162,10 @@ nsresult CaptivePortalService::Start() {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
+  if (!StaticPrefs::network_captive_portal_service_enabled()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   if (xpc::AreNonLocalConnectionsDisabled() &&
       !Preferences::GetBool("network.captive-portal-service.testMode", false)) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -175,13 +188,9 @@ nsresult CaptivePortalService::Start() {
   mStarted = true;
   mEverBeenCaptive = false;
 
-  // Get the delay prefs
-  Preferences::GetUint("network.captive-portal-service.minInterval",
-                       &mMinInterval);
-  Preferences::GetUint("network.captive-portal-service.maxInterval",
-                       &mMaxInterval);
-  Preferences::GetFloat("network.captive-portal-service.backoffFactor",
-                        &mBackoffFactor);
+  mMinInterval = StaticPrefs::network_captive_portal_service_minInterval();
+  mMaxInterval = StaticPrefs::network_captive_portal_service_maxInterval();
+  mBackoffFactor = StaticPrefs::network_captive_portal_service_backoffFactor();
 
   LOG(("CaptivePortalService::Start min:%u max:%u backoff:%.2f\n", mMinInterval,
        mMaxInterval, mBackoffFactor));
@@ -252,6 +261,10 @@ CaptivePortalService::RecheckCaptivePortal() {
     return NS_OK;
   }
 
+  if (!IsActive()) {
+    return NS_OK;
+  }
+
   // This is called for user activity. We need to reset the slack count,
   // so the checks continue to be quite frequent.
   mSlackCount = 0;
@@ -279,6 +292,10 @@ CaptivePortalService::Notify(nsITimer* aTimer) {
   LOG(("CaptivePortalService::Notify\n"));
   MOZ_ASSERT(aTimer == mTimer);
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
+
+  if (!IsActive()) {
+    return NS_OK;
+  }
 
   PerformCheck();
 
@@ -373,7 +390,8 @@ NS_IMETHODIMP
 CaptivePortalService::Prepare() {
   LOG(("CaptivePortalService::Prepare\n"));
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed) ||
+      !IsActive()) {
     return NS_OK;
   }
   // XXX: Finish preparation shouldn't be called until dns and routing is
@@ -389,6 +407,9 @@ CaptivePortalService::Complete(bool success) {
   LOG(("CaptivePortalService::Complete(success=%d) mState=%d\n", success,
        mState));
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
+  if (!IsActive()) {
+    return NS_OK;
+  }
   mLastChecked = TimeStamp::Now();
 
   // Note: this callback gets called when:

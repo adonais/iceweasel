@@ -1355,7 +1355,7 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
     // main thread soon and/or other events hit the main thread regularly
     // enough in those processes we activate lazy purge for, such that this
     // does not matter.
-    TaskController::Get()->MayScheduleIdleMemoryCleanup();
+    TaskController::Get()->MayScheduleMemoryCleanup();
   }
 #endif
 

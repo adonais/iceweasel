@@ -261,7 +261,6 @@ jobs:
       run-on-projects:
           - mozilla-central
           - mozilla-beta
-          - mozilla-esr153
       when:
           - {weekday: 'Friday', hour: 17, minute: 0}
 
@@ -397,6 +396,7 @@ jobs:
           type: decision-task
           treeherder-symbol: perftest-fenix-startup
           target-tasks-method: perftest-fenix-startup
+          include-push-tasks: true
       run-on-projects:
           - mozilla-central
       when:
@@ -415,6 +415,7 @@ jobs:
           type: decision-task
           treeherder-symbol: perftest-applink-p
           target-tasks-method: perftest-applink-profiling
+          include-push-tasks: true
       run-on-projects:
           - mozilla-central
       when:
@@ -440,6 +441,7 @@ jobs:
           type: decision-task
           treeherder-symbol: eslint-build
           target-tasks-method: eslint-build
+          include-push-tasks: true
       run-on-projects:
           - mozilla-central
       when:
@@ -498,6 +500,8 @@ jobs:
           type: decision-task
           treeherder-symbol: osint
           target-tasks-method: os-integration
+          include-push-tasks: true
+          optimize-target-tasks: false
       run-on-projects:
           - mozilla-central
       when:
@@ -568,6 +572,7 @@ jobs:
           type: decision-task
           treeherder-symbol: DTbc
           target-tasks-method: devtools_backward_compat
+          include-push-tasks: true
       run-on-projects:
           - mozilla-central
       # Replaces manual smoke tests from the DevTools release checklist.

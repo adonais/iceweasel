@@ -9,10 +9,12 @@ UNIFIED_SOURCES = [
     "TestTouchResampler.cpp",
     "TestWidgetMouseEventCtors.cpp",
     "TestWidgetTouchEventCtors.cpp",
+    "TestWidgetTouchEventIPC.cpp",
 ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     UNIFIED_SOURCES += [
+        "TestCocoaFilePickerQueue.mm",
         "TestCocoaStaleDragSession.mm",
         "TestMOZShareURLPasteboardItem.mm",
         "TestNativeKeyBindings.cpp",
@@ -26,6 +28,9 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "TestWinMessageLoggingUtils.cpp",
         "TestWinWindowOcclusionTracker.cpp",
         "TestWinWindowOcclusionTrackerInteractive.cpp",
+    ]
+    SOURCE_HEADERS += [
+        "MockWinWidget.h",
     ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
@@ -63,3 +68,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
         ]
 
 DisableStlWrapping()
+
+SOURCE_HEADERS += [
+    "TestWidgetEventCtors.h",
+]

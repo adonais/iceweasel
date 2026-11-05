@@ -28,6 +28,9 @@ import { TopSiteImpressionWrapper } from "./TopSiteImpressionWrapper";
 import { connect } from "react-redux";
 
 const NEWTAB_SOURCE = "newtab";
+const PREF_OHTTP_UNIFIED_ADS = "unifiedAds.ohttp.enabled";
+const PREF_OHTTP_UNIFIED_ADS_TILE_IMAGES =
+  "unifiedAds.tiles.ohttpImages.enabled";
 
 // Tilt so the lifted drag ghost reads as "picked up" (counter-clockwise).
 const DRAG_GHOST_ROTATION_DEG = -7.5;
@@ -201,6 +204,24 @@ export class TopSiteLink extends React.PureComponent {
     return colorArray[index];
   }
 
+  /**
+   * The favicon URL to render. Sponsored tiles are loaded over OHTTP
+   * through the moz-cached-ohttp protocol when enabled.
+   *
+   * @returns {string|undefined} The favicon URL.
+   */
+  getFaviconURL() {
+    const { link, ohttpSponsoredImagesEnabled } = this.props;
+    if (
+      isSponsored(link) &&
+      ohttpSponsoredImagesEnabled &&
+      link.favicon?.startsWith("https:")
+    ) {
+      return `moz-cached-ohttp://newtab-image/?url=${encodeURIComponent(link.favicon)}`;
+    }
+    return link.favicon;
+  }
+
   calculateStyle() {
     const { defaultStyle, link } = this.props;
 
@@ -241,11 +262,11 @@ export class TopSiteLink extends React.PureComponent {
       imageClassName = "top-site-icon rich-icon";
       imageStyle = {
         backgroundColor: link.backgroundColor,
-        backgroundImage: `url(${tippyTopIcon || link.favicon})`,
+        backgroundImage: `url(${tippyTopIcon || this.getFaviconURL()})`,
       };
     } else if (faviconSize >= MIN_SMALL_FAVICON_SIZE) {
       showSmallFavicon = true;
-      smallFaviconStyle = { backgroundImage: `url(${link.favicon})` };
+      smallFaviconStyle = { backgroundImage: `url(${this.getFaviconURL()})` };
     } else {
       selectedColor = this.generateColor();
       imageClassName = "";
@@ -1023,6 +1044,12 @@ export class _TopSiteList extends React.PureComponent {
         this.props.Prefs.values.isPrivateBrowsingEnabled,
       platform: this.props.Prefs.values.platform,
       privacyInfoUrl: this.props.Prefs.values["privacyInfo.url"],
+      ohttpSponsoredImagesEnabled: !!(
+        this.props.Prefs.values[PREF_OHTTP_UNIFIED_ADS] &&
+        (this.props.Prefs.values[PREF_OHTTP_UNIFIED_ADS_TILE_IMAGES] ||
+          this.props.Prefs.values.trainhopConfig?.ohttpSponsoredTileImages
+            ?.enabled)
+      ),
     };
     const { decorations } = this.props;
     // We assign a key to each placeholder slot. We need it to be independent

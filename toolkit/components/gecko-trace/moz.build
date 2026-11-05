@@ -34,3 +34,8 @@ FINAL_LIBRARY = "xul"
 
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Gecko Trace")
+
+SOURCE_HEADERS += [
+    "SemanticConventions.h",
+    "SpanProcessing.h",
+]

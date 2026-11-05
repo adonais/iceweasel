@@ -375,6 +375,41 @@ add_task(async function test_move_folder_into_descendant_rejects() {
   );
 });
 
+add_task(async function test_move_into_non_folder_rejects() {
+  let target = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "http://example.com/target",
+  });
+  let bm = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "http://example.com/",
+  });
+
+  await Assert.rejects(
+    PlacesUtils.bookmarks.moveToFolder([bm.guid], target.guid, 0),
+    /parentGuid must be a folder/,
+    "Should reject when moving a bookmark into a bookmark"
+  );
+  Assert.equal(
+    (await PlacesUtils.bookmarks.fetch(bm.guid)).parentGuid,
+    PlacesUtils.bookmarks.unfiledGuid,
+    "The bookmark should not have been moved"
+  );
+});
+
+add_task(async function test_move_into_nonexisting_parent_rejects() {
+  let bm = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "http://example.com/",
+  });
+
+  await Assert.rejects(
+    PlacesUtils.bookmarks.moveToFolder([bm.guid], "123456789012", 0),
+    /No bookmarks found for the provided parentGuid/,
+    "Should reject when the target parent doesn't exist"
+  );
+});
+
 add_task(async function test_move_from_differnt_with_no_target_rejects() {
   let bm1 = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,

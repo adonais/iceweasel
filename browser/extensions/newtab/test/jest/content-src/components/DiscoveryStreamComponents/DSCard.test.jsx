@@ -12,8 +12,10 @@ import {
   PlaceholderDSCard,
 } from "content-src/components/DiscoveryStreamComponents/DSCard/DSCard";
 import { SafeAnchor } from "content-src/components/DiscoveryStreamComponents/SafeAnchor/SafeAnchor";
-import { actionCreators as ac } from "common/Actions.mjs";
-import { INITIAL_STATE } from "common/Reducers.sys.mjs";
+import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
+import { Provider } from "react-redux";
+import { createStore, combineReducers } from "redux";
 import React from "react";
 
 const DEFAULT_PROPS = {
@@ -94,6 +96,28 @@ describe("<DSCard>", () => {
       "story_sponsored"
     );
     renderSpy.mockRestore();
+  });
+
+  it("should pair a menu Open in a New Window with its click for dwell time", () => {
+    // DSLinkMenu is connected, so it dispatches through the store rather than
+    // the dispatch prop.
+    const store = createStore(combineReducers(reducers), INITIAL_STATE);
+    const storeDispatch = jest.spyOn(store, "dispatch");
+    const { container } = render(
+      <Provider store={store}>
+        <DSCard dispatch={dispatch} {...DEFAULT_PROPS} />
+      </Provider>
+    );
+    const item = container
+      .querySelector("[data-l10n-id='newtab-menu-open-new-window']")
+      .closest("panel-item");
+    storeDispatch.mockClear();
+    act(() => item.click());
+
+    const [[open], [click]] = storeDispatch.mock.calls;
+    expect(open.data).toHaveProperty("dwell_label", "story_organic");
+    expect(open.data.dwell_id).toBeDefined();
+    expect(click.data.value.dwell_id).toBe(open.data.dwell_id);
   });
 
   it("should pass onLinkClick prop", () => {
@@ -309,6 +333,29 @@ describe("<DSCard>", () => {
           },
         })
       );
+    });
+
+    it("should send the click payload as an open intent", () => {
+      setProps({ id: "fooidx", pos: 9, type: "foo" });
+      jest
+        .spyOn(cardRef.current, "doesLinkTopicMatchSelectedTopic")
+        .mockReturnValue(undefined);
+
+      cardRef.current.onLinkOpenIntent({
+        currentTarget: { href: "https://example.com/" },
+      });
+
+      expect(dispatch).toHaveBeenCalledTimes(1);
+      expect(dispatch).toHaveBeenCalledWith(
+        ac.OnlyToMain({
+          type: at.BROWSER_LINK_OPEN_INTENT,
+          data: {
+            url: "https://example.com/",
+            userEvent: cardRef.current.getClickEventData(),
+          },
+        })
+      );
+      expect(dispatch.mock.calls[0][0].data.userEvent.action_position).toBe(9);
     });
 
     it("should set the right card_type on spocs", () => {

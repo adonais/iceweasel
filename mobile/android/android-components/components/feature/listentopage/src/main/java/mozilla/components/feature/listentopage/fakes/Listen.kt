@@ -11,13 +11,16 @@ import java.util.Locale
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.yield
 import mozilla.components.feature.listentopage.PlaybackPhase
 import mozilla.components.feature.listentopage.PlaybackSpeed
 import mozilla.components.feature.listentopage.PlaybackState
 import mozilla.components.feature.listentopage.Voice
 import mozilla.components.feature.listentopage.playback.ArticleDisplayData
 import mozilla.components.feature.listentopage.playback.AudioFileCache
+import mozilla.components.feature.listentopage.playback.ChunkFile
 import mozilla.components.feature.listentopage.playback.PlaybackController
 import mozilla.components.feature.listentopage.synthesis.SpeechSynthesisException
 import mozilla.components.feature.listentopage.synthesis.SpeechSynthesizer
@@ -179,38 +182,83 @@ class FakeAudioFileCache : AudioFileCache {
  * @property status What to report about the playback. Set it to drive a caller's monitoring, including changes no
  *   command of theirs asked for.
  * @property positionMs The position to report as reached.
- * @property seekedTo Every position it was asked to move to, in order.
+ * @property shouldReportSeek Whether a seek into an item reports where it went before it returns and then suspends.
+ * @property hasSeekedChunk Whether a seek finds the chunk it asks for, as it does unless the player has lost it.
+ * @property startPositionsMs Every position into the article it was asked to start an article at, in order.
+ * @property chunksResumedAfterPlaybackEnded Every chunk it moved on to by itself, as the real controller does when
+ *   audio is queued after the playback ran out, in order.
+ * @property seekRequests Emit into it to stand in for a seek from outside the app.
+ * @property seekedChunkPositions Every chunk it was asked to seek into, with the position into the article it was asked
+ *   to seek to, in order.
+ * @property restartedFiles Every file it was restarted on, in order.
+ * @property restartedChunks Every chunk it was restarted on, in order.
+ * @property restartedPositionsMs Every position into the article it was restarted at, in order.
+ * @property restartChunkStartsMs Where in the article each chunk it was restarted on starts, in order.
+ * @property articleDurationsMs Every article duration it was told about, in order.
+ * @property stopAndBufferPositionsMs Every article position it was asked to stop and buffer at for a seek, in order.
+ * @property finishedAtPositionsMs Every article position it was asked to finish the article at, in order.
+ * @property fileDurationsMs How long each file it was given lasts, in the order the files were given.
  * @property playbackSpeedSet Every speed it was asked to read at, in order.
  */
-class FakePlaybackController(var positionMs: Long = 0L) : PlaybackController {
+class FakePlaybackController(var positionMs: Long = 0L, private val shouldReportSeek: Boolean = false) :
+    PlaybackController {
     val played = mutableListOf<File>()
     val queued = mutableListOf<File>()
     val displayDataList = mutableListOf<ArticleDisplayData>()
     var paused = 0
     var resumed = 0
-    val seekedTo = mutableListOf<Long>()
-    val seekedToItem = mutableListOf<Pair<Int, Long>>()
-    val restartedAt = mutableListOf<Pair<File, Long>>()
+    val startPositionsMs = mutableListOf<Long>()
+    val seekedChunkPositions = mutableListOf<Pair<Int, Long>>()
+    var hasSeekedChunk = true
+    val chunksResumedAfterPlaybackEnded = mutableListOf<Int>()
+    val restartedFiles = mutableListOf<File>()
+    val restartedChunks = mutableListOf<Int>()
+    val restartedPositionsMs = mutableListOf<Long>()
+    val restartChunkStartsMs = mutableListOf<Long>()
+    val articleDurationsMs = mutableListOf<Long>()
+    val fileDurationsMs = mutableListOf<Long?>()
+    val stopAndBufferPositionsMs = mutableListOf<Long>()
+    val finishedAtPositionsMs = mutableListOf<Long>()
     val playbackSpeedSet = mutableListOf<PlaybackSpeed>()
     var released = false
 
     override val status = MutableStateFlow(PlaybackState())
 
+    override val seekRequests = MutableSharedFlow<Long>(extraBufferCapacity = 1)
+
+    override suspend fun setArticleDuration(durationMs: Long) {
+        articleDurationsMs.add(durationMs)
+    }
+
     // What the article now playing says it is, as the real controller keeps it.
     private var displayData: ArticleDisplayData? = null
 
-    override suspend fun play(file: File, articleDisplayData: ArticleDisplayData) {
+    override suspend fun startArticle(
+        chunk: ChunkFile,
+        articleDisplayData: ArticleDisplayData,
+        tabId: String,
+        positionMs: Long,
+    ) {
+        fileDurationsMs.add(chunk.durationMs)
         displayData = articleDisplayData
-        played.add(file)
+        played.add(chunk.file)
+        startPositionsMs.add(positionMs)
         displayDataList.add(articleDisplayData)
 
         status.value = PlaybackState(phase = PlaybackPhase.Buffering, speed = status.value.speed)
     }
 
-    override suspend fun enqueue(file: File) {
+    override suspend fun enqueue(chunk: ChunkFile) {
         val displayData = displayData ?: return
-        queued.add(file)
+        fileDurationsMs.add(chunk.durationMs)
+        queued.add(chunk.file)
         displayDataList.add(displayData)
+
+        // Like the real one, which moves a player that ran out on to what was added, and so out of having ended.
+        if (status.value.phase == PlaybackPhase.Ended) {
+            chunksResumedAfterPlaybackEnded.add(chunk.index)
+            status.value = status.value.copy(phase = PlaybackPhase.Buffering)
+        }
     }
 
     override suspend fun pause() {
@@ -223,17 +271,41 @@ class FakePlaybackController(var positionMs: Long = 0L) : PlaybackController {
         status.value = PlaybackState(phase = PlaybackPhase.Buffering, speed = status.value.speed)
     }
 
-    override suspend fun seekTo(positionMs: Long) {
-        seekedTo.add(positionMs)
+    override suspend fun seekTo(chunkIndex: Int, positionMs: Long): Boolean {
+        seekedChunkPositions.add(chunkIndex to positionMs)
+        if (!hasSeekedChunk) return false
+
+        if (shouldReportSeek) {
+            status.value =
+                status.value.copy(chunk = status.value.chunk.copy(index = chunkIndex), positionMs = positionMs)
+            yield()
+        }
+        return true
     }
 
-    override suspend fun seekTo(itemIndex: Int, positionMs: Long) {
-        seekedToItem.add(itemIndex to positionMs)
+    override suspend fun restartAt(chunk: ChunkFile, chunkStartMs: Long, positionMs: Long) {
+        fileDurationsMs.add(chunk.durationMs)
+        restartedFiles.add(chunk.file)
+        restartedChunks.add(chunk.index)
+        restartedPositionsMs.add(positionMs)
+        restartChunkStartsMs.add(chunkStartMs)
+        played.add(chunk.file)
     }
 
-    override suspend fun restartAt(file: File, positionMs: Long) {
-        restartedAt.add(file to positionMs)
-        played.add(file)
+    override suspend fun finishAt(positionMs: Long) {
+        finishedAtPositionsMs.add(positionMs)
+
+        // Like the session, which pauses the player and shows the end.
+        status.value = status.value.copy(phase = PlaybackPhase.Paused, positionMs = positionMs)
+    }
+
+    override suspend fun stopAndBufferAt(positionMs: Long) {
+        stopAndBufferPositionsMs.add(positionMs)
+
+        // Like the session, which reports the position it buffers at as buffering, or as paused for a player that was
+        // paused.
+        val phase = if (status.value.phase == PlaybackPhase.Paused) PlaybackPhase.Paused else PlaybackPhase.Buffering
+        status.value = status.value.copy(phase = phase, positionMs = positionMs)
     }
 
     override suspend fun setSpeed(speed: PlaybackSpeed) {

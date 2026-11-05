@@ -45,78 +45,6 @@ skip-if = [
   "privateBrowsing"
 ]
 
-["test_databaseShadowing1.js"]
-prefs = ["dom.storage.shadow_writes=true", "security.storage.encryption.sqlite.enabled=false"]
-run-sequentially = ["true"] # test_databaseShadowing2.js depends on a file produced by this test
-# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
-# to it.
-skip-if = [
-  "privateBrowsing"
-]
-
-["test_databaseShadowing2.js"]
-prefs = ["security.storage.encryption.sqlite.enabled=false"]
-run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing1.js
-# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
-# to it.
-skip-if = [
-  "privateBrowsing"
-]
-
-["test_databaseShadowing_clearOrigin1.js"]
-prefs = ["dom.storage.shadow_writes=true", "security.storage.encryption.sqlite.enabled=false"]
-run-sequentially = ["true"] # test_databaseShadowing_clearOrigin2.js depends on a file produced by this test
-# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
-# to it.
-skip-if = [
-  "privateBrowsing"
-]
-
-["test_databaseShadowing_clearOrigin2.js"]
-prefs = ["security.storage.encryption.sqlite.enabled=false"]
-run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing_clearOrigin1.js
-# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
-# to it.
-skip-if = [
-  "privateBrowsing"
-]
-
-["test_databaseShadowing_clearOriginsByPattern1.js"]
-prefs = ["dom.storage.shadow_writes=true", "security.storage.encryption.sqlite.enabled=false"]
-run-sequentially = ["true"] # test_databaseShadowing_clearOriginsByPattern2.js depends on a file produced by this test
-# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
-# to it.
-skip-if = [
-  "privateBrowsing"
-]
-
-["test_databaseShadowing_clearOriginsByPattern2.js"]
-prefs = ["security.storage.encryption.sqlite.enabled=false"]
-run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing_clearOriginsByPattern1.js
-# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
-# to it.
-skip-if = [
-  "privateBrowsing"
-]
-
-["test_databaseShadowing_clearOriginsByPrefix1.js"]
-prefs = ["dom.storage.shadow_writes=true", "security.storage.encryption.sqlite.enabled=false"]
-run-sequentially = ["true"] # test_databaseShadowing_clearOriginsByPrefix2.js depends on a file produced by this test
-# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
-# to it.
-skip-if = [
-  "privateBrowsing"
-]
-
-["test_databaseShadowing_clearOriginsByPrefix2.js"]
-prefs = ["security.storage.encryption.sqlite.enabled=false"]
-run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing_clearOriginsByPrefix1.js
-# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
-# to it.
-skip-if = [
-  "privateBrowsing"
-]
-
 ["test_databaseWorkStarted.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
 # Installs a packaged unencrypted SQLite profile; the PB cipher key can't
@@ -315,4 +243,13 @@ skip-if = [
 # browsing encrypts data under storage/private so skip this test in this case.
 skip-if = [
   "privateBrowsing"
+]
+
+["test_usageUnderflowTelemetry.js"]
+# Rewrites the usage file under storage/default, which private browsing does
+# not use (it uses storage/private, which is cleared at shutdown).
+# Debug builds assert on usage underflows before the event is recorded.
+skip-if = [
+  "privateBrowsing",
+  "debug",
 ]

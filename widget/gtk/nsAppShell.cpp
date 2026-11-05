@@ -29,7 +29,8 @@
 #include "prenv.h"
 #ifdef MOZ_ENABLE_DBUS
 #  include <gio/gio.h>
-
+#endif
+#if defined(MOZ_ENABLE_DBUS) || defined(MOZ_WAYLAND)
 #  include "WidgetUtilsGtk.h"
 #endif
 #include "HeadlessScreenHelper.h"

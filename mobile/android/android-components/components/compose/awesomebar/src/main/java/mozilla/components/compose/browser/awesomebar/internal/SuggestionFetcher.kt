@@ -9,10 +9,9 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.mutableStateOf
 import java.util.concurrent.Executors
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import mozilla.components.compose.browser.awesomebar.AwesomeBarFacts
 import mozilla.components.compose.browser.awesomebar.AwesomeBarFacts.emitAwesomeBarFact
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -36,8 +35,6 @@ internal class SuggestionFetcher(
             )
             .asCoroutineDispatcher()
 
-    @VisibleForTesting internal var fetchJob: Job? = null
-
     /** The current list of suggestions as an observable list. */
     val state = mutableStateOf<Map<AwesomeBar.SuggestionProviderGroup, List<AwesomeBar.SuggestionItem>>>(emptyMap())
 
@@ -49,18 +46,14 @@ internal class SuggestionFetcher(
     suspend fun fetch(text: String) {
         profiler?.addMarker("SuggestionFetcher.fetch") // DO NOT ADD ANYTHING ABOVE THIS addMarker CALL.
 
-        fetchJob?.cancel()
-
-        fetchJob =
-            CoroutineScope(dispatcher).launch {
-                groups.forEach { group ->
-                    group.providers.forEach { provider ->
-                        val profilerStartTime =
-                            profiler?.getProfilerTime() // DO NOT ADD ANYTHING ABOVE getProfilerTime.
-                        launch(dispatcher) { fetchFrom(group, provider, text, profilerStartTime) }
-                    }
+        supervisorScope {
+            groups.forEach { group ->
+                group.providers.forEach { provider ->
+                    val profilerStartTime = profiler?.getProfilerTime() // DO NOT ADD ANYTHING ABOVE getProfilerTime.
+                    launch(dispatcher) { fetchFrom(group, provider, text, profilerStartTime) }
                 }
             }
+        }
     }
 
     /** Fetches suggestions from [provider]. */

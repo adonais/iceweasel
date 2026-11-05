@@ -6,13 +6,6 @@
 const WIDGETS_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.widgets.system.enabled";
 const WIDGETS_PREF = "browser.newtabpage.activity-stream.widgets.enabled";
-const LISTS_SYSTEM_PREF =
-  "browser.newtabpage.activity-stream.widgets.system.lists.enabled";
-const LISTS_PREF = "browser.newtabpage.activity-stream.widgets.lists.enabled";
-const TIMER_SYSTEM_PREF =
-  "browser.newtabpage.activity-stream.widgets.system.focusTimer.enabled";
-const TIMER_PREF =
-  "browser.newtabpage.activity-stream.widgets.focusTimer.enabled";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -24,85 +17,46 @@ add_setup(async function () {
   });
 });
 
-add_task(async function test_widgets_children_disabled_when_parent_disabled() {
+add_task(async function test_manage_widgets_follows_widgets_toggle() {
   await SpecialPowers.pushPrefEnv({
     set: [
       [WIDGETS_SYSTEM_PREF, true],
       [WIDGETS_PREF, false],
-      [LISTS_SYSTEM_PREF, true],
-      [TIMER_SYSTEM_PREF, true],
     ],
   });
 
   let { win, tab } = await openHomePreferences();
 
   let widgetsControl = await settingControlRenders("widgets", win);
-
   let toggle = widgetsControl.controlEl;
   await toggle.updateComplete;
-
   ok(!toggle.pressed, "Widgets toggle is unchecked");
 
-  // Child controls (lists and timer) should remain visible but be disabled
-  let listsWrapper = await settingControlRenders("lists", win);
-  let timerWrapper = await settingControlRenders("focusTimer", win);
-
-  ok(listsWrapper, "Lists control exists");
-  ok(timerWrapper, "Timer control exists");
-
-  let listsCheckbox = listsWrapper.controlEl;
-  let timerCheckbox = timerWrapper.controlEl;
-
+  let manageWidgets = getSettingControl("manageWidgets", win);
   ok(
-    listsCheckbox.disabled || listsCheckbox.parentDisabled,
-    "Lists control is disabled when widgets parent is disabled"
-  );
-  ok(
-    timerCheckbox.disabled || timerCheckbox.parentDisabled,
-    "Timer control is disabled when widgets parent is disabled"
+    !manageWidgets || BrowserTestUtils.isHidden(manageWidgets),
+    "Manage widgets is hidden while Widgets is off"
   );
 
-  BrowserTestUtils.removeTab(tab);
-});
+  let prefChanged = waitForPrefChange(WIDGETS_PREF, true);
+  toggle.click();
+  await prefChanged;
+  await waitForToggleState(toggle, true);
 
-add_task(async function test_widgets_children_enabled_when_parent_enabled() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [WIDGETS_SYSTEM_PREF, true],
-      [WIDGETS_PREF, true],
-      [LISTS_SYSTEM_PREF, true],
-      [LISTS_PREF, true],
-      [TIMER_SYSTEM_PREF, true],
-      [TIMER_PREF, true],
-    ],
-  });
-
-  let { win, tab } = await openHomePreferences();
-
-  let widgetsControl = await settingControlRenders("widgets", win);
-
-  let toggle = widgetsControl.controlEl;
-  await toggle.updateComplete;
-
-  ok(toggle.pressed, "Widgets toggle is checked");
-
-  // Child controls (lists and timer) should be enabled
-  let listsWrapper = await settingControlRenders("lists", win);
-  let timerWrapper = await settingControlRenders("focusTimer", win);
-
-  ok(listsWrapper, "Lists control exists");
-  ok(timerWrapper, "Timer control exists");
-
-  let listsCheckbox = listsWrapper.controlEl;
-  let timerCheckbox = timerWrapper.controlEl;
-
-  ok(
-    !listsCheckbox.disabled && !listsCheckbox.parentDisabled,
-    "Lists control is enabled when widgets parent is enabled"
+  manageWidgets = await settingControlRenders("manageWidgets", win);
+  await TestUtils.waitForCondition(
+    () => BrowserTestUtils.isVisible(manageWidgets),
+    "Manage widgets appears once Widgets is turned on"
   );
-  ok(
-    !timerCheckbox.disabled && !timerCheckbox.parentDisabled,
-    "Timer control is enabled when widgets parent is enabled"
+
+  prefChanged = waitForPrefChange(WIDGETS_PREF, false);
+  toggle.click();
+  await prefChanged;
+  await waitForToggleState(toggle, false);
+
+  await TestUtils.waitForCondition(
+    () => BrowserTestUtils.isHidden(manageWidgets),
+    "Manage widgets is hidden again once Widgets is turned off"
   );
 
   BrowserTestUtils.removeTab(tab);

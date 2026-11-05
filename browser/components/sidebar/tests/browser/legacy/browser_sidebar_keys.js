@@ -11,6 +11,7 @@ async function testSidebarKeyToggle(key, options, expectedSidebarId) {
     expectedSidebarId
   );
   EventUtils.synthesizeKey(key, options);
+  await SidebarController.waitUntilStable();
   Assert.ok(!SidebarController.isOpen);
 }
 

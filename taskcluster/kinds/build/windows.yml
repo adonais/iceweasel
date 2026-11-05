@@ -543,6 +543,7 @@ win32-shippable/opt:
         env:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
     mozconfig:
         platform: win32
     run:
@@ -597,6 +598,7 @@ win64-shippable/opt:
         env:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
     mozconfig:
         platform: win64
     run:
@@ -1336,6 +1338,7 @@ win32-devedition/opt:
         env:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
     mozconfig:
         variant: devedition
         platform: win32
@@ -1391,6 +1394,7 @@ win64-devedition/opt:
         env:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
     mozconfig:
         variant: devedition
         platform: win64
@@ -1554,6 +1558,7 @@ win64-aarch64-shippable/opt:
         env:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
     mozconfig:
         platform: win64-aarch64
     run:
@@ -1609,6 +1614,7 @@ win64-aarch64-devedition/opt:
         env:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
     mozconfig:
         variant: devedition
         platform: win64-aarch64

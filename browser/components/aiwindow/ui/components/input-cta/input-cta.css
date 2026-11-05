@@ -147,7 +147,6 @@ moz-button[type="split"].input-cta {
     --button-icon-fill: var(--color-white);
     /* TODO: Bug 2033070 - we probably won't need the background declaration now that
     it doesn't require a gradient for Nova */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background: light-dark(var(--button-background), var(--button-background-dark));
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     box-shadow: var(--button-box-shadow);
@@ -180,9 +179,7 @@ panel-item::part(button) {
   background-repeat: no-repeat;
 
   @media not (forced-colors) {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     fill: var(--panel-icon-fill-color);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     stroke: var(--panel-icon-stroke-color);
   }
 }

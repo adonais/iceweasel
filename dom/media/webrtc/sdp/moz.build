@@ -52,3 +52,29 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
     ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "HybridSdpParser.h",
+    "ParsingResultComparer.h",
+    "RsdparsaSdp.h",
+    "RsdparsaSdpAttributeList.h",
+    "RsdparsaSdpGlue.h",
+    "RsdparsaSdpMediaSection.h",
+    "RsdparsaSdpParser.h",
+    "Sdp.h",
+    "SdpAttribute.h",
+    "SdpAttributeList.h",
+    "SdpAttributeListImpl.h",
+    "SdpEnum.h",
+    "SdpHelper.h",
+    "SdpImpl.h",
+    "SdpLog.h",
+    "SdpMediaSection.h",
+    "SdpMediaSectionImpl.h",
+    "SdpParser.h",
+    "SdpPref.h",
+    "SipccSdp.h",
+    "SipccSdpAttributeList.h",
+    "SipccSdpMediaSection.h",
+    "SipccSdpParser.h",
+]

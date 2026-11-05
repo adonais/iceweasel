@@ -14,9 +14,6 @@ transforms:
 kind-dependencies:
     - release-source
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     release-source-signing:
         from-deps:

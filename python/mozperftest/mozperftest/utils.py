@@ -305,9 +305,6 @@ def install_requirements_file(
                 "install",
                 "-r",
                 requirements_file,
-                "--no-index",
-                "--find-links",
-                "https://pypi.pub.build.mozilla.org/pub/",
             ])
             return True
         except Exception:

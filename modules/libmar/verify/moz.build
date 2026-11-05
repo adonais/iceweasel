@@ -42,3 +42,7 @@ LOCAL_INCLUDES += [
 if CONFIG["MOZ_USE_NSS_FOR_MAR"]:
     LOCAL_INCLUDES += ["../sign"]
     DEFINES["MAR_NSS"] = True
+
+SOURCE_HEADERS += [
+    "cryptox.h",
+]

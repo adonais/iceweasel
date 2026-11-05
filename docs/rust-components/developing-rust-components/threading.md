@@ -38,7 +38,7 @@ This code can then be implemented in `async` JavaScript functions.
 This essentially means that blocking operations are handled by the SpiderMonkey JavaScript engine and the Rust code is non-blocking async code that awaits that.
 
 Alternatively, trait interfaces can be implemented by Desktop Rust code.
-This probably means using the [Firefox Rust XPCOM bridge](https://firefox-source-docs.mozilla.org/writing-rust-code/xpcom.html) to implement the callback interfaces.
+This probably means using the {doc}`Firefox Rust XPCOM bridge </writing-rust-code/xpcom>` to implement the callback interfaces.
 
 ## Can synchronous calls lock Mutexes?
 

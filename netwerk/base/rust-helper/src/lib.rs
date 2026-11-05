@@ -332,9 +332,12 @@ pub extern "C" fn rust_parse_etc_hosts(path: &nsACString, callback: ParsingCallb
 
     let mut array = ThinVec::new();
     for line in file.lines() {
+        // Invalid UTF-8 consumes the bad line, but other read errors may
+        // repeat forever without making progress.
         let line = match line {
             Ok(l) => l,
-            Err(..) => continue,
+            Err(e) if e.kind() == io::ErrorKind::InvalidData => continue,
+            Err(..) => break,
         };
 
         let mut iter = line.split('#').next().unwrap().split_whitespace();

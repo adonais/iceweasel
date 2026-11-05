@@ -5,14 +5,14 @@
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "General")
 
-EXPORTS.mozilla.browser += [
-    "AboutRedirector.h",
-]
-
 XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
 
 SOURCES += [
     "AboutRedirector.cpp",
+]
+
+SOURCE_HEADERS += [
+    "AboutRedirector.h",
 ]
 
 XPCOM_MANIFESTS += [

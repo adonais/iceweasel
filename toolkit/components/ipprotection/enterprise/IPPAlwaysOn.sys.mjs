@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
-import { IPPEarlyStartupFilter } from "moz-src:///toolkit/components/ipprotection/IPPEarlyStartupFilter.sys.mjs";
 
 const lazy = {};
 
@@ -87,6 +86,14 @@ class IPPAlwaysOnSingleton {
       "IPProtectionServerlist:ListChanged",
       this.handleServerlistEvent
     );
+
+    // Always-on means always, so ask now to hold traffic for startup. Direct
+    // rather than #requestStart(), whose backoff defers through a timer.
+    this.#shouldBeRunning = true;
+    lazy.IPPProxyManager.start(
+      false,
+      PrivateBrowsingUtils.permanentPrivateBrowsing
+    );
   }
 
   initOnStartupCompleted() {}
@@ -118,10 +125,7 @@ class IPPAlwaysOnSingleton {
    * the service, proxy, or server list.
    */
   #isStartBlocked() {
-    if (
-      lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE &&
-      lazy.IPPProxyManager.channelFilter()?.proxyInfo
-    ) {
+    if (lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE) {
       return true;
     }
     return !lazy.IPProtectionServerlist.hasList;
@@ -327,9 +331,4 @@ class IPPAlwaysOnSingleton {
 
 const IPPAlwaysOn = new IPPAlwaysOnSingleton();
 
-const IPPAlwaysOnHelpers = [
-  IPPAlwaysOn,
-  new IPPEarlyStartupFilter(() => IPPAlwaysOn.alwaysOnEnabled),
-];
-
-export { IPPAlwaysOnHelpers, IPPAlwaysOnSingleton };
+export { IPPAlwaysOn, IPPAlwaysOnSingleton };

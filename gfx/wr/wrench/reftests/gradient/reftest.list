@@ -8,6 +8,8 @@ platform(linux,mac) == premultiplied-angle-2.yaml premultiplied-angle-2.png
 platform(linux,mac) == premultiplied-radial-2.yaml premultiplied-radial-2.png
 platform(linux,mac) fuzzy(1,100) == premultiplied-conic-2.yaml premultiplied-conic-2.png
 
+fuzzy(5,40000) == unpremultiplied.yaml unpremultiplied-ref.yaml
+
 == linear.yaml linear-ref.png
 == linear-reverse.yaml linear-ref.png
 scale(*) fuzzy(255,1200) == linear-reverse-2.yaml linear-reverse-2-ref.yaml
@@ -107,6 +109,7 @@ scale(*) fuzzy-range(<=1,*195000) == gradient_cache_5stops.yaml gradient_cache_5
 fuzzy-range(<=1,*171840) == gradient_cache_5stops_vertical.yaml gradient_cache_5stops_vertical_ref.yaml
 == gradient_cache_hardstop.yaml gradient_cache_hardstop_ref.yaml
 fuzzy-range(<=1,1) == gradient_cache_hardstop_clip.yaml gradient_cache_hardstop_clip_ref.yaml
+== linear-decomposed-antialiased.yaml linear-decomposed-antialiased_ref.yaml
 scale(*) == gradient_cache_clamp.yaml gradient_cache_clamp_ref.yaml
 == gradient_cache_repeat.yaml gradient_cache_repeat_ref.yaml
 scale(*) == linear-bug-1703141.yaml linear-bug-1703141.yaml

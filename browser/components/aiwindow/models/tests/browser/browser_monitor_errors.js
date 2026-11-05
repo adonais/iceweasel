@@ -270,6 +270,87 @@ add_task(async function test_partial_extraction_failure_still_runs() {
   }
 });
 
+/**
+ * MLPA subcodes must reach history and storage so the UI can explain why a
+ * check failed, even when different failures share the same HTTP status.
+ */
+add_task(async function test_mlpa_error_codes_reach_history() {
+  const mockEngineManager = new MockEngineManager();
+
+  const { url, server } = serveHTML(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Product Page</title>
+      </head>
+      <body>
+        <div>The price is $299</div>
+      </body>
+    </html>
+  `);
+
+  try {
+    await resetMonitorAgentForTesting();
+    const monitor = makeStandaloneMonitor([url]);
+    const cases = [
+      [429, 1, MONITOR_ERROR_CODES.BUDGET_EXCEEDED],
+      [429, 2, MONITOR_ERROR_CODES.RATE_LIMIT],
+      [413, 3, MONITOR_ERROR_CODES.REQUEST_TOO_LARGE],
+      [403, 4, MONITOR_ERROR_CODES.MAX_USERS],
+      [429, 5, MONITOR_ERROR_CODES.UPSTREAM_RATE_LIMIT],
+      [429, 6, MONITOR_ERROR_CODES.FASTLY_RATE_LIMIT],
+      [406, 7, MONITOR_ERROR_CODES.REQUEST_BLOCKED],
+      [400, 8, MONITOR_ERROR_CODES.INVALID_MODEL],
+      [400, 9, MONITOR_ERROR_CODES.INVALID_REQUEST],
+      [429, 10, MONITOR_ERROR_CODES.GLOBAL_BUDGET_EXCEEDED],
+      [500, 10, MONITOR_ERROR_CODES.GLOBAL_BUDGET_EXCEEDED],
+      [429, 11, MONITOR_ERROR_CODES.GUEST_BUDGET_EXCEEDED],
+      [403, 12, MONITOR_ERROR_CODES.MAX_GUESTS],
+      [429, 99, MONITOR_ERROR_CODES.MODEL],
+      [406, undefined, MONITOR_ERROR_CODES.REQUEST_BLOCKED],
+      [403, 1, MONITOR_ERROR_CODES.AUTH],
+      [429, 8, MONITOR_ERROR_CODES.MODEL],
+      [undefined, undefined, MONITOR_ERROR_CODES.MODEL],
+    ];
+
+    for (const [status, code, expected] of cases) {
+      const runPromise = monitor.run({ manual: true });
+      const { reject } = await mockEngineManager.captureRequest({
+        purpose: PURPOSES.MONITOR,
+      });
+      reject(
+        Object.assign(new Error(`${status ?? 429} status code`), {
+          status,
+          error: code,
+        })
+      );
+      await runPromise;
+
+      const entry = monitor.history.at(-1);
+      Assert.equal(entry.status, "error", "The rejected run is an error");
+      Assert.equal(
+        entry.errorCode,
+        expected,
+        `HTTP ${status} with subcode ${code} records ${expected}`
+      );
+      await MonitorStore.saveMonitor(monitor.toSerializable());
+      const saved = (await MonitorStore.listMonitors()).find(
+        item => item.id === monitor.id
+      );
+      Assert.equal(
+        Monitor.fromJSON(saved).history.at(-1).errorCode,
+        expected,
+        "The error code survives saving and restoring the monitor"
+      );
+    }
+  } finally {
+    await new Promise(resolve => server.stop(resolve));
+    mockEngineManager.cleanupMocks();
+    await resetMonitorAgentForTesting();
+  }
+});
+
 add_task(async function test_error_code_persists_and_validates() {
   await resetMonitorAgentForTesting();
 

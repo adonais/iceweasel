@@ -41,12 +41,15 @@ def _bootstrap_sandbox():
     return sandbox
 
 
-def bootstrap_toolchain(toolchain_job):
+def bootstrap_toolchain(toolchain_job, allow_failure=False):
     # Expand the `bootstrap_path` template for the given toolchain_job, and execute the
     # expanded function via `_value_for`, which will trigger autobootstrap.
-    # Returns the path to the toolchain.
+    # Returns the path to the toolchain, or None if it can't be bootstrapped and
+    # allow_failure is set.
     sandbox = _bootstrap_sandbox()
-    return sandbox._value_for(sandbox["bootstrap_path"](toolchain_job))
+    return sandbox._value_for(
+        sandbox["bootstrap_path"](toolchain_job, allow_failure=allow_failure)
+    )
 
 
 def bootstrap_all_toolchains_for(configure_args=[]):

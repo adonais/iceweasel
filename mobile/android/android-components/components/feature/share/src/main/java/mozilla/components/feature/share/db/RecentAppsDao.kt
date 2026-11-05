@@ -15,7 +15,8 @@ private const val DECAY_MULTIPLIER = 0.95
 @Dao
 internal abstract class RecentAppsDao {
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE) abstract fun insertRecentApps(recentApps: List<RecentAppEntity>)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    abstract suspend fun insertRecentApps(recentApps: List<RecentAppEntity>)
 
     @Query(
         """
@@ -23,7 +24,7 @@ internal abstract class RecentAppsDao {
         WHERE activityName = :activityName
     """
     )
-    abstract fun deleteRecentApp(activityName: String)
+    abstract suspend fun deleteRecentApp(activityName: String)
 
     @Query(
         """
@@ -32,7 +33,7 @@ internal abstract class RecentAppsDao {
         LIMIT :limit
     """
     )
-    abstract fun getRecentAppsUpTo(limit: Int): List<RecentAppEntity>
+    abstract suspend fun getRecentAppsUpTo(limit: Int): List<RecentAppEntity>
 
     /**
      * Increments the score of a recent app.
@@ -46,7 +47,7 @@ internal abstract class RecentAppsDao {
         WHERE activityName = :activityName
     """
     )
-    abstract fun updateRecentAppScore(activityName: String)
+    abstract suspend fun updateRecentAppScore(activityName: String)
 
     /**
      * Decreases the score of all but one app (exponential decay).
@@ -61,13 +62,13 @@ internal abstract class RecentAppsDao {
         WHERE activityName != :exceptActivity
     """
     )
-    abstract fun decayAllRecentApps(
+    abstract suspend fun decayAllRecentApps(
         exceptActivity: String,
         decay: Double = DECAY_MULTIPLIER,
     )
 
     @Transaction
-    open fun updateRecentAppAndDecayRest(activityName: String) {
+    open suspend fun updateRecentAppAndDecayRest(activityName: String) {
         updateRecentAppScore(activityName)
         decayAllRecentApps(exceptActivity = activityName)
     }

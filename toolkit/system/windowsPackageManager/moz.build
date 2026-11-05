@@ -22,3 +22,7 @@ XPIDL_MODULE = "windows_package_manager"
 XPIDL_SOURCES += ["nsIWindowsPackageManager.idl"]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "nsWindowsPackageManager.h",
+]

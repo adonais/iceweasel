@@ -88,4 +88,11 @@ IsolationTestTools.runTests(
 registerCleanupFunction(() => {
   SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
   Services.cookies.removeAll();
+  PermissionTestUtils.remove(uri, "cookie");
+  for (let firstPartyDomain of ["example.com", "example.org"]) {
+    let principal = Services.scriptSecurityManager.createContentPrincipal(uri, {
+      firstPartyDomain,
+    });
+    PermissionTestUtils.remove(principal, "cookie");
+  }
 });

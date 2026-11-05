@@ -36,6 +36,7 @@ import mozilla.components.compose.base.theme.privateColorPalette
 import mozilla.components.compose.browser.toolbar.ActionContainer
 import mozilla.components.compose.browser.toolbar.R
 import mozilla.components.compose.browser.toolbar.concept.Action
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_HORIZONTAL_DIVIDER
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_PROGRESSBAR
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
@@ -65,6 +66,7 @@ internal fun FullDisplayToolbar(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     outlineColor: Color = DividerDefaults.color,
+    showDivider: Boolean = true,
     browserActionsColor: Color? = null,
     browserActionsStartModifier: Modifier = Modifier,
     pageActionsStartModifier: Modifier = Modifier,
@@ -172,16 +174,19 @@ internal fun FullDisplayToolbar(
                 }
             }
 
-            HorizontalDivider(
-                modifier =
-                    Modifier.align(
-                        when (gravity) {
-                            Top -> Alignment.BottomCenter
-                            Bottom -> Alignment.TopCenter
-                        }
-                    ),
-                color = outlineColor,
-            )
+            if (showDivider) {
+                HorizontalDivider(
+                    modifier =
+                        Modifier.testTag(ADDRESSBAR_HORIZONTAL_DIVIDER)
+                            .align(
+                                when (gravity) {
+                                    Top -> Alignment.BottomCenter
+                                    Bottom -> Alignment.TopCenter
+                                }
+                            ),
+                    color = outlineColor,
+                )
+            }
 
             if (progressBarConfig != null) {
                 AnimatedProgressBar(

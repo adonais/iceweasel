@@ -75,8 +75,10 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/adaptation/resource.h"
 #include "api/async_dns_resolver.h"
@@ -1134,6 +1136,24 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   // projects.
   virtual void AddIceCandidate(std::unique_ptr<IceCandidate> candidate,
                                std::function<void(RTCError)> callback) {}
+  // Unlike the callback-only overload above, this overload also passes an
+  // operation-completion callback with the result. An embedding that delivers
+  // the result asynchronously may defer invoking the completion callback until
+  // the result has reached its API consumer. It must be invoked exactly once on
+  // the operation's sequence.
+  virtual void AddIceCandidate(
+      std::unique_ptr<IceCandidate> candidate,
+      absl::AnyInvocable<void(RTCError, absl::AnyInvocable<void() &&>) &&>
+          callback) {
+    auto shared_callback =
+        std::make_shared<decltype(callback)>(std::move(callback));
+    AddIceCandidate(std::move(candidate),
+                    [shared_callback =
+                         std::move(shared_callback)](RTCError result) mutable {
+                      auto callback = std::move(*shared_callback);
+                      std::move(callback)(std::move(result), [] {});
+                    });
+  }
   virtual bool RemoveIceCandidate(const IceCandidate* candidate) = 0;
 
   // SetBitrate limits the bandwidth allocated for all RTP streams sent by

@@ -8,6 +8,7 @@
 #include "GLContext.h"
 #include "GLReadTexImageHelper.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/webrender/RenderThread.h"
 
 namespace mozilla {
@@ -25,6 +26,7 @@ RenderAndroidSurfaceTextureHost::RenderAndroidSurfaceTextureHost(
       mPrepareStatus(STATUS_NONE),
       mAttachedToGLContext(false),
       mIsRemoteTexture(aIsRemoteTexture) {
+  MOZ_ASSERT(!gfx::gfxVars::ForceAImageReaderAndroid());
   MOZ_COUNT_CTOR_INHERITED(RenderAndroidSurfaceTextureHost, RenderTextureHost);
 
   if (mSurfTex) {
@@ -304,9 +306,8 @@ gfx::Matrix4x4 RenderAndroidSurfaceTextureHost::GetTextureTransform() const {
 
   // GetTransformMatrix() returns the transform set by the producer side of the
   // SurfaceTexture that must be applied to texture coordinates when
-  // sampling. In some cases we may have set an override value, such as in
-  // AndroidNativeWindowTextureData where we own the producer side, or for
-  // MediaCodec output on devices where where we know the value is incorrect.
+  // sampling. In some cases we may have set an override value, such as for
+  // MediaCodec output on devices where we know the value is incorrect.
   if (mTransformOverride) {
     transform = *mTransformOverride;
   } else if (mSurfTex) {

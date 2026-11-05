@@ -92,8 +92,6 @@ TOutputGLSLBase::TOutputGLSLBase(TCompiler *compiler,
       mDeclaringVariable(false),
       mSkippedDeclaringAnonymousStruct(false),
       mHashFunction(compiler->getHashFunction()),
-      mUserVariablePrefix(compiler->getUserVariableNamePrefix()),
-      mUserBlockPrefix(compiler->getUserBlockNamePrefix()),
       mNameMap(compiler->getNameMap()),
       mShaderType(compiler->getShaderType()),
       mShaderVersion(compiler->getShaderVersion()),
@@ -311,7 +309,7 @@ void TOutputGLSLBase::writeLayoutQualifier(TIntermSymbol *variable)
 void TOutputGLSLBase::writeFieldLayoutQualifier(const TField *field)
 {
     TLayoutQualifier layoutQualifier = field->type()->getLayoutQualifier();
-    if (!field->type()->isMatrix() && !field->type()->isStructureContainingMatrices() &&
+    if (!field->type()->isMatrixPackingApplicable() &&
         layoutQualifier.imageInternalFormat == EiifUnspecified)
     {
         return;
@@ -321,7 +319,7 @@ void TOutputGLSLBase::writeFieldLayoutQualifier(const TField *field)
 
     out << "layout(";
     CommaSeparatedListItemPrefixGenerator listItemPrefix;
-    if (field->type()->isMatrix() || field->type()->isStructureContainingMatrices())
+    if (field->type()->isMatrixPackingApplicable())
     {
         switch (layoutQualifier.matrixPacking)
         {
@@ -475,7 +473,7 @@ void TOutputGLSLBase::writeVariableType(const TType &type,
     //        ...
     //     } variable;
     const bool isStruct          = type.getStruct() != nullptr;
-    const bool isAnonymousStruct = isStruct && type.getStruct()->isNameless();
+    const bool isAnonymousStruct = isStruct && type.getStruct()->symbolType() == SymbolType::Empty;
     const bool isAnonymousStructDeclaration =
         isAnonymousStruct && symbol->symbolType() == SymbolType::Empty;
     const bool isNamedStructDeclaration = type.isStructSpecifier() && !isAnonymousStruct;
@@ -1185,17 +1183,17 @@ void TOutputGLSLBase::visitPreprocessorDirective(TIntermPreprocessorDirective *n
 
 ImmutableString TOutputGLSLBase::getTypeName(const TType &type)
 {
-    return GetTypeName(type, mUserVariablePrefix, mHashFunction, &mNameMap);
+    return GetTypeName(type, kUserVariableNamePrefix, mHashFunction, &mNameMap);
 }
 
 ImmutableString TOutputGLSLBase::hashName(const TSymbol *symbol)
 {
-    return HashName(symbol, mUserVariablePrefix, mHashFunction, &mNameMap);
+    return HashName(symbol, kUserVariableNamePrefix, mHashFunction, &mNameMap);
 }
 
 ImmutableString TOutputGLSLBase::hashBlockName(const TSymbol *symbol)
 {
-    return HashName(symbol, mUserBlockPrefix, mHashFunction, &mNameMap);
+    return HashName(symbol, kUserBlockNamePrefix, mHashFunction, &mNameMap);
 }
 
 ImmutableString TOutputGLSLBase::hashFieldName(const TField *field)
@@ -1203,7 +1201,7 @@ ImmutableString TOutputGLSLBase::hashFieldName(const TField *field)
     ASSERT(field->symbolType() != SymbolType::Empty);
     if (field->symbolType() == SymbolType::UserDefined)
     {
-        return HashName(field->name(), mUserVariablePrefix, mHashFunction, &mNameMap);
+        return HashName(field->name(), kUserVariableNamePrefix, mHashFunction, &mNameMap);
     }
 
     return field->name();
@@ -1229,7 +1227,7 @@ void TOutputGLSLBase::declareStruct(const TStructure *structure)
 
     // Keep nameless structs nameless, because they may need to match with another shader
     // stage (for example if used to declare a varying).
-    if (structure->symbolType() != SymbolType::Empty && !structure->isNameless())
+    if (structure->symbolType() != SymbolType::Empty)
     {
         out << hashName(structure) << " ";
     }

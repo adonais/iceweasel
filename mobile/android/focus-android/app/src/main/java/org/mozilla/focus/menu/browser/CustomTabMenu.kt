@@ -19,6 +19,7 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuAttribution
 import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.MenuItemBadge
+import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconDrawable
@@ -182,7 +183,7 @@ private fun CustomTabMenuStatus.desktopSiteItem(): MenuItem? {
 
 private fun CustomTabMenuStatus.reportSiteIssueItem(): MenuItem? = reportSiteIssueTitle?.let { title ->
     StandardMenuItem(
-        title = Text.String(title),
+        title = MenuItemTitle(Text.String(title)),
         icon = reportSiteIssueIcon?.let { MenuItemIconDrawable(it) },
         onClickEvent = MenuItemTapped(ToolbarMenu.CustomTabItem.ReportSiteIssue),
     )
@@ -197,7 +198,7 @@ private fun CustomTabMenuStatus.openItems(): List<MenuItem> =
         ),
         if (canOpenSomewhereElse) {
             StandardMenuItem(
-                title = Text.Resource(R.string.menu_open_with_default_browser2, listOf(appName)),
+                title = MenuItemTitle(Text.Resource(R.string.menu_open_with_default_browser2, listOf(appName))),
                 onClickEvent = MenuItemTapped(ToolbarMenu.CustomTabItem.OpenInBrowser),
             )
         } else {
@@ -205,7 +206,7 @@ private fun CustomTabMenuStatus.openItems(): List<MenuItem> =
         },
         if (canOpenSomewhereElse) {
             StandardMenuItem(
-                title = Text.Resource(R.string.menu_open_with_a_browser2),
+                title = MenuItemTitle(Text.Resource(R.string.menu_open_with_a_browser2)),
                 onClickEvent = MenuItemTapped(ToolbarMenu.CustomTabItem.OpenInApp),
             )
         } else {
@@ -216,7 +217,7 @@ private fun CustomTabMenuStatus.openItems(): List<MenuItem> =
 /** The items the application which opened this custom tab asked to be shown in its menu. */
 private fun CustomTabMenuStatus.customMenuItems(): List<MenuItem> = customItems.map { item ->
     StandardMenuItem(
-        title = Text.String(item.name),
+        title = MenuItemTitle(Text.String(item.name)),
         onClickEvent = CustomTabMenuItemTapped(item),
     )
 }
@@ -230,7 +231,7 @@ private fun menuItem(
     showText: Boolean = true,
 ): MenuItem =
     StandardMenuItem(
-        title = if (showText) Text.Resource(title) else Text.String(""),
+        title = MenuItemTitle(if (showText) Text.Resource(title) else Text.String("")),
         contentDescription = if (showText) null else Text.Resource(title),
         icon = MenuItemIconRes(iconRes = icon),
         onClickEvent = MenuItemTapped(item),

@@ -647,14 +647,18 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     TaskController* taskController = TaskController::Get();
     IdleTaskManager* idleTaskManager = taskController->GetIdleTaskManager();
     VsyncTaskManager* vsyncTaskManager = VsyncTaskManager::Get();
+    LowestTaskManager* lowestTaskManager =
+        taskController->GetLowestTaskManager();
 
-    // Note, pendingTaskCount includes also all the pending idle and vsync
-    // tasks.
+    // Note, pendingTaskCount includes also all the pending idle, vsync and
+    // lowest priority tasks.
     uint64_t pendingTaskCount =
         taskController->PendingMainthreadTaskCountIncludingSuspended();
     uint64_t pendingIdleTaskCount = idleTaskManager->PendingTaskCount();
     uint64_t pendingVsyncTaskCount = vsyncTaskManager->PendingTaskCount();
-    if (!(pendingTaskCount > (pendingIdleTaskCount + pendingVsyncTaskCount))) {
+    uint64_t pendingLowestTaskCount = lowestTaskManager->PendingTaskCount();
+    if (!(pendingTaskCount > (pendingIdleTaskCount + pendingVsyncTaskCount +
+                              pendingLowestTaskCount))) {
       return false;
     }
     if (aCheckOnlyNewPendingTasks) {
@@ -668,6 +672,10 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     // but only if the main thread wasn't totally empty at some point.
     // In the parent process RunOutOfMTTasksCount() is less meaningful
     // because some of the tasks run through AppShell.
+    //
+    // A queued lowest priority task freezes RunOutOfMTTasksCount(), but the
+    // count check above has already returned false unless work other than
+    // idle, vsync and lowest is pending, which is when we want to delay.
     return mLastIdleTaskCount == idleTaskCount &&
            (taskController->RunOutOfMTTasksCount() ==
                 mLastRunOutOfMTTasksCount ||
@@ -2482,7 +2490,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
                         //
                         // [1]:
                         // https://drafts.csswg.org/web-animations-1/#update-animations-and-send-events
-                        nsAutoMicroTask mt;
+                        nsAutoMicroTaskForDocument mt(&aDoc);
                         UpdateAndReduceAnimations(aDoc);
                       }
                       if (RefPtr pc = aDoc.GetPresContext()) {

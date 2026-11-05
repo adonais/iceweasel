@@ -753,6 +753,14 @@ interface nsILoadInfo : nsISupports
   [infallible] attribute boolean activatedFromNavigationalPrefetch;
 
   /**
+   * True if a Speculation Rules prefetch candidate covered this navigation,
+   * whether or not it was fetched. Set in both branches of the prefetch
+   * experiment, so a prefetched navigation can be compared against one that
+   * would have been prefetched.
+   */
+  [infallible] attribute boolean prefetchCandidateMatched;
+
+  /**
    * If forceInheritPrincipal is true, the data coming from the channel should
    * inherit its principal, even when the data is loaded over http:// or another
    * protocol that would normally use a URI-based principal.

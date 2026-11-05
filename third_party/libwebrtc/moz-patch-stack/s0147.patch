@@ -40,7 +40,7 @@ index e4935b430c..d802a8f766 100644
                                            int height,
                                            int stride_y,
 diff --git a/api/video/video_frame_buffer.cc b/api/video/video_frame_buffer.cc
-index 131aa3e647..328c50b5e7 100644
+index bb405b7b12..f2fad6822c 100644
 --- a/api/video/video_frame_buffer.cc
 +++ b/api/video/video_frame_buffer.cc
 @@ -31,7 +31,10 @@ scoped_refptr<VideoFrameBuffer> VideoFrameBuffer::CropAndScale(

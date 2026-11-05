@@ -564,6 +564,7 @@ ImageTestCase DownscaledBMPTestCase();
 ImageTestCase DownscaledICOTestCase();
 ImageTestCase DownscaledIconTestCase();
 ImageTestCase DownscaledWebPTestCase();
+ImageTestCase DownscaledLossyWebPTestCase();
 ImageTestCase DownscaledTransparentICOWithANDMaskTestCase();
 
 ImageTestCase TruncatedSmallGIFTestCase();

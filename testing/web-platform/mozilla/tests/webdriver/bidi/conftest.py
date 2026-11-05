@@ -229,3 +229,27 @@ async def use_pref(bidi_session, chrome_context):
 
     for pref, reset_value in reset_values.items():
         await set_pref(bidi_session, chrome_context, pref, reset_value)
+
+
+@pytest.fixture
+def session_user_context(bidi_session):
+    """Return the user context the session is restricted to."""
+    return bidi_session.capabilities["moz:userContext"]
+
+
+@pytest.fixture
+def tab_outside_container(bidi_session, current_session):
+    """Open a tab in the default user context, outside of the container the
+    session is restricted to, and return its context id.
+
+    WebDriver classic commands are not restricted, so they are used to open
+    and close the tab.
+    """
+    original_handle = current_session.window_handle
+    handle = current_session.new_window(type_hint="tab")
+
+    yield handle
+
+    current_session.window_handle = handle
+    current_session.window.close()
+    current_session.window_handle = original_handle

@@ -4,6 +4,8 @@
 
 #include "OmxPlatformLayer.h"
 
+#include <memory>
+
 #include "OMX_Component.h"
 #include "OMX_VideoExt.h"  // For VP8.
 #include "OmxDataDecoder.h"
@@ -167,14 +169,14 @@ UniquePtr<OmxAudioConfig> ConfigForMime(const nsACString& aMimeType) {
 
   if (OmxPlatformLayer::SupportsMimeType(aMimeType)) {
     if (aMimeType.EqualsLiteral("audio/mp4a-latm")) {
-      conf.reset(new OmxAacConfig());
+      conf = std::make_unique<OmxAacConfig>();
     } else if (aMimeType.EqualsLiteral("audio/mp3") ||
                aMimeType.EqualsLiteral("audio/mpeg")) {
-      conf.reset(new OmxMp3Config());
+      conf = std::make_unique<OmxMp3Config>();
     } else if (aMimeType.EqualsLiteral("audio/3gpp")) {
-      conf.reset(new OmxAmrConfig<OmxAmrSampleRate::kNarrowBand>());
+      conf = std::make_unique<OmxAmrConfig<OmxAmrSampleRate::kNarrowBand>>();
     } else if (aMimeType.EqualsLiteral("audio/amr-wb")) {
-      conf.reset(new OmxAmrConfig<OmxAmrSampleRate::kWideBand>());
+      conf = std::make_unique<OmxAmrConfig<OmxAmrSampleRate::kWideBand>>();
     }
   }
   return conf;
@@ -227,7 +229,7 @@ UniquePtr<OmxVideoConfig> ConfigForMime(const nsACString& aMimeType) {
   UniquePtr<OmxVideoConfig> conf;
 
   if (OmxPlatformLayer::SupportsMimeType(aMimeType)) {
-    conf.reset(new OmxCommonVideoConfig());
+    conf = std::make_unique<OmxCommonVideoConfig>();
   }
   return conf;
 }

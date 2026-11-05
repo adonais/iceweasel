@@ -174,15 +174,7 @@ class GeckoProfilerRuntime {
   size_t stringsCount();
   void stringsReset();
 
-  bool insertScriptSource(ScriptSource* scriptSource) {
-    MOZ_ASSERT(scriptSource);
-    auto guard = scriptSources_.writeLock();
-    if (!enabled_) {
-      return true;
-    }
-
-    return guard->put(scriptSource);
-  }
+  bool insertScriptSource(ScriptSource* scriptSource);
 
   js::ProfilerJSSources getProfilerScriptSources(bool gatherSourceText);
 

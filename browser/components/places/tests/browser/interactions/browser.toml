@@ -27,9 +27,6 @@ support-files = [
 ["browser_interactions_scrolling.js"]
 
 ["browser_interactions_scrolling_dom_history.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1756157: Randomly times out on macOS
-]
 
 ["browser_interactions_switch_tabs_idleness.js"]
 

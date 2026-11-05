@@ -15,6 +15,9 @@ export RUN_BACKGROUND=True
 bash $SCRIPT_DIR/collect-proc-info-cpu.sh $SCRIPT_DIR $TEST_TIME &
 bash $SCRIPT_DIR/collect-proc-info-memory.sh $SCRIPT_DIR $TEST_TIME &
 bash $SCRIPT_DIR/test-android-resource-usage.sh $TEST_TIME &
+TEST_PID=$!
+wait $TEST_PID
+TEST_STATUS=$?
 wait
 pkill -f "sh test-background-resource-usage"
 pkill -f "sh collect-proc-info-cpu"
@@ -22,5 +25,9 @@ pkill -f "sh collect-proc-info-memory"
 rm $TESTING_DIR/test_start.signal
 rm $TESTING_DIR/test_end.signal
 pkill -f "sh main"
+
+if [ $TEST_STATUS -ne 0 ]; then
+    exit $TEST_STATUS
+fi
 
 python3 $SCRIPT_DIR/parse_resource_usage.py $TESTING_DIR $BROWSER_BINARY $RUN_BACKGROUND

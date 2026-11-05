@@ -46,6 +46,10 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
         inputs=["!manifest-lists.json", "StaticComponents.cpp.in"],
     )
 
+    SOURCE_HEADERS += [
+        "StaticComponents.h",
+    ]
+
 UNIFIED_SOURCES += [
     "GenericFactory.cpp",
     "ManifestParser.cpp",
@@ -81,4 +85,10 @@ include("/ipc/chromium/chromium-config.mozbuild")
 
 PYTHON_UNITTEST_MANIFESTS += [
     "test/python.toml",
+]
+
+SOURCE_HEADERS += [
+    "ManifestParser.h",
+    "nsCategoryManager.h",
+    "nsComponentManager.h",
 ]

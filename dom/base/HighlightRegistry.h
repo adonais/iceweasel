@@ -6,19 +6,13 @@
 #define mozilla_dom_HighlightRegistry_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/CompactPair.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/ECMACollectionMixin.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsHashKeys.h"
-#include "nsHashtablesFwd.h"
-#include "nsTHashMap.h"
 #include "nsWrapperCache.h"
 
 class nsFrameSelection;
 
-namespace mozilla {
-class ErrorResult;
-}
 namespace mozilla::dom {
 
 class AbstractRange;
@@ -35,13 +29,16 @@ struct HighlightsFromPointOptions;
  * to a highlight name.
  *
  * The HighlightRegistry idl interface defines this class to be a `maplike`.
- * To be able to access the members of the maplike without proper support
- * for iteration from C++, the insertion and deletion operations are
- * overridden and the data is also held inside of this class.
+ * Insertion and deletion operations are overridden to maintain frame
+ * selections when highlights are registered or unregistered.
  *
  * @see https://drafts.csswg.org/css-highlight-api-1/#registration
  */
-class HighlightRegistry final : public nsISupports, public nsWrapperCache {
+class HighlightRegistry final
+    : public nsISupports,
+      public nsWrapperCache,
+      public MaplikeMixin<RefPtr<nsAtom>, RefPtr<Highlight>,
+                          AtomStringConverter> {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(HighlightRegistry)
@@ -118,16 +115,17 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
    *
    * If a `FrameSelection` is present, a highlight selection is created.
    */
-  MOZ_CAN_RUN_SCRIPT HighlightRegistry* Set(const nsAString& aKey,
-                                            Highlight& aValue,
-                                            ErrorResult& aRv);
+  using MaplikeMixin::Delete;
+  using MaplikeMixin::Set;
+  MOZ_CAN_RUN_SCRIPT void Set(nsAtom& aKey, Highlight& aValue,
+                              ErrorResult& aRv) override;
 
   /**
    * @brief Removes all highlights from this registry.
    *
    * If a `FrameSelection` is present, all highlight selections are removed.
    */
-  MOZ_CAN_RUN_SCRIPT void Clear(ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void Clear() override;
 
   /**
    * @brief Removes the highlight named `aKey` from the registry.
@@ -137,7 +135,7 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
    *
    * @return true if `aKey` existed and was deleted.
    */
-  MOZ_CAN_RUN_SCRIPT bool Delete(const nsAString& aKey, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT bool Delete(nsAtom& aKey) override;
 
   /**
    * @brief Returns all `Ranges` for all `Highlights` that are present at
@@ -156,31 +154,11 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
    */
   RefPtr<nsFrameSelection> GetFrameSelection();
 
-  /**
-   * @brief Get the registry name-value tuples.
-   */
-  nsTArray<CompactPair<RefPtr<nsAtom>, RefPtr<Highlight>>> const&
-  HighlightsOrdered() {
-    return mHighlightsOrdered;
-  }
-
  private:
   /**
    * Parent document.
    */
   RefPtr<Document> mDocument;
-
-  /**
-   * Highlight instances are stored as array of name-value tuples
-   * instead of a hashmap in order to preserve the insertion order.
-   *
-   * This is done
-   *    a) to keep the order in sync with the underlying
-   *       data structure of the `maplike` interface and
-   *    b) because the insertion order defines the stacking order of
-   *       of highlights that have the same priority.
-   */
-  nsTArray<CompactPair<RefPtr<nsAtom>, RefPtr<Highlight>>> mHighlightsOrdered;
 };
 
 }  // namespace mozilla::dom

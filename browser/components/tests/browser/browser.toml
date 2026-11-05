@@ -4,6 +4,8 @@ support-files = [
   "../../../../dom/security/test/csp/dummy.pdf",
 ]
 
+["browser_background_external_url.js"]
+
 ["browser_browserGlue_client_association_ping.js"]
 
 ["browser_browserGlue_fxa_client_info_ping.js"]

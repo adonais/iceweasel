@@ -29,3 +29,8 @@ MOZ_SRC_FILES += [
 DIST_SUBDIR = ""
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "JSDebugger.h",
+    "nsJSInspector.h",
+]

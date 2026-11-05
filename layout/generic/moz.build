@@ -299,3 +299,29 @@ MOCHITEST_CHROME_MANIFESTS += ["test/chrome.toml"]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
+
+SOURCE_HEADERS += [
+    "BlockReflowState.h",
+    "ColumnSetWrapperFrame.h",
+    "MathMLTextRunFactory.h",
+    "MiddleCroppingBlockFrame.h",
+    "nsBlockDebugFlags.h",
+    "nsBlockReflowContext.h",
+    "nsColumnSetFrame.h",
+    "nsContainerFrameInlines.h",
+    "nsFirstLetterFrame.h",
+    "nsFlexContainerFrame.h",
+    "nsFontInflationData.h",
+    "nsFrameSetFrame.h",
+    "nsHTMLCanvasFrame.h",
+    "nsImageFrame.h",
+    "nsImageMap.h",
+    "nsInlineFrame.h",
+    "nsLeafFrame.h",
+    "nsLineLayout.h",
+    "nsPageContentFrame.h",
+    "nsPageFrame.h",
+    "nsRubyContentFrame.h",
+    "nsTextPaintStyle.h",
+    "TextOverflow.h",
+]

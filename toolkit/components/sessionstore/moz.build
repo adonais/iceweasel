@@ -52,3 +52,7 @@ SPHINX_TREES["/toolkit/components/sessionstore"] = "docs"
 
 with Files("docs/**"):
     SCHEDULES.exclusive = ["docs"]
+
+SOURCE_HEADERS += [
+    "RestoreTabContentObserver.h",
+]

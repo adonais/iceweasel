@@ -1,0 +1,23 @@
+<!DOCTYPE HTML>
+<title>Resizer positioned WITHOUT scrollbar inset (should overlap corner)</title>
+<style>
+.test {
+  width: 200px;
+  height: 150px;
+  border: 1px solid black;
+  border-radius: 20px;
+  overflow: auto;
+  resize: both;
+  scrollbar-color: red blue;
+  /* No scrollbar inset, so resizer will be at the very corner */
+}
+
+.content {
+  width: 400px;
+  height: 300px;
+}
+</style>
+
+<div class="test">
+  <div class="content"></div>
+</div>

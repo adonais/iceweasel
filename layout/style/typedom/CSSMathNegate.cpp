@@ -27,14 +27,22 @@ CSSMathNegate::CSSMathNegate(
 
 // static
 RefPtr<CSSMathNegate> CSSMathNegate::Create(
+    nsCOMPtr<nsISupports> aParent, UniquePtr<StyleNumericType> aNumericType,
+    RefPtr<CSSNumericValue> aValue) {
+  return MakeRefPtr<CSSMathNegate>(std::move(aParent),
+                                   WrapMovingNotNull(std::move(aNumericType)),
+                                   std::move(aValue));
+}
+
+// static
+RefPtr<CSSMathNegate> CSSMathNegate::Create(
     nsCOMPtr<nsISupports> aParent, const StyleMathNegate& aMathNegate) {
   RefPtr<CSSNumericValue> value =
       CSSNumericValue::Create(aParent, *aMathNegate.value);
 
-  return MakeRefPtr<CSSMathNegate>(
-      std::move(aParent),
-      WrapMovingNotNull(MakeUnique<StyleNumericType>(aMathNegate.numeric_type)),
-      std::move(value));
+  return Create(std::move(aParent),
+                MakeUnique<StyleNumericType>(aMathNegate.numeric_type),
+                std::move(value));
 }
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathNegate, CSSMathValue)

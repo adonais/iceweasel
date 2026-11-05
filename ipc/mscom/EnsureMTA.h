@@ -72,6 +72,11 @@ class MOZ_STACK_CLASS EnsureMTA final {
  private:
   static nsCOMPtr<nsIThread> GetPersistentMTAThread();
 
+  // Shut down the persistent MTA thread, if it was started. This is normally
+  // done at XPCOM shutdown; ProcessRuntime calls it for processes that exit
+  // without XPCOM ever being started.
+  static void ShutdownPersistentMTAThread();
+
   static void SyncDispatch(nsCOMPtr<nsIRunnable>&& aRunnable, Option aOpt);
   static void SyncDispatchToPersistentThread(nsIRunnable* aRunnable);
 

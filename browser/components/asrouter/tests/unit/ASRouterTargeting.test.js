@@ -687,3 +687,65 @@ describe("#experimentsLoaded", () => {
     assert.isTrue(result);
   });
 });
+
+describe("#ASRouter state getters", () => {
+  let globals;
+
+  beforeEach(() => {
+    globals = new GlobalOverrider();
+  });
+
+  afterEach(() => {
+    globals.restore();
+  });
+
+  it("previousSessionEnd reads from ASRouter state", () => {
+    globals.set("ASRouter", {
+      initialized: true,
+      state: { previousSessionEnd: 12345 },
+    });
+
+    assert.equal(ASRouterTargeting.Environment.previousSessionEnd, 12345);
+  });
+
+  it("messageImpressions reads from ASRouter state", () => {
+    const messageImpressions = { "message-1": [1, 2, 3] };
+    globals.set("ASRouter", {
+      initialized: true,
+      state: { messageImpressions },
+    });
+
+    assert.deepEqual(
+      ASRouterTargeting.Environment.messageImpressions,
+      messageImpressions
+    );
+  });
+
+  it("screenImpressions reads from ASRouter state", () => {
+    const screenImpressions = { "screen-1": 1 };
+    globals.set("ASRouter", {
+      initialized: true,
+      state: { screenImpressions },
+    });
+
+    assert.deepEqual(
+      ASRouterTargeting.Environment.screenImpressions,
+      screenImpressions
+    );
+  });
+
+  it("returns undefined or -1 before ASRouter is initialized", () => {
+    globals.set("ASRouter", {
+      initialized: false,
+      state: {
+        previousSessionEnd: 12345,
+        messageImpressions: { "message-1": [1, 2, 3] },
+        screenImpressions: { "screen-1": 1 },
+      },
+    });
+
+    assert.equal(ASRouterTargeting.Environment.previousSessionEnd, 0);
+    assert.isUndefined(ASRouterTargeting.Environment.messageImpressions);
+    assert.isUndefined(ASRouterTargeting.Environment.screenImpressions);
+  });
+});

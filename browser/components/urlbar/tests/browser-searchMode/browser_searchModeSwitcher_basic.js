@@ -12,17 +12,9 @@ async function unloadSearchExtension(extension) {
 add_setup(async function setup() {
   requestLongerTimeout(5);
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.search.suggest.enabled", false],
-      // Tests get no default Top Sites, and disabled_unified_button opens the
-      // view on an empty string, which would otherwise leave it closed with no
-      // results.
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "https://example.com/",
-      ],
-    ],
+    set: [["browser.search.suggest.enabled", false]],
   });
+  UrlbarTestUtils.registerZeroPrefixProvider();
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(
       "browser.urlbar.perplexity.hasBeenInSearchMode"
@@ -472,7 +464,7 @@ add_task(async function test_searchWithPostEngine() {
     value: "a b c",
   });
 
-  let spy = sinon.spy(window, "openTrustedLinkIn");
+  let spy = sinon.spy(URILoadingHelper, "openTrustedLinkIn");
 
   let browserLoaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   await UrlbarTestUtils.activateSearchModeSwitcherItem(
@@ -482,8 +474,8 @@ add_task(async function test_searchWithPostEngine() {
   EventUtils.synthesizeKey("KEY_Enter");
   await browserLoaded;
 
-  Assert.equal(spy.firstCall.args[0], "https://example.com/", "Correct URL");
-  let postData = spy.firstCall.args[2].postData;
+  Assert.equal(spy.firstCall.args[1], "https://example.com/", "Correct URL");
+  let postData = spy.firstCall.args[3].postData;
   Assert.equal(
     NetUtil.readInputStreamToString(postData, postData.available()),
     "q=a+b+c",

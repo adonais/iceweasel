@@ -36,7 +36,7 @@ class Thread;
 extern Thread *GetCurrentThreadTLS();
 extern void SetCurrentThreadTLS(Thread *thread);
 #else
-extern thread_local Thread *gCurrentThread;
+extern constinit thread_local Thread *gCurrentThread;
 #endif
 
 gl::Context *GetGlobalLastContext();
@@ -68,10 +68,10 @@ ANGLE_INLINE ScopedContextMutexLock TryLockCurrentContext(Thread *thread)
 }
 
 // Tries to lock "ContextMutex" of the Context with "contextID" if it is valid.
-ANGLE_INLINE ScopedContextMutexLock TryLockContext(Display *display, gl::ContextID contextID)
+ANGLE_INLINE ScopedContextMutexLock TryLockContext(const Display *display, gl::ContextID contextID)
 {
     ASSERT(kIsContextMutexEnabled);
-    gl::Context *context = GetContextIfValid(display, contextID);
+    const gl::Context *context = GetContextIfValid(display, contextID);
     return context != nullptr ? ScopedContextMutexLock(context->getContextMutex())
                               : ScopedContextMutexLock();
 }
@@ -98,29 +98,18 @@ ANGLE_INLINE ScopedContextMutexLock LockAndTryMergeContextMutexes(gl::Context *c
 
 #if !defined(ANGLE_ENABLE_CONTEXT_MUTEX)
 #    define ANGLE_EGL_SCOPED_CONTEXT_LOCK(EP, THREAD, ...)
+#    define ANGLE_EGL_SCOPED_CONTEXT_LOCK_DPY(EP, THREAD, DPY, ...)
 #else
 #    define ANGLE_EGL_SCOPED_CONTEXT_LOCK(EP, THREAD, ...) \
         egl::ScopedContextMutexLock shareContextLock = GetContextLock_##EP(THREAD, ##__VA_ARGS__)
+#    define ANGLE_EGL_SCOPED_CONTEXT_LOCK_DPY(EP, THREAD, DPY, ...) \
+        egl::ScopedContextMutexLock shareContextLock =              \
+            GetContextLock_##EP(THREAD, DPY, ##__VA_ARGS__)
 #endif
 
 }  // namespace egl
 
 #define ANGLE_SCOPED_GLOBAL_LOCK() egl::ScopedGlobalEGLMutexLock globalMutexLock
-#if ANGLE_CAPTURE_ENABLED
-#    define ANGLE_SCOPED_GLOBAL_EGL_AND_EGL_SYNC_LOCK() \
-        egl::ScopedGlobalEGLMutexLock globalMutexLock
-#else
-#    define ANGLE_SCOPED_GLOBAL_EGL_AND_EGL_SYNC_LOCK() \
-        egl::ScopedGlobalEGLMutexLock globalMutexLock;  \
-        egl::ScopedGlobalEGLSyncObjectMutexLock globalEGLSyncObjectMutexLock
-#endif
-
-#if ANGLE_CAPTURE_ENABLED
-#    define ANGLE_SCOPED_GLOBAL_EGL_SYNC_LOCK() egl::ScopedGlobalEGLMutexLock globalMutexLock
-#else
-#    define ANGLE_SCOPED_GLOBAL_EGL_SYNC_LOCK() \
-        egl::ScopedGlobalEGLSyncObjectMutexLock globalEGLSyncObjectMutexLock
-#endif
 
 namespace gl
 {
@@ -185,7 +174,8 @@ static ANGLE_INLINE void DirtyContextIfNeeded(Context *context)
 
 #if !defined(ANGLE_ENABLE_SHARE_CONTEXT_LOCK)
 #    define SCOPED_SHARE_CONTEXT_LOCK(context)
-#    define SCOPED_EGL_IMAGE_SHARE_CONTEXT_LOCK(context, imageID) ANGLE_SCOPED_GLOBAL_LOCK()
+#    define SCOPED_EGL_IMAGE_SHARE_CONTEXT_LOCK(context, imageID) \
+        egl::ScopedDisplayMutexLock displayLock(*context->getDisplay())
 #else
 #    if defined(ANGLE_FORCE_CONTEXT_CHECK_EVERY_CALL)
 #        define SCOPED_SHARE_CONTEXT_LOCK(context)          \
@@ -196,13 +186,14 @@ static ANGLE_INLINE void DirtyContextIfNeeded(Context *context)
 #    elif !defined(ANGLE_ENABLE_CONTEXT_MUTEX)
 #        define SCOPED_SHARE_CONTEXT_LOCK(context) \
             egl::ScopedOptionalGlobalMutexLock shareContextLock(context->isShared())
-#        define SCOPED_EGL_IMAGE_SHARE_CONTEXT_LOCK(context, imageID) ANGLE_SCOPED_GLOBAL_LOCK()
+#        define SCOPED_EGL_IMAGE_SHARE_CONTEXT_LOCK(context, imageID) \
+            egl::ScopedDisplayMutexLock displayLock(*context->getDisplay())
 #    else
 #        define SCOPED_SHARE_CONTEXT_LOCK(context) \
             egl::ScopedContextMutexLock shareContextLock(context->getContextMutex())
-#        define SCOPED_EGL_IMAGE_SHARE_CONTEXT_LOCK(context, imageID) \
-            ANGLE_SCOPED_GLOBAL_LOCK();                               \
-            egl::ScopedContextMutexLock shareContextLock =            \
+#        define SCOPED_EGL_IMAGE_SHARE_CONTEXT_LOCK(context, imageID)        \
+            egl::ScopedDisplayMutexLock displayLock(*context->getDisplay()); \
+            egl::ScopedContextMutexLock shareContextLock =                   \
                 egl::LockAndTryMergeContextMutexes(context, imageID)
 #    endif
 #endif

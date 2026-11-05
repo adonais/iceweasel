@@ -7,6 +7,7 @@
 
 #include "BaseAccessibles.h"
 #include "HyperTextAccessible.h"
+#include "TextLeafAccessible.h"
 
 namespace mozilla {
 namespace a11y {
@@ -59,18 +60,29 @@ class HTMLLIAccessible : public HyperTextAccessible {
 /**
  * Used for bullet of HTML list item element (for example, HTML li).
  */
-class HTMLListBulletAccessible : public LeafAccessible {
+class HTMLListBulletAccessible : public TextLeafAccessible {
  public:
-  HTMLListBulletAccessible(nsIContent* aContent, DocAccessible* aDoc);
+  HTMLListBulletAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : TextLeafAccessible(aContent, aDoc) {
+    mType = eHTMLListBulletType;
+  }
   virtual ~HTMLListBulletAccessible() = default;
 
   // LocalAccessible
-  virtual ENameValueFlag DirectName(nsString& aName) const override;
   virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
   virtual already_AddRefed<AccAttributes> NativeAttributes() override;
-  virtual void AppendTextTo(nsAString& aText, uint32_t aStartOffset = 0,
-                            uint32_t aLength = UINT32_MAX) override;
+  virtual bool IsAcceptableChild(nsIContent* aEl) const override {
+    // The ::marker's children are never exposed.
+    return false;
+  }
+
+  /**
+   * Compute the text for the bullet of the given ::marker element. This uses
+   * CSS alt content if there is any. Otherwise, it uses layout. This is used
+   * both when creating the bullet and when updating its text.
+   */
+  static void ComputeText(nsIContent* aMarker, nsAString& aText);
 };
 
 inline HTMLLIAccessible* LocalAccessible::AsHTMLListItem() {

@@ -6,4 +6,8 @@ if CONFIG["ENABLE_TESTS"]:
         "BlackBox.cpp",
     ]
 
+    SOURCE_HEADERS += [
+        "BlackBox.h",
+    ]
+
     FINAL_LIBRARY = "xul-gtest"

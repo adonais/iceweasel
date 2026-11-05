@@ -2,6 +2,9 @@
 name: js-review
 description: Use this skill when reviewing code the JS engine (SpiderMonkey, js/src/) or self-reviewing code while producing it.
 ---
+
+# Reviewing SpiderMonkey code
+
 - The SpiderMonkey team works in Stacks of Commits. Each commit should be a logical unit of work. Each unit should be independently reviewable even if the stack must all land as a unit. Patches which mix up work should be split into their constituent parts.
     - Refactoring should be a separate part from functional changes to keep changes clear.
 - When fixing a bug, we aim to ensure the bug is _fixed everywhere_: Are there variants this fix would miss (e.g. with other opcodes), is this a spot fix for a pattern that could be fixed architecturally instead? -- Is there a potential invariant that is being expressed? Is there an assertion we could add that would make catching this easier in the future?

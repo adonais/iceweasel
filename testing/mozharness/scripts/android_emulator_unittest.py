@@ -326,7 +326,7 @@ class AndroidEmulatorTest(
             ),
         ]
 
-        raw_log_file, error_summary_file, test_summary_file = self.get_indexed_logs(
+        raw_log_file, error_summary_file = self.get_indexed_logs(
             dirs["abs_blob_upload_dir"], self.test_suite
         )
 
@@ -348,7 +348,6 @@ class AndroidEmulatorTest(
             "log_tbpl_level": self.log_tbpl_level,
             "log_raw_level": self.log_raw_level,
             "error_summary_file": error_summary_file,
-            "test_summary_file": test_summary_file,
             "xpcshell_extra": c.get("xpcshell_extra", ""),
             "gtest_dir": os.path.join(dirs["abs_test_install_dir"], "gtest"),
         }
@@ -588,6 +587,10 @@ class AndroidEmulatorTest(
                     config=self.config,
                     log_obj=self.log_obj,
                     error_list=[],
+                    test_summary_file=self.query_test_summary_file(
+                        self.query_abs_dirs()["abs_blob_upload_dir"],
+                        self.config["suite_definitions"][suite_category],
+                    ),
                 )
 
                 if "reftest" in suite_category:
@@ -599,12 +602,14 @@ class AndroidEmulatorTest(
                     )
                     parser.formatter = ref_formatter.ReftestFormatter()
 
-                self.run_command(final_cmd, cwd=cwd, env=env, output_parser=parser)
-                self.append_test_summary(self.query_abs_dirs()["abs_blob_upload_dir"])
-                tbpl_status, log_level, summary = parser.evaluate_parser(
-                    0, previous_summary=summary
-                )
-                parser.append_tinderboxprint_line(self.test_suite)
+                try:
+                    self.run_command(final_cmd, cwd=cwd, env=env, output_parser=parser)
+                    tbpl_status, log_level, summary = parser.evaluate_parser(
+                        0, previous_summary=summary
+                    )
+                    parser.append_tinderboxprint_line(self.test_suite)
+                finally:
+                    parser.finish()
 
                 self.info("##### %s log ends" % self.test_suite)
 

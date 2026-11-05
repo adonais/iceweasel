@@ -111,7 +111,6 @@ rtc_library("aec_dump_interface") {
     ":audio_frame_view",
     "../../api/audio:audio_frame_api",
     "../../api/audio:audio_processing",
-    "//third_party/abseil-cpp/absl/base:core_headers",
   ]
 }
 
@@ -802,8 +801,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_library("audio_processing_perf_tests") {
-    testonly = true
+  rtc_cc_test("audio_processing_performance_unittest") {
     configs += [ ":apm_debug_dump" ]
 
     sources = [ "audio_processing_performance_unittest.cc" ]

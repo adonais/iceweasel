@@ -34,14 +34,12 @@ class SearchHistoryResult {
    */
   #formHistoryEntries = null;
 
-  //
-  // An array of entries that have come from a remote source and cannot
-  // be deleted. These are listed after the form history entries.
-  //
-  // @type {object[]}
-  // (using proper JSDoc comment here causes sphinx-js failures:
-  //  https://github.com/mozilla/sphinx-js/issues/242).
-  //
+  /**
+   * An array of entries that have come from a remote source and cannot
+   * be deleted. These are listed after the form history entries.
+   *
+   * @type {object[]}
+   */
   #remoteEntries = [];
 
   QueryInterface = ChromeUtils.generateQI([

@@ -10,14 +10,19 @@ import androidx.annotation.VisibleForTesting
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
 import java.io.Closeable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.appservices.autofill.AutofillApiException.NoSuchRecord
 import mozilla.appservices.autofill.Store as RustAutofillStorage
+import mozilla.appservices.autofill.createAutofillStoreWithStaticKeyManager
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCard
-import mozilla.components.concept.storage.CreditCardNumber
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.NewCreditCardFields
 import mozilla.components.concept.storage.UpdatableAddressFields
@@ -48,40 +53,45 @@ class AutofillCreditCardsAddressesStorage(
 
     val crypto by lazy { AutofillCrypto(context, securePrefs.value, this) }
 
+    private val scope by lazy { CoroutineScope(SupervisorJob() + coroutineContext) }
+
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal val conn by lazy {
-        AutofillStorageConnection.init(dbPath = context.getDatabasePath(AUTOFILL_DB_NAME).absolutePath)
-        AutofillStorageConnection
+    internal val conn: Deferred<AutofillStorageConnection> by lazy {
+        scope.async {
+            val managedKey = crypto.getOrGenerateKey()
+            AutofillStorageConnection.init(
+                dbPath = context.getDatabasePath(AUTOFILL_DB_NAME).absolutePath,
+                key = managedKey.key,
+            )
+            AutofillStorageConnection
+        }
     }
+
+    internal suspend fun getStorage(): RustAutofillStorage = conn.await().getStorage()
 
     /** "Warms up" this storage layer by establishing the database connection. */
     override suspend fun warmUp() =
         withContext(coroutineContext) {
-            logElapsedTime(logger, "Warming up storage") { conn }
+            logElapsedTime(logger, "Warming up storage") { conn.await() }
             Unit
         }
 
     override suspend fun runMaintenance(dbSizeLimit: UInt) {
-        conn.getStorage().runMaintenance()
+        getStorage().runMaintenance()
     }
 
     override suspend fun addCreditCard(creditCardFields: NewCreditCardFields): CreditCard =
         withContext(coroutineContext) {
-            val key = crypto.getOrGenerateKey()
-
-            // Assume our key is good, and that this operation shouldn't fail.
-            val encryptedCardNumber = crypto.encrypt(key, creditCardFields.plaintextCardNumber)!!
             val updatableCreditCardFields =
                 UpdatableCreditCardFields(
                     billingName = creditCardFields.billingName,
-                    cardNumber = encryptedCardNumber,
-                    cardNumberLast4 = creditCardFields.cardNumberLast4,
+                    cardNumber = creditCardFields.cardNumber,
                     expiryMonth = creditCardFields.expiryMonth,
                     expiryYear = creditCardFields.expiryYear,
                     cardType = creditCardFields.cardType,
                 )
 
-            conn.getStorage().addCreditCard(updatableCreditCardFields.into()).into()
+            getStorage().addCreditCard(updatableCreditCardFields.into()).into()
         }
 
     override suspend fun updateCreditCard(
@@ -89,45 +99,13 @@ class AutofillCreditCardsAddressesStorage(
         creditCardFields: UpdatableCreditCardFields,
     ) =
         withContext(coroutineContext) {
-            val updatableCreditCardFields =
-                when (creditCardFields.cardNumber) {
-                    // If credit card number changed, we need to encrypt it.
-                    is CreditCardNumber.Plaintext -> {
-                        val key = crypto.getOrGenerateKey()
-                        // Assume our key is good, and that this operation shouldn't fail.
-                        val encryptedCardNumber =
-                            crypto.encrypt(
-                                key,
-                                creditCardFields.cardNumber as CreditCardNumber.Plaintext,
-                            )!!
-                        UpdatableCreditCardFields(
-                            billingName = creditCardFields.billingName,
-                            cardNumber = encryptedCardNumber,
-                            cardNumberLast4 = creditCardFields.cardNumberLast4,
-                            expiryMonth = creditCardFields.expiryMonth,
-                            expiryYear = creditCardFields.expiryYear,
-                            cardType = creditCardFields.cardType,
-                        )
-                    }
-                    // If card number didn't change, we're just round-tripping an existing encrypted version.
-                    is CreditCardNumber.Encrypted -> {
-                        UpdatableCreditCardFields(
-                            billingName = creditCardFields.billingName,
-                            cardNumber = creditCardFields.cardNumber,
-                            cardNumberLast4 = creditCardFields.cardNumberLast4,
-                            expiryMonth = creditCardFields.expiryMonth,
-                            expiryYear = creditCardFields.expiryYear,
-                            cardType = creditCardFields.cardType,
-                        )
-                    }
-                }
-            conn.getStorage().updateCreditCard(guid, updatableCreditCardFields.into())
+            getStorage().updateCreditCard(guid, creditCardFields.into())
         }
 
     override suspend fun getCreditCard(guid: String): CreditCard? =
         withContext(coroutineContext) {
             try {
-                conn.getStorage().getCreditCard(guid).into()
+                getStorage().getCreditCard(guid).into()
             } catch (e: NoSuchRecord) {
                 null
             }
@@ -135,33 +113,33 @@ class AutofillCreditCardsAddressesStorage(
 
     override suspend fun getAllCreditCards(): List<CreditCard> =
         withContext(coroutineContext) {
-            conn.getStorage().getAllCreditCards().map { it.into() }
+            getStorage().getAllCreditCards().map { it.into() }
         }
 
     override suspend fun countAllCreditCards(): Long =
         withContext(coroutineContext) {
-            conn.getStorage().countAllCreditCards()
+            getStorage().countAllCreditCards()
         }
 
     override suspend fun deleteCreditCard(guid: String): Boolean =
         withContext(coroutineContext) {
-            conn.getStorage().deleteCreditCard(guid)
+            getStorage().deleteCreditCard(guid)
         }
 
     override suspend fun touchCreditCard(guid: String) =
         withContext(coroutineContext) {
-            conn.getStorage().touchCreditCard(guid)
+            getStorage().touchCreditCard(guid)
         }
 
     override suspend fun addAddress(addressFields: UpdatableAddressFields): Address =
         withContext(coroutineContext) {
-            conn.getStorage().addAddress(addressFields.into()).into()
+            getStorage().addAddress(addressFields.into()).into()
         }
 
     override suspend fun getAddress(guid: String): Address? =
         withContext(coroutineContext) {
             try {
-                conn.getStorage().getAddress(guid).into()
+                getStorage().getAddress(guid).into()
             } catch (e: NoSuchRecord) {
                 null
             }
@@ -169,27 +147,27 @@ class AutofillCreditCardsAddressesStorage(
 
     override suspend fun getAllAddresses(): List<Address> =
         withContext(coroutineContext) {
-            conn.getStorage().getAllAddresses().map { it.into() }
+            getStorage().getAllAddresses().map { it.into() }
         }
 
     override suspend fun countAllAddresses(): Long =
         withContext(coroutineContext) {
-            conn.getStorage().countAllAddresses()
+            getStorage().countAllAddresses()
         }
 
     override suspend fun updateAddress(guid: String, address: UpdatableAddressFields) =
         withContext(coroutineContext) {
-            conn.getStorage().updateAddress(guid, address.into())
+            getStorage().updateAddress(guid, address.into())
         }
 
     override suspend fun deleteAddress(guid: String): Boolean =
         withContext(coroutineContext) {
-            conn.getStorage().deleteAddress(guid)
+            getStorage().deleteAddress(guid)
         }
 
     override suspend fun touchAddress(guid: String) =
         withContext(coroutineContext) {
-            conn.getStorage().touchAddress(guid)
+            getStorage().touchAddress(guid)
         }
 
     override fun getCreditCardCrypto(): AutofillCrypto {
@@ -198,16 +176,20 @@ class AutofillCreditCardsAddressesStorage(
 
     override suspend fun scrubEncryptedData() =
         withContext(coroutineContext) {
-            conn.getStorage().scrubEncryptedData()
+            getStorage().scrubEncryptedData()
         }
 
     override fun registerWithSyncManager() {
-        conn.getStorage().registerWithSyncManager()
+        scope.launch {
+            getStorage().registerWithSyncManager()
+        }
     }
 
     override fun close() {
-        coroutineContext.cancel()
-        conn.close()
+        scope.launch {
+            conn.await().close()
+            scope.cancel()
+        }
     }
 
     /** Enqueues a periodic storage maintenance worker to WorkManager. */
@@ -237,10 +219,10 @@ class AutofillCreditCardsAddressesStorage(
 internal object AutofillStorageConnection : Closeable {
     @GuardedBy("this") private var storage: RustAutofillStorage? = null
 
-    internal fun init(dbPath: String = AUTOFILL_DB_NAME) =
+    internal fun init(dbPath: String = AUTOFILL_DB_NAME, key: String) =
         synchronized(this) {
             if (storage == null) {
-                storage = RustAutofillStorage(dbPath)
+                storage = createAutofillStoreWithStaticKeyManager(dbPath, key)
             }
         }
 

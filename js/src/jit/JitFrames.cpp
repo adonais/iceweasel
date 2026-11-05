@@ -611,6 +611,7 @@ static void HandleExceptionBaseline(JSContext* cx, JSJitFrameIter& frame,
     // JSOp::AfterYield) and the environment chain is the suspended generator's
     // environment, so it must not be unwound here. Just pop the frame.
     MOZ_ASSERT(pc == frame.baselineFrame()->script()->code());
+    MOZ_ASSERT(!frame.baselineFrame()->hasPendingDebugModeOSRReturn());
     EnsureUnwoundJitExitFrame(cx->activation()->asJit(),
                               frame.baselineFrame()->framePrefix());
     return;
@@ -623,16 +624,25 @@ static void HandleExceptionBaseline(JSContext* cx, JSJitFrameIter& frame,
   // address. We could set the return address to nullptr to ensure it's never
   // used, but the profiler expects a non-null return value for its JitCode map
   // lookup so we have to use an address in the interpreter code instead.
-  if (!frame.baselineFrame()->runningInInterpreter()) {
+  BaselineFrame* baselineFrame = frame.baselineFrame();
+  if (!baselineFrame->runningInInterpreter() ||
+      baselineFrame->hasPendingDebugModeOSRReturn()) {
     const BaselineInterpreter& interp =
         cx->runtime()->jitRuntime()->baselineInterpreter();
     uint8_t* retAddr = interp.codeRaw();
-    BaselineFrame* baselineFrame = frame.baselineFrame();
-
     // Suppress profiler sampling while we fix up the frame to ensure the
     // sampler thread doesn't see an inconsistent state.
     AutoSuppressProfilerSampling suppressProfilerSampling(cx);
-    baselineFrame->switchFromJitToInterpreterForExceptionHandler(cx, pc);
+    if (!baselineFrame->runningInInterpreter()) {
+      baselineFrame->switchFromJitToInterpreterForExceptionHandler(cx, pc);
+    }
+    if (baselineFrame->hasPendingDebugModeOSRReturn()) {
+      auto* site = cx->runtime()->jitRuntime()->lookupDebugModeOSRReturnSite(
+          prevFrame->returnAddress());
+      MOZ_RELEASE_ASSERT(site);
+      baselineFrame->clearPendingDebugModeOSRReturn();
+      cx->runtime()->jitRuntime()->releaseDebugModeOSRReturnSite(site);
+    }
     prevFrame->setReturnAddress(retAddr);
 
     // Ensure the current iterator's resumePCInCurrentFrame_ isn't used

@@ -109,8 +109,21 @@ interface nsIDefaultAgent : nsISupports
   * @param {AString} aIsTaskbarPinned
   *        Whether Firefox is currently pinned to the Windows taskbar.
   *        One of "IsPinned", "NotPinned", or "Error".
+  * @param {boolean} aHasWinPackageId
+  *        Whether this installation is a packaged (MSIX) install.
+  * @param {AString} aWinPackageFamilyName
+  *        The package family name of a Mozilla-published MSIX package, or
+  *        the empty string if not applicable.
+  * @param {AString} aInstallerType
+  *        One of "stub", "full", or "msix", or the empty string if unknown.
+  * @param {boolean} aInstallerFromMsi
+  *        Whether a "full" install came from an MSI package. Ignored for
+  *        other installer types.
+  * @param {boolean} aInstallerSilent
+  *        Whether a "full" install was silent. Ignored for other installer
+  *        types.
   */
-  void sendPing(in AString aCurrentBrowser, in AString aPreviousBrowser, in AString aPdfHandler, in AString aNotificationShown, in AString aNotificationAction, in unsigned long daysSinceLastAppLaunch, in AString aIsTaskbarPinned);
+  void sendPing(in AString aCurrentBrowser, in AString aPreviousBrowser, in AString aPdfHandler, in AString aNotificationShown, in AString aNotificationAction, in unsigned long daysSinceLastAppLaunch, in AString aIsTaskbarPinned, in boolean aHasWinPackageId, in AString aWinPackageFamilyName, in AString aInstallerType, in boolean aInstallerFromMsi, in boolean aInstallerSilent);
 
   /**
   * Set the default browser and optionally additional file extensions via the

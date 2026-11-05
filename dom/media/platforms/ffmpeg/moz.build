@@ -24,15 +24,41 @@ UNIFIED_SOURCES += ["FFmpegRuntimeLinker.cpp"]
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     include("/ipc/chromium/chromium-config.mozbuild")
     UNIFIED_SOURCES += ["VALibWrapper.cpp"]
+    SOURCE_HEADERS += [
+        "VALibWrapper.h",
+    ]
     if CONFIG["MOZ_ENABLE_VULKAN_VIDEO"]:
         UNIFIED_SOURCES += ["VulkanDeviceHolder.cpp"]
+        SOURCE_HEADERS += [
+            "VulkanDeviceHolder.h",
+        ]
 
 LOCAL_INCLUDES += [
     "/media/ffvpx/",
     "/media/libyuv/libyuv/include",
+    "/media/mozva",
 ]
 
 if CONFIG["MOZ_SYSTEM_AV1"]:
     CXXFLAGS += CONFIG["MOZ_SYSTEM_LIBAOM_CFLAGS"]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "FFmpegAudioDecoder.h",
+    "FFmpegAudioEncoder.h",
+    "FFmpegDataDecoder.h",
+    "FFmpegDataEncoder.h",
+    "FFmpegDecoderModule.h",
+    "FFmpegDecodeStats.h",
+    "FFmpegEncoderModule.h",
+    "FFmpegLibs.h",
+    "FFmpegLibWrapper.h",
+    "FFmpegLog.h",
+    "FFmpegUtils.h",
+    "FFmpegVideoDecoder.h",
+    "FFmpegVideoEncoder.h",
+    "FFmpegVideoFramePool.h",
+    "FFmpegVideoUtils.h",
+    "FFmpegVulkanVideoDecoder.h",
+]

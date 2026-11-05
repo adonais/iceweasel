@@ -20,8 +20,9 @@ class NodeDelegate {
   // Forward an event (possibly asynchronously) to the specified node.
   virtual void ForwardEvent(const NodeName& node, ScopedEvent event) = 0;
 
-  // Broadcast an event to all nodes.
-  virtual void BroadcastEvent(ScopedEvent event) = 0;
+  // Broadcast to all nodes that the given port name in this node is a dead
+  // proxy due to an unexpected node disconnection.
+  virtual void BroadcastDeadProxy(const PortName& port_name) = 0;
 
   // Indicates that the port's status has changed recently. Use Node::GetStatus
   // to query the latest status of the port. Note, this event could be spurious

@@ -103,4 +103,18 @@ export default [
     rules: ["div { display: table-cell; align-content: end; }"],
     isActive: false,
   },
+  {
+    info: "align-content is active on grid-lanes containers",
+    property: "align-content",
+    tagName: "div",
+    rules: ["div { align-content: center; display: grid-lanes; }"],
+    isActive: true,
+  },
+  {
+    info: "align-content is active on inline-grid-lanes containers",
+    property: "align-content",
+    tagName: "div",
+    rules: ["div { align-content: center; display: inline-grid-lanes; }"],
+    isActive: true,
+  },
 ];

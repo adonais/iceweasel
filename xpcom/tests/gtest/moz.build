@@ -210,3 +210,8 @@ TEST_HARNESS_FILES.gtest += [
 FINAL_LIBRARY = "xul-gtest"
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "Helpers.h",
+    "UTFStrings.h",
+]

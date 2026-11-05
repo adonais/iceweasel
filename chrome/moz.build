@@ -26,6 +26,12 @@ UNIFIED_SOURCES += [
     "nsChromeRegistryContent.cpp",
 ]
 
+SOURCE_HEADERS += [
+    "nsChromeRegistry.h",
+    "nsChromeRegistryChrome.h",
+    "nsChromeRegistryContent.h",
+]
+
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"

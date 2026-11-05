@@ -11,55 +11,6 @@ task-defaults:
         resources:
             - 'build/build-clang/build-clang.py'
 
-linux64-clang-14-stage1:
-    description: "Clang 14 toolchain build"
-    treeherder:
-        symbol: TL(clang-14-stage1)
-    run:
-        using: toolchain-script
-        script: build-clang.sh
-        arguments:
-            - 'build/build-clang/use-system-clang.json'
-            - 'build/build-clang/clang-14.json'
-            - 'build/build-clang/stage-1.json'
-        resources:
-            - 'build/build-clang/use-system-clang.json'
-            - 'build/build-clang/clang-14.json'
-            - 'build/build-clang/stage-1.json'
-        toolchain-artifact: public/build/clang.tar.zst
-    fetches:
-        fetch:
-            - clang-14
-        toolchain:
-            - linux64-toolchain-sysroot
-
-macosx64-clang-14-raw:
-    description: "Clang 14 toolchain build"
-    treeherder:
-        symbol: TM(clang-14-raw)
-    worker-type: b-linux-docker-large-amd
-    worker:
-        max-run-time: 3600
-    run:
-        script: build-clang.sh
-        arguments:
-            - 'build/build-clang/use-clang-artifact.json'
-            - 'build/build-clang/macosx64.json'
-            - 'build/build-clang/clang-14.json'
-            - 'build/build-clang/stage-1.json'
-        resources:
-            - 'build/build-clang/use-clang-artifact.json'
-            - 'build/build-clang/macosx64.json'
-            - 'build/build-clang/clang-14.json'
-            - 'build/build-clang/stage-1.json'
-        toolchain-artifact: public/build/clang.tar.zst
-    fetches:
-        fetch:
-            - clang-14
-        toolchain:
-            - linux64-clang-14-stage1
-            - macosx64-sdk-13.3
-
 linux64-clang-19-raw:
     description: "Clang 19 toolchain build"
     treeherder:

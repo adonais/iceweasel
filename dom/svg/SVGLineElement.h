@@ -31,7 +31,7 @@ class SVGLineElement final : public SVGLineElementBase {
   // SVGGeometryElement methods:
   bool IsMarkable() override { return true; }
   void GetMarkPoints(nsTArray<SVGMark>* aMarks) override;
-  void GetAsSimplePath(SimplePath* aSimplePath) override;
+  void GetAsSimpleShape(SimpleShape* aShape) override;
   already_AddRefed<Path> BuildPath(PathBuilder* aBuilder) override;
   Maybe<Rect> GetGeometryBounds(
       const StrokeOptions& aStrokeOptions, const Matrix& aToBoundsSpace,

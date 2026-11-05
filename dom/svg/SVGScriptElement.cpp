@@ -75,7 +75,8 @@ void SVGScriptElement::GetType(nsAString& aType) {
 }
 
 void SVGScriptElement::SetType(const nsAString& aType, ErrorResult& rv) {
-  rv = SetAttr(kNameSpaceID_None, nsGkAtoms::type, aType, true);
+  rv = SetAttr(kNameSpaceID_None, nsGkAtoms::type, aType, true,
+               IsKnownNewAttr::No);
 }
 
 void SVGScriptElement::GetCrossOrigin(nsAString& aCrossOrigin) {

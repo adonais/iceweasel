@@ -1303,7 +1303,7 @@ void Console::Method(const GlobalObject& aGlobal, MethodName aMethodName,
 struct ConsoleTimingMarker : public BaseMarkerType<ConsoleTimingMarker> {
   static constexpr const char* Name = "ConsoleTiming";
   static constexpr const char* Description =
-      "Console timing timeStampers created using the Console API methods "
+      "Console timing markers created using the Console API methods "
       "console.time(), console.timeEnd(), and console.timeStamp().";
 
   using MS = MarkerSchema;
@@ -1313,7 +1313,7 @@ struct ConsoleTimingMarker : public BaseMarkerType<ConsoleTimingMarker> {
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
-  static constexpr const char* AllLabels = "{timeStamper.data.label}";
+  static constexpr const char* AllLabels = "{marker.data.label}";
 
   static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::UserMarkers;
 };

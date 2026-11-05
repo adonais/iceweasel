@@ -46,7 +46,7 @@ static constexpr double MinHeapGrowthFactor =
 
 // Limit various parameters to reasonable levels to catch errors.
 static constexpr double MaxHeapGrowthFactor = 100;
-static constexpr size_t MaxNurseryBytesParam = 128 * 1024 * 1024;
+static constexpr size_t MaxNurseryBytesParam = Nursery::MaxNurseryBytesParam;
 
 namespace {
 

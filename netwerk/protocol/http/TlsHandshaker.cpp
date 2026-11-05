@@ -29,6 +29,12 @@ TlsHandshaker::TlsHandshaker(nsHttpConnectionInfo* aInfo,
 
 TlsHandshaker::~TlsHandshaker() { LOG(("TlsHandshaker dtor %p", this)); }
 
+void TlsHandshaker::NotifyClose() {
+  mTlsHandshakeComplitionPending = false;
+  mNPNComplete = true;
+  mOwner = nullptr;
+}
+
 NS_IMETHODIMP
 TlsHandshaker::CertVerificationDone() {
   LOG(("TlsHandshaker::CertVerificationDone mOwner=%p", mOwner.get()));

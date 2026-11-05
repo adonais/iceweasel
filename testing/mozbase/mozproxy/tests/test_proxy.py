@@ -326,5 +326,67 @@ def test_mitm_direct_mode_firefox_policy():
     }
 
 
+@pytest.mark.parametrize(
+    "playback_mode,expected_calls",
+    [
+        ("direct", [mock.call(7, (10240, -1)), mock.call(7, (256, -1))]),
+        ("proxy", []),
+    ],
+)
+def test_mitm_nofile_limit_for_mitmdump(playback_mode, expected_calls):
+    config = {
+        "playback_tool": "mitmproxy",
+        "playback_files": ["pageset.manifest"],
+        "playback_mode": playback_mode,
+        "playback_version": "12.2.1",
+        "platform": mozinfo.os,
+        "run_local": True,
+        "binary": "/tmp/chrome",
+        "app": "chrome",
+        "host": "127.0.0.1",
+    }
+
+    fake_resource = mock.Mock()
+    fake_resource.RLIMIT_NOFILE = 7
+    fake_resource.RLIM_INFINITY = -1
+    fake_resource.getrlimit.return_value = (256, -1)
+    process = mock.Mock(pid=1234)
+    with tempdir() as obj_path:
+        config["obj_path"] = obj_path
+        playback = get_playback(config)
+        playback.playback_files = [mock.Mock()]
+        with ExitStack() as stack:
+            stack.enter_context(
+                mock.patch("mozproxy.backends.mitm.mitm.resource", fake_resource)
+            )
+            stack.enter_context(
+                mock.patch(
+                    "mozproxy.backends.mitm.mitm.get_available_port",
+                    side_effect=[18080, 18443],
+                )
+            )
+            stack.enter_context(
+                mock.patch(
+                    "mozproxy.backends.mitm.mitm.Mitmproxy._build_replay_paths",
+                    return_value=["/tmp/fake.mp"],
+                )
+            )
+            stack.enter_context(
+                mock.patch(
+                    "mozproxy.backends.mitm.mitm.Mitmproxy.check_proxy",
+                    return_value=True,
+                )
+            )
+            stack.enter_context(
+                mock.patch(
+                    "mozproxy.backends.mitm.mitm.ProcessHandler",
+                    return_value=process,
+                )
+            )
+            playback.start_mitmproxy("/tmp/mitmdump", "/tmp/chrome")
+
+    assert fake_resource.setrlimit.call_args_list == expected_calls
+
+
 if __name__ == "__main__":
     mozunit.main(runwith="pytest")

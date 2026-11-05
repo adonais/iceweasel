@@ -770,8 +770,7 @@ void UtilityProcessManager::DestroyProcess(ProcessFields* aProcess) {
     return;
   }
 
-  UtilityProcessHost* process = p->mProcess;
-  p->mProcess = nullptr;
+  RefPtr<UtilityProcessHost> process = p->mProcess.forget();
 
   if (mSharedKeepAlives[p->mSandbox] &&
       mSharedKeepAlives[p->mSandbox]->mProcess == p) {

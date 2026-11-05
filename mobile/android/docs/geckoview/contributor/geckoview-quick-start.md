@@ -308,7 +308,7 @@ for reference.
 #### Deprecation Policy
 
 GeckoView follows a deprecation policy you can learn more in this
-[design doc](https://firefox-source-docs.mozilla.org/mobile/android/geckoview/design/breaking-changes.html).
+{doc}`design doc </mobile/android/geckoview/design/breaking-changes>`.
 
 To deprecate an API, add the deprecation flags with an identifier for a
 deprecation notice, so that all notices with the same identifier will

@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "api/media_types.h"
 #include "api/ref_count.h"
 #include "api/rtc_error.h"
@@ -112,7 +111,7 @@ class RTC_EXPORT RtpTransceiverInterface : public RefCountInterface {
   // https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiver-direction
   // TODO(hta): Deprecate SetDirection without error and rename
   // SetDirectionWithError to SetDirection, remove default implementations.
-  ABSL_DEPRECATED("Use SetDirectionWithError instead")
+  [[deprecated("Use SetDirectionWithError instead")]]
   virtual void SetDirection(RtpTransceiverDirection new_direction);
   virtual RTCError SetDirectionWithError(RtpTransceiverDirection new_direction);
 
@@ -147,7 +146,7 @@ class RTC_EXPORT RtpTransceiverInterface : public RefCountInterface {
   // This is an internal function, and is exposed for historical reasons.
   // https://w3c.github.io/webrtc-pc/#dfn-stop-the-rtcrtptransceiver
   virtual void StopInternal();
-  ABSL_DEPRECATED("Use StopStandard instead") virtual void Stop();
+  [[deprecated("Use StopStandard instead")]] virtual void Stop();
 
   // The SetCodecPreferences method overrides the default codec preferences used
   // by WebRTC for this transceiver.

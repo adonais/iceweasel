@@ -312,6 +312,8 @@ WINDOW_EVENT(pagereveal, ePageReveal, EventNameType_HTMLBodyOrFramesetOnly,
              eBasicEventClass)
 WINDOW_EVENT(pageshow, ePageShow, EventNameType_HTMLBodyOrFramesetOnly,
              eBasicEventClass)
+WINDOW_EVENT(pageswap, ePageSwap, EventNameType_HTMLBodyOrFramesetOnly,
+             eBasicEventClass)
 WINDOW_EVENT(popstate, ePopState,
              EventNameType_XUL | EventNameType_HTMLBodyOrFramesetOnly,
              eBasicEventClass)
@@ -360,9 +362,6 @@ DOCUMENT_ONLY_EVENT(visibilitychange, eVisibilityChange, EventNameType_XUL,
                     eBasicEventClass)
 
 NON_IDL_EVENT(MozMouseHittest, eMouseHitTest, EventNameType_None,
-              eMouseEventClass)
-
-NON_IDL_EVENT(MozMouseExploreByTouch, eMouseExploreByTouch, EventNameType_None,
               eMouseEventClass)
 
 NON_IDL_EVENT(DOMActivate, eLegacyDOMActivate, EventNameType_HTMLXUL,

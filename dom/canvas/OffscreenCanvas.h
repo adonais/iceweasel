@@ -139,8 +139,6 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
 
   CSSIntSize GetWidthHeight() override { return CSSIntSize(mWidth, mHeight); }
 
-  bool CanCreateContext() const override { return !mNeutered; }
-
   virtual already_AddRefed<nsICanvasRenderingContextInternal> CreateContext(
       CanvasContextType aContextType) override;
 
@@ -185,10 +183,7 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
   already_AddRefed<EncodeCompleteCallback> CreateEncodeCompleteCallback(
       Promise* aPromise);
 
-  void CanvasAttrChanged() {
-    ErrorResult dummy;
-    UpdateContext(nullptr, JS::NullHandleValue, dummy);
-  }
+  void CanvasAttrChanged() { UpdateContext(); }
 
   bool mNeutered = false;
   bool mIsWriteOnly = false;

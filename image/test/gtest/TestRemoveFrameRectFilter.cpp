@@ -17,7 +17,7 @@ using namespace mozilla::image;
 
 template <typename Func>
 void WithRemoveFrameRectFilter(const IntSize& aSize, const IntRect& aFrameRect,
-                               Func aFunc) {
+                               Func&& aFunc) {
   RefPtr<image::Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
 

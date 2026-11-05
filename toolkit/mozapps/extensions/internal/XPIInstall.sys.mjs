@@ -916,7 +916,7 @@ function shouldVerifySignedState(aAddonType, aLocation) {
   }
 
   // Otherwise only check signatures if the add-on is one of the signed
-  // types.
+  // types. This is true for all add-ons currently supported by XPIProvider.
   return XPIExports.XPIDatabase.SIGNED_TYPES.has(aAddonType);
 }
 
@@ -4361,6 +4361,15 @@ export var XPIInstall = {
     if (addon.id != id) {
       throw new Error(
         `File file ${file.path} contains an add-on with an incorrect ID`
+      );
+    }
+
+    if (
+      XPIExports.XPIDatabase.mustSign(addon.type) &&
+      addon.signedState <= AddonManager.SIGNEDSTATE_MISSING
+    ) {
+      throw new Error(
+        `Refusing to install distribution add-on ${id} with signed state ${addon.signedState}`
       );
     }
 

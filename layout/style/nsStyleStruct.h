@@ -1707,6 +1707,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   // The margin around a shape-outside: <image>.
   mozilla::NonNegativeLengthPercentage mShapeMargin;
 
+  // TODO: This is a grid-lanes container property, so it belongs in
+  // nsStylePosition, but that struct is at its size limit.
+  mozilla::StyleFitTolerance mFitTolerance;
+
   mozilla::StyleShapeOutside mShapeOutside;
 
   // 'none', 'all', or a list of one or more `<dashed-ident>` identifiers that

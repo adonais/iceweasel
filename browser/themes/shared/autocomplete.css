@@ -18,14 +18,18 @@
     [resultstyles~="loginsFooter"],
     [resultstyles~="insecureWarning"],
     [resultstyles~="importableLogins"],
-    [resultstyles~="generatedPassword"]
+    [resultstyles~="generatedPassword"],
+    [resultstyles~="fromhistory"]
   )::part(content) {
   min-width: 250px;
 }
 
 #PopupAutoComplete > richlistbox {
-  padding-block: var(--space-medium);
-  padding-inline: var(--space-small);
+  --autocomplete-popup-padding: var(--space-small);
+  /* Keep the row corners aligned with the panel corners. */
+  --autocomplete-row-border-radius: max(var(--border-radius-small), calc(var(--panel-border-radius) - var(--autocomplete-popup-padding)));
+
+  padding: var(--autocomplete-popup-padding);
   scrollbar-gutter: stable;
 
   &:not([pointerselected]) > richlistitem.autocomplete-row-item[selected] > autocomplete-row-item:not([subfocused]) {
@@ -70,9 +74,11 @@
   }
 
   > autocomplete-row-item {
+    --row-item-border-radius: var(--autocomplete-row-border-radius);
+
     flex: 1;
     border: var(--focus-outline-width) solid transparent;
-    border-radius: var(--border-radius-large);
+    border-radius: var(--row-item-border-radius);
   }
 }
 

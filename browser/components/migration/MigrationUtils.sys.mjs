@@ -602,6 +602,9 @@ class MigrationUtils {
    *   True if this is a startup migration.
    * @param {boolean} [aOptions.skipSourceSelection=undefined]
    *   True if the source selection page of the wizard should be skipped.
+   * @param {boolean} [aOptions.tabModal=undefined]
+   *   True if the wizard should open as a dialog over the current tab
+   *   instead of in about:preferences.
    * @param {string} [aOptions.profileId]
    *   An identifier for the profile to use when migrating.
    * @returns {Promise<undefined>}
@@ -663,6 +666,22 @@ class MigrationUtils {
       }
 
       openStandaloneWindow(true /* blocking */);
+      return Promise.resolve();
+    }
+
+    if (aOptions.tabModal) {
+      if (aOpener?.gBrowser) {
+        aOpener.gBrowser.getTabDialogBox(aOpener.gBrowser.selectedBrowser).open(
+          "chrome://browser/content/migration/migration-dialog-window.html",
+          {
+            features: "resizable=no",
+            modalType: Ci.nsIPrompt.MODAL_TYPE_CONTENT,
+          },
+          { options: aOptions }
+        );
+      } else {
+        openStandaloneWindow(false /* blocking */);
+      }
       return Promise.resolve();
     }
 

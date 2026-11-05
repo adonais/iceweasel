@@ -21,9 +21,12 @@ function carouselScreen() {
     id: "CAROUSEL_NAV_TEST",
     content: {
       position: "center",
+      // The pills only carry icons in the wide layout
+      screen_style: { width: "800px" },
       title: { raw: "Carousel" },
       tiles: {
         type: "single-select",
+        layout: "carousel",
         selected: PILLS[0].id,
         data: PILLS.map(({ id, label, icon }) => ({
           id,
@@ -31,6 +34,11 @@ function carouselScreen() {
           type: "carousel-card",
           pill: { label: { raw: label }, icon },
           label: { raw: `${label} card` },
+          tilebutton: {
+            label: { raw: "Try it now" },
+            style: "secondary",
+            action: { dismiss: true },
+          },
         })),
       },
       primary_button: { label: { raw: "Done" }, action: { dismiss: true } },
@@ -130,6 +138,36 @@ add_task(async function test_pill_selects_card() {
   Assert.ok(
     !radioFor(win, PILLS[0].id).checked,
     "The previously selected card is no longer selected"
+  );
+
+  await win.close();
+});
+
+add_task(async function test_only_the_selected_card_offers_its_button() {
+  const { win, control, pills } = await showCarousel();
+  const buttonFor = id =>
+    win.document.getElementById(`tile-button-select-item-${id}`);
+
+  Assert.ok(
+    !buttonFor(PILLS[0].id).hasAttribute("inert"),
+    "The selected card's button is reachable"
+  );
+  PILLS.slice(1).forEach(({ id }) =>
+    Assert.ok(
+      buttonFor(id).hasAttribute("inert"),
+      `The peek card ${id} keeps its button out of the tab order`
+    )
+  );
+
+  pills[2].click();
+  await control.updateComplete;
+  await TestUtils.waitForCondition(
+    () => !buttonFor(PILLS[2].id).hasAttribute("inert"),
+    "Waiting for the newly selected card to offer its button"
+  );
+  Assert.ok(
+    buttonFor(PILLS[0].id).hasAttribute("inert"),
+    "The card that lost the selection withdraws its button"
   );
 
   await win.close();

@@ -336,6 +336,56 @@ private val HeadingWithFormatting =
             ),
     )
 
+private val SetextHeadingLevel1 =
+    ParserTestCase(
+        description = "setext heading level 1",
+        source =
+            """
+            Heading One
+            ===
+            """
+                .trimIndent(),
+        expectedDocument =
+            document(
+                blocks =
+                    listOf(
+                        Heading(
+                            level = mozilla.components.ui.richtext.ir.HeadingLevel.H1,
+                            content = listOf(Plain("Heading One")),
+                        )
+                    )
+            ),
+    )
+
+private val SetextHeadingWithFormattingAndParagraph =
+    ParserTestCase(
+        description = "setext heading level 2 with inline formatting, followed by a paragraph",
+        source =
+            """
+            Heading with **bold** text
+            ---
+
+            A paragraph.
+            """
+                .trimIndent(),
+        expectedDocument =
+            document(
+                blocks =
+                    listOf(
+                        Heading(
+                            level = mozilla.components.ui.richtext.ir.HeadingLevel.H2,
+                            content =
+                                listOf(
+                                    Plain("Heading with "),
+                                    Strong(listOf(Plain("bold"))),
+                                    Plain(" text"),
+                                ),
+                        ),
+                        Paragraph(content = listOf(Plain("A paragraph."))),
+                    )
+            ),
+    )
+
 private val UnorderedList =
     ParserTestCase(
         description = "simple unordered list",
@@ -752,6 +802,8 @@ internal val ParserTestCases: List<ParserTestCase> =
         HeadingLevel2,
         HeadingLevel3,
         HeadingWithFormatting,
+        SetextHeadingLevel1,
+        SetextHeadingWithFormattingAndParagraph,
         UnorderedList,
         OrderedList,
         ListWithFormatting,

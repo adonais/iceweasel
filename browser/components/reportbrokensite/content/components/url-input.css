@@ -61,7 +61,6 @@ input:invalid {
     pointer-events: none;
     position: absolute;
     top: 0;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     width: -moz-available;
     height: 100%;
   }
@@ -73,7 +72,6 @@ input:invalid {
 
 #emphasized-url-text {
   direction: ltr;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   width: -moz-available;
   white-space: nowrap;
   overflow: hidden;

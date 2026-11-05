@@ -1402,5 +1402,26 @@ TEST(RtpPacketTest, SetCsrcsTruncatesWhenExceedingMax) {
   }
 }
 
+TEST(RtpPacketToSendTest, DefaultsToNotRetransmittableAndAllowedSending) {
+  RtpPacketToSend packet(nullptr);
+  EXPECT_FALSE(packet.allow_retransmission());
+  EXPECT_TRUE(packet.allow_sending());
+}
+
+TEST(RtpPacketToSendTest, SetsAllowRetransmission) {
+  RtpPacketToSend packet(nullptr);
+  packet.set_allow_retransmission(true);
+  EXPECT_TRUE(packet.allow_retransmission());
+
+  packet.set_allow_retransmission(false);
+  EXPECT_FALSE(packet.allow_retransmission());
+}
+
+TEST(RtpPacketToSendTest, SetsAllowSending) {
+  RtpPacketToSend packet(nullptr);
+  packet.set_allow_sending(false);
+  EXPECT_FALSE(packet.allow_sending());
+}
+
 }  // namespace
 }  // namespace webrtc

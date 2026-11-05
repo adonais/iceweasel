@@ -6,6 +6,7 @@
 #define XULMenuParentElement_h_
 
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/XULPopupElementBinding.h"
 #include "nsISupports.h"
 #include "nsXULElement.h"
 
@@ -52,10 +53,11 @@ class XULMenuParentElement : public nsXULElement {
   MOZ_CAN_RUN_SCRIPT void SetActiveMenuChild(XULButtonElement*,
                                              ByKey = ByKey::No);
 
-  XULButtonElement* GetFirstMenuItem() const;
+  XULButtonElement* GetFirstMenuItem(const GetMenuItemsOptions& = {}) const;
   XULButtonElement* GetLastMenuItem() const;
 
-  XULButtonElement* GetNextMenuItemFrom(const XULButtonElement&) const;
+  XULButtonElement* GetNextMenuItemFrom(const XULButtonElement&,
+                                        const GetMenuItemsOptions& = {}) const;
   XULButtonElement* GetPrevMenuItemFrom(const XULButtonElement&) const;
 
   enum class Wrap : bool { No, Yes };

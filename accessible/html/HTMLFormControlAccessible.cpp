@@ -861,7 +861,7 @@ double HTMLProgressAccessible::CurValue() const {
   return NS_FAILED(error) ? UnspecifiedNaN<double>() : value;
 }
 
-bool HTMLProgressAccessible::SetCurValue(double aValue) {
+bool HTMLProgressAccessible::SetCurValue(double /*aValue*/) {
   return false;  // progress meters are readonly.
 }
 
@@ -988,7 +988,7 @@ double HTMLMeterAccessible::CurValue() const {
   return value;
 }
 
-bool HTMLMeterAccessible::SetCurValue(double aValue) {
+bool HTMLMeterAccessible::SetCurValue(double /*aValue*/) {
   return false;  // meters are readonly.
 }
 

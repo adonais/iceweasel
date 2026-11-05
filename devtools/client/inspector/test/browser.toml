@@ -68,6 +68,8 @@ run-if = [
 
 ["browser_inspector_destroy-before-ready.js"]
 
+["browser_inspector_document_without_root.js"]
+
 ["browser_inspector_expand-collapse.js"]
 
 ["browser_inspector_eyedropper_ruleview.js"]

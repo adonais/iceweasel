@@ -8,11 +8,14 @@
 #include <windef.h>
 #include <winspool.h>
 
+#include <algorithm>
+#include <array>
+
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/PrintPromise.h"
-#include "mozilla/gfx/PrintTargetPDF.h"
+#include "mozilla/gfx/PrintTargetSkPDF.h"
 #include "mozilla/gfx/PrintTargetWindows.h"
 #include "mozilla/glean/PrintingMetrics.h"
 #include "nsAnonymousTemporaryFile.h"
@@ -46,6 +49,24 @@ using namespace mozilla::gfx;
 using namespace mozilla::widget;
 
 static const wchar_t kDriverName[] = L"WINSPOOL";
+
+static constexpr std::array<nsLiteralString, 15> kPDFPrinterPrefixes = {
+    u"Microsoft Print to PDF"_ns,
+    u"Adobe PDF"_ns,
+    u"Bullzip PDF Printer"_ns,
+    u"CutePDF Writer"_ns,
+    u"doPDF"_ns,
+    u"Foxit Reader PDF Printer"_ns,
+    u"Nitro PDF Creator"_ns,
+    u"novaPDF"_ns,
+    u"PDF-XChange"_ns,
+    u"PDF24 PDF"_ns,
+    u"PDFCreator"_ns,
+    u"PrimoPDF"_ns,
+    u"Soda PDF"_ns,
+    u"Solid PDF Creator"_ns,
+    u"Universal Document Converter"_ns,
+};
 
 //----------------------------------------------------------------------------------
 //---------------
@@ -125,22 +146,10 @@ NS_IMETHODIMP nsDeviceContextSpecWin::Init(nsIPrintSettings* aPrintSettings,
     glean::printing::target_type
         .EnumGet(glean::printing::TargetTypeLabel::ePdfFile)
         .Add(1);
-  } else if (StringBeginsWith(printerName, u"Microsoft Print to PDF"_ns) ||
-             StringBeginsWith(printerName, u"Adobe PDF"_ns) ||
-             StringBeginsWith(printerName, u"Bullzip PDF Printer"_ns) ||
-             StringBeginsWith(printerName, u"CutePDF Writer"_ns) ||
-             StringBeginsWith(printerName, u"doPDF"_ns) ||
-             StringBeginsWith(printerName, u"Foxit Reader PDF Printer"_ns) ||
-             StringBeginsWith(printerName, u"Nitro PDF Creator"_ns) ||
-             StringBeginsWith(printerName, u"novaPDF"_ns) ||
-             StringBeginsWith(printerName, u"PDF-XChange"_ns) ||
-             StringBeginsWith(printerName, u"PDF24 PDF"_ns) ||
-             StringBeginsWith(printerName, u"PDFCreator"_ns) ||
-             StringBeginsWith(printerName, u"PrimoPDF"_ns) ||
-             StringBeginsWith(printerName, u"Soda PDF"_ns) ||
-             StringBeginsWith(printerName, u"Solid PDF Creator"_ns) ||
-             StringBeginsWith(printerName,
-                              u"Universal Document Converter"_ns)) {
+  } else if (std::any_of(kPDFPrinterPrefixes.begin(), kPDFPrinterPrefixes.end(),
+                         [&](const auto& prefix) {
+                           return StringBeginsWith(printerName, prefix);
+                         })) {
     glean::printing::target_type
         .EnumGet(glean::printing::TargetTypeLabel::ePdfFile)
         .Add(1);
@@ -258,7 +267,7 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecWin::MakePrintTarget() {
       return stream;
     }();
 
-    return PrintTargetPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
+    return PrintTargetSkPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
   }
 
   if (mDevMode) {

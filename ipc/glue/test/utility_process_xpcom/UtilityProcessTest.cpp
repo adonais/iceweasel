@@ -189,29 +189,23 @@ UtilityProcessTest::UntilChildProcessDead(
 
   // Get a fresh handle to the child process with the specified PID.
   mozilla::UniqueFileHandle handle;
-  {
-    bool failed = false;
-    GeckoChildProcessHost::GetAll([&](GeckoChildProcessHost* aProc) {
-      if (handle || failed) {
-        return;
-      }
-      if (aProc->GetChildProcessId() != pid) {
-        return;
-      }
-
-      HANDLE handle_ = nullptr;
-      if (!::DuplicateHandle(
-              ::GetCurrentProcess(), aProc->GetChildProcessHandle(),
-              ::GetCurrentProcess(), &handle_, SYNCHRONIZE, FALSE, 0)) {
-        failed = true;
-      } else {
-        handle.reset(handle_);
-      }
-    });
-
-    if (failed || !handle) {
-      return NS_ERROR_FAILURE;
+  for (auto& proc : GeckoChildProcessHost::GetAll()) {
+    if (proc->GetChildProcessId() != pid) {
+      continue;
     }
+
+    HANDLE handle_ = nullptr;
+    if (!::DuplicateHandle(::GetCurrentProcess(), proc->GetChildProcessHandle(),
+                           ::GetCurrentProcess(), &handle_, SYNCHRONIZE, FALSE,
+                           0)) {
+      return NS_ERROR_FAILURE;
+    } else {
+      handle.reset(handle_);
+      break;
+    }
+  }
+  if (!handle) {
+    return NS_ERROR_FAILURE;
   }
 
   // Create and attach the resolver for the promise, giving the handle over to

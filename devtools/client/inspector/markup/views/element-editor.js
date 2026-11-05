@@ -67,6 +67,10 @@ const DISPLAY_TYPES = {
   "inline-grid": INSPECTOR_L10N.getStr(
     "markupView.display.inlineGrid.tooltiptext2"
   ),
+  "grid-lanes": INSPECTOR_L10N.getStr("markupView.display.grid.tooltiptext2"),
+  "inline-grid-lanes": INSPECTOR_L10N.getStr(
+    "markupView.display.inlineGrid.tooltiptext2"
+  ),
   subgrid: INSPECTOR_L10N.getStr("markupView.display.subgrid.tooltiptiptext"),
   "flow-root": INSPECTOR_L10N.getStr("markupView.display.flowRoot.tooltiptext"),
   contents: INSPECTOR_L10N.getStr("markupView.display.contents.tooltiptext2"),
@@ -454,7 +458,9 @@ class ElementEditor {
     const isGrid =
       displayType === "grid" ||
       displayType === "inline-grid" ||
-      displayType === "subgrid";
+      displayType === "subgrid" ||
+      displayType === "grid-lanes" ||
+      displayType === "inline-grid-lanes";
 
     const isInteractive =
       isFlex ||
@@ -1131,7 +1137,9 @@ class ElementEditor {
     if (
       target.dataset.display === "grid" ||
       target.dataset.display === "inline-grid" ||
-      target.dataset.display === "subgrid"
+      target.dataset.display === "subgrid" ||
+      target.dataset.display === "grid-lanes" ||
+      target.dataset.display === "inline-grid-lanes"
     ) {
       // Don't toggle the grid highlighter if the max number of new grid highlighters
       // allowed has been reached.

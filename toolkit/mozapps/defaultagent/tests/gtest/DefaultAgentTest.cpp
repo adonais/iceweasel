@@ -12,10 +12,13 @@
 #include "Telemetry.h"
 #include "nsComponentManagerUtils.h"
 #include "nsLiteralString.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/glean/GleanPings.h"
 
 using namespace mozilla::default_agent;
 
 const wchar_t* REG_KEY = L"AppLastRunTime";
+const wchar_t* DISABLE_TELEMETRY_REG_NAME = L"DisableTelemetry";
 const char* DEFAULT_AGENT_CONTRACT_ID = "@mozilla.org/default-agent;1";
 
 class DefaultAgentTest : public ::testing::Test {
@@ -97,8 +100,10 @@ TEST_F(DefaultAgentTest, SendDefaultAgentPing) {
                                        NotificationAction::NoAction};
   uint32_t daysSinceAppLaunch = 12;
   std::string isTaskbarPinned = "NotPinned";
-  HRESULT result = SendDefaultAgentPing(browserInfo, pdfInfo, activities,
-                                        daysSinceAppLaunch, isTaskbarPinned);
+  InstallInfo installInfo = {false, "", "full", false, true};
+  HRESULT result =
+      SendDefaultAgentPing(browserInfo, pdfInfo, activities, daysSinceAppLaunch,
+                           isTaskbarPinned, installInfo);
   ASSERT_EQ(S_OK, result);
 }
 
@@ -114,8 +119,66 @@ TEST_F(DefaultAgentTest, SendPing) {
   uint32_t daysSinceLaunch = 12;
 
   auto isTaskbarPinned = u"NotPinned"_ns;
+  auto winPackageFamilyName = u"Mozilla.Firefox_n80bbvh6b1yt2"_ns;
+  auto installerType = u"msix"_ns;
   nsresult result = defaultAgent->SendPing(
       currentBrowser, previousBrowser, pdfHandler, notificationShown,
-      notificationAction, daysSinceLaunch, isTaskbarPinned);
+      notificationAction, daysSinceLaunch, isTaskbarPinned, true,
+      winPackageFamilyName, installerType, false, false);
   ASSERT_EQ(result, NS_OK);
+}
+
+// Toggles the registry reflection of the telemetry opt-out pref and checks
+// whether SendDefaultAgentPing submits the Glean ping.
+class DefaultAgentPingTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    MaybeBoolResult readResult =
+        RegistryGetValueBool(IsPrefixed::Prefixed, DISABLE_TELEMETRY_REG_NAME);
+    ASSERT_TRUE(readResult.isOk());
+    mSavedDisableTelemetry = readResult.unwrap();
+  }
+
+  void TearDown() override {
+    if (mSavedDisableTelemetry.isSome()) {
+      VoidResult writeResult =
+          RegistrySetValueBool(IsPrefixed::Prefixed, DISABLE_TELEMETRY_REG_NAME,
+                               mSavedDisableTelemetry.value());
+      ASSERT_TRUE(writeResult.isOk());
+    } else {
+      (void)RegistryDeleteValue(IsPrefixed::Prefixed,
+                                DISABLE_TELEMETRY_REG_NAME);
+    }
+  }
+
+  bool PingSubmitted(bool aDisableTelemetry) {
+    VoidResult writeResult = RegistrySetValueBool(
+        IsPrefixed::Prefixed, DISABLE_TELEMETRY_REG_NAME, aDisableTelemetry);
+    EXPECT_TRUE(writeResult.isOk());
+
+    DefaultBrowserInfo browserInfo = {Browser::InternetExplorer,
+                                      Browser::Opera};
+    DefaultPdfInfo pdfInfo = {PDFHandler::AdobeAcrobat};
+    NotificationActivities activities = {NotificationType::Initial,
+                                         NotificationShown::NotShown,
+                                         NotificationAction::NoAction};
+    InstallInfo installInfo = {false, "", "full", true, false};
+    return mozilla::glean_pings::DefaultAgent.TestSubmission(
+        [](const nsACString& aReason) {},
+        [&]() {
+          HRESULT result = SendDefaultAgentPing(
+              browserInfo, pdfInfo, activities, 12, "NotPinned", installInfo);
+          EXPECT_EQ(S_OK, result);
+        });
+  }
+
+  mozilla::Maybe<bool> mSavedDisableTelemetry;
+};
+
+TEST_F(DefaultAgentPingTest, SubmitsWhenTelemetryEnabled) {
+  ASSERT_TRUE(PingSubmitted(false));
+}
+
+TEST_F(DefaultAgentPingTest, DoesNotSubmitWhenTelemetryDisabled) {
+  ASSERT_FALSE(PingSubmitted(true));
 }

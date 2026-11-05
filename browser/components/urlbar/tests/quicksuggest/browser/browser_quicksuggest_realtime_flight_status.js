@@ -156,8 +156,10 @@ const TEST_MERINO_MULTI = [
 
 add_setup(async function () {
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
+  UrlbarTestUtils.stubLocale("en-US");
   registerCleanupFunction(async () => {
     await PlacesUtils.history.clear();
+    UrlbarTestUtils.stubLocale(null);
   });
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit({

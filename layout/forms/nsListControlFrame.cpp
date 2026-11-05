@@ -6,7 +6,6 @@
 
 #include <algorithm>
 
-#include "mozilla/Attributes.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ReflowInput.h"
@@ -36,11 +35,7 @@ NS_IMPL_FRAMEARENA_HELPERS(nsListControlFrame)
 
 nsListControlFrame::nsListControlFrame(ComputedStyle* aStyle,
                                        nsPresContext* aPresContext)
-    : ScrollContainerFrame(aStyle, aPresContext, kClassID, false),
-      mNeedToReset(true),
-      mPostChildrenLoadedReset(false),
-      mMightNeedSecondPass(false),
-      mReflowWasInterrupted(false) {}
+    : ScrollContainerFrame(aStyle, aPresContext, kClassID, false) {}
 
 nsListControlFrame::~nsListControlFrame() = default;
 
@@ -151,9 +146,6 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
   NS_WARNING_ASSERTION(aReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE,
                        "Must have a computed inline size");
-
-  const bool hadPendingInterrupt = aPresContext->HasPendingInterrupt();
-
   SchedulePaint();
 
   MarkInReflow();
@@ -269,9 +261,6 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
   // because ScrollContainerFrame just adds in the border....
   aStatus.Reset();
   ScrollContainerFrame::Reflow(aPresContext, aDesiredSize, state, aStatus);
-
-  mReflowWasInterrupted |=
-      !hadPendingInterrupt && aPresContext->HasPendingInterrupt();
 }
 
 uint32_t nsListControlFrame::GetNumberOfRows() {
@@ -335,11 +324,6 @@ dom::HTMLOptionElement* nsListControlFrame::GetOption(uint32_t aIndex) const {
   return Select().Item(aIndex);
 }
 
-void nsListControlFrame::OnSelectionReset() {
-  mPostChildrenLoadedReset = true;
-  InvalidateFocus();
-}
-
 void nsListControlFrame::ElementStateChanged(ElementState aStates) {
   if (aStates.HasState(ElementState::FOCUS)) {
     InvalidateFocus();
@@ -351,50 +335,6 @@ void nsListControlFrame::GetOptionText(uint32_t aIndex, nsAString& aStr) {
   if (dom::HTMLOptionElement* optionElement = GetOption(aIndex)) {
     optionElement->GetRenderedLabel(aStr);
   }
-}
-
-void nsListControlFrame::OptionsAdded() {
-  // Make sure we scroll to the selected option as needed
-  mNeedToReset = true;
-
-  if (Select().IsDoneAddingChildren()) {
-    mPostChildrenLoadedReset = true;
-  }
-}
-
-class AsyncReset final : public Runnable {
- public:
-  AsyncReset(HTMLSelectElement& aElement, bool aScroll)
-      : Runnable("AsyncReset"), mElement(&aElement), mScroll(aScroll) {}
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
-    MOZ_KnownLive(mElement)->ResetListBoxSelection(mScroll);
-    return NS_OK;
-  }
-
- private:
-  const RefPtr<HTMLSelectElement> mElement;
-  const bool mScroll;
-};
-
-bool nsListControlFrame::ReflowFinished() {
-  if (mNeedToReset && !mReflowWasInterrupted) {
-    mNeedToReset = false;
-    // Suppress scrolling to the selected element if we restored scroll
-    // history state AND the list contents have not changed since we loaded
-    // all the children AND nothing else forced us to scroll by calling
-    // ResetList(true). The latter two conditions are folded into
-    // mPostChildrenLoadedReset.
-    //
-    // The idea is that we want scroll history restoration to trump ResetList
-    // scrolling to the selected element, when the ResetList was probably only
-    // caused by content loading normally.
-    const bool scroll = !DidHistoryRestore() || mPostChildrenLoadedReset;
-    nsContentUtils::AddScriptRunner(
-        MakeAndAddRef<AsyncReset>(Select(), scroll));
-  }
-  mReflowWasInterrupted = false;
-  return ScrollContainerFrame::ReflowFinished();
 }
 
 #ifdef DEBUG_FRAME_DUMP

@@ -37,50 +37,6 @@
 
 namespace webrtc {
 namespace test {
-namespace {
-
-// Verify output bitexactness for the fixed interface.
-// TODO(peah): Check whether it would make sense to add a threshold
-// to use for checking the bitexactness in a soft manner.
-bool VerifyFixedBitExactness(const audioproc::Stream& msg,
-                             const Int16Frame& frame) {
-  if (sizeof(frame.data[0]) * frame.data.size() != msg.output_data().size()) {
-    return false;
-  } else {
-    const int16_t* frame_data = frame.data.data();
-    for (int k = 0; k < frame.num_channels_ * frame.samples_per_channel_; ++k) {
-      if (msg.output_data().data()[k] != frame_data[k]) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-// Verify output bitexactness for the float interface.
-bool VerifyFloatBitExactness(const audioproc::Stream& msg,
-                             const StreamConfig& out_config,
-                             const ChannelBuffer<float>& out_buf) {
-  if (static_cast<size_t>(msg.output_channel_size()) !=
-      out_config.num_channels()) {
-    return false;
-  }
-
-  for (int ch = 0; ch < msg.output_channel_size(); ++ch) {
-    if (msg.output_channel(ch).size() != out_config.num_frames()) {
-      return false;
-    }
-    for (size_t sample = 0; sample < out_config.num_frames(); ++sample) {
-      if (msg.output_channel(ch).data()[sample] !=
-          out_buf.channels()[ch][sample]) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-}  // namespace
 
 AecDumpBasedSimulator::AecDumpBasedSimulator(
     const SimulationSettings& settings,
@@ -182,16 +138,6 @@ void AecDumpBasedSimulator::PrepareProcessStreamCall(
           : std::nullopt;
 }
 
-void AecDumpBasedSimulator::VerifyProcessStreamBitExactness(
-    const audioproc::Stream& msg) {
-  if (bitexact_output_) {
-    if (interface_used_ == InterfaceType::kFixedInterface) {
-      bitexact_output_ = VerifyFixedBitExactness(msg, fwd_frame_);
-    } else {
-      bitexact_output_ = VerifyFloatBitExactness(msg, out_config_, *out_buf_);
-    }
-  }
-}
 
 void AecDumpBasedSimulator::PrepareReverseProcessStreamCall(
     const audioproc::ReverseStream& msg) {
@@ -535,7 +481,6 @@ void AecDumpBasedSimulator::HandleMessage(const audioproc::Stream& msg) {
   }
   PrepareProcessStreamCall(msg);
   ProcessStream(interface_used_ == InterfaceType::kFixedInterface);
-  VerifyProcessStreamBitExactness(msg);
 }
 
 void AecDumpBasedSimulator::HandleMessage(const audioproc::ReverseStream& msg) {

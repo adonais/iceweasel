@@ -26,10 +26,13 @@ get_cpu_info(){
 }
 
 collect_cpu_at() {
-    for pid in $(get_process_ids $BROWSER_BINARY); do
-        echo "Collecting cpu info at $1s for $pid"
-        get_cpu_info "$pid" $TESTING_DIR/cpu_info_$2.txt &
-    done
+    local pids
+    pids=$(get_process_ids $BROWSER_BINARY | tr -d '\r' | paste -sd, -)
+    if [ -z "$pids" ]; then
+        return
+    fi
+    echo "Collecting cpu info at $1s for $pids"
+    get_cpu_info "$pids" $TESTING_DIR/cpu_info_$2.txt
 }
 
 collect_resources_at() {

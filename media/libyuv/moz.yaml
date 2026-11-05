@@ -19,11 +19,11 @@ origin:
 
   # Human-readable identifier for this version/release
   # Generally "version NNN", "tag SSS", "bookmark SSS"
-  release: eb8eda9c7973704d1103a535059224df7a6063b5 (Tue Oct 06 00:45:41 2026).
+  release: 9456b062277d2809c97f4633c116ffa8d485afdd (Wed Oct 07 23:10:15 2026).
 
   # Revision to pull in
   # Must be a long or short commit SHA (long preferred)
-  revision: eb8eda9c7973704d1103a535059224df7a6063b5
+  revision: 9456b062277d2809c97f4633c116ffa8d485afdd
 
   # The package's license, where possible using the mnemonic from
   # https://spdx.org/licenses/
@@ -57,4 +57,5 @@ vendoring:
     - 02_update_gyp.patch
     - 03_add_neon64_and_sve_gyp_targets.patch
     - 04_disable_sme.patch
+    - 05_include_win_sources_on_all_platforms.patch
 

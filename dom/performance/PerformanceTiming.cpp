@@ -4,6 +4,8 @@
 
 #include "PerformanceTiming.h"
 
+#include <memory>
+
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -98,11 +100,11 @@ PerformanceTiming::PerformanceTiming(Performance* aPerformance,
     : mPerformance(aPerformance) {
   MOZ_ASSERT(aPerformance, "Parent performance object should be provided");
 
-  mTimingData.reset(new PerformanceTimingData(
+  mTimingData = std::make_unique<PerformanceTimingData>(
       aChannel, aHttpChannel,
       nsRFPService::ReduceTimePrecisionAsMSecs(
           aZeroTime, aPerformance->GetRandomTimelineSeed(),
-          aPerformance->GetRTPCallerType())));
+          aPerformance->GetRTPCallerType()));
 
   // Non-null aHttpChannel implies that this PerformanceTiming object is being
   // used for subresources, which is irrelevant to this probe.

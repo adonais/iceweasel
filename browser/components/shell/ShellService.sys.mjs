@@ -58,6 +58,13 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsIGIOService
 );
 
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "mimeService",
+  "@mozilla.org/mime;1",
+  Ci.nsIMIMEService
+);
+
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "DESKTOP_ENTRY_API",
@@ -1373,6 +1380,56 @@ let ShellServiceInternal = {
         resolver.reject(error);
       },
     };
+  },
+
+  /**
+   * Sets the desktop background for the current user to the given image.
+   *
+   * Note that this doesn't check enterprise policies, etc.; that's considered
+   * the caller's responsibility.
+   *
+   * @param {CanvasImageSource} drawable - The image to set.
+   * @param {number} width - The width of `drawable`.
+   * @param {number} height - The height of `drawable`.
+   * @param {number} position - The position of the desktop background on the
+   * display. This should be one of the BACKGROUND_* properties in
+   * nsIShellService. (Note that macOS ignores this value.)
+   */
+  async setDesktopBackground(drawable, width, height, position) {
+    let canvas = new OffscreenCanvas(width, height);
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(drawable, 0, 0);
+
+    let [bytes, file] = await Promise.all([
+      canvas.convertToBlob({ type: "image/png" }).then(blob => blob.bytes()),
+      this._getDesktopBackgroundFile(),
+    ]);
+
+    await IOUtils.write(file.path, bytes);
+    this.setDesktopBackgroundFile(file, position);
+  },
+
+  /**
+   * Gets the path which will be used for the image saved by
+   * setDesktopBackground. This is mainly separated so it can be used and
+   * stubbed out by tests.
+   *
+   * @returns {nsIFile} The file which will be used for the background image.
+   */
+  async _getDesktopBackgroundFile() {
+    let leafName = await new Localization([
+      "browser/setDesktopBackground.ftl",
+    ]).formatValue("set-desktop-background-filename");
+
+    leafName = lazy.mimeService.validateFileNameForSaving(
+      leafName + ".png",
+      "image/png",
+      Ci.nsIMIMEService.VALIDATE_SANITIZE_ONLY
+    );
+
+    let file = Services.dirsvc.get("AppRegD", Ci.nsIFile);
+    file.append(leafName);
+    return file;
   },
 };
 

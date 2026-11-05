@@ -5,9 +5,11 @@
 #ifndef mozilla_dom_TestInterfaceSetlikeNode_h
 #define mozilla_dom_TestInterfaceSetlikeNode_h
 
+#include "mozilla/dom/ECMACollectionMixin.h"
 #include "nsCOMPtr.h"
 #include "nsWrapperCache.h"
 
+class nsINode;
 class nsPIDOMWindowInner;
 
 namespace mozilla {
@@ -20,8 +22,10 @@ class GlobalObject;
 
 // Implementation of test binding for webidl setlike interfaces, using
 // primitives for key type.
-class TestInterfaceSetlikeNode final : public nsISupports,
-                                       public nsWrapperCache {
+class TestInterfaceSetlikeNode final
+    : public nsISupports,
+      public nsWrapperCache,
+      public mozilla::dom::SetlikeMixin<RefPtr<nsINode>> {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(TestInterfaceSetlikeNode)

@@ -138,7 +138,7 @@ export class RemoteRenderer {
    * @returns {boolean}
    */
   willDoomOnShutdown(uri) {
-    return this.#cacheEntryURIsToDoomAtShutdown.find(doomedURI =>
+    return this.#cacheEntryURIsToDoomAtShutdown.some(doomedURI =>
       doomedURI.equals(uri)
     );
   }
@@ -363,7 +363,7 @@ export class RemoteRenderer {
    * Writes content to a single cache entry from an ArrayBuffer.
    *
    * @param {nsIURI} uri - Cache key URI
-   * @param {ArrayBuffer} arrayBuffer - Content to write
+   * @param {ArrayBufferLike} arrayBuffer - Content to write
    * @param {string} version - Version identifier
    * @returns {Promise<undefined>}
    */
@@ -423,6 +423,7 @@ export class RemoteRenderer {
    * Version metadata acts as atomic commit flag - both entries written with same version.
    *
    * @param {object} content
+   * @param {ArrayBufferLike} content.manifest - Renderer manifest
    * @param {ArrayBuffer} content.js - JavaScript bundle
    * @param {ArrayBuffer} content.css - CSS stylesheet
    * @param {string} content.version - Version identifier
@@ -657,7 +658,7 @@ export class RemoteRenderer {
    * Fetches the latest JS and CSS bundle from Remote Settings.
    * Downloads attachments and returns them as ArrayBuffers.
    *
-   * @returns {Promise<{js: ArrayBuffer, css: ArrayBuffer, version: string}|null>}
+   * @returns {Promise<{manifest: ArrayBufferLike, js: ArrayBuffer, css: ArrayBuffer, version: string}|null>}
    */
   async fetchLatestContent() {
     try {

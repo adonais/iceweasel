@@ -2238,7 +2238,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
           rect, PresContext()->AppUnitsPerDevPixel());
       dest = wr::ToLayoutRect(devPxRect);
 
-      aBuilder.PushRoundedRect(dest, wrBounds, isBackfaceVisible, color);
+      aBuilder.PushEllipse(dest, wrBounds, isBackfaceVisible, color);
     }
 
     // Reduce the inner rect by the width of the icon, and leave an

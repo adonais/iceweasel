@@ -108,6 +108,14 @@ skip-if = [
 
 ["test_domProxyArrayLengthGetter.html"]
 
+["test_ecma_collection_semantics.html"]
+skip-if = [
+  "asan",
+  "ccov",
+  "opt",
+  "tsan",
+]
+
 ["test_enums.html"]
 
 ["test_exceptionSanitization.html"]

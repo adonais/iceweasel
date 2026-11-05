@@ -20,7 +20,7 @@
 #include "libGLESv2/entry_points_gles_3_2_autogen.h"
 #include "libGLESv2/entry_points_gles_ext_autogen.h"
 #if defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
-#include "libGLESv2/entry_points_gles_ext_explicit_context_autogen.h"
+#    include "libGLESv2/entry_points_gles_ext_explicit_context_autogen.h"
 #endif  // defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
 #include "platform/PlatformMethods.h"
 
@@ -594,10 +594,6 @@ const ProcEntry g_procTable[] = {
     {"glCopyTextureCHROMIUM", P(GL_CopyTextureCHROMIUM)},
 #if defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
     {"glCopyTextureCHROMIUMContextANGLE", P(GL_CopyTextureCHROMIUMContextANGLE)},
-#endif // defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
-    {"glCoverageModulationCHROMIUM", P(GL_CoverageModulationCHROMIUM)},
-#if defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
-    {"glCoverageModulationCHROMIUMContextANGLE", P(GL_CoverageModulationCHROMIUMContextANGLE)},
 #endif // defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
     {"glCreateMemoryObjectsEXT", P(GL_CreateMemoryObjectsEXT)},
 #if defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
@@ -3198,6 +3194,10 @@ const ProcEntry g_procTable[] = {
     {"glTranslatex", P(GL_Translatex)},
 #if defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
     {"glTranslatexContextANGLE", P(GL_TranslatexContextANGLE)},
+#endif // defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
+    {"glTrimMemoryANGLE", P(GL_TrimMemoryANGLE)},
+#if defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
+    {"glTrimMemoryANGLEContextANGLE", P(GL_TrimMemoryANGLEContextANGLE)},
 #endif // defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
     {"glUniform1f", P(GL_Uniform1f)},
 #if defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)

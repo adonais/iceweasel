@@ -73,7 +73,7 @@ already_AddRefed<AccAttributes> ApplicationAccessible::NativeAttributes() {
 GroupPos ApplicationAccessible::GroupPosition() { return GroupPos(); }
 
 LocalAccessible* ApplicationAccessible::LocalChildAtPoint(
-    int32_t aX, int32_t aY, EWhichChildAtPoint aWhichChild) {
+    int32_t /*aX*/, int32_t /*aY*/, EWhichChildAtPoint /*aWhichChild*/) {
   return nullptr;
 }
 
@@ -87,7 +87,7 @@ Accessible* ApplicationAccessible::FocusedChild() {
 }
 
 Relation ApplicationAccessible::RelationByType(
-    RelationType aRelationType) const {
+    RelationType /*aRelationType*/) const {
   return Relation();
 }
 
@@ -134,7 +134,7 @@ void ApplicationAccessible::CreateInitialDocs() {
 }
 
 LocalAccessible* ApplicationAccessible::GetSiblingAtOffset(
-    int32_t aOffset, nsresult* aError) const {
+    int32_t /*aOffset*/, nsresult* aError) const {
   if (aError) *aError = NS_OK;  // fail peacefully
 
   return nullptr;

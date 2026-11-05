@@ -20,14 +20,14 @@ add_task(async function test_sessionData() {
   const tab1 = gBrowser.selectedTab;
   await loadURL(tab1.linkedBrowser, TEST_PAGE);
 
-  const sessionId = "sessionData-test";
+  const internalSessionId = "sessionData-test";
 
   const rootMessageHandlerRegistry = new MessageHandlerRegistry(
     RootMessageHandler.type
   );
 
   const rootMessageHandler =
-    rootMessageHandlerRegistry.getOrCreateMessageHandler(sessionId);
+    rootMessageHandlerRegistry.getOrCreateMessageHandler(internalSessionId);
   ok(rootMessageHandler, "Valid ROOT MessageHandler created");
 
   const sessionData = rootMessageHandler.sessionData;
@@ -52,8 +52,8 @@ add_task(async function test_sessionData() {
 
   sessionDataSnapshot = await getSessionDataFromContent();
   is(sessionDataSnapshot.size, 1, "session data contains 1 session");
-  ok(sessionDataSnapshot.has(sessionId));
-  let snapshot = sessionDataSnapshot.get(sessionId);
+  ok(sessionDataSnapshot.has(internalSessionId));
+  let snapshot = sessionDataSnapshot.get(internalSessionId);
   ok(Array.isArray(snapshot));
   is(snapshot.length, 1);
 
@@ -76,7 +76,7 @@ add_task(async function test_sessionData() {
       values: [12],
     },
   ]);
-  snapshot = (await getSessionDataFromContent()).get(sessionId);
+  snapshot = (await getSessionDataFromContent()).get(internalSessionId);
   is(snapshot.length, 2);
 
   const numberDataItem = snapshot[1];
@@ -98,7 +98,7 @@ add_task(async function test_sessionData() {
       values: [true],
     },
   ]);
-  snapshot = (await getSessionDataFromContent()).get(sessionId);
+  snapshot = (await getSessionDataFromContent()).get(internalSessionId);
   is(snapshot.length, 3);
 
   const boolDataItem = snapshot[2];
@@ -120,7 +120,7 @@ add_task(async function test_sessionData() {
       values: [12],
     },
   ]);
-  snapshot = (await getSessionDataFromContent()).get(sessionId);
+  snapshot = (await getSessionDataFromContent()).get(internalSessionId);
   is(snapshot.length, 2);
   checkSessionDataItem(
     snapshot[0],
@@ -147,7 +147,7 @@ add_task(async function test_sessionData() {
       values: ["value-1", true],
     },
   ]);
-  snapshot = (await getSessionDataFromContent()).get(sessionId);
+  snapshot = (await getSessionDataFromContent()).get(internalSessionId);
   is(snapshot.length, 0, "Session data is now empty");
 
   info("Add another value before destroy");
@@ -160,7 +160,7 @@ add_task(async function test_sessionData() {
       values: ["value-2"],
     },
   ]);
-  snapshot = (await getSessionDataFromContent()).get(sessionId);
+  snapshot = (await getSessionDataFromContent()).get(internalSessionId);
   is(snapshot.length, 1);
   checkSessionDataItem(
     snapshot[0],
@@ -176,9 +176,9 @@ add_task(async function test_sessionData() {
 });
 
 add_task(async function test_sessionDataRootOnlyModule() {
-  const sessionId = "sessionData-test-rootOnly";
+  const internalSessionId = "sessionData-test-rootOnly";
 
-  const rootMessageHandler = createRootMessageHandler(sessionId);
+  const rootMessageHandler = createRootMessageHandler(internalSessionId);
   ok(rootMessageHandler, "Valid ROOT MessageHandler created");
 
   BrowserTestUtils.startLoadingURIString(

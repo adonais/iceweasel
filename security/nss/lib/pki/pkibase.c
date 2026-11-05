@@ -372,13 +372,6 @@ nssCertificateArray_Destroy(
     }
 }
 
-NSS_IMPLEMENT void
-NSSCertificateArray_Destroy(
-    NSSCertificate **certs)
-{
-    nssCertificateArray_Destroy(certs);
-}
-
 NSS_IMPLEMENT NSSCertificate **
 nssCertificateArray_Join(
     NSSCertificate **certs1,
@@ -519,25 +512,6 @@ nssCertificateArray_FindBestCertificate(
         /* XXX later -- defer to policies */
     }
     return bestCert;
-}
-
-NSS_IMPLEMENT PRStatus
-nssCertificateArray_Traverse(
-    NSSCertificate **certs,
-    PRStatus (*callback)(NSSCertificate *c, void *arg),
-    void *arg)
-{
-    PRStatus status = PR_SUCCESS;
-    if (certs) {
-        NSSCertificate **certp;
-        for (certp = certs; *certp; certp++) {
-            status = (*callback)(*certp, arg);
-            if (status != PR_SUCCESS) {
-                break;
-            }
-        }
-    }
-    return status;
 }
 
 NSS_IMPLEMENT void

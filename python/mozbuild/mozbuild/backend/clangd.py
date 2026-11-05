@@ -5,7 +5,7 @@
 # This module provides a backend for `clangd` in order to have support for
 # code completion, compile errors, go-to-definition and more.
 # It is based on `database.py` with the difference that we don't generate
-# an unified `compile_commands.json` but we generate a per file basis `command` in
+# an unified `compile_commands.json` but we generate a per file basis `arguments` in
 # `objdir/clangd/compile_commands.json`
 
 import os

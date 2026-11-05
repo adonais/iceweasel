@@ -1006,6 +1006,24 @@ def get_route_builder(logger, aliases, config):
     return builder
 
 
+def raise_open_file_limit():
+    if sys.platform != "darwin":
+        return
+
+    # on Darwin, NOFILE starts with a very low limit (256), so bump it up a little
+    # by way of comparison, Debian starts with a limit of 1024, Windows 512
+    import resource  # local, as it only exists on Unix-like systems
+    maxfilesperproc = int(subprocess.check_output(
+        ["sysctl", "-n", "kern.maxfilesperproc"]
+    ).strip())
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    # 2048 is somewhat arbitrary, but gives us some headroom for wptrunner --parallel
+    # note that it's expected that 2048 will be the min here
+    new_soft = min(2048, maxfilesperproc, hard)
+    if soft < new_soft:
+        resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft, hard))
+
+
 class ServerProc:
     def __init__(self, mp_context, scheme=None):
         self.proc = None
@@ -1031,19 +1049,7 @@ class ServerProc:
         os.environ = env
         logger = get_logger(config.logging["level"], log_handlers)
 
-        if sys.platform == "darwin":
-            # on Darwin, NOFILE starts with a very low limit (256), so bump it up a little
-            # by way of comparison, Debian starts with a limit of 1024, Windows 512
-            import resource  # local, as it only exists on Unix-like systems
-            maxfilesperproc = int(subprocess.check_output(
-                ["sysctl", "-n", "kern.maxfilesperproc"]
-            ).strip())
-            soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-            # 2048 is somewhat arbitrary, but gives us some headroom for wptrunner --parallel
-            # note that it's expected that 2048 will be the min here
-            new_soft = min(2048, maxfilesperproc, hard)
-            if soft < new_soft:
-                resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft, hard))
+        raise_open_file_limit()
         try:
             self.daemon = init_func(logger, host, port, paths, routes, bind_address, config, **kwargs)
         except OSError:
@@ -1204,6 +1210,9 @@ def startup_failed(logger):
 
 
 def start_http_server(logger, host, port, paths, routes, bind_address, config, **kwargs):
+    # If SSL is available, allow upgrading to TLS after a CONNECT request so
+    # that the HTTP server can also act as an HTTPS proxy.
+    ssl_config = config.ssl_config
     try:
         return wptserve.WebTestHttpd(host=host,
                                      port=port,
@@ -1212,9 +1221,10 @@ def start_http_server(logger, host, port, paths, routes, bind_address, config, *
                                      rewrites=rewrites,
                                      bind_address=bind_address,
                                      config=config,
-                                     use_ssl=False,
-                                     key_file=None,
-                                     certificate=None,
+                                     use_ssl=ssl_config is not None,
+                                     key_file=ssl_config["key_path"] if ssl_config else None,
+                                     certificate=ssl_config["cert_path"] if ssl_config else None,
+                                     encrypt_after_connect=ssl_config is not None,
                                      latency=kwargs.get("latency"))
     except Exception as error:
         logger.critical(f"start_http_server: Caught exception from wptserve.WebTestHttpd: {error}")
@@ -1459,7 +1469,8 @@ class ConfigBuilder(config.ConfigBuilder):
             },
             "pregenerated": {
                 "host_key_path": os.path.join(repo_root, "tools", "certs", "web-platform.test.key"),
-                "host_cert_path": os.path.join(repo_root, "tools", "certs", "web-platform.test.pem")
+                "host_cert_path": os.path.join(repo_root, "tools", "certs", "web-platform.test.pem"),
+                "ca_cert_path": os.path.join(repo_root, "tools", "certs", "cacert.pem")
             },
             "none": {}
         },

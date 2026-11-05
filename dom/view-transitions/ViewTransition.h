@@ -5,16 +5,20 @@
 #ifndef mozilla_dom_ViewTransition_h
 #define mozilla_dom_ViewTransition_h
 
+#include <functional>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/layers/IpcResourceUpdateQueue.h"
 #include "nsAtomHashKeys.h"
+#include "nsCOMPtr.h"
 #include "nsClassHashtable.h"
 #include "nsRect.h"
 #include "nsRefPtrHashtable.h"
 #include "nsWrapperCache.h"
 
 class nsIGlobalObject;
+class nsIPrincipal;
 class nsITimer;
 
 namespace mozilla {
@@ -23,10 +27,11 @@ class ErrorResult;
 struct Keyframe;
 struct PseudoStyleRequest;
 struct StyleLockedDeclarationBlock;
+class WindowRenderer;
 
 namespace layers {
 class RenderRootStateManager;
-}
+}  // namespace layers
 
 namespace wr {
 struct ImageKey;
@@ -68,6 +73,9 @@ enum class SkipTransitionReason : uint8_t {
   // Can happen due to various recoverable internal errors such as GPU process
   // crashes or GPU device resets.
   ResetRendering,
+  // The navigation an outbound cross-document transition was captured for was
+  // stopped or superseded before the new document was revealed.
+  NavigationAborted,
 };
 
 // https://drafts.csswg.org/css-view-transitions-1/#viewtransition-phase
@@ -90,6 +98,11 @@ struct ViewTransitionParams {
   ViewTransitionNamedElements namedElements;
   AutoTArray<RefPtr<nsAtom>, 8> names;
   nsSize initialSnapshotContainingBlockSize;
+  // Principal of the document whose old state was captured. Reveal() checks
+  // that the new document is same-origin with it.
+  nsCOMPtr<nsIPrincipal> producerPrincipal;
+  // Id of the BrowsingContext whose document captured the old state.
+  uint64_t producerBrowsingContextId = 0;
 
   ~ViewTransitionParams();
 };
@@ -107,12 +120,35 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   static already_AddRefed<ViewTransition> CreateCrossDocument(
       Document&, UniquePtr<ViewTransitionParams>, TypeList&&);
 
+  static already_AddRefed<ViewTransition> CreateOutboundCrossDocument(
+      Document&, TypeList&&);
+
+  bool IsOutboundCrossDocument() const { return mIsOutboundCrossDocument; }
+
+  // Moves old-state snapshots from another WebRender bridge to the bridge of
+  // aRenderer. Does nothing if aRenderer does not use WebRender.
+  static void AdoptOldSnapshots(WindowRenderer* aRenderer,
+                                ViewTransitionNamedElements& aNamedElements);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT UniquePtr<ViewTransitionParams>
+  CaptureOldStateForCrossDocument();
+
+  // Captures the old state in the next rendering update, after the animation
+  // frame callbacks. aProceed then gets the captured params, or null if the
+  // transition was skipped.
+  void BeginDeferredOutboundCapture(
+      std::function<void(UniquePtr<ViewTransitionParams>&&)>&& aProceed);
+
   Promise* GetUpdateCallbackDone(ErrorResult&);
   Promise* GetReady(ErrorResult&);
   Promise* GetFinished(ErrorResult&);
   ViewTransitionTypeSet* Types();
   const TypeList& GetTypeList() const { return mTypeList; }
   TypeList& GetTypeList() { return mTypeList; }
+
+  // Called when the active types change. Updates the styles that use
+  // :active-view-transition-type().
+  void NotifyTypesChanged();
 
   void SkipTransition(SkipTransitionReason = SkipTransitionReason::JS);
   MOZ_CAN_RUN_SCRIPT void PerformPendingOperations();
@@ -186,6 +222,9 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
 
   void ClearActiveTransition(bool aIsDocumentHidden);
   void Timeout();
+  // Runs mOutboundCaptureProceed without params if it is set, so that the
+  // navigation continues.
+  void ReleaseDeferredOutboundCapture();
   MOZ_CAN_RUN_SCRIPT void Setup();
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Maybe<SkipTransitionReason>
   CaptureOldState();
@@ -247,6 +286,13 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   RefPtr<nsITimer> mTimeoutTimer;
 
   Phase mPhase = Phase::PendingCapture;
+  // True for the outbound transition created on the old document during a
+  // cross-document navigation.
+  bool mIsOutboundCrossDocument = false;
+  // The aProceed of BeginDeferredOutboundCapture. PerformPendingOperations
+  // runs it after the capture.
+  std::function<void(UniquePtr<ViewTransitionParams>&&)>
+      mOutboundCaptureProceed;
   // The wrapper of the pseudo-elements tree, to make sure it is always
   // out-of-flow. This is the top-layer for rendering the view transition tree.
   // So in general, its child (and only one) is the transition root

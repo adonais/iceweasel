@@ -47,6 +47,11 @@ suites:
         tests:
             "browser_link_preview_perf.js": ""
 
+    toolkit/components/pdfjs/test:
+        description: "Performance tests for PDF.js features on Firefox Desktop"
+        tests:
+            "browser_pdfjs_alttext_perf.js": ""
+
     browser/components/urlbar/tests/browser-ml:
         description: "Performance tests for urlbar features on Firefox Desktop"
         tests:
@@ -135,4 +140,5 @@ suites:
     browser/components/aiwindow/ui/test/browser_perf:
         description: "Performance tests for Smart Window on Firefox Desktop"
         tests:
+            "browser_smartwindow_intent_perf.js": ""
             "browser_smartwindow_perf.js": ""

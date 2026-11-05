@@ -26,6 +26,14 @@ namespace libyuv {
 extern "C" {
 #endif
 
+#ifndef RVV_VL_CLOBBER
+#ifdef __clang__
+#define RVV_VL_CLOBBER
+#else
+#define RVV_VL_CLOBBER "vl",
+#endif
+#endif
+
 #ifdef HAS_SCALEARGBFILTERCOLS_RVV
 void ScaleARGBFilterCols_RVV(uint8_t* dst_argb,
                              const uint8_t* src_argb,
@@ -76,7 +84,7 @@ void ScaleARGBFilterCols_RVV(uint8_t* dst_argb,
         [c_7f] "r"(0x7f),               // %[c_7f]
         [c_01010101] "r"(0x01010101u),  // %[c_01010101]
         [c_7f7f7f7f] "r"(0x7f7f7f7fu)   // %[c_7f7f7f7f]
-      : "vl", "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+      : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
         "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
 }
 #endif
@@ -102,7 +110,7 @@ void ScaleAddRow_RVV(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) {
         [dst_ptr] "+r"(dst_ptr),  // %[dst_ptr]
         [vl] "=&r"(vl)            // %[vl]
       : [one] "r"(1)              // %[one]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17");
 }
 #endif
 
@@ -129,7 +137,7 @@ void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
         [dst] "+r"(dst_argb),  // %[dst]
         [vl] "=&r"(vl)         // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -163,7 +171,7 @@ void ScaleARGBRowDown2Linear_RVV(const uint8_t* src_argb,
         [dst_argb] "+r"(dst_argb),  // %[dst_argb]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -201,7 +209,7 @@ void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
         [dst_argb] "+r"(dst_argb),  // %[dst_argb]
         [vl] "=&r"(vl)              // %[vl]
       : [c2] "r"(2)                 // %[c2]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
         "v19", "v20", "v21", "v22", "v23");
 }
 #endif
@@ -232,7 +240,7 @@ void ScaleARGBRowDownEven_RVV(const uint8_t* src_argb,
         [vl] "=&r"(vl),                              // %[vl]
         [src_step] "=&r"(src_step)                   // %[src_step]
       : [stride_byte] "r"((ptrdiff_t)src_stepx * 4)  // %[stride_byte]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11");
 }
 #endif
 
@@ -273,7 +281,7 @@ void ScaleARGBRowDownEvenBox_RVV(const uint8_t* src_argb,
         [src_step] "=&r"(src_step)                    // %[src_step]
       : [stride_byte] "r"((ptrdiff_t)src_stepx * 4),  // %[stride_byte]
         [c2] "r"(2)                                   // %[c2]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
         "v19", "v20", "v21", "v22", "v23");
 }
 #endif
@@ -301,7 +309,7 @@ void ScaleRowDown2_RVV(const uint8_t* src_ptr,
         [dst] "+r"(dst),          // %[dst]
         [vl] "=&r"(vl)            // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17");
 }
 #endif
 
@@ -334,7 +342,7 @@ void ScaleRowDown2Linear_RVV(const uint8_t* src_ptr,
         [dst] "+r"(dst),          // %[dst]
         [vl] "=&r"(vl)            // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
         "v19");
 }
 #endif
@@ -370,7 +378,7 @@ void ScaleRowDown2Box_RVV(const uint8_t* src_ptr,
         [dst] "+r"(dst),       // %[dst]
         [vl] "=&r"(vl)         // %[vl]
       : [c2] "r"(2)            // %[c2]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
         "v19", "v20", "v21", "v22", "v23");
 }
 #endif
@@ -397,7 +405,7 @@ void ScaleRowDown4_RVV(const uint8_t* src_ptr,
         [dst_ptr] "+r"(dst_ptr),  // %[dst_ptr]
         [vl] "=&r"(vl)            // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -455,7 +463,7 @@ void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
         [dst_ptr] "+r"(dst_ptr),      // %[dst_ptr]
         [vl] "=&r"(vl)                // %[vl]
       : [c8] "r"(8)                   // %[c8]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
         "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28",
         "v29", "v30", "v31");
 }
@@ -487,7 +495,7 @@ void ScaleRowDown34_RVV(const uint8_t* src_ptr,
         [dst_ptr] "+r"(dst_ptr),  // %[dst_ptr]
         [vl] "=&r"(vl)            // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -559,7 +567,7 @@ void ScaleRowDown34_0_Box_RVV(const uint8_t* src_ptr,
       : [src_stride] "r"(src_stride),  // %[src_stride]
         [c2] "r"(2),                   // %[c2]
         [c3] "r"(3)                    // %[c3]
-      : "vl", "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+      : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
         "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",
         "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27",
         "v28", "v29", "v30", "v31");
@@ -625,7 +633,7 @@ void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
       : [src_stride] "r"(src_stride),  // %[src_stride]
         [c2] "r"(2),                   // %[c2]
         [c3] "r"(3)                    // %[c3]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
         "v25", "v26", "v27", "v28", "v29");
 }
@@ -659,7 +667,7 @@ void ScaleRowDown38_RVV(const uint8_t* src_ptr,
         [dst_ptr] "+r"(dst_ptr),  // %[dst_ptr]
         [vl] "=&r"(vl)            // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -723,7 +731,7 @@ void ScaleRowDown38_2_Box_RVV(const uint8_t* src_ptr,
         [vl] "=&r"(vl)                // %[vl]
       : [coeff_a] "r"(65536u / 6u),   // %[coeff_a]
         [coeff_b] "r"(65536u / 4u)    // %[coeff_b]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
         "v25", "v26", "v27", "v28", "v29");
 }
@@ -813,7 +821,7 @@ void ScaleRowDown38_3_Box_RVV(const uint8_t* src_ptr,
         [vl] "=&r"(vl)                // %[vl]
       : [coeff_a] "r"(65536u / 9u),   // %[coeff_a]
         [coeff_b] "r"(65536u / 6u)    // %[coeff_b]
-      : "vl", "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+      : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
         "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",
         "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26");
 }
@@ -858,7 +866,7 @@ void ScaleRowUp2_Linear_RVV(const uint8_t* src_ptr,
           [work_src_next] "=&r"(work_src_next)  // %[work_src_next]
         : [c2] "r"(2),                          // %[c2]
           [c3] "r"(3)                           // %[c3]
-        : "vl", "vtype", "memory", "v12", "v13", "v16", "v17", "v18", "v19",
+        : RVV_VL_CLOBBER "memory", "v12", "v13", "v16", "v17", "v18", "v19",
           "v24", "v25", "v26", "v27");
   }
   dst_ptr[dst_width - 1] = src_ptr[0];
@@ -928,7 +936,7 @@ void ScaleRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
           [tmp_ptr] "=&r"(tmp_ptr)      // %[tmp_ptr]
         : [c2] "r"(2),                  // %[c2]
           [c3] "r"(3)                   // %[c3]
-        : "vl", "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6",
+        : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6",
           "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",
           "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26",
           "v27", "v28", "v29", "v30", "v31");
@@ -962,7 +970,7 @@ void ScaleUVRowDown2_RVV(const uint8_t* src_uv,
         [dst_uv] "+r"(dst_uv),  // %[dst_uv]
         [vl] "=&r"(vl)          // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17");
 }
 #endif
 
@@ -995,7 +1003,7 @@ void ScaleUVRowDown2Linear_RVV(const uint8_t* src_uv,
         [dst_uv] "+r"(dst_uv),  // %[dst_uv]
         [vl] "=&r"(vl)          // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
 }
 #endif
@@ -1037,7 +1045,7 @@ void ScaleUVRowDown2Box_RVV(const uint8_t* src_uv,
         [dst_uv] "+r"(dst_uv),           // %[dst_uv]
         [vl] "=&r"(vl)                   // %[vl]
       : [c2] "r"(2)                      // %[c2]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
         "v25", "v26", "v27", "v28", "v29");
 }
@@ -1071,7 +1079,7 @@ void ScaleUVRowDown4_RVV(const uint8_t* src_uv,
         [dst_uv] "+r"(dst_uv),  // %[dst_uv]
         [vl] "=&r"(vl)          // %[vl]
       :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17");
 }
 #endif
 
@@ -1101,7 +1109,7 @@ void ScaleUVRowDownEven_RVV(const uint8_t* src_uv,
         [vl] "=&r"(vl),                              // %[vl]
         [src_step] "=&r"(src_step)                   // %[src_step]
       : [stride_byte] "r"((ptrdiff_t)src_stepx * 2)  // %[stride_byte]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11");
 }
 #endif
 
@@ -1153,7 +1161,7 @@ void ScaleUVRowUp2_Linear_RVV(const uint8_t* src_ptr,
           [work_src_next] "=&r"(work_src_next)  // %[work_src_next]
         : [c2] "r"(2),                          // %[c2]
           [c3] "r"(3)                           // %[c3]
-        : "vl", "vtype", "memory", "v12", "v13", "v14", "v15", "v16", "v17",
+        : RVV_VL_CLOBBER "memory", "v12", "v13", "v14", "v15", "v16", "v17",
           "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27",
           "v28", "v29", "v30", "v31");
   }
@@ -1272,7 +1280,7 @@ void ScaleUVRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
           [tmp_ptr] "=&r"(tmp_ptr)      // %[tmp_ptr]
         : [c2] "r"(2),                  // %[c2]
           [c3] "r"(3)                   // %[c3]
-        : "vl", "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6",
+        : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6",
           "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",
           "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26",
           "v27", "v28", "v29", "v30", "v31");

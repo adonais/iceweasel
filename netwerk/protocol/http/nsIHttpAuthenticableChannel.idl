@@ -13,11 +13,6 @@ interface nsIInterfaceRequestor;
 interface nsIHttpAuthenticableChannel : nsIProxiedChannel
 {
     /**
-     * If the channel being authenticated is using SSL.
-     */
-    [must_use] readonly attribute boolean isSSL;
-
-    /**
      * Returns if the proxy HTTP method used is CONNECT. If no proxy is being
      * used it must return PR_FALSE.
      */

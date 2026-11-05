@@ -67,8 +67,9 @@ class WebRTCMetaBuildWrapper(mb.MetaBuildWrapper):
                                       output_path=None)
 
         extra_files = [
-            '../../.vpython3',
             '../../testing/test_env.py',
+            '../../vpython.toml',
+            '../../vpython.toml.uv.lock',
         ]
         vpython_exe = 'vpython3'
 

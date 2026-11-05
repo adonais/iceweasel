@@ -56,3 +56,10 @@ if CONFIG['OS_ARCH'] == 'WINNT':
 FINAL_LIBRARY = 'mozavcodec'
 
 include('/media/ffvpx/ffvpxcommon.mozbuild')
+
+SOURCE_HEADERS += [
+	"fdct.h",
+	"idct.h",
+	"vp8dsp.h",
+	"vp9dsp_init.h",
+]

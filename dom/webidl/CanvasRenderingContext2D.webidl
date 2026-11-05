@@ -57,6 +57,11 @@ dictionary HitRegionOptions {
   Element? control = null;
 };
 
+dictionary ImageDataSettings {
+  [Pref="gfx.canvas.colorspace.enabled"]
+  PredefinedColorSpace colorSpace;
+};
+
 typedef (HTMLImageElement or
          SVGImageElement) HTMLOrSVGImageElement;
 
@@ -293,11 +298,13 @@ interface mixin CanvasDrawImage {
 interface mixin CanvasImageData {
   // pixel manipulation
   [NewObject, Throws]
-  ImageData createImageData([EnforceRange] long sw, [EnforceRange] long sh);
+  ImageData createImageData([EnforceRange] long sw, [EnforceRange] long sh,
+                            optional ImageDataSettings settings = {});
   [NewObject, Throws]
   ImageData createImageData(ImageData imagedata);
   [NewObject, Throws, NeedsSubjectPrincipal]
-  ImageData getImageData([EnforceRange] long sx, [EnforceRange] long sy, [EnforceRange] long sw, [EnforceRange] long sh);
+  ImageData getImageData([EnforceRange] long sx, [EnforceRange] long sy, [EnforceRange] long sw, [EnforceRange] long sh,
+                         optional ImageDataSettings settings = {});
   [Throws]
   undefined putImageData(ImageData imagedata, [EnforceRange] long dx, [EnforceRange] long dy);
   [Throws]

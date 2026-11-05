@@ -951,8 +951,10 @@ nsAppStartup::TrackStartupCrashBegin(bool* aIsSafeModeNecessary) {
   // XRE_PROFILE_PATH is set.  After profile manager, the profile lock's mod.
   // time has been changed so can't be used on this startup. After a restart,
   // it's safe to assume the last startup was successful.
+  // Startup clears XRE_PROFILE_PATH by setting it empty, which leaves it in the
+  // environment on Unix for processes this one launches.
   char* xreProfilePath = PR_GetEnv("XRE_PROFILE_PATH");
-  if (xreProfilePath) {
+  if (xreProfilePath && *xreProfilePath) {
     GetAutomaticSafeModeNecessary(aIsSafeModeNecessary);
     return NS_ERROR_NOT_AVAILABLE;
   }

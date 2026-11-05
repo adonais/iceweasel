@@ -1195,9 +1195,9 @@ impl GlDevice {
         let supports_texture_external_bt709 =
             supports_texture_external && supports_extension(&extensions, "GL_EXT_YUV_target");
 
-        // On Windows a GLES context is an ANGLE context, whose default framebuffer
-        // is a D3D surface with a top-left origin.
-        let readback_rows_top_down = cfg!(windows) && gl.get_type() == gl::GlType::Gles;
+        // A default framebuffer with a top-left origin, such as an ANGLE D3D
+        // surface or a SWGL framebuffer, is read back top row first.
+        let readback_rows_top_down = surface_origin_is_top_left;
 
         let mut requires_batched_texture_uploads = None;
         if is_software_webrender {
@@ -3629,7 +3629,15 @@ impl GpuBackend for GlDevice {
             size as _,
             gl::MAP_WRITE_BIT | gl::MAP_UNSYNCHRONIZED_BIT,
         );
-        assert!(!ptr.is_null());
+        if ptr.is_null() {
+            self.gl.buffer_sub_data_untyped(
+                target,
+                offset as _,
+                size as _,
+                data.as_ptr() as *const _,
+            );
+            return;
+        }
 
         unsafe {
             ptr::copy_nonoverlapping(data.as_ptr(), ptr as *mut u8, size);

@@ -62,7 +62,8 @@ add_task(async function testFormattingOfClipboardSuggestion() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:home" },
     async () => {
-      let { result } = await searchEmptyStringAndGetFirstRow();
+      let { result, _elements: elements } =
+        await searchEmptyStringAndGetFirstRow();
 
       Assert.equal(
         result.providerName,
@@ -78,6 +79,16 @@ add_task(async function testFormattingOfClipboardSuggestion() {
         result.payload.title,
         unicodeURL,
         "The Clipboard suggestion title should be decoded."
+      );
+
+      let title = elements.get("title");
+      Assert.ok(
+        title.hasAttribute("is-url"),
+        "The Clipboard suggestion title should have the is-url attribute."
+      );
+      Assert.ok(
+        !title.hasAttribute("dir"),
+        "The Clipboard suggestion title should not have a dir attribute."
       );
     }
   );

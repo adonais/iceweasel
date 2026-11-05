@@ -68,3 +68,13 @@ LOCAL_INCLUDES += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "SMILBoolType.h",
+    "SMILCompositor.h",
+    "SMILCSSProperty.h",
+    "SMILEnumType.h",
+    "SMILFloatType.h",
+    "SMILIntegerType.h",
+    "SMILStringType.h",
+]

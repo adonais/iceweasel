@@ -109,7 +109,7 @@ and then run your tests with JOG enabled e.g.
 To ensure it's working, enable JOG logging with
 `MOZ_LOG=timestamp,sync,jog:5`.
 
-[artifact-build]: https://firefox-source-docs.mozilla.org/contributing/build/artifact_builds.html
+[artifact-build]: /contributing/build/artifact_builds.md
 [glean-js]: https://mozilla.github.io/glean/book/user/adding-glean-to-your-project/javascript.html
 [impl-bug]: https://bugzilla.mozilla.org/show_bug.cgi?id=1698184
 [design-bug]: https://bugzilla.mozilla.org/show_bug.cgi?id=1662863

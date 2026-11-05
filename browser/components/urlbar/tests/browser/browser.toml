@@ -41,6 +41,9 @@ support-files = [
 
 ["browser_canonizeURL.js"]
 https_first_disabled = true
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2081032
+]
 support-files = [
   "searchSuggestionEngine.xml",
   "searchSuggestionEngine.sjs",
@@ -163,6 +166,8 @@ https_first_disabled = true
 support-files = ["redirect_to.sjs"]
 
 ["browser_urlbar_modifiedClick.js"]
+
+["browser_urlbar_typingRace.js"]
 
 ["browser_waitForLoadStartOrTimeout.js"]
 https_first_disabled = true

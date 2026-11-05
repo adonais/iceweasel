@@ -1,0 +1,25 @@
+---
+source-headers:
+    description: |
+        Checks that every moz.build registers all SOURCE_HEADERS appropriately.
+    include:
+        - .
+    exclude:
+        # clang-tidy does not scan those directories
+        - build/clang-plugin/moz.build
+        - build/clang-plugin/tests/moz.build
+        - build/unix/elfhack/moz.build
+        # populates EXPORTS dynamically
+        - dom/webgpu/moz.build
+        # test files
+        - tools/lint/test/files/source-headers/
+        - python/mozbuild/mozbuild/test/frontend/data/reader-error-syntax/moz.build
+    extensions:
+        - build
+        - h
+        - hh
+        - hpp
+    support-files:
+        - 'tools/lint/source_headers/**'
+    type: external
+    payload: source_headers:lint

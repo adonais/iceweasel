@@ -620,6 +620,7 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   }
 
   Maybe<float> displayWidthChangeRatio;
+  const LayoutDeviceIntSize oldDisplaySize = mDisplaySize;
   if (Maybe<LayoutDeviceIntSize> newDisplaySize =
           mContext->GetDocumentViewerSize()) {
     // See the comment in UpdateResolutionForViewportSizeChange for why we're
@@ -662,15 +663,17 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   CSSSize viewport = viewportInfo.GetSize();
   MVM_LOG("%p: Computed CSS viewport %s\n", this, ToString(viewport).c_str());
 
-  if (!mInvalidViewport && !mIsFirstPaint && mMobileViewportSize == viewport) {
+  if (!mInvalidViewport && !mIsFirstPaint && mMobileViewportSize == viewport &&
+      mDisplaySize == oldDisplaySize) {
     // Nothing changed, so no need to do a reflow
     return;
   }
 
   // If it's the first-paint or the viewport changed, we need to update
   // various APZ properties (the zoom and some things that might depend on it)
-  MVM_LOG("%p: Updating properties because %d || %d\n", this, mIsFirstPaint,
-          mMobileViewportSize != viewport);
+  MVM_LOG("%p: Updating properties because %d || %d || %d || %d\n", this,
+          mInvalidViewport, mIsFirstPaint, mMobileViewportSize != viewport,
+          mDisplaySize != oldDisplaySize);
 
   if (mManagerType == ManagerType::VisualAndMetaViewport &&
       (aForceAdjustResolution || mContext->AllowZoomingForDocument())) {

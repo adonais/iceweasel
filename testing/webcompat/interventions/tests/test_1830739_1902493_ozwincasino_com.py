@@ -12,7 +12,9 @@ SUPPORTED_CSS = "#game_main"
 async def get_to_page(client):
     await client.navigate(URL)
     client.click(client.await_css(FIRST_GAME_CSS, is_displayed=True))
-    client.soft_click(client.await_css(FIRST_GAME_PRACTICE_CSS, is_displayed=True))
+    client.soft_click(
+        client.await_css(FIRST_GAME_PRACTICE_CSS, is_displayed=True, timeout=30)
+    )
 
 
 @pytest.mark.only_platforms("android")

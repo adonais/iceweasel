@@ -876,3 +876,405 @@ if (!settingsRedesignHistoryEnabled()) {
     await dh.promiseClosed;
   });
 }
+
+/**
+ * Both contexts that delete data read the same, whichever entry point opened
+ * the dialog. "browser" is the in-window dialog, "clearSiteData" goes through
+ * about:preferences.
+ */
+add_task(async function testDeleteWordingInClearingContexts() {
+  for (let mode of ["browser", "clearSiteData"]) {
+    let dh = new ClearHistoryDialogHelper({ mode });
+    dh.onload = function () {
+      let doc = this.win.document;
+      is(
+        doc.documentElement.getAttribute("data-l10n-id"),
+        "sanitize-dialog-delete-title",
+        `Title uses the delete wording in the ${mode} context`
+      );
+      is(
+        doc
+          .querySelector("dialog")
+          .getButton("accept")
+          .getAttribute("data-l10n-id"),
+        "sanitize-button-delete",
+        `Confirm button uses the delete wording in the ${mode} context`
+      );
+      this.cancelDialog();
+    };
+    dh.open();
+    await dh.promiseClosed;
+  }
+});
+
+/**
+ * Clear on shutdown saves preferences rather than deleting anything, so it
+ * keeps its own title and confirm button.
+ */
+add_task(async function testClearOnShutdownKeepsItsOwnWording() {
+  let dh = new ClearHistoryDialogHelper({ mode: "clearOnShutdown" });
+  dh.onload = function () {
+    let doc = this.win.document;
+    is(
+      doc.documentElement.getAttribute("data-l10n-id"),
+      "sanitize-dialog-title2",
+      "Clear on shutdown keeps its own title"
+    );
+    is(
+      doc
+        .querySelector("dialog")
+        .getButton("accept")
+        .getAttribute("data-l10n-id"),
+      "sanitize-button-ok-on-shutdown",
+      "Clear on shutdown keeps its Save Changes button"
+    );
+    ok(
+      !BrowserTestUtils.isVisible(doc.getElementById("sanitizeDialogClose")),
+      "Clear on shutdown shows no close button"
+    );
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+});
+
+/**
+ * The close button stands in for the title bar one the in-window dialog does
+ * not have, and dismisses without deleting.
+ */
+add_task(async function testCloseButtonCancels() {
+  let cancelled = false;
+  let dh = new ClearHistoryDialogHelper();
+  dh.onload = function () {
+    let closeButton = this.win.document.getElementById("sanitizeDialogClose");
+    ok(
+      BrowserTestUtils.isVisible(closeButton),
+      "Close button is shown in the in-window dialog"
+    );
+    this.win.document.addEventListener("dialogcancel", () => {
+      cancelled = true;
+    });
+    closeButton.click();
+  };
+  dh.onunload = function () {
+    ok(cancelled, "Close button dismisses the dialog the way Cancel does");
+  };
+  dh.open();
+  await dh.promiseClosed;
+});
+
+/**
+ * The close button comes first in the document, but keyboard users should
+ * start on the dialog's content rather than on it.
+ */
+add_task(async function testCloseButtonNotInitiallyFocused() {
+  let dh = new ClearHistoryDialogHelper();
+  dh.onload = async function () {
+    let doc = this.win.document;
+    await TestUtils.waitForCondition(
+      () => doc.activeElement && doc.activeElement != doc.documentElement,
+      "Wait for the dialog to set its initial focus"
+    );
+    is(
+      doc.activeElement,
+      this.getDurationDropdown(),
+      "Initial focus is on the duration dropdown, not the close button"
+    );
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+});
+
+/**
+ * Clear on shutdown has no duration dropdown, so it keeps the default initial
+ * focus on its first focusable element.
+ */
+add_task(async function testClearOnShutdownInitialFocus() {
+  let dh = new ClearHistoryDialogHelper({ mode: "clearOnShutdown" });
+  dh.onload = async function () {
+    let doc = this.win.document;
+    await TestUtils.waitForCondition(
+      () => doc.activeElement && doc.activeElement != doc.documentElement,
+      "Wait for the dialog to set its initial focus"
+    );
+    is(
+      doc.activeElement.localName,
+      "checkbox",
+      "Initial focus is on a checkbox"
+    );
+    ok(
+      BrowserTestUtils.isVisible(doc.activeElement),
+      "The initially focused element is visible"
+    );
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+});
+
+/**
+ * In about:preferences SubDialog draws its own close button, so showing this
+ * one too would double it up.
+ */
+add_task(async function testNoCloseButtonInPreferences() {
+  let dh = new ClearHistoryDialogHelper({ mode: "clearSiteData" });
+  dh.onload = function () {
+    ok(
+      !BrowserTestUtils.isVisible(
+        this.win.document.getElementById("sanitizeDialogClose")
+      ),
+      "The dialog hides its own close button inside about:preferences"
+    );
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+});
+
+/**
+ * A caller can ask for the windows to be replaced when history is cleared.
+ * The dialog then adds openWindows to the same sanitization, which closes the
+ * windows before clearing anything else.
+ */
+add_task(async function testCloseWindowsWithHistory() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.clearHistory.browsingHistoryAndDownloads", true],
+      ["privacy.clearHistory.cookiesAndStorage", true],
+    ],
+  });
+  // Really closing every window would take the test harness with it.
+  let originalSanitize = Sanitizer.sanitize;
+  let calls = [];
+  Sanitizer.sanitize = async itemsToClear => {
+    calls.push(itemsToClear);
+    return {};
+  };
+
+  try {
+    for (let [showUIOptions, clearHistory] of [
+      [{ closeWindowsWithHistory: true }, true],
+      [{ closeWindowsWithHistory: true }, false],
+      [undefined, true],
+    ]) {
+      let dh = new ClearHistoryDialogHelper({ showUIOptions });
+      dh.onload = function () {
+        this.checkPrefCheckbox("browsingHistoryAndDownloads", clearHistory);
+        this.checkPrefCheckbox("cookiesAndStorage", true);
+        this.acceptDialog();
+      };
+      dh.open();
+      await dh.promiseClosed;
+    }
+  } finally {
+    Sanitizer.sanitize = originalSanitize;
+  }
+
+  Assert.equal(calls.length, 3, "Each dialog sanitized once");
+  ok(
+    calls[0].includes("openWindows"),
+    "Clearing history with the option also replaces the windows"
+  );
+  ok(
+    !calls[1].includes("openWindows"),
+    "Without history the windows stay open"
+  );
+  ok(
+    !calls[2].includes("openWindows"),
+    "Without the option the windows stay open"
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Clearing can take a while, and like the dialog buttons the close button
+ * can't interrupt it.
+ */
+add_task(async function testCloseButtonDisabledWhileClearing() {
+  let originalSanitize = Sanitizer.sanitize;
+  let { promise: clearing, resolve: finishClearing } = Promise.withResolvers();
+  let sanitizeStarted = Promise.withResolvers();
+  Sanitizer.sanitize = () => {
+    sanitizeStarted.resolve();
+    return clearing;
+  };
+
+  try {
+    let dh = new ClearHistoryDialogHelper();
+    dh.onload = async function () {
+      let closeButton = this.win.document.getElementById("sanitizeDialogClose");
+      ok(!closeButton.disabled, "Close button is enabled before deleting");
+      this.acceptDialog();
+      await sanitizeStarted.promise;
+      ok(closeButton.disabled, "Close button is disabled while clearing");
+      finishClearing({});
+    };
+    dh.open();
+    await dh.promiseClosed;
+  } finally {
+    Sanitizer.sanitize = originalSanitize;
+  }
+});
+
+/**
+ * Open the clear browsing data dialog with `trigger`, and wait for it to
+ * record that it opened.
+ *
+ * @param {Function} trigger - Opens the dialog, possibly asynchronously.
+ * @returns {Promise<Window>} The dialog's window.
+ */
+async function openDialogAndWaitForTelemetry(trigger) {
+  Services.fog.testResetFOG();
+  let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
+    null,
+    "chrome://browser/content/sanitize_v2.xhtml",
+    { isSubDialog: true }
+  );
+  await trigger();
+  let win = await dialogPromise;
+  await TestUtils.waitForCondition(
+    () => Glean.browserSanitizer.dialogOpened.testGetValue()?.length,
+    "Waiting for dialog_opened"
+  );
+  return win;
+}
+
+/**
+ * Close the dialog with `close` and check the dialog_closed event.
+ *
+ * @param {Window} win - The dialog's window.
+ * @param {Function} close - Closes the dialog.
+ * @param {object} expected - Expected extras of dialog_closed.
+ */
+async function closeDialogAndCheckTelemetry(win, close, expected) {
+  let unloaded = BrowserTestUtils.waitForEvent(win, "unload");
+  close();
+  await unloaded;
+  let closed = Glean.browserSanitizer.dialogClosed.testGetValue();
+  Assert.equal(closed?.length, 1, "Recorded one dialog_closed");
+  Assert.deepEqual(closed[0].extra, expected, "dialog_closed has the extras");
+}
+
+/**
+ * Open the dialog from the History view of the app menu.
+ */
+async function openFromAppMenu() {
+  const { CustomizableUITestUtils } = ChromeUtils.importESModule(
+    "resource://testing-common/CustomizableUITestUtils.sys.mjs"
+  );
+  await new CustomizableUITestUtils(window).openMainMenu();
+  let historyView = PanelMultiView.getViewNode(document, "PanelUI-history");
+  let shown = BrowserTestUtils.waitForEvent(historyView, "ViewShown");
+  PanelMultiView.getViewNode(document, "appMenu-history-button").click();
+  await shown;
+  PanelMultiView.getViewNode(document, "appMenuClearRecentHistory").click();
+}
+
+/**
+ * The dialog records which entry point opened it, telling the keyboard
+ * shortcut apart from the menu items that share its command.
+ */
+add_task(async function testEntryPointTelemetry() {
+  for (let [entryPoint, trigger] of [
+    [
+      "shortcut",
+      () =>
+        EventUtils.synthesizeKey("KEY_Delete", {
+          accelKey: true,
+          shiftKey: true,
+        }),
+    ],
+    ["menu_bar", () => document.getElementById("sanitizeItem").doCommand()],
+    ["app_menu", openFromAppMenu],
+    [
+      "other",
+      () => {
+        // Resolves only once the dialog closes, so don't wait for it here.
+        Sanitizer.showUI(window);
+      },
+    ],
+  ]) {
+    let win = await openDialogAndWaitForTelemetry(trigger);
+    Assert.deepEqual(
+      Glean.browserSanitizer.dialogOpened.testGetValue()[0].extra,
+      { entry_point: entryPoint },
+      `dialog_opened reports ${entryPoint}`
+    );
+    await closeDialogAndCheckTelemetry(
+      win,
+      () => win.document.querySelector("dialog").cancelDialog(),
+      { entry_point: entryPoint, outcome: "cancelled" }
+    );
+  }
+});
+
+add_task(async function testDialogClosedOutcomes() {
+  let originalSanitize = Sanitizer.sanitize;
+  Sanitizer.sanitize = async () => ({});
+  try {
+    let win = await openDialogAndWaitForTelemetry(() =>
+      document.getElementById("sanitizeItem").doCommand()
+    );
+    await closeDialogAndCheckTelemetry(
+      win,
+      () => win.document.querySelector("dialog").acceptDialog(),
+      { entry_point: "menu_bar", outcome: "deleted" }
+    );
+  } finally {
+    Sanitizer.sanitize = originalSanitize;
+  }
+
+  let win = await openDialogAndWaitForTelemetry(() =>
+    document.getElementById("sanitizeItem").doCommand()
+  );
+  await closeDialogAndCheckTelemetry(win, () => win.close(), {
+    entry_point: "menu_bar",
+    outcome: "dismissed",
+  });
+});
+
+/**
+ * Clear on shutdown only saves settings, so it records nothing.
+ */
+add_task(async function testClearOnShutdownRecordsNoTelemetry() {
+  Services.fog.testResetFOG();
+  let dh = new ClearHistoryDialogHelper({ mode: "clearOnShutdown" });
+  dh.onload = function () {
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+  Assert.equal(
+    Glean.browserSanitizer.dialogOpened.testGetValue(),
+    null,
+    "No dialog_opened for clear on shutdown"
+  );
+  Assert.equal(
+    Glean.browserSanitizer.dialogClosed.testGetValue(),
+    null,
+    "No dialog_closed for clear on shutdown"
+  );
+});
+
+add_task(async function testSettingsEntryPoints() {
+  let cases = [["clearSiteData", "settings_site_data"]];
+  // The redesigned Settings have no separate clear history button.
+  if (!settingsRedesignHistoryEnabled()) {
+    cases.push(["clearHistory", "settings_history"]);
+  }
+  for (let [mode, entryPoint] of cases) {
+    Services.fog.testResetFOG();
+    let dh = new ClearHistoryDialogHelper({ mode });
+    dh.onload = function () {
+      this.cancelDialog();
+    };
+    dh.open();
+    await dh.promiseClosed;
+    Assert.deepEqual(
+      Glean.browserSanitizer.dialogOpened.testGetValue()?.[0].extra,
+      { entry_point: entryPoint },
+      `Settings reports ${entryPoint}`
+    );
+  }
+});

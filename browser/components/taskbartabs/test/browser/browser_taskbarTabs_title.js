@@ -16,7 +16,7 @@ let gProfileName = null;
 
 const kUri = Services.io.newURI("https://example.com");
 
-sinon.stub(TaskbarTabsPin, "pinTaskbarTab");
+sinon.stub(TaskbarTabsPin, "pinTaskbarTab").resolves({});
 sinon.stub(TaskbarTabsPin, "unpinTaskbarTab");
 
 add_setup(function setup() {

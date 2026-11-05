@@ -580,7 +580,7 @@ static void RealBreak() {
 }
 
 // Abort() calls this function, don't call it!
-static void Break(const char* aMsg) {
+static void Break([[maybe_unused]] const char* aMsg) {
 #if defined(_WIN32)
   static int ignoreDebugger;
   if (!ignoreDebugger) {

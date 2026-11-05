@@ -48,7 +48,7 @@ add_setup(async function () {
     .stub(FormAutofillML.prototype, "detectFields")
     .callsFake(async fieldDetails => {
       for (const fieldDetail of fieldDetails) {
-        if (fieldDetail.fieldName || !fieldDetail.mlData) {
+        if (!FormAutofillUtils.canUseML(fieldDetail)) {
           continue;
         }
         Assert.greater(
@@ -59,6 +59,7 @@ add_setup(async function () {
         fieldDetail.fieldName = predictions.shift();
         fieldDetail.reason = "ml";
       }
+      return true;
     });
   const getModelVersionStub = sinon
     .stub(FormAutofillML, "getModelVersion")
@@ -73,7 +74,6 @@ add_setup(async function () {
     set: [
       ["extensions.formautofill.useml", true],
       ["extensions.formautofill.useml.nativeOnnxAvailable", true],
-      ["extensions.formautofill.useml.successful", true],
     ],
   });
 

@@ -8,13 +8,16 @@
 
 #include "AudioSegment.h"
 #include "Canonicals.h"
+#include "ImageContainer.h"
 #include "MediaConduitInterface.h"
 #include "MediaPipelineFilter.h"
 #include "MediaTrackGraph.h"
 #include "MediaTrackListener.h"
 #include "MediaTransportHandler.h"
+#include "MockConduit.h"
 #include "PeerConnectionCtx.h"
 #include "SharedBuffer.h"
+#include "VideoSegment.h"
 #include "WebrtcCallWrapper.h"
 #include "WebrtcEnvironmentWrapper.h"
 #include "WebrtcTaskQueueWrapper.h"
@@ -22,6 +25,7 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/environment/environment_factory.h"
 #include "api/scoped_refptr.h"
+#include "api/video/i420_buffer.h"
 #include "logging.h"
 #include "modules/audio_device/include/fake_audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
@@ -68,7 +72,7 @@ class MainAsCurrent : public webrtc::TaskQueueBase {
   void Delete() override { delete this; }
 
   void PostTaskImpl(absl::AnyInvocable<void() &&> task,
-                    const PostTaskTraits& traits,
+                    const PostTaskTraits& /*traits*/,
                     const webrtc::Location& location) override {
     mWebrtcTaskQueue->PostTask(std::move(task), location);
   }
@@ -139,7 +143,7 @@ class FakeAudioTrack : public ProcessedMediaTrack {
 
   static const int AUDIO_BUFFER_SIZE = 1600;
   static const int NUM_CHANNELS = 2;
-  static void FakeAudioTrackGenerateData(nsITimer* timer, void* closure) {
+  static void FakeAudioTrackGenerateData(nsITimer* /*timer*/, void* closure) {
     auto t = static_cast<FakeAudioTrack*>(closure);
     MutexAutoLock lock(t->mMutex);
     if (t->mMainThreadDestroyed) {
@@ -195,7 +199,7 @@ class LoopbackTransport : public MediaTransportHandler {
 
   void Shutdown() { peer_ = nullptr; }
 
-  RefPtr<IceLogPromise> GetIceLog(const nsCString& aPattern) override {
+  RefPtr<IceLogPromise> GetIceLog(const nsCString& /*aPattern*/) override {
     return nullptr;
   }
 
@@ -205,8 +209,8 @@ class LoopbackTransport : public MediaTransportHandler {
 
   void CreateIceCtx(const std::string& aName) override {}
 
-  nsresult SetIceConfig(const nsTArray<dom::RTCIceServer>& aIceServers,
-                        dom::RTCIceTransportPolicy aIcePolicy) override {
+  nsresult SetIceConfig(const nsTArray<dom::RTCIceServer>& /*aIceServers*/,
+                        dom::RTCIceTransportPolicy /*aIcePolicy*/) override {
     return NS_OK;
   }
 
@@ -251,8 +255,9 @@ class LoopbackTransport : public MediaTransportHandler {
 
   void UpdateNetworkState(bool aOnline) override {}
 
-  RefPtr<dom::RTCStatsPromise> GetIceStats(const std::string& aTransportId,
-                                           DOMHighResTimeStamp aNow) override {
+  RefPtr<dom::RTCStatsPromise> GetIceStats(
+      const std::string& /*aTransportId*/,
+      DOMHighResTimeStamp /*aNow*/) override {
     return nullptr;
   }
 
@@ -406,7 +411,7 @@ class TestAgentSend : public TestAgent {
   }
 
   virtual void CreatePipeline(const std::string& aTransportId,
-                              const MediaPipelineTestOptions& aOptions) {
+                              const MediaPipelineTestOptions& /*aOptions*/) {
     std::string test_pc;
 
     RefPtr<MediaPipelineTransmit> audio_pipeline =
@@ -785,6 +790,137 @@ TEST_F(MediaPipelineTest, TestAudioInactiveNoRecv) {
   // Packets should have been sent but not received.
   ASSERT_NE(p1_.GetAudioRtpCountSent(), 0);
   ASSERT_EQ(p2_.GetAudioRtpCountReceived(), 0);
+}
+
+// A video SourceMediaTrack outside any graph, whose appended data the test
+// takes.
+class MockSourceMediaTrack : public SourceMediaTrack {
+ public:
+  MockSourceMediaTrack() : SourceMediaTrack(MediaSegment::VIDEO, 90000) {}
+
+  MOCK_METHOD(TrackTime, AppendData, (MediaSegment*, MediaSegment*),
+              (override));
+
+  void AddListener(MediaTrackListener* aListener) override {}
+  RefPtr<GenericPromise> RemoveListener(
+      MediaTrackListener* aListener) override {
+    return GenericPromise::CreateAndResolve(true, __func__);
+  }
+  void Destroy() override { mMainThreadDestroyed = true; }
+};
+
+// A frame libwebrtc decodes itself reaches the track as an I420 copy in the
+// color space the frame declares.
+TEST(MediaPipelineReceiveVideoTest, TestI420FrameColorSpace)
+{
+  MediaEventProducerExc<MediaPacket> rtcpSendEvent;
+  auto conduit = MakeRefPtr<testing::NiceMock<MockVideoConduit>>();
+  ON_CALL(*conduit, ReceiverRtcpSendEvent())
+      .WillByDefault(testing::ReturnRef(rtcpSendEvent));
+  RefPtr<VideoRenderer> renderer;
+  EXPECT_CALL(*conduit, AttachRenderer(testing::_))
+      .WillOnce(testing::DoAll(testing::SaveArg<0>(&renderer),
+                               testing::Return(kMediaConduitNoError)));
+  EXPECT_CALL(*conduit, DetachRenderer());
+
+  auto source = MakeRefPtr<testing::NiceMock<MockSourceMediaTrack>>();
+  RefPtr<layers::Image> image;
+  ON_CALL(*source, AppendData(testing::_, testing::_))
+      .WillByDefault([&](MediaSegment* aSegment, MediaSegment*) {
+        auto* segment = static_cast<VideoSegment*>(aSegment);
+        image = segment->GetLastFrame()->GetImage();
+        return segment->GetDuration();
+      });
+
+  auto pipeline = MakeRefPtr<MediaPipelineReceiveVideo>(
+      "", nullptr, AbstractThread::MainThread(), GetCurrentSerialEventTarget(),
+      conduit, source, TrackingId(), PRINCIPAL_HANDLE_NONE,
+      PrincipalPrivacy::NonPrivate);
+  ASSERT_TRUE(renderer);
+
+  auto receive = [&](const std::optional<webrtc::ColorSpace>& aColorSpace) {
+    image = nullptr;
+    renderer->RenderVideoFrame(
+        webrtc::VideoFrame::Builder()
+            .set_video_frame_buffer(webrtc::I420Buffer::Create(16, 16))
+            .set_color_space(aColorSpace)
+            .build());
+    MOZ_RELEASE_ASSERT(image);
+    RefPtr<layers::PlanarYCbCrImage> yuvImage = image->AsPlanarYCbCrImage();
+    MOZ_RELEASE_ASSERT(yuvImage);
+    return *yuvImage->GetData();
+  };
+
+  {
+    // A frame that declares no color space (e.g. VP8): BT.601 limited.
+    const layers::PlanarYCbCrData data = receive(std::nullopt);
+    EXPECT_EQ(data.mYUVColorSpace, gfx::YUVColorSpace::BT601);
+    EXPECT_EQ(data.mColorRange, gfx::ColorRange::LIMITED);
+    EXPECT_EQ(data.mColorPrimaries, gfx::ColorSpace2::UNKNOWN);
+    EXPECT_EQ(data.mTransferFunction, gfx::TransferFunction::BT709);
+  }
+  {
+    const layers::PlanarYCbCrData data =
+        receive(webrtc::ColorSpace(webrtc::ColorSpace::PrimaryID::kBT709,
+                                   webrtc::ColorSpace::TransferID::kBT709,
+                                   webrtc::ColorSpace::MatrixID::kBT709,
+                                   webrtc::ColorSpace::RangeID::kLimited));
+    EXPECT_EQ(data.mYUVColorSpace, gfx::YUVColorSpace::BT709);
+    EXPECT_EQ(data.mColorRange, gfx::ColorRange::LIMITED);
+    EXPECT_EQ(data.mColorPrimaries, gfx::ColorSpace2::BT709);
+    EXPECT_EQ(data.mTransferFunction, gfx::TransferFunction::BT709);
+  }
+  {
+    const layers::PlanarYCbCrData data =
+        receive(webrtc::ColorSpace(webrtc::ColorSpace::PrimaryID::kBT2020,
+                                   webrtc::ColorSpace::TransferID::kSMPTEST2084,
+                                   webrtc::ColorSpace::MatrixID::kBT2020_NCL,
+                                   webrtc::ColorSpace::RangeID::kFull));
+    EXPECT_EQ(data.mYUVColorSpace, gfx::YUVColorSpace::BT2020);
+    EXPECT_EQ(data.mColorRange, gfx::ColorRange::FULL);
+    EXPECT_EQ(data.mColorPrimaries, gfx::ColorSpace2::BT2020);
+    EXPECT_EQ(data.mTransferFunction, gfx::TransferFunction::PQ);
+  }
+  {
+    const layers::PlanarYCbCrData data = receive(
+        webrtc::ColorSpace(webrtc::ColorSpace::PrimaryID::kBT2020,
+                           webrtc::ColorSpace::TransferID::kARIB_STD_B67,
+                           webrtc::ColorSpace::MatrixID::kBT2020_NCL,
+                           webrtc::ColorSpace::RangeID::kLimited));
+    EXPECT_EQ(data.mYUVColorSpace, gfx::YUVColorSpace::BT2020);
+    EXPECT_EQ(data.mColorRange, gfx::ColorRange::LIMITED);
+    EXPECT_EQ(data.mColorPrimaries, gfx::ColorSpace2::BT2020);
+    EXPECT_EQ(data.mTransferFunction, gfx::TransferFunction::HLG);
+  }
+  {
+    // An unspecified matrix follows the primaries, as for the platform
+    // decoders.
+    const layers::PlanarYCbCrData data = receive(
+        webrtc::ColorSpace(webrtc::ColorSpace::PrimaryID::kBT709,
+                           webrtc::ColorSpace::TransferID::kIEC61966_2_1,
+                           webrtc::ColorSpace::MatrixID::kUnspecified,
+                           webrtc::ColorSpace::RangeID::kFull));
+    EXPECT_EQ(data.mYUVColorSpace, gfx::YUVColorSpace::BT709);
+    EXPECT_EQ(data.mColorRange, gfx::ColorRange::FULL);
+    EXPECT_EQ(data.mColorPrimaries, gfx::ColorSpace2::BT709);
+    EXPECT_EQ(data.mTransferFunction, gfx::TransferFunction::SRGB);
+  }
+  {
+    // With nothing to go by, BT.601 limited.
+    const layers::PlanarYCbCrData data =
+        receive(webrtc::ColorSpace(webrtc::ColorSpace::PrimaryID::kUnspecified,
+                                   webrtc::ColorSpace::TransferID::kUnspecified,
+                                   webrtc::ColorSpace::MatrixID::kUnspecified,
+                                   webrtc::ColorSpace::RangeID::kInvalid));
+    EXPECT_EQ(data.mYUVColorSpace, gfx::YUVColorSpace::BT601);
+    EXPECT_EQ(data.mColorRange, gfx::ColorRange::LIMITED);
+    EXPECT_EQ(data.mColorPrimaries, gfx::ColorSpace2::UNKNOWN);
+    EXPECT_EQ(data.mTransferFunction, gfx::TransferFunction::BT709);
+  }
+
+  pipeline->Shutdown();
+  NS_ProcessPendingEvents(nullptr);
+  source->Destroy();
 }
 
 }  // end namespace

@@ -5,11 +5,11 @@ The About Welcome page is a full-screen, multi-step onboarding experience that a
 
 The onboarding experience on `about:welcome` displays screens in the following precedence order:
 - Has AMO attribution
-  - [Return to AMO](https://firefox-source-docs.mozilla.org/browser/components/asrouter/docs/first-run.html#return-to-amo-rtamo) custom onboarding screens
+  - [Return to AMO](/browser/components/asrouter/docs/first-run.md#return-to-amo-rtamo) custom onboarding screens
 - Experiments
 - `MR_ABOUT_WELCOME_DEFAULT` [screens](https://searchfox.org/mozilla-central/rev/3b707c8fd7e978eebf24279ee51ccf07895cfbcb/browser/components/newtab/aboutwelcome/lib/AboutWelcomeDefaults.jsm#523) selected by dynamic rules inside the [prepareContentForReact](https://searchfox.org/mozilla-central/rev/3b707c8fd7e978eebf24279ee51ccf07895cfbcb/browser/components/newtab/aboutwelcome/lib/AboutWelcomeDefaults.jsm#577) method. Each screen's visibility can be dynamically configured through the screen-level targeting ([see example](https://searchfox.org/mozilla-central/rev/3b707c8fd7e978eebf24279ee51ccf07895cfbcb/browser/components/newtab/aboutwelcome/lib/AboutWelcomeDefaults.jsm#90)).
 
-The [Spotlight messaging surface](https://firefox-source-docs.mozilla.org/browser/components/asrouter/docs/spotlight.html) can be configured to show `about:welcome` screens in a modal format by using [exposed window.AW* interfaces](https://searchfox.org/firefox-main/source/browser/base/content/spotlight.js#28-47). These interfaces expose top level functions expected by the About Welcome bundle and allow for custom handling as needed. This [Unified Onboarding](https://docs.google.com/document/d/1o8W-gEkgw2GC7KFSfQRkKfWzNJg1-6fpkVPrYmmot4Y/edit) approach enables reusing `about:welcome` as a rendering engine for multiple messaging surfaces such as Spotlight and [Feature Callout](https://firefox-source-docs.mozilla.org/browser/components/asrouter/docs/feature-callout.html).
+The {doc}`Spotlight messaging surface </browser/components/asrouter/docs/spotlight>` can be configured to show `about:welcome` screens in a modal format by using [exposed window.AW* interfaces](https://searchfox.org/firefox-main/source/browser/base/content/spotlight.js#28-47). These interfaces expose top level functions expected by the About Welcome bundle and allow for custom handling as needed. This [Unified Onboarding](https://docs.google.com/document/d/1o8W-gEkgw2GC7KFSfQRkKfWzNJg1-6fpkVPrYmmot4Y/edit) approach enables reusing `about:welcome` as a rendering engine for multiple messaging surfaces such as Spotlight and {doc}`Feature Callout </browser/components/asrouter/docs/feature-callout>`.
 
 ## Testing about:welcome Screens
 
@@ -116,7 +116,21 @@ tiles: {
 
 ##### Carousel Card
 
-The `carousel-card` type displays a single select tile inside a card with a full bleed image, label, body, and an optional button. These cards, along with navigation pills, are consumed by the `carousel` layout and supported with horizontal scrolling navigation.
+The `carousel-card` type displays a single select tile inside a card with a full bleed image, label, and an optional button. These cards, along with navigation pills, are consumed by the `carousel` layout and supported with horizontal scrolling navigation.
+
+The row renders at one of two sizes. The large size applies when the Spotlight
+is at least 800px wide and the window is over 650px tall. It enlarges the
+selected card, grows its label and button to match, and leaves the cards on
+either side peeking in from the edges of the row. The small size applies at
+every other window size. It gives each card the same dimensions, marks the
+selected one with a thicker border, and fits one line of label text under the
+image.
+
+Set `screen_style.width` on the screen to request the large size. A window
+narrower than 800px holds the Spotlight at its default width.
+
+Including `body` is optional. The card does not display the text, but it stays
+in the page so a screen reader reads it out after the label.
 
 ![Carousel Card](./carousel-card.png)
 
@@ -126,14 +140,15 @@ A `carousel-card` item may define a `pill`, which renders it into a
 `moz-segmented-control` row above the cards. `pill.icon` must be a `chrome://`
 SVG authored with `context-fill` so it can recolour on the selected pill and in
 High Contrast Mode. Selecting a pill scrolls its card
-to the centre and marks it selected. The pill row only renders when at least two
-items define a `pill`, and it respects per-item `targeting` because the pills and
-the cards come from the same `data` array. Set `tiles.pill_nav_label` to override
-the group's accessible name.
+to the centre and marks it selected. The pill row requires `tiles.layout` to be
+`"carousel"`, and only renders when at least two items define a `pill`. It
+respects per-item `targeting` because the pills and the cards come from the same
+`data` array. Set `tiles.pill_nav_label` to override the group's accessible name.
 
 ```js
 tiles: {
   type: "single-select",
+  layout: "carousel",
   pill_nav_label: { raw: "Feature highlights" },
   data: [
     {

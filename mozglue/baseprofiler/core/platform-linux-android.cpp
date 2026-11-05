@@ -120,6 +120,18 @@ static void PopulateRegsFromContext(Registers& aRegs, ucontext_t* aContext) {
   aRegs.mPC = reinterpret_cast<Address>(mcontext.pc);
   aRegs.mSP = reinterpret_cast<Address>(mcontext.gregs[29]);
   aRegs.mFP = reinterpret_cast<Address>(mcontext.gregs[30]);
+#elif defined(GP_PLAT_loongarch64_linux)
+  aRegs.mPC = reinterpret_cast<Address>(mcontext.__pc);
+  aRegs.mSP = reinterpret_cast<Address>(mcontext.__gregs[3]);
+  aRegs.mFP = reinterpret_cast<Address>(mcontext.__gregs[22]);
+  aRegs.mRA = reinterpret_cast<Address>(mcontext.__gregs[1]);
+  aRegs.mT3 = reinterpret_cast<Address>(mcontext.__gregs[15]);
+#elif defined(GP_PLAT_riscv64_linux)
+  aRegs.mPC = reinterpret_cast<Address>(mcontext.__gregs[0]);  // REG_PC
+  aRegs.mSP = reinterpret_cast<Address>(mcontext.__gregs[2]);
+  aRegs.mFP = reinterpret_cast<Address>(mcontext.__gregs[8]);
+  aRegs.mRA = reinterpret_cast<Address>(mcontext.__gregs[1]);
+  aRegs.mT3 = reinterpret_cast<Address>(mcontext.__gregs[28]);
 
 #else
 #  error "bad platform"

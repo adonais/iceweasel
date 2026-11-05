@@ -135,7 +135,7 @@ function setupAutoTabGroupingTest() {
 }
 
 async function cleanupAutoTabGroupingTest(win, mockEngineManager) {
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   if (win) {
     await BrowserTestUtils.closeWindow(win);
   }

@@ -353,14 +353,14 @@ struct arena_t : public BaseAllocClass {
   // (but not arena_t.mLock !) through gArenas.mOutstandingPurges.
   mozilla::DoublyLinkedListElement<arena_t> mPurgeListElem;
 
-  // A "significant reuse" is when a dirty page is used for a new allocation,
-  // it has the CHUNK_MAP_DIRTY bit cleared and CHUNK_MAP_ALLOCATED set.
+  // A page reuse is when a dirty page is used for a new allocation, it has the
+  // CHUNK_MAP_DIRTY bit cleared and CHUNK_MAP_ALLOCATED set.
   //
-  // Timestamp of the last time we saw a significant reuse (in ns).
+  // Timestamp of the last time we saw a page reuse (in ns).
   // Note that this variable is written very often from many threads and read
   // only sparsely on the main thread, but when we read it we need to see the
   // chronologically latest write asap (so we cannot use Relaxed).
-  mozilla::Atomic<uint64_t> mLastSignificantReuseNS;
+  mozilla::Atomic<uint64_t> mLastPageReuseNS;
 
  public:
   // A flag that indicates if arena will be Purge()'d.
@@ -556,9 +556,8 @@ struct arena_t : public BaseAllocClass {
   // This must be called without the mLock held (it'll take the lock).
   //
   ArenaPurgeResult Purge(PurgeCondition aCond, mozilla::PurgeStats& aStats,
-                         const mozilla::Maybe<std::function<bool()>>&
-                             aKeepGoing = mozilla::Nothing())
-      MOZ_EXCLUDES(mLock);
+                         purge_keep_going_t aKeepGoing = nullptr,
+                         void* aClosure = nullptr) MOZ_EXCLUDES(mLock);
 
   // Run Purge() in a loop. If sCallback is non-null then collect statistics and
   // publish them through the callback,  aCaller should be used to identify the
@@ -569,12 +568,13 @@ struct arena_t : public BaseAllocClass {
   //                 profiling
   // aReuseGraceMS - Stop purging the arena if it was used within this many
   //                 milliseconds.  Or 0 to ignore recent reuse.
-  // aKeepGoing    - Optional function to implement a time budget.
+  // aKeepGoing    - Optional predicate, purging stops when it returns false.
+  // aClosure      - Handed back to aKeepGoing on every call.
   //
-  ArenaPurgeResult PurgeLoop(
-      PurgeCondition aCond, const char* aCaller, uint32_t aReuseGraceMS = 0,
-      mozilla::Maybe<std::function<bool()>> aKeepGoing = mozilla::Nothing())
-      MOZ_EXCLUDES(mLock);
+  ArenaPurgeResult PurgeLoop(PurgeCondition aCond, const char* aCaller,
+                             uint32_t aReuseGraceMS = 0,
+                             purge_keep_going_t aKeepGoing = nullptr,
+                             void* aClosure = nullptr) MOZ_EXCLUDES(mLock);
 
   class PurgeInfo {
    private:
@@ -653,9 +653,10 @@ struct arena_t : public BaseAllocClass {
   arena_chunk_t* PurgeGetDirtyChunk(PurgeCondition aCond,
                                     mozilla::PurgeStats& aStats);
 
-  ArenaPurgeResult PurgeDirtyPages(
-      arena_chunk_t* aChunk, PurgeCondition aCond, mozilla::PurgeStats& aStats,
-      const mozilla::Maybe<std::function<bool()>>& aKeepGoing);
+  ArenaPurgeResult PurgeDirtyPages(arena_chunk_t* aChunk, PurgeCondition aCond,
+                                   mozilla::PurgeStats& aStats,
+                                   purge_keep_going_t aKeepGoing,
+                                   void* aClosure);
 
  public:
   void HardPurge();
@@ -682,8 +683,8 @@ struct arena_t : public BaseAllocClass {
     return (mNumDirty > ((aCond == PurgeUnconditional) ? 0 : mMaxDirty >> 1));
   }
 
-  // Update the last significant reuse timestamp.
-  void NotifySignificantReuse() MOZ_EXCLUDES(mLock);
+  // Update the last page reuse timestamp.
+  void NotifyPageReuse() MOZ_EXCLUDES(mLock);
 
   bool IsMainThreadOnly() const { return !mLock.LockIsEnabled(); }
 

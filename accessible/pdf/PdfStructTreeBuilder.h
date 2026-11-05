@@ -71,6 +71,10 @@ class PdfStructTreeBuilder {
     static constexpr uint64_t Nothing = 0;
     static constexpr uint64_t PageHeader = 1;
     static constexpr uint64_t PageFooter = 2;
+    // Used for content which is purely visual and is communicated semantically
+    // through other means. For example, the MathML <msqrt> tag draws a square
+    // root sign, but that shouldn't be exposed to assistive technology.
+    static constexpr uint64_t OtherArtifact = 3;
   };
 
   using ReadyPromise = MozPromise<Ok, Ok, true>;
@@ -92,7 +96,8 @@ class PdfStructTreeBuilder {
   explicit PdfStructTreeBuilder(uint64_t aInnerWindowId);
   void InitInternal(dom::WindowContext*);
   int GeneratePdfId(Accessible* aAcc);
-  void BuildStructSubtree(Accessible* aAcc, SkPDF::StructureElementNode& aPdf);
+  void BuildStructSubtree(Accessible* aAcc, SkPDF::StructureElementNode& aPdf,
+                          bool aInMath = false);
   int GetPdfIdInternal(uint64_t aInnerWindowId, uint64_t aAccId) const;
 
   // We can't take a reference to an Accessible, so we store the inner window

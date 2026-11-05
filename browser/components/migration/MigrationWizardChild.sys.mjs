@@ -175,7 +175,10 @@ export class MigrationWizardChild extends JSWindowActorChild {
           key: event.detail.key,
         });
         if (success) {
-          await this.#requestState(true /* allowOnlyFileMigrators */);
+          await this.#requestState(
+            true /* allowOnlyFileMigrators */,
+            event.detail.key
+          );
         }
         break;
       }
@@ -195,12 +198,12 @@ export class MigrationWizardChild extends JSWindowActorChild {
     }
   }
 
-  async #requestState(allowOnlyFileMigrators) {
+  async #requestState(allowOnlyFileMigrators, migratorKey) {
     this.setComponentState({
       page: MigrationWizardConstants.PAGES.LOADING,
     });
 
-    await this.#populateMigrators(allowOnlyFileMigrators);
+    await this.#populateMigrators(allowOnlyFileMigrators, migratorKey);
 
     this.#wizardEl.dispatchEvent(
       new this.contentWindow.CustomEvent("MigrationWizard:Ready", {

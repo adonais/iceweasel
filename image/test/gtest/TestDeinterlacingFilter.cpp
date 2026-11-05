@@ -17,7 +17,7 @@ using namespace mozilla::image;
 
 template <typename Func>
 void WithDeinterlacingFilter(const IntSize& aSize, bool aProgressiveDisplay,
-                             Func aFunc) {
+                             Func&& aFunc) {
   RefPtr<image::Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(bool(decoder));
 

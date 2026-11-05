@@ -2,7 +2,7 @@
 
 /* import-globals-from http3_common.js */
 
-const { Http3ProxyFilter, NodeHTTP2ProxyServer } = ChromeUtils.importESModule(
+const { Http3ProxyFilter } = ChromeUtils.importESModule(
   "resource://testing-common/NodeServer.sys.mjs"
 );
 
@@ -151,13 +151,5 @@ add_task(async function test_slow_receiver() {
 // connection.
 // TODO: Bug 1582667 should try to fix issue with connection being closed.
 add_task(async function test_version_fallback() {
-  let proxy = new NodeHTTP2ProxyServer();
-  await proxy.startWithoutProxyFilter(proxyPort);
-  registerCleanupFunction(async () => {
-    await proxy.stop();
-  });
-  Assert.equal(proxyPort, proxy.port());
-  info(`proxy port=${proxy.port()}\n`);
-
   await do_test_version_fallback(httpsOrigin);
 });

@@ -7,3 +7,7 @@ SOURCES += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "nsNetworkLinkService.h",
+]

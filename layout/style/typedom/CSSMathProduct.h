@@ -13,6 +13,7 @@
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"
+#include "nsTArrayForwardDeclare.h"
 
 template <class T>
 struct already_AddRefed;
@@ -40,6 +41,10 @@ class CSSMathProduct final : public CSSMathValue {
   CSSMathProduct(nsCOMPtr<nsISupports> aParent,
                  MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
                  RefPtr<CSSNumericArray> aValues);
+
+  static RefPtr<CSSMathProduct> Create(
+      nsCOMPtr<nsISupports> aParent, UniquePtr<StyleNumericType> aNumericType,
+      nsTArray<RefPtr<CSSNumericValue>> aValues);
 
   static RefPtr<CSSMathProduct> Create(nsCOMPtr<nsISupports> aParent,
                                        const StyleMathProduct& aMathProduct);

@@ -12,7 +12,6 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
-#include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsIGfxInfo.h"
 #include "nsPromiseFlatString.h"
@@ -111,16 +110,24 @@ DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
       SLOG("Rejecting audio of type {}", PromiseFlatCString(aMimeType).get());
       return media::DecodeSupportSet{};
 
-    // H264 always reports software decode
-    case MediaCodec::H264:
-      return DecodeSupport::SoftwareDecode;
-
     case MediaCodec::HEVC:
       if (!StaticPrefs::media_hevc_enabled()) {
         SLOG("Rejecting HEVC as the preference is disabled");
         return media::DecodeSupportSet{};
       }
-      break;
+      [[fallthrough]];
+    case MediaCodec::H264: {
+      DecodeSupportSet support;
+      if (MCSInfo::SupportsSoftwareDecode(
+              gfx::gfxVars::PlatformMediaCodecsSupported(), codec)) {
+        support += DecodeSupport::SoftwareDecode;
+      }
+      if (codec == MediaCodec::H264 ? gfx::gfxVars::UseH264HwDecode()
+                                    : gfx::gfxVars::UseHEVCHwDecode()) {
+        support += DecodeSupport::HardwareDecode;
+      }
+      return support;
+    }
 
     // AV1 doesn't need any special handling.
     case MediaCodec::AV1:
@@ -192,32 +199,47 @@ media::DecodeSupportSet AndroidDecoderModule::Supports(
     return media::DecodeSupportSet{};
   }
 
-  // Check 10-bit video.
-  const TrackInfo& trackInfo = aParams.mConfig;
-  const VideoInfo* videoInfo = trackInfo.GetAsVideoInfo();
-  if (!videoInfo || videoInfo->mColorDepth != gfx::ColorDepth::COLOR_10) {
+  const VideoInfo* videoInfo = aParams.mConfig.GetAsVideoInfo();
+  if (!videoInfo) {
     return support;
   }
 
-  return java::HardwareCodecCapabilityUtils::Decodes10Bit(
-             TranslateMimeType(aParams.MimeType()))
-             ? support
-             : media::DecodeSupportSet{};
+  const MediaCodec codec =
+      MCSInfo::GetMediaCodecFromMimeType(aParams.MimeType());
+  return MCSInfo::GetMediaCodecDecodeSupportForSize(
+      codec,
+      MCSInfo::GetMediaCodecDecodeSupportForColorDepth(codec, support,
+                                                       videoInfo->mColorDepth),
+      videoInfo->mImage);
 }
 
-already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
-    const CreateDecoderParams& aParams) {
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+AndroidDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
+  RefPtr<CreateDecoderPromise> p;
+  if (aParams.IsAudio()) {
+    p = CreateAudioDecoder(aParams);
+  } else if (aParams.IsVideo()) {
+    p = CreateVideoDecoder(aParams);
+  }
+  if (!p) {
+    p = CreateDecoderPromiseFrom(nullptr, aParams);
+  }
+  return p;
+}
+
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+AndroidDecoderModule::CreateVideoDecoder(const CreateDecoderParams& aParams) {
   // Temporary - forces use of VPXDecoder when alpha is present.
   // Bug 1263836 will handle alpha scenario once implemented. It will shift
   // the check for alpha to PDMFactory but not itself remove the need for a
   // check.
   if (aParams.VideoConfig().HasAlpha()) {
-    return nullptr;
+    return CreateDecoderPromiseFrom(nullptr, aParams);
   }
 
   if (AOMDecoder::IsAV1(aParams.mConfig.mMimeType) &&
       !AOMDecoder::IsMainProfile(aParams.VideoConfig().mExtraData)) {
-    return nullptr;
+    return CreateDecoderPromiseFrom(nullptr, aParams);
   }
 
   // Don't use SW VPX MediaCodecs. Prefering VPXDecoder over MediaCodec SW
@@ -227,7 +249,7 @@ already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
   if (VPXDecoder::IsVPX(aParams.VideoConfig().mMimeType) &&
       !SupportsMimeType(aParams.VideoConfig().mMimeType)
            .contains(DecodeSupport::HardwareDecode)) {
-    return nullptr;
+    return CreateDecoderPromiseFrom(nullptr, aParams);
   }
 
   nsString drmStubId;
@@ -235,9 +257,7 @@ already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
     drmStubId = mProxy->GetMediaDrmStubId();
   }
 
-  RefPtr<MediaDataDecoder> decoder =
-      RemoteDataDecoder::CreateVideoDecoder(aParams, drmStubId, mProxy);
-  return decoder.forget();
+  return RemoteDataDecoder::CreateVideoDecoder(aParams, drmStubId, mProxy);
 }
 
 // static
@@ -246,8 +266,8 @@ bool AndroidDecoderModule::IsJavaDecoderModuleAllowed() {
          !java::GeckoAppShell::IsIsolatedProcess();
 }
 
-already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateAudioDecoder(
-    const CreateDecoderParams& aParams) {
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+AndroidDecoderModule::CreateAudioDecoder(const CreateDecoderParams& aParams) {
   const AudioInfo& config = aParams.AudioConfig();
   LOG("CreateAudioFormat with mimeType={}, mRate={}, channels={}",
       config.mMimeType.get(), config.mRate, config.mChannels);
@@ -256,9 +276,7 @@ already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateAudioDecoder(
   if (mProxy) {
     drmStubId = mProxy->GetMediaDrmStubId();
   }
-  RefPtr<MediaDataDecoder> decoder =
-      RemoteDataDecoder::CreateAudioDecoder(aParams, drmStubId, mProxy);
-  return decoder.forget();
+  return RemoteDataDecoder::CreateAudioDecoder(aParams, drmStubId, mProxy);
 }
 
 /* static */

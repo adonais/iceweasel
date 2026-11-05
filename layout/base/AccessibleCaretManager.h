@@ -310,16 +310,13 @@ class AccessibleCaretManager {
   // be dragged. Returns the rect relative to aFrame.
   static nsRect GetAllChildFrameRectsUnion(nsIFrame* aFrame);
 
-  // Restrict the active caret's dragging position based on
-  // sCaretsAllowDraggingAcrossOtherCaret. If the active caret is the first
-  // caret, the `limit` will be the previous character of the second caret.
-  // Otherwise, the `limit` will be the next character of the first caret.
+  // Restrict the active caret's dragging position. If the active caret is
+  // dragged across the inactive caret, the two carets swap roles, i.e.
+  // mActiveCaret becomes the other caret.
   //
-  // @param aOffsets is the new position of the active caret, and it will be set
-  // to the `limit` when 1) sCaretsAllowDraggingAcrossOtherCaret is false and
-  // it's being dragged past the limit. 2) sCaretsAllowDraggingAcrossOtherCaret
-  // is true and the active caret's position is the same as the inactive's
-  // position.
+  // @param aOffsets is the new position of the active caret. If it is the same
+  // as the inactive caret's position, it is moved one character away from the
+  // inactive caret so that the selection won't be collapsed.
   // @return true if the aOffsets is suitable for changing the selection.
   bool RestrictCaretDraggingOffsets(nsIFrame::ContentOffsets& aOffsets);
 

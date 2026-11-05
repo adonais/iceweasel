@@ -409,7 +409,8 @@ class imgLoader final : public imgILoader,
                      imgRequestProxy** aProxyRequest,
                      nsIPrincipal* aTriggeringPrincipal, mozilla::CORSMode,
                      bool aLinkPreload, uint64_t aEarlyHintPreloaderId,
-                     mozilla::dom::FetchPriority aFetchPriority);
+                     mozilla::dom::FetchPriority aFetchPriority,
+                     const nsAString& aInitiatorType);
 
   bool ValidateRequestWithNewChannel(
       imgRequest* request, nsIURI* aURI, nsIURI* aInitialDocumentURI,
@@ -419,7 +420,8 @@ class imgLoader final : public imgILoader,
       nsLoadFlags aLoadFlags, nsContentPolicyType aContentPolicyType,
       imgRequestProxy** aProxyRequest, nsIPrincipal* aLoadingPrincipal,
       mozilla::CORSMode, bool aLinkPreload, uint64_t aEarlyHintPreloaderId,
-      mozilla::dom::FetchPriority aFetchPriority, bool* aNewChannelCreated);
+      mozilla::dom::FetchPriority aFetchPriority,
+      const nsAString& aInitiatorType, bool* aNewChannelCreated);
 
   void NotifyObserversForCachedImage(
       imgCacheEntry* aEntry, imgRequest* request, nsIURI* aURI,

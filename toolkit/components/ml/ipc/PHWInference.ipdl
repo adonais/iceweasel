@@ -3,7 +3,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#ifdef MOZ_WEBSPEECH
 include protocol PSpeechRecognition;
+#endif
 include protocol PTextGeneration;
 include protocol PUtilityProcess;
 
@@ -75,8 +77,10 @@ protocol PHWInference
                        nsCString id) returns (GetModelFileResult result);
 
   child:
+#ifdef MOZ_WEBSPEECH
     async NewContentSpeechRecognition(Endpoint<PSpeechRecognitionParent> endpoint,
                                       ContentParentId contentId);
+#endif
 
     // The model file is resolved and opened by the parent, the utility never
     // learns its path.

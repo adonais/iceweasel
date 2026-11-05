@@ -20,50 +20,6 @@ from mozboot.util import (
     http_download_and_save,
 )
 
-NO_MERCURIAL = """
-Could not find Mercurial (hg) in the current shell's path. Try starting a new
-shell and running the bootstrapper again.
-"""
-
-MERCURIAL_UNABLE_UPGRADE = """
-You are currently running Mercurial %s. Running %s or newer is
-recommended for performance and stability reasons.
-
-Unfortunately, this bootstrapper currently does not know how to automatically
-upgrade Mercurial on your machine.
-
-You can usually install Mercurial through your package manager or by
-downloading a package from http://mercurial.selenic.com/.
-"""
-
-MERCURIAL_UPGRADE_FAILED = """
-We attempted to upgrade Mercurial to a modern version (%s or newer).
-However, you appear to have version %s still.
-
-It's possible your package manager doesn't support a modern version of
-Mercurial. It's also possible Mercurial is not being installed in the search
-path for this shell. Try creating a new shell and run this bootstrapper again.
-
-If it continues to fail, consider installing Mercurial by following the
-instructions at http://mercurial.selenic.com/.
-"""
-
-MERCURIAL_INSTALL_PROMPT = """
-Mercurial releases a new version every 3 months and your distro's package
-may become out of date. This may cause incompatibility with some
-Mercurial extensions that rely on new Mercurial features. As a result,
-you may not have an optimal version control experience.
-
-To have the best Mercurial experience possible, we recommend installing
-Mercurial via the "pip" Python packaging utility. This will likely result
-in files being placed in /usr/local/bin and /usr/local/lib.
-
-How would you like to continue?
-  1. Install a modern Mercurial via pip [default]
-  2. Install a legacy Mercurial via the distro package manager
-  3. Do not install Mercurial
-Your choice: """
-
 PYTHON_UNABLE_UPGRADE = """
 You are currently running Python %s. Running %s or newer (but
 not 3.x) is required.
@@ -144,11 +100,6 @@ JS_MOZCONFIG_TEMPLATE = """\
 ac_add_options --enable-project=js
 """
 
-# Upgrade Mercurial older than this.
-# This should match the OLDEST_NON_LEGACY_VERSION in
-# version-control-tools/hgext/configwizard/__init__.py.
-MODERN_MERCURIAL_VERSION = Version("4.9")
-
 # Upgrade rust older than this.
 MODERN_RUST_VERSION = Version(MINIMUM_RUST_VERSION)
 
@@ -173,7 +124,7 @@ class BaseBootstrapper:
     def install_system_packages(self):
         """
         Install packages shared by all applications. These are usually
-        packages required by the development (like mercurial) or the
+        packages required by the development (like Git) or the
         build system (like autoconf).
         """
         raise NotImplementedError(
@@ -454,74 +405,6 @@ class BaseBootstrapper:
 
     def _parse_version(self, path: Path, name=None, env=None):
         return self._parse_version_impl(path, name, env, "--version")
-
-    def _hg_cleanenv(self, load_hgrc=False):
-        """Returns a copy of the current environment updated with the HGPLAIN
-        and HGRCPATH environment variables.
-
-        HGPLAIN prevents Mercurial from applying locale variations to the output
-        making it suitable for use in scripts.
-
-        HGRCPATH controls the loading of hgrc files. Setting it to the empty
-        string forces that no user or system hgrc file is used.
-        """
-        env = os.environ.copy()
-        env["HGPLAIN"] = "1"
-        if not load_hgrc:
-            env["HGRCPATH"] = ""
-
-        return env
-
-    def is_mercurial_modern(self):
-        hg = to_optional_path(which("hg"))
-        if not hg:
-            print(NO_MERCURIAL)
-            return False, False, None
-
-        our = self._parse_version(hg, "version", self._hg_cleanenv())
-        if not our:
-            return True, False, None
-
-        return True, our >= MODERN_MERCURIAL_VERSION, our
-
-    def ensure_mercurial_modern(self):
-        installed, modern, version = self.is_mercurial_modern()
-
-        if modern:
-            print("Your version of Mercurial (%s) is sufficiently modern." % version)
-            return installed, modern
-
-        self._ensure_package_manager_updated()
-
-        if installed:
-            print("Your version of Mercurial (%s) is not modern enough." % version)
-            print(
-                "(Older versions of Mercurial have known security vulnerabilities. "
-                "Unless you are running a patched Mercurial version, you may be "
-                "vulnerable."
-            )
-        else:
-            print("You do not have Mercurial installed")
-
-        if self.upgrade_mercurial(version) is False:
-            return installed, modern
-
-        installed, modern, after = self.is_mercurial_modern()
-
-        if installed and not modern:
-            print(MERCURIAL_UPGRADE_FAILED % (MODERN_MERCURIAL_VERSION, after))
-
-        return installed, modern
-
-    def upgrade_mercurial(self, current):
-        """Upgrade Mercurial.
-
-        Child classes should reimplement this.
-
-        Return False to not perform a version check after the upgrade is
-        performed.
-        """
-        print(MERCURIAL_UNABLE_UPGRADE % (current, MODERN_MERCURIAL_VERSION))
 
     def warn_if_pythonpath_is_set(self):
         if "PYTHONPATH" in os.environ:

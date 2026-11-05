@@ -14,6 +14,7 @@ import {
   isSettingsURL,
   isSmartPageURL,
 } from "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs";
+import { parseTabGroupMentionId } from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-chat-card.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -39,6 +40,14 @@ export class AIChatMessage extends MozLitElement {
   #lastMessage = null;
   #lastMessageElement = null;
   #blockHtml = [];
+
+  /**
+   * The assistant message whose first-character telemetry event was most recently sent.
+   * This guards against double-sending an event for streaming responses to the same message.
+   *
+   * @type {string|null}
+   */
+  #firstCharacterReportedMessageId = null;
 
   /**
    * Track if link unfurling needs to re-run, as it needs to manually manipulate
@@ -183,7 +192,42 @@ export class AIChatMessage extends MozLitElement {
     }
   }
 
+  /**
+   * Reports when an assistant message first displays readable text.
+   *
+   * @param {Map} changed - Properties changed by this update.
+   */
+  #maybeReportTimeToFirstCharacter(changed) {
+    // The message list can reuse this element for a different message,
+    // so we need to first ensure that the context is relevant to report
+    // the time to first character.
+    if (
+      (!changed.has("message") && !changed.has("messageId")) ||
+      this.role !== "assistant" ||
+      !this.messageId ||
+      this.#firstCharacterReportedMessageId === this.messageId ||
+      !this.message?.trim() ||
+      !this.#lastMessageElement?.innerText.trim()
+    ) {
+      return;
+    }
+
+    this.#firstCharacterReportedMessageId = this.messageId;
+    this.dispatchEvent(
+      new CustomEvent("AIChatContent:FirstCharacterDisplayed", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          conversationId: this.conversationId,
+          messageId: this.messageId,
+        },
+      })
+    );
+  }
+
   updated(changed) {
+    this.#maybeReportTimeToFirstCharacter(changed);
+
     if (changed.has("complete") && this.complete && this.role === "assistant") {
       const messageEl = this.shadowRoot?.querySelector(`.message-${this.role}`);
       const text = messageEl
@@ -273,6 +317,7 @@ export class AIChatMessage extends MozLitElement {
       if (isTabGroup) {
         chip.isTabGroup = true;
         chip.tabGroupColor = color ?? "";
+        chip.tabGroupId = parseTabGroupMentionId(linkHref) ?? "";
       } else {
         chip.iconSrc = this.#getIconSrc(linkHref);
         chip.href = linkHref;

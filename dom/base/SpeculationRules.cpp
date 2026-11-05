@@ -5,23 +5,33 @@
 #include "mozilla/dom/SpeculationRules.h"
 
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/Encoding.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/PrefetchCandidates.h"
 #include "mozilla/dom/PrefetchLog.h"
+#include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/SpeculationRuleSet.h"
 #include "mozilla/dom/SpeculationRulesManager.h"
 #include "mozilla/dom/speculationrules_ffi_generated.h"
+#include "mozilla/net/SFV.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIChannel.h"
 #include "nsIContentInlines.h"
 #include "nsIFrame.h"
+#include "nsIHttpChannel.h"
 #include "nsIScriptElement.h"
+#include "nsIStreamLoader.h"
 #include "nsITimer.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
+#include "nsPresContext.h"
+#include "nsRefreshObservers.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
 
@@ -96,6 +106,14 @@ SpeculationRules::SpeculationRules(Document* aDocument)
 SpeculationRules::~SpeculationRules() { CancelHoverTimer(); }
 
 // https://html.spec.whatwg.org/#register-speculation-rules
+void SpeculationRules::RegisterFromHeader(
+    UniquePtr<SpeculationRuleSet> aRuleSet) {
+  mDocument->SetUseCounter(eUseCounter_custom_SpeculationRulesHeader);
+  aRuleSet->SetUseCounters(*mDocument);
+  mRuleSetsFromHeader.AppendElement(std::move(aRuleSet));
+  ConsiderLoads();
+}
+
 void SpeculationRules::RegisterFromScript(
     nsIScriptElement* aScriptElement, UniquePtr<SpeculationRuleSet> aRuleSet) {
   aRuleSet->SetUseCounters(*mDocument);
@@ -157,6 +175,12 @@ void SpeculationRules::InnerConsiderLoads() {
     return;
   }
 
+  // In order to find matching links, we need the link frames to have been
+  // constructed. If frame construction is pending, wait for it.
+  if (WaitForPendingFrames()) {
+    return;
+  }
+
   // https://html.spec.whatwg.org/#find-matching-links
   // The result doesn't depend on any particular rule set, so it's computed
   // once here and shared across every rule set's ConsiderLoads call below.
@@ -167,6 +191,9 @@ void SpeculationRules::InnerConsiderLoads() {
   UniquePtr<PrefetchCandidates> prefetchCandidates =
       PrefetchCandidates::Create();
   // Step 3.
+  for (auto& ruleset : mRuleSetsFromHeader) {
+    ruleset->ConsiderLoads(prefetchCandidates.get(), links);
+  }
   for (auto& entry : mRuleSetsFromScript) {
     entry.GetData()->ConsiderLoads(prefetchCandidates.get(), links);
   }
@@ -186,6 +213,49 @@ void SpeculationRules::InnerConsiderLoads() {
   // fired now; the less eager ones wait in mCandidateGroups until the user
   // shows interest in a link matching them.
   EnactCandidates(nullptr, Eagerness::Immediate);
+}
+
+bool SpeculationRules::IsFrameConstructionPending() const {
+  PresShell* presShell = mDocument ? mDocument->GetPresShell() : nullptr;
+  return presShell && presShell->NeedFlush(FlushType::Frames, false);
+}
+
+bool SpeculationRules::WaitForPendingFrames() {
+  if (mPendingFramesObserver) {
+    return true;
+  }
+
+  if (!IsFrameConstructionPending()) {
+    return false;
+  }
+  nsPresContext* presContext = mDocument->GetPresContext();
+  if (!presContext) {
+    return false;
+  }
+
+  // If there are no document rules, no links will be matched against, so
+  // don't bother waiting.
+  if (std::none_of(mRuleSetsFromHeader.begin(), mRuleSetsFromHeader.end(),
+                   [](auto& ruleset) { return ruleset->HasDocumentRules(); }) &&
+      std::none_of(
+          mRuleSetsFromScript.begin(), mRuleSetsFromScript.end(),
+          [](auto& entry) { return entry.GetData()->HasDocumentRules(); })) {
+    return false;
+  }
+
+  mPendingFramesObserver = MakeRefPtr<ManagedPostRefreshObserver>(
+      presContext, [self = RefPtr{this}](bool aWasCanceled) {
+        if (!aWasCanceled && self->IsFrameConstructionPending()) {
+          return ManagedPostRefreshObserver::Unregister::No;
+        }
+        self->mPendingFramesObserver = nullptr;
+        if (!aWasCanceled) {
+          self->InnerConsiderLoads();
+        }
+        return ManagedPostRefreshObserver::Unregister::Yes;
+      });
+  presContext->RegisterManagedPostRefreshObserver(mPendingFramesObserver);
+  return true;
 }
 
 void SpeculationRules::EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel) {
@@ -245,17 +315,20 @@ void SpeculationRules::EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel) {
   }
 }
 
+bool SpeculationRules::HasRuleSets() const {
+  return !mRuleSetsFromHeader.IsEmpty() || !mRuleSetsFromScript.IsEmpty();
+}
+
 void SpeculationRules::AddLink(Element* aElement) {
   mLinks.Insert(aElement);
-  if (!mRuleSetsFromScript.IsEmpty()) {
+  if (HasRuleSets()) {
     ConsiderLoads();
   }
 }
 
 void SpeculationRules::RemoveLink(Element* aElement) {
   mLinks.Remove(aElement);
-  if (!mRuleSetsFromScript.IsEmpty() && mDocument &&
-      mDocument->IsFullyActive()) {
+  if (HasRuleSets() && mDocument && mDocument->IsFullyActive()) {
     // Link elements are removed when a document is being cycle-collected; we
     // shouldn't bother firing the microtask in that case.
     ConsiderLoads();
@@ -397,6 +470,154 @@ void SpeculationRules::PointerDown(Element* aLink) {
 
   if (nsCOMPtr<nsIURI> uri = aLink->GetHrefURI()) {
     EnactCandidates(uri, Eagerness::Conservative);
+  }
+}
+
+namespace {
+
+class SpeculationRulesFetcher final : public nsIStreamLoaderObserver {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSISTREAMLOADEROBSERVER
+
+  explicit SpeculationRulesFetcher(Document* aDocument)
+      : mDocument(aDocument) {}
+
+  static void Fetch(Document* aDocument, nsIURI* aUri);
+
+ private:
+  ~SpeculationRulesFetcher() = default;
+
+  RefPtr<Document> mDocument;
+};
+
+NS_IMPL_ISUPPORTS(SpeculationRulesFetcher, nsIStreamLoaderObserver)
+
+/* static */ void SpeculationRulesFetcher::Fetch(Document* aDocument,
+                                                 nsIURI* aUri) {
+  RefPtr<SpeculationRulesFetcher> fetcher =
+      new SpeculationRulesFetcher(aDocument);
+  nsCOMPtr<nsILoadGroup> loadGroup = aDocument->GetDocumentLoadGroup();
+  nsCOMPtr<nsIChannel> channel;
+  nsresult rv =
+      NS_NewChannel(getter_AddRefs(channel), aUri, aDocument,
+                    nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT,
+                    nsIContentPolicy::TYPE_INTERNAL_SPECULATION_RULES, nullptr,
+                    loadGroup, nullptr, nsIRequest::LOAD_BACKGROUND);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel)) {
+    nsCOMPtr<nsIReferrerInfo> referrerInfo = new ReferrerInfo(*aDocument);
+    (void)httpChannel->SetReferrerInfoWithoutClone(referrerInfo);
+  }
+
+  nsCOMPtr<nsIStreamLoader> loader;
+  if (NS_FAILED(NS_NewStreamLoader(getter_AddRefs(loader), fetcher))) {
+    return;
+  }
+  (void)channel->AsyncOpen(loader);
+}
+
+NS_IMETHODIMP SpeculationRulesFetcher::OnStreamComplete(
+    nsIStreamLoader* aLoader, nsISupports* aContext, nsresult aStatus,
+    uint32_t aDataLen, const uint8_t* aData) {
+  if (!mDocument->IsFullyActive()) {
+    return NS_OK;
+  }
+
+  // https://html.spec.whatwg.org/#process-the-speculation-rules-header
+  // Steps 3.4.2.2.1-3.4.2.2.2.
+  if (NS_FAILED(aStatus) || !aData) {
+    return NS_OK;
+  }
+  nsCOMPtr<nsIRequest> request;
+  aLoader->GetRequest(getter_AddRefs(request));
+  nsCOMPtr<nsIHttpChannel> channel(do_QueryInterface(request));
+  if (!channel) {
+    return NS_OK;
+  }
+  if (bool succeeded = false;
+      NS_FAILED(channel->GetRequestSucceeded(&succeeded)) || !succeeded) {
+    return NS_OK;
+  }
+
+  // Step 3.4.2.2.3.
+  nsAutoCString contentType;
+  if (NS_FAILED(channel->GetContentType(contentType)) ||
+      !contentType.EqualsLiteral("application/speculationrules+json")) {
+    return NS_OK;
+  }
+
+  // Step 3.4.2.2.4.
+  nsAutoCString source;
+  if (NS_FAILED(UTF_8_ENCODING->DecodeWithBOMRemoval(
+          nsDependentCSubstring(reinterpret_cast<const char*>(aData), aDataLen),
+          source))) {
+    return NS_OK;
+  }
+
+  // Step 3.4.2.2.5.
+  nsCOMPtr<nsIURI> responseUri;
+  if (NS_FAILED(NS_GetFinalChannelURI(channel, getter_AddRefs(responseUri)))) {
+    return NS_OK;
+  }
+  auto result = SpeculationRuleSet::Parse(source, mDocument->GetDocBaseURI(),
+                                          responseUri);
+  if (result.isErr()) {
+    return NS_OK;
+  }
+
+  // Steps 3.4.2.2.6-3.4.2.2.7.
+  mDocument->SpeculationRules().RegisterFromHeader(result.unwrap());
+  return NS_OK;
+}
+
+}  // namespace
+
+void SpeculationRules::ProcessSpeculationRulesHeader(
+    const nsACString& aHeader) {
+  // https://html.spec.whatwg.org/#process-the-speculation-rules-header
+  // Step 1. Let parsedList be the result of getting a structured field value
+  //         given `Speculation-Rules` and "list" from response's header list.
+  auto parsedList = mozilla::net::SFV::ParseList(aHeader);
+  // Step 2. If parsedList is null, then return.
+  if (!parsedList.IsValid()) {
+    return;
+  }
+
+  // Step 3. For each item of parsedList:
+  for (size_t i = 0; i < parsedList.Length(); i++) {
+    auto item = parsedList.GetItemAt(i);
+    if (!item.IsValid()) {
+      continue;
+    }
+    // Step 3.1. If item is not a string, then continue.
+    nsAutoCString uriString;
+    if (NS_FAILED(item.GetValue<mozilla::net::SFV::SFVString>(uriString))) {
+      continue;
+    }
+
+    // Step 3.2. Let url be the result of URL parsing item with document's
+    //           document base URL.
+    nsCOMPtr<nsIURI> uri;
+    nsresult rv = NS_NewURI(getter_AddRefs(uri), uriString, nullptr,
+                            mDocument->GetDocBaseURI());
+    // Step 3.3. If url is failure, then continue.
+    if (NS_FAILED(rv) || !uri) {
+      continue;
+    }
+
+    // Step 3.4.
+    mDocument->Dispatch(NS_NewRunnableFunction(
+        "SpeculationRules::ProcessSpeculationRulesHeader",
+        [doc = mDocument, uri = std::move(uri)]() {
+          if (!doc->IsFullyActive()) {
+            return;
+          }
+          SpeculationRulesFetcher::Fetch(doc, uri);
+        }));
   }
 }
 

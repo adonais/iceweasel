@@ -84,6 +84,7 @@ class nsHttpDigestAuth final : public nsIHttpAuthenticator {
                                             nsACString& aHeaderLine);
 
  protected:
+  // Per-call scratch state on a shared singleton: main thread only.
   nsCOMPtr<nsICryptoHash> mVerifier;
   char mHashBuf[SHA256_DIGEST_LENGTH]{0};
 

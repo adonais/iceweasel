@@ -27,6 +27,8 @@ import { embeddingsGeneratorFactory } from "chrome://global/content/ml/Embedding
 
 /**
  * @typedef {import("chrome://global/content/ml/EmbeddingsGenerator.sys.mjs").EmbeddingsGenerator} EmbeddingsGenerator
+ * @typedef {import("moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs").MLEngine} MLEngine
+ * @typedef {import("chrome://global/content/ml/Utils.sys.mjs").ProgressAndStatusCallbackParams} ProgressAndStatusCallbackParams
  */
 
 const lazy = XPCOMUtils.declareLazy({
@@ -586,11 +588,14 @@ export class SmartTabGroupingManager extends AIFeature {
   /**
    * Generates similar tabs a grouped list of tabs
    *
-   * @param {Array} allTabs all tabs that are part of the window
-   * @param {Array} groupedIndices indices of tabs that are already part of the group
-   * @param {Array} alreadyGroupedIndices indices of tabs that are part of other groups
-   * @param {string} groupLabel name of group if present
-   * @param {number} threshold for nearest neighbor similarity
+   * @param {object} options
+   * @param {Array} options.allTabs all tabs that are part of the window
+   * @param {Array} options.groupedIndices indices of tabs that are already part of the group
+   * @param {Array} options.alreadyGroupedIndices indices of tabs that are part of other groups
+   * @param {string} [options.groupLabel] name of group if present
+   * @param {number} [options.thresholdMills] threshold for nearest neighbor similarity, in thousandths
+   * @param {Array} [options.precomputedEmbeddings]
+   * @param {number} [options.depth]
    * @returns a list of suggested tabs that are similar to the groupedIndices tabs
    */
   async findNearestNeighbors({
@@ -671,8 +676,8 @@ export class SmartTabGroupingManager extends AIFeature {
   /**
    * Calculates the average similarity between the anchor embeddings and the candidate embeddings
    *
-   * @param {number[]} anchorEmbeddings title embeddings for the anchor tabs
-   * @param {number[]} candidateEmbeddings title embeddings for the candidate tabs
+   * @param {number[][]} anchorEmbeddings title embeddings for the anchor tabs
+   * @param {number[][]} candidateEmbeddings title embeddings for the candidate tabs
    */
   getAverageSimilarity(anchorEmbeddings, candidateEmbeddings) {
     let averageSimilarities = [];
@@ -690,8 +695,8 @@ export class SmartTabGroupingManager extends AIFeature {
    * Calculates the max similarity between the anchor embeddings and the candidate embeddings
    * (used for s_tt_max).
    *
-   * @param {number[]} anchorEmbeddings title embeddings for the anchor tabs
-   * @param {number[]} candidateEmbeddings title embeddings for the candidate tabs
+   * @param {number[][]} anchorEmbeddings title embeddings for the anchor tabs
+   * @param {number[][]} candidateEmbeddings title embeddings for the candidate tabs
    */
   getMaxSimilarity(anchorEmbeddings, candidateEmbeddings) {
     let maxSimilarities = [];
@@ -853,10 +858,11 @@ export class SmartTabGroupingManager extends AIFeature {
   /**
    * Generates similar tabs to a grouped list of tabs using a logistic regression "model"
    *
-   * @param {Array} allTabs all tabs that are part of the window
-   * @param {Array} groupedIndices indices of tabs that are already part of the group
-   * @param {Array} alreadyGroupedIndices indices of tabs that are part of other groups
-   * @param {string} groupLabel name of group if present
+   * @param {object} options
+   * @param {Array} options.allTabs all tabs that are part of the window
+   * @param {Array} options.groupedIndices indices of tabs that are already part of the group
+   * @param {Array} options.alreadyGroupedIndices indices of tabs that are part of other groups
+   * @param {string} [options.groupLabel] name of group if present
    */
   async findSimilarTabsLogisticRegression({
     allTabs,
@@ -997,8 +1003,7 @@ export class SmartTabGroupingManager extends AIFeature {
   /**
    * Logs to the appropriate place for debugging. Console for now
    *
-   * @param {string} msg Message to log
-   * @param {boolean} useDescription Whether to add description to the final text
+   * @param {string} _msg Message to log
    */
   log(_msg) {}
 
@@ -1057,8 +1062,8 @@ export class SmartTabGroupingManager extends AIFeature {
    * Creates an ML engine for a given config.
    *
    * @param {*} engineConfig
-   * @param {function} progressCallback
-   * @returns MLEngine
+   * @param {function(ProgressAndStatusCallbackParams):void} [progressCallback]
+   * @returns {Promise<MLEngine>}
    */
   async _createMLEngine(engineConfig, progressCallback) {
     const {
@@ -1112,10 +1117,13 @@ export class SmartTabGroupingManager extends AIFeature {
    * Clusters in desired methods
    * based on the config of the class
    *
-   * @param tabList List of tabs as array
-   * @param docEmbeddings Precomputed embeddings for the Tab as two dimensional array
-   * @param k Desired number of clusters. Tries a range of sizes if 0.
-   * @param {function} randomFunc Optional seeded random number generator for testing
+   * @param {object} options
+   * @param {Array} options.tabs List of tabs as array
+   * @param {number[][]} options.embeddings Precomputed embeddings for the Tab as two dimensional array
+   * @param {number} options.k Desired number of clusters. Tries a range of sizes if 0.
+   * @param {function():number} [options.randomFunc] Optional seeded random number generator for testing
+   * @param {number[]} [options.anchorIndices]
+   * @param {number[]} [options.alreadyGroupedIndices]
    * @returns {SmartTabGroupingResult}
    * @private
    */
@@ -1289,11 +1297,11 @@ export class SmartTabGroupingManager extends AIFeature {
    *
    * @param {object[]} tabList - List of tab objects to be clustered.
    * @param {number[][]} [precomputedEmbeddings] - Precomputed embeddings for tab titles and descriptions.
-   * @param {number} numClusters - Number of clusters to form.
-   * @param {Function} randFunc - Random function used for clustering initialization.
+   * @param {number} [numClusters] - Number of clusters to form.
+   * @param {function():number} [randFunc] - Random function used for clustering initialization.
    * @param {number[]} [anchorIndices=[]] - Indices of anchor tabs that should be prioritized in clustering.
    * @param {number[]} [alreadyGroupedIndices=[]] - Indices of tabs that are already assigned to groups.
-   * @returns {SmartTabGroupingResult} - The best clustering result based on centroid inertia.
+   * @returns {Promise<SmartTabGroupingResult>} - The best clustering result based on centroid inertia.
    */
   async generateClusters(
     tabList,
@@ -1596,11 +1604,12 @@ export class SmartTabGroupingManager extends AIFeature {
    * Generates glean metrics for ml smart tab label / topic.
    * This is currently called when the user saves or cancels the "suggest label" flow.
    *
-   * @param {string} action "save" or "cancel"
-   * @param {number} numTabsInGroup Number of tabs used to generate the label
-   * @param {string} mlLabel ML generated label for the tab group
-   * @param {string} userLabel User saved label for the tab group
-   * @param {string} id The id of the group
+   * @param {object} options
+   * @param {string} options.action "save" or "cancel"
+   * @param {number} options.numTabsInGroup Number of tabs used to generate the label
+   * @param {string} options.mlLabel ML generated label for the tab group
+   * @param {string} options.userLabel User saved label for the tab group
+   * @param {string} [options.id] The id of the group
    */
   async handleLabelTelemetry({
     action,
@@ -1621,7 +1630,10 @@ export class SmartTabGroupingManager extends AIFeature {
         userLabel || "",
         mlLabel || ""
       ),
-      model_revision: topicEngineConfig.modelRevision || "",
+      model_revision:
+        ("modelRevision" in topicEngineConfig &&
+          topicEngineConfig.modelRevision) ||
+        "",
       id,
       label_reason: labelReason,
       backend: this.backend || "onnx-native",
@@ -1633,13 +1645,14 @@ export class SmartTabGroupingManager extends AIFeature {
    * Generates glean metrics for ml smart tab label / topic.
    * This is currently called when the user saves or cancels the "suggest other tabs" flow
    *
-   * @param {string} action "save" or "cancel"
-   * @param {number} numTabsInWindow Number of tabs in the current window
-   * @param {number} numTabsInGroup Number of tabs in the current group
-   * @param {number} numTabsSuggested Number of tabs suggested by the model
-   * @param {number} numTabsApproved Number of tabs approved by the user
-   * @param {number} numTabsRemoved Number of tabs removed by the user
-   * @param {string} id The id of the group
+   * @param {object} options
+   * @param {string} options.action "save" or "cancel"
+   * @param {number} options.numTabsInWindow Number of tabs in the current window
+   * @param {number} options.numTabsInGroup Number of tabs in the current group
+   * @param {number} options.numTabsSuggested Number of tabs suggested by the model
+   * @param {number} options.numTabsApproved Number of tabs approved by the user
+   * @param {number} options.numTabsRemoved Number of tabs removed by the user
+   * @param {string} [options.id] The id of the group
    */
   async handleSuggestTelemetry({
     action,
@@ -1659,7 +1672,10 @@ export class SmartTabGroupingManager extends AIFeature {
       tabs_suggested: numTabsSuggested,
       tabs_approved: numTabsApproved,
       tabs_removed: numTabsRemoved,
-      model_revision: embeddingEngineConfig.modelRevision || "",
+      model_revision:
+        ("modelRevision" in embeddingEngineConfig &&
+          embeddingEngineConfig.modelRevision) ||
+        "",
       id,
       backend: this.getEmbeddingsGenerator().options.backend || "onnx-native",
     });
@@ -1667,8 +1683,6 @@ export class SmartTabGroupingManager extends AIFeature {
 
   /**
    * Gets config that engine was initialized with
-   *
-   * @return {Promise<{"[ML_TASK_TEXT2TEXT]", "[ML_TASK_FEATURE_EXTRACTION]"}>}
    */
   async getEngineConfigs() {
     if (!this.topicEngineConfig) {
@@ -1696,10 +1710,11 @@ export class SmartTabGroupingResult {
    * Creates a result from indices and complete tab and embedding lists.
    * This may create some extra data for management later
    *
-   * @param indices indices of clusters (eg [[2,4], [1], [3]]_
-   * @param tabItems 1D array of tabs
-   * @param embeddingItems Two dimensional array of embeddings
-   * @param config Cluster config
+   * @param {object} options
+   * @param {number[][]} [options.indices] indices of clusters (eg [[2,4], [1], [3]]_
+   * @param {Array} [options.tabs] One-dimensional array of tabs
+   * @param {number[][]} [options.embeddings] Two dimensional array of embeddings
+   * @param {object} options.config Cluster config
    */
   constructor({ indices = [], tabs, embeddings, config }) {
     this.embeddingItems = embeddings;
@@ -1731,7 +1746,7 @@ export class SmartTabGroupingResult {
    * Returns a list of documents for each cluster. Currently it is a list of documents picked
    * in no particular order.
    *
-   * @return {[strings]} Title and description that represent the cluster. (If no docs are in the class, then titles are returned)
+   * @return {string[]} Title and description that represent the cluster. (If no docs are in the class, then titles are returned)
    */
   getRepresentativeDocuments() {
     if (!this.documents) {
@@ -1831,7 +1846,7 @@ export class SmartTabGroupingResult {
    * Converts a cluster representation to a flat list of tabs, with clusterID key in each
    * tab representing the id of the cluster it was part of.
    *
-   * @returns {[object]}
+   * @returns {object[]}
    */
   _flatMapItemsInClusters() {
     return this.clusterRepresentations.reduce((result, clusterRep) => {
@@ -1862,7 +1877,7 @@ export class SmartTabGroupingResult {
    *
    * @param labelKey Key in the tabs that represent a unique label ID for the cluster.
    * @param clusterValue is the cluster we are comparing
-   * @returns {number} The rand score.
+   * @returns {{accuracy: number, kappa: number}} The accuracy and kappa values.
    */
   getAccuracyStatsForCluster(labelKey = "annotatedLabel", clusterValue) {
     const combinedItems = this._flatMapItemsInClusters();
@@ -1917,6 +1932,12 @@ function genHexString(len) {
 }
 
 class EmbeddingCluster {
+  /**
+   * @param {object} options
+   * @param {Array} [options.tabs]
+   * @param {number[][]} [options.embeddings]
+   * @param {number[]} [options.centroid]
+   */
   constructor({ tabs, embeddings, centroid }) {
     this.embeddings = embeddings;
     this.centroid =
@@ -1980,7 +2001,7 @@ class EmbeddingCluster {
   /**
    * Returns number of items in the cluster
    *
-   * @returns {int}
+   * @returns {number}
    */
   numItems() {
     return this.tabs.length;
@@ -1991,6 +2012,13 @@ class EmbeddingCluster {
  * Represents a single cluster with additional saved metadata
  */
 export class ClusterRepresentation extends EmbeddingCluster {
+  /**
+   * @param {object} options
+   * @param {Array} [options.tabs]
+   * @param {number[][]} [options.embeddings]
+   * @param {number[]} [options.centroid]
+   * @param {object} options.config
+   */
   constructor({ tabs, embeddings, centroid, config }) {
     super({ tabs, embeddings, centroid });
     this.config = config;
@@ -2002,6 +2030,9 @@ export class ClusterRepresentation extends EmbeddingCluster {
     this.documents = null;
     this.clusterID = genHexString(10);
     this.isSingleTabSearch = tabs?.length == 1 && isSearchTab(tabs[0]);
+    // Set by SmartTabGroupingManager.generateClusters.
+    /** @type {number|undefined} */
+    this.cohesion;
   }
 
   /**

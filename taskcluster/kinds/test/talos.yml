@@ -5,7 +5,16 @@
 task-defaults:
     max-run-time: 3600
     suite: talos
+    dependencies:
+        by-test-platform:
+            macosx(1500|2700)-aarch64(-vms)?-shippable/.*:
+                build: build-macosx64-aarch64-shippable/opt
+            default: {}
     use-python: system
+    use-caches:
+        by-test-platform:
+            windows.*: [checkout, pip]
+            default: [checkout, pip, uv]
     virtualization: hardware
     mozharness:
         script: talos_script.py
@@ -57,7 +66,6 @@ talos-chrome:
     treeherder-symbol: T(c)
     variants:
         - webrender-sw
-        - no-nova
     run-on-projects:
         by-test-platform:
             linux(?!.*shippable).*: []
@@ -404,7 +412,6 @@ talos-other:
     treeherder-symbol: T(o)
     variants:
         - webrender-sw
-        - no-nova
     run-on-projects:
         by-variant:
             webrender-sw:
@@ -442,7 +449,6 @@ talos-sessionrestore-many-windows:
     treeherder-symbol: T(smw)
     variants:
         - webrender-sw
-        - no-nova
     run-on-projects:
         by-variant:
             webrender-sw:
@@ -618,7 +624,6 @@ talos-tabswitch:
     treeherder-symbol: T(tabswitch)
     variants:
         - webrender-sw
-        - no-nova
     run-on-projects: []
     max-run-time: 2100
     mozharness:

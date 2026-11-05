@@ -21,3 +21,23 @@ SOURCES += [
 Library('breakpad_mac_common_s')
 
 include('/toolkit/crashreporter/crashreporter.mozbuild')
+
+SOURCE_HEADERS += [
+	"arch_utilities.h",
+	"bootstrap_compat.h",
+	"byteswap.h",
+	"dump_syms.h",
+	"file_id.h",
+	"GTMDefines.h",
+	"GTMLogger.h",
+	"HTTPMultipartUpload.h",
+	"launch_reporter.h",
+	"MachIPC.h",
+	"macho_id.h",
+	"macho_reader.h",
+	"macho_utilities.h",
+	"macho_walker.h",
+	"scoped_task_suspend-inl.h",
+	"string_utilities.h",
+	"super_fat_arch.h",
+]

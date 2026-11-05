@@ -23,10 +23,9 @@ public class VideoTrack extends MediaStreamTrack {
   /**
    * Adds a VideoSink to the track.
    *
-   * A track can have any number of VideoSinks. VideoSinks will replace
-   * renderers. However, converting old style texture frames will involve costly
-   * conversion to I420 so it is not recommended to upgrade before all your
-   * sources produce VideoFrames.
+   * <p>A track can have any number of VideoSinks. VideoSinks will replace renderers. However,
+   * converting old style texture frames will involve costly conversion to I420 so it is not
+   * recommended to upgrade before all your sources produce VideoFrames.
    */
   public void addSink(VideoSink sink) {
     if (sink == null) {
@@ -34,34 +33,49 @@ public class VideoTrack extends MediaStreamTrack {
     }
     // We allow calling addSink() with the same sink multiple times. This is similar to the C++
     // VideoTrack::AddOrUpdateSink().
-    if (!sinks.containsKey(sink)) {
-      final long nativeSink = nativeWrapSink(sink);
-      sinks.put(sink, nativeSink);
-      nativeAddSink(getNativeMediaStreamTrack(), nativeSink);
-    }
+    lifecycleLock.run(
+        nativeTrack -> {
+          synchronized (sinks) {
+            if (!sinks.containsKey(sink)) {
+              final long nativeSink = nativeWrapSink(sink);
+              sinks.put(sink, nativeSink);
+              nativeAddSink(nativeTrack, nativeSink);
+            }
+          }
+        });
   }
 
   /**
    * Removes a VideoSink from the track.
    *
-   * If the VideoSink was not attached to the track, this is a no-op.
+   * <p>If the VideoSink was not attached to the track, this is a no-op.
    */
   public void removeSink(VideoSink sink) {
-    final Long nativeSink = sinks.remove(sink);
-    if (nativeSink != null) {
-      nativeRemoveSink(getNativeMediaStreamTrack(), nativeSink);
-      nativeFreeSink(nativeSink);
-    }
+    lifecycleLock.runIfAlive(
+        nativeTrack -> {
+          synchronized (sinks) {
+            final Long nativeSink = sinks.remove(sink);
+            if (nativeSink != null) {
+              nativeRemoveSink(nativeTrack, nativeSink);
+              nativeFreeSink(nativeSink);
+            }
+          }
+        });
   }
 
   @Override
   public void dispose() {
-    for (long nativeSink : sinks.values()) {
-      nativeRemoveSink(getNativeMediaStreamTrack(), nativeSink);
-      nativeFreeSink(nativeSink);
-    }
-    sinks.clear();
-    super.dispose();
+    lifecycleLock.dispose(
+        nativeTrack -> {
+          synchronized (sinks) {
+            for (long nativeSink : sinks.values()) {
+              nativeRemoveSink(nativeTrack, nativeSink);
+              nativeFreeSink(nativeSink);
+            }
+            sinks.clear();
+          }
+          JniCommon.nativeReleaseRef(nativeTrack);
+        });
   }
 
   /** Returns a pointer to webrtc::VideoTrackInterface. */

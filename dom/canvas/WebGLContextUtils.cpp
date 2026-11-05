@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "WebGLContextUtils.h"
-
 #include "GLContext.h"
 #include "HostWebGLContext.h"
 #include "WebGLBuffer.h"
@@ -23,41 +21,6 @@
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla {
-
-TexTarget TexImageTargetToTexTarget(TexImageTarget texImageTarget) {
-  switch (texImageTarget.get()) {
-    case LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_X:
-    case LOCAL_GL_TEXTURE_CUBE_MAP_NEGATIVE_X:
-    case LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_Y:
-    case LOCAL_GL_TEXTURE_CUBE_MAP_NEGATIVE_Y:
-    case LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_Z:
-    case LOCAL_GL_TEXTURE_CUBE_MAP_NEGATIVE_Z:
-      return LOCAL_GL_TEXTURE_CUBE_MAP;
-
-    default:
-      return texImageTarget.get();
-  }
-}
-
-/*static*/ const char* WebGLContext::ErrorName(GLenum error) {
-  switch (error) {
-    case LOCAL_GL_INVALID_ENUM:
-      return "INVALID_ENUM";
-    case LOCAL_GL_INVALID_OPERATION:
-      return "INVALID_OPERATION";
-    case LOCAL_GL_INVALID_VALUE:
-      return "INVALID_VALUE";
-    case LOCAL_GL_OUT_OF_MEMORY:
-      return "OUT_OF_MEMORY";
-    case LOCAL_GL_INVALID_FRAMEBUFFER_OPERATION:
-      return "INVALID_FRAMEBUFFER_OPERATION";
-    case LOCAL_GL_NO_ERROR:
-      return "NO_ERROR";
-    default:
-      MOZ_ASSERT(false);
-      return "[unknown WebGL error]";
-  }
-}
 
 // This version is fallible and will return nullptr if unrecognized.
 const char* GetEnumName(const GLenum val, const char* const defaultRet) {
@@ -559,43 +522,6 @@ void WebGLContext::AssertCachedGlobalState() const {
 
   MOZ_ASSERT(!gl::GLContext::IsBadCallError(errorScope.GetError()));
 #endif
-}
-
-const char* InfoFrom(WebGLTexImageFunc func, WebGLTexDimensions dims) {
-  switch (dims) {
-    case WebGLTexDimensions::Tex2D:
-      switch (func) {
-        case WebGLTexImageFunc::TexImage:
-          return "texImage2D";
-        case WebGLTexImageFunc::TexSubImage:
-          return "texSubImage2D";
-        case WebGLTexImageFunc::CopyTexImage:
-          return "copyTexImage2D";
-        case WebGLTexImageFunc::CopyTexSubImage:
-          return "copyTexSubImage2D";
-        case WebGLTexImageFunc::CompTexImage:
-          return "compressedTexImage2D";
-        case WebGLTexImageFunc::CompTexSubImage:
-          return "compressedTexSubImage2D";
-        default:
-          MOZ_CRASH("GFX: invalid 2D TexDimensions");
-      }
-    case WebGLTexDimensions::Tex3D:
-      switch (func) {
-        case WebGLTexImageFunc::TexImage:
-          return "texImage3D";
-        case WebGLTexImageFunc::TexSubImage:
-          return "texSubImage3D";
-        case WebGLTexImageFunc::CopyTexSubImage:
-          return "copyTexSubImage3D";
-        case WebGLTexImageFunc::CompTexSubImage:
-          return "compressedTexSubImage3D";
-        default:
-          MOZ_CRASH("GFX: invalid 3D TexDimensions");
-      }
-    default:
-      MOZ_CRASH("GFX: invalid TexDimensions");
-  }
 }
 
 ////

@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Login Manager: test basic login autocomplete</title>
+  <script src="/tests/SimpleTest/GleanTest.js"></script>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <script src="/tests/SimpleTest/EventUtils.js"></script>
   <script type="text/javascript" src="../../../satchel/test/satchel_common.js"></script>
@@ -48,6 +49,7 @@ This tests the login manager in a secure setting using https. A similar test fil
   });
 
   add_named_task("menuitems, telemetry events, selection and escape", async () => {
+    await GleanTest.testResetFOG();
     await setStoredLoginsDuringTask(
       // login 0 has no username, so should be filtered out from the autocomplete list.
       [location.origin, "https://autocomplete:8888", null, "", "pass0", "", "pword"],
@@ -69,13 +71,11 @@ This tests the login manager in a secure setting using https. A similar test fil
     checkAutoCompleteResults(autocompleteItems, expectedMenuItems,
                              window.location.host, "Check all menuitems are displayed correctly.");
 
-    const acEvents = await getTelemetryEvents({ process: "parent", filterProps: TelemetryFilterPropsAC, clear: true });
-    is(acEvents.length, 1, "One autocomplete event");
-    checkACTelemetryEvent(acEvents[0], form.uname, {
-      "hadPrevious": "0",
-      "login": expectedMenuItems.length + "",
-      "loginsFooter": "1"
-    });
+    const events = await GleanTest.formAutocomplete.showLogins.testGetValue();
+    is(1, events.length, "One autocomplete event");
+    is("0", events[0].extra.hadPrevious);
+    is(expectedMenuItems.length.toString(), events[0].extra.login);
+    is("1", events[0].extra.loginsFooter);
 
     is(form.uname.value, "", "username is empty");
     is(form.pword.value, "", "password is empty");

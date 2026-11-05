@@ -95,7 +95,6 @@ p {
 }
 
 .promo.top {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background: var(--color-white-alpha-20);
   position: absolute;
   top: 0;
@@ -228,7 +227,6 @@ content-search-handoff-ui {
 }
 
 .info {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--color-black-alpha-20);
   background-image: none;
   border: 1px solid transparent;
@@ -284,7 +282,6 @@ content-search-handoff-ui {
   display: flex;
   border: 1px solid transparent;
   border-radius: var(--border-radius-small);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--color-black-alpha-20);
 }
 
@@ -458,7 +455,6 @@ content-search-handoff-ui {
   display: none;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   @media not (prefers-contrast) {
     html.private {
@@ -547,7 +543,7 @@ content-search-handoff-ui {
   html.private .info-border {
     margin-block-start: auto;
     margin-block-end: 0;
-    padding-block: var(--space-xxlarge) 0;
+    padding-block: var(--space-xxlarge) 100px;
     padding-inline: 0;
 
     @media not (prefers-contrast) {
@@ -608,7 +604,6 @@ content-search-handoff-ui {
     flex: 1;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.privateWindowRedesign.enabled") {
     @media not (prefers-contrast) {
       html.private {

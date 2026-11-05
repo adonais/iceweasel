@@ -145,6 +145,60 @@ mapping:
         pretty_name: firefox-${version}.mozinfo.json
         checksums_path: ${path_platform}/${locale}/firefox-${version}.mozinfo.json
         expiry: "1 year"
+    sbom.json:
+        <<: *default
+        description: "CycloneDX software bill of materials describing the build"
+        not_for_platforms:
+            - macosx64-shippable
+            - macosx64-devedition
+        pretty_name: firefox-${version}.sbom.json
+        checksums_path: ${path_platform}/${locale}/firefox-${version}.sbom.json
+        expiry: "1 year"
+    sbom-x86_64.json:
+        <<: *default
+        description: "CycloneDX software bill of materials describing the x86_64 half of the universal build"
+        only_for_platforms:
+            - macosx64-shippable
+            - macosx64-devedition
+        pretty_name: firefox-${version}.sbom-x86_64.json
+        checksums_path: ${path_platform}/${locale}/firefox-${version}.sbom-x86_64.json
+        expiry: "1 year"
+    sbom-aarch64.json:
+        <<: *default
+        description: "CycloneDX software bill of materials describing the aarch64 half of the universal build"
+        only_for_platforms:
+            - macosx64-shippable
+            - macosx64-devedition
+        pretty_name: firefox-${version}.sbom-aarch64.json
+        checksums_path: ${path_platform}/${locale}/firefox-${version}.sbom-aarch64.json
+        expiry: "1 year"
+    sbom-build-tooling.json:
+        <<: *default
+        description: "CycloneDX software bill of materials describing the tooling used to build and test"
+        not_for_platforms:
+            - macosx64-shippable
+            - macosx64-devedition
+        pretty_name: firefox-${version}.sbom-build-tooling.json
+        checksums_path: ${path_platform}/${locale}/firefox-${version}.sbom-build-tooling.json
+        expiry: "1 year"
+    sbom-build-tooling-x86_64.json:
+        <<: *default
+        description: "CycloneDX software bill of materials describing the tooling used to build and test the x86_64 half of the universal build"
+        only_for_platforms:
+            - macosx64-shippable
+            - macosx64-devedition
+        pretty_name: firefox-${version}.sbom-build-tooling-x86_64.json
+        checksums_path: ${path_platform}/${locale}/firefox-${version}.sbom-build-tooling-x86_64.json
+        expiry: "1 year"
+    sbom-build-tooling-aarch64.json:
+        <<: *default
+        description: "CycloneDX software bill of materials describing the tooling used to build and test the aarch64 half of the universal build"
+        only_for_platforms:
+            - macosx64-shippable
+            - macosx64-devedition
+        pretty_name: firefox-${version}.sbom-build-tooling-aarch64.json
+        checksums_path: ${path_platform}/${locale}/firefox-${version}.sbom-build-tooling-aarch64.json
+        expiry: "1 year"
     target_info.txt:
         <<: *default
         description: "File containing the buildID"

@@ -19,9 +19,6 @@ class SolusBootstrapper(LinuxBootstrapper, BaseBootstrapper):
     def _update_package_manager(self):
         pass
 
-    def upgrade_mercurial(self, current):
-        self.package_install("mercurial")
-
     def package_install(self, *packages):
         command = ["eopkg", "install"]
         if self.no_interactive:

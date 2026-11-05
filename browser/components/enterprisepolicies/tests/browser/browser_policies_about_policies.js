@@ -3,6 +3,12 @@
 
 "use strict";
 
+add_setup(async function () {
+  Cc["@mozilla.org/consoleAPI-storage;1"]
+    .getService(Ci.nsIConsoleAPIStorage)
+    .clearEvents();
+});
+
 add_task(async function test_partially_applied_policy_is_flagged() {
   // browser.startup.page is an integer preference, so setting it to a string
   // fails and the policy is only partially applied.

@@ -184,6 +184,7 @@ void HWInferenceParent::SendWhenReady(Send&& aSend) {
       []() { LOGD("HWInference never came up: dropping the endpoint"); });
 }
 
+#ifdef MOZ_WEBSPEECH
 void HWInferenceParent::StartContentSpeechRecognition(
     Endpoint<PSpeechRecognitionParent>&& aEndpoint,
     dom::ContentParentId aChildId) {
@@ -192,6 +193,7 @@ void HWInferenceParent::StartContentSpeechRecognition(
     return aSelf.SendNewContentSpeechRecognition(std::move(endpoint), aChildId);
   });
 }
+#endif  // MOZ_WEBSPEECH
 
 void HWInferenceParent::StartTextGeneration(
     Endpoint<PTextGenerationChild>&& aEndpoint,

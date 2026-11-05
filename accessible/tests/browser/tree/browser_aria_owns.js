@@ -276,3 +276,20 @@ addAccessibleTask(
     testChildrenIds(containerAcc, ["a", "b", "c", "d"]);
   }
 );
+
+// Subtree properly shuts down.
+addAccessibleTask(
+  `<div id="container">
+      <div id="outer" aria-owns="branch">
+          <div id="target"></div>
+      </div>
+      <div id="branch" aria-owns="target"></div>
+  </div>`,
+  async function (browser, accDoc) {
+    await contentSpawnMutation(browser, MOVE, function () {
+      content.document.getElementById("outer").remove();
+    });
+    testChildrenIds(findAccessibleChildByID(accDoc, "container"), ["branch"]);
+  },
+  { chrome: true }
+);

@@ -32,3 +32,4 @@ pref(dom.xslt.enabled,true) HTTP load 1430818.sjs
 pref(dom.xslt.enabled,true) HTTP load 1941002-1.html
 pref(dom.xslt.enabled,true) HTTP load 1941002-2.html
 pref(dom.xslt.enabled,true) HTTP load 1941002-3.html
+pref(dom.xslt.enabled,true) HTTP load 2079783.html

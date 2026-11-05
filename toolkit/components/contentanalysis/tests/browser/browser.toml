@@ -77,7 +77,7 @@ support-files = [
   "!/dom/events/test/browser_dragdrop_outer.html",
 ]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1936521
+  "os == 'win' && os_version == '11.26200' && arch == 'x86' && opt", # Bug 2064939
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1936521
 ]
 
@@ -88,7 +88,6 @@ support-files = [
   "!/dom/events/test/browser_dragdrop_outer.html",
 ]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && opt", # Bug 1922273
   "os == 'win' && os_version == '11.26200' && opt", # Bug 1922273
 ]
 

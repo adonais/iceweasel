@@ -66,9 +66,6 @@ class MOZ_RAII YCbCrTextureClientAllocationHelper
                                      const gfx::IntSize& aCbCrSize,
                                      TextureFlags aTextureFlags);
 
-  YCbCrTextureClientAllocationHelper(const PlanarYCbCrData& aData,
-                                     TextureFlags aTextureFlags);
-
   bool IsCompatible(TextureClient* aTextureClient) override;
 
   already_AddRefed<TextureClient> Allocate(

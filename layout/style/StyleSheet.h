@@ -325,7 +325,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   void GetType(nsAString& aType);
   void GetHref(nsAString& aHref, ErrorResult& aRv);
   // GetOwnerNode is defined above.
-  StyleSheet* GetParentStyleSheet() const { return GetParentSheet(); }
+  already_AddRefed<StyleSheet> GetParentStyleSheet() const {
+    return do_AddRef(GetParentSheet());
+  }
   void GetTitle(nsAString& aTitle);
   dom::MediaList* Media();
   bool Disabled() const { return bool(mState & State::Disabled); }

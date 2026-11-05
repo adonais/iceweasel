@@ -436,8 +436,7 @@ bool Node::IsEventFromPreviousPeer(const Event& event) {
       // PortAccepted is sent by the next peer
       return false;
     case Event::Type::kObserveProxy:
-      // ObserveProxy with an invalid port name is a broadcast event
-      return event.port_name() != kInvalidPortName;
+      return true;
     case Event::Type::kObserveProxyAck:
       return true;
     case Event::Type::kObserveClosure:
@@ -501,8 +500,8 @@ int Node::AcceptEvent(const NodeName& from_node, ScopedEvent event) {
 
   if (!IsEventFromPreviousPeer(*event)) {
     DCHECK_EQ(event->control_sequence_num(), kInvalidSequenceNum);
-    // Some events are not coming from the previous peer, e.g. broadcasts or
-    // PortAccepted events. No need to check the sequence number or sender.
+    // Some events are not coming from the previous peer, e.g. PortAccepted
+    // events. No need to check the sequence number or sender.
     return AcceptEventInternal(port_ref, from_node, std::move(event));
   }
 
@@ -632,6 +631,15 @@ int Node::LostConnectionToNode(const NodeName& node_name) {
   return OK;
 }
 
+int Node::CleanupDeadProxy(const NodeName& node_name,
+                           const PortName& port_name) {
+  DVLOG(1) << "Observing dead proxy in node " << name_ << " of peer "
+           << port_name << "@" << node_name;
+
+  DestroyAllPortsWithPeer(node_name, port_name);
+  return OK;
+}
+
 int Node::OnUserMessage(const PortRef& port_ref, const NodeName& from_node,
                         mozilla::UniquePtr<UserMessageEvent> message) {
 #ifdef DEBUG
@@ -731,20 +739,6 @@ int Node::OnPortAccepted(const PortRef& port_ref,
 
 int Node::OnObserveProxy(const PortRef& port_ref,
                          mozilla::UniquePtr<ObserveProxyEvent> event) {
-  if (event->port_name() == kInvalidPortName) {
-    // An ObserveProxy with an invalid target port name is a broadcast used to
-    // inform ports when their peer (which was itself a proxy) has become
-    // defunct due to unexpected node disconnection.
-    //
-    // Receiving ports affected by this treat it as equivalent to peer closure.
-    // Proxies affected by this can be removed and will in turn broadcast their
-    // own death with a similar message.
-    DCHECK_EQ(event->proxy_target_node_name(), kInvalidNodeName);
-    DCHECK_EQ(event->proxy_target_port_name(), kInvalidPortName);
-    DestroyAllPortsWithPeer(event->proxy_node_name(), event->proxy_port_name());
-    return OK;
-  }
-
   // The port may have already been closed locally, in which case the
   // ObserveClosure message will contain the last_sequence_num field.
   // We can then silently ignore this message.
@@ -1959,16 +1953,14 @@ void Node::DestroyAllPortsWithPeer(const NodeName& node_name,
   }
 
   for (const auto& proxy_name : dead_proxies_to_broadcast) {
-    // Broadcast an event signifying that this proxy is no longer functioning.
-    delegate_->BroadcastEvent(mozilla::MakeUnique<ObserveProxyEvent>(
-        kInvalidPortName, kInvalidPortName, kInvalidSequenceNum, name_,
-        proxy_name, kInvalidNodeName, kInvalidPortName));
+    // Broadcast that this proxy is no longer functioning.
+    delegate_->BroadcastDeadProxy(proxy_name);
 
     // Also process death locally since the port that points this closed one
     // could be on the current node.
     // Note: Although this is recursive, only a single port is involved which
     // limits the expected branching to 1.
-    DestroyAllPortsWithPeer(name_, proxy_name);
+    CleanupDeadProxy(name_, proxy_name);
   }
 
   // Close any ports referenced by undelivered messages.

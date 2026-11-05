@@ -71,6 +71,9 @@ class XULPopupElement : public XULMenuParentElement {
                                        const ActivateMenuItemOptions& aOptions,
                                        ErrorResult& aRv);
 
+  void GetMenuItems(const GetMenuItemsOptions& aOptions,
+                    nsTArray<RefPtr<Element>>& aItems);
+
   void GetState(nsString& aState);
 
   MOZ_CAN_RUN_SCRIPT void PopupOpened(bool aSelectFirstItem);

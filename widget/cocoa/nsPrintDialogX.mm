@@ -5,7 +5,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/WidgetUtils.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/gfx/PrintTargetCG.h"
+#include "mozilla/gfx/PrintTarget.h"
 
 #include "nsCOMPtr.h"
 #include "nsCRT.h"

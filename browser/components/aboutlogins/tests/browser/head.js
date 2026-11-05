@@ -207,7 +207,6 @@ add_setup(async function setup_head() {
   registerCleanupFunction(async () => {
     EXPECTED_ERROR_MESSAGE = null;
     await db.clear();
-    Services.telemetry.clearEvents();
     SpecialPowers.postConsoleSentinel();
   });
 });

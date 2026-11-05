@@ -3729,13 +3729,51 @@ void CodeGenerator::visitWasmReplaceLaneSimd128(LWasmReplaceLaneSimd128* ins) {
 #endif
 }
 
+void CodeGenerator::visitWasmMoveLaneSimd128(LWasmMoveLaneSimd128* ins) {
+#ifdef ENABLE_JIT_SIMD
+  MOZ_ASSERT(ToFloatRegister(ins->lhs()) == ToFloatRegister(ins->output()));
+  const FloatRegister lhsDest = ToFloatRegister(ins->lhs());
+  const FloatRegister src = ToFloatRegister(ins->rhs());
+  const uint32_t laneIndex = ins->mir()->laneIndex();
+  const uint32_t srcLaneIndex = ins->mir()->srcLaneIndex();
+
+  // High ui4: dest lane selection. Low ui4: src lane selection.
+  // <https://jia.je/unofficial-loongarch-intrinsics-guide/lsx/misc/#__m128i-__lsx_vextrins_d-__m128i-a-__m128i-b-imm0_255-imm>
+  const uint32_t imm = (laneIndex << 4) | srcLaneIndex;
+
+  switch (ins->mir()->simdOp()) {
+    case wasm::SimdOp::I8x16ReplaceLane:
+      masm.as_vextrins_b(lhsDest, src, imm);
+      break;
+    case wasm::SimdOp::I16x8ReplaceLane:
+      masm.as_vextrins_h(lhsDest, src, imm);
+      break;
+    case wasm::SimdOp::I32x4ReplaceLane:
+      masm.as_vextrins_w(lhsDest, src, imm);
+      break;
+    case wasm::SimdOp::I64x2ReplaceLane:
+      masm.as_vextrins_d(lhsDest, src, imm);
+      break;
+    default:
+      MOZ_CRASH("MoveLane SimdOp not implemented");
+  }
+#else
+  MOZ_CRASH("No SIMD");
+#endif
+}
+
 void CodeGenerator::visitWasmReplaceInt64LaneSimd128(
     LWasmReplaceInt64LaneSimd128* ins) {
 #ifdef ENABLE_JIT_SIMD
   MOZ_RELEASE_ASSERT(ins->mir()->simdOp() == wasm::SimdOp::I64x2ReplaceLane);
   MOZ_ASSERT(ToFloatRegister(ins->lhs()) == ToFloatRegister(ins->output()));
-  masm.replaceLaneInt64x2(ins->mir()->laneIndex(), ToRegister64(ins->rhs()),
-                          ToFloatRegister(ins->lhs()));
+  const FloatRegister lhsDest = ToFloatRegister(ins->lhs());
+  const uint32_t lane = ins->mir()->laneIndex();
+  if (ins->rhs().value().isBogus()) {
+    masm.replaceLaneInt64x2(lane, Register64(zero), lhsDest);
+  } else {
+    masm.replaceLaneInt64x2(lane, ToRegister64(ins->rhs()), lhsDest);
+  }
 #else
   MOZ_CRASH("No SIMD");
 #endif
@@ -4170,46 +4208,38 @@ void CodeGenerator::visitWasmLoadLaneSimd128(LWasmLoadLaneSimd128* ins) {
 
 void CodeGenerator::visitWasmStoreLaneSimd128(LWasmStoreLaneSimd128* ins) {
 #ifdef ENABLE_JIT_SIMD
-  // Forward storing to wasmStore for the result of extractLane.
   const MWasmStoreLaneSimd128* mir = ins->mir();
   Register memoryBase = ToRegister(ins->memoryBase());
   FloatRegister src = ToFloatRegister(ins->src());
+  Register ptr = ToRegister(ins->ptr());
 
   UseScratchRegisterScope temps(&masm);
-  Register temp = temps.Acquire();
   Register scratch = temps.Acquire();
-  Register ptr = ToRegister(ins->ptr());
-  Register ptrScratch = InvalidReg;
-  if (mir->access().offset32()) {
-    ptrScratch = scratch;
-  }
   if (mir->base()->type() == MIRType::Int32) {
     masm.move32To64ZeroExtend(ptr, Register64(scratch));
     ptr = scratch;
-  } else if (ptrScratch != InvalidReg) {
-    masm.movePtr(ptr, scratch);
   }
 
   switch (mir->laneSize()) {
     case 1:
-      masm.extractLaneInt8x16(mir->laneIndex(), src, temp);
-      masm.wasmStore(DeriveMemoryAccessDesc(mir->access(), Scalar::Int8),
-                     AnyRegister(temp), memoryBase, ptr, ptrScratch);
+      masm.wasmStoreLane(DeriveMemoryAccessDesc(mir->access(), Scalar::Int8),
+                         src, memoryBase, ptr, mir->laneSize(),
+                         mir->laneIndex());
       break;
     case 2:
-      masm.extractLaneInt16x8(mir->laneIndex(), src, temp);
-      masm.wasmStore(DeriveMemoryAccessDesc(mir->access(), Scalar::Int16),
-                     AnyRegister(temp), memoryBase, ptr, ptrScratch);
+      masm.wasmStoreLane(DeriveMemoryAccessDesc(mir->access(), Scalar::Int16),
+                         src, memoryBase, ptr, mir->laneSize(),
+                         mir->laneIndex());
       break;
     case 4:
-      masm.extractLaneInt32x4(mir->laneIndex(), src, temp);
-      masm.wasmStore(DeriveMemoryAccessDesc(mir->access(), Scalar::Int32),
-                     AnyRegister(temp), memoryBase, ptr, ptrScratch);
+      masm.wasmStoreLane(DeriveMemoryAccessDesc(mir->access(), Scalar::Int32),
+                         src, memoryBase, ptr, mir->laneSize(),
+                         mir->laneIndex());
       break;
     case 8:
-      masm.extractLaneInt64x2(mir->laneIndex(), src, Register64(temp));
-      masm.wasmStoreI64(DeriveMemoryAccessDesc(mir->access(), Scalar::Int64),
-                        Register64(temp), memoryBase, ptr, ptrScratch);
+      masm.wasmStoreLane(DeriveMemoryAccessDesc(mir->access(), Scalar::Int64),
+                         src, memoryBase, ptr, mir->laneSize(),
+                         mir->laneIndex());
       break;
     default:
       MOZ_CRASH("Unsupported store lane size");

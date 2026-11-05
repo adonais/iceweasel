@@ -25,6 +25,8 @@ const TOP_STORIES_PREF = `${PREF_PREFIX}feeds.section.topstories`;
 const VARIANT_PREF = `${PREF_PREFIX}activationWindow.variant`;
 const TOP_SITES_TEMP_PREF = `${PREF_PREFIX}activationWindow.temp.topSitesUserValue`;
 const TOP_STORIES_TEMP_PREF = `${PREF_PREFIX}activationWindow.temp.topStoriesUserValue`;
+const WIDGETS_PREF = `${PREF_PREFIX}widgets.enabled`;
+const WIDGETS_TEMP_PREF = `${PREF_PREFIX}activationWindow.temp.widgetsUserValue`;
 
 const TEST_NOW = Temporal.Instant.from("2024-01-15T12:00:00Z");
 const TEST_PROFILE_24H_AGO = Temporal.Instant.from("2024-01-14T12:00:00Z");
@@ -524,6 +526,167 @@ add_task(async function test_user_disabling_persists_topstories() {
     "User's choice to disable top stories should persist"
   );
 
+  await doExperimentCleanup();
+  sandbox.restore();
+});
+
+/**
+ * Tests that entering the activation window disables widgets by default when
+ * configured to do so via Nimbus, and that the original default is restored
+ * after the activation window expires.
+ */
+add_task(async function test_activation_window_widgets() {
+  const sandbox = sinon.createSandbox();
+  let profileCreatedInstant = TEST_PROFILE_24H_AGO;
+
+  const prefsFeed = await getPrefsFeed();
+
+  Services.prefs.clearUserPref(WIDGETS_PREF);
+  const originalDefault = Services.prefs
+    .getDefaultBranch("")
+    .getBoolPref(WIDGETS_PREF);
+
+  await ExperimentAPI.ready();
+  const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+    enabled: true,
+    maxProfileAgeInHours: 48,
+    disableTopSites: false,
+    disableTopStories: false,
+    disableWidgets: true,
+    variant: "a",
+  });
+
+  sandbox
+    .stub(AboutNewTab.activityStream, "createdInstant")
+    .get(() => profileCreatedInstant);
+
+  prefsFeed.checkForActivationWindow(TEST_NOW, /* isStartup */ true);
+
+  Assert.equal(
+    Services.prefs.getBoolPref(WIDGETS_PREF),
+    false,
+    "Widgets should be hidden during activation window"
+  );
+  Assert.ok(
+    !Services.prefs.prefHasUserValue(WIDGETS_TEMP_PREF),
+    "Temp pref should not be set by the activation window default"
+  );
+
+  profileCreatedInstant = TEST_PROFILE_50H_AGO;
+  prefsFeed.checkForActivationWindow(TEST_NOW);
+
+  Assert.equal(
+    Services.prefs.getBoolPref(WIDGETS_PREF),
+    originalDefault,
+    "Widgets default should be restored after exit"
+  );
+
+  await doExperimentCleanup();
+  sandbox.restore();
+});
+
+/**
+ * Tests that when a user explicitly enables widgets during the activation
+ * window, their choice persists after the activation window expires.
+ */
+add_task(async function test_user_enabling_persists_widgets() {
+  const sandbox = sinon.createSandbox();
+  let profileCreatedInstant = TEST_PROFILE_24H_AGO;
+
+  const prefsFeed = await getPrefsFeed();
+
+  Services.prefs.clearUserPref(WIDGETS_PREF);
+
+  await ExperimentAPI.ready();
+  const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+    enabled: true,
+    maxProfileAgeInHours: 48,
+    disableTopSites: false,
+    disableTopStories: false,
+    disableWidgets: true,
+    variant: "a",
+  });
+
+  sandbox
+    .stub(AboutNewTab.activityStream, "createdInstant")
+    .get(() => profileCreatedInstant);
+
+  prefsFeed.checkForActivationWindow(TEST_NOW, /* isStartup */ true);
+
+  Services.prefs.setBoolPref(WIDGETS_PREF, true);
+
+  profileCreatedInstant = TEST_PROFILE_50H_AGO;
+  prefsFeed.checkForActivationWindow(TEST_NOW);
+
+  Assert.equal(
+    Services.prefs.getBoolPref(WIDGETS_PREF),
+    true,
+    "User's choice to enable widgets should persist"
+  );
+  Assert.ok(
+    !Services.prefs.prefHasUserValue(WIDGETS_TEMP_PREF),
+    "Temp pref should be cleared after exit"
+  );
+
+  Services.prefs.clearUserPref(WIDGETS_PREF);
+  await doExperimentCleanup();
+  sandbox.restore();
+});
+
+/**
+ * Tests that when a user enables and then disables widgets during the
+ * activation window, their choice to disable them persists after the
+ * activation window expires.
+ */
+add_task(async function test_user_disabling_persists_widgets() {
+  const sandbox = sinon.createSandbox();
+  let profileCreatedInstant = TEST_PROFILE_24H_AGO;
+
+  const prefsFeed = await getPrefsFeed();
+
+  Services.prefs.clearUserPref(WIDGETS_PREF);
+
+  await ExperimentAPI.ready();
+  const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+    enabled: true,
+    maxProfileAgeInHours: 48,
+    disableTopSites: false,
+    disableTopStories: false,
+    disableWidgets: true,
+    variant: "a",
+  });
+
+  sandbox
+    .stub(AboutNewTab.activityStream, "createdInstant")
+    .get(() => profileCreatedInstant);
+
+  prefsFeed.checkForActivationWindow(TEST_NOW, /* isStartup */ true);
+
+  // Simulate the user enabling widgets...
+  Services.prefs.setBoolPref(WIDGETS_PREF, true);
+  // and then deciding to disable them again.
+  Services.prefs.setBoolPref(WIDGETS_PREF, false);
+
+  Assert.equal(
+    Services.prefs.getBoolPref(WIDGETS_TEMP_PREF),
+    false,
+    "Temp pref should hold the user's choice before exit"
+  );
+
+  profileCreatedInstant = TEST_PROFILE_50H_AGO;
+  prefsFeed.checkForActivationWindow(TEST_NOW);
+
+  Assert.equal(
+    Services.prefs.getBoolPref(WIDGETS_PREF),
+    false,
+    "User's choice to disable widgets should persist"
+  );
+  Assert.ok(
+    !Services.prefs.prefHasUserValue(WIDGETS_TEMP_PREF),
+    "Temp pref should be cleared after exit"
+  );
+
+  Services.prefs.clearUserPref(WIDGETS_PREF);
   await doExperimentCleanup();
   sandbox.restore();
 });

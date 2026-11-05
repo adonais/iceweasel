@@ -705,9 +705,6 @@ support-files = [
 ["test_bug465498.html"]
 
 ["test_bug495145.html"]
-skip-if = [
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 1404373
-]
 
 ["test_bug495300.html"]
 
@@ -730,9 +727,6 @@ tags = "capturestream"
 ["test_bug919265.html"]
 
 ["test_bug1113600.html"]
-skip-if = [
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && debug", # Bug 1713410
-]
 
 ["test_bug1120222.html"]
 tags = "capturestream"

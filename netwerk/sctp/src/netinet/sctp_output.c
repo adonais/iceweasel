@@ -74,6 +74,9 @@
 #if defined(__Userspace__) && defined(INET6)
 #include <netinet6/sctp6_var.h>
 #endif
+#if defined(_WIN32) && defined(__MINGW32__)
+#include <minmax.h>
+#endif
 #if defined(__APPLE__) && !defined(__Userspace__)
 #if !(defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD))
 #define SCTP_MAX_LINKHDR 16
@@ -3762,8 +3765,7 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 #endif
 				sin.sin_port = stcb->rport;
 				m_copydata(control, cmsg_data_off, sizeof(struct in_addr), (caddr_t)&sin.sin_addr);
-				if ((sin.sin_addr.s_addr == INADDR_ANY) ||
-				    (sin.sin_addr.s_addr == INADDR_BROADCAST) ||
+				if (in_broadcast(sin.sin_addr) ||
 				    IN_MULTICAST(ntohl(sin.sin_addr.s_addr))) {
 					*error = EINVAL;
 					return (1);
@@ -3796,8 +3798,7 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 #ifdef INET
 				if (IN6_IS_ADDR_V4MAPPED(&sin6.sin6_addr)) {
 					in6_sin6_2_sin(&sin, &sin6);
-					if ((sin.sin_addr.s_addr == INADDR_ANY) ||
-					    (sin.sin_addr.s_addr == INADDR_BROADCAST) ||
+					if (in_broadcast(sin.sin_addr) ||
 					    IN_MULTICAST(ntohl(sin.sin_addr.s_addr))) {
 						*error = EINVAL;
 						return (1);
@@ -4217,7 +4218,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		ip->ip_id = htons(SCTP_IP_ID(inp)++);
 #elif defined(__FreeBSD__)
 		/* FreeBSD has a function for ip_id's */
-		ip_fillid(ip);
+		ip_fillid(ip, V_ip_random_id);
 #elif defined(__APPLE__)
 #if RANDOM_IP_ID
 		ip->ip_id = ip_randomid();
@@ -11858,7 +11859,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #if defined(__Userspace__)
 		ip->ip_id = htons(ip_id++);
 #elif defined(__FreeBSD__)
-		ip_fillid(ip);
+		ip_fillid(ip, V_ip_random_id);
 #elif defined(__APPLE__)
 #if RANDOM_IP_ID
 		ip->ip_id = ip_randomid();
@@ -15074,9 +15075,9 @@ sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro)
 	mask = (struct sockaddr_in *)(ifa->ifa_netmask);
 	sin = &sifa->address.sin;
 	srcnetaddr.s_addr = (sin->sin_addr.s_addr & mask->sin_addr.s_addr);
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "match_nexthop4: src address is ");
+	SCTPDBG(SCTP_DEBUG_OUTPUT2, "match_nexthop4: src address is ");
 	SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, &sifa->address.sa);
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "network address is %x\n", srcnetaddr.s_addr);
+	SCTPDBG(SCTP_DEBUG_OUTPUT2, "network address is %x\n", srcnetaddr.s_addr);
 
 #if defined(__FreeBSD__)
 	sin = &ro->ro_nh->gw4_sa;
@@ -15084,13 +15085,13 @@ sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro)
 	sin = (struct sockaddr_in *)ro->ro_rt->rt_gateway;
 #endif
 	gwnetaddr.s_addr = (sin->sin_addr.s_addr & mask->sin_addr.s_addr);
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "match_nexthop4: nexthop is ");
+	SCTPDBG(SCTP_DEBUG_OUTPUT2, "match_nexthop4: nexthop is ");
 #if defined(__FreeBSD__)
 	SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, &ro->ro_nh->gw_sa);
 #else
 	SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, ro->ro_rt->rt_gateway);
 #endif
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "network address is %x\n", gwnetaddr.s_addr);
+	SCTPDBG(SCTP_DEBUG_OUTPUT2, "network address is %x\n", gwnetaddr.s_addr);
 	if (srcnetaddr.s_addr == gwnetaddr.s_addr) {
 		return (1);
 	}

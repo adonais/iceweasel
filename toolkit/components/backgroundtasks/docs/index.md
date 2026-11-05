@@ -73,7 +73,7 @@ Use `BackgroundTasksRunner::RunInDetachedProcess` is a helper to open a new back
 
 * `BackgroundTask_defaultagent`
 
-  Reports telemetry on Windows for the system defaults. See [Default Browser Agent](https://firefox-source-docs.mozilla.org/toolkit/mozapps/defaultagent/default-browser-agent/index.html) for more information.
+  Reports telemetry on Windows for the system defaults. See {doc}`Default Browser Agent </toolkit/mozapps/defaultagent/default-browser-agent/index>` for more information.
 
 ## The background task mode runtime environment
 
@@ -89,7 +89,7 @@ The technical mechanism that keeps background tasks "lightweight" is very simple
 
 For Firefox in particular, this means that [`BrowserContentHandler.sys.mjs`](https://searchfox.org/firefox-main/source/browser/components/BrowserContentHandler.sys.mjs) is not registered as a command-line-handler.  This means that [`BrowserGlue.sys.mjs`](https://searchfox.org/firefox-main/source/browser/components/BrowserGlue.sys.mjs) is not loaded, and this short circuits regular headed browsing startup.
 
-See the [documentation for defining static components](https://firefox-source-docs.mozilla.org/build/buildsystem/defining-xpcom-components.html) for how to change this default behaviour, and [Bug 1675848](https://bugzilla.mozilla.org/show_bug.cgi?id=1675848) for details of the implementation.
+See the {doc}`documentation for defining static components </build/buildsystem/defining-xpcom-components>` for how to change this default behaviour, and [Bug 1675848](https://bugzilla.mozilla.org/show_bug.cgi?id=1675848) for details of the implementation.
 
 ### Most background tasks do not process updates
 

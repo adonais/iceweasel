@@ -7,8 +7,9 @@
 // 3. run `[path to]/firefox -xpcshell [path to]/getHSTSPreloadlist.js [absolute path to]/nsSTSPreloadlist.inc'
 //    To carry failure streaks forward, append the absolute path to the previous
 //    run's hsts-probe-results.json as an optional second argument.
-// Note: Running this file outputs a new nsSTSPreloadlist.inc and
-//       hsts-probe-results.json in the current working directory.
+// Note: Running this file outputs a new nsSTSPreloadlist.inc,
+//       hsts-probe-results.json and an hsts-profile directory in the current
+//       working directory.
 
 var gSSService = Cc["@mozilla.org/ssservice;1"].getService(
   Ci.nsISiteSecurityService
@@ -17,6 +18,11 @@ var gSSService = Cc["@mozilla.org/ssservice;1"].getService(
 const { FileUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/FileUtils.sys.mjs"
 );
+const { RemoteSecuritySettings } = ChromeUtils.importESModule(
+  "resource://gre/modules/psm/RemoteSecuritySettings.sys.mjs"
+);
+
+const logger = console.createInstance({ prefix: "HSTSPreloadList" });
 
 const SOURCE =
   "https://raw.githubusercontent.com/chromium/chromium/main/net/http/transport_security_state_static.json";
@@ -65,6 +71,39 @@ async function download() {
   return data;
 }
 
+async function loadPreloadedIntermediates() {
+  let profileDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
+  profileDir.append("hsts-profile");
+  profileDir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o700);
+  Services.dirsvc.QueryInterface(Ci.nsIDirectoryService).registerProvider({
+    getFile(prop, persistent) {
+      persistent.value = true;
+      return ["ProfD", "ProfLD", "ProfDS", "ProfLDS"].includes(prop)
+        ? profileDir.clone()
+        : null;
+    },
+    QueryInterface: ChromeUtils.generateQI(["nsIDirectoryServiceProvider"]),
+  });
+  Services.obs.notifyObservers(null, "profile-do-change");
+
+  let { IntermediatePreloadsClient } = RemoteSecuritySettings.init();
+  Services.prefs.setIntPref(
+    "security.remote_settings.intermediates.downloads_per_poll",
+    1000000
+  );
+  try {
+    await IntermediatePreloadsClient.client.sync();
+    await IntermediatePreloadsClient.updatePreloadedIntermediates();
+    let records = await IntermediatePreloadsClient.client.db.list();
+    let imported = records.filter(r => r.cert_import_complete).length;
+    logger.log(
+      `Loaded ${imported} of ${records.length} preloaded intermediates`
+    );
+  } catch (e) {
+    logger.warn(`loading the preloaded intermediates failed: ${e}`);
+  }
+}
+
 function getHosts(rawdata) {
   let hosts = [];
 
@@ -110,14 +149,8 @@ function processStsHeader(host, header, status, securityInfo, nsresult = 0) {
       let uri = Services.io.newURI("https://" + host.name);
       gSSService.processHeader(uri, header, {}, maxAge, includeSubdomains);
     } catch (e) {
-      dump(
-        "ERROR: could not process header '" +
-          header +
-          "' from " +
-          host.name +
-          ": " +
-          e +
-          "\n"
+      logger.error(
+        `could not process header '${header}' from ${host.name}: ${e}`
       );
       error = e;
     }
@@ -171,18 +204,18 @@ RedirectAndAuthStopper.prototype = {
   ]),
 };
 
-function fetchstatus(host) {
+function fetchstatus(host, method) {
   return new Promise(resolve => {
     let xhr = new XMLHttpRequest();
     let uri = "https://" + host.name + "/";
     host.startTime = Date.now();
 
-    xhr.open("head", uri, true);
+    xhr.open(method, uri, true);
     xhr.setRequestHeader("X-Automated-Tool", TOOL_SOURCE);
     xhr.timeout = REQUEST_TIMEOUT;
 
     let errorHandler = () => {
-      dump("ERROR: exception making request to " + host.name + "\n");
+      logger.error(`exception making request to ${host.name}`);
       resolve(
         processStsHeader(
           host,
@@ -198,11 +231,20 @@ function fetchstatus(host) {
     xhr.ontimeout = errorHandler;
     xhr.onabort = errorHandler;
 
-    xhr.onload = () => {
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState != XMLHttpRequest.HEADERS_RECEIVED) {
+        return;
+      }
       let header = xhr.getResponseHeader("strict-transport-security");
-      resolve(
-        processStsHeader(host, header, xhr.status, xhr.channel.securityInfo)
+      let status = processStsHeader(
+        host,
+        header,
+        xhr.status,
+        xhr.channel.securityInfo
       );
+      xhr.onerror = xhr.ontimeout = xhr.onabort = null;
+      xhr.abort();
+      resolve(status);
     };
 
     xhr.channel.notificationCallbacks = new RedirectAndAuthStopper();
@@ -268,17 +310,17 @@ function spinResolve(promise) {
   }
 }
 
-async function probePool(hosts) {
+async function probePool(hosts, method = "HEAD") {
   let total = hosts.length;
   let results = [];
   let lastProgress = 0;
   let worker = async () => {
     while (hosts.length) {
-      results.push(await fetchstatus(hosts.pop()));
+      results.push(await fetchstatus(hosts.pop(), method));
       let progress = Math.floor((100 * results.length) / total);
       if (progress > lastProgress) {
         lastProgress = progress;
-        dump(progress + "% done\n");
+        logger.log(`${progress}% done`);
       }
     }
   };
@@ -294,7 +336,7 @@ function needsRetry(status) {
 }
 
 async function probeHSTSStatuses(hosts) {
-  dump("Examining " + hosts.length + " hosts.\n");
+  logger.log(`Examining ${hosts.length} hosts.`);
   for (let i = hosts.length - 1; i > 0; i--) {
     let j = Math.floor(Math.random() * (i + 1));
     [hosts[i], hosts[j]] = [hosts[j], hosts[i]];
@@ -303,18 +345,38 @@ async function probeHSTSStatuses(hosts) {
 
   let results = probed.filter(status => !needsRetry(status));
   let failed = probed.filter(needsRetry);
-  dump("Retrying " + failed.length + " hosts that failed or answered 429.\n");
+  logger.log(`Retrying ${failed.length} hosts that failed or answered 429.`);
   let retried = await probePool(failed.map(status => ({ name: status.name })));
   let rescued = retried.filter(status => !needsRetry(status));
   for (let status of rescued) {
     status.rescued = true;
   }
   results = results.concat(retried);
-  dump(
-    rescued.length + " of " + failed.length + " retried hosts were rescued.\n"
+  logger.log(
+    `${rescued.length} of ${failed.length} retried hosts were rescued.`
   );
 
-  dump("HSTS Probe received " + results.length + " statuses.\n");
+  let headerless = results.filter(
+    status => status.error == ERROR_NO_HSTS_HEADER && status.httpStatus != 429
+  );
+  logger.log(`Probing ${headerless.length} hosts without a header with GET.`);
+  let viaGet = (
+    await probePool(
+      headerless.map(status => ({ name: status.name })),
+      "GET"
+    )
+  ).filter(
+    status =>
+      status.error != ERROR_NO_HSTS_HEADER &&
+      status.error != ERROR_CONNECTING_TO_HOST
+  );
+  let byName = new Map(headerless.map(status => [status.name, status]));
+  for (let status of viaGet) {
+    Object.assign(byName.get(status.name), status, { get: true });
+  }
+  logger.log(`${viaGet.length} of them sent a header on GET.`);
+
+  logger.log(`HSTS Probe received ${results.length} statuses.`);
   return results;
 }
 
@@ -323,8 +385,9 @@ function probeResult(status) {
     case ERROR_NONE:
       return "ok";
     case ERROR_NO_HSTS_HEADER:
-    case ERROR_MAX_AGE_TOO_LOW:
       return "no-header";
+    case ERROR_MAX_AGE_TOO_LOW:
+      return "max-age-too-low";
     case ERROR_CONNECTING_TO_HOST:
       return "connect-failed";
     default:
@@ -336,7 +399,7 @@ function isFailedRun(status) {
   let result = probeResult(status);
   return (
     result != "ok" &&
-    status.error != ERROR_MAX_AGE_TOO_LOW &&
+    result != "max-age-too-low" &&
     !(result == "no-header" && status.httpStatus < 400)
   );
 }
@@ -347,7 +410,7 @@ async function writeProbeResults(probedStatuses, previousPath) {
     try {
       previous = await IOUtils.readJSON(previousPath);
     } catch (e) {
-      dump(`WARNING: could not read previous probe results: ${e}\n`);
+      logger.warn(`could not read previous probe results: ${e}`);
     }
   }
   let previousHosts = previous?.hosts ?? {};
@@ -358,6 +421,9 @@ async function writeProbeResults(probedStatuses, previousPath) {
     let record = { result: probeResult(status), latencyMs: status.latencyMs };
     if (status.rescued) {
       record.rescued = true;
+    }
+    if (status.get) {
+      record.get = true;
     }
     if (status.httpStatus) {
       record.httpStatus = status.httpStatus;
@@ -383,7 +449,7 @@ async function writeProbeResults(probedStatuses, previousPath) {
     Services.dirsvc.get("CurWorkD", Ci.nsIFile).path,
     RESULTS_OUTPUT
   );
-  dump("INFO: Writing probe results to " + path + "\n");
+  logger.log(`Writing probe results to ${path}`);
   await IOUtils.writeJSON(path, {
     version: 1,
     run: {
@@ -504,7 +570,7 @@ function filterForcedInclusions(inHosts, outNotForced, outForced) {
 }
 
 function output(statuses) {
-  dump("INFO: Writing output to " + OUTPUT + "\n");
+  logger.log(`Writing output to ${OUTPUT}`);
   try {
     let file = new FileUtils.File(
       PathUtils.join(Services.dirsvc.get("CurWorkD", Ci.nsIFile).path, OUTPUT)
@@ -522,9 +588,9 @@ function output(statuses) {
 
     writeTo(GPERF_DELIM, fos);
     FileUtils.closeSafeFileOutputStream(fos);
-    dump("finished writing output file\n");
+    logger.log("finished writing output file");
   } catch (e) {
-    dump("ERROR: problem writing output to '" + OUTPUT + "': " + e + "\n");
+    logger.error(`problem writing output to '${OUTPUT}': ${e}`);
     throw e;
   }
 }
@@ -551,6 +617,7 @@ async function main(args) {
     "network.stricttransportsecurity.preloadlist",
     false
   );
+  await loadPreloadedIntermediates();
   // download and parse the raw json file from the Chromium source
   let rawdata = await download();
   // get just the hosts with mode: "force-https"
@@ -566,10 +633,10 @@ async function main(args) {
   // Initialize the final status list
   let hstsStatuses = [];
   // Add the hosts we use in tests
-  dump("Adding test hosts\n");
+  logger.log("Adding test hosts");
   insertHosts(hstsStatuses, getTestHosts());
   // Add in the hosts that are forced
-  dump("Adding forced hosts\n");
+  logger.log("Adding forced hosts");
   insertHosts(hstsStatuses, forcedHosts);
 
   let probedStatuses = await probeHSTSStatuses(hostsToContact);
@@ -584,7 +651,6 @@ async function main(args) {
       isFailedRun(status) &&
       status.name in currentHosts
     ) {
-      // dump("INFO: error connecting to or processing " + status.name + " - using previous status on list\n");
       status.maxAge = MINIMUM_REQUIRED_MAX_AGE;
       status.includeSubdomains = currentHosts[status.name];
     }
@@ -593,17 +659,12 @@ async function main(args) {
   // Filter out entries we aren't including.
   let total = statuses.filter(function (status) {
     if (status.maxAge < MINIMUM_REQUIRED_MAX_AGE && !status.forceInclude) {
-      // dump("INFO: " + status.name + " NOT ON the preload list\n");
       return false;
     }
 
-    // dump("INFO: " + status.name + " ON the preload list (includeSubdomains: " + status.includeSubdomains + ")\n");
     if (status.forceInclude && status.error != ERROR_NONE) {
-      dump(
-        status.name +
-          ": " +
-          errorToString(status) +
-          " (error ignored - included regardless)\n"
+      logger.log(
+        `${status.name}: ${errorToString(status)} (error ignored - included regardless)`
       );
     }
     return true;
@@ -612,8 +673,12 @@ async function main(args) {
   // Write the output file
   output(total);
 
-  dump("HSTS probing all done\n");
+  logger.log("HSTS probing all done");
 }
 
 // arguments is a global within xpcshell
-spinResolve(main(arguments));
+try {
+  spinResolve(main(arguments));
+} finally {
+  Services.obs.notifyObservers(null, "profile-before-change");
+}

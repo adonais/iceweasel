@@ -1,0 +1,53 @@
+Subject: [PATCH] Mark ANGLE TLS pointers constinit
+
+Declare and define the current thread and context pointers as constinit so
+callers do not emit references to optional TLS initialization functions.
+
+diff --git a/src/libANGLE/Context.h b/src/libANGLE/Context.h
+--- a/src/libANGLE/Context.h
++++ b/src/libANGLE/Context.h
+@@ -1209,7 +1209,7 @@
+ extern Context *GetCurrentValidContextTLS();
+ extern void SetCurrentValidContextTLS(Context *context);
+ #else
+-extern thread_local Context *gCurrentValidContext;
++extern constinit thread_local Context *gCurrentValidContext;
+ #endif
+ 
+ extern void SetCurrentValidContext(Context *context);
+diff --git a/src/libANGLE/Context.cpp b/src/libANGLE/Context.cpp
+--- a/src/libANGLE/Context.cpp
++++ b/src/libANGLE/Context.cpp
+@@ -659,7 +659,7 @@
+     gCurrentValidContext = context;
+ }
+ #else
+-thread_local Context *gCurrentValidContext = nullptr;
++constinit thread_local Context *gCurrentValidContext = nullptr;
+ #endif
+ 
+ // Handle setting the current context in TLS on different platforms
+diff --git a/src/libGLESv2/global_state.h b/src/libGLESv2/global_state.h
+--- a/src/libGLESv2/global_state.h
++++ b/src/libGLESv2/global_state.h
+@@ -36,7 +36,7 @@
+ extern Thread *GetCurrentThreadTLS();
+ extern void SetCurrentThreadTLS(Thread *thread);
+ #else
+-extern thread_local Thread *gCurrentThread;
++extern constinit thread_local Thread *gCurrentThread;
+ #endif
+ 
+ gl::Context *GetGlobalLastContext();
+diff --git a/src/libGLESv2/global_state.cpp b/src/libGLESv2/global_state.cpp
+--- a/src/libGLESv2/global_state.cpp
++++ b/src/libGLESv2/global_state.cpp
+@@ -123,7 +123,7 @@
+     gCurrentThread = thread;
+ }
+ #else
+-thread_local Thread *gCurrentThread = nullptr;
++constinit thread_local Thread *gCurrentThread = nullptr;
+ #endif
+ 
+ gl::Context *GetGlobalLastContext()

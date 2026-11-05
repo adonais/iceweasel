@@ -3,9 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
-    BUG_COMPONENT = ("Toolkit", "Picture-in-Picture")
+    BUG_COMPONENT = ("Firefox", "Mini Window")
 
 JAR_MANIFESTS += ["jar.mn"]
+
+SPHINX_TREES["docs"] = "docs"
 
 MOZ_SRC_FILES += [
     "MiniWindow.sys.mjs",

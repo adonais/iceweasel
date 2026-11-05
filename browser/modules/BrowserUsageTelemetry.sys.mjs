@@ -278,6 +278,10 @@ function getOpenTabsAndWinsCounts() {
 
   for (let win of Services.wm.getEnumerator("navigator:browser")) {
     winCount++;
+    // Windows that are still opening don't have a gBrowser yet.
+    if (!win.gBrowser) {
+      continue;
+    }
     tabCount += win.gBrowser.tabs.length;
     for (const tab of win.gBrowser.tabs) {
       if (tab.getAttribute("pending") !== "true") {
@@ -305,6 +309,9 @@ function getPinnedTabsCount() {
   let pinnedTabs = 0;
 
   for (let win of Services.wm.getEnumerator("navigator:browser")) {
+    if (!win.gBrowser) {
+      continue;
+    }
     pinnedTabs += [...win.gBrowser.tabs].filter(t => t.pinned).length;
   }
 
@@ -1587,6 +1594,9 @@ export let BrowserUsageTelemetry = {
     let tabGroupLengths = [];
 
     for (let win of Services.wm.getEnumerator("navigator:browser")) {
+      if (!win.gBrowser) {
+        continue;
+      }
       totalTabs += win.gBrowser.tabs.length;
       for (let group of win.gBrowser.tabGroups) {
         totalTabsInGroups += group.tabs.length;
@@ -1633,6 +1643,9 @@ export let BrowserUsageTelemetry = {
       collapsed = 0;
 
     for (let win of Services.wm.getEnumerator("navigator:browser")) {
+      if (!win.gBrowser) {
+        continue;
+      }
       for (let group of win.gBrowser.tabGroups) {
         if (group.collapsed) {
           collapsed += 1;
@@ -2051,25 +2064,15 @@ export let BrowserUsageTelemetry = {
       extra.other_inst = (!!install_data.installPaths.size).toString();
       extra.other_msix_inst = (!!install_data.msixInstalls.size).toString();
     } else {
-      let dataPath = dataPathOverride;
-      if (!dataPath) {
-        dataPath = Services.dirsvc.get("GreD", Ci.nsIFile);
-        dataPath.append("installation_telemetry.json");
+      const data =
+        await lazy.WindowsInstallsInfo.readInstallationTelemetry(
+          dataPathOverride
+        );
+      if (!data) {
+        // Many systems will not have the data file, return silently if not found as
+        // there is nothing to record.
+        return {};
       }
-
-      let dataBytes;
-      try {
-        dataBytes = await IOUtils.read(dataPath.path);
-      } catch (ex) {
-        if (ex.name == "NotFoundError") {
-          // Many systems will not have the data file, return silently if not found as
-          // there is nothing to record.
-          return {};
-        }
-        throw ex;
-      }
-      const dataString = new TextDecoder("utf-16").decode(dataBytes);
-      const data = JSON.parse(dataString);
 
       if (lastInstallTime && data.install_timestamp == lastInstallTime) {
         // We've already seen this install

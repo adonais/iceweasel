@@ -38,3 +38,18 @@ LOCAL_INCLUDES += [
     "/dom/base",
     "/dom/html",
 ]
+
+SOURCE_HEADERS += [
+    "ButtonControlFrame.h",
+    "ListMutationObserver.h",
+    "nsCheckboxRadioFrame.h",
+    "nsColorControlFrame.h",
+    "nsComboboxControlFrame.h",
+    "nsDateTimeControlFrame.h",
+    "nsFieldSetFrame.h",
+    "nsFileControlFrame.h",
+    "nsListControlFrame.h",
+    "nsProgressFrame.h",
+    "nsRangeFrame.h",
+    "nsTextControlFrame.h",
+]

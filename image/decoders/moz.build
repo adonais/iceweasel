@@ -37,6 +37,9 @@ if CONFIG["MOZ_JXL"]:
         "JxlDecodePool.cpp",
         "nsJXLDecoder.cpp",
     ]
+    SOURCE_HEADERS += [
+        "nsJXLDecoder.h",
+    ]
 
 include("/ipc/chromium/chromium-config.mozbuild")
 
@@ -57,3 +60,16 @@ COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]
 
 # Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "EXIF.h",
+    "GIF2.h",
+    "nsAVIFDecoder.h",
+    "nsBMPDecoder.h",
+    "nsGIFDecoder2.h",
+    "nsICODecoder.h",
+    "nsIconDecoder.h",
+    "nsJPEGDecoder.h",
+    "nsPNGDecoder.h",
+    "nsWebPDecoder.h",
+]

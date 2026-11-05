@@ -51,11 +51,6 @@
 
 /*---------------------------------------------------------------------------*/
 
-/* This variable lives in libbz2.  It's declared in bzlib_private.h, so we just
- * declare it here to avoid including that entire header file.
- */
-extern unsigned int BZ2_crc32Table[256];
-
 static unsigned int
 crc32(const unsigned char *buf, unsigned int len)
 {

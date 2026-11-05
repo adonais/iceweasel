@@ -133,6 +133,10 @@ inline size_t js::Nursery::Space::offsetFromExclusiveAddress(
 }
 
 inline size_t js::Nursery::Space::offsetFromAddress(uintptr_t addr) const {
+#ifdef JS_CONTIGUOUS_NURSERY
+  MOZ_ASSERT(region_.containsAddress(addr));
+  return addr - region_.startAddress();
+#else   // !JS_CONTIGUOUS_NURSERY
   gc::ChunkBase* chunk =
       gc::detail::GetCellChunkBase(reinterpret_cast<gc::Cell*>(addr));
   MOZ_ASSERT(chunk->getKind() == kind);
@@ -141,6 +145,7 @@ inline size_t js::Nursery::Space::offsetFromAddress(uintptr_t addr) const {
   uint32_t offset = addr & gc::ChunkMask;
   MOZ_ASSERT(offset >= sizeof(gc::ChunkBase));
   return (chunk->nurseryChunkIndex << gc::ChunkShift) | offset;
+#endif  // JS_CONTIGUOUS_NURSERY
 }
 
 MOZ_ALWAYS_INLINE /* static */ bool js::Nursery::getForwardedPointer(

@@ -257,9 +257,22 @@ static bool IsNonactivatingWindow(NSWindow* aWindow) {
   id delegate = window.delegate;
   if (!delegate || ![delegate isKindOfClass:[WindowDelegate class]]) {
     [TopLevelWindowData deactivateInWindowViews:window];
-  } else if (window.isSheet || window.isMainWindow ||
-             IsNonactivatingWindow(window)) {
+  } else if (window.isSheet || IsNonactivatingWindow(window)) {
     [TopLevelWindowData deactivateInWindow:window];
+  } else if (window.isMainWindow) {
+    // Opening a panel such as the macOS Emoji picker gets us this notification
+    // without key going anywhere: NSApp still reports this window as its key
+    // window, no other window becomes key, and it stays key while the panel is
+    // up. Deactivating for that costs the content process its focused editor,
+    // and text which the panel sends us in the meantime then arrives with no
+    // editing host to dispatch a `beforeinput` event at (bug 2060994).
+    //
+    // When key really does move, to another window or to another application,
+    // NSApp reports the new window, or nil, by the time we are called, so a
+    // window which lost key is not the key window here.
+    if (NSApp.keyWindow != window) {
+      [TopLevelWindowData deactivateInWindow:window];
+    }
   }
 }
 

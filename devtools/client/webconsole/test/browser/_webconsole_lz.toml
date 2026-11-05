@@ -296,9 +296,6 @@ fail-if = [
 ["browser_webconsole_script_errordoc_urls.js"]
 
 ["browser_webconsole_scroll.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1923756
-]
 
 ["browser_webconsole_select_all.js"]
 

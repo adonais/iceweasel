@@ -5,6 +5,7 @@
 #ifndef PANNING_UTILS_H
 #define PANNING_UTILS_H
 
+#include "AudioBlock.h"
 #include "AudioNodeEngine.h"
 #include "AudioSegment.h"
 

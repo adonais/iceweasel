@@ -5,11 +5,12 @@
 "use strict";
 
 /**
- * Tests that confirmation hints aren't shown if required prefs are disabled.
+ * Tests that confirmation hints aren't shown if the site exceptions feature
+ * is disabled.
  */
 add_task(async function test_confirmation_hint_prefs_disabled() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.ipProtection.siteExceptionsHintsEnabled", false]],
+    set: [["browser.ipProtection.features.siteExceptions", false]],
   });
 
   const sandbox = sinon.createSandbox();
@@ -17,6 +18,7 @@ add_task(async function test_confirmation_hint_prefs_disabled() {
   const EXCLUDED_SITE = "https://example.org";
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
   sandbox
     .stub(IPPSiteRuleManager, "getRule")
     .returns(IPPPrincipalRules.EXCLUDED);
@@ -35,7 +37,7 @@ add_task(async function test_confirmation_hint_prefs_disabled() {
 
   Assert.ok(
     !showConfirmationHintSpy.called,
-    "ConfirmationHint.show() should not be called when prefs are disabled"
+    "ConfirmationHint.show() should not be called when the feature is disabled"
   );
 
   BrowserTestUtils.removeTab(protectedTab);
@@ -48,14 +50,11 @@ add_task(async function test_confirmation_hint_prefs_disabled() {
  * Tests that we don't show confirmation hints on page reloads.
  */
 add_task(async function test_confirmation_hint_exclusions_page_reloads() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ipProtection.siteExceptionsHintsEnabled", true]],
-  });
-
   const sandbox = sinon.createSandbox();
   const EXCLUDED_SITE = "https://example.org";
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
   sandbox
     .stub(IPPSiteRuleManager, "getRule")
     .returns(IPPPrincipalRules.EXCLUDED);
@@ -76,7 +75,6 @@ add_task(async function test_confirmation_hint_exclusions_page_reloads() {
 
   BrowserTestUtils.removeTab(tab);
   sandbox.restore();
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -92,10 +90,6 @@ add_task(async function test_confirmation_hint_exclusions_page_reloads() {
  * 6. protected --> excluded: show (+2)
  */
 add_task(async function test_confirmation_hint_visbility_different_tab() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ipProtection.siteExceptionsHintsEnabled", true]],
-  });
-
   const sandbox = sinon.createSandbox();
 
   const PROTECTED_SITE = "https://example.com";
@@ -103,6 +97,7 @@ add_task(async function test_confirmation_hint_visbility_different_tab() {
   const EXCLUDED_SITE_2 = "https://example.net";
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
   sandbox.stub(IPPSiteRuleManager, "getRule").callsFake(principal => {
     return principal?.origin === EXCLUDED_SITE ||
       principal?.origin === EXCLUDED_SITE_2
@@ -187,7 +182,6 @@ add_task(async function test_confirmation_hint_visbility_different_tab() {
   IPPProxyManager.dispatchEvent(
     new CustomEvent("IPPProxyManager:StateChanged")
   );
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -203,10 +197,6 @@ add_task(async function test_confirmation_hint_visbility_different_tab() {
  * 6. protected --> excluded: show (+2)
  */
 add_task(async function test_confirmation_hint_visbility_same_tab() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ipProtection.siteExceptionsHintsEnabled", true]],
-  });
-
   const sandbox = sinon.createSandbox();
 
   const PROTECTED_SITE = "https://example.com";
@@ -214,6 +204,7 @@ add_task(async function test_confirmation_hint_visbility_same_tab() {
   const EXCLUDED_SITE_2 = "https://example.net";
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
   sandbox.stub(IPPSiteRuleManager, "getRule").callsFake(principal => {
     return principal?.origin === EXCLUDED_SITE ||
       principal?.origin === EXCLUDED_SITE_2
@@ -281,7 +272,6 @@ add_task(async function test_confirmation_hint_visbility_same_tab() {
   IPPProxyManager.dispatchEvent(
     new CustomEvent("IPPProxyManager:StateChanged")
   );
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -294,10 +284,6 @@ add_task(async function test_confirmation_hint_visbility_same_tab() {
  * 3. protected tab --> excluded tab 2 (different site): show (+2)
  */
 add_task(async function test_confirmation_hint_visbility_tab_switch() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ipProtection.siteExceptionsHintsEnabled", true]],
-  });
-
   const sandbox = sinon.createSandbox();
 
   const PROTECTED_SITE = "https://example.com";
@@ -305,6 +291,7 @@ add_task(async function test_confirmation_hint_visbility_tab_switch() {
   const EXCLUDED_SITE_2 = "https://example.net";
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
   sandbox.stub(IPPSiteRuleManager, "getRule").callsFake(principal => {
     return principal?.origin === EXCLUDED_SITE ||
       principal?.origin === EXCLUDED_SITE_2
@@ -364,7 +351,6 @@ add_task(async function test_confirmation_hint_visbility_tab_switch() {
   IPPProxyManager.dispatchEvent(
     new CustomEvent("IPPProxyManager:StateChanged")
   );
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -377,16 +363,13 @@ add_task(async function test_confirmation_hint_visbility_tab_switch() {
  * 3. protected --> excluded site A: do not show
  */
 add_task(async function test_confirmation_hint_once_per_unique_excluded_site() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ipProtection.siteExceptionsHintsEnabled", true]],
-  });
-
   const sandbox = sinon.createSandbox();
 
   const PROTECTED_SITE = "https://example.com";
   const EXCLUDED_SITE_A = "https://example.org";
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
   sandbox.stub(IPPSiteRuleManager, "getRule").callsFake(principal => {
     return principal?.origin === EXCLUDED_SITE_A
       ? IPPPrincipalRules.EXCLUDED
@@ -431,17 +414,12 @@ add_task(async function test_confirmation_hint_once_per_unique_excluded_site() {
   IPPProxyManager.dispatchEvent(
     new CustomEvent("IPPProxyManager:StateChanged")
   );
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
  * Tests that we don't show confirmation hints when we press the exclusion toggle.
  */
 add_task(async function test_confirmation_hint_exclusions_toggle() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ipProtection.siteExceptionsHintsEnabled", true]],
-  });
-
   const sandbox = sinon.createSandbox();
   Services.perms.removeByType("ipp-vpn");
 
@@ -450,6 +428,7 @@ add_task(async function test_confirmation_hint_exclusions_toggle() {
   });
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -491,5 +470,4 @@ add_task(async function test_confirmation_hint_exclusions_toggle() {
   IPPProxyManager.dispatchEvent(
     new CustomEvent("IPPProxyManager:StateChanged")
   );
-  await SpecialPowers.popPrefEnv();
 });

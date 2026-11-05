@@ -23,6 +23,8 @@ class ContentClassifierFeatureUtils final {
   // first-party requests for the first-party tracking flag.
   static bool IsThirdPartyUnlessAnnotating(
       const ContentClassifierRequest& aRequest, ClassifyMode aMode);
+  static bool IsNonPassiveThirdPartyUnlessAnnotating(
+      const ContentClassifierRequest& aRequest, ClassifyMode aMode);
   static bool IsNonRecommendedAddonRequest(
       const ContentClassifierRequest& aRequest, ClassifyMode aMode);
   static void HarmfulAddonCancelChannelCallback(nsIChannel* aChannel);

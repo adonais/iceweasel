@@ -9,6 +9,9 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 const { AddonManager } = ChromeUtils.importESModule(
   "resource://gre/modules/AddonManager.sys.mjs"
 );
+const { PolicyFailures } = ChromeUtils.importESModule(
+  "resource://gre/modules/PoliciesHelpers.sys.mjs"
+);
 const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
 );
@@ -507,3 +510,173 @@ add_task(async function test_update_url_with_placeholders_fails_validation() {
 
   await AddonTestUtils.promiseShutdownManager();
 });
+
+// The version of add-ons specified by update_url must match reality. If there's
+// a mismatch, installation should fail, and a useful policy failure message
+// should be logged.
+add_task(
+  { pref_set: [["extensions.checkUpdateSecurity", false]] },
+  async function test_update_url_version_mismatch_does_not_install() {
+    await AddonTestUtils.promiseStartupManager();
+
+    const id = "incorrect-version@test";
+    const installURL = `${BASE_URL}/update-incorrect-version.xpi`;
+
+    server.registerFile(
+      "/data/update-incorrect-version.xpi",
+      AddonTestUtils.createTempWebExtensionFile({
+        manifest: {
+          version: "999.0",
+          browser_specific_settings: { gecko: { id } },
+        },
+      })
+    );
+
+    server.registerPathHandler("/data/update.json", (request, response) => {
+      response.setHeader("Content-Type", "application/json");
+      response.write(
+        JSON.stringify({
+          addons: {
+            [id]: {
+              updates: [
+                {
+                  version: "1.0",
+                  update_link: installURL,
+                },
+              ],
+            },
+          },
+        })
+      );
+    });
+
+    const {
+      messages,
+      result: [[install]],
+    } = await AddonTestUtils.promiseConsoleOutput(() =>
+      Promise.all([
+        AddonTestUtils.promiseInstallEvent("onDownloadFailed"),
+        setupPolicyEngineWithJson({
+          policies: {
+            ExtensionSettings: {
+              [id]: {
+                installation_mode: "force_installed",
+                update_url: `${BASE_URL}/update.json`,
+              },
+            },
+          },
+        }),
+      ])
+    );
+
+    // Check that the addon was rejected with useful failure messages.
+    equal(
+      await AddonManager.getAddonByID(id),
+      null,
+      "Addon should not be installed when the version does not match"
+    );
+    equal(
+      AddonManager.errorToString(install.error),
+      "ERROR_UNEXPECTED_ADDON_VERSION",
+      "Correct install.error type should be given for version mismatches"
+    );
+    ok(
+      messages.some(({ message }) =>
+        message.includes("Expected addon version 1.0 instead of 999.0")
+      ),
+      "Useful error should be logged for version mismatches"
+    );
+    ok(
+      PolicyFailures.getAll().ExtensionSettings.some(message =>
+        message.includes(
+          `Download failed - ERROR_UNEXPECTED_ADDON_VERSION - ${installURL} - ` +
+            "Expected 1.0 instead of 999.0"
+        )
+      ),
+      "Useful policy failure should be logged for version mismatches"
+    );
+
+    await AddonTestUtils.promiseShutdownManager();
+  }
+);
+
+// If there's an AMO version mismatch for an add-on, it should not be installed,
+// and a useful policy failure message should be logged.
+add_task(
+  {
+    pref_set: [
+      ["extensions.install.requireSecureOrigin", false],
+      ["extensions.getAddons.get.url", `${BASE_URL}/amo.json?guid=%IDS%`],
+    ],
+  },
+  async function test_amo_version_mismatch_does_not_install() {
+    await AddonTestUtils.promiseStartupManager();
+
+    const id = "amo-version-mismatch@test";
+    const installURL = `${BASE_URL}/amo-version-mismatch.xpi`;
+
+    server.registerFile(
+      "/data/amo-version-mismatch.xpi",
+      AddonTestUtils.createTempWebExtensionFile({
+        manifest: {
+          version: "999.0",
+          browser_specific_settings: { gecko: { id } },
+        },
+      })
+    );
+
+    server.registerPathHandler("/data/amo.json", (request, response) => {
+      response.setHeader("Content-Type", "application/json");
+      response.write(JSON.stringify(makeAMOResponse(id, installURL)));
+    });
+
+    const {
+      messages,
+      result: [[install]],
+    } = await AddonTestUtils.promiseConsoleOutput(() =>
+      Promise.all([
+        AddonTestUtils.promiseInstallEvent(
+          "onDownloadFailed",
+          eventInstall => eventInstall.sourceURI.spec == installURL
+        ),
+        setupPolicyEngineWithJson({
+          policies: {
+            ExtensionSettings: {
+              [id]: {
+                installation_mode: "force_installed",
+              },
+            },
+          },
+        }),
+      ])
+    );
+
+    equal(
+      await AddonManager.getAddonByID(id),
+      null,
+      "Addon should not be installed when the AMO version does not match"
+    );
+    equal(
+      AddonManager.errorToString(install.error),
+      "ERROR_UNEXPECTED_ADDON_VERSION",
+      "Correct install.error type should be given for AMO version mismatches"
+    );
+    ok(
+      messages.some(({ message }) =>
+        message.includes("Expected addon version 1.0 instead of 999.0")
+      ),
+      "Useful error should be logged for AMO version mismatches"
+    );
+    ok(
+      (PolicyFailures.getAll().ExtensionSettings ?? []).some(message =>
+        message.includes(
+          `Download failed - ERROR_UNEXPECTED_ADDON_VERSION - ${installURL} - ` +
+            "Expected 1.0 instead of 999.0"
+        )
+      ),
+      "Useful policy failure should be logged for AMO version mismatches"
+    );
+
+    await AddonTestUtils.promiseShutdownManager();
+  }
+);

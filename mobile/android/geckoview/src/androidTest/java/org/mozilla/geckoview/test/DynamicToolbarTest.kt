@@ -1262,7 +1262,7 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.waitForPageStop()
         mainSession.flushApzRepaints()
 
-        // Scroll to the bottom edge first.
+        // Scroll the buttons into view, but not to the bottom edge of the page to avoid bug 2076041.
         val scrollPromise =
             mainSession.evaluatePromiseJS(
                 """
@@ -1277,7 +1277,7 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.waitForRoundTrip()
         mainSession.evaluateJS(
             """
-            document.scrollingElement.scrollTo(0, document.scrollingElement.scrollHeight);
+            document.querySelector("#not-sticky").scrollIntoView({ behavior: 'instant' });
             """
                 .trimIndent()
         )
@@ -1299,17 +1299,37 @@ class DynamicToolbarTest : BaseSessionTest() {
                     .trimIndent()
             )
 
-        // Explicitly call `waitForRoundTrip()` to make sure the above event listener
-        // has set up in the content.
+        // The layout viewport grows by the dynamic toolbar height once the toolbar
+        // offset has been reflected on the main-thread.
+        val viewportResizePromise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                    window.addEventListener('resize', () => {
+                        resolve(true);
+                    }, { once: true });
+                });
+                """
+                    .trimIndent()
+            )
+
+        // Explicitly call `waitForRoundTrip()` to make sure the above event listeners
+        // have set up in the content.
         mainSession.waitForRoundTrip()
 
         // Simulate the dynamic toolbar being hidden by the scroll
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
 
-        // To make sure the dynamic toolbar height has been reflected into APZ.
-        mainSession.flushApzRepaints()
-        // Also to make sure the dynamic toolbar height has been reflected on the main-thread.
+        // To make sure the dynamic toolbar height has been reflected on the main-thread.
+        assertThat(
+            "layout viewport resize event",
+            viewportResizePromise.value as Boolean,
+            equalTo(true),
+        )
+        // And to make sure the position sticky element has been painted at the new
+        // position and that the new position has been reflected into APZ.
         mainSession.promiseAllPaintsDone()
+        mainSession.flushApzRepaints()
 
         // Click a point where the dynamic toolbar was covering originally.
         mainSession.synthesizeTap(SCREEN_WIDTH / 2, SCREEN_HEIGHT - dynamicToolbarMaxHeight / 4)

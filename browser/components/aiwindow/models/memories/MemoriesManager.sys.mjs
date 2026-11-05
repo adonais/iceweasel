@@ -14,6 +14,7 @@ import {
   renderPrompt,
   parseAndExtractJSON,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { AuthProvider } from "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import {
   buildConversation,
@@ -56,7 +57,6 @@ import {
 } from "moz-src:///browser/components/aiwindow/models/memories/Memories.sys.mjs";
 import { AIWindow } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs";
 import { EveryWindow } from "resource:///modules/EveryWindow.sys.mjs";
-import { AIWindowAccountAuth } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineLazyGetter(lazy, "console", function () {
@@ -738,7 +738,7 @@ export class MemoriesManager {
     conversation.setSystemMessage(systemPrompt);
     conversation.addUserMessage(userPrompt);
     const response = await conversation.run({
-      fxAccountToken: await openAIEngine.getFxAccountToken(),
+      token: await AuthProvider.getToken(),
     });
 
     const parsed = parseAndExtractJSON(response, {
@@ -819,7 +819,7 @@ export class MemoriesManager {
       );
     }
 
-    const hasConsent = AIWindowAccountAuth.hasToSConsent;
+    const hasConsent = AuthProvider.hasToSConsent;
 
     const hasFirstrunCompleted = Services.prefs.getBoolPref(
       PREF_FIRSTRUN_HAS_COMPLETED,

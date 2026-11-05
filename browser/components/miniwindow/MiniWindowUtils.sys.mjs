@@ -47,7 +47,7 @@ export class MiniWindowUtils {
    *
    * First tries the screen's own four corners, preferring the one nearest to
    * where the window wanted to sit. If they're all taken, falls back to
-   * sitting flush against an obstacle's edge:
+   * sitting flush against an obstacle's edge::
    *
    *      +---+
    *      | 2 |          1  left:   flush to the obstacle's left
@@ -227,7 +227,7 @@ export class MiniWindowUtils {
    * size, scale 1), clamped down to the available screen when the crop is
    * larger, preserving aspect ratio, then corner it in the available rect.
    *
-   * Three pixel spaces meet here:
+   * Three pixel spaces meet here::
    *   desktop px      availRect
    *   screen CSS px   cropInfo, returned width/height
    *   originWin CSS   returned left/top (what openWindow features take)
@@ -287,63 +287,6 @@ export class MiniWindowUtils {
       top: Math.round(top / originCssToDesktopScale),
       width,
       height,
-    };
-  }
-
-  /**
-   * How large to lay the popup's <browser> out, in two coordinate spaces:
-   *   - page{Width,Height} (content CSS px): the logical page the browser
-   *     represents - the larger of the viewport the crop was captured against
-   *     and the content's measured size, so the whole page the crop pans over
-   *     fits. The user's crop is a sub-region of this that the transform frames.
-   *   - box{Width,Height} (chrome CSS px): the <browser> element's on-screen
-   *     size. Under fullZoom one content px paints as `zoom` chrome px, so
-   *     box = page * zoom keeps the content laid out at its natural size.
-   *
-   * @param {object} cropInfo - the user's crop; uses viewportWidth/Height (the
-   *   content viewport size at capture time), in content CSS px.
-   * @param {?object} measuredSize - the content's measured {width, height} in
-   *   content CSS px, or null if the content actor couldn't report it.
-   * @param {number} zoom - the browser's fullZoom factor.
-   * @returns {object} {pageWidth, pageHeight, boxWidth, boxHeight}
-   */
-  static computeFrameBox(cropInfo, measuredSize, zoom = 1) {
-    // Logical page size (content CSS px): big enough for both the captured
-    // viewport and the full measured content.
-    let pageWidth = Math.max(
-      cropInfo.viewportWidth ?? 0,
-      measuredSize?.width ?? 0
-    );
-    let pageHeight = Math.max(
-      cropInfo.viewportHeight ?? 0,
-      measuredSize?.height ?? 0
-    );
-    return {
-      pageWidth,
-      pageHeight,
-      boxWidth: pageWidth * zoom,
-      boxHeight: pageHeight * zoom,
-    };
-  }
-
-  /**
-   * Chrome-side scale/translate that frames the `crop` so it fills the
-   * popup window's width. The browser element is laid out at full page
-   * size with scroll normalized to 0,0 - this transform crops+zooms it.
-   *
-   * @param {number} innerWidth
-   * @param {object} crop
-   * @param {number} zoom
-   */
-  static computeTransform(innerWidth, crop, zoom = 1) {
-    // crop is in content CSS px; the browser box is laid out at page size * zoom
-    // so fold zoom into both the scale and the translate.
-    let scale = crop.width > 0 ? innerWidth / (crop.width * zoom) || 1 : 1;
-    return {
-      scale,
-      // `|| 0` avoids a -0 result when the offset is 0.
-      tx: -(crop.left * zoom) || 0,
-      ty: -(crop.top * zoom) || 0,
     };
   }
 }

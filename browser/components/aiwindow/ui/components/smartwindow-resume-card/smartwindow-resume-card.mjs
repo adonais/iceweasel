@@ -63,7 +63,13 @@ export class SmartwindowResumeCard extends MozLitElement {
       return;
     }
 
-    this.#dispatch("resume", { journeyId: this.journeyId });
+    const fromResumeButton = !!event.target.closest(
+      ".resume-card-resume-button"
+    );
+    this.#dispatch("resume", {
+      journeyId: this.journeyId,
+      source: fromResumeButton ? "resume_button" : "card",
+    });
   };
 
   #onDismissClick = e => {
@@ -158,7 +164,7 @@ export class SmartwindowResumeCard extends MozLitElement {
           ></moz-button>
           <panel-list id=${MORE_MENU_ID} @click=${this.#stopPropagation}>
             <panel-item
-              @click=${() => this.#onMenuItemClick("open-tabs")}
+              @click=${() => this.#onMenuItemClick("open_tabs")}
               data-l10n-id="aiwindow-resume-card-open-tabs"
             ></panel-item>
             <panel-item

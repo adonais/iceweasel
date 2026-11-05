@@ -10,10 +10,13 @@
 
 #include "pc/sdp_payload_type_suggester.h"
 
+#include <iterator>
 #include <map>
 #include <string>
 #include <utility>
 
+#include "absl/base/nullability.h"
+#include "absl/cleanup/cleanup.h"
 #include "absl/strings/string_view.h"
 #include "api/jsep.h"
 #include "api/payload_type.h"
@@ -26,10 +29,30 @@
 #include "media/base/codec_comparators.h"
 #include "pc/session_description.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/containers/flat_map.h"
+#include "rtc_base/containers/flat_set.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {
+namespace {
+
+// Records the payload types of `content` in `recorder` and reports the ones
+// that are in use through `payload_types_in_use`.
+RTCError RecordCodecs(const ContentInfo& content,
+                      PayloadTypeRecorder& recorder,
+                      flat_set<PayloadType>& payload_types_in_use) {
+  for (const Codec& codec : content.media_description()->codecs()) {
+    RTCError error = recorder.AddMapping(codec.id, codec);
+    if (!error.ok()) {
+      return error;
+    }
+    payload_types_in_use.insert(codec.id);
+  }
+  return RTCError::OK();
+}
+
+}  // namespace
 
 // Implementation of the SdpPayloadTypeSuggester
 RTCErrorOr<PayloadType> SdpPayloadTypeSuggester::SuggestPayloadType(
@@ -74,8 +97,7 @@ RTCErrorOr<PayloadType> SdpPayloadTypeSuggester::SuggestPayloadType(
     // Fall through to SuggestMapping.
   }
   RTCErrorOr<PayloadType> suggested_result =
-      payload_type_picker_.SuggestMapping(codec, &local_recorder,
-                                          pick_from_top_of_range);
+      payload_type_picker_.SuggestMapping(codec, pick_from_top_of_range);
   if (suggested_result.ok()) {
     local_recorder.AddMapping(suggested_result.value(), codec);
   }
@@ -127,35 +149,75 @@ RTCError SdpPayloadTypeSuggester::Update(const SessionDescription* description,
   if (type == SdpType::kAnswer) {
     bundle_manager_.Commit();
   }
+  // The payload types that `description` uses, per recorder. A recorder covers
+  // all the media sections of a bundle group, so the payload types of every
+  // section are collected before anything is released.
+  flat_map<PayloadTypeRecorder*, flat_set<PayloadType>> payload_types_in_use;
+  flat_set<PayloadTypeRecorder*> modified_recorders;
+  for (const ContentInfo& content : description->contents()) {
+    if (!content.rejected) {
+      PayloadTypeRecorder& recorder = LookupRecorder(content.mid(), local);
+      if (modified_recorders.insert(&recorder).second) {
+        recorder.DisallowRedefinition();
+      }
+    }
+  }
+  auto reallow_guard = absl::MakeCleanup([&modified_recorders] {
+    for (PayloadTypeRecorder* recorder : modified_recorders) {
+      recorder->ReallowRedefinition();
+    }
+  });
   for (const ContentInfo& content : description->contents()) {
     if (content.rejected) {
       continue;
     }
     PayloadTypeRecorder& recorder = LookupRecorder(content.mid(), local);
-    recorder.DisallowRedefinition();
-    RTCError error;
-    for (const Codec& codec : content.media_description()->codecs()) {
-      error = recorder.AddMapping(codec.id, codec);
-      if (!error.ok()) {
-        break;
-      }
-    }
-    recorder.ReallowRedefinition();
+    RTCError error =
+        RecordCodecs(content, recorder, payload_types_in_use[&recorder]);
     if (!error.ok()) {
       return error;
     }
+    RecordRtpHeaderExtensions(content);
+  }
+  // Payload types that `description` does not use are available again. They
+  // belong either to codecs that have been negotiated away, or to codecs that
+  // were assigned a payload type while an offer was being created but that did
+  // not end up in the offer.
+  for (auto& [recorder, payload_types] : payload_types_in_use) {
+    recorder->RetainOnly(payload_types);
+  }
+  EraseUnusedRecorders(description);
+  payload_type_picker_.ReleaseUnusedPayloadTypes();
+  return RTCError::OK();
+}
 
-    BundleTypeRecorder& bundle_recorder = LookupBundleRecorder(content.mid());
-    for (const auto& extension :
-         content.media_description()->rtp_header_extensions()) {
-      bundle_recorder.header_extensions().AddMapping(
-          extension.id, extension.uri, extension.encrypt);
-    }
-    if (type == SdpType::kAnswer) {
-      bundle_recorder.header_extensions().Commit();
+void SdpPayloadTypeSuggester::RecordRtpHeaderExtensions(
+    const ContentInfo& content) {
+  BundleTypeRecorder& bundle_recorder = LookupBundleRecorder(content.mid());
+  for (const auto& extension :
+       content.media_description()->rtp_header_extensions()) {
+    bundle_recorder.header_extensions().AddMapping(extension.id, extension.uri,
+                                                   extension.encrypt);
+  }
+}
+
+void SdpPayloadTypeSuggester::EraseUnusedRecorders(
+    const SessionDescription* absl_nonnull description) {
+  // Recorders are created per mid until the bundle group is known, at which
+  // point all the mids of the group start sharing the recorder of the first
+  // mid. The ones that are left behind, and the ones belonging to media
+  // sections that have been rejected, would otherwise hold on to their payload
+  // types forever.
+  flat_set<std::string> recorders_in_use;
+  for (const ContentInfo& content : description->contents()) {
+    if (!content.rejected) {
+      recorders_in_use.insert(BundleRecorderName(content.mid()));
     }
   }
-  return RTCError::OK();
+  for (auto it = recorder_by_mid_.begin(); it != recorder_by_mid_.end();) {
+    it = recorders_in_use.contains(it->first) ? std::next(it)
+                                              : recorder_by_mid_.erase(it);
+  }
 }
 
 PayloadTypeRecorder& SdpPayloadTypeSuggester::LookupRecorder(
@@ -168,21 +230,23 @@ PayloadTypeRecorder& SdpPayloadTypeSuggester::LookupRecorder(
 
 SdpPayloadTypeSuggester::BundleTypeRecorder&
 SdpPayloadTypeSuggester::LookupBundleRecorder(absl::string_view mid) {
-  const ContentGroup* group = bundle_manager_.LookupGroupByMid(mid);
-  std::string transport_mapped_name;
-  if (group) {
-    const std::string* group_name = group->FirstContentName();
-    RTC_CHECK(group_name);  // empty groups should be impossible here
-    transport_mapped_name = *group_name;
-  } else {
+  std::string transport_mapped_name = BundleRecorderName(mid);
+  return recorder_by_mid_
+      .try_emplace(std::move(transport_mapped_name), payload_type_picker_, env_)
+      .first->second;
+}
+
+std::string SdpPayloadTypeSuggester::BundleRecorderName(
+    absl::string_view mid) const {
+  const ContentGroup* absl_nullable group =
+      bundle_manager_.LookupGroupByMid(mid);
+  if (group == nullptr) {
     // Not in a group.
-    transport_mapped_name = mid;
+    return std::string(mid);
   }
-  if (!recorder_by_mid_.contains(transport_mapped_name)) {
-    recorder_by_mid_.emplace(std::make_pair(
-        transport_mapped_name, BundleTypeRecorder(payload_type_picker_, env_)));
-  }
-  return recorder_by_mid_.at(transport_mapped_name);
+  const std::string* group_name = group->FirstContentName();
+  RTC_CHECK(group_name);  // empty groups should be impossible here
+  return *group_name;
 }
 
 }  // namespace webrtc

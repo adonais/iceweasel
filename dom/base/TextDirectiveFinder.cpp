@@ -7,6 +7,7 @@
 #include "TextDirectiveUtil.h"
 #include "fragmentdirectives_ffi_generated.h"
 #include "mozilla/CycleCollectedUniquePtr.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/ToString.h"
 #include "mozilla/dom/Range.h"
 #include "mozilla/glean/DomMetrics.h"
@@ -129,9 +130,18 @@ RefPtr<Range> TextDirectiveFinder::FindRangeForTextDirective(
   }
 
   nsContentUtils::NodeIndexCache nodeIndexCache;
+  nsFind::WordBoundaryCache wordBoundaryCache;
   RefPtr<nsFind> finder = new nsFind();
+
   finder->SetNodeIndexCache(&nodeIndexCache);
+  auto clearNodeIndexCache =
+      MakeScopeExit([&] { finder->SetNodeIndexCache(nullptr); });
+  finder->SetWordBoundaryCache(&wordBoundaryCache);
+  auto clearWordBoundaryCache =
+      MakeScopeExit([&] { finder->SetWordBoundaryCache(nullptr); });
+
   finder->SetSkipNativeAnonymousContent(true);
+  finder->SetSegmenterWordBoundaries(true);
 
   // 2. While searchRange is not collapsed:
   while (!searchRange->Collapsed()) {

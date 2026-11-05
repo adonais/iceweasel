@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-// stylelint-disable color-hex-length, color-hex-case -- we want to preserve
+// stylelint-disable color-hex-length -- we want to preserve
 // these values exactly, since they're drawn from other parts of the browser.
 
 @mixin light-theme {

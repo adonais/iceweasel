@@ -157,7 +157,7 @@ add_task(async function prettyPrintSingleLineDataUrl() {
   info("Check that the HTML file was pretty-printed as expected");
   const expectedPrettyHtml = `<meta charset=utf8><script>
 {
-  'use strict';
+  "use strict";
   globalThis.foo = function () {
   }
 }
@@ -214,12 +214,12 @@ function getExpectedPrettyPrintedHtml() {
 
     <!-- the unusual formatting is wanted to check inline scripts pretty printing -->
     <script id="inline" type="application/javascript">
-➤const userInfo = JSON.parse(document.getElementById('json-data').text);
-➤console.log('User information: %o', userInfo);
+➤const userInfo = JSON.parse(document.getElementById("json-data").text);
+➤console.log("User information: %o", userInfo);
 ➤document.addEventListener(
-  'click',
+  "click",
   function onClick(e) {
-➤    console.log('in inline script');
+➤    console.log("in inline script");
     // this is
     // something
 ➤    e.target;
@@ -238,18 +238,18 @@ function getExpectedPrettyPrintedHtml() {
   42
 ]) {
 ➤  if (x > 0) {
-➤    console.log(x, 'yay')
+➤    console.log(x, "yay")
   } else {
-➤    console.log(x, 'booh')
+➤    console.log(x, "booh")
   }
 ➤}
 </script>
     <!-- Multiple line "minified" script, with content on the first line -->
     <script>
 {
-  'use strict';
-➤  document.querySelector('h1').addEventListener('mousedown', e => {
-➤    console.log('mousedown on h1')
+  "use strict";
+➤  document.querySelector("h1").addEventListener("mousedown", e => {
+➤    console.log("mousedown on h1")
 ➤  })
 ➤}
 </script>

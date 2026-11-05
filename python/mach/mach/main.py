@@ -384,13 +384,18 @@ To see more help for a specific command, run:
             import threading
 
             context._telemetry_init_done = threading.Event()
+            context._telemetry_init_error = None
 
             def _finish_telemetry_init(future):
-                from .telemetry import report_invocation_metrics
+                try:
+                    from .telemetry import report_invocation_metrics
 
-                context.telemetry = future.result()
-                report_invocation_metrics(context.telemetry, handler.name)
-                context._telemetry_init_done.set()
+                    context.telemetry = future.result()
+                    report_invocation_metrics(context.telemetry, handler.name)
+                except Exception as e:
+                    context._telemetry_init_error = e
+                finally:
+                    context._telemetry_init_done.set()
 
             self._telemetry_future.add_done_callback(_finish_telemetry_init)
 
@@ -505,6 +510,12 @@ To see more help for a specific command, run:
         finally:
             if context._telemetry_init_done is not None:
                 context._telemetry_init_done.wait()
+                if context._telemetry_init_error is not None:
+                    print(
+                        "Warning: failed to initialize mach telemetry: "
+                        f"{context._telemetry_init_error!r}",
+                        file=sys.stderr,
+                    )
 
     def log(self, level, action, params, format_str):
         """Helper method to record a structured log event."""

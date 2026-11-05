@@ -2589,7 +2589,8 @@ const TileButton = props => {
   const {
     content,
     handleAction,
-    inputName
+    inputName,
+    inert
   } = props;
   const ref = (0,external_React_namespaceObject.useRef)(null);
   if (!content) {
@@ -2610,6 +2611,7 @@ const TileButton = props => {
     onClick: onClick,
     value: "tile_button",
     ref: ref,
+    inert: inert ? "" : undefined,
     className: `${content.style} tile-button slim`
   }));
 };
@@ -2659,11 +2661,157 @@ function _extends() { return _extends = Object.assign ? Object.assign.bind() : f
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
+
+// Matches --carousel-resize-duration, so the card finishes growing and
+// arriving at the same moment.
+const CAROUSEL_SCROLL_MS = 500;
+
+/**
+ * Centres the selected carousel card and reports which layout the row is in.
+ * Belongs in the component that owns the row, since it needs the scroller and
+ * every card element; the pill row only says which card to centre.
+ */
+function useCarouselScroll(activeId, isCarousel) {
+  const cardRefs = (0,external_React_namespaceObject.useRef)(new Map());
+  const scrollerRef = (0,external_React_namespaceObject.useRef)(null);
+  const glidingRef = (0,external_React_namespaceObject.useRef)(false);
+  const [isSmallLayout, setIsSmallLayout] = (0,external_React_namespaceObject.useState)(false);
+  const registerCard = (0,external_React_namespaceObject.useCallback)((id, el) => {
+    if (el) {
+      cardRefs.current.set(id, el);
+    } else {
+      cardRefs.current.delete(id);
+    }
+  }, []);
+
+  // The scroll position that centres a card. Measured such that
+  // it holds regardless of text direction, padding or offset parent.
+  const centredScrollLeft = (0,external_React_namespaceObject.useCallback)(id => {
+    const card = cardRefs.current.get(id);
+    const scroller = scrollerRef.current;
+    if (!card || !scroller) {
+      return null;
+    }
+    const cardRect = card.getBoundingClientRect();
+    const rowRect = scroller.getBoundingClientRect();
+    const offset = cardRect.left + cardRect.width / 2 - (rowRect.left + rowRect.width / 2);
+    return {
+      scroller,
+      left: scroller.scrollLeft + offset
+    };
+  }, []);
+  const settle = (0,external_React_namespaceObject.useCallback)(id => {
+    const end = centredScrollLeft(id);
+    end?.scroller.scrollTo({
+      left: end.left,
+      behavior: "auto"
+    });
+  }, [centredScrollLeft]);
+
+  // Glide the selected card to the centre, re-measures the destination each
+  // frame because the card is still growing. Progress comes from elapsed time
+  // so the journey takes the same duration whatever its length or the display
+  // refresh rate.
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!isCarousel || !activeId) {
+      return undefined;
+    }
+    let frame;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches || !window.performance) {
+      frame = window.requestAnimationFrame(() => settle(activeId));
+      return () => window.cancelAnimationFrame(frame);
+    }
+    const start = window.performance.now();
+    let easedBefore = 0;
+    glidingRef.current = true;
+    const step = now => {
+      const elapsed = Math.max(0, now - start);
+      const progress = Math.min(1, elapsed / CAROUSEL_SCROLL_MS);
+      if (progress >= 1) {
+        settle(activeId);
+        glidingRef.current = false;
+        return;
+      }
+      const target = centredScrollLeft(activeId);
+      if (target) {
+        const eased = 1 - Math.pow(1 - progress, 3);
+        // Cover this frame's share of whatever distance is left.
+        // Both follow the same curve, but this one still
+        // converges if something else scrolls the row.
+        const share = (eased - easedBefore) / (1 - easedBefore);
+        easedBefore = eased;
+        const current = target.scroller.scrollLeft;
+        target.scroller.scrollTo({
+          left: current + (target.left - current) * share,
+          behavior: "auto"
+        });
+      }
+      frame = window.requestAnimationFrame(step);
+    };
+    frame = window.requestAnimationFrame(step);
+    return () => {
+      glidingRef.current = false;
+      window.cancelAnimationFrame(frame);
+    };
+  }, [activeId, isCarousel, centredScrollLeft, settle]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const scroller = scrollerRef.current;
+    if (!isCarousel || !scroller || !activeId || !window.ResizeObserver) {
+      return undefined;
+    }
+    let frame = 0;
+    // Which layout the row is in is decided by a container query, read the
+    // marker it sets rather than duplicating the breakpoint here.
+    const readLayout = () => setIsSmallLayout(window.getComputedStyle(scroller).getPropertyValue("--carousel-layout").trim() === "small");
+    readLayout();
+    // Re-centre the card when the row is resized.
+    // Initialize a observer to watch for size changes and ignore callbacks
+    // that do not reflect an actual change.
+    let {
+      width,
+      height
+    } = scroller.getBoundingClientRect();
+    const observer = new window.ResizeObserver(() => {
+      readLayout();
+      const box = scroller.getBoundingClientRect();
+      if (glidingRef.current || box.width === width && box.height === height) {
+        return;
+      }
+      ({
+        width,
+        height
+      } = box);
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        settle(activeId);
+        // Crossing the breakpoint restarts the card's size transition which causes the
+        // centre keeps moving after this frame so settle again once it stops.
+        const running = cardRefs.current.get(activeId)?.getAnimations?.() ?? [];
+        if (running.length) {
+          Promise.allSettled(running.map(anim => anim.finished)).then(() => settle(activeId));
+        }
+      });
+    });
+    observer.observe(scroller, {
+      box: "border-box"
+    });
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(frame);
+    };
+  }, [activeId, isCarousel, settle]);
+  return {
+    scrollerRef,
+    registerCard,
+    isSmallLayout
+  };
+}
 const CarouselNav = ({
   items = [],
   activeId,
   onSelect,
-  navLabel
+  navLabel,
+  compact
 }) => {
   const groupRef = (0,external_React_namespaceObject.useRef)(null);
   const onSelectRef = (0,external_React_namespaceObject.useRef)(onSelect);
@@ -2697,9 +2845,10 @@ const CarouselNav = ({
   }) => /*#__PURE__*/external_React_default().createElement("moz-segmented-control-item", {
     key: id,
     value: id,
+    size: "small",
     label: pill.label?.raw,
     "data-l10n-id": pill.label?.string_id,
-    iconsrc: pill.icon
+    iconsrc: compact ? undefined : pill.icon
   }))));
 };
 ;// ./content-src/components/SingleSelect.jsx
@@ -2721,21 +2870,21 @@ const SingleSelect = ({
   activeTheme,
   content,
   handleAction,
+  messageId,
   setActiveSingleSelectSelection,
   singleSelectId
 }) => {
   const category = content.tiles?.category?.type || content.tiles?.type;
   const isSingleSelect = category === "single-select";
-  const cardRefs = (0,external_React_namespaceObject.useRef)(new Map());
+  const isCarousel = isSingleSelect && content.tiles?.layout === "carousel";
+  const {
+    scrollerRef,
+    registerCard,
+    isSmallLayout
+  } = useCarouselScroll(activeSingleSelectSelections[singleSelectId], isCarousel);
   const handlePillSelect = id => {
     setActiveSingleSelectSelection(id, singleSelectId);
-    const card = cardRefs.current.get(id);
-    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    card?.scrollIntoView?.({
-      behavior: reduceMotion ? "auto" : "smooth",
-      inline: "center",
-      block: "nearest"
-    });
+    MultiStageUtils.sendActionTelemetry(messageId, `carousel-pill-${id}`, "CLICK_BUTTON");
   };
   const autoTriggerAllowed = itemAction => {
     // Currently only enabled for sidebar experiment prefs
@@ -2778,14 +2927,18 @@ const SingleSelect = ({
 
   const CONFIGURABLE_STYLES = ["background", "border", "borderRadius", "height", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
   return /*#__PURE__*/external_React_default().createElement("div", {
-    className: `tiles-single-select-container`
-  }, isSingleSelect ? /*#__PURE__*/external_React_default().createElement(CarouselNav, {
+    className: `tiles-single-select-container ${isCarousel ? "carousel" : ""}`
+  }, isCarousel ? /*#__PURE__*/external_React_default().createElement(CarouselNav, {
     items: content.tiles?.data,
     activeId: activeSingleSelectSelections[singleSelectId],
     onSelect: handlePillSelect,
-    navLabel: content.tiles?.pill_nav_label
-  }) : null, /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("fieldset", {
-    className: `tiles-single-select-section ${category}`
+    navLabel: content.tiles?.pill_nav_label,
+    compact: isSmallLayout
+  }) : null, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "tiles-single-select-wrapper"
+  }, /*#__PURE__*/external_React_default().createElement("fieldset", {
+    className: `tiles-single-select-section ${category} ${isCarousel ? "carousel" : ""}`,
+    ref: scrollerRef
   }, /*#__PURE__*/external_React_default().createElement(Localized, {
     text: content.tiles?.subtitle || content.subtitle
   }, /*#__PURE__*/external_React_default().createElement("legend", {
@@ -2818,6 +2971,9 @@ const SingleSelect = ({
       iconStyle["--single-select-icon-background-dark"] = icon.darkModeBackground;
       delete iconStyle.background;
     }
+    if (isCarousel && iconStyle) {
+      iconStyle.backgroundSize = "100% 100%";
+    }
     const handleClick = evt => {
       if (isSingleSelect) {
         setActiveSingleSelectSelection(value, singleSelectId); // Update selection for the specific component
@@ -2836,13 +2992,7 @@ const SingleSelect = ({
       text: valOrObj(tooltip)
     }, /*#__PURE__*/external_React_default().createElement("label", {
       className: `select-item ${type} ${selected ? " selected" : ""}`,
-      ref: el => {
-        if (el) {
-          cardRefs.current.set(value, el);
-        } else {
-          cardRefs.current.delete(value);
-        }
-      },
+      ref: el => registerCard(value, el),
       onKeyDown: e => handleKeyDown(e),
       style: {
         ...MultiStageUtils.getValidStyle(style, CONFIGURABLE_STYLES),
@@ -2884,7 +3034,8 @@ const SingleSelect = ({
     })) : "", tilebutton ? /*#__PURE__*/external_React_default().createElement(TileButton, {
       content: tilebutton,
       handleAction: handleAction,
-      inputName: inputName
+      inputName: inputName,
+      inert: isCarousel && !selected
     }) : ""));
   }))));
 };
@@ -4187,7 +4338,8 @@ const ContentTiles = props => {
       handleAction: props.handleAction,
       activeSingleSelectSelections: props.activeSingleSelectSelections,
       setActiveSingleSelectSelection: props.setActiveSingleSelectSelection,
-      singleSelectId: `single-select-${index}`
+      singleSelectId: `single-select-${index}`,
+      messageId: props.messageId
     }), tile.type === "mobile_downloads" && tile.data && /*#__PURE__*/external_React_default().createElement(MobileDownloads, {
       data: tile.data,
       handleAction: props.handleAction
@@ -4309,6 +4461,7 @@ const ContentTiles = props => {
 
 
 const DEFAULT_AUTO_ADVANCE_MS = 20000;
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 const CORNER_IMAGE_POSITIONS = new Set(["bottom-left", "bottom-right", "top-left", "top-right"]);
 const DEFAULT_CORNER_IMAGE_POSITION = "bottom-right";
 const CORNER_IMAGE_ENTRANCE_ANIMATIONS = new Set(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]);
@@ -4341,6 +4494,38 @@ function resolveDirectionalImage(image) {
     ...image.rtl
   } : image;
 }
+
+/**
+ * Dismisses the message once the screen has been shown for `autoDismiss.after`
+ * milliseconds. The countdown only runs while the page is visible and restarts
+ * when it becomes visible again, so the screen can't time out while invisible
+ * in the background.
+ */
+function useAutoDismiss(autoDismiss, messageId) {
+  const after = autoDismiss?.after;
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!Number.isFinite(after) || after < 0 || after > MAX_TIMEOUT_MS) {
+      return undefined;
+    }
+    let timer = null;
+    let dismissed = false;
+    const dismiss = () => {
+      dismissed = true;
+      MultiStageUtils.sendActionTelemetry(messageId, "auto_dismiss", "AUTO_DISMISS");
+      window.AWFinish();
+    };
+    const restartCountdown = () => {
+      clearTimeout(timer);
+      timer = !dismissed && document.visibilityState === "visible" ? setTimeout(dismiss, after) : null;
+    };
+    restartCountdown();
+    document.addEventListener("visibilitychange", restartCountdown);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", restartCountdown);
+    };
+  }, [after, messageId]);
+}
 const MultiStageProtonScreen = props => {
   const {
     autoAdvance,
@@ -4350,6 +4535,7 @@ const MultiStageProtonScreen = props => {
     navigate,
     order
   } = props;
+  useAutoDismiss(props.autoDismiss, messageId);
   (0,external_React_namespaceObject.useEffect)(() => {
     if (!autoAdvance && !advanceOnExperimentLoad) {
       return () => {};
@@ -4814,6 +5000,23 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       className: "center-image"
     }) : null);
   }
+
+  // Draws the front card plus one back card for each screen still to come, up
+  // to two.
+  renderCardStackLayers() {
+    const {
+      order = 0,
+      totalNumberOfScreens = 1
+    } = this.props;
+    const cardsBehind = totalNumberOfScreens - order - 1;
+    return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
+      className: "card-stack-front"
+    }), cardsBehind >= 1 ? /*#__PURE__*/external_React_default().createElement("div", {
+      className: "card-stack-layer-1"
+    }) : null, cardsBehind >= 2 ? /*#__PURE__*/external_React_default().createElement("div", {
+      className: "card-stack-layer-2"
+    }) : null);
+  }
   renderCornerImage(anchor) {
     const cornerImage = this.props.content.corner_image;
     const position = resolveCornerImagePosition(cornerImage.position);
@@ -5148,7 +5351,10 @@ class ProtonScreen extends (external_React_default()).PureComponent {
         this.mainContentHeader = input;
       },
       "no-rdm": content.no_rdm ? "" : null
-    }, cornerImageAnchor === "screen" ? this.renderCornerImage("screen") : null, isCenterPosition ? null : this.renderSecondarySection(content), /*#__PURE__*/external_React_default().createElement("div", {
+      // eslint-disable-next-line react/no-unknown-property
+      ,
+      "initial-card": content.position === "card-stack" && this.props.isFirstScreen && this.props.previousOrder < 0 ? "" : null
+    }, content.position === "card-stack" ? this.renderCardStackLayers() : null, cornerImageAnchor === "screen" ? this.renderCornerImage("screen") : null, isCenterPosition ? null : this.renderSecondarySection(content), /*#__PURE__*/external_React_default().createElement("div", {
       className: `section-main ${isEmbeddedMigration ? "embedded-migration" : ""}${isSystemPromptStyleSpotlight ? "system-prompt-spotlight" : ""}`,
       "hide-secondary-section": content.hide_secondary_section ? String(content.hide_secondary_section) : null,
       role: "document",
@@ -5554,7 +5760,11 @@ const screenContentShape = {
     // CSS overrides of the tile container. Any CSS properties starting with
     // '--' are also allowed.
     style: (prop_types_default()).object,
-    // Accessible name for the optional carousel pill navigation.
+    // Optional, currently for single-select tiles only. Visual layout for
+    // the tile's items.
+    layout: prop_types_default().oneOf(["carousel"]),
+    // Optional, currently for single-select tiles only. Accessible name for
+    // the carousel pill navigation.
     pill_nav_label: localizableThingPropTypes,
     // Array of tile configurations needed for the tile type.
     data: prop_types_default().oneOfType([(prop_types_default()).array, (prop_types_default()).object])
@@ -6129,6 +6339,7 @@ const MultiStageAboutWelcome = props => {
       content: currentScreen.content,
       navigate: handleTransition,
       autoAdvance: currentScreen.auto_advance,
+      autoDismiss: currentScreen.auto_dismiss,
       advanceOnExperimentLoad: currentScreen.advance_on_experiment_load,
       messageId: `${props.message_id}_${order}_${currentScreen.id}`,
       UTMTerm: props.utm_term,
@@ -6683,6 +6894,7 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
       isSingleScreen: this.props.isSingleScreen,
       startsWithCorner: this.props.startsWithCorner,
       autoAdvance: this.props.autoAdvance,
+      autoDismiss: this.props.autoDismiss,
       advanceOnExperimentLoad: this.props.advanceOnExperimentLoad,
       navigate: this.props.navigate,
       forceHideStepsIndicator: this.props.forceHideStepsIndicator,
@@ -6819,7 +7031,10 @@ window.mountMultistageMessage = function mountMultistageMessage(container, props
         return "";
       }
     },
-    AWGetInstalledAddons: () => Promise.resolve()
+    AWGetInstalledAddons: () => Promise.resolve(),
+    AWWaitForMigrationClose: () => window.ASRouterMessage({
+      type: "AW_WAIT_FOR_MIGRATION_CLOSE"
+    })
   };
   for (const [handlerName, fn] of Object.entries(awHandlers)) {
     window[handlerName] = fn;

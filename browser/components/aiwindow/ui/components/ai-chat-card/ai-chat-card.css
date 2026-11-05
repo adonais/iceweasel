@@ -4,7 +4,6 @@
 
 :host {
   --card-padding: var(--space-xsmall);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   --card-border-radius: 12px;
   --card-box-shadow: none;
   --ai-chat-card-thumbnail-background: var(--background-color-box);
@@ -136,12 +135,12 @@
     fill: transparent;
 
     @media not (forced-colors) {
-      /* stylelint-disable-next-line -- Figma design */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/no-base-design-tokens -- Figma design */
       fill: light-dark(var(--color-violet-10), var(--color-violet-70));
     }
 
     @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
-      /* stylelint-disable-next-line -- Figma design */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- Figma design */
       fill: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-70));
     }
   }
@@ -150,7 +149,7 @@
     fill: var(--icon-color);
 
     @media not (forced-colors) {
-      /* stylelint-disable-next-line -- Figma design */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- Figma design */
       fill: light-dark(var(--color-white-alpha-60), var(--color-white-alpha-30));
     }
   }

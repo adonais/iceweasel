@@ -412,5 +412,28 @@ describe("ASRouterParentProcessMessageHandler", () => {
         assert.equal(result, "nova-flare@mozilla.org");
       });
     });
+    describe("AW_WAIT_FOR_MIGRATION_CLOSE action", () => {
+      it("default resolves once the migration wizard closes", async () => {
+        sandbox.stub(global.Services.obs, "addObserver");
+        sandbox.stub(global.Services.obs, "removeObserver");
+        const promise = handler.handleMessage(msg.AW_WAIT_FOR_MIGRATION_CLOSE);
+
+        assert.calledWith(
+          global.Services.obs.addObserver,
+          sinon.match.func,
+          "MigrationWizard:Closed"
+        );
+        assert.calledWith(
+          global.Services.obs.addObserver,
+          sinon.match.func,
+          "MigrationWizard:Destroyed"
+        );
+
+        global.Services.obs.addObserver.firstCall.args[0]();
+        await promise;
+
+        assert.calledTwice(global.Services.obs.removeObserver);
+      });
+    });
   });
 });

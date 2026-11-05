@@ -16,7 +16,6 @@
 #include "mozilla/dom/AudioDecoderBinding.h"
 #include "mozilla/dom/EncodedAudioChunk.h"
 #include "mozilla/dom/EncodedAudioChunkBinding.h"
-#include "mozilla/dom/ImageUtils.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebCodecsUtils.h"

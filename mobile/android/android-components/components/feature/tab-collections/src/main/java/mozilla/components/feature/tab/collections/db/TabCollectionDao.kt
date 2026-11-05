@@ -16,11 +16,11 @@ import kotlinx.coroutines.flow.Flow
 /** Internal DAO for accessing [TabCollectionEntity] instances. */
 @Dao
 internal interface TabCollectionDao {
-    @Insert fun insertTabCollection(collection: TabCollectionEntity): Long
+    @Insert suspend fun insertTabCollection(collection: TabCollectionEntity): Long
 
-    @Delete fun deleteTabCollection(collection: TabCollectionEntity)
+    @Delete suspend fun deleteTabCollection(collection: TabCollectionEntity)
 
-    @Update fun updateTabCollection(collection: TabCollectionEntity)
+    @Update suspend fun updateTabCollection(collection: TabCollectionEntity)
 
     @Transaction
     @Query(
@@ -53,5 +53,5 @@ internal interface TabCollectionDao {
     )
     suspend fun getTabCollectionsList(): List<TabCollectionWithTabs>
 
-    @Query("SELECT COUNT(*) FROM tab_collections") fun countTabCollections(): Int
+    @Query("SELECT COUNT(*) FROM tab_collections") suspend fun countTabCollections(): Int
 }

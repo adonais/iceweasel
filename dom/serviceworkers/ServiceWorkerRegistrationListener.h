@@ -5,6 +5,9 @@
 #ifndef mozilla_dom_ServiceWorkerRegistrationListener_h
 #define mozilla_dom_ServiceWorkerRegistrationListener_h
 
+#include "nsISupportsImpl.h"
+#include "nsStringFwd.h"
+
 namespace mozilla::dom {
 
 class ServiceWorkerRegistrationDescriptor;

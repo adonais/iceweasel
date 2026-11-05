@@ -17,6 +17,12 @@
 #ifndef wasm_exception_h
 #define wasm_exception_h
 
+#include <cstdint>
+
+#include "js/AllocPolicy.h"
+#include "wasm/WasmConstants.h"
+#include "wasm/WasmValType.h"
+
 namespace js {
 namespace wasm {
 

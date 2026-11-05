@@ -6396,16 +6396,17 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
   {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
 
+    // Long and short viewport heights, corresponding to CSS length values of
+    // 100lvh and 100svh.
+    const CSSCoord lvh = ToCSSPixels(Metrics().GetCompositionBounds().height);
+    const CSSCoord svh =
+        ToCSSPixels(Metrics().GetCompositionSizeWithoutDynamicToolbar().height);
+
     // If we are zooming to focus an input element near the bottom of the
     // scrollable rect, it may be covered up by the dynamic toolbar and we may
     // not have room to scroll it into view. In such cases, trigger hiding of
     // the dynamic toolbar to ensure the input element is visible.
     if (aFlags & ZOOM_TO_FOCUSED_INPUT) {
-      // Long and short viewport heights, corresponding to CSS length values of
-      // 100lvh and 100svh.
-      const CSSCoord lvh = ToCSSPixels(Metrics().GetCompositionBounds().height);
-      const CSSCoord svh = ToCSSPixels(
-          Metrics().GetCompositionSizeWithoutDynamicToolbar().height);
       const CSSCoord scrollableRectHeight =
           Metrics().GetScrollableRect().height;
 
@@ -6452,10 +6453,16 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     // page), then the CSS content rect, in layers pixels, will be smaller than
     // the composition bounds. If this happens, we can't fill the target
     // composited area with this frame.
-    const CSSRect cssExpandedPageRect = Metrics().GetExpandedScrollableRect();
+    // A page shorter than 100lvh only needs to fill the composition bounds
+    // without the dynamic toolbar.
+    const ParentLayerCoord heightToFill =
+        cssPageRect.Height() < lvh
+            ? ParentLayerCoord(
+                  Metrics().GetCompositionSizeWithoutDynamicToolbar().height)
+            : ParentLayerCoord(compositionBounds.Height());
     CSSToParentLayerScale localMinZoom(
-        std::max(compositionBounds.Width() / cssExpandedPageRect.Width(),
-                 compositionBounds.Height() / cssExpandedPageRect.Height()));
+        std::max(compositionBounds.Width() / cssPageRect.Width(),
+                 heightToFill.value / cssPageRect.Height()));
 
     localMinZoom.scale =
         std::clamp(localMinZoom.scale, mZoomConstraints.mMinZoom.scale,

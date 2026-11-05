@@ -63,17 +63,21 @@ Result<Ok, nsresult> WriteHangDetailsToFile(HangDetails& aDetails,
  */
 class ProcessHangStackRunnable final : public Runnable {
  public:
+  /**
+   * If aPermahangFile is non-null, the hang details are written to it before
+   * being submitted.
+   */
   explicit ProcessHangStackRunnable(HangDetails&& aHangDetails,
-                                    PersistedToDisk aPersistedToDisk)
+                                    nsCOMPtr<nsIFile>&& aPermahangFile)
       : Runnable("ProcessHangStackRunnable"),
         mHangDetails(std::move(aHangDetails)),
-        mPersistedToDisk(aPersistedToDisk) {}
+        mPermahangFile(std::move(aPermahangFile)) {}
 
   NS_IMETHOD Run() override;
 
  private:
   HangDetails mHangDetails;
-  PersistedToDisk mPersistedToDisk;
+  nsCOMPtr<nsIFile> mPermahangFile;
 };
 
 /**

@@ -84,13 +84,8 @@ class nsUpdateProcessor final : public nsIUpdateProcessor {
   ~nsUpdateProcessor();
 
   struct StagedUpdateInfo {
-    StagedUpdateInfo() : mArgc(0), mArgv(nullptr) {}
-    ~StagedUpdateInfo() {
-      for (int i = 0; i < mArgc; ++i) {
-        delete[] mArgv[i];
-      }
-      delete[] mArgv;
-    }
+    StagedUpdateInfo();
+    ~StagedUpdateInfo();
 
     nsCOMPtr<nsIFile> mGREDir;
     nsCOMPtr<nsIFile> mAppDir;

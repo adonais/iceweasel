@@ -10,7 +10,6 @@ Hooks for the startup tests that run android_startup_videoapplink.py, which
 needs cv2.
 """
 
-INTERNAL_PYPI = "https://pypi.pub.build.mozilla.org/pub/"
 NUMPY_DEPENDENCY = "numpy<2"
 OPENCV_DEPENDENCY = "opencv-python==4.10.0.84"
 PIP_TIMEOUT = 120
@@ -28,9 +27,6 @@ def before_iterations(args):
         "install",
         OPENCV_DEPENDENCY,
         "--no-deps",
-        "--no-index",
-        "--find-links",
-        INTERNAL_PYPI,
         "--timeout",
         str(PIP_TIMEOUT),
     ])

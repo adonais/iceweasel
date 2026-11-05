@@ -200,8 +200,8 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
   }
 
   if (aIsCreatedHidden) {
-    nsresult rv =
-        newElement->SetAttr(kNameSpaceID_None, nsGkAtoms::hidden, u""_ns, true);
+    nsresult rv = newElement->SetAttr(kNameSpaceID_None, nsGkAtoms::hidden,
+                                      u""_ns, true, IsKnownNewAttr::Yes);
     if (NS_FAILED(rv)) {
       NS_WARNING("Element::SetAttr(nsGkAtoms::hidden, ...) failed");
       return nullptr;
@@ -211,7 +211,7 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
   // add an _moz_anonclass attribute if needed
   if (!aAnonClass.IsEmpty()) {
     nsresult rv = newElement->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
-                                      aAnonClass, true);
+                                      aAnonClass, true, IsKnownNewAttr::Yes);
     if (NS_FAILED(rv)) {
       NS_WARNING("Element::SetAttr(nsGkAtoms::_moz_anonclass) failed");
       return nullptr;

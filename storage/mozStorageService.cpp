@@ -24,6 +24,8 @@
 #include "mozilla/LateWriteChecks.h"
 #include "mozIStorageCompletionCallback.h"
 #include "mozIStoragePendingStatement.h"
+#include "mozilla/glean/GleanPings.h"
+#include "mozilla/glean/StorageMetrics.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPrefs_storage.h"
 #include "mozilla/intl/Collator.h"
@@ -204,6 +206,8 @@ Service::AutoVFSRegistration::~AutoVFSRegistration() {
   }
 }
 
+Service::Service() : mSlowStatements({}, "Service::mSlowStatements") {}
+
 Service::~Service() {
   mozilla::UnregisterWeakMemoryReporter(this);
   mozilla::UnregisterStorageSQLiteDistinguishedAmount();
@@ -312,6 +316,11 @@ static const char* sObserverTopics[] = {"memory-pressure",
 
 nsresult Service::initialize() {
   MOZ_ASSERT(NS_IsMainThread(), "Must be initialized on the main thread");
+
+#ifdef NIGHTLY_BUILD
+  // Submit last session's slow SQL, if any.
+  glean_pings::SlowSql.Submit("startup"_ns);
+#endif  // NIGHTLY_BUILD
 
   int rc = AutoSQLiteLifetime::getInitResult();
   if (rc != SQLITE_OK) {
@@ -706,5 +715,99 @@ Service::Observe(nsISupports*, const char* aTopic, const char16_t*) {
 
   return NS_OK;
 }
+
+#ifdef NIGHTLY_BUILD
+// The maximum length (not including '...' appended after truncation) of slow
+// sql statements recorded.
+// Chosen to match Legacy Telemetry recording, and to make singular statements
+// less likely to blow the ping size budget.
+const uint32_t kMaxSlowStatementLength = 1000;
+
+// The list of dbs for which we record per-statement slow executions.
+constexpr nsLiteralCString kSlowSqlDbAllowlist[] = {
+    "818200132aebmoouht.sqlite"_ns,  // IndexedDB for about:home, see
+                                     // aboutHome.js
+    "addons.sqlite"_ns,
+    "content-prefs.sqlite"_ns,
+    "cookies.sqlite"_ns,
+    "extensions.sqlite"_ns,
+    "favicons.sqlite"_ns,
+    "formhistory.sqlite"_ns,
+    "index.sqlite"_ns,
+    "netpredictions.sqlite"_ns,
+    "permissions.sqlite"_ns,
+    "places.sqlite"_ns,
+    "search.sqlite"_ns,
+    "urlclassifier3.sqlite"_ns,
+    "webappsstore.sqlite"_ns,
+};
+
+void Service::RecordSlowStatement(sqlite3_stmt* aStatement,
+                                  TimeDuration aDuration,
+                                  const nsCString& aFilename) {
+  bool reportStatement = StringBeginsWith(aFilename, "indexedDB-"_ns);
+  if (!reportStatement) {
+    for (const auto& allowed : kSlowSqlDbAllowlist) {
+      if (aFilename.Equals(allowed)) {
+        reportStatement = true;
+        break;
+      }
+    }
+  }
+
+  const char* norm =
+      reportStatement ? ::sqlite3_normalized_sql(aStatement) : "<untracked>";
+  if (!norm) {
+    glean::sqlite_store::failed_normalize.Add(1);
+    return;
+  }
+  nsCString normalizedSql(norm);
+  if (normalizedSql.Length() > kMaxSlowStatementLength) {
+    normalizedSql.SetLength(kMaxSlowStatementLength);
+    normalizedSql.AppendLiteral("...");
+  }
+
+  {
+    auto slowStatements = mSlowStatements.Lock();
+
+    bool found = false;
+    for (auto& statement : *slowStatements) {
+      if (statement.db.ref().Equals(aFilename) &&
+          statement.sql.ref().Equals(normalizedSql)) {
+        found = true;
+        if (NS_IsMainThread()) {
+          statement.main_thread_hits.ref() += 1;
+          statement.main_thread_ms.ref() += aDuration.ToMilliseconds();
+        } else {
+          statement.other_thread_hits.ref() += 1;
+          statement.other_thread_ms.ref() += aDuration.ToMilliseconds();
+        }
+        break;
+      }
+    }
+
+    if (!found) {
+      glean::sqlite_store::SlowStatementsObjectItem statement({
+          Some(aFilename),
+          Some(normalizedSql),
+          Some(0),
+          Some(0),
+          Some(0),
+          Some(0),
+      });
+      if (NS_IsMainThread()) {
+        statement.main_thread_hits.ref() += 1;
+        statement.main_thread_ms.ref() += aDuration.ToMilliseconds();
+      } else {
+        statement.other_thread_hits.ref() += 1;
+        statement.other_thread_ms.ref() += aDuration.ToMilliseconds();
+      }
+      slowStatements->AppendElement(statement);
+    }
+
+    glean::sqlite_store::slow_statements.Set(*slowStatements);
+  }
+}
+#endif  // NIGHTLY_BUILD
 
 }  // namespace mozilla::storage

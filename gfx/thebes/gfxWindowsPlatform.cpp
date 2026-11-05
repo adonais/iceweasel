@@ -373,6 +373,105 @@ void gfxWindowsPlatform::InitPlatformHardwareVideoConfig() {
     featureEnc.ForceDisable(FeatureStatus::Unavailable, "Cannot use with WARP",
                             "FEATURE_FAILURE_D3D11_WARP_DEVICE"_ns);
   }
+
+  InitReuseDecoderDeviceConfig(dm);
+  InitD3D11FencesConfig(dm);
+}
+
+void gfxWindowsPlatform::InitReuseDecoderDeviceConfig(DeviceManagerDx* aDm) {
+  FeatureState& feature = gfxConfig::GetFeature(Feature::REUSE_DECODER_DEVICE);
+  feature.Reset();
+  feature.EnableByDefault();
+
+  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
+
+  bool isAMD = false;
+  if (gfxInfo) {
+    nsAutoString adapterVendorId;
+    gfxInfo->GetAdapterVendorID(adapterVendorId);
+    isAMD = adapterVendorId.EqualsLiteral("0x1002");
+  }
+  // On hybrid GPU systems the compositor device may be on another adapter than
+  // the one gfxInfo reports, so also check it once its status is known.
+  if (aDm && aDm->GetCompositorAdapterVendorId() == Some(0x1002u)) {
+    isAMD = true;
+  }
+
+  bool blocked = true;
+  FeatureStatus blockedStatus = FeatureStatus::BlockedNoGfxInfo;
+  const char* blockedMessage = "gfxInfo is broken";
+  nsCString failureId;
+  int32_t status;
+  if (!gfxInfo ||
+      NS_FAILED(gfxInfo->GetFeatureStatus(
+          nsIGfxInfo::FEATURE_REUSE_DECODER_DEVICE, failureId, &status))) {
+    failureId = "FEATURE_FAILURE_NO_GFX_INFO"_ns;
+  } else if (status != nsIGfxInfo::FEATURE_STATUS_OK) {
+    blockedStatus = FeatureStatus::Blocked;
+    blockedMessage = "Blocklisted by gfxInfo";
+  } else {
+    blocked = false;
+  }
+
+  const bool prefEnabled =
+      StaticPrefs::gfx_direct3d11_reuse_decoder_device_AtStartup();
+  // AMD drivers are known to crash when using separate devices for decoding
+  // and compositing, so the decoder device is always reused there.
+  if (isAMD && (!prefEnabled || blocked)) {
+    feature.UserForceEnable("Always reused on AMD");
+  } else if (!prefEnabled) {
+    feature.UserDisable("Disabled via gfx.direct3d11.reuse-decoder-device",
+                        "FEATURE_FAILURE_PREF_OFF"_ns);
+  } else if (
+      StaticPrefs::
+          gfx_direct3d11_reuse_decoder_device_force_enabled_AtStartup()) {
+    feature.UserForceEnable("Force enabled by pref");
+  }
+
+  if (blocked) {
+    feature.Disable(blockedStatus, blockedMessage, failureId);
+  }
+
+  const bool forceDisabled = StaticPrefs::
+      gfx_direct3d11_reuse_decoder_device_force_disabled_AtStartup();
+  gfxVars::SetReuseDecoderDevice(feature.IsEnabled() && !forceDisabled);
+
+  // DeviceManagerDx checks the remaining conditions itself, and decoders still
+  // share one decoder device when they fail, so they only affect reporting.
+  if (forceDisabled) {
+    feature.ForceDisable(FeatureStatus::Disabled, "Force disabled by pref",
+                         "FEATURE_FAILURE_USER_FORCE_DISABLED"_ns);
+  } else if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
+    feature.SetFailed(FeatureStatus::Unavailable, "Requires D3D11 compositing",
+                      "FEATURE_FAILURE_REQUIRES_D3D11_COMPOSITING"_ns);
+  } else if (gfxVars::UseSoftwareWebRender()) {
+    feature.SetFailed(FeatureStatus::Unavailable, "Requires hardware WebRender",
+                      "FEATURE_FAILURE_REQUIRES_HW_WEBRENDER"_ns);
+  } else if (aDm && aDm->CompositorDeviceSupportsVideo() == Some(false)) {
+    feature.SetFailed(FeatureStatus::Unavailable,
+                      "Compositor device has no video support",
+                      "FEATURE_FAILURE_COMPOSITOR_NO_VIDEO"_ns);
+  }
+}
+
+void gfxWindowsPlatform::InitD3D11FencesConfig(DeviceManagerDx* aDm) {
+  FeatureState& feature = gfxConfig::GetFeature(Feature::D3D11_FENCES);
+  feature.Reset();
+  feature.EnableByDefault();
+
+  if (!StaticPrefs::gfx_direct3d11_fences_enabled_AtStartup()) {
+    feature.UserDisable("Disabled via gfx.direct3d11.fences-enabled",
+                        "FEATURE_FAILURE_PREF_OFF"_ns);
+  }
+
+  if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
+    feature.SetFailed(FeatureStatus::Unavailable, "Requires D3D11 compositing",
+                      "FEATURE_FAILURE_REQUIRES_D3D11_COMPOSITING"_ns);
+  } else if (aDm && aDm->CompositorDeviceSupportsFences() == Some(false)) {
+    feature.SetFailed(FeatureStatus::Unavailable,
+                      "Not supported by the compositor device",
+                      "FEATURE_FAILURE_NO_FENCE_SUPPORT"_ns);
+  }
 }
 
 #ifdef MOZ_WMF_CDM

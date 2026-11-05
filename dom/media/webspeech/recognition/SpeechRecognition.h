@@ -350,15 +350,6 @@ class SpeechRecognition final
   RefPtr<TrackListener> mListener;
   // Backend instance for handling audio processing
   RefPtr<SpeechRecognitionBackend> mBackend;
-
-  static nsTHashSet<nsCString> sDownloadingLanguages
-      MOZ_GUARDED_BY(sMainThreadCapability);
-  // One entry per language currently in sDownloadingLanguages, so a second
-  // install() call for the same language can wait on the in-flight download
-  // instead of starting a redundant one. See GetDownloadCompletionPromise().
-  static nsTHashMap<nsCStringHashKey,
-                    RefPtr<GenericNonExclusivePromise::Private>>
-      sLanguageDownloadPromises MOZ_GUARDED_BY(sMainThreadCapability);
 };
 
 }  // namespace dom

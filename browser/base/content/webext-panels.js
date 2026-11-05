@@ -22,19 +22,6 @@ function getBrowser(panel) {
     return Promise.resolve(browser);
   }
 
-  if (panel.viewType === "sidebar" && gSidebarRevampEnabled) {
-    if (!customElements.get("sidebar-panel-header")) {
-      ChromeUtils.importESModule(
-        "chrome://browser/content/sidebar/sidebar-panel-header.mjs",
-        { global: "current" }
-      );
-    }
-    const heading =
-      panel.extension.manifest.sidebar_action.default_title ??
-      panel.extension.name;
-    document.getElementById("sidebar-panel-header").heading = heading;
-  }
-
   let stack = document.getElementById("webext-panels-stack");
   if (!stack) {
     stack = document.createXULElement("stack");

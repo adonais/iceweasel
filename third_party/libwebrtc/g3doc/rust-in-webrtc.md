@@ -10,11 +10,8 @@ WebRTC is adopting [Rust] to advance memory safety. Rust targets and build
 infrastructure have been integrated into the repository and are enabled by
 default.
 
-Currently there are few Rust component integrated into tests, but not production
-code.
-
-As a next step we plan to integrate a small Rust component into production code,
-but keep a c++ fallback.
+Currently there is a Rust component integrated into production code with a c++
+fallback.
 
 ## rtc_rust build flag
 

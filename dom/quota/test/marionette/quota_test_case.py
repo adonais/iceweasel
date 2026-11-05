@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+import shutil
 from contextlib import contextmanager
 
 from marionette_driver import Wait
@@ -54,6 +55,24 @@ class QuotaTestCase(MarionetteTestCase):
 
         assert res is not None
         return res
+
+    def restartWithCleanStorage(self, prefs):
+        """
+        Quit Firefox, remove the profile's storage directory, write prefs to
+        the profile and start Firefox again. Firefox must not be running while
+        storage is removed: on Windows it keeps the database files locked.
+        """
+        self.marionette.quit(in_app=False)
+
+        storageDir = os.path.join(self.marionette.instance.profile.profile, "storage")
+        if os.path.isdir(storageDir):
+            shutil.rmtree(storageDir)
+
+        self.marionette.instance.profile.set_preferences(prefs)
+
+        self.marionette.instance.start()
+        self.marionette.raise_for_port(timeout=self.marionette.DEFAULT_STARTUP_TIMEOUT)
+        self.marionette.start_session(self.marionette.requested_capabilities)
 
     def ensureInvariantHolds(self, op):
         maxWaitTime = 60

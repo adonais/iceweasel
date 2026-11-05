@@ -51,7 +51,8 @@ class History final : public BaseHistory,
 
   // IHistory
   NS_IMETHOD VisitURI(nsIWidget*, nsIURI*, nsIURI* aLastVisitedURI,
-                      uint32_t aFlags, uint64_t aBrowserId) final;
+                      uint32_t aFlags, uint64_t aBrowserId,
+                      uint32_t aUserContextId) final;
   NS_IMETHOD SetURITitle(nsIURI*, const nsAString&) final;
 
   // BaseHistory

@@ -80,29 +80,22 @@ nsresult AppleDecoderModule::Startup() {
   return NS_OK;
 }
 
-already_AddRefed<MediaDataDecoder> AppleDecoderModule::CreateVideoDecoder(
-    const CreateDecoderParams& aParams) {
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+AppleDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
   if (Supports(SupportDecoderParams(aParams), nullptr /* diagnostics */)
           .isEmpty()) {
-    return nullptr;
+    return CreateDecoderPromiseFrom(nullptr, aParams);
   }
   RefPtr<MediaDataDecoder> decoder;
-  if (IsVideoSupported(aParams.VideoConfig(), aParams.mOptions)) {
+  if (aParams.IsAudio()) {
+    decoder = new AppleATDecoder(aParams.AudioConfig());
+  } else if (aParams.IsVideo() &&
+             IsVideoSupported(aParams.VideoConfig(), aParams.mOptions)) {
     decoder = new AppleVTDecoder(aParams.VideoConfig(), aParams.mImageContainer,
                                  aParams.mOptions, aParams.mKnowsCompositor,
                                  aParams.mTrackingId);
   }
-  return decoder.forget();
-}
-
-already_AddRefed<MediaDataDecoder> AppleDecoderModule::CreateAudioDecoder(
-    const CreateDecoderParams& aParams) {
-  if (Supports(SupportDecoderParams(aParams), nullptr /* diagnostics */)
-          .isEmpty()) {
-    return nullptr;
-  }
-  RefPtr<MediaDataDecoder> decoder = new AppleATDecoder(aParams.AudioConfig());
-  return decoder.forget();
+  return CreateDecoderPromiseFrom(decoder.forget(), aParams);
 }
 
 DecodeSupportSet AppleDecoderModule::SupportsMimeType(

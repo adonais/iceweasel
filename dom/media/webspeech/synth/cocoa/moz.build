@@ -11,3 +11,7 @@ XPCOM_MANIFESTS += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "OSXSpeechSynthesizerService.h",
+]

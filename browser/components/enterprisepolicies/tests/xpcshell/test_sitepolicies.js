@@ -486,3 +486,76 @@ add_task(async function test_disableServiceWorkersPolicy() {
   assertHttpState("http://example.net/", true);
   assertHttpState("http://example.com/", false);
 });
+
+add_task(async function test_trailing_dot_hostname() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Match: ["*.example.com"],
+          Policies: {
+            DisableJit: true,
+            HttpsOnly: true,
+          },
+        },
+      ],
+    },
+  });
+
+  let bareUri = Services.io.newURI("https://www.example.com/page");
+  let trailingDotUri = Services.io.newURI("https://www.example.com./page");
+
+  Assert.equal(
+    Services.policies.isAllowedForURI("jit", bareUri),
+    false,
+    "Bare hostname should match and disable JIT"
+  );
+  Assert.equal(
+    Services.policies.isAllowedForURI("jit", trailingDotUri),
+    false,
+    "Trailing-dot hostname should match and disable JIT"
+  );
+
+  Assert.equal(
+    Services.policies.isAllowedForURI("http", bareUri),
+    false,
+    "Bare hostname should match and enforce HttpsOnly"
+  );
+  Assert.equal(
+    Services.policies.isAllowedForURI("http", trailingDotUri),
+    false,
+    "Trailing-dot hostname should match and enforce HttpsOnly"
+  );
+});
+
+add_task(async function test_trailing_dot_hostname_exceptions() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Match: ["*"],
+          Exceptions: ["*.example.com"],
+          Policies: {
+            DisableJit: true,
+          },
+        },
+      ],
+    },
+  });
+
+  let trailingDotExceptionUri = Services.io.newURI(
+    "https://www.example.com./page"
+  );
+  let trailingDotOtherUri = Services.io.newURI("https://www.example.net./page");
+
+  Assert.equal(
+    Services.policies.isAllowedForURI("jit", trailingDotExceptionUri),
+    true,
+    "Trailing-dot hostname in Exceptions should be unrestricted"
+  );
+  Assert.equal(
+    Services.policies.isAllowedForURI("jit", trailingDotOtherUri),
+    false,
+    "Trailing-dot hostname not in Exceptions should be restricted"
+  );
+});

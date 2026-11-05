@@ -27,7 +27,7 @@ async function check_no_enterprise_roots_imported(
     "should not have imported any enterprise roots"
   );
   if (dbKey) {
-    let cert = certDB.findCertByDBKey(dbKey);
+    let cert = await certDB.asyncFindCertByDBKey(dbKey);
     // If the garbage-collector hasn't run, there may be reachable copies of
     // imported enterprise root certificates. If so, they shouldn't be trusted
     // to issue TLS server auth certificates.

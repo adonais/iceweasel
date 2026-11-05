@@ -102,7 +102,9 @@ public:
 
   Segment &    segment;
 private:
-  Slot         * m_slot_map[MAX_SLOTS+1];
+  // In addition to the input slots, keep storage for the preceding slot
+  // and for the writable end() position used by the VM on return.
+  Slot         * m_slot_map[MAX_SLOTS+2];
   unsigned short m_size;
   unsigned short m_precontext;
   Slot         * m_highwater;
@@ -225,7 +227,7 @@ SlotMap::SlotMap(Segment & seg, uint8 direction, size_t maxSize)
 : segment(seg), m_size(0), m_precontext(0), m_highwater(0),
     m_maxSize(int(maxSize)), m_dir(direction), m_highpassed(false)
 {
-    m_slot_map[0] = 0;
+    m_slot_map[0] = m_slot_map[1] = 0;
 }
 
 inline
@@ -259,12 +261,15 @@ void SlotMap::reset(Slot & slot, short unsigned int ctxt)
   m_size = 0;
   m_precontext = ctxt;
   *m_slot_map = slot.prev();
+  m_slot_map[1] = 0;
 }
 
 inline
 void SlotMap::pushSlot(Slot*const slot)
 {
+  assert(m_size < MAX_SLOTS);
   m_slot_map[++m_size] = slot;
+  m_slot_map[m_size + 1] = 0;
 }
 
 inline

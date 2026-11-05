@@ -4,6 +4,7 @@
 
 #include "txStylesheetCompiler.h"
 
+#include <memory>
 #include <utility>
 
 #include "mozilla/UniquePtr.h"
@@ -407,7 +408,8 @@ nsresult txStylesheetCompiler::ensureNewElementContext() {
     return NS_OK;
   }
 
-  UniquePtr<txElementContext> context(new txElementContext(*mElementContext));
+  UniquePtr<txElementContext> context =
+      std::make_unique<txElementContext>(*mElementContext);
   pushObject(mElementContext.release());
   mElementContext = std::move(context);
 

@@ -158,6 +158,7 @@ struct DefaultJitOptions {
   bool regexp_quick_check;
   bool regexp_tier_up;
   bool regexp_bytecode_analysis;
+  bool regexp_atomic_loop;
   bool trace_regexp_assembler;
   bool trace_regexp_compiler;
   bool trace_regexp_graph_building;

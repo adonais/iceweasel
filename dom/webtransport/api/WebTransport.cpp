@@ -4,15 +4,21 @@
 
 #include "WebTransport.h"
 
+#include <memory>
+
 #include "WebTransportBidirectionalStream.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/Headers.h"
+#include "mozilla/dom/HeadersBinding.h"
+#include "mozilla/dom/InternalHeaders.h"
 #include "mozilla/dom/PWebTransport.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
+#include "mozilla/dom/ReadableStreamBinding.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/WebTransportDatagramDuplexStream.h"
@@ -26,6 +32,7 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsIURL.h"
+#include "nsIWebTransport.h"
 #include "nsIWebTransportStream.h"
 #include "nsPIDOMWindowInlines.h"
 #include "nsTHashSet.h"
@@ -47,6 +54,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WebTransport)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReady)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDraining)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mClosed)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mResponseHeaders)
   for (const auto& hashEntry : tmp->mSendStreams.Values()) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mSendStreams entry item");
     cb.NoteXPCOMChild(hashEntry);
@@ -76,6 +84,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebTransport)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReady)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDraining)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mClosed)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mResponseHeaders)
   if (tmp->mChild) {
     tmp->mChild->Shutdown(false);
     tmp->mChild = nullptr;
@@ -121,8 +130,8 @@ void WebTransport::NewBidirectionalStream(
   // IncomingBidirectionalStreams stream. Must be added to the ReceiveStreams
   // and SendStreams arrays
 
-  UniquePtr<BidirectionalPair> streams(
-      new BidirectionalPair(aIncoming, aOutgoing));
+  UniquePtr<BidirectionalPair> streams =
+      std::make_unique<BidirectionalPair>(aIncoming, aOutgoing);
   auto tuple = std::tuple<uint64_t, UniquePtr<BidirectionalPair>>(
       aStreamId, std::move(streams));
   mBidirectionalStreams.AppendElement(std::move(tuple));
@@ -165,6 +174,10 @@ void WebTransport::NewDatagramReceived(nsTArray<uint8_t>&& aData,
   mDatagrams->NewDatagramReceived(std::move(aData), aTimeStamp);
 }
 
+void WebTransport::OnDatagramReady(uint64_t aDatagramId) {
+  mDatagrams->OnDatagramReady(aDatagramId);
+}
+
 // WebIDL Boilerplate
 
 nsIGlobalObject* WebTransport::GetParentObject() const { return mGlobal; }
@@ -193,7 +206,7 @@ already_AddRefed<WebTransport> WebTransport::Constructor(
   // Don't let this document go into BFCache
   result->NotifyToWindow(true);
 
-  // Step 25 Return transport
+  // Step 35: Return transport.
   return result.forget();
 }
 
@@ -207,26 +220,24 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   using mozilla::ipc::PBackgroundChild;
 
   // https://w3c.github.io/webtransport/#webtransport-constructor
-  // Steps 1-4: Parse string for validity and Throw a SyntaxError if it isn't
-  // Let parsedURL be the URL record resulting from parsing url.
-  // If parsedURL is a failure, throw a SyntaxError exception.
-  // If parsedURL scheme is not https, throw a SyntaxError exception.
-  // If parsedURL fragment is not null, throw a SyntaxError exception.
+  // Steps 1-5: Let baseURL be this's relevant settings object's API base URL.
+  // Let url be the URL record resulting from parsing url with baseURL.
+  // If url is failure, throw a SyntaxError exception.
+  // If url's scheme is not https, throw a SyntaxError exception.
+  // If url's fragment is not null, throw a SyntaxError exception.
   if (!ParseURL(aURL)) {
     aError.ThrowSyntaxError("Invalid WebTransport URL");
     return;
   }
-  // Step 5: Let allowPooling be options's allowPooling if it exists, and false
-  // otherwise.
-  // Step 6: Let dedicated be the negation of allowPooling.
+  // Step 6: Let newConnection be "no" if options's allowPooling is true;
+  // otherwise "yes-and-dedicated". Represented here as a boolean.
   bool dedicated = !aOptions.mAllowPooling;
-  // Step 7: Let serverCertificateHashes be options's serverCertificateHashes if
-  // it exists, and null otherwise.
-  // Step 8: If dedicated is false and serverCertificateHashes is non-null,
-  // then throw a TypeError.
+  // Step 7: Let serverCertificateHashes be options's serverCertificateHashes.
+  // Step 8: If newConnection is "no" and serverCertificateHashes is not empty,
+  // then throw a NotSupportedError exception.
   nsTArray<mozilla::ipc::WebTransportHash> aServerCertHashes;
   if (aOptions.mServerCertificateHashes.WasPassed()) {
-    if (!dedicated) {
+    if (!dedicated && !aOptions.mServerCertificateHashes.Value().IsEmpty()) {
       aError.ThrowNotSupportedError(
           "serverCertificateHashes not supported for non-dedicated "
           "connections");
@@ -259,8 +270,10 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
       WebTransportCongestionControl::Default;  // aOptions.mCongestionControl;
   // Set this to 'default' until we add congestion control setting
 
-  // Step 11.5: Let protocols be options's protocols if it exists, and null
-  // otherwise.
+  // Step 12: Let protocols be options's protocols.
+  // Step 13: If any of the values in protocols occur more than once, fail to
+  // match the requirements for the negotiated application protocol, or have an
+  // isomorphic encoded length of 0 or exceeding 512, throw a SyntaxError.
   nsTArray<nsString> protocols;
   if (aOptions.mProtocols.Length() != 0) {
     const auto& protocolSeq = aOptions.mProtocols;
@@ -303,14 +316,67 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
     }
   }
 
-  // Setup up WebTransportDatagramDuplexStream
-  // Step 12: Let incomingDatagrams be a new ReadableStream.
-  // Step 13: Let outgoingDatagrams be a new WritableStream.
-  // Step 14: Let datagrams be the result of creating a
-  // WebTransportDatagramDuplexStream, its readable set to
-  // incomingDatagrams and its writable set to outgoingDatagrams.
+  // Step 30: Let headers be a new Headers object filled with
+  // options["headers"].
+  //
+  // Step 31: Let requestHeaders be a new Headers object whose header list is
+  // request's header list and guard is "request".
+  //
+  // Step 32: For each header of headers's header list:
+  //   1. If ascii lowercase header's name is "wt-available-protocols", then
+  //      throw a TypeError.
+  //   2. append header to requestHeaders.
+  // NOTE: Headers are subject to Fetch's forbidden request-header
+  // restrictions.
+  // NOTE: This runs right after the protocols checks (Step 13) rather than at
+  // Step 30, so the throws happen before any IPC state is set up.  See
+  // https://github.com/w3c/webtransport/issues/805
+  nsTArray<mozilla::ipc::WebTransportHeader> requestHeaderList;
+  if (aOptions.mHeaders.WasPassed()) {
+    const auto& init = aOptions.mHeaders.Value();
+    RefPtr<InternalHeaders> headers = new InternalHeaders();
+    if (init.IsByteStringSequenceSequence()) {
+      headers->Fill(init.GetAsByteStringSequenceSequence(), aError);
+    } else if (init.IsByteStringByteStringRecord()) {
+      headers->Fill(init.GetAsByteStringByteStringRecord(), aError);
+    }
+    if (aError.Failed()) {
+      return;
+    }
+    nsTArray<InternalHeaders::Entry> entries;
+    headers->GetEntries(entries);
+    RefPtr<InternalHeaders> requestHeaders =
+        new InternalHeaders(HeadersGuardEnum::Request);
+    for (const auto& entry : entries) {
+      if (entry.mName.LowerCaseEqualsLiteral("wt-available-protocols")) {
+        aError.ThrowTypeError(
+            "wt-available-protocols is not allowed in headers");
+        return;
+      }
+      requestHeaders->Append(entry.mName, entry.mValue, aError);
+      if (aError.Failed()) {
+        return;
+      }
+    }
+    nsTArray<InternalHeaders::Entry> requestEntries;
+    requestHeaders->GetEntries(requestEntries);
+    for (const auto& entry : requestEntries) {
+      requestHeaderList.AppendElement(
+          mozilla::ipc::WebTransportHeader(entry.mName, entry.mValue));
+    }
+  }
+
+  // Step 17: Let incomingDatagrams be a new ReadableStream.
+  // Steps 18-19: Let transport be a newly constructed WebTransport object and
+  // set transport.[[Datagrams]] to the result of creating a
+  // WebTransportDatagramDuplexStream with transport and incomingDatagrams.
+  // datagramsReadableType has no default, so a default (non-byte) readable
+  // stream is used unless the app opted into byte-stream semantics.
+  bool useByteStream =
+      aOptions.mDatagramsReadableType.WasPassed() &&
+      aOptions.mDatagramsReadableType.Value() == ReadableStreamType::Bytes;
   mDatagrams = new WebTransportDatagramDuplexStream(mGlobal, this);
-  mDatagrams->Init(aError);
+  mDatagrams->Init(useByteStream, aError);
   if (aError.Failed()) {
     return;
   }
@@ -321,16 +387,13 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                                workerPrivate->IsServiceWorker())
                  ? nullptr
                  : net::WebTransportEventService::GetOrCreate();
-  // Step 15 Let transport be a newly constructed WebTransport object, with:
-  // SendStreams: empty ordered set
-  // ReceiveStreams: empty ordered set
-  // Ready: new promise
+  // Step 18 (continued): [[Ready]]: new promise
   mReady = Promise::CreateInfallible(mGlobal);
 
-  // Draining: new promise
+  // Step 18 (continued): [[Draining]]: new promise
   mDraining = Promise::CreateInfallible(mGlobal);
 
-  // Closed: new promise
+  // Step 18 (continued): [[Closed]]: new promise
   mClosed = Promise::CreateInfallible(mGlobal);
 
   PBackgroundChild* backgroundChild =
@@ -373,20 +436,16 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
 
   JSContext* cx = aGlobal.Context();
   // Set up Datagram streams
-  // Step 16: Let pullDatagramsAlgorithm be an action that runs pullDatagrams
+  // Step 20: Let pullDatagramsAlgorithm be an action that runs pullDatagrams
   // with transport.
-  // Step 17: Let writeDatagramsAlgorithm be an action that runs writeDatagrams
-  // with transport.
-  // Step 18: Set up incomingDatagrams with pullAlgorithm set to
+  // Step 21: Set up incomingDatagrams with pullAlgorithm set to
   // pullDatagramsAlgorithm, and highWaterMark set to 0.
-  // Step 19: Set up outgoingDatagrams with writeAlgorithm set to
-  // writeDatagramsAlgorithm.
 
   // XXX TODO
 
-  // Step 20: Let pullBidirectionalStreamAlgorithm be an action that runs
+  // Step 22: Let pullBidirectionalStreamAlgorithm be an action that runs
   // pullBidirectionalStream with transport.
-  // Step 21: Set up transport.[[IncomingBidirectionalStreams]] with
+  // Step 23: Set up transport.[[IncomingBidirectionalStreams]] with
   // pullAlgorithm set to pullBidirectionalStreamAlgorithm, and highWaterMark
   // set to 0.
   Optional<JS::Handle<JSObject*>> underlying;
@@ -405,9 +464,9 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   if (aError.Failed()) {
     return;
   }
-  // Step 22: Let pullUnidirectionalStreamAlgorithm be an action that runs
+  // Step 24: Let pullUnidirectionalStreamAlgorithm be an action that runs
   // pullUnidirectionalStream with transport.
-  // Step 23: Set up transport.[[IncomingUnidirectionalStreams]] with
+  // Step 25: Set up transport.[[IncomingUnidirectionalStreams]] with
   // pullAlgorithm set to pullUnidirectionalStreamAlgorithm, and highWaterMark
   // set to 0.
 
@@ -421,23 +480,31 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
     return;
   }
 
-  // Step 24: Initialize WebTransport over HTTP with transport, parsedURL,
-  // dedicated, requireUnreliable, and congestionControl.
+  // Steps 26-34: Construct the HTTP CONNECT request with url,
+  // serverCertificateHashes, protocols, and headers, then fetch it with
+  // processResponse set to process a WebTransport fetch response.
   LOG(("Connecting WebTransport to parent for %s",
        NS_ConvertUTF16toUTF8(aURL).get()));
 
   // https://w3c.github.io/webtransport/#webtransport-constructor Spec 5.2
   mChild = child;
+
+  // Step 14: Let anticipatedConcurrentIncomingUnidirectionalStreams be
+  // options's anticipatedConcurrentIncomingUnidirectionalStreams.
+  // Step 15: Let anticipatedConcurrentIncomingBidirectionalStreams be
+  // options's anticipatedConcurrentIncomingBidirectionalStreams.
+
   backgroundChild
       ->SendCreateWebTransportParent(
           aURL, principal, mBrowsingContextID, ipcClientInfo, dedicated,
           requireUnreliable, (uint32_t)congestionControl, protocols,
-          std::move(aServerCertHashes), std::move(parentEndpoint))
+          requestHeaderList, std::move(aServerCertHashes),
+          std::move(parentEndpoint))
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [self = RefPtr{this}](
                  PBackgroundChild::CreateWebTransportParentPromise::
                      ResolveOrRejectValue&& aResult) {
-               // aResult is a std::tuple<nsresult, uint8_t>
+               // aResult is a std::tuple<nsresult, uint8_t, uint64_t>
                // TODO: is there a better/more-spec-compliant error in the
                // reject case? Which begs the question, why would we get a
                // reject?
@@ -449,9 +516,16 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                if (NS_FAILED(rv)) {
                  self->RejectWaitingConnection(rv);
                } else {
-                 // This will process anything waiting for the connection to
-                 // complete;
+                 // Set max datagram size from the CreateWebTransportParent
+                 // response
+                 uint64_t maxDatagramSize = std::get<2>(aResult.ResolveValue());
+                 MOZ_ASSERT(self->mDatagrams);
+                 self->mDatagrams->SetMaxDatagramSize(maxDatagramSize);
+                 LOG(("max datagram size for the session is %" PRIu64,
+                      maxDatagramSize));
 
+                 // This will process anything waiting for the connection to
+                 // complete
                  self->ResolveWaitingConnection(
                      static_cast<WebTransportReliabilityMode>(
                          std::get<1>(aResult.ResolveValue())));
@@ -490,22 +564,13 @@ void WebTransport::ResolveWaitingConnection(
     }
   }
 
-  mChild->SendGetMaxDatagramSize()->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [self = RefPtr{this}](uint64_t&& aMaxDatagramSize) {
-        MOZ_ASSERT(self->mDatagrams);
-        self->mDatagrams->SetMaxDatagramSize(aMaxDatagramSize);
-        LOG(("max datagram size for the session is %" PRIu64,
-             aMaxDatagramSize));
-      },
-      [](const mozilla::ipc::ResponseRejectReason& aReason) {
-        LOG(("WebTransport fetching maxDatagramSize failed"));
-      });
-
   // Step 17.5: Resolve transport.[[Ready]] with undefined.
+  // The max datagram size has already been set from the
+  // CreateWebTransportParent response, so datagrams are ready to be sent with
+  // the correct size limit.
   mReady->MaybeResolveWithUndefined();
 
-  // We can now release any queued datagrams
+  // Release queued datagrams with the correct max datagram size.
   mDatagrams->SetChild(mChild);
 
   if (mInnerWindowID != 0) {
@@ -757,8 +822,9 @@ void WebTransport::SendGetStatsRequest(Promise* aPromise) {
         // (datagrams queue drops/expiry) rather than at the transport layer,
         // so snapshot them here.
         self->mCachedStats = Some(*aStats);
-        // The datagram queue doesn't count drops/expiry yet; see bug 2007757.
-        self->mCachedDroppedIncoming = 0;
+        self->mCachedDroppedIncoming =
+            self->mDatagrams ? self->mDatagrams->GetDroppedIncoming() : 0;
+        // The queue doesn't count expiry until bug 2023587 adds it.
         self->mCachedExpiredIncoming = 0;
 
         WebTransportConnectionStats stats;
@@ -775,49 +841,52 @@ void WebTransport::SendGetStatsRequest(Promise* aPromise) {
 }
 
 already_AddRefed<Promise> WebTransport::ExportKeyingMaterial(
-    const BufferSource& aLabel, const Optional<BufferSource>& aContext,
-    ErrorResult& aError) {
+    const BufferSource& aLabel, const BufferSource& aContext,
+    uint32_t aOutputLength, ErrorResult& aError) {
   LOG(("ExportKeyingMaterial() called"));
 
   // https://w3c.github.io/webtransport/#dom-webtransport-exportkeyingmaterial
-  // Step 1-2: Extract label data
+  // Step 1: Let labelLength be label's byte length.
   nsTArray<uint8_t> labelData;
   ProcessTypedArraysFixed(aLabel, [&](const Span<const uint8_t>& aData) {
     labelData.AppendElements(aData.Elements(), aData.Length());
   });
 
-  // Step 3: If labelLength is more than 255, return a promise rejected with a
-  // RangeError
+  // Step 2: If labelLength is more than 255, return a promise rejected with a
+  // RangeError.
   if (labelData.Length() > 255) {
     aError.ThrowRangeError("label must not exceed 255 bytes");
     return nullptr;
   }
 
-  // Step 4: Let contextLength be 0.
-  // Step 5: If context is given, set contextLength to context.byte length.
-  Maybe<nsTArray<uint8_t>> contextData;
-  if (aContext.WasPassed()) {
-    nsTArray<uint8_t> context;
-    ProcessTypedArraysFixed(
-        aContext.Value(), [&](const Span<const uint8_t>& aData) {
-          context.AppendElements(aData.Elements(), aData.Length());
-        });
+  // Step 3-4: Let contextLength be context's byte length (context is a
+  // required argument).
+  nsTArray<uint8_t> contextData;
+  ProcessTypedArraysFixed(aContext, [&](const Span<const uint8_t>& aData) {
+    contextData.AppendElements(aData.Elements(), aData.Length());
+  });
 
-    // Step 6: If contextLength is more than 255, return a promise rejected with
-    // a RangeError
-    if (context.Length() > 255) {
-      aError.ThrowRangeError("context must not exceed 255 bytes");
-      return nullptr;
-    }
+  // Step 5: If contextLength is more than 255, return a promise rejected with a
+  // RangeError.
+  if (contextData.Length() > 255) {
+    aError.ThrowRangeError("context must not exceed 255 bytes");
+    return nullptr;
+  }
 
-    contextData = Some(std::move(context));
+  // Step 6: If outputLength is 0 or more than the implementation-defined
+  // maximum (which the spec requires to be at least 4096), return a promise
+  // rejected with a RangeError.
+  if (aOutputLength == 0 ||
+      aOutputLength > nsIWebTransport::MAX_KEYING_MATERIAL_LENGTH) {
+    aError.ThrowRangeError("outputLength must be between 1 and 4096 bytes");
+    return nullptr;
   }
 
   // Step 7: Let p be a new promise.
   RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
 
-  // Step 8: If transport.[[State]] is "closed" or "failed", return a new
-  // rejected promise with an InvalidStateError.
+  // The parallel steps abort with an InvalidStateError if the transport becomes
+  // "closed" or "failed"; reject synchronously here as well.
   if (mState == WebTransportState::CLOSED ||
       mState == WebTransportState::FAILED || !mChild) {
     promise->MaybeRejectWithInvalidStateError("Transport closed or failed");
@@ -825,57 +894,70 @@ already_AddRefed<Promise> WebTransport::ExportKeyingMaterial(
   }
 
   mChild->SendExportKeyingMaterial(
-      labelData, contextData,
-      [self = RefPtr{this}, promise](
-          nsTArray<uint8_t>&& aKeyingMaterial) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-        // Step 8: If transport.[[State]] became "closed" or "failed", reject
-        // with InvalidStateError
-        if (self->mState == WebTransportState::CLOSED ||
-            self->mState == WebTransportState::FAILED) {
-          promise->MaybeRejectWithInvalidStateError(
-              "Transport closed or failed during export");
-          return;
-        }
+      labelData, contextData, aOutputLength,
+      [self = RefPtr{this}, promise](Maybe<nsTArray<uint8_t>>&& aKeyingMaterial)
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+            // Step 8: If transport.[[State]] became "closed" or "failed",
+            // reject with InvalidStateError
+            if (self->mState == WebTransportState::CLOSED ||
+                self->mState == WebTransportState::FAILED) {
+              promise->MaybeRejectWithInvalidStateError(
+                  "Transport closed or failed during export");
+              return;
+            }
 
-        // Convert the byte array to ArrayBuffer
-        AutoJSAPI jsapi;
-        if (!jsapi.Init(promise->GetGlobalObject())) {
-          promise->MaybeRejectWithTypeError("Failed to initialize JS API");
-          return;
-        }
-        JSContext* cx = jsapi.cx();
+            // The parent rejects with Nothing() on any internal export failure
+            // (e.g. the TLS keying material exporter itself failed); there's no
+            // spec-defined error for this case, so use InvalidStateError to
+            // match the state-based rejection above.
+            if (!aKeyingMaterial) {
+              promise->MaybeRejectWithInvalidStateError(
+                  "Failed to export keying material");
+              return;
+            }
+            const nsTArray<uint8_t>& keyingMaterial = *aKeyingMaterial;
 
-        UniquePtr<uint8_t[], JS::FreePolicy> data(
-            static_cast<uint8_t*>(JS_malloc(cx, aKeyingMaterial.Length())));
-        if (!data) {
-          promise->MaybeRejectWithTypeError("Out of memory");
-          return;
-        }
-        memcpy(data.get(), aKeyingMaterial.Elements(),
-               aKeyingMaterial.Length());
+            // Convert the byte array to ArrayBuffer
+            AutoJSAPI jsapi;
+            if (!jsapi.Init(promise->GetGlobalObject())) {
+              promise->MaybeRejectWithTypeError("Failed to initialize JS API");
+              return;
+            }
+            JSContext* cx = jsapi.cx();
 
-        JS::Rooted<JSObject*> arrayBuffer(
-            cx, JS::NewArrayBufferWithContents(cx, aKeyingMaterial.Length(),
-                                               std::move(data)));
-        if (!arrayBuffer) {
-          promise->MaybeRejectWithTypeError("Failed to create ArrayBuffer");
-          return;
-        }
+            UniquePtr<uint8_t[], JS::FreePolicy> data(
+                static_cast<uint8_t*>(JS_malloc(cx, keyingMaterial.Length())));
+            if (!data) {
+              promise->MaybeRejectWithTypeError("Out of memory");
+              return;
+            }
+            memcpy(data.get(), keyingMaterial.Elements(),
+                   keyingMaterial.Length());
 
-        JSObject* uint8Array = JS_NewUint8ArrayWithBuffer(
-            cx, arrayBuffer, 0, static_cast<int64_t>(aKeyingMaterial.Length()));
-        if (!uint8Array) {
-          promise->MaybeRejectWithTypeError("Failed to create Uint8Array");
-          return;
-        }
+            JS::Rooted<JSObject*> arrayBuffer(
+                cx, JS::NewArrayBufferWithContents(cx, keyingMaterial.Length(),
+                                                   std::move(data)));
+            if (!arrayBuffer) {
+              promise->MaybeRejectWithTypeError("Failed to create ArrayBuffer");
+              return;
+            }
 
-        // Step 8.1/8.2: Let keyingMaterial be the result of exporting TLS
-        // keying material, as defined in [WEB-TRANSPORT-OVERVIEW] Section 4.1,
-        // with labelLength, label, contextLength, and if present, context.
-        // Queue a network task with transport to resolve p with keyingMaterial.
-        JS::Rooted<JS::Value> value(cx, JS::ObjectValue(*uint8Array));
-        promise->MaybeResolve(value);
-      },
+            JSObject* uint8Array = JS_NewUint8ArrayWithBuffer(
+                cx, arrayBuffer, 0,
+                static_cast<int64_t>(keyingMaterial.Length()));
+            if (!uint8Array) {
+              promise->MaybeRejectWithTypeError("Failed to create Uint8Array");
+              return;
+            }
+
+            // Step 8.1/8.2: Let keyingMaterial be the result of exporting TLS
+            // keying material, as defined in [WEB-TRANSPORT-OVERVIEW]
+            // Section 4.1, with labelLength, label, contextLength, and if
+            // present, context. Queue a network task with transport to resolve
+            // p with keyingMaterial.
+            JS::Rooted<JS::Value> value(cx, JS::ObjectValue(*uint8Array));
+            promise->MaybeResolve(value);
+          },
       [promise](mozilla::ipc::ResponseRejectReason) {
         promise->MaybeRejectWithInvalidStateError(
             "Failed to export keying material");
@@ -908,6 +990,20 @@ void WebTransport::SetNegotiatedProtocol(const nsACString& aProtocol) {
   CopyUTF8toUTF16(aProtocol, mProtocol);
 }
 
+void WebTransport::SetResponseHeaders(nsTArray<WebTransportHeader>&& aHeaders) {
+  auto internalHeaders =
+      MakeRefPtr<InternalHeaders>(HeadersGuardEnum::Response);
+  for (const auto& header : aHeaders) {
+    internalHeaders->Append(header.name(), header.value(), IgnoreErrors());
+  }
+  // https://w3c.github.io/webtransport/#process-a-webtransport-fetch-response
+  // Step 7: transport.[[ResponseHeaders]] must be an immutable Headers
+  // object; without this, content script could mutate what is supposed to
+  // be a read-only snapshot of the server's response headers.
+  internalHeaders->SetGuard(HeadersGuardEnum::Immutable, IgnoreErrors());
+  mResponseHeaders = new Headers(mGlobal, internalHeaders);
+}
+
 void WebTransport::RemoteClosed(bool aCleanly, const uint32_t& aCode,
                                 const nsACString& aReason,
                                 const Maybe<WebTransportStatsData>& aStats) {
@@ -921,7 +1017,7 @@ void WebTransport::RemoteClosed(bool aCleanly, const uint32_t& aCode,
   if (!mCachedStats && aStats) {
     LOG(("Caching stats from RemoteClosed"));
     mCachedStats = Some(*aStats);
-    mCachedDroppedIncoming = 0;
+    mCachedDroppedIncoming = mDatagrams ? mDatagrams->GetDroppedIncoming() : 0;
   }
 
   // Step 2 of https://w3c.github.io/webtransport/#web-transport-termination
@@ -974,6 +1070,14 @@ void WebTransport::PropagateError(Stream* aStream, WebTransportError* aError) {
   aStream->ErrorNative(cx, errorValue, IgnoreErrors());
 }
 
+static Nullable<uint32_t> ToNullableErrorCode(const Maybe<uint32_t>& aCode) {
+  Nullable<uint32_t> code;
+  if (aCode) {
+    code.SetValue(*aCode);
+  }
+  return code;
+}
+
 void WebTransport::OnStreamResetOrStopSending(
     uint64_t aStreamId, const StreamResetOrStopSendingError& aError) {
   LOG(("WebTransport::OnStreamResetOrStopSending %p id=%" PRIx64, this,
@@ -983,11 +1087,9 @@ void WebTransport::OnStreamResetOrStopSending(
     if (!stream) {
       return;
     }
-    uint8_t errorCode = net::GetWebTransportErrorFromNSResult(
-        aError.get_StopSendingError().error());
     RefPtr<WebTransportError> error = new WebTransportError(
         "WebTransportStream StopSending"_ns, WebTransportErrorSource::Stream,
-        Nullable<uint8_t>(errorCode));
+        ToNullableErrorCode(aError.get_StopSendingError().errorCode()));
     PropagateError(stream.get(), error);
   } else if (aError.type() == StreamResetOrStopSendingError::TResetError) {
     RefPtr<WebTransportReceiveStream> stream = mReceiveStreams.Get(aStreamId);
@@ -996,11 +1098,9 @@ void WebTransport::OnStreamResetOrStopSending(
     if (!stream) {
       return;
     }
-    uint8_t errorCode =
-        net::GetWebTransportErrorFromNSResult(aError.get_ResetError().error());
     RefPtr<WebTransportError> error = new WebTransportError(
         "WebTransportStream Reset"_ns, WebTransportErrorSource::Stream,
-        Nullable<uint8_t>(errorCode));
+        ToNullableErrorCode(aError.get_ResetError().errorCode()));
     PropagateError(stream.get(), error);
   }
 }
@@ -1066,8 +1166,7 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
   // will go away in any case, so IPC to the  parent wouldn't help us).
   RefPtr<WebTransport> self = this;
   RefPtr<WebTransportError> error =
-      new WebTransportError("close()"_ns, WebTransportErrorSource::Session,
-                            DOMException_Binding::ABORT_ERR);
+      new WebTransportError("close()"_ns, WebTransportErrorSource::Session);
   WebTransportCloseInfo closeInfo;
   closeInfo.mCloseCode = aOptions.mCloseCode;
   closeInfo.mReason = aOptions.mReason;
@@ -1080,7 +1179,10 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
           LOG(("Caching stats from close: bytesSent=%llu",
                (unsigned long long)aStats->bytesSent()));
           self->mCachedStats = Some(*aStats);
-          self->mCachedDroppedIncoming = 0;
+          self->mCachedDroppedIncoming =
+              self->mDatagrams ? self->mDatagrams->GetDroppedIncoming() : 0;
+          // The queue doesn't count expiry until bug 2023587 adds it.
+          self->mCachedExpiredIncoming = 0;
         } else {
           LOG(("No stats returned from close"));
           self->mCachedStats = Nothing();
@@ -1150,7 +1252,7 @@ already_AddRefed<Promise> WebTransport::CreateBidirectionalStreamInternal(
   // https://w3c.github.io/webtransport/#dom-webtransport-createbidirectionalstream
   RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
 
-  // Step 2: If transport.[[State]] is "closed" or "failed", return a new
+  // Step 3: If transport.[[State]] is "closed" or "failed", return a new
   // rejected promise with an InvalidStateError.
   if (mState == WebTransportState::CLOSED ||
       mState == WebTransportState::FAILED || !mChild) {
@@ -1415,7 +1517,11 @@ void WebTransport::Cleanup(WebTransportError* aError,
     LOG(("Resolving mClosed with closeinfo"));
     mClosed->MaybeResolve(*aCloseInfo);
     // 12.2: Assert: ready is settled.
-    MOZ_ASSERT(mReady->State() != Promise::PromiseState::Pending);
+    // However, if the connection closes before maxDatagramSize is received,
+    // ready may still be pending. Resolve it in that case.
+    if (mReady->State() == Promise::PromiseState::Pending) {
+      mReady->MaybeResolveWithUndefined();
+    }
     // 12.3: Close incomingBidirectionalStreams
     // This keeps the clang-plugin happy
     RefPtr<ReadableStream> stream = mIncomingBidirectionalStreams;
@@ -1438,6 +1544,17 @@ void WebTransport::Cleanup(WebTransportError* aError,
   // Let go of the algorithms
   mIncomingBidirectionalAlgorithm = nullptr;
   mIncomingUnidirectionalAlgorithm = nullptr;
+
+  // Empty each outgoing datagram writable's [[OutgoingDatagramsQueue]], then
+  // close (clean close) or error (failure) each writable itself, like the
+  // send/receive streams above.
+  // TODO: Cleanup() also resolves each writable's withheld write promise,
+  // which the current spec doesn't do; see
+  // https://github.com/w3c/webtransport/pull/790.
+  if (RefPtr<WebTransportDatagramDuplexStream> datagrams = mDatagrams) {
+    datagrams->Cleanup();
+    datagrams->CloseOrErrorWritables(cx, !!aCloseInfo, errorValue);
+  }
 
   // We no longer block BFCache
   NotifyToWindow(false);

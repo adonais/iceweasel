@@ -95,8 +95,7 @@ static bool CheckForIOIncomplete(bool success) {
 #endif
 
 CrashGenerationServer::CrashGenerationServer(
-    const std::wstring& pipe_name,
-    SECURITY_ATTRIBUTES* pipe_sec_attrs,
+    HANDLE pipe,
     OnClientConnectedCallback connect_callback,
     void* connect_context,
     OnClientDumpRequestCallback dump_callback,
@@ -108,9 +107,7 @@ CrashGenerationServer::CrashGenerationServer(
     void* upload_context,
     bool generate_dumps,
     const std::wstring* dump_path)
-    : pipe_name_(pipe_name),
-      pipe_sec_attrs_(pipe_sec_attrs),
-      pipe_(NULL),
+    : pipe_(pipe),
       pipe_wait_handle_(NULL),
       server_alive_handle_(NULL),
       connect_callback_(connect_callback),
@@ -242,14 +239,6 @@ bool CrashGenerationServer::Start() {
     return false;
   }
 
-  pipe_ = CreateNamedPipe(pipe_name_.c_str(),
-                          kPipeAttr,
-                          kPipeMode,
-                          1,
-                          kOutBufferSize,
-                          kInBufferSize,
-                          0,
-                          pipe_sec_attrs_);
   if (pipe_ == INVALID_HANDLE_VALUE) {
     return false;
   }
@@ -274,6 +263,24 @@ void CrashGenerationServer::SetPath(const wchar_t* dump_path) {
 std::wstring CrashGenerationServer::GetPath() {
   AutoCriticalSection lock(&sync_);
   return dump_path_;
+}
+
+/* static */
+HANDLE CrashGenerationServer::CreateReportPipe(const wchar_t *pipe_name) {
+  SECURITY_ATTRIBUTES security_attributes = {
+    .nLength = (DWORD)sizeof(SECURITY_ATTRIBUTES),
+    .lpSecurityDescriptor = nullptr,
+    .bInheritHandle = TRUE,
+  };
+
+  return CreateNamedPipe(pipe_name,
+                         kPipeAttr,
+                         kPipeMode,
+                         /* nMaxInstances */ 1,
+                         kOutBufferSize,
+                         kInBufferSize,
+                         /* nDefaultTimeOut */ 0,
+                         &security_attributes);
 }
 
 // If the server thread serving clients ever gets into the

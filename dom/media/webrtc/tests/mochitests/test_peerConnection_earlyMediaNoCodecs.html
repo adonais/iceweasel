@@ -1,0 +1,60 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script type="application/javascript" src="pc.js"></script>
+</head>
+<body>
+<pre id="test">
+<script type="application/javascript">
+  createHTML({
+    bug: "2072722",
+    title: "Adding a transceiver to a connected datachannel-only bundle must not start an audio receive stream without codecs"
+  });
+
+  runNetworkTest(async () => {
+    const pc1 = new RTCPeerConnection();
+    const pc2 = new RTCPeerConnection();
+    pc1.onicecandidate = e => e.candidate && pc2.addIceCandidate(e.candidate);
+    pc2.onicecandidate = e => e.candidate && pc1.addIceCandidate(e.candidate);
+
+    const ctx = new AudioContext();
+    const track = ctx.createMediaStreamDestination().stream.getAudioTracks()[0];
+
+    pc1.createDataChannel("channel");
+    await pc1.setLocalDescription(await pc1.createOffer());
+    await pc2.setRemoteDescription(pc1.localDescription);
+    await pc2.setLocalDescription(await pc2.createAnswer());
+    await pc1.setRemoteDescription(pc2.localDescription);
+    await new Promise(resolve => {
+      pc1.onconnectionstatechange = () => {
+        if (pc1.connectionState == "connected") {
+          resolve();
+        }
+      };
+      if (pc1.connectionState == "connected") {
+        resolve();
+      }
+    });
+
+    await pc1.setLocalDescription({});
+    let answer;
+    try {
+      answer = await pc2.createAnswer();
+    } catch (e) {}
+    const legacy = new Promise(resolve =>
+      pc1.setLocalDescription(answer, resolve, resolve)
+    );
+    pc1.addTransceiver(track);
+    await legacy;
+    await pc1.setLocalDescription();
+    await wait(1000);
+
+    ok(true, "did not crash");
+    pc1.close();
+    pc2.close();
+    ctx.close();
+  });
+</script>
+</pre>
+</body>
+</html>

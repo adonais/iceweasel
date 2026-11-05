@@ -129,6 +129,38 @@ formautofill.creditcards:
           nearly always share a cause. Absent when the counts say it all.
         type: string
 
+  migrate_to_rust_blocked:
+    type: event
+    description: >
+      Recorded each time a profile with credit cards owes a copy of them into
+      the Rust store -- the migration or its dry run -- and a check holds it
+      back rather than risk asking the user anything. Tracks how many profiles
+      each check keeps from migrating, and so how many the move to the Rust
+      store would leave behind.
+    data_sensitivity:
+      - technical
+    bugs:
+      - https://bugzil.la/2081661
+    data_reviews:
+      - https://bugzil.la/2081661
+    notification_emails:
+      - autofill@lists.mozilla.org
+    expires: never
+    extra_keys:
+      reason:
+        description: >
+          Which check held the copy back. "primary_password": a primary password
+          is set, so nothing is copied into Rust, whose key it guards.
+          "keystore_locked": the copy waits until something else unlocks the OS
+          key store. "keystore_busy": the copy waits behind another OS key store
+          operation.
+        type: string
+      dry_run:
+        description: >
+          Whether the copy owed is the dry run, which measures the migration
+          and then undoes it.
+        type: boolean
+
   migrate_record_divergence:
     type: event
     description: >
@@ -1520,6 +1552,9 @@ creditcard:
           What triggered the OS Keystore Popup.
           "edit" - when editing credit cards
           "autofill" - when autofilling credit cards
+          "formautofill_migration" - when copying credit cards from the JSON
+          store into the Rust store, which does not ask for
+          re-authentication
         type: string
 
 passport:

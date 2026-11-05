@@ -21,7 +21,7 @@ use crate::transform::GpuTransformId;
 use crate::resource_cache::ImageRequest;
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilder, GpuBufferBuilderF};
 use crate::render_backend::DataStores;
-use crate::render_target::{ResolveOp, RenderTargetKind};
+use crate::render_target::RenderTargetKind;
 use crate::render_task_graph::{PassId, RenderTaskId, RenderTaskGraphBuilder};
 use crate::render_task_cache::RenderTaskCacheEntryHandle;
 use crate::segment::EdgeMask;
@@ -101,12 +101,6 @@ pub enum RenderTaskLocation {
     CacheRequest {
         size: DeviceIntSize,
     },
-    /// Same allocation as an existing task deeper in the dependency graph
-    Existing {
-        parent_task_id: RenderTaskId,
-        /// Requested size of this render task
-        size: DeviceIntSize,
-    },
 
     // Before batching begins, we expect that locations have been resolved to
     // one of the following variants:
@@ -143,7 +137,6 @@ impl RenderTaskLocation {
             RenderTaskLocation::Dynamic { rect, .. } => rect.size(),
             RenderTaskLocation::Static { rect, .. } => rect.size(),
             RenderTaskLocation::CacheRequest { size } => *size,
-            RenderTaskLocation::Existing { size, .. } => *size,
         }
     }
 }
@@ -198,16 +191,6 @@ pub struct PrimTask {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct TileCompositeTask {
-    pub clear_color: ColorF,
-    pub scissor_rect: DeviceIntRect,
-    pub valid_rect: DeviceIntRect,
-    pub task_id: Option<RenderTaskId>,
-    pub sub_rect_offset: DeviceIntVector2D,
-}
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PictureTask {
     pub can_merge: bool,
     pub content_origin: DevicePoint,
@@ -218,30 +201,12 @@ pub struct PictureTask {
     pub scissor_rect: Option<DeviceIntRect>,
     pub valid_rect: Option<DeviceIntRect>,
     pub cmd_buffer_index: CommandBufferIndex,
-    pub resolve_op: Option<ResolveOp>,
     pub content_size: DeviceIntSize,
     pub can_use_shared_surface: bool,
-}
-
-impl PictureTask {
-    /// Copy an existing picture task, but set a new command buffer for it to build in to.
-    /// Used for pictures that are split between render tasks (e.g. pre/post a backdrop
-    /// filter). Subsequent picture tasks never have a clear color as they are by definition
-    /// going to write to an existing target
-    pub fn duplicate(
-        &self,
-        cmd_buffer_index: CommandBufferIndex,
-    ) -> Self {
-        assert_eq!(self.resolve_op, None);
-
-        PictureTask {
-            clear_color: None,
-            cmd_buffer_index,
-            resolve_op: None,
-            can_use_shared_surface: false,
-            ..*self
-        }
-    }
+    /// For the task a backdrop is captured into: the color to clear its content
+    /// area to. Drawing is scissored to the content area, and any padding added
+    /// for a filter is cleared to transparent.
+    pub capture_clear_color: Option<ColorF>,
 }
 
 #[derive(Debug)]
@@ -369,7 +334,6 @@ pub enum RenderTaskKind {
     Border(BorderTask),
     LineDecoration(LineDecorationTask),
     SVGFENode(SVGFEFilterTask),
-    TileComposite(TileCompositeTask),
     Prim(PrimTask),
     Empty(EmptyTask),
     #[cfg(test)]
@@ -415,7 +379,6 @@ impl RenderTaskKind {
             RenderTaskKind::Border(..) => "Border",
             RenderTaskKind::LineDecoration(..) => "LineDecoration",
             RenderTaskKind::SVGFENode(..) => "SVGFENode",
-            RenderTaskKind::TileComposite(..) => "TileComposite",
             RenderTaskKind::Prim(..) => "Prim",
             RenderTaskKind::Empty(..) => "Empty",
             #[cfg(test)]
@@ -431,7 +394,6 @@ impl RenderTaskKind {
             RenderTaskKind::Border(..) |
             RenderTaskKind::Picture(..) |
             RenderTaskKind::Blit(..) |
-            RenderTaskKind::TileComposite(..) |
             RenderTaskKind::Prim(..)  => {
                 RenderTargetKind::Color
             }
@@ -462,21 +424,6 @@ impl RenderTaskKind {
         }
     }
 
-    pub fn new_tile_composite(
-        sub_rect_offset: DeviceIntVector2D,
-        scissor_rect: DeviceIntRect,
-        valid_rect: DeviceIntRect,
-        clear_color: ColorF,
-    ) -> Self {
-        RenderTaskKind::TileComposite(TileCompositeTask {
-            task_id: None,
-            sub_rect_offset,
-            scissor_rect,
-            valid_rect,
-            clear_color,
-        })
-    }
-
     pub fn new_picture(
         size: DeviceIntSize,
         needs_scissor_rect: bool,
@@ -496,6 +443,7 @@ impl RenderTaskKind {
         RenderTaskKind::Picture(PictureTask {
             content_origin,
             can_merge: !needs_scissor_rect,
+            capture_clear_color: None,
             surface_spatial_node_index,
             raster_spatial_node_index,
             device_pixel_scale,
@@ -503,7 +451,6 @@ impl RenderTaskKind {
             valid_rect,
             clear_color,
             cmd_buffer_index,
-            resolve_op: None,
             can_use_shared_surface,
             content_size: content_size.unwrap_or(size),
         })
@@ -649,7 +596,6 @@ impl RenderTaskKind {
             RenderTaskKind::Scaling(..) |
             RenderTaskKind::Border(..) |
             RenderTaskKind::LineDecoration(..) |
-            RenderTaskKind::TileComposite(..) |
             RenderTaskKind::Blit(..) => {
                 [0.0; 4]
             }
@@ -741,9 +687,9 @@ impl RenderTaskKind {
                     FilterGraphOp::SVGFEDiffuseLightingDistant{..} => {}
                     FilterGraphOp::SVGFEDiffuseLightingPoint{..} => {}
                     FilterGraphOp::SVGFEDiffuseLightingSpot{..} => {}
-                    FilterGraphOp::SVGFEDisplacementMap{scale, x_channel_selector, y_channel_selector} => {
+                    FilterGraphOp::SVGFEDisplacementMap{scale_x, scale_y, x_channel_selector, y_channel_selector} => {
                         let mut writer = gpu_buffer.f32.write_blocks(1);
-                        writer.push_one([x_channel_selector as f32, y_channel_selector as f32, scale, 0.0]);
+                        writer.push_one([x_channel_selector as f32, y_channel_selector as f32, scale_x, scale_y]);
                         filter_task.extra_gpu_data = Some(writer.finish());
                     }
                     FilterGraphOp::SVGFEDropShadow { color, .. } |
@@ -1294,9 +1240,10 @@ impl RenderTask {
                 },
                 FilterGraphOp::SVGFEFlood{..} => op.clone(),
                 FilterGraphOp::SVGFEDisplacementMap{
-                    scale, x_channel_selector, y_channel_selector} => {
+                    scale_x, scale_y, x_channel_selector, y_channel_selector} => {
                     FilterGraphOp::SVGFEDisplacementMap{
-                        scale: scale * subregion_to_device_scale_x,
+                        scale_x: scale_x * subregion_to_device_scale_x,
+                        scale_y: scale_y * subregion_to_device_scale_y,
                         x_channel_selector: *x_channel_selector,
                         y_channel_selector: *y_channel_selector}
                 },
@@ -2164,7 +2111,6 @@ impl RenderTask {
             RenderTaskLocation::Static { surface: StaticRenderTaskSurface::TextureCache { texture, .. }, .. } => {
                 TextureSource::TextureCache(texture, Swizzle::default())
             }
-            RenderTaskLocation::Existing { .. } |
             RenderTaskLocation::Static { .. } |
             RenderTaskLocation::CacheRequest { .. } |
             RenderTaskLocation::Unallocated { .. } => {
@@ -2191,7 +2137,6 @@ impl RenderTask {
             //           would allow us to restore this debug check.
             RenderTaskLocation::Dynamic { rect, .. } => rect,
             RenderTaskLocation::Static { rect, .. } => rect,
-            RenderTaskLocation::Existing { .. } |
             RenderTaskLocation::CacheRequest { .. } |
             RenderTaskLocation::Unallocated { .. } => {
                 panic!("bug: get_target_rect called before allocating");
@@ -2203,7 +2148,6 @@ impl RenderTask {
         match self.location {
             RenderTaskLocation::Dynamic { rect, .. } => rect.size(),
             RenderTaskLocation::Static { rect, .. } => rect.size(),
-            RenderTaskLocation::Existing { size, .. } => size,
             RenderTaskLocation::CacheRequest { size } => size,
             RenderTaskLocation::Unallocated { size } => size,
         }

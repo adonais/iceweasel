@@ -6,3 +6,4 @@ run-if = [
 tags = "os_integration"
 
 ["test_gpuprocess.js"]
+prefs = ["layers.gpu-process.enabled=true"]

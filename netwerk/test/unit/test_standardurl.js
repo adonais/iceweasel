@@ -503,6 +503,80 @@ add_test(function test_hugeStringThrows() {
   run_next_test();
 });
 
+add_test(function test_encodedLengthThrows() {
+  const maxLen = 100;
+  Services.prefs.setIntPref("network.standard-url.max-length", maxLen);
+
+  // Each input fits the limit unencoded but exceeds it once escaped,
+  // normalized or delimited.
+  const str = "あ".repeat(28);
+  const host = Array(20).fill("aé").join(".");
+  const long = "http://h/" + "a".repeat(87);
+  const a = n => "a".repeat(n);
+  const cases = [
+    ["http://h/", m => m.setUsername(a(91))],
+    ["http://h/", m => m.setPassword(a(90))],
+    ["http://h/", m => m.setUserPass(a(91))],
+    ["http://h/", m => m.setQuery(a(91))],
+    ["http://h/", m => m.setRef(a(91))],
+    ["http://h/", m => m.setUserPass(str)],
+    ["http://h/", m => m.setUsername(str)],
+    ["http://h/", m => m.setPassword(str)],
+    ["http://u@h/", m => m.setPassword(str)],
+    ["http://u:p@h/", m => m.setPassword(str)],
+    [
+      "http://h/x.txt",
+      m => m.QueryInterface(Ci.nsIURLMutator).setFileName(str),
+    ],
+    [
+      "http://h/x.txt",
+      m => m.QueryInterface(Ci.nsIURLMutator).setFileBaseName(str),
+    ],
+    [
+      "http://h/x.txt",
+      m => m.QueryInterface(Ci.nsIURLMutator).setFileExtension(str),
+    ],
+    ["http://h/", m => m.setHost(host)],
+    [long, m => m.setHost("1")],
+    [long, m => m.setPort(65535)],
+  ];
+  for (let [spec, setter] of cases) {
+    let url = stringToURL(spec);
+    Assert.throws(
+      () => setter(url.mutate()).finalize(),
+      /NS_ERROR_MALFORMED_URI/,
+      `${setter} on ${spec} should throw`
+    );
+  }
+
+  // SetHostPort ignores SetPort failures.
+  let url = stringToURL(long).mutate().setHostPort("h:65535").finalize();
+  Assert.lessOrEqual(url.spec.length, maxLen);
+
+  // A failed setter leaves the spec unchanged.
+  for (let setter of [m => m.setQuery(str), m => m.setRef(str)]) {
+    let mutator = stringToURL("http://h/").mutate();
+    Assert.throws(() => setter(mutator), /NS_ERROR_MALFORMED_URI/);
+    Assert.equal(mutator.finalize().spec, "http://h/");
+  }
+
+  // Results of exactly the maximum length are allowed.
+  for (let setter of [
+    m => m.setUsername(a(90)),
+    m => m.setPassword(a(89)),
+    m => m.setUserPass(a(90)),
+    m => m.setQuery(a(90)),
+    m => m.setRef(a(90)),
+  ]) {
+    url = setter(stringToURL("http://h/").mutate()).finalize();
+    Assert.equal(url.spec.length, maxLen, `${setter}`);
+  }
+
+  // URLs created before the pref change may exceed maxLen and assert in GetSpec.
+  Services.prefs.clearUserPref("network.standard-url.max-length");
+  run_next_test();
+});
+
 add_test(function test_verticalBar() {
   var url = Services.io.newURI("file:///w|m");
   Assert.equal(url.spec, "file:///w|m");

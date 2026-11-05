@@ -63,7 +63,7 @@ support-files = [
   "test_context_url_injection_page.html"
 ]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan && nova", # Bug 2057552
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 2057552
 ]
 
 ["browser_actor_user_prompt.js"]
@@ -205,7 +205,7 @@ skip-if = [
 
 ["browser_aiwindow_smartbar_context_paste.js"]
 skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt && nova", # Bug 2057548
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt", # Bug 2057548
 ]
 
 ["browser_aiwindow_smartbar_focus.js"]
@@ -240,6 +240,7 @@ skip-if = [
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov",
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 2055099
 ]
 
 ["browser_aiwindow_smartwindow_promo.js"]

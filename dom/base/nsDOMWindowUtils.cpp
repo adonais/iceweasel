@@ -132,6 +132,7 @@
 #include "nsIBaseWindow.h"
 #include "nsIDocShellTreeOwner.h"
 #include "nsIInterfaceRequestorUtils.h"
+#include "nsIMutableArray.h"
 #include "nsNetUtil.h"
 #include "nsROCSSPrimitiveValue.h"
 

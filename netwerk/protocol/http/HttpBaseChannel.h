@@ -650,6 +650,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
   virtual void DoAsyncAbort(nsresult aStatus) = 0;
 
   void MaybeReportTimingData();
+  // Reports timing data for this channel if aNewChannel, the target of a
+  // redirect, will not report it itself (e.g. moz-extension: channels).
+  void MaybeReportTimingDataForRedirect(nsISupports* aNewChannel);
   nsIURI* GetReferringPage();
   nsPIDOMWindowInner* GetInnerDOMWindow();
 

@@ -8,9 +8,10 @@
 
 #include "libANGLE/Compiler.h"
 
+#include "common/SimpleMutex.h"
+#include "common/base/anglebase/no_destructor.h"
 #include "common/debug.h"
 #include "libANGLE/Context.h"
-#include "libANGLE/Display.h"
 #include "libANGLE/State.h"
 #include "libANGLE/renderer/CompilerImpl.h"
 #include "libANGLE/renderer/GLImplFactory.h"
@@ -22,36 +23,55 @@ namespace
 {
 
 // To know when to call sh::Initialize and sh::Finalize.
-size_t gActiveCompilers = 0;
-
-ShShaderOutput GetShaderOutputType(const State &state, const rx::CompilerImpl *impl)
+class ActiveCompilers final : angle::NonCopyable
 {
-    if (state.usesPassthroughShaders())
+  public:
+    ActiveCompilers()  = default;
+    ~ActiveCompilers() = default;
+
+    void increment()
     {
-        return SH_NULL_OUTPUT;
+        std::lock_guard<angle::SimpleMutex> lock(mMutex);
+        if (mCount == 0)
+        {
+            sh::Initialize();
+        }
+        ++mCount;
     }
 
-    return impl->getTranslatorOutputType();
+    void decrement()
+    {
+        std::lock_guard<angle::SimpleMutex> lock(mMutex);
+        ASSERT(mCount > 0);
+        --mCount;
+        if (mCount == 0)
+        {
+            sh::Finalize();
+        }
+    }
+
+  private:
+    angle::SimpleMutex mMutex;
+    size_t mCount = 0;
+};
+
+ActiveCompilers &GetActiveCompilers()
+{
+    static angle::base::NoDestructor<ActiveCompilers> activeCompilers;
+    return *activeCompilers;
 }
 
 }  // anonymous namespace
 
-Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state, egl::Display *display)
+Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state)
     : mImplementation(implFactory->createCompiler()),
       mSpec(SelectShaderSpec(state)),
-      mOutputType(GetShaderOutputType(state, mImplementation.get())),
+      mOutputType(mImplementation->getTranslatorOutputType()),
       mResources()
 {
     ASSERT(state.getClientVersion() >= ES_1_0 && state.getClientVersion() <= ES_3_2);
 
-    {
-        std::lock_guard<angle::SimpleMutex> lock(display->getDisplayGlobalMutex());
-        if (gActiveCompilers == 0)
-        {
-            sh::Initialize();
-        }
-        ++gActiveCompilers;
-    }
+    GetActiveCompilers().increment();
 
     const Caps &caps             = state.getCaps();
     const Extensions &extensions = state.getExtensions();
@@ -101,13 +121,6 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state, egl::Disp
 
     // Hashing and prefixing
     mResources.HashFunction = nullptr;
-    if (mOutputType == SH_NULL_OUTPUT)
-    {
-        // Disable user variable prefixing if using the null output type. The untranslated source
-        // shader is used so make sure the mapped names match the input names.
-        mResources.UserVariableNamePrefix = '\0';
-        mResources.UserBlockNamePrefix    = '\0';
-    }
 
     // EXT_multisampled_render_to_texture and EXT_multisampled_render_to_texture2
     mResources.EXT_multisampled_render_to_texture  = extensions.multisampledRenderToTextureEXT;
@@ -305,7 +318,6 @@ Compiler::~Compiler() = default;
 
 void Compiler::onDestroy(const Context *context)
 {
-    std::lock_guard<angle::SimpleMutex> lock(context->getDisplay()->getDisplayGlobalMutex());
     for (auto &pool : mPools)
     {
         for (ShCompilerInstance &instance : pool)
@@ -313,11 +325,7 @@ void Compiler::onDestroy(const Context *context)
             instance.destroy();
         }
     }
-    --gActiveCompilers;
-    if (gActiveCompilers == 0)
-    {
-        sh::Finalize();
-    }
+    GetActiveCompilers().decrement();
 }
 
 ShCompilerInstance Compiler::getInstance(ShaderType type)

@@ -58,3 +58,11 @@ if CONFIG["CC_TYPE"] == "clang-cl":
     CXXFLAGS += ["-Wno-extra-tokens"]
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "ia2AccessibleApplication.h",
+    "ia2AccessibleImage.h",
+    "ia2AccessibleRelation.h",
+    "ia2AccessibleTable.h",
+    "ia2AccessibleTableCell.h",
+]

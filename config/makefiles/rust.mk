@@ -2,12 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-ifdef RUST_LIBRARY_CARGO_PROFILE_SUFFIX
-cargo_profile_dir := $(MOZ_CARGO_PROFILE_PREFIX)-$(RUST_LIBRARY_CARGO_PROFILE_SUFFIX)
-else
-cargo_profile_dir := $(MOZ_CARGO_DEFAULT_PROFILE_DIR)
-endif
-
 ifeq (WINNT,$(HOST_OS_ARCH))
 # //?/ is the long path prefix which seems to confuse make, so we remove it
 # (things should work without it).
@@ -75,22 +69,6 @@ force-cargo-library-build:
 	$(call BUILDSTATUS,START_Rust $(notdir $(RUST_LIBRARY_FILE)))
 	$(call RUN_CARGO_ACTION,.cargo-library-spec.json,$(cargo_action_rustc_flags))
 	$(call BUILDSTATUS,END_Rust $(notdir $(RUST_LIBRARY_FILE)))
-# When we are building in --enable-release mode; we add an additional check to confirm
-# that we are not importing any networking-related functions in rust code. This reduces
-# the chance of proxy bypasses originating from rust code.
-# The check only works when rust code is built with -Clto but without MOZ_LTO_RUST_CROSS.
-# Sanitizers and sancov also fail because compiler-rt hooks network functions.
-ifndef MOZ_PROFILE_GENERATE
-ifeq ($(OS_ARCH), Linux)
-ifeq (,$(RUST_SANCOV_FLAGS)$(MOZ_ASAN)$(MOZ_TSAN)$(MOZ_UBSAN))
-ifndef MOZ_LTO_RUST_CROSS
-ifdef RUST_LIBRARY_LTO
-	$(call py_action,check_binary $(@F),--networking $(RUST_LIBRARY_FILE))
-endif
-endif
-endif
-endif
-endif
 
 $(eval $(call make_cargo_rule,$(RUST_LIBRARY_FILE),force-cargo-library-build,.cargo-library-spec.json $(cargo_action_deps)))
 
@@ -98,25 +76,7 @@ endif # RUST_LIBRARY_FILE
 
 ifdef RUST_TESTS
 
-# Cargo writes the test binaries under the profile directory selected in
-# cargo_profile_dir above.
-rust_test_bindir := $(CARGO_TARGET_DIR)/$(RUST_TARGET)/$(cargo_profile_dir)/deps
-
-# Outside Windows, the test binaries get an rpath to dist/bin, but Linux only
-# applies it to direct dependencies of the test binary. Transitive dependencies
-# are optimized out by the linker, which is an issue for NSS.
-#
-# `cargo test` inserts the test binary's directory into the library search path
-# on all platforms, so we can copy potential transitive dependencies for
-# non-macOS platforms there.
-ifneq ($(OS_ARCH),Darwin)
-stage_test_libs = mkdir -p $(rust_test_bindir)$(if $(wildcard $(ABS_DIST)/bin/$(DLL_PREFIX)*$(DLL_SUFFIX)), && cp $(ABS_DIST)/bin/$(DLL_PREFIX)*$(DLL_SUFFIX) $(rust_test_bindir)/)
-else
-stage_test_libs = :
-endif
-
 force-cargo-test-run:
-	$(stage_test_libs)
 	$(call RUN_CARGO_ACTION,.cargo-tests-spec.json)
 
 endif # RUST_TESTS

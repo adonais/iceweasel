@@ -146,3 +146,12 @@ LOCAL_INCLUDES += [
     "/xpcom/build",
     "/xpcom/threads",
 ]
+
+SOURCE_HEADERS += [
+    "CDMStorageIdProvider.h",
+    "ChromiumCDMAdapter.h",
+    "ChromiumCDMCallbackProxy.h",
+    "ChromiumCDMChild.h",
+    "ChromiumCDMCompat.h",
+    "GMPLog.h",
+]

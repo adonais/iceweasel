@@ -175,6 +175,28 @@ const PAGE_LAYOUTS_INFO = {
       "edge leading to the space beyond it instead of a segmented control. " +
       "pageLayouts.spacesOrder sets the order.",
   },
+  [PAGE_LAYOUT_VARIANTS.SPACES_PREVIEW_KIT]: {
+    label: "Spaces (Preview with Kit)",
+    description:
+      "Buttons at the bottom, where each tab previews its space with an " +
+      "illustration of Kit moving through it.",
+  },
+  [PAGE_LAYOUT_VARIANTS.SPACES_PREVIEW_ILLUSTRATED]: {
+    label: "Spaces (Preview without Kit)",
+    description: "Same as above, with the illustrations alone.",
+  },
+  [PAGE_LAYOUT_VARIANTS.SPACES_PREVIEW_CARDS]: {
+    label: "Spaces (Preview with cards)",
+    description:
+      "Buttons at the bottom, where each tab previews its space's first " +
+      "medium story card, else its first widget or Recent activity card.",
+  },
+  [PAGE_LAYOUT_VARIANTS.SPACES_PEEK]: {
+    label: "Spaces (Peek)",
+    description:
+      "Buttons at the bottom, plus a preview of the spaces on either side in " +
+      "the page margins. Clicking one navigates there.",
+  },
   // @experiment(remove) { bug 2069496 }
   [PAGE_LAYOUT_VARIANTS.WIDGETS_AD_LARGE]: {
     label: "Widgets row ad (large)",
@@ -1217,6 +1239,10 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     const adsFeedEnabled =
       this.props.otherPrefs[PREF_UNIFIED_ADS_ADSFEED_ENABLED];
 
+    const PREF_UNIFIED_ADS_ADSCLIENT_ENABLED = "unifiedAds.adsClient.enabled";
+    const adsClientEnabled =
+      this.props.otherPrefs[PREF_UNIFIED_ADS_ADSCLIENT_ENABLED];
+
     const unifiedAdsEndpoint = this.props.otherPrefs[PREF_UNIFIED_ADS_ENDPOINT];
     const spocsEndpoint = unifiedAdsSpocsEnabled
       ? unifiedAdsEndpoint
@@ -1247,6 +1273,10 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
                   label="Toggle allizom"
                 />
               </td>
+            </Row>
+            <Row>
+              <td className="min">MAC enabled</td>
+              <td>{adsClientEnabled ? "true" : "false"}</td>
             </Row>
             <Row>
               <td className="min">adsfeed enabled</td>

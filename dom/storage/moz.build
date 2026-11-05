@@ -70,3 +70,12 @@ LOCAL_INCLUDES += [
 
 if CONFIG["ENABLE_TESTS"]:
     DEFINES["DOM_STORAGE_TESTS"] = True
+
+SOURCE_HEADERS += [
+    "LocalStorageCache.h",
+    "SessionStorage.h",
+    "SessionStorageCache.h",
+    "SessionStorageObserver.h",
+    "StorageCommon.h",
+    "StorageDBThread.h",
+]

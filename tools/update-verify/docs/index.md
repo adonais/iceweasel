@@ -1,6 +1,6 @@
 # Update Verify
 
-Update verify is test that runs before each Firefox Release (excluding Nightlies) are shipped. Its main purpose is to ensure that users who receive the release through an update MAR ([Mozilla ARchive](https://wiki.mozilla.org/Software_Update:MAR)) end up in the same place as a fresh install would get them. This helps us to ensure that [partial MARs](https://firefox-source-docs.mozilla.org/taskcluster/partials.html) work in future updates, and that code signatures are valid regardless of how a user arrived at a new version.
+Update verify is test that runs before each Firefox Release (excluding Nightlies) are shipped. Its main purpose is to ensure that users who receive the release through an update MAR ([Mozilla ARchive](https://wiki.mozilla.org/Software_Update:MAR)) end up in the same place as a fresh install would get them. This helps us to ensure that {doc}`partial MARs </taskcluster/partials>` work in future updates, and that code signatures are valid regardless of how a user arrived at a new version.
 
 Note that the object under test here is the update MAR files that are prepared as part of a Firefox release -- and *nothing* else. Although certain other parts of the update system are currently used as part of these tests, the following things are specifically *not* considered under test:
 

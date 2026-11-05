@@ -162,10 +162,6 @@ void AndroidCallClient::CreatePeerConnectionFactory() {
   network_thread_->SetName("network_thread", nullptr);
   RTC_CHECK(network_thread_->Start()) << "Failed to start thread";
 
-  worker_thread_ = webrtc::Thread::Create();
-  worker_thread_->SetName("worker_thread", nullptr);
-  RTC_CHECK(worker_thread_->Start()) << "Failed to start thread";
-
   signaling_thread_ = webrtc::Thread::Create();
   signaling_thread_->SetName("signaling_thread", nullptr);
   RTC_CHECK(signaling_thread_->Start()) << "Failed to start thread";
@@ -173,7 +169,6 @@ void AndroidCallClient::CreatePeerConnectionFactory() {
   webrtc::PeerConnectionFactoryDependencies pcf_deps;
   pcf_deps.env = env_;
   pcf_deps.network_thread = network_thread_.get();
-  pcf_deps.worker_thread = worker_thread_.get();
   pcf_deps.signaling_thread = signaling_thread_.get();
 
   pcf_deps.video_encoder_factory =

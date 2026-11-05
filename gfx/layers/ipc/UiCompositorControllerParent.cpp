@@ -17,6 +17,7 @@
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
+#include "mozilla/layers/LayerTreeLog.h"
 #include "mozilla/layers/UiCompositorControllerMessageTypes.h"
 #include "mozilla/layers/WebRenderBridgeParent.h"
 
@@ -57,6 +58,8 @@ mozilla::ipc::IPCResult UiCompositorControllerParent::RecvPause() {
   CompositorBridgeParent* parent =
       CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(
           mRootLayerTreeId);
+  LAYERTREE_LOG("UI controller paused compositor for root layer tree {:x}",
+                mRootLayerTreeId);
   if (parent) {
     parent->PauseComposition();
   }
@@ -72,6 +75,8 @@ mozilla::ipc::IPCResult UiCompositorControllerParent::RecvResume(
   if (parent) {
     *aOutResumed = parent->ResumeComposition();
   }
+  LAYERTREE_LOG("UI controller resumed compositor for root layer tree {:x}: {}",
+                mRootLayerTreeId, *aOutResumed);
   return IPC_OK();
 }
 
@@ -91,6 +96,9 @@ mozilla::ipc::IPCResult UiCompositorControllerParent::RecvResumeAndResize(
 #endif
     *aOutResumed = parent->ResumeCompositionAndResize(aX, aY, aWidth, aHeight);
   }
+  LAYERTREE_LOG(
+      "UI controller resumed compositor for root layer tree {:x} at {}x{}: {}",
+      mRootLayerTreeId, aWidth, aHeight, *aOutResumed);
   return IPC_OK();
 }
 

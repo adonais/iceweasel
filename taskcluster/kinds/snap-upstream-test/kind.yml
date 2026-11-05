@@ -18,7 +18,6 @@ kind-dependencies:
     - snap-upstream-build
 
 task-defaults:
-    run-on-repo-type: [hg]
     from-deps:
         group-by: single-with-filters
     attributes:
@@ -28,7 +27,6 @@ task-defaults:
         kind: test
         tier: 2
     run:
-        clone-with: hg
         using: run-task
         checkout: false
     fetches:

@@ -20,8 +20,6 @@ void WebGL2Context::BindSampler(GLuint unit, WebGLSampler* sampler) {
   if (IsContextLost()) return;
   funcScope.mBindFailureGuard = true;
 
-  if (sampler && !ValidateObject("sampler", *sampler)) return;
-
   if (unit >= mBoundSamplers.Length())
     return ErrorInvalidValue("unit must be < %u", mBoundSamplers.Length());
 
@@ -39,8 +37,6 @@ void WebGL2Context::SamplerParameteri(WebGLSampler& sampler, GLenum pname,
   const FuncScope funcScope(*this, "samplerParameteri");
   if (IsContextLost()) return;
 
-  if (!ValidateObject("sampler", sampler)) return;
-
   sampler.SamplerParameter(pname, FloatOrInt(param));
 }
 
@@ -49,8 +45,6 @@ void WebGL2Context::SamplerParameterf(WebGLSampler& sampler, GLenum pname,
   const FuncScope funcScope(*this, "samplerParameterf");
   if (IsContextLost()) return;
 
-  if (!ValidateObject("sampler", sampler)) return;
-
   sampler.SamplerParameter(pname, FloatOrInt(param));
 }
 
@@ -58,8 +52,6 @@ Maybe<double> WebGL2Context::GetSamplerParameter(const WebGLSampler& sampler,
                                                  GLenum pname) const {
   const FuncScope funcScope(*this, "getSamplerParameter");
   if (IsContextLost()) return {};
-
-  if (!ValidateObject("sampler", sampler)) return {};
 
   ////
 

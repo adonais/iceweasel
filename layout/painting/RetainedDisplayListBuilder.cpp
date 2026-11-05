@@ -184,7 +184,7 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
       aList->mDAG.Length() ==
           (initializeOldItems ? aList->Length() : aList->mOldItems.Length()));
 
-  nsDisplayList out(Builder());
+  nsDisplayList out;
 
   size_t i = 0;
   while (nsDisplayItem* item = aList->RemoveBottom()) {
@@ -447,7 +447,6 @@ class MergeState {
         mOldDAG(
             std::move(*reinterpret_cast<DirectedAcyclicGraph<OldListUnits>*>(
                 &aOldList.mDAG))),
-        mMergedItems(aBuilder->Builder()),
         mOuterItem(aOuterItem),
         mResultIsModified(false) {
     mMergedDAG.EnsureCapacityFor(mOldDAG);
@@ -507,7 +506,7 @@ class MergeState {
     }
 
     Maybe<const ActiveScrolledRoot*> containerASRForChildren;
-    nsDisplayList empty(mBuilder->Builder());
+    nsDisplayList empty;
     const bool modified = mBuilder->MergeDisplayLists(
         aNewItem ? aNewItem->GetChildren() : &empty, aOldItem->GetChildren(),
         aOutItem->GetChildren(), containerASRForChildren, aOutItem);
@@ -617,7 +616,7 @@ class MergeState {
       ProcessOldNode(OldListIndex(i), std::move(directPredecessors));
     }
 
-    RetainedDisplayList result(mBuilder->Builder());
+    RetainedDisplayList result;
     result.AppendToTop(&mMergedItems);
     result.mDAG = std::move(mMergedDAG);
     MOZ_RELEASE_ASSERT(result.mDAG.Length() == result.Length());
@@ -1582,7 +1581,7 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
   }
 
   nsRect modifiedDirty;
-  nsDisplayList modifiedDL(&mBuilder);
+  nsDisplayList modifiedDL;
   nsIFrame* modifiedAGR = nullptr;
   PartialUpdateResult result = PartialUpdateResult::NoChange;
   const bool simpleUpdate =

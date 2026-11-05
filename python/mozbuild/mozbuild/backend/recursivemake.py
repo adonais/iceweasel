@@ -24,7 +24,6 @@ from mozbuild.frontend.context import (
     Path,
     SourcePath,
 )
-from mozbuild.rust_commands import applies_library_lto
 
 from ..frontend.data import (
     BaseLibrary,
@@ -342,6 +341,18 @@ class RecursiveMakeBackend(MakeBackend):
     """
 
     BUILT_INSTALL_MANIFESTS = "_build_manifests/built"
+    TARGETS = {
+        "analysis-prereqs": ["pre-export", "export", "pre-compile"],
+        "gtest": ["recurse_gtest"],
+        "rust-prereqs": ["pre-export", "export"],
+        "rusttests": ["recurse_rusttests"],
+        "syms": ["recurse_syms"],
+        "uniffi-target": ["recurse_uniffi-target"],
+    }
+
+    @classmethod
+    def resolve_targets(cls, what):
+        return [t for name in what for t in cls.TARGETS.get(name, [name])]
 
     def _init(self):
         MakeBackend._init(self)
@@ -634,7 +645,7 @@ class RecursiveMakeBackend(MakeBackend):
             self._no_skip["syms"].add(backend_file.relobjdir)
 
         elif isinstance(obj, HostSimpleProgram):
-            self._process_host_simple_program(obj.program, backend_file)
+            self._process_host_simple_program(obj, backend_file)
             self._process_linked_libraries(obj, backend_file)
 
         elif isinstance(obj, LocalInclude):
@@ -1342,6 +1353,8 @@ class RecursiveMakeBackend(MakeBackend):
         backend_file.write(
             "HOST_PROGRAM = %s\n" % self._pretty_path(program.output_path, backend_file)
         )
+        if program.cxx_link:
+            backend_file.write_once("HOST_CPP_PROG_LINK := 1\n")
 
     def _process_rust_program_base(
         self, obj, backend_file, target_variable, target_cargo_variable
@@ -1428,8 +1441,10 @@ class RecursiveMakeBackend(MakeBackend):
             if not obj.cxx_link and not self.environment.bin_suffix:
                 backend_file.write("PROG_IS_C_ONLY_%s := 1\n" % obj.program)
 
-    def _process_host_simple_program(self, program, backend_file):
-        backend_file.write("HOST_SIMPLE_PROGRAMS += %s\n" % program)
+    def _process_host_simple_program(self, obj, backend_file):
+        backend_file.write(f"HOST_SIMPLE_PROGRAMS += {obj.program}\n")
+        if obj.cxx_link:
+            backend_file.write_once("HOST_CPP_PROG_LINK := 1\n")
 
     def _process_relrhack(self, obj):
         if isinstance(
@@ -1524,6 +1539,13 @@ class RecursiveMakeBackend(MakeBackend):
             backend_file.write(
                 "%s_FLAGS += %s\n" % (mozpath.basename(per_source_flag.file_name), flag)
             )
+        stem = mozpath.splitext(mozpath.basename(per_source_flag.file_name))[0]
+        if per_source_flag.object_deps:
+            prerequisites = " ".join(
+                self._pretty_path(p, backend_file)
+                for p in (per_source_flag.path, *per_source_flag.object_deps)
+            )
+            backend_file.write(f"{stem}.$(OBJ_SUFFIX): {prerequisites}\n")
 
     def _process_computed_flags(self, computed_flags, backend_file):
         for var, flags in computed_flags.get_flags():
@@ -1556,7 +1578,7 @@ class RecursiveMakeBackend(MakeBackend):
             self._process_non_default_target(libdef, shared_lib, backend_file)
         if self.environment.substs.get("OS_ARCH") == "WINNT" and libdef.installed:
             backend_file.write("IMPORT_LIB_FILES := $(IMPORT_LIBRARY)\n")
-            backend_file.write("IMPORT_LIB_DEST := $(DIST)/lib\n")
+            backend_file.write("IMPORT_LIB_DEST = $(DIST)/lib$(DIST_SUBDIR:%=/%)\n")
             backend_file.write("IMPORT_LIB_TARGET := target\n")
             backend_file.write("INSTALL_TARGETS += IMPORT_LIB\n")
 
@@ -1585,16 +1607,8 @@ class RecursiveMakeBackend(MakeBackend):
         # up recompiling lots of things.
         target_dir = mozpath.normpath(backend_file.environment.topobjdir)
         backend_file.write("CARGO_TARGET_DIR := %s\n" % target_dir)
-        if libdef.cargo_profile_suffix:
-            backend_file.write(
-                f"RUST_LIBRARY_CARGO_PROFILE_SUFFIX := {libdef.cargo_profile_suffix}\n"
-            )
         if libdef.output_category:
             self._process_non_default_target(libdef, rust_lib, backend_file)
-
-        kind = "library" if libdef.KIND == "target" else "host-library"
-        if applies_library_lto(kind, not libdef.no_lto, self.environment.substs):
-            backend_file.write("RUST_LIBRARY_LTO := 1\n")
 
     def _process_host_shared_library(self, libdef, backend_file):
         backend_file.write("HOST_SHARED_LIBRARY = %s\n" % libdef.lib_name)

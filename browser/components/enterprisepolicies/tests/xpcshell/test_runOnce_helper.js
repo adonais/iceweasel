@@ -43,25 +43,13 @@ add_task(async function test_runOncePerModification_helper() {
   await runOncePerModification("test_modification", "two", callback);
   equal(runCount, 2, "Callback ran again for a changed value.");
 
-  // DisplayMenuBar passes a boolean, so the value has to be stored in the
-  // form the next run's comparison sees, or its callback runs every startup.
-  await runOncePerModification("test_modification", false, callback);
-  equal(runCount, 3, "Callback ran for a non-string value.");
-  equal(
-    Services.prefs.getStringPref(marker),
-    "false",
-    "The recorded value is the string form."
-  );
-  await runOncePerModification("test_modification", false, callback);
-  equal(runCount, 3, "The same non-string value did not run it again.");
-
   clearRunOnceModification("test_modification");
   ok(
     !Services.prefs.prefHasUserValue(marker),
     "Clearing removes the recorded value."
   );
   await runOncePerModification("test_modification", "false", callback);
-  equal(runCount, 4, "Callback ran again after the record was cleared.");
+  equal(runCount, 3, "Callback ran again after the record was cleared.");
 
   clearRunOnceModification("test_modification");
 });

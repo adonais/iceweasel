@@ -5,8 +5,12 @@
 #ifndef MOZILLA_DOM_CANVASRENDERINGCONTEXTHELPER_H_
 #define MOZILLA_DOM_CANVASRENDERINGCONTEXTHELPER_H_
 
+#include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Variant.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CanvasRenderingContext2DBinding.h"
+#include "mozilla/dom/WebGLRenderingContextBinding.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsSize.h"
@@ -41,6 +45,32 @@ enum class CanvasContextType : uint8_t {
   ImageBitmap
 };
 
+class CanvasRenderingContextOptions {
+ public:
+  CanvasRenderingContextOptions() : mVariant(UnknownOptions()) {}
+
+  template <typename T>
+  bool is() const {
+    return mVariant.is<T>();
+  }
+
+  template <typename T>
+  const T& as() const {
+    return mVariant.as<T>();
+  }
+
+  MOZ_IMPLICIT operator bool() const { return !mVariant.is<UnknownOptions>(); }
+
+  bool Init(JSContext* aCx, CanvasContextType aContextType,
+            JS::Handle<JS::Value> aContextOptions, ErrorResult& aRv);
+
+ private:
+  struct UnknownOptions {};
+  Variant<CanvasRenderingContext2DSettings, WebGLContextAttributes,
+          UnknownOptions>
+      mVariant;
+};
+
 /**
  * Povides common RenderingContext functionality used by both OffscreenCanvas
  * and HTMLCanvasElement.
@@ -52,9 +82,13 @@ class CanvasRenderingContextHelper {
   virtual bool GetOpaqueAttr() = 0;
 
  protected:
-  virtual nsresult UpdateContext(JSContext* aCx,
-                                 JS::Handle<JS::Value> aNewContextOptions,
-                                 ErrorResult& aRvForDictionaryInit);
+  bool InitOrUpdateContext(
+      const nsCOMPtr<nsICanvasRenderingContextInternal>& aContext,
+      const CanvasRenderingContextOptions* aOptions);
+  void UpdateContext();
+
+  // Called after UpdateContext, but only if it succeeded.
+  virtual void AfterUpdateContext() {}
 
   virtual nsresult ParseParams(JSContext* aCx, const nsAString& aType,
                                const JS::Value& aEncoderOptions,
@@ -77,13 +111,9 @@ class CanvasRenderingContextHelper {
 
   nsICookieJarSettings* GetCookieJarSettings() const;
 
-  already_AddRefed<nsISupports> GetOrCreateContext(
-      JSContext* aCx, const nsAString& aContextId,
-      JS::Handle<JS::Value> aContextOptions, ErrorResult& aRv);
-
-  already_AddRefed<nsISupports> GetOrCreateContext(
-      JSContext* aCx, CanvasContextType aContextType,
-      JS::Handle<JS::Value> aContextOptions, ErrorResult& aRv);
+  bool GetOrCreateContext(CanvasContextType aContextType,
+                          const CanvasRenderingContextOptions& aContextOptions,
+                          ErrorResult& aRv);
 
   virtual already_AddRefed<nsICanvasRenderingContextInternal> CreateContext(
       CanvasContextType aContextType);
@@ -92,9 +122,6 @@ class CanvasRenderingContextHelper {
       CanvasContextType aContextType, layers::LayersBackend aCompositorBackend);
 
   virtual CSSIntSize GetWidthHeight() = 0;
-
-  // Whether a new context may be installed on this canvas.
-  virtual bool CanCreateContext() const = 0;
 
   CanvasContextType mCurrentContextType;
   nsCOMPtr<nsICanvasRenderingContextInternal> mCurrentContext;

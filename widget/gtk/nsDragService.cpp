@@ -1224,8 +1224,12 @@ bool nsDragSession::IsTextFlavor(GdkAtom aFlavor) {
 nsDragSession::DragTask::DragTask(
     DragTaskType aType, nsWindow* aWindow,
     const mozilla::LayoutDeviceIntPoint& aWindowPoint, guint aTime)
-    : mType(aType), mWindow(aWindow), mWindowPoint(aWindowPoint), mTime(aTime) {
-      };
+    : mType(aType),
+      mWindow(aWindow),
+      mWindowPoint(aWindowPoint),
+      mTime(aTime) {}
+
+nsDragSession::DragTask::~DragTask() = default;
 
 #undef LOGDRAG
 #undef LOGDRAGSTATIC

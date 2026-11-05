@@ -22,3 +22,11 @@ LOCAL_INCLUDES += [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "AudioDecoderInputTrack.h",
+    "AudioSink.h",
+    "AudioSinkWrapper.h",
+    "DecodedStream.h",
+    "VideoSink.h",
+]

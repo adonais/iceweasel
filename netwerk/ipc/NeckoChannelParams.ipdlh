@@ -216,6 +216,7 @@ struct LoadInfoArgs
   RFPTargetSet?               overriddenFingerprintingSettings;
   bool                        isMetaRefresh;
   bool                        activatedFromNavigationalPrefetch;
+  bool                        prefetchCandidateMatched;
   CrossOriginEmbedderPolicy   loadingEmbedderPolicy;
   bool                        originTrialCoepCredentiallessEnabledForTopLevel;
   nullable nsIURI             unstrippedURI;
@@ -408,7 +409,6 @@ struct HttpChannelOpenArgs
   RequestMode                 requestMode;
   bool                        forceValidateCacheContent;
   bool                        preferCacheLoadOverBypass;
-  bool                        forceMainDocumentChannel;
   uint8_t                     redirectionLimit;
   nsString                    classicScriptHintCharset;
   nsString                    documentCharacterSet;

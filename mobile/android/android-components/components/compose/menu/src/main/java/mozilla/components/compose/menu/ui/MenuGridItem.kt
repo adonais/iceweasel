@@ -5,8 +5,6 @@
 package mozilla.components.compose.menu.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -24,8 +22,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.CollectionItemInfo
 import androidx.compose.ui.semantics.Role.Companion.Button
 import androidx.compose.ui.semantics.collectionItemInfo
@@ -37,14 +33,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.badge.BADGE_SIZE_SMALL
 import mozilla.components.compose.base.badge.BadgedIcon
-import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.information
 import mozilla.components.compose.menu.store.MenuEvent
 import mozilla.components.compose.menu.ui.MenuItemState.DEFAULT
-import mozilla.components.compose.menu.ui.MenuItemState.DISABLED
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -52,13 +46,13 @@ import mozilla.components.ui.icons.R as iconsR
  *
  * @param title The title of the menu item.
  * @param icon An icon of the menu item.
- * @param onClickEvent [MenuEvent] to dispatch when the menu item is clicked.
+ * @param onClickEvent Optional [MenuEvent] to dispatch when the menu item is clicked.
  * @param onInteraction The callback to invoke when the menu item is interacted with.
  * @param contentDescription Optional custom content description for the menu item.
  * @param index The optional index of this item in the grid.
  * @param modifier The modifier to apply to the menu item.
  * @param state The state of this menu item.
- * @param onLongClickEvent [MenuEvent] to dispatch when the menu item is long-clicked.
+ * @param onLongClickEvent Optional [MenuEvent] to dispatch when the menu item is long-clicked.
  * @param showContainer Whether the menu item should be shown inside a styled container.
  * @param shape The [Shape] to clip the background into.
  */
@@ -66,7 +60,7 @@ import mozilla.components.ui.icons.R as iconsR
 internal fun MenuGridItem(
     title: Text,
     icon: MenuItemIcon,
-    onClickEvent: MenuEvent,
+    onClickEvent: MenuEvent?,
     onInteraction: (MenuEvent) -> Unit,
     modifier: Modifier = Modifier,
     contentDescription: Text?,
@@ -88,13 +82,14 @@ internal fun MenuGridItem(
         modifier
             .clip(shape)
             .background(backgroundColor)
-            .menuGridItemClickable(
+            .menuItemClickableBehavior(
                 state = state,
+                role = Button,
                 onClickEvent = onClickEvent,
                 onLongClickEvent = onLongClickEvent,
                 onInteraction = onInteraction,
             )
-            .menuGridItemSemantics(index, description)
+            .menuGridItemSemantics(index, description, onClickEvent, onLongClickEvent)
 
     Column(
         modifier =
@@ -114,40 +109,11 @@ internal fun MenuGridItem(
 }
 
 @Composable
-private fun Modifier.menuGridItemClickable(
-    state: MenuItemState,
-    onClickEvent: MenuEvent,
-    onLongClickEvent: MenuEvent?,
-    onInteraction: (MenuEvent) -> Unit,
-): Modifier {
-    val haptic = LocalHapticFeedback.current
-    return this.clickable(
-            enabled = state != DISABLED && onLongClickEvent == null,
-            onClick = { onInteraction(onClickEvent) },
-            role = Button,
-        )
-        .thenConditional(
-            Modifier.combinedClickable(
-                enabled = state != DISABLED,
-                onClick = { onInteraction(onClickEvent) },
-                onLongClick =
-                    onLongClickEvent?.let {
-                        {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onInteraction(it)
-                        }
-                    },
-                role = Button,
-            )
-        ) {
-            onLongClickEvent != null
-        }
-}
-
-@Composable
 private fun Modifier.menuGridItemSemantics(
     index: Int?,
     description: String?,
+    onClickEvent: MenuEvent?,
+    onLongClickEvent: MenuEvent?,
 ): Modifier {
     return this.semantics(mergeDescendants = true) {
         index?.let {
@@ -160,7 +126,9 @@ private fun Modifier.menuGridItemSemantics(
                 )
         }
         description?.let { this.contentDescription = it }
-        this.role = Button
+        if (onClickEvent != null || onLongClickEvent != null) {
+            this.role = Button
+        }
     }
 }
 

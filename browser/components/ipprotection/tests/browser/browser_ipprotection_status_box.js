@@ -343,3 +343,32 @@ add_task(async function test_unavailable_error() {
 
   await closePanel();
 });
+
+/**
+ * Tests that clicking the support link in the unavailable error closes the panel.
+ */
+add_task(async function test_unavailable_error_support_link_closes_panel() {
+  let content = await openPanel({
+    unauthenticated: false,
+    error: ERRORS.VPN_UNAVAILABLE,
+  });
+
+  let supportLink = content.statusBoxEl.descriptionEl.querySelector("a");
+  Assert.ok(supportLink, "Support link should be present");
+
+  let newTabPromise = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    Services.urlFormatter.formatURLPref("app.support.baseURL") +
+      LINKS.NO_ACCESS_SUPPORT_SLUG
+  );
+  let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
+  supportLink.click();
+  info("after click");
+  let newTab = await newTabPromise;
+  info("after newTabPromise");
+  await panelHiddenPromise;
+  info("afterpanelHiddenPromise");
+  await setPanelState();
+  info("after setPanelState");
+  BrowserTestUtils.removeTab(newTab);
+});

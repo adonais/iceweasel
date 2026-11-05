@@ -13,9 +13,6 @@ transforms:
 kind-dependencies:
     - signing
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     post-signing-dummy:
         description: Dummy task to wait on all builds before publishing them

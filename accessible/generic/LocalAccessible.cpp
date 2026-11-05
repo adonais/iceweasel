@@ -7,7 +7,6 @@
 #include "AccIterator.h"
 #include "ApplicationAccessible.h"
 #include "CachedTableAccessible.h"
-#include "CssAltContent.h"
 #include "DocAccessible-inl.h"
 #include "EmbeddedObjCollector.h"
 #include "EventTree.h"
@@ -60,6 +59,7 @@
 #include "nsAtom.h"
 #include "nsComputedDOMStyle.h"
 #include "nsContainerFrame.h"
+#include "nsCoreUtils.h"
 #include "nsDisplayList.h"
 #include "nsEventShell.h"
 #include "nsFocusManager.h"
@@ -147,12 +147,12 @@ ENameValueFlag LocalAccessible::Name(nsString& aName) const {
     return eNameFromTooltip;
   }
 
-  if (auto cssAlt = CssAltContent(mContent)) {
+  if (Maybe<nsString> cssAlt = nsCoreUtils::GetCssAltContent(mContent)) {
     // This covers two cases:
     // 1. The CSS content property replaces the content of an element with an
     // image plus alt text.
     // 2. Alt text is provided for a pseudo-element image.
-    cssAlt.AppendToString(aName);
+    aName.Append(*cssAlt);
     return eNameOK;
   }
 
@@ -1901,7 +1901,7 @@ double LocalAccessible::CurValue() const {
   return checkValue;
 }
 
-bool LocalAccessible::SetCurValue(double aValue) { return false; }
+bool LocalAccessible::SetCurValue(double /*aValue*/) { return false; }
 
 role LocalAccessible::NativeRole() const { return roles::NOTHING; }
 
@@ -2640,7 +2640,7 @@ void LocalAccessible::DoCommand(uint32_t aActionIndex) const {
       }));
 }
 
-void LocalAccessible::DispatchClickEvent(uint32_t aActionIndex) const {
+void LocalAccessible::DispatchClickEvent(uint32_t /*aActionIndex*/) const {
   if (IsDefunct()) return;
   MOZ_ASSERT(mContent);
 
@@ -3640,10 +3640,8 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       fields->SetAttribute(CacheKey::Tooltip, DeleteEntry());
     }
 
-    nsString cssAltContent;
-    if (auto cssAlt = CssAltContent(mContent)) {
-      cssAlt.AppendToString(cssAltContent);
-      fields->SetAttribute(CacheKey::CssAltContent, std::move(cssAltContent));
+    if (Maybe<nsString> cssAlt = nsCoreUtils::GetCssAltContent(mContent)) {
+      fields->SetAttribute(CacheKey::CssAltContent, std::move(*cssAlt));
     } else if (IsUpdatePush(CacheDomain::NameAndDescription)) {
       fields->SetAttribute(CacheKey::CssAltContent, DeleteEntry());
     }

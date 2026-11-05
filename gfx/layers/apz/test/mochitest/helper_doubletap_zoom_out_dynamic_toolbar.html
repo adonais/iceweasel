@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Double-tap zooming is disabled if the viewport isn't wider than the screen. -->
+  <meta name="viewport" content="width=2000, initial-scale=1, minimum-scale=0.25">
+  <title>Check that double-tap zooming out a page taller than 100lvh fills the composition bounds including the dynamic toolbar area</title>
+  <script src="apz_test_native_event_utils.js"></script>
+  <script src="apz_test_utils.js"></script>
+  <script src="/tests/SimpleTest/paint_listener.js"></script>
+  <style>
+    html, body { margin: 0; }
+    /* Wide enough that the page height, not its width, decides how far the
+       page can be zoomed out. */
+    body { width: 800vw; height: 100lvh; }
+  </style>
+  <script>
+
+const dynamicToolbarMaxHeight = 100;
+
+async function test() {
+  await doubleTapOn(document.body, 20, 20);
+
+  const resolution = await getResolution();
+  const toolbarHeight =
+    dynamicToolbarMaxHeight / (window.devicePixelRatio * resolution);
+  // The fuzz only absorbs float rounding in the zoom calculation.
+  isfuzzy(visualViewport.height + toolbarHeight,
+          document.documentElement.scrollHeight, 1,
+          "The page fills the composition bounds including the dynamic toolbar");
+}
+
+SpecialPowers.getDOMWindowUtils(window).setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight);
+waitUntilApzStable()
+.then(test)
+.then(subtestDone, subtestFailed);
+
+  </script>
+</head>
+<body>
+</body>
+</html>

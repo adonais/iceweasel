@@ -148,10 +148,10 @@ export class RemotePageChild extends JSWindowActorChild {
 
   RPMSendQuery(aName, aData = null) {
     return this.wrapPromise(
-      new Promise(resolve => {
+      new Promise((resolve, reject) => {
         this.sendQuery(aName, aData).then(result => {
           resolve(Cu.cloneInto(result, this.contentWindow));
-        });
+        }, reject);
       })
     );
   }

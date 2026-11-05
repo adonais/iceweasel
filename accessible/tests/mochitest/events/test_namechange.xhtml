@@ -33,6 +33,19 @@
       await changed;
       testName(buttonWithLabel, "changed");
 
+      const buttonWithTooltip = getNode("buttonWithTooltip");
+      testName(buttonWithTooltip, "initial");
+      info("Clearing buttonWithTooltip label");
+      changed = waitForEvent(EVENT_NAME_CHANGE, buttonWithTooltip);
+      buttonWithTooltip.setAttribute("label", "");
+      await changed;
+      testName(buttonWithTooltip, "tooltip");
+      info("Setting buttonWithTooltip label");
+      changed = waitForEvent(EVENT_NAME_CHANGE, buttonWithTooltip);
+      buttonWithTooltip.setAttribute("label", "changed");
+      await changed;
+      testName(buttonWithTooltip, "changed");
+
       SimpleTest.finish();
     }
 
@@ -57,5 +70,6 @@
     </richlistbox>
 
     <button id="buttonWithLabel" label="initial"/>
+    <toolbarbutton id="buttonWithTooltip" label="initial" tooltiptext="tooltip"/>
   </vbox>
 </window>

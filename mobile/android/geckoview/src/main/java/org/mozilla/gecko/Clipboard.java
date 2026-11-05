@@ -172,7 +172,7 @@ public final class Clipboard {
    * @param clipData a {@link android.content.ClipData} to set to clipboard
    * @return true if copy is successful.
    */
-  private static boolean setData(
+  /* package */ static boolean setData(
       final Context context, final ClipData clipData, final boolean isPrivateData) {
     // In API Level 11 and above, CLIPBOARD_SERVICE returns android.content.ClipboardManager,
     // which is a subclass of android.text.ClipboardManager.
@@ -358,22 +358,12 @@ public final class Clipboard {
 
   @WrapForJNI(calledFrom = "gecko")
   private static boolean commitWriteSession(
-      final Context context,
       final long sessionId,
       final CharSequence text,
       final String htmlText,
       final boolean isPrivateData) {
-    final ClipData clipData =
-        GeckoClipboardContentProvider.commitSessionToClipData(context, sessionId, text, htmlText);
-    if (clipData == null) {
-      return false;
-    }
-    return setData(context, clipData, isPrivateData);
-  }
-
-  @WrapForJNI(calledFrom = "gecko")
-  private static void cancelWriteSession(final long sessionId) {
-    GeckoClipboardContentProvider.cancelSession(sessionId);
+    return GeckoClipboardContentProvider.commitSessionToClipboard(
+        GeckoAppShell.getApplicationContext(), sessionId, text, htmlText, isPrivateData);
   }
 
   /**

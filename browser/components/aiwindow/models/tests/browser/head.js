@@ -11,12 +11,25 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
+const { AuthProvider } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs"
+);
 const { openAIEngine } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
 const { MockRegistrar } = ChromeUtils.importESModule(
   "resource://testing-common/MockRegistrar.sys.mjs"
+);
+
+const { PAGE_SETTLE_DELAY_MS, setPageSettleDelayForTesting } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs"
+  );
+
+setPageSettleDelayForTesting(0);
+registerCleanupFunction(() =>
+  setPageSettleDelayForTesting(PAGE_SETTLE_DELAY_MS)
 );
 
 /**
@@ -298,14 +311,14 @@ async function withServer(serverOptions, task) {
     set: [["browser.smartwindow.endpoint", `http://localhost:${port}/v1`]],
   });
 
-  const getFxAccountTokenStub = sinon
-    .stub(openAIEngine, "getFxAccountToken")
+  const getTokenStub = sinon
+    .stub(AuthProvider, "getToken")
     .resolves("mock-fxa-token");
 
   try {
     await task({ port });
   } finally {
-    getFxAccountTokenStub.restore();
+    getTokenStub.restore();
     await SpecialPowers.popPrefEnv();
     await stopMockOpenAI(server);
   }
@@ -342,5 +355,56 @@ function mockAlertsService() {
       observers.length = 0;
     },
     cleanup: () => MockRegistrar.unregister(cid),
+  };
+}
+
+/**
+ * Have the chat model call a tool, the way production runs one: start a chat
+ * turn on `conversation` and answer it with the tool call. Answer any requests
+ * the tool makes to other engines before awaiting the result.
+ *
+ * @param {MockEngineManager} mockEngine
+ * @param {ChatConversation} conversation
+ * @param {object} options
+ * @param {string} options.toolName
+ * @param {object} options.toolParams - The arguments the model calls it with.
+ * @returns {Promise<{body: any, toolUIData: object}>} Once the turn is over,
+ *   the tool's result and the UI data it attached to the assistant message, if
+ *   any.
+ */
+async function callTool(mockEngine, conversation, { toolName, toolParams }) {
+  const { Chat } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs"
+  );
+  const { PURPOSES } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+  );
+  const { MESSAGE_ROLE } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs"
+  );
+
+  conversation.addUserMessage(`Call ${toolName}`);
+  conversation.addAssistantMessage("text", "");
+  const turn = Chat.fetchWithHistory({ conversation });
+  const id = await mockEngine.respondToWithToolCall({ toolName, toolParams });
+
+  // Most tools hand their result back to the model for a follow-up turn, which
+  // ends the turn once answered.
+  const chatEngine = mockEngine.engines.get(PURPOSES.CHAT);
+  await Promise.race([turn, chatEngine.waitForRunRequest()]);
+  if (chatEngine.runRequests.size) {
+    await mockEngine.respondTo({ purpose: PURPOSES.CHAT, response: "" });
+  }
+  await turn;
+
+  const message = conversation.messages.find(
+    m => m.role === MESSAGE_ROLE.TOOL && m.content.tool_call_id === id
+  );
+  Assert.ok(message, `The ${toolName} call left its result in the chat`);
+  return {
+    body: message.content.body,
+    toolUIData: conversation.messages.findLast(
+      m => m.toolUIData?.toolCallId === id
+    )?.toolUIData,
   };
 }

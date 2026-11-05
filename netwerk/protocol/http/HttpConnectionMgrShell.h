@@ -70,8 +70,9 @@ class HttpConnectionMgrShell : public nsISupports {
   // from being reused.
   [[nodiscard]] virtual nsresult DoShiftReloadConnectionCleanup() = 0;
 
-  // Like DoShiftReloadConnectionCleanup() above, but also resets CI specific
-  // information such as Happy Eyeballs history.
+  // Like DoShiftReloadConnectionCleanup() above, but only for connections
+  // whose origin attributes match the CI. Also resets CI specific information
+  // such as Happy Eyeballs history.
   [[nodiscard]] virtual nsresult DoShiftReloadConnectionCleanupWithConnInfo(
       nsHttpConnectionInfo*) = 0;
 

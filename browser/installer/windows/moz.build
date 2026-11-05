@@ -115,3 +115,17 @@ if CONFIG["MAKENSISU"]:
             + ["--nsi=test_stub.nsi", f"--buildid-header={TOPOBJDIR}/buildid.h"],
         )
         FINAL_TARGET_FILES += ["!test_stub_installer.exe"]
+
+# NSIS is under the zlib license, which appreciates but does not require an
+# acknowledgment in the product documentation.
+LICENSES += ["nsis"]
+LICENSES["nsis"].title = "NSIS License"
+LICENSES["nsis"].text = "nsis-license.txt"
+LICENSES["nsis"].notice = """
+<p>This license applies to the Nullsoft Scriptable Install System code in the
+Windows installer.</p>
+"""
+LICENSES["nsis"].acknowledgement = (
+    'The <a href="http://nsis.sourceforge.net/">Nullsoft Scriptable Install System</a> '
+    "(Amir Szekely and team)"
+)

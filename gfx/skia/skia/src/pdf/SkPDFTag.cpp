@@ -76,6 +76,7 @@ struct SkPDFStructElem {
     bool fUsed = false;
     bool fUsedInIDTree = false;
     SkString fStructType;
+    SkString fNamespace;
     SkString fTitle;
     SkString fAlt;
     SkString fLang;
@@ -296,15 +297,16 @@ void SkPDFStructTree::move(SkPDF::StructureElementNode& node,
     const SkString& type = node.fTypeString;
     wantTitle |= fOutline == SkPDF::Metadata::Outline::StructureElementHeaders &&
                  type.size() == 2 && type[0] == 'H' && '1' <= type[1] && type[1] <= '6';
+    // If alt text was provided for this node, we want to use that alt text
+    // alone for the outline, so don't accumulate title text from glyphs drawn
+    // within it or its descendants.
+    wantTitle &= node.fAlt.isEmpty();
     structElem->fWantTitle = wantTitle;
 
     static SkString nonStruct("NonStruct");
     structElem->fStructType = node.fTypeString.isEmpty() ? nonStruct : std::move(node.fTypeString);
-    if (node.fExposeAlt) {
-        structElem->fAlt = std::move(node.fAlt);
-    } else {
-        structElem->fTitle = std::move(node.fAlt);
-    }
+    structElem->fNamespace = std::move(node.fNamespace);
+    structElem->fAlt = std::move(node.fAlt);
     structElem->fLang = std::move(node.fLang);
 
     size_t childCount = node.fChildVector.size();
@@ -435,6 +437,18 @@ SkPDFIndirectReference SkPDFStructTree::getContentItemRefForStructParentKey(
     return std::get<Item>(entry).fContentItemRef;
 }
 
+SkPDFIndirectReference SkPDFStructTree::namespaceRef(const SkString& namespaceURI,
+                                                      SkPDFDocument* doc) const {
+    if (SkPDFIndirectReference* ref = fNamespaceRefForURI.find(namespaceURI)) {
+        return *ref;
+    }
+    SkPDFDict namespaceDict("Namespace");
+    namespaceDict.insertTextString("NS", namespaceURI);
+    SkPDFIndirectReference ref = doc->emit(namespaceDict);
+    fNamespaceRefForURI.set(namespaceURI, ref);
+    return ref;
+}
+
 SkPDFIndirectReference SkPDFStructElem::emitStructElem(
         const SkPDFStructTree& structTree,
         SkPDFIndirectReference parent,
@@ -452,6 +466,9 @@ SkPDFIndirectReference SkPDFStructElem::emitStructElem(
     }
     if (!fLang.isEmpty()) {
         dict.insertTextString("Lang", fLang);
+    }
+    if (!fNamespace.isEmpty()) {
+        dict.insertRef("NS", structTree.namespaceRef(fNamespace, doc));
     }
     dict.insertRef("P", parent);
 
@@ -666,6 +683,16 @@ SkPDFIndirectReference SkPDFStructTree::emitStructTreeRoot(SkPDFDocument* doc) c
     SkPDFStructElem::ContentSpan rootContentSpan;
     structTreeRoot.insertRef("K", fRoot->emitStructElem(*this, structTreeRootRef, &idTree, doc,
                                                         rootContentSpan));
+
+    // Namespace dictionaries referenced by a StructElem's NS entry must also be listed here.
+    if (!fNamespaceRefForURI.empty()) {
+        auto namespaces = SkPDFMakeArray();
+        fNamespaceRefForURI.foreach([&namespaces](const SkString&, const SkPDFIndirectReference& ref) {
+            namespaces->appendRef(ref);
+        });
+        structTreeRoot.insertObject("Namespaces", std::move(namespaces));
+    }
+
     structTreeRoot.insertInt("ParentTreeNextKey", fParentTree.size());
 
     // Build the parent tree, a number tree which consists of two things:

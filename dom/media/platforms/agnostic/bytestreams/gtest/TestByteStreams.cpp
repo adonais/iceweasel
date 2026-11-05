@@ -1765,6 +1765,211 @@ TEST(H265, ComputeMaxReorderPics)
   EXPECT_EQ(H265::ComputeMaxReorderPics(garbage.get()), 0u);
 }
 
+TEST(H265, CreateFakeExtraDataAssumptions)
+{
+  // H265::CreateExtraData rewrites the canned parameter sets, which relies on
+  // these properties of the canned SPS.
+  RefPtr<MediaByteBuffer> extradata = H265::CreateFakeExtraData();
+  auto rv = HVCCConfig::Parse(extradata);
+  ASSERT_TRUE(rv.isOk());
+  auto spsMaybe =
+      rv.unwrap().GetFirstAvaiableNALU(H265NALU::NAL_TYPES::SPS_NUT);
+  ASSERT_TRUE(spsMaybe);
+  auto spsRv = H265::DecodeSPSFromSPSNALU(*spsMaybe);
+  ASSERT_TRUE(spsRv.isOk());
+  const auto sps = spsRv.unwrap();
+  // No sub-layers, so each profile_tier_level is exactly 96 bits.
+  EXPECT_EQ(sps.sps_max_sub_layers_minus1, 0u);
+  // 4:2:0, so there is no separate_colour_plane_flag to skip.
+  EXPECT_EQ(sps.chroma_format_idc, 1u);
+  // MinCbSizeY is 8, the granularity the coded dimensions are rounded to.
+  EXPECT_EQ(sps.log2_min_luma_coding_block_size_minus3, 0u);
+  // No conformance window to carry over.
+  EXPECT_EQ(sps.conformance_window_flag, false);
+  // PCM would put sample bit depths later in the SPS, which the rewrite copies
+  // verbatim rather than adjusting alongside bit_depth_luma_minus8.
+  EXPECT_FALSE(sps.pcm_enabled_flag);
+}
+
+TEST(H265, CreateExtraDataReproducesCannedParameterSets)
+{
+  // Rewriting the canned parameter sets with the values they already carry must
+  // reproduce them exactly, which pins the bit-level copy on both sides of the
+  // fields CreateExtraData replaces, including rbsp_trailing_bits.
+  const H265CodecDetails details{
+      0, false, 1, 0x60000000, UINT64_C(0x900000000000), 63};
+  RefPtr<MediaByteBuffer> extradata =
+      H265::CreateExtraData(details, {640, 360});
+  ASSERT_TRUE(extradata);
+  auto rv = HVCCConfig::Parse(extradata);
+  ASSERT_TRUE(rv.isOk());
+  const auto hvcc = rv.unwrap();
+
+  RefPtr<MediaByteBuffer> fakeExtradata = H265::CreateFakeExtraData();
+  auto fakeRv = HVCCConfig::Parse(fakeExtradata);
+  ASSERT_TRUE(fakeRv.isOk());
+  const auto fakeHvcc = fakeRv.unwrap();
+
+  auto sameNALU = [](H265NALU::NAL_TYPES aType, const HVCCConfig& aLhs,
+                     const HVCCConfig& aRhs) {
+    const auto lhs = aLhs.GetFirstAvaiableNALU(aType);
+    const auto rhs = aRhs.GetFirstAvaiableNALU(aType);
+    return lhs && rhs && lhs->mNALU.Length() == rhs->mNALU.Length() &&
+           memcmp(lhs->mNALU.Elements(), rhs->mNALU.Elements(),
+                  lhs->mNALU.Length()) == 0;
+  };
+  EXPECT_TRUE(sameNALU(H265NALU::NAL_TYPES::VPS_NUT, hvcc, fakeHvcc));
+  EXPECT_TRUE(sameNALU(H265NALU::NAL_TYPES::SPS_NUT, hvcc, fakeHvcc));
+  EXPECT_TRUE(sameNALU(H265NALU::NAL_TYPES::PPS_NUT, hvcc, fakeHvcc));
+}
+
+TEST(H265, CreateExtraData)
+{
+  struct TestCase {
+    const char* mName;
+    H265CodecDetails mDetails;
+    gfx::IntSize mSize;
+    uint32_t mCodedWidth;
+    uint32_t mCodedHeight;
+    bool mConformanceWindow;
+    gfx::IntSize mImageSize;
+    uint32_t mBitDepth;
+  };
+  // general_profile_compatibility_flags are in bitstream order, so the Main
+  // and Main 10 bits are 0x60000000, matching "hvc1.1.6" once Annex E.3's
+  // reverse bit order is undone.
+  const TestCase kTestCases[] = {
+      {"Main 1080p",
+       {0, false, 1, 0x60000000, UINT64_C(0xB0) << 40, 93},
+       {1920, 1080},
+       1920,
+       1080,
+       false,
+       {1920, 1080},
+       8},
+      {"Main 10 4K",
+       {0, false, 2, 0x20000000, UINT64_C(0xB0) << 40, 120},
+       {3840, 2160},
+       3840,
+       2160,
+       false,
+       {3840, 2160},
+       10},
+      {"Main without constraint bytes",
+       {0, false, 1, 0x60000000, 0, 93},
+       {800, 600},
+       800,
+       600,
+       false,
+       {800, 600},
+       8},
+      {"Main needing a conformance window",
+       {0, false, 1, 0x60000000, 0, 93},
+       {1366, 768},
+       1368,
+       768,
+       true,
+       {1366, 768},
+       8},
+      // With SubWidthC and SubHeightC equal to 2, an odd dimension cannot be
+      // cropped back exactly.
+      {"Main with odd dimensions",
+       {0, false, 1, 0x60000000, 0, 93},
+       {801, 601},
+       808,
+       608,
+       true,
+       {802, 602},
+       8},
+      {"Range Extensions at High tier",
+       {0, true, 4, 0x80000000, UINT64_C(0xB0) << 40, 153},
+       {1920, 1080},
+       1920,
+       1080,
+       false,
+       {1920, 1080},
+       8},
+      {"Main in profile space B",
+       {2, false, 1, 0x60000000, 0, 93},
+       {1920, 1080},
+       1920,
+       1080,
+       false,
+       {1920, 1080},
+       8},
+      {"Main with all six constraint bytes",
+       {0, false, 1, 0x60000000, UINT64_C(0xB00102030405), 93},
+       {1920, 1080},
+       1920,
+       1080,
+       false,
+       {1920, 1080},
+       8},
+  };
+
+  for (const auto& testCase : kTestCases) {
+    SCOPED_TRACE(testCase.mName);
+    const auto& details = testCase.mDetails;
+    RefPtr<MediaByteBuffer> extradata =
+        H265::CreateExtraData(details, testCase.mSize);
+    ASSERT_TRUE(extradata);
+
+    auto rv = HVCCConfig::Parse(extradata);
+    ASSERT_TRUE(rv.isOk());
+    const auto hvcc = rv.unwrap();
+    // The VPS, SPS and PPS are all carried over.
+    EXPECT_EQ(hvcc.mNALUs.Length(), 3u);
+    EXPECT_EQ(hvcc.NumSPS(), 1u);
+    EXPECT_TRUE(hvcc.HasSPS());
+    EXPECT_EQ(hvcc.general_profile_space, details.general_profile_space);
+    EXPECT_EQ(hvcc.general_tier_flag, details.general_tier_flag);
+    EXPECT_EQ(hvcc.general_profile_idc, details.general_profile_idc);
+    EXPECT_EQ(hvcc.general_profile_compatibility_flags,
+              details.general_profile_compatibility_flags);
+    EXPECT_EQ(hvcc.general_constraint_indicator_flags,
+              details.general_constraint_indicator_flags);
+    EXPECT_EQ(hvcc.general_level_idc, details.general_level_idc);
+    EXPECT_EQ(hvcc.chroma_format_idc, 1u);
+    EXPECT_EQ(hvcc.bit_depth_luma_minus8, testCase.mBitDepth - 8);
+    EXPECT_EQ(hvcc.bit_depth_chroma_minus8, testCase.mBitDepth - 8);
+
+    // The SPS must agree with the hvcC, since HEVCChangeMonitor takes the
+    // image size and colour depth from the SPS.
+    auto spsRv = H265::DecodeSPSFromHVCCExtraData(extradata);
+    ASSERT_TRUE(spsRv.isOk());
+    const auto sps = spsRv.unwrap();
+    const auto& ptl = sps.profile_tier_level;
+    EXPECT_EQ(ptl.general_profile_space, details.general_profile_space);
+    EXPECT_EQ(ptl.general_tier_flag, details.general_tier_flag);
+    EXPECT_EQ(ptl.general_profile_idc, details.general_profile_idc);
+    EXPECT_EQ(ptl.general_profile_compatibility_flags,
+              details.general_profile_compatibility_flags);
+    EXPECT_EQ(ptl.general_level_idc, details.general_level_idc);
+    // The four named constraint flags are the most significant bits of
+    // general_constraint_indicator_flags.
+    const uint64_t constraints = details.general_constraint_indicator_flags;
+    EXPECT_EQ(ptl.general_progressive_source_flag,
+              ((constraints >> 47) & 1) != 0);
+    EXPECT_EQ(ptl.general_interlaced_source_flag,
+              ((constraints >> 46) & 1) != 0);
+    EXPECT_EQ(ptl.general_non_packed_constraint_flag,
+              ((constraints >> 45) & 1) != 0);
+    EXPECT_EQ(ptl.general_frame_only_constraint_flag,
+              ((constraints >> 44) & 1) != 0);
+
+    EXPECT_EQ(sps.chroma_format_idc, 1u);
+    EXPECT_EQ(sps.pic_width_in_luma_samples, testCase.mCodedWidth);
+    EXPECT_EQ(sps.pic_height_in_luma_samples, testCase.mCodedHeight);
+    EXPECT_EQ(sps.conformance_window_flag, testCase.mConformanceWindow);
+    EXPECT_EQ(sps.GetImageSize(), testCase.mImageSize);
+    EXPECT_EQ(sps.BitDepthLuma(), testCase.mBitDepth);
+    EXPECT_EQ(sps.BitDepthChroma(), testCase.mBitDepth);
+    EXPECT_EQ(sps.ColorDepth(), testCase.mBitDepth == 10
+                                    ? gfx::ColorDepth::COLOR_10
+                                    : gfx::ColorDepth::COLOR_8);
+  }
+}
+
 TEST(H265, ConfWindowTest)
 {
   // This sps contains some cropping information, which will crop video from the

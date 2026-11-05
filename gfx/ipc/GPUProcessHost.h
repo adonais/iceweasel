@@ -147,8 +147,6 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   // Kill the remote process, triggering IPC shutdown.
   void KillHard(bool aGenerateMinidump);
 
-  void DestroyProcess();
-
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   static bool sLaunchWithMacSandbox;
   bool IsMacSandboxLaunchEnabled() override { return sLaunchWithMacSandbox; }
@@ -174,14 +172,6 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   bool mLaunchOomError MOZ_GUARDED_BY(mMonitor) = false;
 
   TimeStamp mLaunchTime;
-
-  // Set to true on construction and to false just prior deletion.
-  // The GPUProcessHost isn't refcounted; so we can capture this by value in
-  // lambdas along with a strong reference to mLiveToken and check if that value
-  // is true before accessing "this".
-  // While a reference to mLiveToken can be taken on any thread; its value can
-  // only be read on the main thread.
-  const RefPtr<media::Refcountable<bool>> mLiveToken;
 
 #ifdef MOZ_WIDGET_ANDROID
   // Binder interface used to send compositor surfaces to GPU process. There is

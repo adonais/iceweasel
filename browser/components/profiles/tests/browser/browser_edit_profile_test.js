@@ -805,17 +805,161 @@ add_task(async function test_edit_link_keyboard_accessibility() {
           "Avatar selector should be visible after Enter key"
         );
 
-        editButton.focus();
-        EventUtils.synthesizeKey("KEY_Enter", {}, content); // Hide the avatar selector first
+        EventUtils.synthesizeKey("KEY_Escape", {}, content);
         Assert.ok(
           ContentTaskUtils.isHidden(avatarSelector.dialog),
           "Avatar selector should be hidden again"
+        );
+        Assert.equal(
+          editProfileCard.shadowRoot.activeElement,
+          editButton,
+          "Focus should return to the edit button"
         );
 
         EventUtils.synthesizeKey(" ", {}, content);
         Assert.ok(
           ContentTaskUtils.isVisible(avatarSelector.dialog),
           "Avatar selector should be visible after Space key"
+        );
+      });
+    }
+  );
+});
+
+add_task(async function test_avatar_selector_closes_on_click_outside() {
+  if (!AppConstants.MOZ_SELECTABLE_PROFILES) {
+    ok(true, "Skipping because !AppConstants.MOZ_SELECTABLE_PROFILES");
+    return;
+  }
+
+  await setup();
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "about:editprofile",
+    },
+    async browser => {
+      await SpecialPowers.spawn(browser, [], async () => {
+        const EventUtils = ContentTaskUtils.getEventUtils(content);
+
+        let editProfileCard =
+          content.document.querySelector("edit-profile-card").wrappedJSObject;
+
+        await ContentTaskUtils.waitForCondition(
+          () => editProfileCard.initialized,
+          "Waiting for edit-profile-card to be initialized"
+        );
+        await editProfileCard.updateComplete;
+
+        let avatarSelector = editProfileCard.avatarSelector;
+
+        EventUtils.synthesizeMouseAtCenter(
+          editProfileCard.avatarSelectorButton,
+          {},
+          content
+        );
+        Assert.ok(
+          ContentTaskUtils.isVisible(avatarSelector.dialog),
+          "Avatar selector should be visible"
+        );
+
+        EventUtils.synthesizeMouse(
+          content.document.documentElement,
+          2,
+          2,
+          {},
+          content
+        );
+        Assert.ok(
+          ContentTaskUtils.isHidden(avatarSelector.dialog),
+          "Avatar selector should be hidden after clicking outside of it"
+        );
+      });
+    }
+  );
+});
+
+add_task(async function test_avatar_selector_contains_focus() {
+  if (!AppConstants.MOZ_SELECTABLE_PROFILES) {
+    ok(true, "Skipping because !AppConstants.MOZ_SELECTABLE_PROFILES");
+    return;
+  }
+
+  await setup();
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "about:editprofile",
+    },
+    async browser => {
+      await SpecialPowers.spawn(browser, [], async () => {
+        const EventUtils = ContentTaskUtils.getEventUtils(content);
+
+        let editProfileCard =
+          content.document.querySelector("edit-profile-card").wrappedJSObject;
+
+        await ContentTaskUtils.waitForCondition(
+          () => editProfileCard.initialized,
+          "Waiting for edit-profile-card to be initialized"
+        );
+        await editProfileCard.updateComplete;
+
+        let avatarSelector = editProfileCard.avatarSelector;
+
+        const getDeepActiveElement = () => {
+          let element = content.document.activeElement;
+          while (element?.shadowRoot?.activeElement) {
+            element = element.shadowRoot.activeElement;
+          }
+          return element;
+        };
+
+        const isInDialog = element => {
+          while (element) {
+            if (avatarSelector.dialog.contains(element)) {
+              return true;
+            }
+            element = element.getRootNode().host;
+          }
+          return false;
+        };
+
+        EventUtils.synthesizeMouseAtCenter(
+          editProfileCard.avatarSelectorButton,
+          {},
+          content
+        );
+        Assert.ok(
+          ContentTaskUtils.isVisible(avatarSelector.dialog),
+          "Avatar selector should be visible"
+        );
+        let initialFocus = getDeepActiveElement();
+        Assert.ok(
+          isInDialog(initialFocus),
+          "Focus should move into the avatar selector when it opens"
+        );
+
+        // Tab until focus leaves the page or wraps back to where it started.
+        // Focus must never land on the page behind the dialog.
+        let focused;
+        do {
+          EventUtils.synthesizeKey("KEY_Tab", {}, content);
+          focused = content.document.hasFocus() ? getDeepActiveElement() : null;
+          if (focused) {
+            Assert.ok(
+              isInDialog(focused),
+              "Focus should stay inside the avatar selector"
+            );
+          }
+        } while (focused && focused !== initialFocus);
+
+        editProfileCard.nameInput.focus();
+        Assert.notEqual(
+          editProfileCard.shadowRoot.activeElement,
+          editProfileCard.nameInput,
+          "Content behind the avatar selector should not be focusable"
         );
       });
     }

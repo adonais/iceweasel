@@ -17,6 +17,9 @@
 
 #if defined(MOZILLA_INTERNAL_API)
 #  include "mozilla/mscom/EnsureMTA.h"
+#  include "nsCOMPtr.h"
+#  include "nsIComponentManager.h"
+#  include "nsXPCOM.h"
 #  if defined(MOZ_SANDBOX)
 #    include "mozilla/sandboxTarget.h"
 #  endif  // defined(MOZ_SANDBOX)
@@ -147,6 +150,16 @@ ProcessRuntime::ProcessRuntime(const ProcessCategory aProcessCategory)
 ProcessRuntime::~ProcessRuntime() {
   MOZ_DIAGNOSTIC_ASSERT(sInstance == this);
   sInstance = nullptr;
+
+  // When XPCOM is not running, either because it was never started (e.g. a
+  // remoting client) or because it already shut down, nothing else will stop
+  // the persistent MTA thread started by EnsureMTA() in our constructor. Left
+  // running, it could start or keep running while the process tears down
+  // state it depends on.
+  nsCOMPtr<nsIComponentManager> compMgr;
+  if (NS_FAILED(NS_GetComponentManager(getter_AddRefs(compMgr)))) {
+    EnsureMTA::ShutdownPersistentMTAThread();
+  }
 }
 
 void ProcessRuntime::InitUsingPersistentMTAThread(bool aNeedsSandboxedInit) {

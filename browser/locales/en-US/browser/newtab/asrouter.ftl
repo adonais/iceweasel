@@ -516,3 +516,9 @@ refresh-unused-profile-infobar-message = It looks like you haven’t started { -
 refresh-reinstalled-profile-infobar-message = Looks like you’ve reinstalled { -brand-short-name }. Want us to clean it up for a fresh, like-new experience?
 refresh-profile-infobar-button = Refresh { -brand-short-name }…
   .accesskey = e
+
+## Infobar shown at startup to suggest session-restore
+
+# <img data-l10n-name="icon"/> will be replaced by the application menu icon
+restore-session-startup-suggestion-message = <strong>Open previous tabs?</strong> You can restore your previous session from the { -brand-short-name } application menu <img data-l10n-name="icon"/>, under History.
+restore-session-startup-suggestion-button = Show me how

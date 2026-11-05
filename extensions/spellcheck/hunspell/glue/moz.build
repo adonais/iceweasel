@@ -27,3 +27,14 @@ HunspellIncludes()
 XPCOM_MANIFESTS += [
     "components.conf",
 ]
+
+SOURCE_HEADERS += [
+    "hunspell_alloc_hooks.h",
+    "mozHunspell.h",
+    "mozHunspellAllocator.h",
+    "mozHunspellRLBoxGlue.h",
+    "mozHunspellRLBoxHost.h",
+    "mozHunspellRLBoxSandbox.h",
+    "RLBoxHunspell.h",
+    "RLBoxHunspellTypes.h",
+]

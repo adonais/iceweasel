@@ -171,7 +171,10 @@ add_task(test_mode_2);
 
 add_task(test_excluded_domains);
 
-add_task(test_captiveportal_canonicalURL);
+add_task(
+  { skip_if: () => mozinfo.os == "android" },
+  test_captiveportal_canonicalURL
+);
 
 add_task(test_parentalcontrols);
 
@@ -180,7 +183,7 @@ add_task(test_builtin_excluded_domains);
 
 add_task(test_excluded_domains_mode3);
 
-add_task(test25e);
+add_task({ skip_if: () => mozinfo.os == "android" }, test25e);
 
 add_task(test_parentalcontrols_mode3);
 

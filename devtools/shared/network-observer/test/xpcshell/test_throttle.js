@@ -160,3 +160,62 @@ add_task(async function () {
   newState = await onChange;
   equal(newState, "stop", "onStateChanged reported");
 });
+
+add_task(async function test_destroy_unthrottles_all_requests() {
+  const throttler = new NetworkThrottleManager({
+    latencyMean: 100000,
+    latencyMax: 100000,
+    downloadBPSMean: 1,
+    downloadBPSMax: 1,
+    uploadBPSMean: 0,
+    uploadBPSMax: 0,
+  });
+
+  const TEST_INPUT = "hi bob";
+  const createInputStream = () => {
+    const storageStream = Cc["@mozilla.org/storagestream;1"].createInstance(
+      Ci.nsIStorageStream
+    );
+    storageStream.init(512, 512);
+    const out = storageStream.getOutputStream(0);
+    out.write(TEST_INPUT, TEST_INPUT.length);
+    out.close();
+    return storageStream.newInputStream(0);
+  };
+
+  const bufferedChannel = new TestChannel();
+  const bufferedListener = throttler.manage(bufferedChannel);
+  bufferedListener.onStartRequest(null);
+  bufferedListener.onDataAvailable(null, createInputStream(), 0, 6);
+
+  const startedChannel = new TestChannel();
+  const startedListener = throttler.manage(startedChannel);
+  startedListener.onStartRequest(null);
+
+  const notStartedChannel = new TestChannel();
+  const notStartedListener = throttler.manage(notStartedChannel);
+
+  equal(bufferedChannel.testListener.state, "start", "data is buffered");
+
+  throttler.destroy();
+  equal(
+    bufferedChannel.testListener.data,
+    TEST_INPUT,
+    "buffered data is sent on destroy"
+  );
+
+  startedListener.onDataAvailable(null, createInputStream(), 0, 6);
+  equal(
+    startedChannel.testListener.data,
+    TEST_INPUT,
+    "data is sent immediately for a request started before destroy"
+  );
+
+  notStartedListener.onStartRequest(null);
+  notStartedListener.onDataAvailable(null, createInputStream(), 0, 6);
+  equal(
+    notStartedChannel.testListener.data,
+    TEST_INPUT,
+    "data is sent immediately for a request started after destroy"
+  );
+});

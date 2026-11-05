@@ -171,7 +171,10 @@ function test_read_baddb() {
 }
 
 function test_busy_telemetry() {
-  let file = do_get_file("goodDB.sqlite");
+  let profileDir = do_get_profile();
+  do_get_file("goodDB.sqlite").copyTo(profileDir, "goodDB.sqlite");
+  let file = profileDir.clone();
+  file.append("goodDB.sqlite");
   let conn1 = Services.storage.openUnsharedDatabase(file);
   let conn2 = Services.storage.openUnsharedDatabase(file);
 

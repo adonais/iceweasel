@@ -185,18 +185,22 @@
       justify-content: center;
     }
 
-    // No room for widgets plus two cards, so the feed takes the whole panel.
-    .widgets-section-container {
+    // No room for widgets plus two cards, so the feed takes the whole panel. A
+    // widgets-only space has no feed to make room for.
+    .space:has(.layout-content-column) .widgets-section-container {
       display: none;
     }
 
     /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
     @include at-band-fits-pair(2) {
+      // Exactly the pair: its two tracks plus the 3 * --space-medium gap. Any
+      // wider and the frame overflows the band just past the breakpoint, which
+      // only admitted the pair.
       .spaces-frame {
-        inline-size: --col-span(13);
+        inline-size: calc(#{--col-span(12)} + 2 * var(--space-medium));
       }
 
-      .widgets-section-container {
+      .space:has(.layout-content-column) .widgets-section-container {
         display: grid;
       }
 
@@ -204,17 +208,17 @@
       // the same card count the flat band would rather than holding the paired
       // width. The largest whole card count the frame fits, because the feed's
       // auto-fill grid collapses to one card without a definite width -- which
-      // is why this cannot be folded into the stretch below.
-      .layout-content-column.has-feed {
+      // is why this cannot be folded into the stretch below. A space with no
+      // feed gives it to its widgets and Recent activity the same way.
+      .layout-content-column.has-feed, .space:not(:has(.layout-content-column)) :is(.widgets-section-container, .layout-highlights-column) {
         inline-size: --col-span(12);
       }
 
-      // Only a space that has widgets is a pair; the rest keep one column.
-      .space:has(.widgets-section-container) {
+      // Only a space that has both is a pair; the rest keep one column.
+      .space:has(.widgets-section-container):has(.layout-content-column) {
         grid-template-columns: --col-span(8) --col-span(4);
 
         // Here the grid tracks govern the widths instead.
-        /* stylelint-disable-next-line max-line-length */
         :is(.widgets-section-container, .layout-content-column.has-feed, .layout-highlights-column) {
           inline-size: auto;
           justify-self: stretch;
@@ -243,14 +247,14 @@
 
     @include at-band-fits-pair(3) {
       .spaces-frame {
-        inline-size: --col-span(17);
+        inline-size: calc(#{--col-span(16)} + 2 * var(--space-medium));
       }
 
-      .layout-content-column.has-feed {
+      .layout-content-column.has-feed, .space:not(:has(.layout-content-column)) :is(.widgets-section-container, .layout-highlights-column) {
         inline-size: --col-span(16);
       }
 
-      .space:has(.widgets-section-container) {
+      .space:has(.widgets-section-container):has(.layout-content-column) {
         grid-template-columns: --col-span(12) --col-span(4);
       }
     }
@@ -340,9 +344,121 @@
     }
   }
 
-  // Floating arrows: an arrow at each edge that has a space beyond it, in place
-  // of the tablist.
+  // Tab preview, in the spaces-preview variants and when a thematic config
+  // turns it on: the space a tab leads to, shown above that tab. Each tab names
+  // itself as an anchor only when the preview is on.
+  .spaces-tab {
+    anchor-name: var(--spaces-tab-anchor);
+  }
+
+  .spaces-preview {
+    position: absolute;
+    position-anchor: var(--spaces-preview-anchor);
+    position-area: block-start;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-large);
+    margin-block-end: var(--space-xxlarge);
+    background-color: var(--panel-background-color);
+    color: var(--panel-text-color);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius-large);
+    pointer-events: none;
+    padding: var(--space-large);
+    box-sizing: border-box;
+
+    // The comps' fixed size.
+    /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+    inline-size: 291px;
+    block-size: 296px;
+    /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+
+    // The selected tab's accent border. Its token is chrome-only, and
+    // background-clip: border-area is off for content, so this paints the
+    // gradient under a padding-box fill instead.
+    --spaces-preview-border-color-leading: var(--color-violet-30);
+    --spaces-preview-border-color-trailing: var(--color-orange-30);
+    --spaces-preview-caret-border-color: var(--border-color);
+
+    @media (prefers-contrast: no-preference) {
+      // The gradient's colour at the caret, which sits midway along it.
+      --spaces-preview-caret-border-color: color-mix(in srgb, var(--spaces-preview-border-color-leading), var(--spaces-preview-border-color-trailing));
+
+      border-color: transparent;
+      background:
+        linear-gradient(var(--panel-background-color), var(--panel-background-color)) padding-box,
+        linear-gradient(96deg, var(--spaces-preview-border-color-leading) 20.68%, var(--spaces-preview-border-color-trailing) 79.34%) border-box;
+    }
+
+    // Points down at the tab: a square turned 45deg, half over the box's
+    // bottom edge so it covers the border there, with the two sides that meet
+    // at its lower corner bordered. Those are its inline-end and block-end
+    // sides only while it turns towards the inline end, so RTL turns it the
+    // other way.
+    &::after {
+      content: '';
+      position: absolute;
+      inset-block-start: 100%;
+      inset-inline: 0;
+      margin-inline: auto;
+      translate: 0 -50%;
+      rotate: 45deg;
+      inline-size: var(--size-item-xsmall);
+      block-size: var(--size-item-xsmall);
+      border-inline-end: var(--border-width) solid var(--spaces-preview-caret-border-color);
+      border-block-end: var(--border-width) solid var(--spaces-preview-caret-border-color);
+      background-color: var(--panel-background-color);
+      color: var(--panel-text-color);
+    }
+
+    &:dir(rtl)::after {
+      rotate: -45deg;
+    }
+  }
+
+  // Whatever the box has left, with the item contained in it at its own aspect
+  // ratio.
+  .spaces-preview-item {
+    align-self: stretch;
+    flex: 1;
+    min-block-size: 0;
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+
+  // At its designed size, centred, over the whole box inside the border,
+  // padding included, where its rounded corners clip whatever overhangs, as
+  // the comps' card does to Kit.
+  .spaces-preview-image {
+    position: absolute;
+    inset: 0;
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    border-radius: var(--border-radius-large);
+    object-fit: none;
+    object-position: center;
+  }
+
+  // Floating arrows: the panel runs to the bottom of the page, and the arrows
+  // replace the tablist.
   &.spaces-floating-arrows {
+    // The panel moves to the container, below.
+    .spaces-frame::before {
+      content: none;
+    }
+
+    // Faster than the other spaces variants.
+    .spaces-track.animate .space {
+      transition-duration: 150ms;
+    }
+  }
+
+  // An arrow at each window edge. The floating arrows variant always has them,
+  // the thematic one when its config asks.
+  &.spaces-arrows {
     // Full-bleed: the band extends over the container's padding and takes one
     // full-width track, so the panel and arrows reach the window edges.
     max-inline-size: none;
@@ -356,20 +472,10 @@
       container: content-grid / inline-size;
     }
 
-    // The panel moves to the container, below.
-    .spaces-frame::before {
-      content: none;
-    }
-
     // Anchors the .spaces-panel-backdrop.
     .spaces-container {
       position: relative;
       anchor-name: --spaces-panel;
-    }
-
-    // Faster than the other spaces variants.
-    .spaces-track.animate .space {
-      transition-duration: 150ms;
     }
 
     // Spans the band's height, so the sticky arrow never rises above it into
@@ -398,6 +504,14 @@
       position: sticky;
       inset-block-start: 40vh;
       pointer-events: auto;
+    }
+
+    // With no panel behind them, the arrows sit directly on the wallpaper, and
+    // have no band to line up with, so they ride in the window's lower third.
+    &:not(.spaces-floating-arrows) .spaces-arrow {
+      @include wallpaper-contrast-fix;
+
+      inset-block-start: calc(70vh - var(--button-min-height) / 2);
     }
 
     .spaces-arrow::part(button) {
@@ -454,6 +568,199 @@
 
     .next .spaces-arrow:dir(rtl) {
       --button-icon-content: url('chrome://global/skin/icons/shaft-arrow-left.svg');
+    }
+  }
+
+  // Peek: the neighbouring spaces show in the page margins. Impressions are
+  // gated on SpaceActiveContext instead of the track's clip, so here the clip
+  // can open sideways.
+  &.spaces-peek {
+    --peek-gap: calc(2 * var(--space-medium) + 2 * var(--space-xxlarge));
+    --peek-slide: var(--space-xlarge);
+    --peek-push: calc(5 * var(--space-large));
+    --peek-duration: 150ms;
+    // A medium card plus the space's heading.
+    --peek-min-height: calc(
+      var(--newtab-card-height) + 2 * var(--space-xlarge)
+    );
+    --space-gap: var(--peek-gap);
+
+    // Full-bleed, so the margin reaches the window edges.
+    max-inline-size: none;
+    inline-size: auto;
+    justify-self: stretch;
+    margin-inline: calc(-1 * var(--space-xlarge));
+    grid-template-columns: 100%;
+
+    .spaces-frame {
+      container: content-grid / inline-size;
+    }
+
+    // Clips the peek at the window edge. --peek-sign flips the hover moves for RTL.
+    .spaces-container {
+      --peek-sign: 1;
+
+      overflow-x: clip;
+
+      &:dir(rtl) {
+        --peek-sign: -1;
+      }
+    }
+
+    // Unclipped, so a peek gets --peek-min-height when the active space is shorter.
+    .spaces-track {
+      overflow: visible;
+    }
+
+    // Not the frame itself: a transform there would capture the fixed tablist.
+    .spaces-track,
+    .spaces-frame::before {
+      transition: translate var(--peek-duration) ease-out;
+    }
+
+    // Hovering a peek or its tab pushes the current space, and the far peek,
+    // away by --peek-push, and slides the hovered peek in by that plus
+    // --peek-slide.
+    .peek-hover-next {
+      .spaces-track,
+      .spaces-frame::before,
+      .spaces-peek-box.prev {
+        translate: calc(-1 * var(--peek-sign) * var(--peek-push));
+      }
+
+      .spaces-peek-box.next {
+        translate: calc(
+          -1 * var(--peek-sign) * (var(--peek-push) + var(--peek-slide))
+        );
+      }
+    }
+
+    .peek-hover-prev {
+      .spaces-track,
+      .spaces-frame::before,
+      .spaces-peek-box.next {
+        translate: calc(var(--peek-sign) * var(--peek-push));
+      }
+
+      .spaces-peek-box.prev {
+        translate: calc(var(--peek-sign) * (var(--peek-push) + var(--peek-slide)));
+      }
+    }
+
+    // The base .space offset, with the gap narrowed by the slide.
+    .peek-hover-next .space.peeking-next,
+    .peek-hover-prev .space.peeking-prev {
+      translate: calc(
+        var(--peek-sign) * var(--space-offset) * (100% + var(--peek-gap) - var(--peek-slide))
+      );
+    }
+
+    // Small delay on the hover slide, so quick passes do not set it off.
+    :is(.peek-hover-next, .peek-hover-prev) {
+      :is(.spaces-track, .spaces-peek-box, .space),
+      .spaces-frame::before {
+        transition-delay: 50ms;
+      }
+    }
+
+    // Only the neighbours peek. visibility transitions with the slide, so a
+    // space leaving stays visible until it is out of the frame.
+    .space:not(.active, .peeking) {
+      visibility: hidden;
+    }
+
+    // As tall as the active space, or --peek-min-height where that is taller.
+    .space:not(.active) {
+      inset-block-end: 0;
+      // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
+      min-block-size: var(--peek-min-height);
+      overflow-y: clip;
+    }
+
+    .spaces-track.animate .space {
+      transition-property: translate, opacity, visibility;
+      transition-duration: var(--peek-duration);
+    }
+
+    // Draws the peeked space's panel and takes its hover and click. It sits
+    // under the space, whose inert content lets the pointer through. 100vw
+    // so it's always wider than the margin.
+    .spaces-peek-box {
+      @include layout-panel;
+
+      position: absolute;
+      inset-block: 0;
+      inline-size: 100vw;
+      // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
+      min-block-size: var(--peek-min-height);
+      cursor: pointer;
+      transition-property: translate, opacity, visibility;
+      transition-duration: var(--peek-duration);
+      transition-timing-function: ease-out;
+
+      &.next {
+        inset-inline-start: calc(100% + var(--peek-gap));
+      }
+
+      &.prev {
+        inset-inline-end: calc(100% + var(--peek-gap));
+      }
+    }
+
+    // Last, so it overrides every peek transition above. The hover slide is
+    // disabled for reduced motion.
+    @media (prefers-reduced-motion: reduce) {
+      .spaces-track,
+      .spaces-track.animate .space,
+      .spaces-frame::before,
+      .spaces-peek-box {
+        transition: none;
+      }
+
+      .spaces-frame,
+      .spaces-peek-box {
+        --peek-push: 0px;
+        --peek-slide: 0px;
+      }
+    }
+
+    // For the cutoff's container queries, which cannot read custom properties.
+    $peek-min: 3rem;
+    $peek-gap: 2 * $col-gap-px + 4rem;
+
+    // Hides the peek while the frame is $cols wide and less than $peek-min of
+    // the space would show beside it, and turns off the hover slide with it.
+    // Queries the spaces container, which spans the window.
+    @mixin peek-hidden-below($cols) {
+      $frame: calc(#{$cols} * #{$col-width-px} + #{$cols - 1} * #{$col-gap-px});
+
+      @container component (inline-size < calc(#{$frame} + 2 * (#{$peek-gap} + #{$peek-min}))) {
+        :is(.spaces-peek-box, .space.peeking) {
+          opacity: 0;
+          visibility: hidden;
+        }
+
+        .spaces-frame,
+        .spaces-peek-box {
+          --peek-push: 0px;
+          --peek-slide: 0px;
+        }
+      }
+    }
+
+    // One threshold per frame step, as each step narrows the margin.
+    @include peek-hidden-below(4);
+
+    @include at-band-cols(8) {
+      @include peek-hidden-below(8);
+    }
+
+    @include at-band-cols(12) {
+      @include peek-hidden-below(12);
+    }
+
+    @include at-band-cols(16) {
+      @include peek-hidden-below(16);
     }
   }
 }

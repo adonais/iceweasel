@@ -853,3 +853,101 @@ add_task(async function test_tab_group_confirmation_event_detail() {
     await restore();
   }
 });
+
+/**
+ * Test that "Select all" / "Deselect all" on either confirmation card is
+ * forwarded as a tool UI update, so the parent can record it
+ */
+add_task(async function test_confirmation_toggle_all_dispatches_update() {
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["Please confirm the tabs."] },
+  });
+  const win = await openAIWindow();
+
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+    const aichatBrowser = await getAichatBrowser(browser);
+
+    for (const [uiType, properties] of [
+      ["website-confirmation", {}],
+      ["tab-group-confirmation", { actionType: "open_tabs" }],
+    ]) {
+      const toolCallId = `tool-toggle-${uiType}`;
+      await setupConversationWithToolUI(aichatBrowser, {
+        userMessage: "Act on tabs",
+        assistantMessage: "Please confirm the tabs.",
+        messageId: `msg-toggle-${uiType}`,
+        toolUIData: {
+          toolCallId,
+          uiType,
+          properties: {
+            ...properties,
+            tabs: [
+              {
+                linkedPanel: "panel-1",
+                url: "https://example.com",
+                title: "Example",
+                checked: false,
+              },
+            ],
+          },
+        },
+      });
+
+      await SpecialPowers.spawn(
+        aichatBrowser,
+        [uiType, toolCallId],
+        async (type, expectedToolCallId) => {
+          const chatContent = content.document.querySelector("ai-chat-content");
+          const confirmation = await ContentTaskUtils.waitForCondition(
+            () =>
+              chatContent.shadowRoot.querySelector("ai-website-confirmation"),
+            "Wait for confirmation component"
+          );
+          await confirmation.updateComplete;
+
+          const updates = [];
+          const listener = event => updates.push(event.detail);
+          chatContent.addEventListener("AIChatContent:ToolUIUpdate", listener);
+
+          const toggleButton =
+            confirmation.shadowRoot.querySelectorAll("moz-button")[1];
+          toggleButton.click();
+          await confirmation.updateComplete;
+          toggleButton.click();
+
+          chatContent.removeEventListener(
+            "AIChatContent:ToolUIUpdate",
+            listener
+          );
+
+          Assert.deepEqual(
+            updates.map(update => ({
+              toolCallId: update.toolCallId,
+              updateType: update.updateType,
+              allSelected: update.updateData.allSelected,
+            })),
+            [
+              {
+                toolCallId: expectedToolCallId,
+                updateType: "toggle-all-tab-selection",
+                allSelected: true,
+              },
+              {
+                toolCallId: expectedToolCallId,
+                updateType: "toggle-all-tab-selection",
+                allSelected: false,
+              },
+            ],
+            `${type}: select all then deselect all are forwarded`
+          );
+        }
+      );
+    }
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    restoreSignIn();
+    await restore();
+  }
+});

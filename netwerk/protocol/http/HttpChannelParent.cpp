@@ -173,10 +173,9 @@ bool HttpChannelParent::Init(const HttpChannelCreationArgs& aArgs) {
           a.launchServiceWorkerStart(), a.launchServiceWorkerEnd(),
           a.dispatchFetchEventStart(), a.dispatchFetchEventEnd(),
           a.handleFetchEventStart(), a.handleFetchEventEnd(),
-          a.forceMainDocumentChannel(), a.navigationStartTimeStamp(),
-          a.earlyHintPreloaderId(), a.classicScriptHintCharset(),
-          a.documentCharacterSet(), a.isUserAgentHeaderModified(),
-          a.initiatorType());
+          a.navigationStartTimeStamp(), a.earlyHintPreloaderId(),
+          a.classicScriptHintCharset(), a.documentCharacterSet(),
+          a.isUserAgentHeaderModified(), a.initiatorType());
     }
     case HttpChannelCreationArgs::THttpChannelConnectArgs: {
       const HttpChannelConnectArgs& cArgs = aArgs.get_HttpChannelConnectArgs();
@@ -445,7 +444,6 @@ bool HttpChannelParent::DoAsyncOpen(
     const TimeStamp& aDispatchFetchEventEnd,
     const TimeStamp& aHandleFetchEventStart,
     const TimeStamp& aHandleFetchEventEnd,
-    const bool& aForceMainDocumentChannel,
     const TimeStamp& aNavigationStartTimeStamp,
     const uint64_t& aEarlyHintPreloaderId,
     const nsAString& aClassicScriptHintCharset,
@@ -453,7 +451,23 @@ bool HttpChannelParent::DoAsyncOpen(
     const bool& aIsUserAgentHeaderModified, const nsString& aInitiatorType) {
   MOZ_ASSERT(aURI, "aURI should not be NULL");
 
-  if (aEarlyHintPreloaderId) {
+  dom::PContentParent* pcp = Manager()->Manager();
+  const dom::RemoteType& remoteType =
+      static_cast<dom::ContentParent*>(pcp)->GetRemoteType();
+
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(aLoadInfoArgs, remoteType,
+                                                     getter_AddRefs(loadInfo));
+  if (NS_FAILED(rv)) {
+    return SendFailedAsyncOpen(rv);
+  }
+
+  // If the early hint preload is gone or was made for a different request,
+  // ignore it and load the resource normally.
+  RefPtr<EarlyHintRegistrar> registrar =
+      aEarlyHintPreloaderId ? EarlyHintRegistrar::GetOrCreate() : nullptr;
+  if (registrar &&
+      registrar->MatchesRequest(aEarlyHintPreloaderId, aURI, loadInfo)) {
     // Wait for HttpBackgrounChannel to continue the async open procedure.
     mEarlyHintPreloaderId = aEarlyHintPreloaderId;
     RefPtr<HttpChannelParent> self = this;
@@ -490,17 +504,22 @@ bool HttpChannelParent::DoAsyncOpen(
                   MarkerThreadId::MainThread(), ChannelMarker,
                   aURI->GetSpecOrDefault(), aChannelId);
 
-  nsresult rv;
-
-  dom::PContentParent* pcp = Manager()->Manager();
-  const dom::RemoteType& remoteType =
-      static_cast<dom::ContentParent*>(pcp)->GetRemoteType();
-
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  rv = mozilla::ipc::LoadInfoArgsToLoadInfo(aLoadInfoArgs, remoteType,
-                                            getter_AddRefs(loadInfo));
-  if (NS_FAILED(rv)) {
-    return SendFailedAsyncOpen(rv);
+  // Document, subdocument and object/embed loads go through DocumentChannel,
+  // never PHttpChannel. Reject content-process attempts to open such a channel,
+  // including any carrying navigation- or object-load flags, to prevent forged
+  // navigation attacks. System-principal loads are exempt.
+  nsIPrincipal* loadingPrincipal = loadInfo->GetLoadingPrincipal();
+  bool isSystemPrincipal =
+      loadingPrincipal && loadingPrincipal->IsSystemPrincipal();
+  ExtContentPolicy extType = loadInfo->GetExternalContentPolicyType();
+  if (!isSystemPrincipal &&
+      (extType == ExtContentPolicy::TYPE_DOCUMENT ||
+       extType == ExtContentPolicy::TYPE_SUBDOCUMENT ||
+       extType == ExtContentPolicy::TYPE_OBJECT ||
+       (aLoadFlags & (nsIChannel::LOAD_DOCUMENT_URI |
+                      nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE |
+                      nsIRequest::LOAD_HTML_OBJECT_DATA)))) {
+    return SendFailedAsyncOpen(NS_ERROR_CONTENT_BLOCKED);
   }
 
   nsCOMPtr<nsIChannel> channel;
@@ -558,10 +577,6 @@ bool HttpChannelParent::DoAsyncOpen(
 
   if (aLoadFlags != nsIRequest::LOAD_NORMAL) {
     httpChannel->SetLoadFlags(aLoadFlags);
-  }
-
-  if (aForceMainDocumentChannel) {
-    httpChannel->SetIsMainDocumentChannel(true);
   }
 
   for (uint32_t i = 0; i < requestHeaders.Length(); i++) {

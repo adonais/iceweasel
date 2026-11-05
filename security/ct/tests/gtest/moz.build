@@ -51,3 +51,7 @@ if not CONFIG["MOZ_DEBUG"]:
     DEFINES["NDEBUG"] = True
 
 FINAL_LIBRARY = "xul-gtest"
+
+SOURCE_HEADERS += [
+    "CTTestUtils.h",
+]

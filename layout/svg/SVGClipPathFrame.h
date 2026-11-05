@@ -104,6 +104,17 @@ class SVGClipPathFrame final : public SVGContainerFrame {
   // mask based clipping.
   bool IsTrivial(nsIFrame** aSingleChild = nullptr);
 
+  /**
+   * If this clipPath is trivial and its single child is an axis aligned
+   * rectangle, rounded rectangle, circle or ellipse once the clipPathUnits
+   * and transforms are applied, returns the shape in aClippedFrame's user
+   * space: aRect is the bounding rect and aRadii the corner radii. A
+   * clipPath with no child to clip with yields an empty rect, which clips
+   * everything away.
+   */
+  bool GetSimpleClipShape(nsIFrame* aClippedFrame, CSSRect* aRect,
+                          CSSSize* aRadii);
+
   // nsIFrame interface:
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                             AttrModType aModType) override;

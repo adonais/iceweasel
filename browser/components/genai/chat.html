@@ -31,23 +31,11 @@
     <script src="chrome://browser/content/genai/chat.js"></script>
     <script
       type="module"
-      src="chrome://browser/content/sidebar/sidebar-panel-switcher.mjs"
-    ></script>
-    <script
-      type="module"
       src="chrome://browser/content/genai/content/chatbot-promo.mjs"
     ></script>
   </head>
   <body>
     <div id="header">
-      <!-- Shown only in horizontal-tabs "hide-launcher" mode, where there is no
-           launcher to switch sidebar panels with. The switcher and close button
-           are ordered first in the DOM so keyboard focus reaches them (switcher,
-           then close) ahead of the chatbot's own provider switcher and options
-           menu; CSS keeps the visual layout of each mode intact. -->
-      <sidebar-panel-switcher
-        view="viewGenaiChatSidebar"
-      ></sidebar-panel-switcher>
       <moz-button
         data-l10n-id="genai-header-close-button"
         iconsrc="chrome://global/skin/icons/close.svg"

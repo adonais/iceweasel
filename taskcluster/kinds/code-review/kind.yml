@@ -9,22 +9,38 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 kind-dependencies:
+    - build
     - source-test
+
+task-defaults:
+    # This task is a no-op: it exists only to publish a pulse message
+    # to indicate that relevant tasks have completed.
+    worker-type: succeed
+
+    # Only run when specific target tasks methods are used that
+    # explicitly select one of these tasks.
+    run-on-projects: []
+
+    # This option permits to run the task
+    # regardless of the soft-dependencies tasks exit status
+    # as we are interested in the task failures
+    requires: all-resolved
 
 tasks:
     issues:
         label: code-review-issues
         description: List all issues found in static analysis and linting tasks
-        worker-type: succeed
-
-        # Only run by using the code-review target_tasks_method
-        run-on-projects: []
-
-        # This option permits to run the task
-        # regardless of the soft-dependencies tasks exit status
-        # as we are interested in the task failures
-        requires: all-resolved
+        upstream-attribute: code-review
 
         # Publish on pulse
         routes:
             - project.relman.codereview.v1.try_ending
+
+    build-test-issues:
+        label: code-review-build-test-issues
+        description: List all issues found in build and test tasks
+        upstream-attribute: code-review-build-test
+
+        # Publish on pulse
+        routes:
+            - project.relman.codereview-build-test.v1.try_ending

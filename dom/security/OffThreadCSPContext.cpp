@@ -13,19 +13,6 @@
 
 namespace mozilla::dom {
 
-/* static */
-Result<UniquePtr<OffThreadCSPContext>, nsresult>
-OffThreadCSPContext::CreateFromCSP(nsIContentSecurityPolicy* aCSP) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  mozilla::ipc::CSPInfo cspInfo;
-  nsresult rv = CSPToCSPInfo(aCSP, &cspInfo);
-  if (NS_FAILED(rv)) {
-    return Err(rv);
-  }
-  return MakeUnique<OffThreadCSPContext>(std::move(cspInfo));
-}
-
 const nsTArray<UniquePtr<const nsCSPPolicy>>& OffThreadCSPContext::Policies() {
   EnsureIPCPoliciesRead();
   return mPolicies;

@@ -13,9 +13,6 @@ transforms:
 kind-dependencies:
     - repackage-msix
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     repackage-signing-msix:
         from-deps:

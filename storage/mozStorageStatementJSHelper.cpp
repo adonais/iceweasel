@@ -228,6 +228,13 @@ StatementJSHelper::Resolve(nsIXPConnectWrappedNative* aWrapper, JSContext* aCtx,
 }
 
 NS_IMPL_ISUPPORTS0(StatementParamsHolder);
+StatementParamsHolder::StatementParamsHolder(StatementParams* aParams)
+    : mParams(aParams) {}
+
+StatementParams* StatementParamsHolder::Get() const {
+  MOZ_ASSERT(mParams);
+  return mParams;
+}
 
 StatementParamsHolder::~StatementParamsHolder() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -237,6 +244,13 @@ StatementParamsHolder::~StatementParamsHolder() {
 }
 
 NS_IMPL_ISUPPORTS0(StatementRowHolder);
+
+StatementRowHolder::StatementRowHolder(StatementRow* aRow) : mRow(aRow) {}
+
+StatementRow* StatementRowHolder::Get() const {
+  MOZ_ASSERT(mRow);
+  return mRow;
+}
 
 StatementRowHolder::~StatementRowHolder() {
   MOZ_ASSERT(NS_IsMainThread());

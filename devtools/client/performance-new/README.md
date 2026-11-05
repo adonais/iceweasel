@@ -4,7 +4,7 @@ This folder contains the code for the new performance panel that is a simplified
 
 ## TypeScript
 
-This project contains TypeScript types in JSDoc comments. To run the type checker point your terminal to this directory, and run `yarn install`, then `yarn test`. In addition type hints should work if your editor is configured to speak TypeScript.
+This project contains TypeScript types in JSDoc comments. To run the type checker point your terminal to this directory, and run `npm ci`, then `npm test`. In addition type hints should work if your editor is configured to speak TypeScript.
 
 ## Overall Architecture
 

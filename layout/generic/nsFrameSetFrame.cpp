@@ -1235,7 +1235,7 @@ void nsHTMLFramesetFrame::MouseDrag(nsPresContext* aPresContext,
       GenerateRowCol(aPresContext, width, colSpecs, mColSizes, newColAttr);
       // Setting the attr will trigger a reflow
       mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::cols,
-                                     newColAttr, true);
+                                     newColAttr, true, IsKnownNewAttr::No);
     }
   } else {
     change = aPresContext->DevPixelsToAppUnits(aEvent->mRefPoint.y -
@@ -1259,7 +1259,7 @@ void nsHTMLFramesetFrame::MouseDrag(nsPresContext* aPresContext,
       GenerateRowCol(aPresContext, height, rowSpecs, mRowSizes, newRowAttr);
       // Setting the attr will trigger a reflow
       mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::rows,
-                                     newRowAttr, true);
+                                     newRowAttr, true, IsKnownNewAttr::No);
     }
   }
 

@@ -29,6 +29,8 @@ static const LiveRegisterSet AllRegs =
     LiveRegisterSet(GeneralRegisterSet(Registers::AllMask),
                     FloatRegisterSet(FloatRegisters::AllMask));
 
+static_assert(sizeof(uintptr_t) == sizeof(uint64_t), "Not 32-bit clean.");
+
 static void PushBailoutFrame(MacroAssembler& masm, Register spArg) {
   // Push the frameSize_ stored in ra
   // See: CodeGeneratorRiscv64::generateOutOfLineCode()
@@ -40,6 +42,11 @@ static void PushBailoutFrame(MacroAssembler& masm, Register spArg) {
   // Put pointer to BailoutStack as first argument to the Bailout()
   masm.movePtr(StackPointer, spArg);
 }
+
+struct EnterJITFrame {
+  uint64_t fp;
+  uint64_t ra;
+};
 
 struct EnterJITRegs {
   double fs11;
@@ -58,9 +65,7 @@ struct EnterJITRegs {
   //  uintptr_t align;
 
   // non-volatile registers.
-  uint64_t ra;
   uint64_t sp;
-  uint64_t fp;
   uint64_t gp;
   uint64_t s11;
   uint64_t s10;
@@ -75,7 +80,15 @@ struct EnterJITRegs {
   uint64_t s1;
   // Save reg_vp(a7) on stack, use it after call jit code.
   uint64_t a7;
+
+  EnterJITFrame frame;
 };
+
+static constexpr size_t EnterJITSaveSize = offsetof(EnterJITRegs, frame);
+
+static_assert(sizeof(EnterJITFrame) % JitStackAlignment == 0);
+static_assert(EnterJITSaveSize % JitStackAlignment == 0);
+static_assert(sizeof(EnterJITRegs) == EnterJITSaveSize + sizeof(EnterJITFrame));
 
 static void GenerateReturn(MacroAssembler& masm, int returnCode) {
   MOZ_ASSERT(masm.framePushed() == sizeof(EnterJITRegs));
@@ -93,9 +106,7 @@ static void GenerateReturn(MacroAssembler& masm, int returnCode) {
   masm.ld(s10, StackPointer, offsetof(EnterJITRegs, s10));
   masm.ld(s11, StackPointer, offsetof(EnterJITRegs, s11));
   masm.ld(gp, StackPointer, offsetof(EnterJITRegs, gp));
-  masm.ld(fp, StackPointer, offsetof(EnterJITRegs, fp));
   masm.ld(sp, StackPointer, offsetof(EnterJITRegs, sp));
-  masm.ld(ra, StackPointer, offsetof(EnterJITRegs, ra));
 
   // Restore non-volatile floating point registers
   masm.fld(fs11, StackPointer, offsetof(EnterJITRegs, fs11));
@@ -111,13 +122,24 @@ static void GenerateReturn(MacroAssembler& masm, int returnCode) {
   masm.fld(fs1, StackPointer, offsetof(EnterJITRegs, fs1));
   masm.fld(fs0, StackPointer, offsetof(EnterJITRegs, fs0));
 
-  masm.freeStack(sizeof(EnterJITRegs));
+  masm.freeStack(EnterJITSaveSize);
+
+  masm.ld(ra, StackPointer, offsetof(EnterJITFrame, ra));
+  masm.ld(fp, StackPointer, offsetof(EnterJITFrame, fp));
+
+  masm.freeStack(sizeof(EnterJITFrame));
 
   masm.branch(ra);
 }
 
 static void GeneratePrologue(MacroAssembler& masm) {
-  masm.reserveStack(sizeof(EnterJITRegs));
+  masm.reserveStack(sizeof(EnterJITFrame));
+
+  masm.sd(ra, StackPointer, offsetof(EnterJITFrame, ra));
+  masm.sd(fp, StackPointer, offsetof(EnterJITFrame, fp));
+  masm.movePtr(StackPointer, FramePointer);
+
+  masm.reserveStack(EnterJITSaveSize);
 
   masm.sd(s1, StackPointer, offsetof(EnterJITRegs, s1));
   masm.sd(s2, StackPointer, offsetof(EnterJITRegs, s2));
@@ -131,9 +153,7 @@ static void GeneratePrologue(MacroAssembler& masm) {
   masm.sd(s10, StackPointer, offsetof(EnterJITRegs, s10));
   masm.sd(s11, StackPointer, offsetof(EnterJITRegs, s11));
   masm.sd(gp, StackPointer, offsetof(EnterJITRegs, gp));
-  masm.sd(fp, StackPointer, offsetof(EnterJITRegs, fp));
   masm.sd(sp, StackPointer, offsetof(EnterJITRegs, sp));
-  masm.sd(ra, StackPointer, offsetof(EnterJITRegs, ra));
   masm.sd(a7, StackPointer, offsetof(EnterJITRegs, a7));
 
   masm.fsd(fs11, StackPointer, offsetof(EnterJITRegs, fs11));
@@ -200,9 +220,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
   MOZ_ASSERT(OsrFrameReg == reg_frame);
 
   GeneratePrologue(masm);
-
-  // Save stack pointer as baseline frame.
-  masm.movePtr(StackPointer, FramePointer);
 
   if (mode == EnterJitMode::GeneratorResume) {
     generateEnterJitResumeShared(masm, reg_argv, reg_token, s1, s2);
@@ -322,8 +339,9 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
   }
 
   // Discard arguments and padding. Set sp to the address of the EnterJITRegs
-  // on the stack.
-  masm.mov(FramePointer, StackPointer);
+  // save area on the stack.
+  masm.computeEffectiveAddress(
+      Address(FramePointer, -int32_t(EnterJITSaveSize)), StackPointer);
 
   // Store the returned value into the vp
   masm.ld(reg_vp, StackPointer, offsetof(EnterJITRegs, a7));

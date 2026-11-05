@@ -63,3 +63,13 @@ if CONFIG["OS_TARGET"] == "Android":
     LDFLAGS += [
         "-Wl,-rpath=$ORIGIN",
     ]
+
+SOURCE_HEADERS += [
+    "jsoptparse.h",
+    "jsshell.h",
+    "ModuleLoader.h",
+    "OSObject.h",
+    "ShellModuleObjectWrapper.h",
+    "StringUtils.h",
+    "WasmTesting.h",
+]

@@ -37,7 +37,6 @@
   --smartwindow-ai-chat-grid-border-color: light-dark(var(--color-violet-10), var(--container-bg, rgba(191, 143, 204, 0.2)));
   --smartwindow-main-box-shadow: none;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     /* HCM Default */
     --smartwindow-text-color-accent-primary: var(--text-color);

@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* stylelint-disable */
 
 /*
  * The styles in this file are intended to be applied to `aiChatContent.html`,
@@ -51,6 +50,7 @@
         margin-inline: auto;
         /* Also caps the backdrop-filter surface well under WebRender's
         4096px limit so the blur doesn't silently drop on large screens. */
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
         max-width: var(--smartwindow-content-max-width);
         pointer-events: none;
         position: fixed;
@@ -58,6 +58,7 @@
 
       &::after {
         background: linear-gradient(to bottom, var(--ai-background-color) 40%, rgb(from var(--ai-background-color) r g b / 0) 100%);
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
         height: 110px;
         mask: linear-gradient(var(--color-black) 30%, var(--color-black-alpha-60) 50%, transparent 70%);
         top: 0;
@@ -92,6 +93,7 @@
       inset: 0;
       pointer-events: none;
       z-index: 1;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       box-shadow: var(--smartwindow-main-box-shadow);
     }
   }
@@ -115,6 +117,7 @@
   flex-shrink: 0;
   gap: var(--space-small);
   padding-block-start: var(--smart-window-top-spacing-chat);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-inline: max(var(--space-medium), calc((100vw - var(--smartwindow-content-max-width)) / 2));
   --content-height: 100%;
   min-height: var(--content-height);
@@ -122,10 +125,12 @@
 
   /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
   @media -moz-pref("browser.nova.enabled") {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     padding-inline: max(var(--space-medium), calc((100vw - var(--smartwindow-content-max-width) + var(--space-xlarge)) / 2));
   }
 
   & > :last-child:not(.chat-bubble-user) {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     padding-block-end: var(--smart-window-fade-size);
   }
 
@@ -138,6 +143,7 @@
     margin-block-start: calc(-2 * var(--space-small));
 
     /* Spacing for an assistant turn that ends with a confirmation card. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
     & .chat-bubble-inner:has(ai-action-confirmation) {
       padding-block-start: var(--space-small);
     }
@@ -194,7 +200,9 @@
   width: fit-content;
 
   .chat-bubble-inner {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-radius: var(--space-medium);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     box-shadow:
       var(--smartwindow-shadow, var(--box-shadow-level-2)),
       inset 0 0 5px var(--chat-bubble-inset-color, var(--box-shadow-color-lighter-layer-1));
@@ -287,9 +295,12 @@ moz-button.tool-retry-button::part(button) {
 moz-button.tool-retry-button::part(button)::before {
   content: "";
   position: absolute;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   inset: calc(-1 * var(--border-width));
   border-radius: inherit;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: var(--border-width);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens */
   background: light-dark(
     linear-gradient(
       180deg,

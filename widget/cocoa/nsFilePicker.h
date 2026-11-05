@@ -17,6 +17,8 @@ class nsILocalFileMac;
 @class NSSavePanel;
 
 class nsFilePicker final : public nsBaseFilePicker {
+  friend class FilePickerTest;
+
  public:
   nsFilePicker();
   using nsIFilePicker::ResultCode;

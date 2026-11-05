@@ -166,11 +166,11 @@ add_task(async function test_custom_width_persists() {
 
   info("Collapse the sidebar using toolbar button.");
   EventUtils.synthesizeMouseAtCenter(SidebarController.toolbarButton, {});
-  await SidebarController.sidebarMain.updateComplete;
+  await SidebarController.waitUntilStable();
 
   info("Expand the sidebar using toolbar button.");
   EventUtils.synthesizeMouseAtCenter(SidebarController.toolbarButton, {});
-  await SidebarController.sidebarMain.updateComplete;
+  await SidebarController.waitUntilStable();
   Assert.equal(
     customWidth,
     getLauncherWidth(),
@@ -264,6 +264,48 @@ add_task(async function test_resize_of_pinned_tabs() {
     "Pinned tabs container was resized."
   );
 
+  for (let tab of [...gBrowser.tabs]) {
+    if (tab.pinned) {
+      gBrowser.unpinTab(tab);
+    }
+  }
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+  }
+});
+
+add_task(async function test_reset_pinned_tabs_height() {
+  await SidebarController.updateUIState({
+    launcherExpanded: true,
+  });
+
+  for (let i = 0; i < 10; i++) {
+    gBrowser.pinTab(BrowserTestUtils.addTab(gBrowser, "about:blank"));
+  }
+  const wrapper = SidebarController._pinnedTabsItemsWrapper;
+
+  info("Widen the launcher so the pinned tabs fit in a single row.");
+  SidebarController._state.expandedLauncherWidth = 700;
+  await SidebarController.waitUntilStable();
+  const singleRowHeight = wrapper.getBoundingClientRect().height;
+
+  info("Drag the pinned tabs splitter to its maximum height.");
+  await dragPinnedTabs(200);
+  await SidebarController.waitUntilStable();
+
+  info("Narrow the launcher so the pinned tabs wrap onto several rows.");
+  SidebarController._state.expandedLauncherWidth = 150;
+  await SidebarController.waitUntilStable();
+  const wrappedHeight = wrapper.getBoundingClientRect().height;
+  Assert.greater(wrappedHeight, singleRowHeight, "The pinned tabs wrapped.");
+  Assert.greaterOrEqual(
+    getPinnedTabsHeight(),
+    Math.floor(wrappedHeight),
+    "Dragging to the maximum reset the height, so the container fits all rows."
+  );
+
+  SidebarController._state.expandedPinnedTabsHeight = undefined;
+  SidebarController._state.collapsedPinnedTabsHeight = undefined;
   for (let tab of [...gBrowser.tabs]) {
     if (tab.pinned) {
       gBrowser.unpinTab(tab);

@@ -18,6 +18,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
 #include "api/units/data_size.h"
@@ -333,7 +334,9 @@ void PrioritizedPacketQueue::SetPauseState(bool paused, Timestamp now) {
   paused_ = paused;
 }
 
-void PrioritizedPacketQueue::RemovePacketsForSsrc(uint32_t ssrc) {
+std::vector<std::unique_ptr<RtpPacketToSend>>
+PrioritizedPacketQueue::RemovePacketsForSsrc(uint32_t ssrc) {
+  std::vector<std::unique_ptr<RtpPacketToSend>> removed_packets;
   auto kv = streams_.find(ssrc);
   if (kv != streams_.end()) {
     // Dequeue all packets from the queue for this SSRC.
@@ -351,6 +354,7 @@ void PrioritizedPacketQueue::RemovePacketsForSsrc(uint32_t ssrc) {
         QueuedPacket packet = std::move(packet_queue.front());
         packet_queue.pop_front();
         DequeuePacketInternal(packet);
+        removed_packets.push_back(std::move(packet.packet));
       }
 
       // Next, deregister this `StreamQueue` from the round-robin tables.
@@ -373,6 +377,7 @@ void PrioritizedPacketQueue::RemovePacketsForSsrc(uint32_t ssrc) {
     }
   }
   MaybeUpdateTopPrioLevel();
+  return removed_packets;
 }
 
 bool PrioritizedPacketQueue::HasKeyframePackets(uint32_t ssrc) const {

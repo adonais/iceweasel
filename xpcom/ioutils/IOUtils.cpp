@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "ErrorList.h"
+#include "LockstoreService.h"
 #include "PathUtils.h"
 #include "ScopedNSSTypes.h"
 #include "js/ArrayBuffer.h"
@@ -18,6 +19,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
 #include "mozilla/Compression.h"
 #include "mozilla/Encoding.h"
@@ -27,6 +29,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Span.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Try.h"
@@ -53,6 +56,7 @@
 #include "nsString.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
+#include "nsTHashSet.h"
 #include "nsThreadManager.h"
 #include "nsXULAppAPI.h"
 #include "prerror.h"
@@ -98,6 +102,13 @@ static constexpr auto SHUTDOWN_ERROR =
     "IOUtils: Shutting down and refusing additional I/O tasks"_ns;
 
 namespace mozilla {
+
+using security::lockstore::LockstoreService;
+
+// Keystore is torn down at xpcom-will-shutdown, which is e.g. three phases
+// after profile-before-change where session-store uses it.
+// IOUtils disables its event queue at profile-before-change-telemetry
+// so no encrypted IO can be pending when the keystore closes.
 
 // static helper functions
 
@@ -376,12 +387,28 @@ already_AddRefed<Promise> IOUtils::Read(GlobalObject& aGlobal,
           toRead.emplace(aOptions.mMaxBytes.Value());
         }
 
+        if (!aOptions.mDecrypt.IsEmpty() &&
+            (!aOptions.mMaxBytes.IsNull() || aOptions.mOffset != 0)) {
+          RejectJSPromise(
+              promise, IOError(NS_ERROR_ILLEGAL_INPUT,
+                               "Could not read `%s': the `decrypt' option is "
+                               "incompatible with `maxBytes' and `offset'",
+                               file->HumanReadablePath().get()));
+          return;
+        }
+
+        RefPtr<LockstoreService> lockstore =
+            aOptions.mDecrypt.IsEmpty() ? nullptr
+                                        : LockstoreService::GetSingleton();
+
         DispatchAndResolve<JsBuffer>(
             state->mEventQueue, promise,
             [file = std::move(file), offset = aOptions.mOffset, toRead,
-             decompress = aOptions.mDecompress]() {
-              return ReadSync(file, offset, toRead, decompress,
-                              BufferKind::Uint8Array);
+             decompress = aOptions.mDecompress,
+             decryptKeyId = nsCString(aOptions.mDecrypt),
+             lockstore = std::move(lockstore)]() {
+              return ReadSync(file, offset, toRead, decompress, decryptKeyId,
+                              lockstore.get(), BufferKind::Uint8Array);
             });
       });
 }
@@ -435,10 +462,17 @@ already_AddRefed<Promise> IOUtils::ReadUTF8(GlobalObject& aGlobal,
         REJECT_IF_INIT_PATH_FAILED(file, aPath, promise, "Could not read `%s'",
                                    NS_ConvertUTF16toUTF8(aPath).get());
 
+        RefPtr<LockstoreService> lockstore =
+            aOptions.mDecrypt.IsEmpty() ? nullptr
+                                        : LockstoreService::GetSingleton();
+
         DispatchAndResolve<JsBuffer>(
             state->mEventQueue, promise,
-            [file = std::move(file), decompress = aOptions.mDecompress]() {
-              return ReadUTF8Sync(file, decompress);
+            [file = std::move(file), decompress = aOptions.mDecompress,
+             decryptKeyId = nsCString(aOptions.mDecrypt),
+             lockstore = std::move(lockstore)]() {
+              return ReadUTF8Sync(file, decompress, decryptKeyId,
+                                  lockstore.get());
             });
       });
 }
@@ -454,6 +488,10 @@ already_AddRefed<Promise> IOUtils::ReadJSON(GlobalObject& aGlobal,
         REJECT_IF_INIT_PATH_FAILED(file, aPath, promise, "Could not read `%s'",
                                    NS_ConvertUTF16toUTF8(aPath).get());
 
+        RefPtr<LockstoreService> lockstore =
+            aOptions.mDecrypt.IsEmpty() ? nullptr
+                                        : LockstoreService::GetSingleton();
+
         RefPtr<StrongWorkerRef> workerRef;
         if (!NS_IsMainThread()) {
           // We need to manually keep the worker alive until the promise
@@ -464,8 +502,11 @@ already_AddRefed<Promise> IOUtils::ReadJSON(GlobalObject& aGlobal,
 
         state->mEventQueue
             ->template Dispatch<JsBuffer>(
-                [file, decompress = aOptions.mDecompress]() {
-                  return ReadUTF8Sync(file, decompress);
+                [file, decompress = aOptions.mDecompress,
+                 decryptKeyId = nsCString(aOptions.mDecrypt),
+                 lockstore = std::move(lockstore)]() {
+                  return ReadUTF8Sync(file, decompress, decryptKeyId,
+                                      lockstore.get());
                 })
             ->Then(
                 GetCurrentSerialEventTarget(), __func__,
@@ -551,10 +592,17 @@ already_AddRefed<Promise> IOUtils::Write(GlobalObject& aGlobal,
           return;
         }
 
+        auto opts = result.unwrap();
+        RefPtr<LockstoreService> lockstore =
+            opts.mEncryptKeyId.IsEmpty() ? nullptr
+                                         : LockstoreService::GetSingleton();
+
         DispatchAndResolve<uint32_t>(
             state->mEventQueue, promise,
             [file = std::move(file), buf = buf.extract(),
-             opts = result.unwrap()]() { return WriteSync(file, buf, opts); });
+             opts = std::move(opts), lockstore = std::move(lockstore)]() {
+              return WriteSync(file, buf, opts, lockstore.get());
+            });
       });
 }
 
@@ -580,11 +628,16 @@ already_AddRefed<Promise> IOUtils::WriteUTF8(GlobalObject& aGlobal,
           return;
         }
 
+        auto opts = result.unwrap();
+        RefPtr<LockstoreService> lockstore =
+            opts.mEncryptKeyId.IsEmpty() ? nullptr
+                                         : LockstoreService::GetSingleton();
+
         DispatchAndResolve<uint32_t>(
             state->mEventQueue, promise,
             [file = std::move(file), str = nsCString(aString),
-             opts = result.unwrap()]() {
-              return WriteSync(file, AsBytes(Span(str)), opts);
+             opts = std::move(opts), lockstore = std::move(lockstore)]() {
+              return WriteSync(file, AsBytes(Span(str)), opts, lockstore.get());
             });
       });
 }
@@ -628,6 +681,10 @@ already_AddRefed<Promise> IOUtils::WriteJSON(GlobalObject& aGlobal,
           return;
         }
 
+        RefPtr<LockstoreService> lockstore =
+            opts.mEncryptKeyId.IsEmpty() ? nullptr
+                                         : LockstoreService::GetSingleton();
+
         JSContext* cx = aGlobal.Context();
         JS::Rooted<JS::Value> value(cx, aValue);
         nsString string;
@@ -649,7 +706,9 @@ already_AddRefed<Promise> IOUtils::WriteJSON(GlobalObject& aGlobal,
         DispatchAndResolve<dom::WriteJSONResult>(
             state->mEventQueue, promise,
             [file = std::move(file), string = std::move(string),
-             opts = std::move(opts)]() -> Result<WriteJSONResult, IOError> {
+             opts = std::move(opts),
+             lockstore =
+                 std::move(lockstore)]() -> Result<WriteJSONResult, IOError> {
               nsAutoCString utf8Str;
               if (!CopyUTF16toUTF8(string, utf8Str, fallible)) {
                 return Err(IOError(
@@ -658,8 +717,8 @@ already_AddRefed<Promise> IOUtils::WriteJSON(GlobalObject& aGlobal,
                     file->HumanReadablePath().get()));
               }
 
-              uint32_t size =
-                  MOZ_TRY(WriteSync(file, AsBytes(Span(utf8Str)), opts));
+              uint32_t size = MOZ_TRY(WriteSync(file, AsBytes(Span(utf8Str)),
+                                                opts, lockstore.get()));
 
               dom::WriteJSONResult result;
               result.mSize = size;
@@ -1274,11 +1333,14 @@ already_AddRefed<Promise> IOUtils::CreateJSPromise(GlobalObject& aGlobal,
 /* static */
 Result<IOUtils::JsBuffer, IOUtils::IOError> IOUtils::ReadSync(
     nsIFile* aFile, const uint64_t aOffset, const Maybe<uint32_t> aMaxBytes,
-    const bool aDecompress, IOUtils::BufferKind aBufferKind) {
+    const bool aDecompress, const nsCString& aDecryptKeyId,
+    LockstoreService* aLockstore, IOUtils::BufferKind aBufferKind) {
   MOZ_ASSERT(!NS_IsMainThread());
-  // This is checked in IOUtils::Read.
+  // These are checked in IOUtils::Read.
   MOZ_ASSERT(aMaxBytes.isNothing() || !aDecompress,
              "maxBytes and decompress are mutually exclusive");
+  MOZ_ASSERT(aDecryptKeyId.IsEmpty() || (aOffset == 0 && aMaxBytes.isNothing()),
+             "decrypt is incompatible with offset and maxBytes");
 
   if (aOffset > static_cast<uint64_t>(INT64_MAX)) {
     return Err(
@@ -1380,6 +1442,19 @@ Result<IOUtils::JsBuffer, IOUtils::IOError> IOUtils::ReadSync(
     buffer.SetLength(totalRead);
   }
 
+  // Decrypt the file contents, skip the call entirely when the file lacks
+  // the encryption header to avoid an unnecessary full-file copy.
+  if (!aDecryptKeyId.IsEmpty() &&
+      Encryption::IsEncrypted(AsBytes(buffer.BeginReading()))) {
+    auto result = Encryption::Decrypt(AsBytes(buffer.BeginReading()),
+                                      aLockstore, aDecryptKeyId, aBufferKind);
+    if (result.isErr()) {
+      return Err(IOError::WithCause(result.unwrapErr(), "Could not read `%s'",
+                                    aFile->HumanReadablePath().get()));
+    }
+    buffer = result.unwrap();
+  }
+
   // Decompress the file contents, if required.
   if (aDecompress) {
     auto result =
@@ -1396,8 +1471,10 @@ Result<IOUtils::JsBuffer, IOUtils::IOError> IOUtils::ReadSync(
 
 /* static */
 Result<IOUtils::JsBuffer, IOUtils::IOError> IOUtils::ReadUTF8Sync(
-    nsIFile* aFile, bool aDecompress) {
-  auto result = ReadSync(aFile, 0, Nothing{}, aDecompress, BufferKind::String);
+    nsIFile* aFile, bool aDecompress, const nsCString& aDecryptKeyId,
+    LockstoreService* aLockstore) {
+  auto result = ReadSync(aFile, 0, Nothing{}, aDecompress, aDecryptKeyId,
+                         aLockstore, BufferKind::String);
   if (result.isErr()) {
     return result.propagateErr();
   }
@@ -1415,7 +1492,7 @@ Result<IOUtils::JsBuffer, IOUtils::IOError> IOUtils::ReadUTF8Sync(
 /* static */
 Result<uint32_t, IOUtils::IOError> IOUtils::WriteSync(
     nsIFile* aFile, const Span<const uint8_t>& aByteArray,
-    const IOUtils::InternalWriteOpts& aOptions) {
+    const IOUtils::InternalWriteOpts& aOptions, LockstoreService* aLockstore) {
   MOZ_ASSERT(!NS_IsMainThread());
 
   nsIFile* backupFile = aOptions.mBackupFile;
@@ -1511,6 +1588,7 @@ Result<uint32_t, IOUtils::IOError> IOUtils::WriteSync(
   {
     // Compress the byte array if required.
     nsTArray<uint8_t> compressed;
+    nsTArray<uint8_t> encrypted;
     Span<const char> bytes;
     if (aOptions.mCompress) {
       auto result = MozLZ4::Compress(aByteArray);
@@ -1525,6 +1603,22 @@ Result<uint32_t, IOUtils::IOError> IOUtils::WriteSync(
     } else {
       bytes = Span(reinterpret_cast<const char*>(aByteArray.Elements()),
                    aByteArray.Length());
+    }
+
+    // Encrypt the (possibly compressed) byte array if required. Encryption
+    // happens after compression so the ciphertext is the last transform
+    // before the bytes hit the disk.
+    if (!aOptions.mEncryptKeyId.IsEmpty()) {
+      auto result = Encryption::Encrypt(AsBytes(bytes), aLockstore,
+                                        aOptions.mEncryptKeyId);
+      if (result.isErr()) {
+        return Err(IOError::WithCause(result.unwrapErr(),
+                                      "Could not write to `%s'",
+                                      writeFile->HumanReadablePath().get()));
+      }
+      encrypted = result.unwrap();
+      bytes = Span(reinterpret_cast<const char*>(encrypted.Elements()),
+                   encrypted.Length());
     }
 
     RefPtr stream = MakeRefPtr<nsFileOutputStream>();
@@ -2708,6 +2802,175 @@ Result<IOUtils::JsBuffer, IOUtils::IOError> IOUtils::MozLZ4::Decompress(
   return decompressed;
 }
 
+namespace {
+
+constexpr nsLiteralCString kEncryptionKekType = "local"_ns;
+constexpr nsLiteralCString kEncryptionKekIdentifier = "sessionstore"_ns;
+
+StaticMutex sEncryptionSetupMutex;
+StaticAutoPtr<nsCString> sEncryptionKekRef;
+StaticAutoPtr<nsTHashSet<nsCString>> sEncryptionDekNames;
+
+// Idempotent get-or-create of the LocalKey KEK (cached after first call).
+// Called by Encrypt only; Decrypt uses a KEK that already wraps the DEK.
+Result<nsCString, nsresult> EnsureEncryptionKek(LockstoreService* aLockstore) {
+  StaticMutexAutoLock lock(sEncryptionSetupMutex);
+
+  if (!sEncryptionKekRef) {
+    auto result = aLockstore->DoCreateKek(kEncryptionKekType,
+                                          kEncryptionKekIdentifier, ""_ns,
+                                          /* cacheTimeoutMs */ 0);
+    if (result.isErr()) {
+      return Err(result.unwrapErr());
+    }
+    sEncryptionKekRef = new nsCString(result.unwrap());
+    sEncryptionDekNames = new nsTHashSet<nsCString>();
+
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("IOUtils::EncryptionCleanup", [] {
+          ClearOnShutdown(&sEncryptionKekRef);
+          ClearOnShutdown(&sEncryptionDekNames);
+        }));
+  }
+
+  return *sEncryptionKekRef;
+}
+
+// Ensures a DEK exists for |aDekName|, creating one if necessary.
+// Cached after first successful call. Called by Encrypt only — the decrypt
+// path does not need to create keys because the DEK must already exist if
+// an encrypted file is on disk.
+Result<Ok, IOUtils::IOError> EnsureEncryptionDek(LockstoreService* aLockstore,
+                                                 const nsACString& aDekName,
+                                                 const nsACString& aKekRef) {
+  StaticMutexAutoLock lock(sEncryptionSetupMutex);
+  MOZ_ASSERT(sEncryptionDekNames, "EnsureEncryptionKek must be called first");
+
+  if (!sEncryptionDekNames->Contains(aDekName)) {
+    auto existingDeks = aLockstore->DoListDeks();
+    if (existingDeks.isErr()) {
+      return Err(IOUtils::IOError(existingDeks.unwrapErr(),
+                                  "could not list existing DEKs"_ns));
+    }
+    if (!existingDeks.unwrap().Contains(nsCString(aDekName))) {
+      nsresult rv = aLockstore->DoCreateDek(aDekName, aKekRef,
+                                            /* extractable */ false,
+                                            /* keySize */ 32);
+      if (NS_FAILED(rv)) {
+        return Err(IOUtils::IOError(rv, "could not create DEK"_ns));
+      }
+    }
+    sEncryptionDekNames->Insert(nsCString(aDekName));
+  }
+
+  return Ok();
+}
+
+// Copies |aBytes| into a freshly allocated JsBuffer of the given kind.
+Result<IOUtils::JsBuffer, IOUtils::IOError> BufferFromBytes(
+    Span<const uint8_t> aBytes, IOUtils::BufferKind aBufferKind) {
+  if (aBytes.Length() == 0) {
+    return IOUtils::JsBuffer::CreateEmpty(aBufferKind);
+  }
+  auto result = IOUtils::JsBuffer::Create(aBufferKind, aBytes.Length());
+  if (result.isErr()) {
+    return result.propagateErr();
+  }
+  IOUtils::JsBuffer buffer = result.unwrap();
+  memcpy(buffer.BeginWriting().Elements(), aBytes.Elements(), aBytes.Length());
+  buffer.SetLength(aBytes.Length());
+  return buffer;
+}
+
+}  // namespace
+
+/* static */
+bool IOUtils::Encryption::IsEncrypted(Span<const uint8_t> aData) {
+  return aData.Length() >= MAGIC_NUMBER.size() &&
+         std::equal(MAGIC_NUMBER.begin(), MAGIC_NUMBER.begin() + VERSION_OFFSET,
+                    aData.begin());
+}
+
+/* static */
+Result<nsTArray<uint8_t>, IOUtils::IOError> IOUtils::Encryption::Encrypt(
+    Span<const uint8_t> aPlaintext, LockstoreService* aLockstore,
+    const nsACString& aKeyId) {
+  if (!aLockstore) {
+    return Err(IOError(NS_ERROR_NOT_AVAILABLE,
+                       "could not encrypt: keystore unavailable"_ns));
+  }
+
+  nsCString kekRef;
+  {
+    auto result = EnsureEncryptionKek(aLockstore);
+    if (result.isErr()) {
+      return Err(IOError(result.unwrapErr(),
+                         "could not encrypt: KEK setup failed"_ns));
+    }
+    kekRef = result.unwrap();
+  }
+  {
+    auto result = EnsureEncryptionDek(aLockstore, aKeyId, kekRef);
+    if (result.isErr()) {
+      return Err(IOError::WithCause(result.unwrapErr(),
+                                    "could not encrypt: DEK setup failed"_ns));
+    }
+  }
+
+  auto encrypted = aLockstore->DoEncrypt(aKeyId, kekRef, aPlaintext);
+  if (encrypted.isErr()) {
+    return Err(IOError(encrypted.unwrapErr(), "could not encrypt data"_ns));
+  }
+  nsTArray<uint8_t> blob = encrypted.unwrap();
+
+  nsTArray<uint8_t> result;
+  if (!result.SetCapacity(MAGIC_NUMBER.size() + blob.Length(), fallible)) {
+    return Err(IOError(NS_ERROR_OUT_OF_MEMORY,
+                       "could not encrypt: could not allocate buffer"_ns));
+  }
+  result.AppendElements(Span(MAGIC_NUMBER.data(), MAGIC_NUMBER.size()));
+  result.AppendElements(blob);
+  return result;
+}
+
+/* static */
+Result<IOUtils::JsBuffer, IOUtils::IOError> IOUtils::Encryption::Decrypt(
+    Span<const uint8_t> aFileContents, LockstoreService* aLockstore,
+    const nsACString& aKeyId, IOUtils::BufferKind aBufferKind) {
+  if (!IsEncrypted(aFileContents)) {
+    return BufferFromBytes(aFileContents, aBufferKind);
+  }
+
+  if (aFileContents[VERSION_OFFSET] != CURRENT_VERSION) {
+    return Err(IOError(NS_ERROR_FILE_CORRUPTED,
+                       "could not decrypt: unsupported encryption version '%c'",
+                       static_cast<char>(aFileContents[VERSION_OFFSET])));
+  }
+
+  if (!aLockstore) {
+    return Err(IOError(NS_ERROR_FILE_CORRUPTED,
+                       "could not decrypt: keystore unavailable"_ns));
+  }
+
+  // Use a KEK that already wraps the DEK; a read never creates keys.
+  auto kekRefs = aLockstore->DoListKeks(aKeyId);
+  if (kekRefs.isErr() || kekRefs.inspect().IsEmpty()) {
+    return Err(IOError(NS_ERROR_FILE_CORRUPTED,
+                       "could not decrypt: no key for this file"_ns));
+  }
+
+  auto body = aFileContents.From(MAGIC_NUMBER.size());
+  auto decrypted = aLockstore->DoDecrypt(aKeyId, kekRefs.inspect()[0], body);
+  if (decrypted.isErr()) {
+    return Err(IOError(NS_ERROR_FILE_CORRUPTED,
+                       "could not decrypt file: the file may be corrupt or "
+                       "tampered with"_ns));
+  }
+
+  nsTArray<uint8_t> plaintext = decrypted.unwrap();
+  return BufferFromBytes(plaintext, aBufferKind);
+}
+
 NS_IMPL_ISUPPORTS(IOUtilsShutdownBlocker, nsIAsyncShutdownBlocker,
                   nsIAsyncShutdownCompletionCallback);
 
@@ -2856,6 +3119,16 @@ IOUtils::InternalWriteOpts::FromBinding(const WriteOptions& aOptions) {
   }
 
   opts.mCompress = aOptions.mCompress;
+  opts.mEncryptKeyId = aOptions.mEncrypt;
+
+  if (!opts.mEncryptKeyId.IsEmpty() &&
+      (opts.mMode == dom::WriteMode::Append ||
+       opts.mMode == dom::WriteMode::AppendOrCreate)) {
+    return Err(IOUtils::IOError(
+        NS_ERROR_ILLEGAL_INPUT,
+        "the `encrypt' option is incompatible with append write modes"));
+  }
+
   return opts;
 }
 

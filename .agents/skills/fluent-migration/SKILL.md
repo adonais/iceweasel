@@ -12,6 +12,8 @@ description: >
   files, .properties -> Fluent. Also covers changes that must NOT be migrated.
 ---
 
+# Fluent migrations
+
 ## What this does
 
 A **migration recipe** is a Python module in `python/l10n/fluent_migrations/`,

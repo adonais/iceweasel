@@ -384,8 +384,6 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   mozilla::ipc::TaskFactory<GPUProcessManager> mTaskFactory;
   RefPtr<VsyncIOThreadHolder> mVsyncIOThread;
   uint32_t mNextNamespace;
-  uint32_t mIdNamespace;
-  uint32_t mResourceId;
 
   uint32_t mUnstableProcessAttempts;
   uint32_t mTotalProcessAttempts;
@@ -403,7 +401,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   bool mAppInForeground;
 
   // Fields that are associated with the current GPU process.
-  GPUProcessHost* mProcess;
+  RefPtr<GPUProcessHost> mProcess;
   uint64_t mProcessToken;
   bool mProcessStable = false;
   bool mProcessStableOnce = false;

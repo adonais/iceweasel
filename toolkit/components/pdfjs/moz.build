@@ -5,7 +5,10 @@
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "PDF Viewer")
 
-BROWSER_CHROME_MANIFESTS += ["test/browser.toml"]
+BROWSER_CHROME_MANIFESTS += [
+    "test/browser.toml",
+    "test/perftest.toml",
+]
 MOCHITEST_MANIFESTS += ["test/mochitest.toml"]
 XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
 

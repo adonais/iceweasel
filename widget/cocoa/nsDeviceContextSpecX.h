@@ -26,11 +26,14 @@ class nsDeviceContextSpecX : public nsIDeviceContextSpec {
                            mozilla::dom::WindowContext*, int32_t aStartPage,
                            int32_t aEndPage) override;
   RefPtr<mozilla::gfx::PrintEndDocumentPromise> EndDocument() override;
-  NS_IMETHOD BeginPage(const IntSize& aSizeInPoints) override { return NS_OK; };
-  NS_IMETHOD EndPage() override { return NS_OK; };
 
   void GetPaperRect(double* aTop, double* aLeft, double* aBottom,
                     double* aRight);
+
+  nsresult BeginPage(const IntSize&) final {
+    mCurrentPageCount++;
+    return NS_OK;
+  }
 
  protected:
   virtual ~nsDeviceContextSpecX();
@@ -40,11 +43,17 @@ class nsDeviceContextSpecX : public nsIDeviceContextSpec {
   PMPageFormat mPageFormat = nullptr;
   PMPrintSettings mPMPrintSettings = nullptr;
   nsCOMPtr<nsIOutputStream> mOutputStream;  // Output stream from settings.
-  // file "print" output generated if printing via PDF
-  nsCOMPtr<nsIFile> mTempFile;
+  // The temporary PDF we post-process in EndDocument, or the final destination
+  // file if mOutputFileIsFinal.
+  nsCOMPtr<nsIFile> mOutputFile;
+  // Whether the output file is the final destination.
+  bool mOutputFileIsFinal = false;
+  // The number of pages of the document at a given point in time.
+  int32_t mCurrentPageCount = 0;
 
  private:
   nsresult DoEndDocument();
+  nsresult PrintPDFViaPrintSession(CFURLRef aPDFURL);
 };
 
 #endif  // nsDeviceContextSpecX_h_

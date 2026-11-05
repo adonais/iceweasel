@@ -5,16 +5,10 @@
 #include "nsDeviceContextSpecProxy.h"
 
 #include "gfxASurface.h"
-#include "gfxPlatform.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/gfx/DrawEventRecorder.h"
-#include "mozilla/gfx/PrintTargetThebes.h"
+#include "mozilla/gfx/PrintTargetRecording.h"
 #include "mozilla/layout/RemotePrintJobChild.h"
-#include "nsAppDirectoryServiceDefs.h"
-#include "nsComponentManagerUtils.h"
-#include "nsDirectoryServiceUtils.h"
 #include "nsIPrintSettings.h"
-#include "private/pprio.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -54,36 +48,14 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecProxy::MakePrintTarget() {
   width /= TWIPS_PER_POINT_FLOAT;
   height /= TWIPS_PER_POINT_FLOAT;
 
-  RefPtr<gfxASurface> surface =
-      gfxPlatform::GetPlatform()->CreateOffscreenSurface(
-          mozilla::gfx::IntSize::Ceil(width, height),
-          mozilla::gfx::SurfaceFormat::A8R8G8B8_UINT32);
-  if (!surface) {
-    return nullptr;
-  }
-
-  // The type of PrintTarget that we return here shouldn't really matter since
-  // our implementation of GetDrawEventRecorder returns an object, which means
-  // the DrawTarget returned by the PrintTarget will be a
-  // DrawTargetWrapAndRecord. The recording will be serialized and sent over to
-  // the parent process where PrintTranslator::TranslateRecording will call
-  // MakePrintTarget (indirectly via PrintTranslator::CreateDrawTarget) on
-  // whatever type of nsIDeviceContextSpecProxy is created for the platform that
-  // we are running on.  It is that DrawTarget that the recording will be
-  // replayed on to print.
-  // XXX(jwatt): The above isn't quite true.  We do want to use a
-  // PrintTargetRecording here, but we can't until bug 1280324 is figured out
-  // and fixed otherwise we will cause bug 1280181 to happen again.
-  RefPtr<PrintTarget> target = PrintTargetThebes::CreateOrNull(surface);
-
-  return target.forget();
+  return PrintTargetRecording::CreateOrNull(IntSize::Ceil(width, height));
 }
 
 NS_IMETHODIMP
 nsDeviceContextSpecProxy::GetDrawEventRecorder(
-    mozilla::gfx::DrawEventRecorder** aDrawEventRecorder) {
+    DrawEventRecorder** aDrawEventRecorder) {
   MOZ_ASSERT(aDrawEventRecorder);
-  RefPtr<mozilla::gfx::DrawEventRecorder> result = mRecorder;
+  RefPtr<DrawEventRecorder> result = mRecorder;
   result.forget(aDrawEventRecorder);
   return NS_OK;
 }
@@ -99,6 +71,7 @@ nsDeviceContextSpecProxy::BeginDocument(const nsAString& aTitle,
   }
 
   mRecorder = new mozilla::layout::DrawEventRecorderPRFileDesc();
+  mRecorder->SetSupportsGlyphSourceText(true);
   nsresult rv = mRemotePrintJob->InitializePrint(
       nsString(aTitle), aWindowContext, aStartPage, aEndPage);
   if (NS_FAILED(rv)) {
@@ -131,8 +104,7 @@ nsDeviceContextSpecProxy::EndDocument() {
                                                                  __func__);
 }
 
-NS_IMETHODIMP
-nsDeviceContextSpecProxy::BeginPage(const IntSize& aSizeInPoints) {
+nsresult nsDeviceContextSpecProxy::BeginPage(const IntSize& aSizeInPoints) {
   if (!mRemotePrintJob || mRemotePrintJob->IsDestroyed()) {
     mRemotePrintJob = nullptr;
     return NS_ERROR_NOT_AVAILABLE;
@@ -144,8 +116,7 @@ nsDeviceContextSpecProxy::BeginPage(const IntSize& aSizeInPoints) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsDeviceContextSpecProxy::EndPage() {
+nsresult nsDeviceContextSpecProxy::EndPage() {
   if (!mRemotePrintJob || mRemotePrintJob->IsDestroyed()) {
     mRemotePrintJob = nullptr;
     return NS_ERROR_NOT_AVAILABLE;

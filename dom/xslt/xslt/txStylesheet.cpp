@@ -4,6 +4,7 @@
 
 #include "txStylesheet.h"
 
+#include <memory>
 #include <utility>
 
 #include "txExpr.h"
@@ -312,7 +313,7 @@ nsresult txStylesheet::doneCompiling() {
   }
 
   if (!mDecimalFormats.get(txExpandedName())) {
-    UniquePtr<txDecimalFormat> format(new txDecimalFormat);
+    auto format = std::make_unique<txDecimalFormat>();
     rv = mDecimalFormats.add(txExpandedName(), format.get());
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -348,8 +349,8 @@ nsresult txStylesheet::addTemplate(txTemplateItem* aTemplate,
       aImportFrame->mMatchableTemplates.get(aTemplate->mMode);
 
   if (!templates) {
-    UniquePtr<nsTArray<MatchableTemplate>> newList(
-        new nsTArray<MatchableTemplate>);
+    UniquePtr<nsTArray<MatchableTemplate>> newList =
+        std::make_unique<nsTArray<MatchableTemplate>>();
     nsresult rv =
         aImportFrame->mMatchableTemplates.set(aTemplate->mMode, newList.get());
     NS_ENSURE_SUCCESS(rv, rv);
@@ -483,9 +484,9 @@ nsresult txStylesheet::addGlobalVariable(txVariableItem* aVariable) {
   if (mGlobalVariables.get(aVariable->mName)) {
     return NS_OK;
   }
-  UniquePtr<GlobalVariable> var(new GlobalVariable(
+  auto var = std::make_unique<GlobalVariable>(
       std::move(aVariable->mValue), std::move(aVariable->mFirstInstruction),
-      aVariable->mIsParam));
+      aVariable->mIsParam);
   nsresult rv = mGlobalVariables.add(aVariable->mName, var.get());
   NS_ENSURE_SUCCESS(rv, rv);
 

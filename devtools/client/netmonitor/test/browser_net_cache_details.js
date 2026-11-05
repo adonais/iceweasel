@@ -81,19 +81,31 @@ add_task(async function () {
   // they are formatted using toLocaleDateString/toLocaleTimeString, and
   // `new Date` might be unable to parse them. See Bug 1800448.
 
-  // For "last modified" should be the same day as the test, and we could assert
-  // that. However the cache panel is intermittently fully "Not available",
-  // except for the "Expires" field, which seems to always have a value.
   const lastModified = getCacheDetailsValue(document, "Last Modified");
   info("Retrieved lastModified value: " + lastModified);
-  ok(!!lastModified, "Last Modified was found in the cache panel");
-
-  // For "expires" we will only check that this is not set to `Not Available`.
-  const expires = getCacheDetailsValue(document, "Expires");
-  info("Retrieved expires value: " + expires);
   ok(
-    !expires.includes("Not Available"),
-    "Expires is set to a value other than unavailable"
+    !lastModified.includes("Not Available"),
+    "Last Modified is set to a value other than unavailable"
+  );
+
+  const lastFetched = getCacheDetailsValue(document, "Last Fetched");
+  info("Retrieved lastFetched value: " + lastFetched);
+  ok(
+    !lastFetched.includes("Not Available"),
+    "Last Fetched is set to a value other than unavailable"
+  );
+
+  is(
+    getCacheDetailsValue(document, "Data Size"),
+    "6",
+    "Data Size matches the size of the cached response body"
+  );
+
+  // The response uses Cache-Control: no-cache, so the cache entry is expired.
+  is(
+    getCacheDetailsValue(document, "Expires"),
+    "Not Available",
+    "Expires is `Not Available` for a no-cache response"
   );
 });
 

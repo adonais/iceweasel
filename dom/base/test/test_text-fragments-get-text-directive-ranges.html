@@ -11,6 +11,19 @@
   <p>
     sample text.
   </p>
+  <p>
+    he's falling.
+  </p>
+  <p>
+    3.5
+  </p>
+  <p>
+    <span>40</span><span>.</span><span>2</span>
+  </p>
+  <div>
+    <p>II</p>
+    <p>the cat</p>
+  </div>
 
   <script>
     SimpleTest.waitForExplicitFinish();
@@ -62,13 +75,50 @@
       is(ranges[1].toString(), "text", "The second text directive should be the second range");
 
       SpecialPowers.wrap(document).fragmentDirective.removeAllTextDirectives();
+
+      // "he" in "he's" isn't a whole word, so text=he must find no match.
+      let directive = "#:~:text=he";
+      await changeHash(directive);
+      ranges = SpecialPowers.wrap(document).fragmentDirective.getTextDirectiveRanges();
+      is(ranges.length, 0, `"${directive}" should NOT match since "he" is not word-bounded`);
+      SpecialPowers.wrap(document).fragmentDirective.removeAllTextDirectives();
+
+      // he's is a whole word, so should match
+      directive = "#:~:text=he%27s";
+      await changeHash(directive);
+      ranges = SpecialPowers.wrap(document).fragmentDirective.getTextDirectiveRanges();
+      ok(ranges.length === 1 && ranges[0].toString() === "he's",
+        `"${directive}" should match he's.`);
+      SpecialPowers.wrap(document).fragmentDirective.removeAllTextDirectives();
+
+      directive = "#:~:text=5";
+      await changeHash(directive);
+      ranges = SpecialPowers.wrap(document).fragmentDirective.getTextDirectiveRanges();
+      is(ranges.length, 0, `"${directive}" should NOT match mid-number inside 3.5`);
+      SpecialPowers.wrap(document).fragmentDirective.removeAllTextDirectives();
+
+      directive = "#:~:text=3%2E";
+      await changeHash(directive);
+      ranges = SpecialPowers.wrap(document).fragmentDirective.getTextDirectiveRanges();
+      is(ranges.length, 0, `"${directive}" should NOT match 3. in 3.5`);
+      SpecialPowers.wrap(document).fragmentDirective.removeAllTextDirectives();
+
+      directive = "#:~:text=2";
+      await changeHash(directive);
+      ranges = SpecialPowers.wrap(document).fragmentDirective.getTextDirectiveRanges();
+      is(ranges.length, 0, `"${directive}" should NOT match mid-number inside multi-node 40.2`);
+      SpecialPowers.wrap(document).fragmentDirective.removeAllTextDirectives();
+
+      directive = "#:~:text=i-,the%20cat";
+      await changeHash(directive);
+      ranges = SpecialPowers.wrap(document).fragmentDirective.getTextDirectiveRanges();
+      is(ranges.length, 0,
+        `${directive} must not match: 'II' second I is mid-word, not a prefix word-start`);
+      SpecialPowers.wrap(document).fragmentDirective.removeAllTextDirectives();
     }
 
     async function runTests() {
       try {
-        await SpecialPowers.pushPrefEnv({"set": [
-        ["dom.text_fragments.enabled", true],
-      ]});
         await testGetTextDirectiveRangesAndRemoveRanges();
       }
       finally {

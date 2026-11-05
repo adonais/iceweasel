@@ -417,6 +417,12 @@ async function asyncStartTLSTestServer(
     );
     return false;
   }
+  // The server creates an NSS database in its certificate directory, so give
+  // it a per-test copy.
+  let certDirCopy = do_get_tempdir();
+  certDirCopy.append(certDir.leafName);
+  certDir.copyTo(certDirCopy.parent, null);
+  certDir = certDirCopy;
   let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
   process.init(serverBin);
   // Using "sql:" causes the SQL DB to be used so we can run tests on Android.

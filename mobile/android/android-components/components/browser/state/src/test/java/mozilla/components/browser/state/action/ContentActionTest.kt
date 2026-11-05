@@ -145,6 +145,47 @@ class ContentActionTest {
     }
 
     @Test
+    fun `WHEN a new document is committed THEN isPdf is cleared`() {
+        state = BrowserStateReducer.reduce(state, ContentAction.EnteredPdfViewer(tab.id))
+
+        assertTrue(tab.content.isPdf)
+
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateUrlAction(tab.id, "https://www.example.org"),
+            )
+
+        assertFalse(tab.content.isPdf)
+    }
+
+    @Test
+    fun `WHEN the url is re-dispatched unchanged THEN isPdf is kept`() {
+        state = BrowserStateReducer.reduce(state, ContentAction.EnteredPdfViewer(tab.id))
+
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateUrlAction(tab.id, tab.content.url),
+            )
+
+        assertTrue(tab.content.isPdf)
+    }
+
+    @Test
+    fun `WHEN only the fragment of the url changes THEN isPdf is kept`() {
+        state = BrowserStateReducer.reduce(state, ContentAction.EnteredPdfViewer(tab.id))
+
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateUrlAction(tab.id, tab.content.url + "#page=7"),
+            )
+
+        assertTrue(tab.content.isPdf)
+    }
+
+    @Test
     fun `WHEN UpdateUrlAction is dispatched by user gesture THEN the search terms are cleared`() {
         val searchTerms = "Firefox"
         state =

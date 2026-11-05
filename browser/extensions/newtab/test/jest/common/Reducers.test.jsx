@@ -5,7 +5,7 @@
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { actionTypes as at } from "common/Actions.mjs";
 
-const { PrivacyWidget, RecentSearches, Wallpapers } = reducers;
+const { PrivacyWidget, RecentSearches, Travel, Wallpapers } = reducers;
 
 describe("PrivacyWidget reducer", () => {
   it("defaults to an uninitialized state", () => {
@@ -26,6 +26,27 @@ describe("PrivacyWidget reducer", () => {
   it("returns the prior state for unrelated actions", () => {
     const prev = INITIAL_STATE.PrivacyWidget;
     expect(PrivacyWidget(prev, { type: "SOME_OTHER_ACTION" })).toBe(prev);
+  });
+});
+
+describe("Travel reducer", () => {
+  it("defaults to an uninitialized state with no results", () => {
+    expect(INITIAL_STATE.Travel.initialized).toBe(false);
+    expect(INITIAL_STATE.Travel.results).toEqual([]);
+  });
+
+  it("stores the results and flips initialized on WIDGETS_TRAVEL_UPDATE", () => {
+    const next = Travel(INITIAL_STATE.Travel, {
+      type: at.WIDGETS_TRAVEL_UPDATE,
+      data: { results: [{ name: "Lisbon" }] },
+    });
+    expect(next.initialized).toBe(true);
+    expect(next.results).toEqual([{ name: "Lisbon" }]);
+  });
+
+  it("returns the prior state for unrelated actions", () => {
+    const prev = INITIAL_STATE.Travel;
+    expect(Travel(prev, { type: "SOME_OTHER_ACTION" })).toBe(prev);
   });
 });
 

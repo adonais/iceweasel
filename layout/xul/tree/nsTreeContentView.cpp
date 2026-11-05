@@ -552,10 +552,10 @@ void nsTreeContentView::ToggleOpenState(int32_t aRow, ErrorResult& aError) {
 
   if (row->IsOpen()) {
     row->mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::open, u"false"_ns,
-                           true);
+                           true, IsKnownNewAttr::No);
   } else {
-    row->mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::open, u"true"_ns,
-                           true);
+    row->mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::open, u"true"_ns, true,
+                           IsKnownNewAttr::No);
   }
 }
 
@@ -662,7 +662,8 @@ void nsTreeContentView::SetCellValue(int32_t aRow, nsTreeColumn& aColumn,
   if (realRow) {
     Element* cell = GetCell(realRow, aColumn);
     if (cell) {
-      cell->SetAttr(kNameSpaceID_None, nsGkAtoms::value, aValue, true);
+      cell->SetAttr(kNameSpaceID_None, nsGkAtoms::value, aValue, true,
+                    IsKnownNewAttr::No);
     }
   }
 }
@@ -692,7 +693,8 @@ void nsTreeContentView::SetCellText(int32_t aRow, nsTreeColumn& aColumn,
   if (realRow) {
     Element* cell = GetCell(realRow, aColumn);
     if (cell) {
-      cell->SetAttr(kNameSpaceID_None, nsGkAtoms::label, aValue, true);
+      cell->SetAttr(kNameSpaceID_None, nsGkAtoms::label, aValue, true,
+                    IsKnownNewAttr::No);
     }
   }
 }

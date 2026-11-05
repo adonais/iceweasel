@@ -20,6 +20,10 @@
 #ifndef wasm_wasm_baseline_reg_defs_inl_h
 #define wasm_wasm_baseline_reg_defs_inl_h
 
+#include "wasm/WasmBCRegDefs.h"
+
+#include "wasm/WasmBCClass.h"
+
 namespace js {
 namespace wasm {
 // TODO / OPTIMIZE (Bug 1316802): Do not sync everything on allocation

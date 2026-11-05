@@ -77,7 +77,7 @@ Usually a firefox forked process running untrusted web content.
 [DNS](https://developer.mozilla.org/en-US/docs/Glossary/DNS) over HTTPS.\
 Refer [RFC 8484 - DNS Queries over HTTPS (DoH)](https://datatracker.ietf.org/doc/html/rfc8484).\
 Resolves DNS names by using a HTTPS server.\
-Refer [this link](https://firefox-source-docs.mozilla.org/networking/dns/dns-over-https-trr.html) for more details.
+Refer {doc}`this link </networking/dns/dns-over-https-trr>` for more details.
 
 ## Eventsource
 Web API for [server-sent-events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events). \
@@ -136,7 +136,7 @@ For content processes, MainThread is where normal JS content runs ([Worker](http
 
 ## Mochitest
 Browser tests, run with full UI. \
-Refer [this](https://firefox-source-docs.mozilla.org/testing/mochitest-plain/index.html) for more details.
+Refer {doc}`this </testing/mochitest-plain/index>` for more details.
 
 ## neqo v/s Necko
 _neqo_ is the name of the Mozilla [QUIC](https://github.com/mozilla/neqo) stack.
@@ -147,11 +147,11 @@ _Necko_ is the project name of the Mozilla networking stack.
 
 ## NSS
 An acronym for the Network Security Services.
-Refer  [this](https://firefox-source-docs.mozilla.org/security/nss/index.html) for more details.
+Refer  {doc}`this </security/nss/index>` for more details.
 
 
 ## NSPR
-An acronym for [Netscape Portable Runtime](https://firefox-source-docs.mozilla.org/nspr/index.html)
+An acronym for {doc}`Netscape Portable Runtime </nspr/index>`
 Necko’s scope?
 
 ## Observer
@@ -175,7 +175,7 @@ Before e10s, all code ran in the Parent Process.
 ### Principal
 Abstraction encapsulating security details of a web page.
 Refer the following links for more details:
-- [sec-necko-components](https://firefox-source-docs.mozilla.org/networking/sec-necko-components.html)
+- {doc}`sec-necko-components </networking/sec-necko-components>`
 - [nsIPrincipal](https://searchfox.org/firefox-main/source/caps/nsIPrincipal.idl)
 
 ## OMT
@@ -232,7 +232,7 @@ References:
 ## Xpcshell-tests
 Unit tests for testing our XPCOM code from JS context.
 Runs without a UI in a simpler  setup (typically single-process). \
-Refer [firefox-source-docs](https://firefox-source-docs.mozilla.org/testing/xpcshell/index.html) for detailed explanation.
+Refer to the {doc}`xpcshell documentation </testing/xpcshell/index>` for detailed explanation.
 
 ## XHR
 [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest). One way to perform AJAX, essentially a way to dynamically make network requests for use in the callers webpage, similar to Fetch.

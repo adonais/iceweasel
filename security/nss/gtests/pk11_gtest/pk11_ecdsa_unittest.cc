@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <algorithm>
 #include <memory>
 #include "nss.h"
 #include "pk11pub.h"
@@ -190,6 +191,12 @@ TEST_F(Pkcs11EcdsaSha256Test, ImportPointNotOnCurve) {
   ASSERT_TRUE(privKey);
 
   ScopedSECKEYPublicKey pubKey(SECKEY_ConvertToPublicKey(privKey.get()));
+  // A FIPS token gets the key unwrapped, without a CKA_EC_POINT, and rejects
+  // the point as soon as it has to produce the public key.
+  if (PK11_IsFIPS()) {
+    EXPECT_FALSE(pubKey);
+    return;
+  }
   ASSERT_TRUE(pubKey);
 
   ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
@@ -237,7 +244,7 @@ TEST_F(Pkcs11EcdsaSha256Test, ImportSpkiPointNotOnCurve) {
 class Pkcs11EcdsaWycheproofTest : public ::testing::Test {
  protected:
   void Run(const std::string& name) {
-    WycheproofHeader(name, "ECDSA", "ecdsa_verify_schema.json",
+    WycheproofHeader(name, "ECDSA", "ecdsa_verify_schema_v1.json",
                      [this](JsonReader& r) { RunGroup(r); });
   }
 
@@ -253,16 +260,25 @@ class Pkcs11EcdsaWycheproofTest : public ::testing::Test {
         break;
       }
 
-      if (n == "key" || n == "keyPem") {
+      if (n == "publicKey" || n == "publicKeyPem" || n == "source") {
         r.SkipValue();
-      } else if (n == "keyDer") {
+      } else if (n == "publicKeyDer") {
         public_key = r.ReadHex();
       } else if (n == "sha") {
         hash_oid = r.ReadHash();
       } else if (n == "type") {
         ASSERT_EQ("EcdsaVerify", r.ReadString());
       } else if (n == "tests") {
-        WycheproofReadTests(r, &tests, ReadTestAttr);
+        WycheproofReadTests(r, &tests, ReadTestAttr, true,
+                            [](EcdsaTestVector& t, const std::string&,
+                               const std::vector<std::string>& flags) {
+                              // NSS accepts signatures that are missing the
+                              // leading zero on a positive integer.
+                              if (std::find(flags.begin(), flags.end(),
+                                            "MissingZero") != flags.end()) {
+                                t.valid = true;
+                              }
+                            });
       } else {
         FAIL() << "unknown label in group: " << n;
       }

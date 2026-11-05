@@ -632,13 +632,13 @@ bool CreateMediaContentAnswer(
   answer->set_rtp_header_extensions(negotiated_rtp_extensions);
   // Cryptex is declarative, i.e. does not depend on the offer.
   // If present in the offer we match the level (session/media)
-  // and put it at session level otherwise.
+  // and use media level otherwise.
   if (session_options.crypto_options.srtp.cryptex_policy !=
       CryptoOptions::Srtp::CryptexPolicy::kDisabled) {
     answer->set_cryptex_level(
         offer->cryptex_level() != MediaContentDescription::AttributeLevel::kNone
             ? offer->cryptex_level()
-            : MediaContentDescription::AttributeLevel::kSession);
+            : MediaContentDescription::AttributeLevel::kMedia);
   }
 
   answer->set_rtcp_mux(session_options.rtcp_mux_enabled && offer->rtcp_mux());

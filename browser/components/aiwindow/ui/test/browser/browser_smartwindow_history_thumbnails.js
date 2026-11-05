@@ -36,7 +36,7 @@ describe("smartwindow history thumbnails", () => {
       // Reject any background engine requests (e.g. title-generation) that were
       // never explicitly responded to via respondTo() so their suspended async
       // chains resolve and release the window for GC
-      mockEngineMan.rejectAllRequests();
+      await mockEngineMan.rejectAllRequests();
       mockEngineMan.cleanupMocks();
     }
 

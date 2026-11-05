@@ -61,7 +61,7 @@ class ExtensionEventListener final : public mozIExtensionEventListener {
 
   dom::WorkerPrivate* GetWorkerPrivate() const;
 
-  RefPtr<dom::Function> GetCallback() const { return mCallback; }
+  RefPtr<dom::Function> GetCallback() const;
 
   nsCOMPtr<nsIGlobalObject> GetGlobalObject() const {
     nsCOMPtr<nsIGlobalObject> global = do_QueryReferent(mGlobal);
@@ -70,36 +70,17 @@ class ExtensionEventListener final : public mozIExtensionEventListener {
 
   ExtensionBrowser* GetExtensionBrowser() const { return mExtensionBrowser; }
 
-  void Cleanup() {
-    if (mWorkerRef) {
-      MutexAutoLock lock(mMutex);
-
-      mWorkerRef->Private()->AssertIsOnWorkerThread();
-      mWorkerRef = nullptr;
-    }
-
-    mGlobal = nullptr;
-    mCallback = nullptr;
-    mExtensionBrowser = nullptr;
-  }
+  void Cleanup();
 
  private:
   ExtensionEventListener(nsIGlobalObject* aGlobal,
                          ExtensionBrowser* aExtensionBrowser,
-                         dom::Function* aCallback)
-      : mGlobal(do_GetWeakReference(aGlobal)),
-        mExtensionBrowser(aExtensionBrowser),
-        mCallback(aCallback),
-        mMutex("ExtensionEventListener::mMutex") {
-    MOZ_ASSERT(aGlobal);
-    MOZ_ASSERT(aExtensionBrowser);
-    MOZ_ASSERT(aCallback);
-  };
+                         dom::Function* aCallback);
 
   static UniquePtr<dom::StructuredCloneHolder> SerializeCallArguments(
       const nsTArray<JS::Value>& aArgs, JSContext* aCx, ErrorResult& aRv);
 
-  ~ExtensionEventListener() { Cleanup(); };
+  ~ExtensionEventListener();
 
   // Accessed on the main and on the owning threads.
   RefPtr<dom::ThreadSafeWorkerRef> mWorkerRef;

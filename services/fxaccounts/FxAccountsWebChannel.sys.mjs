@@ -37,6 +37,7 @@ import {
   ON_SERVICE_ENABLED_NOTIFICATION,
   PREF_LAST_FXA_USER_UID,
   PREF_LAST_FXA_USER_EMAIL,
+  SCOPE_APP_SYNC,
   SCOPE_OLD_SYNC,
   SCOPE_PROFILE,
   WEBCHANNEL_ID,
@@ -55,6 +56,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   Weave: "resource://services-sync/main.sys.mjs",
   WebChannel: "resource://gre/modules/WebChannel.sys.mjs",
+});
+ChromeUtils.defineLazyGetter(lazy, "mpLocked", () => {
+  return ChromeUtils.importESModule("resource://services-sync/util.sys.mjs")
+    .Utils.mpLocked;
 });
 ChromeUtils.defineLazyGetter(lazy, "SelectableProfileService", () => {
   try {
@@ -999,6 +1004,10 @@ FxAccountsWebChannelHelpers.prototype = {
    * If returning status information is not allowed or no user is signed into
    * Sync, `user_data` will be null.
    */
+  _isPrimaryPasswordLocked() {
+    return lazy.mpLocked();
+  },
+
   async getFxaStatus(service, sendingContext, isPairing, context) {
     let signedInUser = null;
 
@@ -1017,6 +1026,13 @@ FxAccountsWebChannelHelpers.prototype = {
           sessionToken: userData.sessionToken,
           uid: userData.uid,
           verified: userData.verified,
+          // Firefox's own Sync entry points unlock the Primary Password
+          // before opening FxA, so hasSyncKey is only unreliable when FxA was
+          // reached directly while it is still locked; primaryPasswordLocked
+          // lets FxA tell those cases apart.
+          hasSyncKey:
+            await this._fxAccounts.keys.hasKeysForScope(SCOPE_APP_SYNC),
+          primaryPasswordLocked: this._isPrimaryPasswordLocked(),
         };
       }
     }

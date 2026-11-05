@@ -34,6 +34,18 @@ add_task(async function refresh() {
 
 // Tests the clear tip.
 add_task(async function clear() {
+  const { Sanitizer } = ChromeUtils.importESModule(
+    "resource:///modules/Sanitizer.sys.mjs"
+  );
+  let originalShowUI = Sanitizer.showUI;
+  let showUIOptions = [];
+  Sanitizer.showUI = function (window, mode, options) {
+    showUIOptions.push(options);
+    return originalShowUI.call(this, window, mode, options);
+  };
+  registerCleanupFunction(() => {
+    Sanitizer.showUI = originalShowUI;
+  });
   // Pick the tip, which should open the refresh dialog.  Click its cancel
   // button.
   await checkIntervention({
@@ -51,6 +63,12 @@ add_task(async function clear() {
       );
     },
   });
+  Assert.deepEqual(
+    showUIOptions,
+    [{ entryPoint: "address_bar_suggestion" }],
+    "The dialog is told it was opened from the address bar suggestion."
+  );
+  Sanitizer.showUI = originalShowUI;
 });
 
 // Tests the clear tip in a private window. The clear tip shouldn't appear in

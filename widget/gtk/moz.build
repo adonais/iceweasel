@@ -134,6 +134,15 @@ if CONFIG["MOZ_WAYLAND"]:
         "nsWindowWayland.cpp",  # conflicts with X11 headers
         "WaylandVsyncSource.cpp",  # conflicts with X11 headers
     ]
+    SOURCE_HEADERS += [
+        "nsDragServiceWayland.h",
+        "nsWindowWayland.h",
+        "RetrievalContextGtk.h",
+        "RetrievalContextWayland.h",
+        "WaylandVsyncSource.h",
+        "WindowSurfaceCairo.h",
+        "WindowSurfaceWaylandMultiBuffer.h",
+    ]
     EXPORTS.mozilla.widget += [
         "MozContainerWayland.h",
         "nsWaylandDisplay.h",
@@ -152,6 +161,14 @@ if CONFIG["MOZ_X11"]:
     ]
     SOURCES += [
         "nsWindowX11.cpp",  # conflicts with X11 headers
+    ]
+    SOURCE_HEADERS += [
+        "nsShmImage.h",
+        "nsWindowX11.h",
+        "RetrievalContextX11.h",
+        "WindowSurfaceX11.h",
+        "WindowSurfaceX11Image.h",
+        "WindowSurfaceX11SHM.h",
     ]
 
 XPCOM_MANIFESTS += [
@@ -211,11 +228,51 @@ if CONFIG["MOZ_ENABLE_DBUS"]:
         "DBusMenu.cpp",
         "DBusService.cpp",
     ]
+    SOURCE_HEADERS += [
+        "DBusMenu.h",
+        "DBusService.h",
+    ]
     CXXFLAGS += CONFIG["MOZ_DBUS_CFLAGS"]
 
 if CONFIG["MOZ_WAYLAND"] and CONFIG["MOZ_ENABLE_DBUS"]:
     UNIFIED_SOURCES += [
         "FileTransferPortal.cpp",
     ]
+    SOURCE_HEADERS += [
+        "FileTransferPortal.h",
+    ]
 
 COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]
+
+SOURCE_HEADERS += [
+    "AsyncClipboardRequest.h",
+    "GtkWidgets.h",
+    "IMContextWrapper.h",
+    "MPRISInterfaceDescription.h",
+    "MPRISServiceHandler.h",
+    "NativeKeyBindings.h",
+    "NativeMenuGtk.h",
+    "nsApplicationChooser.h",
+    "nsBidiKeyboard.h",
+    "nsClipboard.h",
+    "nsColorPicker.h",
+    "nsDeviceContextSpecG.h",
+    "nsDragService.h",
+    "nsDragServiceGtk.h",
+    "nsDragSessionSource.h",
+    "nsFilePicker.h",
+    "nsGtkCursors.h",
+    "nsGtkKeyUtils.h",
+    "nsLookAndFeel.h",
+    "nsNativeThemeGTK.h",
+    "nsPrintDialogGTK.h",
+    "nsPrintSettingsGTK.h",
+    "nsPrintSettingsServiceGTK.h",
+    "nsSound.h",
+    "nsUserIdleServiceGTK.h",
+    "nsWidgetFactory.h",
+    "nsWindow.h",
+    "ScreenHelperGTK.h",
+    "TaskbarProgress.h",
+    "WakeLockListener.h",
+]

@@ -25,6 +25,11 @@ dictionary ActivateMenuItemOptions {
   short button = 0;
 };
 
+dictionary GetMenuItemsOptions {
+  // Whether to include disabled items where keyboard navigation skips them.
+  boolean includeDisabled = false;
+};
+
 typedef (DOMString or OpenPopupOptions) StringOrOpenPopupOptions;
 
 [ChromeOnly,
@@ -137,6 +142,13 @@ interface XULPopupElement : XULElement
   [Throws]
   undefined activateItem(Element itemElement,
                          optional ActivateMenuItemOptions options = {});
+
+  /**
+   * Returns the items that keyboard navigation in this menu reaches, in order.
+   * Hidden items are left out, and so are disabled items where the platform
+   * passes over them, unless options.includeDisabled is set.
+   */
+  sequence<Element> getMenuItems(optional GetMenuItemsOptions options = {});
 
   /**
    * Attribute getter and setter for label.

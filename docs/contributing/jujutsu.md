@@ -130,7 +130,7 @@ You could instead make this a shell alias/function, if preferred.
 . Follow the
 instructions here:
 
-<https://firefox-source-docs.mozilla.org/code-quality/lint/usage.html#jujutsu-integration>
+[Jujutsu integration](/code-quality/lint/usage.md#jujutsu-integration)
 
 (adding the config to `jj config edit --repo`)
 

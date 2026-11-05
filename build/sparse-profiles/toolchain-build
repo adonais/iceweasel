@@ -7,3 +7,5 @@
 [include]
 # Needed by build-clang.py.
 path:tools/rewriting/
+# Needed by build-onnxruntime.sh to dump symbols.
+path:toolkit/crashreporter/tools/

@@ -197,21 +197,25 @@ add_task(async function test_switch_from_chat_onboarding() {
   });
 
   await SidebarTestUtils.showPanel(window, "viewGenaiChatSidebar");
-  const chatWindow = SidebarController.browser.contentWindow;
-  await BrowserTestUtils.waitForMutationCondition(
-    chatWindow.document.body,
-    { childList: true },
-    () => chatWindow.document.getElementById("multi-stage-message-root"),
-    { msg: "Chatbot onboarding is visible" }
-  );
-  const switcher = chatWindow.document.querySelector("sidebar-panel-switcher");
-  await switcher.updateComplete;
+  const { contentDocument, contentWindow } = SidebarController.browser;
+  const isFocused = () =>
+    contentDocument
+      .getElementById("multi-stage-message-root")
+      ?.contains(contentDocument.activeElement);
+  if (!isFocused()) {
+    await BrowserTestUtils.waitForEvent(
+      contentWindow,
+      "focusin",
+      false,
+      isFocused
+    );
+  }
+  const { switcher } = SidebarController.panelHeader;
   Assert.ok(BrowserTestUtils.isVisible(switcher), "Panel switcher is visible");
 
   const listShown = BrowserTestUtils.waitForEvent(switcher.panelList, "shown");
-  EventUtils.synthesizeMouseAtCenter(switcher.button, {}, chatWindow);
+  EventUtils.synthesizeMouseAtCenter(switcher.button, {}, window);
   await listShown;
-  await switcher.updateComplete;
 
   const { label } = (await SidebarController.getRevampSwitcherItems()).find(
     ({ view }) => view === "viewHistorySidebar"
@@ -221,7 +225,7 @@ add_task(async function test_switch_from_chat_onboarding() {
   );
   Assert.ok(historyItem, "History is available in the switcher");
   const sidebarShown = BrowserTestUtils.waitForEvent(window, "SidebarShown");
-  EventUtils.synthesizeMouseAtCenter(historyItem, {}, chatWindow);
+  EventUtils.synthesizeMouseAtCenter(historyItem, {}, window);
   await sidebarShown;
   Assert.equal(
     SidebarController.currentID,
@@ -378,12 +382,12 @@ add_task(async function test_keyboard_shortcut() {
 
   await SpecialPowers.pushPrefEnv({ set: [[enabled, true]] });
   key.doCommand();
-
+  await SidebarController.waitUntilStable();
   Assert.ok(Services.prefs.getBoolPref(enabled), "Enabled with keyboard");
   Assert.ok(SidebarController.isOpen, "Opened chatbot with keyboard");
 
   key.doCommand();
-
+  await SidebarController.waitUntilStable();
   Assert.ok(!SidebarController.isOpen, "Closed chatbot with keyboard");
 
   Assert.ok(

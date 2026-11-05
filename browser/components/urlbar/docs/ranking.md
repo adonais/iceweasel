@@ -2,7 +2,7 @@
 
 Before results appear in the UrlbarView, they are fetched from providers.
 
-Each [UrlbarProvider](https://firefox-source-docs.mozilla.org/browser/urlbar/overview.html#urlbarprovider)
+Each [UrlbarProvider](/browser/urlbar/overview.md#urlbarprovider)
 implements its own internal ranking and returns sorted results.
 
 Externally all the results are ranked by the {searchfox}`UrlbarMuxer <browser/components/urlbar/UrlbarMuxerStandard.sys.mjs>`

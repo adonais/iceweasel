@@ -115,12 +115,6 @@ EngineSynchronizer.prototype = {
       case "resetClient":
         await this.service.resetClient(engineManager.enabledEngineNames);
         break;
-      case "wipeClient":
-        await this.service.wipeClient(engineManager.enabledEngineNames);
-        break;
-      case "wipeRemote":
-        await this.service.wipeRemote(engineManager.enabledEngineNames);
-        break;
       default:
         allowEnginesHint = true;
         break;

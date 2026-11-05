@@ -18,18 +18,12 @@ support-files = ["bug1393259.html"]
 run-if = [
   "os == 'mac'", # This is a Mac-specific test
 ]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929424
-]
 tags = "os_integration"
 
 ["browser_content_sandbox_fs.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86' && debug", # bug 1379635
   "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # bug 1379635
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # bug 1379635
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # bug 1379635
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
 ]
 
 ["browser_content_sandbox_syscalls.js"]

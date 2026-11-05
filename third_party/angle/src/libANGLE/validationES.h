@@ -79,6 +79,7 @@ bool ValidImageDataSize(const Context *context,
                         GLsizei width,
                         GLsizei height,
                         GLsizei depth,
+                        bool isSubImage,
                         GLenum format,
                         GLenum type,
                         const void *pixels,
@@ -378,6 +379,15 @@ bool ValidateCopyTexImageParametersBase(const Context *context,
                                         GLsizei height,
                                         GLint border,
                                         Format *textureFormatOut);
+
+bool ValidateHardenedContextTextureLevelRedefine(const Context *context,
+                                                 angle::EntryPoint entryPoint,
+                                                 const Texture *texture,
+                                                 GLint level,
+                                                 GLsizei width,
+                                                 GLsizei height,
+                                                 GLsizei depth,
+                                                 const InternalFormat &format);
 
 void RecordDrawModeError(const Context *context, angle::EntryPoint entryPoint, PrimitiveMode mode);
 const char *ValidateDrawElementsStates(const Context *context);
@@ -1213,12 +1223,12 @@ bool ValidateLogicOpCommon(const PrivateState &state,
                            angle::EntryPoint entryPoint,
                            LogicalOperation opcodePacked);
 
-bool ValidateNoActivePLSConflict(const Context *context,
-                                 angle::EntryPoint entryPoint,
-                                 TextureID textureId);
-bool ValidateNoActivePLSConflict(const Context *context,
-                                 angle::EntryPoint entryPoint,
-                                 RenderbufferID renderbufferId);
+bool ValidateNotAttachmentWithActivePLS(const Context *context,
+                                        angle::EntryPoint entryPoint,
+                                        TextureID textureId);
+bool ValidateNotAttachmentWithActivePLS(const Context *context,
+                                        angle::EntryPoint entryPoint,
+                                        RenderbufferID renderbufferId);
 }  // namespace gl
 
 #endif  // LIBANGLE_VALIDATION_ES_H_

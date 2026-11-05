@@ -110,12 +110,9 @@ add_task(async function searchbar() {
   });
 });
 
-// A handoff session searches in engine search mode, where pressing Enter loads
-// the engine's search URL directly without picking a result, and only picking a
-// result starts tracking a bounce.
 add_task(async function handoff() {
   await doHandoffTest({
-    trigger: win => doEngagementAndNavigateBack(win, () => doClick()),
+    trigger: win => doEngagementAndNavigateBack(win, () => doEnter({}, win)),
     assert: () => assertBounceTelemetry([{ sap: "handoff" }]),
   });
 });

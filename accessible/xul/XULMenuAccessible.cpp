@@ -250,7 +250,7 @@ role XULMenuitemAccessible::NativeRole() const {
   return roles::MENUITEM;
 }
 
-int32_t XULMenuitemAccessible::GetLevel(bool aFast) const {
+int32_t XULMenuitemAccessible::GetLevel(bool /*aFast*/) const {
   return nsAccUtils::GetLevelForXULContainerItem(mContent);
 }
 
@@ -313,7 +313,8 @@ uint64_t XULMenuSeparatorAccessible::NativeState() const {
          (states::OFFSCREEN | states::INVISIBLE);
 }
 
-ENameValueFlag XULMenuSeparatorAccessible::NativeName(nsString& aName) const {
+ENameValueFlag XULMenuSeparatorAccessible::NativeName(
+    nsString& /*aName*/) const {
   return eNameOK;
 }
 
@@ -487,6 +488,6 @@ LocalAccessible* XULMenubarAccessible::CurrentItem() const {
   return mDoc->GetAccessible(content->GetActiveMenuChild());
 }
 
-void XULMenubarAccessible::SetCurrentItem(const LocalAccessible* aItem) {
+void XULMenubarAccessible::SetCurrentItem(const LocalAccessible* /*aItem*/) {
   NS_ERROR("XULMenubarAccessible::SetCurrentItem not implemented");
 }

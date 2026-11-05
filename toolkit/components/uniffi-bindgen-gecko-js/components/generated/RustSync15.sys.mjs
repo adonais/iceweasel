@@ -61,7 +61,7 @@ export var UnitTestObjs = {
  * to assume that this module knows about all valid device types for the device type it is
  * deployed on.
  */
-export const DeviceType = Object.freeze({
+export const DeviceType = Object.freeze(/** @lends DeviceType */ {
     /**
      * DESKTOP
      */

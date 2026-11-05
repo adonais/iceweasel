@@ -18,8 +18,6 @@
 #include "nsString.h"
 #include "nsTHashSet.h"
 
-class nsAuthSSPI;
-
 class DNSServiceWrapper final : public nsPIDNSService {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -60,13 +58,7 @@ class nsDNSService final : public mozilla::net::DNSServiceBase,
   bool GetOffline() const;
 
  protected:
-  friend class nsAuthSSPI;
   friend class DNSServiceWrapper;
-
-  nsresult DeprecatedSyncResolve(
-      const nsACString& aHostname, nsIDNSService::DNSFlags flags,
-      const mozilla::OriginAttributes& aOriginAttributes,
-      nsIDNSRecord** result);
 
  private:
   ~nsDNSService() = default;

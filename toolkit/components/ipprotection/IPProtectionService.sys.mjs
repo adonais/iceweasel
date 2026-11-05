@@ -43,6 +43,9 @@ export const IPProtectionStates = Object.freeze({
  * @fires IPProtectionServiceSingleton#"IPProtectionService:StateChanged"
  *  When the proxy state machine changes state. Check the `state` attribute to
  *  know the current state.
+ * @fires IPProtectionServiceSingleton#"IPProtectionService:StartupCompleted"
+ *  Once startup is done and the state reflects it rather than the one cached
+ *  from the previous session.
  */
 class IPProtectionServiceSingleton extends EventTarget {
   #state = IPProtectionStates.UNINITIALIZED;
@@ -123,6 +126,16 @@ class IPProtectionServiceSingleton extends EventTarget {
   async initOnStartupCompleted() {
     await Promise.allSettled(
       this.#helpers.map(helper => helper.initOnStartupCompleted?.())
+    );
+
+    this.dispatchEvent(
+      new CustomEvent("IPProtectionService:StartupCompleted", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          state: this.#state,
+        },
+      })
     );
   }
 

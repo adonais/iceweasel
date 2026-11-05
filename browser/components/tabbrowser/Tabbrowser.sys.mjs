@@ -460,7 +460,6 @@ export class Tabbrowser {
     "stopScroll",
     "startScroll",
     "userTypedValue",
-    "userTypedClear",
     "didStartLoadSinceLastUserTyping",
     "audioMuted",
   ];
@@ -665,6 +664,7 @@ export class Tabbrowser {
 
   #selectedTab = null;
 
+  /** @type {MozBrowser} */
   #selectedBrowser = null;
 
   set selectedTab(val) {
@@ -2143,6 +2143,8 @@ export class Tabbrowser {
     // that might rely upon the other changes suppressed.
     // Focus is suppressed in the event that the main browser window is minimized - focusing a tab would restore the window
     if (!this.#previewMode) {
+      TabProgressListener.onTabSelect(newTab);
+
       // We've selected the new tab, so go ahead and notify listeners.
       let event = new this.documentGlobal.CustomEvent("TabSelect", {
         bubbles: true,
@@ -3341,7 +3343,6 @@ export class Tabbrowser {
           };
           break;
         case "userTypedValue":
-        case "userTypedClear":
           getter = () => lazy.SessionStore.getLazyTabValue(aTab, name);
           break;
         default:
@@ -10390,6 +10391,17 @@ export class Tabbrowser {
  * A web progress listener object definition for a given tab.
  */
 class TabProgressListener {
+  // Keyed by tab, because a tab's listener is replaced when its browser
+  // changes remoteness mid-load.
+  static #tabsNotSelectedSinceLoad = new WeakSet();
+
+  /**
+   * @param {MozTabbrowserTab} tab
+   */
+  static onTabSelect(tab) {
+    TabProgressListener.#tabsNotSelectedSinceLoad.delete(tab);
+  }
+
   constructor(
     aTab,
     aBrowser,
@@ -10637,7 +10649,11 @@ class TabProgressListener {
         ) {
           this._tab.setAttribute("busy", "true");
           this.#tabbrowser._tabAttrModified(this._tab, ["busy"]);
-          this._tab._notselectedsinceload = !this._tab.selected;
+          if (this._tab.selected) {
+            TabProgressListener.#tabsNotSelectedSinceLoad.delete(this._tab);
+          } else {
+            TabProgressListener.#tabsNotSelectedSinceLoad.add(this._tab);
+          }
         }
 
         if (this._tab.selected) {
@@ -10663,11 +10679,10 @@ class TabProgressListener {
           !this.#tabbrowser.tabContainer.tabAnimationsInProgress &&
           !this.#documentGlobal.gReduceMotion
         ) {
-          if (this._tab._notselectedsinceload) {
-            this._tab.setAttribute("notselectedsinceload", "true");
-          } else {
-            this._tab.removeAttribute("notselectedsinceload");
-          }
+          this._tab.toggleAttribute(
+            "notselectedsinceload",
+            TabProgressListener.#tabsNotSelectedSinceLoad.has(this._tab)
+          );
 
           this._tab.setAttribute("bursting", "true");
         }

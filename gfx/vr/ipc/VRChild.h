@@ -55,7 +55,7 @@ class VRChild final : public PVRChild,
  private:
   ~VRChild();
 
-  VRProcessParent* mHost;
+  RefPtr<VRProcessParent> mHost;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;
   bool mVRReady;
 };

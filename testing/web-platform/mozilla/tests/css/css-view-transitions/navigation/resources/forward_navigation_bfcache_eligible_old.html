@@ -1,0 +1,9 @@
+<!doctype html>
+<style>@view-transition { navigation: auto; }</style>
+<div style="width: 100px; height: 100px; background: green; view-transition-name: box"></div>
+<script>
+const channel = new URLSearchParams(location.search).get('channel');
+onload = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+  location.href = `forward_navigation_bfcache_eligible_new.html?channel=${channel}`;
+}));
+</script>

@@ -110,7 +110,7 @@ class ComponentStatusList extends LitElement {
   /********  Helpers *********/
   // Get story Id href
   _storyHrefFromId(storyId) {
-    return storyId ? `/?path=/story/${storyId}` : "#";
+    return storyId ? `./?path=/story/${storyId}` : "#";
   }
 
   _renderLinkGroup(it) {

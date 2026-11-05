@@ -252,7 +252,7 @@ class JsepSessionTest : public JsepSessionTestBase,
   JsepTrack RemoveTrack(JsepSession& side, size_t index) {
     if (GetTransceivers(side).size() <= index) {
       EXPECT_TRUE(false) << "Index " << index << " out of bounds!";
-      return JsepTrack(SdpMediaSection::kAudio, sdp::kSend);
+      return JsepTrack({.type = SdpMediaSection::kAudio}, sdp::kSend);
     }
 
     JsepTransceiver transceiver(GetTransceivers(side)[index]);
@@ -358,7 +358,7 @@ class JsepSessionTest : public JsepSessionTestBase,
 
       if (!suitableTransceiver) {
         i = GetTransceivers(side).size();
-        side.AddTransceiver(JsepTransceiver(type, mUuidGen));
+        side.AddTransceiver(JsepTransceiver({.type = type}, mUuidGen));
         suitableTransceiver = Some(GetTransceivers(side).back());
         if (magic == ADDTRACK_MAGIC) {
           suitableTransceiver->SetAddTrackMagic();
@@ -509,7 +509,7 @@ class JsepSessionTest : public JsepSessionTestBase,
       return transceiver.mSendTrack;
     }
 
-    return JsepTrack(type, sdp::kSend);
+    return JsepTrack({.type = type}, sdp::kSend);
   }
 
   JsepTrack GetTrackOff(size_t index, SdpMediaSection::MediaType type) {
@@ -991,7 +991,7 @@ class JsepSessionTest : public JsepSessionTestBase,
    public:
     CandidateSet() {}
 
-    void Gather(JsepSession& session, ComponentType maxComponent = RTCP) {
+    void Gather(JsepSession& session, ComponentType /*maxComponent*/ = RTCP) {
       for (const auto& transceiver : GetTransceivers(session)) {
         if (transceiver.HasOwnTransport()) {
           Gather(session, transceiver.mTransport.mTransportId, RTP);
@@ -1804,10 +1804,10 @@ TEST_P(JsepSessionTest, RenegotiationAnswererAddsTrack) {
 
   // We need to add a recvonly m-section to the offer for this to work
   mSessionOff->AddTransceiver(
-      JsepTransceiver(SdpMediaSection::kAudio, mUuidGen,
+      JsepTransceiver({.type = SdpMediaSection::kAudio}, mUuidGen,
                       SdpDirectionAttribute::Direction::kRecvonly));
   mSessionOff->AddTransceiver(
-      JsepTransceiver(SdpMediaSection::kVideo, mUuidGen,
+      JsepTransceiver({.type = SdpMediaSection::kVideo}, mUuidGen,
                       SdpDirectionAttribute::Direction::kRecvonly));
 
   std::string offer = CreateOffer();
@@ -3336,12 +3336,15 @@ INSTANTIATE_TEST_SUITE_P(
 // offerToReceiveXxx variants
 
 TEST_F(JsepSessionTest, OfferAnswerRecvOnlyLines) {
-  mSessionOff->AddTransceiver(JsepTransceiver(
-      SdpMediaSection::kAudio, mUuidGen, SdpDirectionAttribute::kRecvonly));
-  mSessionOff->AddTransceiver(JsepTransceiver(
-      SdpMediaSection::kVideo, mUuidGen, SdpDirectionAttribute::kRecvonly));
-  mSessionOff->AddTransceiver(JsepTransceiver(
-      SdpMediaSection::kVideo, mUuidGen, SdpDirectionAttribute::kRecvonly));
+  mSessionOff->AddTransceiver(
+      JsepTransceiver({.type = SdpMediaSection::kAudio}, mUuidGen,
+                      SdpDirectionAttribute::kRecvonly));
+  mSessionOff->AddTransceiver(
+      JsepTransceiver({.type = SdpMediaSection::kVideo}, mUuidGen,
+                      SdpDirectionAttribute::kRecvonly));
+  mSessionOff->AddTransceiver(
+      JsepTransceiver({.type = SdpMediaSection::kVideo}, mUuidGen,
+                      SdpDirectionAttribute::kRecvonly));
   std::string offer = CreateOffer();
 
   UniquePtr<Sdp> parsedOffer(Parse(offer));
@@ -3465,8 +3468,9 @@ TEST_F(JsepSessionTest, OfferAnswerSendOnlyLines) {
 }
 
 TEST_F(JsepSessionTest, OfferToReceiveAudioNotUsed) {
-  mSessionOff->AddTransceiver(JsepTransceiver(
-      SdpMediaSection::kAudio, mUuidGen, SdpDirectionAttribute::kRecvonly));
+  mSessionOff->AddTransceiver(
+      JsepTransceiver({.type = SdpMediaSection::kAudio}, mUuidGen,
+                      SdpDirectionAttribute::kRecvonly));
 
   OfferAnswer(CHECK_SUCCESS);
 
@@ -3488,8 +3492,9 @@ TEST_F(JsepSessionTest, OfferToReceiveAudioNotUsed) {
 }
 
 TEST_F(JsepSessionTest, OfferToReceiveVideoNotUsed) {
-  mSessionOff->AddTransceiver(JsepTransceiver(
-      SdpMediaSection::kVideo, mUuidGen, SdpDirectionAttribute::kRecvonly));
+  mSessionOff->AddTransceiver(
+      JsepTransceiver({.type = SdpMediaSection::kVideo}, mUuidGen,
+                      SdpDirectionAttribute::kRecvonly));
 
   OfferAnswer(CHECK_SUCCESS);
 
@@ -3511,12 +3516,12 @@ TEST_F(JsepSessionTest, OfferToReceiveVideoNotUsed) {
 }
 
 TEST_F(JsepSessionTest, CreateOfferNoDatachannelDefault) {
-  JsepTransceiver audio(SdpMediaSection::kAudio, mUuidGen);
+  JsepTransceiver audio({.type = SdpMediaSection::kAudio}, mUuidGen);
   audio.mSendTrack.UpdateStreamIds(
       std::vector<std::string>(1, "offerer_stream"));
   mSessionOff->AddTransceiver(audio);
 
-  JsepTransceiver video(SdpMediaSection::kVideo, mUuidGen);
+  JsepTransceiver video({.type = SdpMediaSection::kVideo}, mUuidGen);
   video.mSendTrack.UpdateStreamIds(
       std::vector<std::string>(1, "offerer_stream"));
   mSessionOff->AddTransceiver(video);
@@ -3537,12 +3542,12 @@ TEST_F(JsepSessionTest, ValidateOfferedVideoCodecParams) {
   types.push_back(SdpMediaSection::kAudio);
   types.push_back(SdpMediaSection::kVideo);
 
-  JsepTransceiver audio(SdpMediaSection::kAudio, mUuidGen);
+  JsepTransceiver audio({.type = SdpMediaSection::kAudio}, mUuidGen);
   audio.mSendTrack.UpdateStreamIds(
       std::vector<std::string>(1, "offerer_stream"));
   mSessionOff->AddTransceiver(audio);
 
-  JsepTransceiver video(SdpMediaSection::kVideo, mUuidGen);
+  JsepTransceiver video({.type = SdpMediaSection::kVideo}, mUuidGen);
   video.mSendTrack.UpdateStreamIds(
       std::vector<std::string>(1, "offerer_stream"));
   mSessionOff->AddTransceiver(video);
@@ -3738,13 +3743,13 @@ TEST_F(JsepSessionTest, ValidateOfferedRecvonlyVideoCodecParams) {
   types.push_back(SdpMediaSection::kAudio);
   types.push_back(SdpMediaSection::kVideo);
 
-  JsepTransceiver audio(SdpMediaSection::kAudio, mUuidGen,
+  JsepTransceiver audio({.type = SdpMediaSection::kAudio}, mUuidGen,
                         SdpDirectionAttribute::kRecvonly);
   audio.mSendTrack.UpdateStreamIds(
       std::vector<std::string>(1, "offerer_stream"));
   mSessionOff->AddTransceiver(audio);
 
-  JsepTransceiver video(SdpMediaSection::kVideo, mUuidGen,
+  JsepTransceiver video({.type = SdpMediaSection::kVideo}, mUuidGen,
                         SdpDirectionAttribute::kRecvonly);
   video.mSendTrack.UpdateStreamIds(
       std::vector<std::string>(1, "offerer_stream"));
@@ -3975,12 +3980,12 @@ TEST_F(JsepSessionTest, ValidateOfferedAudioCodecParams) {
   types.push_back(SdpMediaSection::kAudio);
   types.push_back(SdpMediaSection::kVideo);
 
-  JsepTransceiver audio(SdpMediaSection::kAudio, mUuidGen);
+  JsepTransceiver audio({.type = SdpMediaSection::kAudio}, mUuidGen);
   audio.mSendTrack.UpdateStreamIds(
       std::vector<std::string>(1, "offerer_stream"));
   mSessionOff->AddTransceiver(audio);
 
-  JsepTransceiver video(SdpMediaSection::kVideo, mUuidGen);
+  JsepTransceiver video({.type = SdpMediaSection::kVideo}, mUuidGen);
   video.mSendTrack.UpdateStreamIds(
       std::vector<std::string>(1, "offerer_stream"));
   mSessionOff->AddTransceiver(video);
@@ -7729,7 +7734,7 @@ TEST_F(JsepSessionTest, NoAddTrackMagicReplaceTrack) {
   ASSERT_EQ(2U, GetTransceivers(*mSessionAns).size());
   AddTracks(*mSessionOff, "audio");
   mSessionAns->AddTransceiver(
-      JsepTransceiver(SdpMediaSection::MediaType::kAudio, mUuidGen));
+      JsepTransceiver({.type = SdpMediaSection::MediaType::kAudio}, mUuidGen));
 
   GetTransceivers(*mSessionAns)[2].mSendTrack.UpdateStreamIds({"newstream"});
 
@@ -7774,7 +7779,7 @@ TEST_F(JsepSessionTest, AddTrackDoesNotMakeTransceiverMagical) {
   ASSERT_EQ(2U, GetTransceivers(*mSessionAns).size());
   AddTracks(*mSessionOff, "audio");
   mSessionAns->AddTransceiver(
-      JsepTransceiver(SdpMediaSection::MediaType::kAudio, mUuidGen));
+      JsepTransceiver({.type = SdpMediaSection::MediaType::kAudio}, mUuidGen));
 
   ASSERT_EQ(3U, GetTransceivers(*mSessionAns).size());
   ASSERT_EQ(0U, GetTransceivers(*mSessionAns)[0].GetLevel());
@@ -7890,7 +7895,7 @@ TEST_F(JsepSessionTest, ComplicatedRemoteRollback) {
   // Create a fourth audio transceiver. Rollback will leave it alone, since we
   // created it.
   mSessionAns->AddTransceiver(
-      JsepTransceiver(SdpMediaSection::MediaType::kAudio, mUuidGen,
+      JsepTransceiver({.type = SdpMediaSection::MediaType::kAudio}, mUuidGen,
                       SdpDirectionAttribute::Direction::kRecvonly));
 
   ASSERT_FALSE(
@@ -8214,8 +8219,9 @@ TEST_F(JsepSessionTest, TestOneWayRtx) {
 }
 
 TEST_F(JsepSessionTest, TestRtxNoSsrcGroup) {
-  mSessionOff->AddTransceiver(JsepTransceiver(
-      SdpMediaSection::kVideo, mUuidGen, SdpDirectionAttribute::kRecvonly));
+  mSessionOff->AddTransceiver(
+      JsepTransceiver({.type = SdpMediaSection::kVideo}, mUuidGen,
+                      SdpDirectionAttribute::kRecvonly));
 
   OfferAnswer(CHECK_SUCCESS);
 
@@ -8228,8 +8234,9 @@ TEST_F(JsepSessionTest, TestRtxNoSsrcGroup) {
 }
 
 TEST_F(JsepSessionTest, TestRtxSsrcGroupOnlyOffered) {
-  mSessionOff->AddTransceiver(JsepTransceiver(
-      SdpMediaSection::kVideo, mUuidGen, SdpDirectionAttribute::kSendonly));
+  mSessionOff->AddTransceiver(
+      JsepTransceiver({.type = SdpMediaSection::kVideo}, mUuidGen,
+                      SdpDirectionAttribute::kSendonly));
 
   OfferAnswer(CHECK_SUCCESS);
 
@@ -8658,7 +8665,7 @@ TEST_F(JsepSessionTest, TestBundleSupportWithZeroPort) {
   }
 }
 
-TEST_F(JsepSessionTest, ExtmapAllowMixedTrueWhenPrensentAtSessionLevel) {
+TEST_F(JsepSessionTest, ExtmapAllowMixedTrueWhenPresentAtSessionLevel) {
   AddTracks(*mSessionOff, "audio,video,datachannel");
   AddTracks(*mSessionAns, "audio,video,datachannel");
   std::string offer;
@@ -8691,7 +8698,7 @@ TEST_F(JsepSessionTest, ExtmapAllowMixedTrueWhenPrensentAtSessionLevel) {
   });
 }
 
-TEST_F(JsepSessionTest, ExtmapAllowMixedCheckDoNotDefaultToSessionLevel) {
+TEST_F(JsepSessionTest, ExtmapAllowMixedCheckDefaultToSessionLevel) {
   AddTracks(*mSessionOff, "audio,video,datachannel");
   AddTracks(*mSessionAns, "audio,video,datachannel");
 
@@ -8707,8 +8714,8 @@ TEST_F(JsepSessionTest, ExtmapAllowMixedCheckDoNotDefaultToSessionLevel) {
   mSessionOff->SetRemoteDescription(kJsepSdpAnswer, answer);
   mSessionAns->SetLocalDescription(kJsepSdpAnswer, answer);
 
-  ASSERT_FALSE(ExtmapAllowMixed(*mSessionOff));
-  ASSERT_FALSE(ExtmapAllowMixed(*mSessionAns));
+  ASSERT_TRUE(ExtmapAllowMixed(*mSessionOff));
+  ASSERT_TRUE(ExtmapAllowMixed(*mSessionAns));
 }
 
 TEST_F(JsepSessionTest, NoExtmapAllowMixedInDatachannel) {

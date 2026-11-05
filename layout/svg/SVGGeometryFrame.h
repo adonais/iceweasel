@@ -10,6 +10,7 @@
 #include "mozilla/DisplaySVGItem.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/ISVGDisplayableFrame.h"
+#include "mozilla/gfx/Matrix.h"
 #include "nsIFrame.h"
 
 namespace mozilla {
@@ -110,7 +111,11 @@ class SVGGeometryFrame final : public nsIFrame, public ISVGDisplayableFrame {
       const mozilla::layers::StackingContextHelper& aSc,
       mozilla::layers::RenderRootStateManager* aManager,
       nsDisplayListBuilder* aDisplayListBuilder, DisplaySVGGeometry* aItem,
-      bool aDryRun);
+      bool aDryRun, const mozilla::gfx::Matrix& aTransform);
+  // Whether shape-rendering asks for no anti-aliasing.
+  bool HasCrispEdges() const;
+  // Whether the WebRender primitives for this shape should be anti-aliased.
+  bool ShouldAntiAlias() const;
   /**
    * @param aMatrix The transform that must be multiplied onto aContext to
    *   establish this frame's SVG user space.
@@ -141,11 +146,13 @@ class DisplaySVGGeometry final : public DisplaySVGItem {
 
   // Whether this part of the SVG should be natively handled by webrender,
   // potentially becoming an "active layer" inside a blob image.
+  // aTransform is the 2D transform between aSc and the item.
   bool ShouldBeActive(mozilla::wr::DisplayListBuilder& aBuilder,
                       mozilla::wr::IpcResourceUpdateQueue& aResources,
                       const mozilla::layers::StackingContextHelper& aSc,
                       mozilla::layers::RenderRootStateManager* aManager,
-                      nsDisplayListBuilder* aDisplayListBuilder) {
+                      nsDisplayListBuilder* aDisplayListBuilder,
+                      const mozilla::gfx::Matrix& aTransform) {
     // We delegate this question to the parent frame to take advantage of
     // the SVGGeometryFrame inheritance hierarchy which provides actual
     // implementation details. The dryRun flag prevents serious side-effects.
@@ -153,7 +160,7 @@ class DisplaySVGGeometry final : public DisplaySVGItem {
     return frame
         ->CreateWebRenderCommands(aBuilder, aResources, aSc, aManager,
                                   aDisplayListBuilder, this,
-                                  /*aDryRun=*/true)
+                                  /*aDryRun=*/true, aTransform)
         .isOk();
   }
 
@@ -169,7 +176,7 @@ class DisplaySVGGeometry final : public DisplaySVGItem {
     auto* frame = static_cast<SVGGeometryFrame*>(mFrame);
     WebRenderCommandsResult result = frame->CreateWebRenderCommands(
         aBuilder, aResources, aSc, aManager, aDisplayListBuilder, this,
-        /*aDryRun=*/false);
+        /*aDryRun=*/false, mozilla::gfx::Matrix());
     MOZ_ASSERT(result.isOk(),
                "ShouldBeActive inconsistent with CreateWRCommands?");
     return result;

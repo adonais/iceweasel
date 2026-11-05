@@ -3,6 +3,8 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 import argparse
 import os
+import shutil
+import sys
 
 from mozlog.commandline import add_logging_group
 
@@ -78,6 +80,42 @@ APP_BINARIES = {
     "geckoview": "org.mozilla.geckoview_example",
     "refbrow": "org.mozilla.reference.browser",
 }
+
+
+def default_desktop_binary(app):
+    """Return the usual install location of a non-Firefox desktop browser on
+    this platform, or None if it isn't installed there."""
+    candidates = []
+    if app == CHROME:
+        if sys.platform == "darwin":
+            candidates = [
+                "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+            ]
+        elif sys.platform == "win32":
+            candidates = [
+                os.path.join(
+                    os.environ[var], "Google", "Chrome", "Application", "chrome.exe"
+                )
+                for var in ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA")
+                if os.environ.get(var)
+            ]
+        else:
+            candidates = [
+                shutil.which("google-chrome"),
+                shutil.which("google-chrome-stable"),
+                "/usr/bin/google-chrome",
+            ]
+    elif app == SAFARI and sys.platform == "darwin":
+        candidates = ["/Applications/Safari.app/Contents/MacOS/Safari"]
+    elif app == SAFARI_TP and sys.platform == "darwin":
+        candidates = [
+            "/Applications/Safari Technology Preview.app/Contents/MacOS/"
+            "Safari Technology Preview"
+        ]
+    for candidate in candidates:
+        if candidate and os.path.isfile(candidate):
+            return candidate
+    return None
 
 
 def print_all_activities():
@@ -344,14 +382,6 @@ def create_parser(mach_interface=False):
         help="Disable Fission (site isolation) in Gecko.",
     )
     add_arg(
-        "--enable-fission-mobile",
-        dest="fission_mobile",
-        action="store_true",
-        default=False,
-        help="Temporary work-around to enable fission on mobile as it is enabled "
-        "by default for desktop now but not mobile.",
-    )
-    add_arg(
         "--setpref",
         dest="extra_prefs",
         action="append",
@@ -599,9 +629,11 @@ def create_parser(mach_interface=False):
 def verify_options(parser, args):
     ctx = vars(args)
     if args.binary is None and args.app != "chrome-m":
-        args.binary = APP_BINARIES.get(args.app, None)
+        args.binary = APP_BINARIES.get(args.app) or default_desktop_binary(args.app)
         if args.binary is None:
-            parser.error("--binary is required!")
+            parser.error(
+                f"Couldn't find an installed {args.app}, pass --binary <path/to/binary>"
+            )
         else:
             print(f"Using {args.binary} as default binary argument for {args.app} app")
 

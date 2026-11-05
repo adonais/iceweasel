@@ -640,9 +640,13 @@ class RtpSenderReceiverTest
         voice_media_receive_channel_.get());
   }
 
-  void SetSsrc(uint32_t ssrc, RtpSenderInternal& sender) {
+  // `layer_count` is the number of send layers the local description would
+  // describe for the stream; the default covers the single layer case.
+  void SetSsrc(uint32_t ssrc,
+               RtpSenderInternal& sender,
+               size_t layer_count = 1) {
     ScopedOperationsBatcher worker_tasks(worker_thread_.get());
-    worker_tasks.AddWithFinalizer(sender.SetSsrcTask(ssrc));
+    worker_tasks.AddWithFinalizer(sender.SetSsrcTask(ssrc, layer_count));
   }
 
   test::RunLoop run_loop_;
@@ -1785,7 +1789,7 @@ TEST_F(RtpSenderReceiverTest, VideoSenderInitParametersMovedAfterNegotiation) {
     video_rtp_sender_->SetMediaChannel(
         video_media_send_channel()->AsVideoSendChannel());
   });
-  SetSsrc(kVideoSsrcSimulcast, *video_rtp_sender_);
+  SetSsrc(kVideoSsrcSimulcast, *video_rtp_sender_, /*layer_count=*/2);
 
   params = video_rtp_sender_->GetParameters();
   ASSERT_EQ(2u, params.encodings.size());
@@ -1831,7 +1835,7 @@ TEST_F(RtpSenderReceiverTest,
     video_rtp_sender_->SetMediaChannel(
         video_media_send_channel()->AsVideoSendChannel());
   });
-  SetSsrc(kVideoSsrcSimulcast, *video_rtp_sender_);
+  SetSsrc(kVideoSsrcSimulcast, *video_rtp_sender_, /*layer_count=*/2);
 
   params = video_rtp_sender_->GetParameters();
   ASSERT_EQ(2u, params.encodings.size());
@@ -1840,69 +1844,197 @@ TEST_F(RtpSenderReceiverTest,
   DestroyVideoRtpSender();
 }
 
-#if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST(RtpSenderReceiverDeathTest,
-     VideoSenderManualRemoveSimulcastFailsDeathTest) {
-  test::RunLoop run_loop;
-  Environment env = CreateTestEnvironment();
-  // This test uses a single thread for all of signaling, worker and network.
-  Thread* thread = Thread::Current();
+// Simulates SDP munging that removes simulcast: the sender was configured with
+// more encodings than the local description ends up describing. The local
+// description is authoritative, so the surplus layers are dropped.
+TEST_F(RtpSenderReceiverTest,
+       VideoSenderManualRemoveSimulcastDropsSurplusLayers) {
+  AddVideoTrack(/*is_screencast=*/false);
 
-  auto media_engine = std::make_unique<FakeMediaEngine>();
-  FakeCall fake_call(env, thread, thread);
-
-  std::unique_ptr<VideoBitrateAllocatorFactory>
-      video_bitrate_allocator_factory =
-          CreateBuiltinVideoBitrateAllocatorFactory();
-  auto video_media_send_channel = media_engine->video().CreateSendChannel(
-      env, &fake_call, MediaConfig(), VideoOptions(), CryptoOptions(),
-      video_bitrate_allocator_factory.get(), nullptr, nullptr);
-
-  scoped_refptr<MediaStreamInterface> local_stream =
-      MediaStream::Create(kStreamId1);
-  scoped_refptr<VideoTrackInterface> video_track = VideoTrack::Create(
-      kVideoTrackId, FakeVideoTrackSource::Create(/*is_screencast=*/false),
-      thread);
-  EXPECT_TRUE(local_stream->AddTrack(video_track));
-
-  std::unique_ptr<MockSetStreamsObserver> set_streams_observer =
-      std::make_unique<MockSetStreamsObserver>();
-  auto video_rtp_sender = VideoRtpSender::Create(
-      env, thread, thread, video_track->id(), set_streams_observer.get(),
+  MockSetStreamsObserver set_streams_observer;
+  video_rtp_sender_ = VideoRtpSender::Create(
+      CreateTestEnvironment(), signaling_thread_, worker_thread_.get(),
+      video_track_->id(), &set_streams_observer,
       /*enable_sframe_at_owner=*/nullptr, nullptr,
       /*init_send_encodings=*/{}, /*simulcast_rejected=*/false,
       /*initial_simulcast_layers=*/{});
-
-  ASSERT_TRUE(video_rtp_sender->SetTrack(video_track.get()));
-  EXPECT_CALL(*set_streams_observer, OnSetStreams());
-  video_rtp_sender->SetStreams({local_stream->id()});
+  ASSERT_TRUE(video_rtp_sender_->SetTrack(video_track_.get()));
+  EXPECT_CALL(set_streams_observer, OnSetStreams());
+  video_rtp_sender_->SetStreams({local_stream_->id()});
 
   std::vector<RtpEncodingParameters> init_encodings(2);
   init_encodings[0].max_bitrate_bps = 60000;
   init_encodings[1].max_bitrate_bps = 120000;
-  video_rtp_sender->set_init_send_encodings(init_encodings);
+  video_rtp_sender_->set_init_send_encodings(init_encodings);
 
-  RtpParameters params = video_rtp_sender->GetParameters();
+  RtpParameters params = video_rtp_sender_->GetParameters();
   ASSERT_EQ(2u, params.encodings.size());
+
+  // Simulate the setLocalDescription call. The media channel only knows about
+  // the single, non-simulcast stream that was negotiated.
+  worker_thread_->BlockingCall([&] {
+    video_rtp_sender_->SetMediaChannel(
+        video_media_send_channel()->AsVideoSendChannel());
+  });
+  SetSsrc(kVideoSsrc, *video_rtp_sender_);
+
+  params = video_rtp_sender_->GetParameters();
+  ASSERT_EQ(1u, params.encodings.size());
   EXPECT_EQ(params.encodings[0].max_bitrate_bps, 60000);
 
-  // Simulate the setLocalDescription call as if the user used SDP munging
-  // to disable simulcast.
-  StreamParams stream_params = StreamParams::CreateLegacy(kVideoSsrc);
-  video_media_send_channel->AddSendStream(stream_params);
-
-  video_rtp_sender->SetMediaChannel(
-      video_media_send_channel->AsVideoSendChannel());
-  EXPECT_DEATH(
-      {
-        ScopedOperationsBatcher worker_tasks(thread);
-        worker_tasks.AddWithFinalizer(
-            video_rtp_sender->SetSsrcTask(kVideoSsrcSimulcast));
-      },
-      "");
-  video_rtp_sender->Stop();
+  DestroyVideoRtpSender();
 }
-#endif
+
+// The layer count from the local description is reconciled with the encodings
+// the application asked for on the signaling thread, before the worker thread
+// task that configures the media channel runs.
+TEST_F(RtpSenderReceiverTest, SurplusLayersAreDroppedOnTheSignalingThread) {
+  AddVideoTrack(/*is_screencast=*/false);
+
+  MockSetStreamsObserver set_streams_observer;
+  video_rtp_sender_ = VideoRtpSender::Create(
+      CreateTestEnvironment(), signaling_thread_, worker_thread_.get(),
+      video_track_->id(), &set_streams_observer,
+      /*enable_sframe_at_owner=*/nullptr, nullptr,
+      /*init_send_encodings=*/{}, /*simulcast_rejected=*/false,
+      /*initial_simulcast_layers=*/{});
+  ASSERT_TRUE(video_rtp_sender_->SetTrack(video_track_.get()));
+  EXPECT_CALL(set_streams_observer, OnSetStreams());
+  video_rtp_sender_->SetStreams({local_stream_->id()});
+
+  std::vector<RtpEncodingParameters> init_encodings(2);
+  init_encodings[0].max_bitrate_bps = 60000;
+  init_encodings[1].max_bitrate_bps = 120000;
+  video_rtp_sender_->set_init_send_encodings(init_encodings);
+
+  worker_thread_->BlockingCall([&] {
+    video_rtp_sender_->SetMediaChannel(
+        video_media_send_channel()->AsVideoSendChannel());
+  });
+
+  {
+    ScopedOperationsBatcher worker_tasks(worker_thread_.get());
+    ScopedOperationsBatcher::BatchTaskWithFinalizer task =
+        video_rtp_sender_->SetSsrcTask(kVideoSsrc, /*layer_count=*/1);
+    EXPECT_EQ(1u, video_rtp_sender_->init_send_encodings().size());
+    worker_tasks.AddWithFinalizer(std::move(task));
+  }
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  ASSERT_EQ(1u, params.encodings.size());
+  EXPECT_EQ(params.encodings[0].max_bitrate_bps, 60000);
+
+  DestroyVideoRtpSender();
+}
+
+// The media channel has no send stream for the ssrc the sender is attached to.
+// This is equivalent to attaching to ssrc 0; the initial parameters are dropped
+// and no attempt is made to configure the channel.
+TEST_F(RtpSenderReceiverTest, VideoSenderWithSsrcUnknownToTheMediaChannel) {
+  AddVideoTrack(/*is_screencast=*/false);
+
+  MockSetStreamsObserver set_streams_observer;
+  video_rtp_sender_ = VideoRtpSender::Create(
+      CreateTestEnvironment(), signaling_thread_, worker_thread_.get(),
+      video_track_->id(), &set_streams_observer,
+      /*enable_sframe_at_owner=*/nullptr, nullptr,
+      /*init_send_encodings=*/{}, /*simulcast_rejected=*/false,
+      /*initial_simulcast_layers=*/{});
+  ASSERT_TRUE(video_rtp_sender_->SetTrack(video_track_.get()));
+  EXPECT_CALL(set_streams_observer, OnSetStreams());
+  video_rtp_sender_->SetStreams({local_stream_->id()});
+
+  std::vector<RtpEncodingParameters> init_encodings(2);
+  init_encodings[0].max_bitrate_bps = 60000;
+  init_encodings[1].max_bitrate_bps = 120000;
+  video_rtp_sender_->set_init_send_encodings(init_encodings);
+
+  worker_thread_->BlockingCall([&] {
+    video_rtp_sender_->SetMediaChannel(
+        video_media_send_channel()->AsVideoSendChannel());
+  });
+  // No send stream was ever added for `kVideoSsrcSimulcast`.
+  SetSsrc(kVideoSsrcSimulcast, *video_rtp_sender_);
+
+  EXPECT_TRUE(video_rtp_sender_->GetParameters().encodings.empty());
+  EXPECT_TRUE(video_rtp_sender_->init_send_encodings().empty());
+
+  DestroyVideoRtpSender();
+}
+
+// The encodings the application configured before negotiation are kept when
+// the media channel rejects them, so that a later negotiation can apply them.
+TEST_F(RtpSenderReceiverTest, InitParametersSurviveARejectedUpdate) {
+  AddVideoTrack(/*is_screencast=*/false);
+
+  MockSetStreamsObserver set_streams_observer;
+  video_rtp_sender_ = VideoRtpSender::Create(
+      CreateTestEnvironment(), signaling_thread_, worker_thread_.get(),
+      video_track_->id(), &set_streams_observer,
+      /*enable_sframe_at_owner=*/nullptr, nullptr,
+      /*init_send_encodings=*/{}, /*simulcast_rejected=*/false,
+      /*initial_simulcast_layers=*/{});
+  ASSERT_TRUE(video_rtp_sender_->SetTrack(video_track_.get()));
+  EXPECT_CALL(set_streams_observer, OnSetStreams());
+  video_rtp_sender_->SetStreams({local_stream_->id()});
+
+  // A minimum bitrate above the maximum makes the media channel reject the
+  // parameters.
+  std::vector<RtpEncodingParameters> init_encodings(1);
+  init_encodings[0].min_bitrate_bps = 120000;
+  init_encodings[0].max_bitrate_bps = 60000;
+  video_rtp_sender_->set_init_send_encodings(init_encodings);
+
+  worker_thread_->BlockingCall([&] {
+    video_rtp_sender_->SetMediaChannel(
+        video_media_send_channel()->AsVideoSendChannel());
+  });
+  SetSsrc(kVideoSsrc, *video_rtp_sender_);
+
+  ASSERT_EQ(1u, video_rtp_sender_->init_send_encodings().size());
+  EXPECT_EQ(video_rtp_sender_->init_send_encodings()[0].max_bitrate_bps, 60000);
+
+  DestroyVideoRtpSender();
+}
+
+// A degradation preference that the application configured before negotiation
+// is kept when there is no send stream to apply it to, so that it still takes
+// effect once the sender is attached to one.
+TEST_F(RtpSenderReceiverTest, DegradationPreferenceSurvivesAMissingSendStream) {
+  AddVideoTrack(/*is_screencast=*/false);
+
+  MockSetStreamsObserver set_streams_observer;
+  video_rtp_sender_ = VideoRtpSender::Create(
+      CreateTestEnvironment(), signaling_thread_, worker_thread_.get(),
+      video_track_->id(), &set_streams_observer,
+      /*enable_sframe_at_owner=*/nullptr, nullptr,
+      /*init_send_encodings=*/{}, /*simulcast_rejected=*/false,
+      /*initial_simulcast_layers=*/{});
+  ASSERT_TRUE(video_rtp_sender_->SetTrack(video_track_.get()));
+  EXPECT_CALL(set_streams_observer, OnSetStreams());
+  video_rtp_sender_->SetStreams({local_stream_->id()});
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  params.degradation_preference = DegradationPreference::MAINTAIN_FRAMERATE;
+  ASSERT_TRUE(video_rtp_sender_->SetParameters(params).ok());
+
+  worker_thread_->BlockingCall([&] {
+    video_rtp_sender_->SetMediaChannel(
+        video_media_send_channel()->AsVideoSendChannel());
+  });
+  // No send stream was ever added for `kVideoSsrcSimulcast`, so there is
+  // nothing to apply the preference to.
+  SetSsrc(kVideoSsrcSimulcast, *video_rtp_sender_);
+
+  // The next negotiation attaches the sender to a send stream that the media
+  // channel knows about, which is where the preference takes effect.
+  SetSsrc(kVideoSsrc, *video_rtp_sender_);
+
+  EXPECT_EQ(video_rtp_sender_->GetParameters().degradation_preference,
+            DegradationPreference::MAINTAIN_FRAMERATE);
+
+  DestroyVideoRtpSender();
+}
 
 TEST_F(RtpSenderReceiverTest,
        VideoSenderMustCallGetParametersBeforeSetParametersBeforeNegotiation) {

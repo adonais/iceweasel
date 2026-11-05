@@ -27,6 +27,7 @@ import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.service.fxa.FxaAuthData
+import mozilla.components.service.fxa.FxaService
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SCOPE_PROFILE
 import mozilla.components.service.fxa.manager.SCOPE_SYNC
@@ -120,7 +121,11 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
     private fun initViews() {
         findViewById<View>(R.id.buttonWebView).setOnClickListener {
             lifecycleScope.launch {
-                val authUrl = accountManager.beginAuthentication(entrypoint = SampleFxAEntryPoint.HomeMenu)
+                val authUrl =
+                    accountManager.beginAuthentication(
+                        service = FxaService.Relay.identifier,
+                        entrypoint = SampleFxAEntryPoint.HomeMenu,
+                    )
                 if (authUrl == null) {
                     Toast.makeText(
                             this@MainActivity,

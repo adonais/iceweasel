@@ -1811,6 +1811,11 @@ class LayerViewSupport final
   }
 };
 
+GeckoViewSupport::GeckoViewSupport(
+    nsWindow* aWindow, const java::GeckoSession::Window::LocalRef& aInstance,
+    nsPIDOMWindowOuter* aDOMWindow)
+    : mWindow(aWindow), mGeckoViewWindow(aInstance), mDOMWindow(aDOMWindow) {}
+
 GeckoViewSupport::~GeckoViewSupport() {
   if (mWindow) {
     mWindow->DetachNatives();
@@ -2417,6 +2422,182 @@ void GeckoViewSupport::RequestFullScreenshot(
       ->Start();
 }
 
+// Captures a single content region (CSS pixels, scaled by mScale) and blits it
+// into an Android Surface at the surface buffer's top-left.
+class RegionToSurface final {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(RegionToSurface)
+
+  RegionToSurface(java::GeckoResult::GlobalRef&& aResult,
+                  RefPtr<dom::WindowGlobalParent>&& aWgp,
+                  java::sdk::Surface::GlobalRef&& aSurface,
+                  const gfx::IntRect& aRegion, float aScale)
+      : mResult(std::move(aResult)),
+        mWgp(std::move(aWgp)),
+        mSurface(std::move(aSurface)),
+        mRegion(aRegion),
+        mScale(aScale) {}
+
+  void Start() {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    if (!mSurface) {
+      Reject("Failed to start region capture - no target surface");
+      return;
+    }
+
+    gfx::CrossProcessPaint::Start(
+        mWgp, Some(mRegion), mScale, NS_RGB(255, 255, 255),
+        gfx::CrossProcessPaintFlags::UseHighQualityScaling)
+        ->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [self = RefPtr{this}](RefPtr<gfx::SourceSurface>&& aSnapshot) {
+              if (!self->Blit(aSnapshot)) {
+                self->Reject("Failed to capture region - blit error");
+                return;
+              }
+              self->mResult->Complete(nullptr);
+            },
+            [self = RefPtr{this}](const nsresult&) {
+              self->Reject("Failed to capture region - capture error");
+            });
+  }
+
+ private:
+  ~RegionToSurface() = default;
+
+  void Reject(const char* aMsg) {
+    mResult->CompleteExceptionally(
+        java::sdk::IllegalStateException::New(aMsg).Cast<jni::Throwable>());
+    GVS_LOG("%s", aMsg);
+  }
+
+  bool Blit(gfx::SourceSurface* aSnapshot) {
+    // R8G8B8A8 to match the RGBA_8888 Surface buffer.
+    const int32_t bpp = gfx::BytesPerPixel(gfx::SurfaceFormat::R8G8B8A8);
+
+    RefPtr<gfx::DataSourceSurface> data =
+        AndroidWidgetUtils::GetDataSourceSurfaceForAndroidBitmap(
+            aSnapshot, nullptr, aSnapshot->GetSize().width * bpp);
+    if (!data) {
+      return false;
+    }
+
+    gfx::DataSourceSurface::ScopedMap srcMap(data,
+                                             gfx::DataSourceSurface::READ);
+    if (!srcMap.IsMapped()) {
+      return false;
+    }
+
+    ANativeWindow* const window =
+        ANativeWindow_fromSurface(jni::GetEnvForThread(), mSurface.Get());
+    if (!window) {
+      return false;
+    }
+    auto releaseWindow =
+        MakeScopeExit([&]() { ANativeWindow_release(window); });
+
+    const int32_t format = ANativeWindow_getFormat(window);
+    if (format != WINDOW_FORMAT_RGBA_8888 &&
+        format != WINDOW_FORMAT_RGBX_8888) {
+      return false;
+    }
+
+    const gfx::IntSize srcPx = data->GetSize();
+    const int32_t copyW = std::min(srcPx.width, ANativeWindow_getWidth(window));
+    const int32_t copyH =
+        std::min(srcPx.height, ANativeWindow_getHeight(window));
+    if (copyW <= 0 || copyH <= 0) {
+      return false;
+    }
+
+    ANativeWindow_Buffer buffer;
+    if (ANativeWindow_lock(window, &buffer, nullptr) != 0) {
+      return false;
+    }
+    auto unlock = MakeScopeExit([&]() { ANativeWindow_unlockAndPost(window); });
+
+    const int32_t rows = std::min(copyH, buffer.height);
+    const int32_t cols = std::min(copyW, buffer.width);
+    const uint8_t* srcRow = srcMap.GetData();
+    uint8_t* dstRow = static_cast<uint8_t*>(buffer.bits);
+    const size_t dstStride = size_t(buffer.stride) * bpp;
+    for (int32_t y = 0; y < rows; y++) {
+      memcpy(dstRow, srcRow, size_t(cols) * bpp);
+      srcRow += srcMap.GetStride();
+      dstRow += dstStride;
+    }
+    return true;
+  }
+
+  java::GeckoResult::GlobalRef mResult;
+  RefPtr<dom::WindowGlobalParent> mWgp;
+  java::sdk::Surface::GlobalRef mSurface;
+  gfx::IntRect mRegion;
+  const float mScale;
+};
+
+void GeckoViewSupport::RequestRegionToSurface(
+    const java::GeckoSession::Window::LocalRef& inst,
+    jni::Object::Param aResult, jni::Object::Param aSurface, int32_t aX,
+    int32_t aY, int32_t aWidth, int32_t aHeight, float aScale) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  auto result =
+      java::GeckoResult::GlobalRef(java::GeckoResult::LocalRef(aResult));
+  auto surface =
+      java::sdk::Surface::GlobalRef(java::sdk::Surface::LocalRef(aSurface));
+
+  if (!surface) {
+    result->CompleteExceptionally(
+        java::sdk::IllegalArgumentException::New(
+            "Error requesting region to surface - no target surface")
+            .Cast<jni::Throwable>());
+    GVS_LOG("Error requesting region to surface - no target surface");
+    return;
+  }
+  if (aWidth <= 0 || aHeight <= 0) {
+    result->CompleteExceptionally(
+        java::sdk::IllegalArgumentException::New(
+            "Error requesting region to surface - invalid dimensions")
+            .Cast<jni::Throwable>());
+    GVS_LOG("Error requesting region to surface - invalid dimensions");
+    return;
+  }
+
+  RefPtr<CanonicalBrowsingContext> cbc = GetContentCanonicalBrowsingContext();
+  if (!cbc) {
+    result->CompleteExceptionally(
+        java::sdk::IllegalStateException::New(
+            "Error requesting region to surface - could not retrieve canonical "
+            "browsing context")
+            .Cast<jni::Throwable>());
+    GVS_LOG(
+        "Error requesting region to surface - could not retrieve canonical "
+        "browsing context");
+    return;
+  }
+
+  RefPtr<dom::WindowGlobalParent> wgp = cbc->GetCurrentWindowGlobal();
+  if (!wgp) {
+    result->CompleteExceptionally(
+        java::sdk::IllegalStateException::New(
+            "Error requesting region to surface - could not retrieve current "
+            "window global")
+            .Cast<jni::Throwable>());
+    GVS_LOG(
+        "Error requesting region to surface - could not retrieve current "
+        "window global");
+    return;
+  }
+
+  const gfx::IntRect region(aX, aY, aWidth, aHeight);
+
+  MakeRefPtr<RegionToSurface>(std::move(result), std::move(wgp),
+                              std::move(surface), region, aScale)
+      ->Start();
+}
+
 void GeckoViewSupport::RequestContentMetrics(
     const java::GeckoSession::Window::LocalRef& inst,
     jni::Object::Param aResult, jni::Object::Param aMetrics) {
@@ -2467,9 +2648,11 @@ void GeckoViewSupport::RequestContentMetrics(
       [result, metrics](
           const PWindowGlobalParent::GetContentMetricsPromise::ResolveValueType&
               aResolved) {
-        const auto& [size, dpr] = aResolved;
+        const auto& [size, dpr, scrollOffset] = aResolved;
 
-        metrics->Set(size.width, size.height, dpr);
+        const auto roundedSize = gfx::RoundedToInt(size);
+        metrics->Set(roundedSize.width, roundedSize.height, dpr, scrollOffset.x,
+                     scrollOffset.y);
         result->Complete(metrics);
       },
       [result](mozilla::ipc::ResponseRejectReason) {

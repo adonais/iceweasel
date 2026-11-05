@@ -17,7 +17,6 @@
 #include <span>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/timestamp.h"
@@ -355,7 +354,7 @@ class DcSctpSocketCallbacks {
   //
   // Note that it's NOT ALLOWED to call into this library from within this
   // callback.
-  ABSL_DEPRECATED("Use OnTotalBufferedAmountLow instead")
+  [[deprecated("Use OnTotalBufferedAmountLow instead")]]
   virtual void NotifyOutgoingMessageBufferEmpty() {}
 
   // Called when the library has received an SCTP message in full and delivers
@@ -674,7 +673,7 @@ class DcSctpSocketInterface {
   // If this method is called too early (before
   // `DcSctpSocketCallbacks::OnConnected` has triggered), this will likely
   // return `SctpImplementation::kUnknown`.
-  ABSL_DEPRECATED("See Metrics::peer_implementation instead")
+  [[deprecated("See Metrics::peer_implementation instead")]]
   virtual SctpImplementation peer_implementation() const {
     return SctpImplementation::kUnknown;
   }

@@ -7,23 +7,17 @@ package mozilla.components.service.sync.autofill
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import mozilla.appservices.autofill.AutofillApiException
-import mozilla.appservices.autofill.decryptString
-import mozilla.appservices.autofill.encryptString
+import mozilla.appservices.db_crypto.DbCryptoApiException
+import mozilla.appservices.db_crypto.checkCanary
+import mozilla.appservices.db_crypto.createCanary
 import mozilla.components.concept.storage.CreditCardCrypto
-import mozilla.components.concept.storage.CreditCardNumber
 import mozilla.components.concept.storage.KeyGenerationReason
 import mozilla.components.concept.storage.KeyManager
-import mozilla.components.concept.storage.ManagedKey
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
-import mozilla.components.support.base.log.logger.Logger
 
 /**
- * A class that knows how to encrypt & decrypt strings, backed by application-services' autofill lib. Used for
- * protecting credit card numbers at rest.
- *
- * This class manages creation and storage of the encryption key. It also keeps track of abnormal events, such as
- * managed key going missing or getting corrupted.
+ * A class that manages the encryption key used by application-services' autofill lib to protect credit card numbers at
+ * rest. It also keeps track of abnormal events, such as the managed key going missing or getting corrupted.
  *
  * @param context [Context] used for obtaining [SharedPreferences] for managing internal prefs.
  * @param securePrefs A [SecureAbove22Preferences] instance used for storing the managed key.
@@ -33,47 +27,18 @@ class AutofillCrypto(
     private val securePrefs: SecureAbove22Preferences,
     private val storage: AutofillCreditCardsAddressesStorage,
 ) : CreditCardCrypto, KeyManager() {
-    private val logger = Logger("AutofillCrypto")
     private val plaintextPrefs by lazy { context.getSharedPreferences(AUTOFILL_PREFS, Context.MODE_PRIVATE) }
-
-    override fun encrypt(
-        key: ManagedKey,
-        plaintextCardNumber: CreditCardNumber.Plaintext,
-    ): CreditCardNumber.Encrypted? {
-        return try {
-            CreditCardNumber.Encrypted(encryptString(key.key, plaintextCardNumber.number))
-        } catch (e: AutofillApiException) {
-            logger.warn("Failed to encrypt", e)
-            null
-        }
-    }
-
-    override fun decrypt(
-        key: ManagedKey,
-        encryptedCardNumber: CreditCardNumber.Encrypted,
-    ): CreditCardNumber.Plaintext? {
-        if (encryptedCardNumber.number.isEmpty()) {
-            logger.info("Skipping decryption of previously scrubbed CC number")
-            return null
-        }
-        return try {
-            CreditCardNumber.Plaintext(decryptString(key.key, encryptedCardNumber.number))
-        } catch (e: AutofillApiException) {
-            logger.warn("Failed to decrypt", e)
-            null
-        }
-    }
 
     override fun createKey() = mozilla.appservices.autofill.createKey()
 
     override fun isKeyRecoveryNeeded(rawKey: String, canary: String): KeyGenerationReason.RecoveryNeeded? {
         return try {
-            if (CANARY_PHRASE_PLAINTEXT == decryptString(rawKey, canary)) {
+            if (checkCanary(canary, CANARY_PHRASE_PLAINTEXT, rawKey)) {
                 null
             } else {
                 KeyGenerationReason.RecoveryNeeded.Corrupt
             }
-        } catch (e: AutofillApiException) {
+        } catch (e: DbCryptoApiException) {
             KeyGenerationReason.RecoveryNeeded.Corrupt
         }
     }
@@ -94,7 +59,7 @@ class AutofillCrypto(
         // To detect key corruption or absence, use the newly generated key to encrypt a known string.
         // See isKeyValid below.
         plaintextPrefs.edit {
-            putString(CANARY_PHRASE_CIPHERTEXT_KEY, encryptString(key, CANARY_PHRASE_PLAINTEXT))
+            putString(CANARY_PHRASE_CIPHERTEXT_KEY, createCanary(CANARY_PHRASE_PLAINTEXT, key))
         }
     }
 

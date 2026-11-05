@@ -26,6 +26,18 @@ export PATH="$(cd $MOZ_FETCHES_DIR/clang && pwd)/bin:${PATH}"
 export CC=clang
 export CXX=clang++
 
+# Only the targets we ship fetch dump_syms; the others skip symbol generation.
+dump_syms="$MOZ_FETCHES_DIR/dump_syms/dump_syms"
+if test -f "$dump_syms.exe"; then
+    dump_syms="$dump_syms.exe"
+elif test ! -f "$dump_syms"; then
+    dump_syms=
+fi
+
+# Line tables are all the crash reporter needs, and cost far less to compile and
+# link under LTO than full DWARF. MSVC has no equivalent; see the Windows case.
+DEBUG_INFO_FLAGS=${dump_syms:+-gline-tables-only}
+
 ###
 # Extra setup per platform
 case ${target_platform} in
@@ -61,6 +73,13 @@ case ${target_platform} in
             CMAKE_AR=${MACOS_AR}
             CMAKE_RANLIB=${MACOS_RANLIB})
         TARGET_FLAGS="$MACOS_EXTRA_CFLAGS"
+        if test -n "$dump_syms"; then
+            # Under LTO the linker writes its objects to a single reused
+            # temporary name, which dsymutil skips as a duplicate, leaving the
+            # debug map resolving next to nothing. Keep them for it to read.
+            mkdir -p "$PWD/lto-objects"
+            extra_args+=(--cmake_extra_defines "CMAKE_SHARED_LINKER_FLAGS=-Wl,-object_path_lto,$PWD/lto-objects")
+        fi
         prefix=lib
         extension=dylib
         HARDENING_FLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-strong"
@@ -116,9 +135,16 @@ case ${target_platform} in
                 ;;
         esac
         HARDENING_FLAGS="/guard:cf"
-        extra_args+=(--cmake_extra_defines "CMAKE_SHARED_LINKER_FLAGS=/MANIFEST:NO /guard:cf")
+        DEBUG_INFO_FLAGS=
+        # Embedded is /Z7, which keeps debug info in the objects; upstream's
+        # ProgramDatabase default serialises every compilation through mspdbsrv
+        # under Ninja. The linker only writes the .pdb dump_syms reads when
+        # given /DEBUG, which in turn switches /OPT back to NOREF and NOICF.
+        msvc_debug_format=${dump_syms:+Embedded}
+        debug_linker_flags=${dump_syms:+/DEBUG /OPT:REF /OPT:ICF}
+        extra_args+=(--cmake_extra_defines CMAKE_MSVC_DEBUG_INFORMATION_FORMAT=$msvc_debug_format)
+        extra_args+=(--cmake_extra_defines "CMAKE_SHARED_LINKER_FLAGS=/MANIFEST:NO /guard:cf $debug_linker_flags")
         . $GECKO_PATH/taskcluster/scripts/misc/vs-setup.sh
-        sed -i -e 's/ProgramDatabase//' "$MOZ_FETCHES_DIR/onnxruntime/tools/ci_build/build.py"
         # build.py appends its own CMAKE_C_FLAGS/CMAKE_CXX_FLAGS=/MP after the extra defines and
         # cmake keeps the last definition, which would drop ours. /MP does nothing under Ninja.
         sed -i -e 's/if njobs > 1:/if False:/' "$MOZ_FETCHES_DIR/onnxruntime/tools/ci_build/build.py"
@@ -161,6 +187,18 @@ target_sources(onnxruntime PRIVATE "$GECKO_PATH/taskcluster/scripts/misc/onnxrun
 EOF
 fi
 
+if test "$target_platform" != Windows; then
+    # Upstream gives the library a versioned soname, libonnxruntime.so.1, but we
+    # ship the file unversioned and load it by path (dom/onnx/InferenceSession.cpp),
+    # so nothing needs the version. It also has to go for the symbols to resolve:
+    # dump_syms names the module after the soname, while the crash reporter
+    # reports the name on disk, and the two have to agree.
+    cat >> cmake/onnxruntime.cmake <<EOF
+set_property(TARGET onnxruntime PROPERTY VERSION)
+set_property(TARGET onnxruntime PROPERTY SOVERSION)
+EOF
+fi
+
 ###
 # Configure and build
 onnx_builddir=_build
@@ -183,8 +221,8 @@ python3 tools/ci_build/build.py \
     --cmake_extra_defines PYTHON_EXECUTABLE=$(which python3)\
     --cmake_extra_defines ONNX_USE_LITE_PROTO=ON\
     --disable_exceptions \
-    --cmake_extra_defines CMAKE_C_FLAGS_INIT="$HARDENING_FLAGS $TARGET_FLAGS"\
-    --cmake_extra_defines CMAKE_CXX_FLAGS_INIT="$HARDENING_FLAGS $TARGET_FLAGS $EXTRA_CXX_FLAGS"\
+    --cmake_extra_defines CMAKE_C_FLAGS_INIT="$HARDENING_FLAGS $TARGET_FLAGS $DEBUG_INFO_FLAGS"\
+    --cmake_extra_defines CMAKE_CXX_FLAGS_INIT="$HARDENING_FLAGS $TARGET_FLAGS $EXTRA_CXX_FLAGS $DEBUG_INFO_FLAGS"\
     "${extra_args[@]}"
 
 telemetry_setting=$(sed -n 's/^onnxruntime_USE_TELEMETRY:[^=]*=//p' "$onnx_builddir/$build_type/CMakeCache.txt")
@@ -222,19 +260,49 @@ fi
 
 ls -la "$onnx_folder"
 
+mkdir -p $UPLOAD_DIR
+
+# tar needs telling that a "c:/..." destination is not a remote host.
+tar_args=()
+if test "$target_platform" = Windows; then
+    tar_args=(--force-local)
+fi
+
+###
+# Dump the symbols for the crash reporter. This reads the library in the build
+# directory, not the copy above that is about to be stripped; stripping leaves
+# the build id alone, so these symbols still resolve the library we ship.
+if test -n "$dump_syms"; then
+    built_lib="$PWD/$onnx_builddir/$build_type/${prefix}onnxruntime.${extension}"
+    symbols_dir="$PWD/$onnx_builddir/sym"
+    case ${target_platform} in
+        Darwin)
+            symbol_platform=Darwin
+            # symbolstore.py reads these from the build config, which a
+            # toolchain task has no objdir for.
+            export DSYMUTIL=$MOZ_FETCHES_DIR/clang/bin/dsymutil
+            export OTOOL=$MOZ_FETCHES_DIR/clang/bin/llvm-otool
+            ;;
+        Windows) symbol_platform=WINNT ;;
+        *) symbol_platform=Linux ;;
+    esac
+    (cd "$GECKO_PATH" && ./mach python toolkit/crashreporter/tools/symbolstore.py \
+        "$dump_syms" \
+        --platform "$symbol_platform" \
+        --no-rust \
+        --no-moz-extra-info \
+        "$symbols_dir" \
+        "$built_lib")
+    ls -lR "$symbols_dir"
+    tar -a -c -f "$UPLOAD_DIR/target.crashreporter-symbols-onnxruntime.tar.zst" \
+        "${tar_args[@]}" -C "$symbols_dir" .
+fi
+
 find "$onnx_folder" -type f -exec llvm-strip -x {} \;  || true
 
 ls -la "$onnx_folder"
-mkdir -p $UPLOAD_DIR
 
 export ZSTD_CLEVEL=19
 
-case ${target_platform} in
-    Windows)
-        tar -a -c -f "$UPLOAD_DIR/$artifact" --force-local "$onnx_folder"
-        ;;
-    *)
-        tar acf "$UPLOAD_DIR/$artifact" "$onnx_folder"
-        ;;
-esac
+tar -a -c -f "$UPLOAD_DIR/$artifact" "${tar_args[@]}" "$onnx_folder"
 ls -la "$UPLOAD_DIR/$artifact"

@@ -13,3 +13,7 @@ SOURCES += [
 FINAL_LIBRARY = "xul"
 
 CFLAGS += CONFIG["MOZ_X11_CFLAGS"]
+
+SOURCE_HEADERS += [
+    "keysym2ucs.h",
+]

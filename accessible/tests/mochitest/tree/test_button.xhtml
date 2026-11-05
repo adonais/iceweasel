@@ -4,6 +4,7 @@
                  type="text/css"?>
 
 <window xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml"
         title="Accessible XUL button hierarchy tests">
 
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js" />
@@ -12,6 +13,8 @@
           src="../common.js" />
   <script type="application/javascript"
           src="../role.js" />
+  <script type="application/javascript"
+          src="../name.js" />
 
   <script type="application/javascript">
   <![CDATA[
@@ -26,7 +29,12 @@
       var accTree = {
         role: ROLE_PUSHBUTTON,
         name: "hello",
-        children: [ ]
+        children: [
+          {
+            role: ROLE_LABEL,
+            children: [ { role: ROLE_STATICTEXT, name: "hello" } ]
+          }
+        ]
       };
       testAccessibleTree("button1", accTree);
 
@@ -36,7 +44,12 @@
       accTree = {
         role: ROLE_PUSHBUTTON,
         name: "hello",
-        children: [ ]
+        children: [
+          {
+            role: ROLE_LABEL,
+            children: [ { role: ROLE_STATICTEXT, name: "hello" } ]
+          }
+        ]
       };
       testAccessibleTree("button2", accTree);
 
@@ -46,9 +59,82 @@
       accTree = {
         role: ROLE_TOGGLE_BUTTON,
         name: "hello",
-        children: [ ]
+        children: [
+          {
+            role: ROLE_LABEL,
+            children: [ { role: ROLE_STATICTEXT, name: "hello" } ]
+          }
+        ]
       };
       testAccessibleTree("button3", accTree);
+
+      //////////////////////////////////////////////////////////////////////////
+      // toolbarbutton with ::after content on its label
+
+      accTree = {
+        role: ROLE_PUSHBUTTON,
+        name: "hello (Ctrl+B)",
+        children: [
+          {
+            role: ROLE_LABEL,
+            children: [
+              { role: ROLE_STATICTEXT, name: "hello" },
+              { role: ROLE_STATICTEXT, name: " (Ctrl+B)" }
+            ]
+          }
+        ]
+      };
+      testAccessibleTree("button4", accTree);
+
+      //////////////////////////////////////////////////////////////////////////
+      // button with ::after content on the button itself
+
+      accTree = {
+        role: ROLE_PUSHBUTTON,
+        name: "hello (Ctrl+B)",
+        children: [
+          {
+            role: ROLE_LABEL,
+            children: [ { role: ROLE_STATICTEXT, name: "hello" } ]
+          },
+          { role: ROLE_STATICTEXT, name: "(Ctrl+B)" }
+        ]
+      };
+      testAccessibleTree("button5", accTree);
+
+      //////////////////////////////////////////////////////////////////////////
+      // toolbarbutton whose label is hidden by CSS
+
+      accTree = {
+        role: ROLE_PUSHBUTTON,
+        name: "hello",
+        children: [ ]
+      };
+      testAccessibleTree("button6", accTree);
+
+      //////////////////////////////////////////////////////////////////////////
+      // menu button: the popup shouldn't contribute to the name
+
+      testName("button7", "hello");
+
+      //////////////////////////////////////////////////////////////////////////
+      // button with an access key that isn't in the label, which is appended to
+      // the visible label if menu access keys are enabled
+
+      testName(
+        "button8",
+        Services.prefs.getIntPref("ui.key.menuAccessKey") ? "hello (Z)" : "hello"
+      );
+
+      //////////////////////////////////////////////////////////////////////////
+      // button with an access key that is in the label, which is underlined
+
+      testName("button9", "hello");
+
+      //////////////////////////////////////////////////////////////////////////
+      // toolbarbutton with an empty label and a tooltip
+
+      testName("button10", "Foo");
 
       SimpleTest.finish()
     }
@@ -76,6 +162,25 @@
       <button id="button1" label="hello"/>
       <toolbarbutton id="button2" label="hello"/>
       <toolbarbutton id="button3" type="checkbox" label="hello"/>
+      <html:style>
+        #button4 > .toolbarbutton-text::after,
+        #button5::after {
+          content: " (Ctrl+B)";
+        }
+      </html:style>
+      <toolbarbutton id="button4" label="hello"/>
+      <button id="button5" label="hello"/>
+      <toolbar mode="icons">
+        <toolbarbutton id="button6" label="hello"/>
+      </toolbar>
+      <button id="button7" type="menu" label="hello">
+        <menupopup>
+          <menuitem label="item"/>
+        </menupopup>
+      </button>
+      <button id="button8" label="hello" accesskey="z"/>
+      <button id="button9" label="hello" accesskey="e"/>
+      <toolbarbutton id="button10" label="" tooltiptext="Foo"/>
     </vbox>
   </hbox>
 

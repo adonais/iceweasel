@@ -4,6 +4,8 @@
 
 #include "Request.h"
 
+#include <memory>
+
 #include "js/Value.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -290,7 +292,7 @@ SafeRefPtr<Request> Request::Constructor(
       if (doc) {
         request->SetEnvironmentReferrerPolicy(doc->GetReferrerPolicy());
 
-        principalInfo.reset(new mozilla::ipc::PrincipalInfo());
+        principalInfo = std::make_unique<mozilla::ipc::PrincipalInfo>();
         nsresult rv =
             PrincipalToPrincipalInfo(doc->NodePrincipal(), principalInfo.get());
         if (NS_WARN_IF(NS_FAILED(rv))) {

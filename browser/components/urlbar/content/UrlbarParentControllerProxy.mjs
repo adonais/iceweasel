@@ -223,6 +223,16 @@ export class UrlbarParentControllerProxy {
   }
 
   /**
+   * Ships a URL canonization to the parent. The counterpart to the
+   * controller's `recordCanonization()`.
+   */
+  recordCanonization() {
+    this.#port.sendAsyncMessage("RecordCanonization", {
+      instanceId: this.#instanceId,
+    });
+  }
+
+  /**
    * Runs the address bar's single-word keyword URI fixup DNS check parent-side.
    * The counterpart to the controller's `checkKeywordURIFixup()`.
    *
@@ -473,7 +483,14 @@ export class UrlbarParentControllerProxy {
   }
 
   /** @type {UrlbarParentController["openSERP"]} */
-  openSERP(engineId, searchTerms, where, inBackground, browserId) {
+  openSERP(
+    engineId,
+    searchTerms,
+    where,
+    inBackground,
+    browserId,
+    tracksBounce
+  ) {
     this.#port.sendAsyncMessage("OpenSERP", {
       instanceId: this.#instanceId,
       engineId,
@@ -481,6 +498,7 @@ export class UrlbarParentControllerProxy {
       where,
       inBackground,
       browserId,
+      tracksBounce,
     });
   }
 

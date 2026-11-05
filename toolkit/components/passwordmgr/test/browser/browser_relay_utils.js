@@ -197,5 +197,5 @@ const setupRelayScenario = async scenarioName => {
   await SpecialPowers.pushPrefEnv({
     set: [["signon.firefoxRelay.feature", scenarioName]],
   });
-  Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
 };

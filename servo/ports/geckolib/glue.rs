@@ -4630,7 +4630,7 @@ pub extern "C" fn Servo_ResolvePseudoStyle(
     )
     .expect("ResolvePseudoStyle with a non-pseudo?");
 
-    let matching_fn = |pseudo: &PseudoElement| *pseudo == pseudo_element;
+    let matching_fn = |pseudo: &PseudoElement| pseudo_element.matches(pseudo, &element);
 
     let global_style_data = &*GLOBAL_STYLE_DATA;
     let guard = global_style_data.shared_lock.read();
@@ -6212,6 +6212,17 @@ pub extern "C" fn Servo_DeclarationBlock_HasCSSWideKeyword(
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn Servo_DeclarationBlock_HasUnparsedValue(
+    declarations: &LockedDeclarationBlock,
+    property: NonCustomCSSPropertyId,
+) -> bool {
+    let property_id = get_property_id_from_noncustomcsspropertyid!(property, false);
+    read_locked_arc(declarations, |decls: &PropertyDeclarationBlock| {
+        decls.has_unparsed_value(&property_id)
+    })
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn Servo_MediaList_GetText(list: &LockedMediaList, result: &mut nsACString) {
     read_locked_arc(list, |list: &MediaList| {
         list.to_css(&mut CssWriter::new(result)).unwrap();
@@ -7123,6 +7134,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
     cond: &nsACString,
     params: &CssSupportsParams,
     raw_extra_data: *mut URLExtraData,
+    rule_type: CssRuleType,
 ) -> bool {
     let condition = unsafe { cond.as_str_unchecked() };
     let mut input = Parser::new(&condition);
@@ -7149,7 +7161,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
     let mut context = ParserContext::new(
         params.origin,
         url_data,
-        Some(CssRuleType::Style),
+        Some(rule_type),
         ParsingMode::DEFAULT,
         params.quirks.into(),
         /* namespaces = */ Default::default(),
@@ -8345,12 +8357,12 @@ fn relative_selector_invalidated_at(element: GeckoElement, result: &Invalidation
     }
 }
 
-fn add_relative_selector_attribute_dependency<'a>(
+fn add_relative_selector_attribute_dependency<'a, 'b>(
     element: &GeckoElement<'a>,
     scope: &Option<OpaqueElement>,
     invalidation_map: &'a InvalidationMap,
     attribute: &AtomIdent,
-    collector: &mut RelativeSelectorDependencyCollector<'a, GeckoElement<'a>>,
+    collector: &mut RelativeSelectorDependencyCollector<'a, 'b, GeckoElement<'a>>,
 ) {
     match invalidation_map
         .other_attribute_affecting_selectors
@@ -9201,14 +9213,14 @@ pub extern "C" fn Servo_CssUrl_IsLocalRef(url: &url::CssUrl) -> bool {
     url.is_fragment()
 }
 
-fn relative_selector_dependencies_for_id<'a>(
+fn relative_selector_dependencies_for_id<'a, 'b>(
     old_id: *const nsAtom,
     new_id: *const nsAtom,
     element: &GeckoElement<'a>,
     scope: Option<OpaqueElement>,
     quirks_mode: QuirksMode,
     invalidation_map: &'a InvalidationMap,
-    collector: &mut RelativeSelectorDependencyCollector<'a, GeckoElement<'a>>,
+    collector: &mut RelativeSelectorDependencyCollector<'a, 'b, GeckoElement<'a>>,
 ) {
     [old_id, new_id]
         .iter()
@@ -9227,13 +9239,13 @@ fn relative_selector_dependencies_for_id<'a>(
         });
 }
 
-fn relative_selector_dependencies_for_class<'a>(
+fn relative_selector_dependencies_for_class<'a, 'b>(
     classes_changed: &SmallVec<[Atom; 8]>,
     element: &GeckoElement<'a>,
     scope: Option<OpaqueElement>,
     quirks_mode: QuirksMode,
     invalidation_map: &'a InvalidationMap,
-    collector: &mut RelativeSelectorDependencyCollector<'a, GeckoElement<'a>>,
+    collector: &mut RelativeSelectorDependencyCollector<'a, 'b, GeckoElement<'a>>,
 ) {
     classes_changed.iter().for_each(|atom| {
         match invalidation_map.class_to_selector.get(atom, quirks_mode) {
@@ -9247,12 +9259,12 @@ fn relative_selector_dependencies_for_class<'a>(
     });
 }
 
-fn relative_selector_dependencies_for_custom_state<'a>(
+fn relative_selector_dependencies_for_custom_state<'a, 'b>(
     state: *const nsAtom,
     element: GeckoElement<'a>,
     scope: Option<OpaqueElement>,
     invalidation_map: &'a InvalidationMap,
-    collector: &mut RelativeSelectorDependencyCollector<'a, GeckoElement<'a>>,
+    collector: &mut RelativeSelectorDependencyCollector<'a, 'b, GeckoElement<'a>>,
 ) {
     unsafe {
         AtomIdent::with(state, |atom| {
@@ -10416,7 +10428,7 @@ pub extern "C" fn Servo_ViewTransitionRule_GetTypes(
     result: &mut nsTArray<*mut nsAtom>,
 ) {
     if let Some(ref types) = rule.descriptors.types {
-        result.extend(types.value.iter().map(|ty| ty.0.as_ptr()));
+        result.extend(types.iter().map(|ty| ty.0.as_ptr()));
     }
 }
 
@@ -11677,6 +11689,7 @@ pub unsafe extern "C" fn Servo_GetComputationStepsSupportedCSSFunctions(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_GetComputationSteps(
+    property: &nsACString,
     string: &nsACString,
     raw_element: &RawGeckoElement,
     pseudo_type: PseudoStyleType,
@@ -11690,62 +11703,68 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     use style::values::generics::calc::SimplificationResult;
     use style::values::specified::calc::{CalcNode, CalcParseFlags, CalcPercentageLeaf, Leaf};
 
+    let property = unsafe { property.as_str_unchecked() };
     let string = unsafe { string.as_str_unchecked() };
+    let mut parser_context = dummy_author_style_rule_context();
+    let property_id = PropertyId::parse(&property, &parser_context).ok();
     let mut substituted = None;
     let element = GeckoElement(raw_element);
     let data = raw_data.borrow();
-    let parser_context = dummy_author_style_rule_context();
     let mut context = ContextForSubstitution::new(element, pseudo_type);
     let context = context.computed_context(&data, style);
 
-    if let Some(s) = compute_arbritrary_substitution_functions(
-        &string,
-        element,
-        style,
-        &data,
-        &parser_context,
-        &context,
-    ) {
-        // We successfully substituted, let's add the initial string to the result array
-        out.push(nsCString::from(string));
-        // …as well as the substituted string.
-        out.push(nsCString::from(&s));
-        substituted = Some(s.clone());
+    let mut parse_node = |parser_context: &ParserContext| {
+        if let Some(s) = compute_arbritrary_substitution_functions(
+            &string,
+            element,
+            style,
+            &data,
+            &parser_context,
+            &context,
+        ) {
+            // We successfully substituted, let's add the initial string to the result array
+            out.push(nsCString::from(string));
+            // …as well as the substituted string.
+            out.push(nsCString::from(&s));
+            substituted = Some(s.clone());
+        };
+
+        let substituted_str = substituted.as_deref().unwrap_or(&string);
+        let mut parser = Parser::new(substituted_str);
+
+        let flags = CalcParseFlags {
+            percentage_context: PercentageContext::allowed(),
+            in_place_operations: CalcNodeParseInPlaceOperations::No,
+            ..Default::default()
+        };
+
+        // Initial parsing
+        Some(match parser.next().ok()? {
+            Token::Function(name) => {
+                let math_func = CalcNode::math_function(&parser_context, name).ok()?;
+                CalcNode::parse(&parser_context, &mut parser, math_func, flags).ok()?
+            },
+            Token::Percentage { unit_value, .. } => CalcNode::Leaf(Leaf::Percentage(
+                CalcPercentageLeaf::new(*unit_value, Optional::None),
+            )),
+            Token::Dimension { value, unit, .. } => {
+                let length =
+                    NoCalcLength::parse_dimension_with_context(&parser_context, *value, unit)
+                        .ok()?;
+                CalcNode::Leaf(Leaf::Length(length))
+            },
+            _ => return None,
+        })
     };
 
-    let substituted_str = substituted.as_deref().unwrap_or(&string);
-    let mut parser = Parser::new(substituted_str);
-
-    let flags = CalcParseFlags {
-        percentage_context: PercentageContext::allowed(),
-        in_place_operations: CalcNodeParseInPlaceOperations::No,
-        ..Default::default()
+    let node = match property_id {
+        Some(ref id) => {
+            parser_context.with_property_declaration(PropertyIdRef::from(id), parse_node)
+        },
+        None => parse_node(&parser_context),
     };
-
-    // Initial parsing
-    let Ok(token) = parser.next() else { return };
-    let mut node = match token {
-        Token::Function(name) => {
-            let Ok(math_func) = CalcNode::math_function(&parser_context, name) else {
-                return;
-            };
-            match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
-                Ok(n) => n,
-                Err(_) => return,
-            }
-        },
-        Token::Percentage { unit_value, .. } => CalcNode::Leaf(Leaf::Percentage(
-            CalcPercentageLeaf::new(*unit_value, Optional::None),
-        )),
-        Token::Dimension { value, unit, .. } => {
-            let Ok(length) =
-                NoCalcLength::parse_dimension_with_context(&parser_context, *value, unit)
-            else {
-                return;
-            };
-            CalcNode::Leaf(Leaf::Length(length))
-        },
-        _ => return,
+    let Some(mut node) = node else {
+        return;
     };
 
     let mut value = match node.as_leaf() {
@@ -11784,6 +11803,10 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
         Leaf::TreeCountingFunction(t) => {
             let result = t.to_computed_value(&context) as f32;
             Leaf::Number(NoCalcNumber::from_computed_value(&result))
+        },
+        Leaf::RandomKey(ref key) => {
+            let base_value = *key.to_computed_value(&context) as f32;
+            Leaf::Number(NoCalcNumber::from_computed_value(&base_value))
         },
         ref l => l.clone(),
     });
@@ -11841,4 +11864,10 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
 #[unsafe(no_mangle)]
 pub extern "C" fn Servo_TextTransform_Case(text_transform: TextTransform) -> TextTransformCase {
     text_transform.case()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn Servo_RuleType_Supports_Declarations(rule_type: CssRuleType) -> bool {
+    rule_type == CssRuleType::NestedDeclarations
+        || CssRuleTypes::from(rule_type).allows_declarations()
 }

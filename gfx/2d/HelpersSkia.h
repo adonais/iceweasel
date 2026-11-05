@@ -95,6 +95,13 @@ static inline void GfxMatrixToSkiaMatrix(const Matrix4x4& aMatrix,
                  SkFloatToScalar(aMatrix._44));
 }
 
+static inline Matrix4x4 SkiaMatrixToGfxMatrix(const SkMatrix& aMatrix) {
+  return Matrix4x4(aMatrix.getScaleX(), aMatrix.getSkewY(), 0,
+                   aMatrix.getPerspX(), aMatrix.getSkewX(), aMatrix.getScaleY(),
+                   0, aMatrix.getPerspY(), 0, 0, 1, 0, aMatrix.getTranslateX(),
+                   aMatrix.getTranslateY(), 0, aMatrix[SkMatrix::kMPersp2]);
+}
+
 static inline SkPaint::Cap CapStyleToSkiaCap(CapStyle aCap) {
   switch (aCap) {
     case CapStyle::BUTT:

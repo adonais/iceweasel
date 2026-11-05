@@ -1,0 +1,34 @@
+diff --git a/src/Pass.cpp b/src/Pass.cpp
+index 986fed83b164..7ea0a0bef037 100644
+--- a/src/Pass.cpp
++++ b/src/Pass.cpp
+@@ -640,2 +640,3 @@ void SlotMap::collectGarbage(Slot * &aSlot)
+ {
++    if (m_size == 0 || m_size > MAX_SLOTS) return;
+     for(Slot **s = begin(), *const *const se = end() - 1; s != se; ++s) {
+diff --git a/src/inc/Rule.h b/src/inc/Rule.h
+index 09025dc799bc..90f1ca525cde 100644
+--- a/src/inc/Rule.h
++++ b/src/inc/Rule.h
+@@ -104,3 +104,5 @@ public:
+ private:
+-  Slot         * m_slot_map[MAX_SLOTS+1];
++  // In addition to the input slots, keep storage for the preceding slot
++  // and for the writable end() position used by the VM on return.
++  Slot         * m_slot_map[MAX_SLOTS+2];
+   unsigned short m_size;
+@@ -227,3 +229,3 @@ SlotMap::SlotMap(Segment & seg, uint8 direction, size_t maxSize)
+ {
+-    m_slot_map[0] = 0;
++    m_slot_map[0] = m_slot_map[1] = 0;
+ }
+@@ -261,2 +263,3 @@ void SlotMap::reset(Slot & slot, short unsigned int ctxt)
+   *m_slot_map = slot.prev();
++  m_slot_map[1] = 0;
+ }
+@@ -266,3 +269,5 @@ void SlotMap::pushSlot(Slot*const slot)
+ {
++  assert(m_size < MAX_SLOTS);
+   m_slot_map[++m_size] = slot;
++  m_slot_map[m_size + 1] = 0;
+ }

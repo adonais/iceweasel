@@ -6,9 +6,6 @@
 const { BaseAction } = ChromeUtils.importESModule(
   "resource://normandy/actions/BaseAction.sys.mjs"
 );
-const { ClientEnvironment } = ChromeUtils.importESModule(
-  "resource://normandy/lib/ClientEnvironment.sys.mjs"
-);
 const { EventEmitter } = ChromeUtils.importESModule(
   "resource://normandy/lib/EventEmitter.sys.mjs"
 );

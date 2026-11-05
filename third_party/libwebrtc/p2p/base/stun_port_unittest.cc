@@ -256,6 +256,10 @@ class StunPortTest : public ::testing::Test {
         this, [this](Port* port) { OnPortComplete(port); });
     stun_port_->SubscribePortError(this,
                                    [this](Port* port) { OnPortError(port); });
+    stun_port_->SubscribeCandidateError(
+        this, [this](Port* port, const IceCandidateErrorEvent& event) {
+          OnCandidateError(port, event);
+        });
   }
 
   void PrepareAddress() {
@@ -376,6 +380,23 @@ TEST_F(StunPortTest, TestPrepareAddressFail) {
             std::string::npos);
   std::string server_url = "stun:" + kBadAddr.ToString();
   EXPECT_EQ(error_event_.url, server_url);
+}
+
+TEST_F(StunPortTest, TestSocketCloseFailsPendingBindingRequest) {
+  CreateSharedUdpPort(kBadAddr, nullptr);
+  PrepareAddress();
+  ASSERT_TRUE(HasPendingRequest(STUN_BINDING_REQUEST));
+  ASSERT_FALSE(done());
+
+  constexpr int kSocketError = 1;
+  socket()->NotifyClosedForTest(kSocketError);
+
+  // Without advancing the clock.
+  EXPECT_TRUE(done());
+  EXPECT_FALSE(HasPendingRequest(STUN_BINDING_REQUEST));
+  EXPECT_EQ(port()->GetError(), kSocketError);
+  EXPECT_EQ(error_event_.error_code, STUN_ERROR_SERVER_NOT_REACHABLE);
+  EXPECT_EQ(error_event_.url, "stun:" + kBadAddr.ToString());
 }
 
 // Test that we fail without emitting an error if we try to get an address from

@@ -245,11 +245,11 @@ const JitcodeGlobalEntry* JitcodeGlobalTable::lookupForSampler(
     return nullptr;
   }
 
-  entry->setSamplePositionInBuffer(samplePosInBuffer);
+  entry->recordSampleAtPosition(samplePosInBuffer);
 
   // IonIC entries must keep their corresponding Ion entries alive.
   if (entry->isIonIC()) {
-    entry->asIonIC().ionEntry().setSamplePositionInBuffer(samplePosInBuffer);
+    entry->asIonIC().ionEntry().recordSampleAtPosition(samplePosInBuffer);
   }
 
   // The jitcode_ edge is weak, but no read barrier is needed here because the
@@ -272,6 +272,44 @@ JitcodeGlobalEntry* JitcodeGlobalTable::lookupInternal(void* ptr) {
   return nullptr;
 }
 
+JitcodeGlobalEntry* JitcodeGlobalTable::lookupForSamplePosition(
+    void* ptr, uint64_t samplePosInBuffer, uint64_t* lastSamplePos) {
+  // The samples of all code that was placed at |ptr| are ordered in the
+  // buffer: the code at an address is only replaced after its JitCode is
+  // collected, so the last sample of the old code comes before the first
+  // sample of the new code. This also requires that a sample with JIT return
+  // addresses is never copied to a later buffer position, because the copy
+  // would not update the entry's sample positions. ProfileBuffer's
+  // DuplicateLastSample makes sure of that.
+  //
+  // If the entry in the AVL tree was first sampled at or before
+  // |samplePosInBuffer|, the sample belongs to that entry. Otherwise it belongs
+  // to the displaced entry with the earliest last sample at or after
+  // |samplePosInBuffer|, if there is one. An entry without samples has both
+  // positions set to UINT64_MAX, so it fails the first check.
+  *lastSamplePos = UINT64_MAX;
+  JitcodeGlobalEntry* treeEntry = lookupInternal(ptr);
+  if (treeEntry &&
+      treeEntry->firstSamplePositionInBuffer() <= samplePosInBuffer) {
+    return treeEntry;
+  }
+
+  JitcodeGlobalEntry* result = nullptr;
+  for (JitcodeGlobalEntry* entry : displacedEntries_) {
+    if (!entry->containsPointer(ptr) || !entry->hasSampleInBuffer()) {
+      continue;
+    }
+    uint64_t entryLastSamplePos = entry->lastSamplePositionInBuffer();
+    if (samplePosInBuffer <= entryLastSamplePos &&
+        entryLastSamplePos < *lastSamplePos) {
+      result = entry;
+      *lastSamplePos = entryLastSamplePos;
+    }
+  }
+
+  return result ? result : treeEntry;
+}
+
 bool JitcodeGlobalTable::addEntry(UniqueJitcodeGlobalEntry entry) {
   MOZ_ASSERT(entry->isIon() || entry->isIonIC() || entry->isBaseline() ||
              entry->isBaselineInterpreter() || entry->isDummy() ||
@@ -283,12 +321,16 @@ bool JitcodeGlobalTable::addEntry(UniqueJitcodeGlobalEntry entry) {
   // Old entries whose JitCode was collected but were kept alive for profiler
   // buffer processing may still occupy overlapping address ranges. Remove them
   // from the AVL tree so the new entry can take their place. They are left in
-  // entries_ and will be swept from the vector by traceWeak at the next GC.
-  // There may be multiple (e.g. several small IonIC stubs whose memory was
-  // reused by a larger JitCode).
+  // entries_ and moved to displacedEntries_, so that lookupForSamplePosition
+  // can still find them for older samples, and they will be swept by traceWeak
+  // once no sample references them. There may be multiple (e.g. several small
+  // IonIC stubs whose memory was reused by a larger JitCode).
   while (JitCodeRange** existing = tree_.maybeLookup(entry.get())) {
     auto* oldEntry = static_cast<JitcodeGlobalEntry*>(*existing);
     MOZ_ASSERT(!oldEntry->hasJitcode());
+    if (!displacedEntries_.append(oldEntry)) {
+      return false;
+    }
     tree_.remove(oldEntry);
     oldEntry->setInTree(false);
   }
@@ -319,6 +361,13 @@ void JitcodeGlobalTable::traceWeak(JSRuntime* rt, JSTracer* trc) {
   // If the profiler is off, rangeStart will be Nothing() and all entries are
   // considered to be expired.
   Maybe<uint64_t> rangeStart = rt->profilerSampleBufferRangeStart();
+
+  // Displaced entries have no JitCode, so the loop below erases them from
+  // entries_ under the same condition.
+  displacedEntries_.eraseIf([&](JitcodeGlobalEntry* entry) {
+    MOZ_ASSERT(!entry->hasJitcode() && !entry->isInTree());
+    return !entry->isReferencedByProfiler(rangeStart);
+  });
 
   entries_.eraseIf([&](auto& entry) {
     // Expire entries no longer referenced from the profiler buffer.
@@ -1025,8 +1074,8 @@ JS_PUBLIC_API uint64_t JS::ProfiledFrameHandle::realmID() const {
   return entry_.realmID(rt_);
 }
 
-JS_PUBLIC_API JS::ProfiledFrameRange JS::GetProfiledFrames(JSContext* cx,
-                                                           void* addr) {
+JS_PUBLIC_API JS::ProfiledFrameRange JS::GetProfiledFrames(
+    JSContext* cx, void* addr, uint64_t samplePositionInBuffer) {
   // Ensure ProfiledFrameRange::MaxInliningDepth matches
   // InlineScriptTree::MaxDepth. Please keep them in sync.
   static_assert(ProfiledFrameRange::MaxInliningDepth ==
@@ -1037,9 +1086,11 @@ JS_PUBLIC_API JS::ProfiledFrameRange JS::GetProfiledFrames(JSContext* cx,
   JSRuntime* rt = cx->runtime();
   js::jit::JitcodeGlobalTable* table =
       rt->jitRuntime()->getJitcodeGlobalTable();
-  js::jit::JitcodeGlobalEntry* entry = table->lookup(addr);
+  uint64_t lastSamplePos;
+  js::jit::JitcodeGlobalEntry* entry = table->lookupForSamplePosition(
+      addr, samplePositionInBuffer, &lastSamplePos);
 
-  ProfiledFrameRange result(rt, addr, entry);
+  ProfiledFrameRange result(rt, addr, entry, lastSamplePos);
 
   if (entry) {
     result.depth_ = entry->callStackAtAddr(rt, addr, result.frames_,

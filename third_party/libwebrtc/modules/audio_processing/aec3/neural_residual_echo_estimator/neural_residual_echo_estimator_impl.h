@@ -21,10 +21,10 @@
 #include "api/audio/echo_canceller3_config.h"
 #include "api/audio/neural_residual_echo_estimator.h"
 #include "api/audio/tflite_model_handle.h"
+#include "api/environment/environment.h"
 #include "api/ref_count.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
-#include "api/task_queue/task_queue_factory.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/neural_residual_echo_estimator/neural_feature_extractor.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
@@ -40,6 +40,17 @@
 #endif
 
 namespace webrtc {
+
+// Status categories for async neural residual echo estimator model
+// initialization.
+// Must match enum WebRtcNeuralResidualEchoEstimatorInitResult in
+// web_rtc/enums.xml.
+enum class NeuralResidualEchoEstimatorInitResult {
+  kSuccess = 0,
+  kModelLoadFailed = 1,
+  kDestroyedBeforeResolved = 2,
+  kNumCategories = 3,
+};
 
 // Implements the NeuralResidualEchoEstimator's virtual methods to estimate
 // residual echo not fully removed by the linear AEC3 estimator. It uses a
@@ -75,7 +86,7 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
   // `IsInitialized()` to poll for when the estimator starts producing real
   // estimates.
   static absl_nonnull std::unique_ptr<NeuralResidualEchoEstimator> CreateAsync(
-      TaskQueueFactory& task_queue_factory,
+      const Environment& env,
       std::unique_ptr<tflite::OpResolver> op_resolver,
       scoped_refptr<TfliteModelHandle> model_handle);
 
@@ -87,6 +98,7 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
   // Constructor used for synchronous initialization.
   explicit NeuralResidualEchoEstimatorImpl(
       std::unique_ptr<ModelRunner> model_runner);
+  ~NeuralResidualEchoEstimatorImpl() override;
 
   void Estimate(
       const Block& render,
@@ -127,6 +139,8 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
   // All state is guarded by mutex. Minimize access on realtime threads.
   struct CrossThreadState : public RefCountInterface {
    public:
+    enum class Resolution { kPending, kSuccess, kFailed };
+
     // Sets the initialized model data to be used for processing.
     // Should only be called once, as the capture thread will stop polling
     // `TryGet()` after receiving a model.
@@ -134,6 +148,12 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
       webrtc::MutexLock lock(&mutex_);
       RTC_DCHECK(!model_bundle_);
       model_bundle_ = std::move(bundle);
+      resolution_ = Resolution::kSuccess;
+    }
+
+    void MarkFailed() {
+      webrtc::MutexLock lock(&mutex_);
+      resolution_ = Resolution::kFailed;
     }
 
     // Retrieves the model data to be used for processing, if available.
@@ -142,14 +162,20 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
       return std::move(model_bundle_);
     }
 
+    Resolution GetResolution() const {
+      webrtc::MutexLock lock(&mutex_);
+      return resolution_;
+    }
+
    private:
     mutable webrtc::Mutex mutex_;
     std::unique_ptr<ModelBundle> model_bundle_ RTC_GUARDED_BY(mutex_);
+    Resolution resolution_ RTC_GUARDED_BY(mutex_) = Resolution::kPending;
   };
 
   // Constructor used for async initialization. See CreateAsync for details.
   NeuralResidualEchoEstimatorImpl(
-      TaskQueueFactory& task_queue_factory,
+      const Environment& env,
       std::unique_ptr<tflite::OpResolver> op_resolver,
       scoped_refptr<TfliteModelHandle> model_handle);
 

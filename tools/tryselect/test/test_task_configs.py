@@ -609,5 +609,64 @@ def test_exisiting_tasks_rev(responses):
     assert params == {"existing_tasks": label_to_taskid}
 
 
+def test_use_indexed_tasks(responses):
+    parser = ArgumentParser()
+    cfg = all_task_configs["existing-tasks"]()
+    cfg.add_arguments(parser)
+
+    args = parser.parse_args([
+        "--use-indexed-tasks",
+        "task-foo=gecko.v2.foo.latest",
+        "--use-indexed-tasks",
+        "task-bar=gecko.v2.bar.latest",
+    ])
+
+    for index_path, task_id in (
+        ("gecko.v2.foo.latest", "123"),
+        ("gecko.v2.bar.latest", "456"),
+    ):
+        responses.add(
+            responses.GET,
+            f"{TC_URL}/api/index/v1/task/{index_path}",
+            json={"taskId": task_id},
+        )
+
+    params = cfg.get_parameters(**vars(args))
+    assert params == {"existing_tasks": {"task-foo": "123", "task-bar": "456"}}
+
+
+def test_use_indexed_tasks_overrides_use_existing_tasks(mocker):
+    parser = ArgumentParser()
+    cfg = all_task_configs["existing-tasks"]()
+    cfg.add_arguments(parser)
+
+    args = parser.parse_args([
+        "--use-existing-tasks",
+        "task-id=abc",
+        "--use-indexed-tasks",
+        "task-foo=gecko.v2.foo.latest",
+    ])
+
+    mocker.patch(
+        "taskgraph.util.taskcluster.get_artifact",
+        return_value={"task-foo": "123", "task-bar": "456"},
+    )
+    mocker.patch("taskgraph.util.taskcluster.find_task_id", return_value="789")
+
+    params = cfg.get_parameters(**vars(args))
+    assert params == {"existing_tasks": {"task-foo": "789", "task-bar": "456"}}
+
+
+@pytest.mark.parametrize("label_and_index", ["task-foo", "=gecko.v2.foo", "task-foo="])
+def test_use_indexed_tasks_invalid(label_and_index):
+    parser = ArgumentParser()
+    cfg = all_task_configs["existing-tasks"]()
+    cfg.add_arguments(parser)
+
+    args = parser.parse_args(["--use-indexed-tasks", label_and_index])
+    with pytest.raises(SystemExit):
+        cfg.get_parameters(**vars(args))
+
+
 if __name__ == "__main__":
     mozunit.main()

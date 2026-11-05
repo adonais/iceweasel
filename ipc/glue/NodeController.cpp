@@ -164,18 +164,14 @@ bool NodeController::SendUserMessage(const PortRef& aPort,
 }
 
 auto NodeController::SerializeEventMessage(UniquePtr<Event> aEvent,
-                                           const NodeName* aRelayTarget,
-                                           uint32_t aType)
+                                           const NodeName* aRelayTarget)
     -> UniquePtr<IPC::Message> {
   UniquePtr<IPC::Message> message;
   if (aEvent->type() == Event::kUserMessage) {
-    MOZ_DIAGNOSTIC_ASSERT(
-        aType == EVENT_MESSAGE_TYPE,
-        "Can only send a UserMessage in an EVENT_MESSAGE_TYPE");
     message = static_cast<UserMessageEvent*>(aEvent.get())
                   ->TakeMessage<IPC::Message>();
   } else {
-    message = MakeUnique<IPC::Message>(MSG_ROUTING_CONTROL, aType);
+    message = MakeUnique<IPC::Message>(MSG_ROUTING_CONTROL, EVENT_MESSAGE_TYPE);
   }
 
   message->set_relay(aRelayTarget != nullptr);
@@ -415,17 +411,14 @@ void NodeController::ForwardEvent(const NodeName& aNode,
   }
 }
 
-void NodeController::BroadcastEvent(UniquePtr<Event> aEvent) {
-  UniquePtr<IPC::Message> message =
-      SerializeEventMessage(std::move(aEvent), nullptr, BROADCAST_MESSAGE_TYPE);
-
+void NodeController::BroadcastDeadProxy(const PortName& aPort) {
   if (IsBroker()) {
-    OnBroadcast(mName, std::move(message));
+    BroadcastDeadProxyInternal(mName, aPort);
   } else if (RefPtr<NodeChannel> broker = GetNodeChannel(kBrokerNodeName)) {
-    broker->Broadcast(std::move(message));
+    broker->DeadProxy(mName, aPort);
   } else {
     NODECONTROLLER_WARNING(
-        "Trying to broadcast event, but no connection to broker");
+        "Trying to broadcast a dead proxy event, but no connection to broker");
   }
 }
 
@@ -583,45 +576,37 @@ void NodeController::OnEventMessage(const NodeName& aFromNode,
   (void)mNode->AcceptEvent(fromNode, std::move(event));
 }
 
-void NodeController::OnBroadcast(const NodeName& aFromNode,
-                                 UniquePtr<IPC::Message> aMessage) {
-  MOZ_DIAGNOSTIC_ASSERT(aMessage->type() == BROADCAST_MESSAGE_TYPE);
+void NodeController::OnDeadProxy(const NodeName& aFromNode,
+                                 const NodeName& aProxyNode,
+                                 const PortName& aProxyPort) {
+  AssertIOThread();
 
-  // NOTE: This method may be called off of the IO thread by the
-  // `BroadcastEvent` node callback.
-  if (!IsBroker()) {
-    NODECONTROLLER_WARNING("Broadcast request received by non-broker node");
+  if (aProxyNode == mojo::core::ports::kInvalidNodeName ||
+      aProxyPort == mojo::core::ports::kInvalidPortName) {
+    NODECONTROLLER_WARNING("DeadProxy with invalid name");
+    DropPeer(aFromNode);
     return;
   }
 
-  UniquePtr<Event> event = DeserializeEventMessage(std::move(aMessage));
-  if (!event) {
-    NODECONTROLLER_WARNING("Invalid broadcast message from peer");
-    return;
-  }
-
-  nsTArray<RefPtr<NodeChannel>> peers;
-  {
-    auto state = mState.Lock();
-    peers.SetCapacity(state->mPeers.Count());
-    for (const auto& peer : state->mPeers.Values()) {
-      peers.AppendElement(peer);
-    }
-  }
-  for (const auto& peer : peers) {
-    // NOTE: This `clone` operation is only supported for a limited number of
-    // message types by the ports API, which provides some extra security by
-    // only allowing those specific types of messages to be broadcasted.
-    // Messages which don't support `CloneForBroadcast` cannot be broadcast, and
-    // the ports library will not attempt to broadcast them.
-    auto clone = event->CloneForBroadcast();
-    if (!clone) {
-      NODECONTROLLER_WARNING("Attempt to broadcast unsupported message");
-      break;
+  if (IsBroker()) {
+    // Broker should always receive DeadProxy from the original source.
+    if (aFromNode != aProxyNode) {
+      NODECONTROLLER_WARNING("DeadProxy received from incorrect node");
+      DropPeer(aFromNode);
+      return;
     }
 
-    peer->SendEventMessage(SerializeEventMessage(std::move(clone)));
+    BroadcastDeadProxyInternal(aProxyNode, aProxyPort);
+  } else {
+    // Non-broker nodes should always receive DeadProxy from the broker.
+    if (aFromNode != kBrokerNodeName) {
+      NODECONTROLLER_WARNING("DeadProxy received from non-broker node");
+      DropPeer(aFromNode);
+      return;
+    }
   }
+
+  (void)mNode->CleanupDeadProxy(aProxyNode, aProxyPort);
 }
 
 void NodeController::OnIntroduce(const NodeName& aFromNode,
@@ -782,6 +767,28 @@ void NodeController::OnAcceptInvite(const NodeName& aFromNode,
 void NodeController::OnChannelError(const NodeName& aFromNode) {
   AssertIOThread();
   DropPeer(aFromNode);
+}
+
+void NodeController::BroadcastDeadProxyInternal(const NodeName& aProxyNode,
+                                                const PortName& aProxyPort) {
+  MOZ_ASSERT(IsBroker());
+
+  // NOTE: This method may be called off of the IO thread by the
+  // `BroadcastDeadProxy` node callback.
+  nsTArray<RefPtr<NodeChannel>> peers;
+  {
+    auto state = mState.Lock();
+    peers.SetCapacity(state->mPeers.Count());
+    for (const auto& entry : state->mPeers) {
+      if (entry.GetKey() != aProxyNode) {
+        peers.AppendElement(entry.GetData());
+      }
+    }
+  }
+
+  for (const auto& peer : peers) {
+    peer->DeadProxy(aProxyNode, aProxyPort);
+  }
 }
 
 static mojo::core::ports::NodeName RandomNodeName() {

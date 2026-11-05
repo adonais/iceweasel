@@ -1797,7 +1797,8 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
                                &ratio);
     if (NS_SUCCEEDED(rv)) {
       if (ratio > 0 && ratio < 1) {
-        mFocusedWindowTransactionRatio = ratio;
+        auto lockedRatio = mFocusedWindowTransactionRatio.Lock();
+        *lockedRatio = ratio;
       } else {
         NS_WARNING("Wrong value for focused_window_transaction_ratio");
       }
@@ -2460,9 +2461,7 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
   } else if (!strcmp(topic, "idle-daily")) {
     // Submit the local-network-access ping once per day
     if (XRE_IsParentProcess()) {
-#if defined(EARLY_BETA_OR_EARLIER)  // Submit custom telemetry ping.
       glean_pings::LocalNetworkAccess.Submit();
-#endif
     }
   }
   return NS_OK;
@@ -2727,8 +2726,9 @@ nsHttpHandler::EnsureHSTSDataReadyNative(
   auto func = [callback(aCallback)](bool aResult, nsresult aStatus) {
     callback->DoCallback(aResult);
   };
-  rv = NS_ShouldSecureUpgrade(uri, nullptr, nullptr, false, originAttributes,
-                              shouldUpgrade, std::move(func), willCallback);
+  rv = NS_ShouldSecureUpgrade(uri, nullptr, nullptr, nullptr, false,
+                              originAttributes, shouldUpgrade, std::move(func),
+                              willCallback);
   if (NS_FAILED(rv) || !willCallback) {
     aCallback->DoCallback(false);
     return rv;
@@ -3026,6 +3026,7 @@ void nsHttpHandler::SetHttpHandlerInitArgs(const HttpHandlerInitArgs& aArgs) {
   mCompatFirefox = aArgs.mCompatFirefox();
   mCompatDevice = aArgs.mCompatDevice();
   mDeviceModelId = aArgs.mDeviceModelId();
+  mUserAgentIsDirty = true;
 }
 
 void nsHttpHandler::SetDeviceModelId(const nsACString& aModelId) {

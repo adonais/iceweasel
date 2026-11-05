@@ -9,6 +9,7 @@
 
 #include "ConnectionHandle.h"
 #include "HappyEyeballsTransaction.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/Result.h"
 #include "mozilla/net/DNS.h"
 #include "nsAHttpConnection.h"
@@ -51,6 +52,7 @@ class ConnectionEstablisher : public nsITransportEventSink,
 
   virtual bool Start(DoneCallback&& aCallback) = 0;
   void SetSecurityCallbacks(nsIInterfaceRequestor* aCallbacks) {
+    MutexAutoLock lock(mSecurityCallbacksLock);
     mSecurityCallbacks = aCallbacks;
   }
   void SetTransportStatusCallback(TransportStatusCallback&& aCallback) {
@@ -114,7 +116,9 @@ class ConnectionEstablisher : public nsITransportEventSink,
   DoneCallback mCallback;
   TransportStatusCallback mTransportStatusCallback;
   LnaCheckCallback mLnaCheckCallback;
-  nsCOMPtr<nsIInterfaceRequestor> mSecurityCallbacks;
+  Mutex mSecurityCallbacksLock{"ConnectionEstablisher::mSecurityCallbacksLock"};
+  nsCOMPtr<nsIInterfaceRequestor> mSecurityCallbacks
+      MOZ_GUARDED_BY(mSecurityCallbacksLock);
   RefPtr<ConnectionHandle> mHandle;
   RefPtr<HttpConnectionBase> mResultConn;
   RefPtr<HappyEyeballsTransaction> mTransaction;

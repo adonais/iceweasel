@@ -22,7 +22,6 @@
   border-radius: var(--border-radius-medium);
   text-decoration: none;
   color: var(--text-color-deemphasized);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/no-base-design-tokens */
   --sw-topsite-hover-background: light-dark(color-mix(in srgb, var(--color-violet-50) 15%, transparent), color-mix(in srgb, white 10%, transparent));
 }
 

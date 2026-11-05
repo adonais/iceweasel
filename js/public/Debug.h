@@ -179,7 +179,7 @@ struct ValueSummary {
   // Keep in mind to update
   // js/src/jit-test/tests/debug/ExecutionTracer-traced-values.js
   // VALUE_SUMMARY_VERSION value.
-  static const uint32_t VERSION = 3;
+  static const uint32_t VERSION = 5;
 
   // If the type is an int and flags != Flags::NUMBER_IS_OUT_OF_LINE_MAGIC,
   // the value is MIN_INLINE_INT + flags.
@@ -276,8 +276,8 @@ struct ValueSummary {
 //        value:  ValueSummary
 struct ObjectSummary {
   // This is a special value for ValueSummary::typeAndFlags. It should be noted
-  // that this only works as long as 0xf is not a valid JS::ValueType.
-  static const uint8_t GETTER_SETTER_MAGIC = 0x0f;
+  // that this only works as long as 0x1 is not a valid JS::ValueType.
+  static const uint8_t GETTER_SETTER_MAGIC = 0x01;
 
   enum class Kind : uint8_t {
     NotImplemented,

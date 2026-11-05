@@ -216,7 +216,6 @@
 
 #hover-highlight {
   animation: fade-in 125ms forwards cubic-bezier(0.07, 0.95, 0, 1);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background: var(--hover-highlight-background-color);
   border: 2px dashed rgba(255, 255, 255, 0.4);
   border-radius: 1px;
@@ -353,7 +352,6 @@
   pointer-events: none;
 
   @media (forced-colors) {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-color: ButtonText;
   }
 }

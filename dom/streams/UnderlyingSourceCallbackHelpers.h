@@ -271,6 +271,13 @@ class InputToReadableStreamAlgorithms
   void ErrorPropagation(JSContext* aCx, ReadableStream* aStream,
                         nsresult aError);
 
+  // Decides whether a failure of the backing nsIInputStream (other than
+  // NS_BASE_STREAM_CLOSED) errors the ReadableStream.  Override to return
+  // false when the stream will be errored through another channel.  Keep the
+  // condition strict: a status that is not propagated here, but never arrives
+  // on the other channel, leaves the stream hanging.
+  virtual bool ShouldPropagateError(nsresult aError) { return true; }
+
   // Builds the JS error value used to error the stream when the input stream
   // closes with a failure status other than NS_BASE_STREAM_CLOSED. The default
   // is a generic TypeError; subclasses may override to map specific nsresults

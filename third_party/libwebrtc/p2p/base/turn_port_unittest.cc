@@ -1475,6 +1475,83 @@ TEST_F(TurnPortTest, TestSocketCloseWillDestroyConnection) {
       {.timeout = kConnectionDestructionDelay, .clock = &time_controller_}));
 }
 
+TEST_F(TurnPortTest, TestUdpSocketCloseFailsPendingAllocateRequest) {
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  turn_port_->PrepareAddress();
+  ASSERT_FALSE(turn_ready_);
+
+  turn_port_->socket()->NotifyClosedForTest(1);
+
+  // Without advancing the clock, except for the posted NotifyPortError().
+  EXPECT_EQ(error_event_.error_code, STUN_ERROR_SERVER_NOT_REACHABLE);
+  EXPECT_EQ(error_event_.error_text, "Socket was closed");
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+  EXPECT_TRUE(turn_error_);
+  EXPECT_EQ(turn_port_->Candidates().size(), 0U);
+}
+
+TEST_F(TurnPortTest, TestPrivateIpTurnCandidateErrorAddressScrubbedTcp) {
+  const SocketAddress kTurnPrivateIntAddr("192.168.1.1", TURN_SERVER_PORT);
+  const ProtocolAddress kTurnPrivateTcpProtoAddr(kTurnPrivateIntAddr,
+                                                 PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnPrivateIntAddr, PROTO_TCP);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnPrivateTcpProtoAddr);
+  turn_port_->PrepareAddress();
+  ASSERT_FALSE(turn_ready_);
+  ASSERT_NE(turn_port_->socket(), nullptr);
+
+  turn_port_->socket()->NotifyClosedForTest(1);
+
+  EXPECT_EQ(error_event_.error_code, STUN_ERROR_SERVER_NOT_REACHABLE);
+  EXPECT_EQ(error_event_.address, "");
+  EXPECT_EQ(error_event_.port, 0);
+}
+
+TEST_F(TurnPortTest, TestPrivateIpTurnCandidateErrorAddressScrubbedTls) {
+  const SocketAddress kTurnPrivateIntAddr("192.168.1.1", TURN_SERVER_PORT);
+  const ProtocolAddress kTurnPrivateTlsProtoAddr(kTurnPrivateIntAddr,
+                                                 PROTO_TLS);
+  turn_server_.AddInternalSocket(kTurnPrivateIntAddr, PROTO_TLS);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnPrivateTlsProtoAddr);
+  turn_port_->PrepareAddress();
+  ASSERT_FALSE(turn_ready_);
+  ASSERT_NE(turn_port_->socket(), nullptr);
+
+  turn_port_->socket()->NotifyClosedForTest(1);
+
+  EXPECT_EQ(error_event_.error_code, STUN_ERROR_SERVER_NOT_REACHABLE);
+  EXPECT_EQ(error_event_.address, "");
+  EXPECT_EQ(error_event_.port, 0);
+}
+
+TEST_F(TurnPortTest, TestPublicIpTurnCandidateErrorAddressNotScrubbedTcp) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
+  turn_port_->PrepareAddress();
+  ASSERT_FALSE(turn_ready_);
+  ASSERT_NE(turn_port_->socket(), nullptr);
+
+  turn_port_->socket()->NotifyClosedForTest(1);
+
+  EXPECT_EQ(error_event_.error_code, STUN_ERROR_SERVER_NOT_REACHABLE);
+  EXPECT_FALSE(error_event_.address.empty());
+  EXPECT_NE(error_event_.port, 0);
+}
+
+TEST_F(TurnPortTest, TestPublicIpTurnCandidateErrorAddressNotScrubbedTls) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTlsProtoAddr);
+  turn_port_->PrepareAddress();
+  ASSERT_FALSE(turn_ready_);
+  ASSERT_NE(turn_port_->socket(), nullptr);
+
+  turn_port_->socket()->NotifyClosedForTest(1);
+
+  EXPECT_EQ(error_event_.error_code, STUN_ERROR_SERVER_NOT_REACHABLE);
+  EXPECT_FALSE(error_event_.address.empty());
+  EXPECT_NE(error_event_.port, 0);
+}
+
 // Test try-alternate-server feature.
 TEST_F(TurnPortTest, TestTurnAlternateServerUDP) {
   TestTurnAlternateServer(PROTO_UDP);

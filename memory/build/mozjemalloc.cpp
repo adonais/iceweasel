@@ -509,8 +509,8 @@ class ArenaCollection {
   //
   // Parameters:
   // aPeekOnly:     If true, check only if there is work to do without doing it.
-  // aReuseGraceMS: The time to wait with purge after a
-  //                significant re-use happened for an arena.
+  // aReuseGraceMS: The time to wait with purge after a page reuse happened
+  //                for an arena.
   // aKeepGoing:    If this returns false purging will cease.
   //
   // This could exit for 3 different reasons.
@@ -518,9 +518,9 @@ class ArenaCollection {
   //  - There are more requests but aKeepGoing() returned false. (returns true)
   //  - One arena is completely purged, (returns true).
   //
-  may_purge_now_result_t MayPurgeSteps(
-      bool aPeekOnly, uint32_t aReuseGraceMS,
-      const Maybe<std::function<bool()>>& aKeepGoing);
+  may_purge_now_result_t MayPurgeSteps(bool aPeekOnly, uint32_t aReuseGraceMS,
+                                       purge_keep_going_t aKeepGoing,
+                                       void* aClosure);
 
  private:
   const static arena_id_t MAIN_THREAD_ARENA_BIT = 0x1;
@@ -1138,36 +1138,54 @@ void arena_t::DemoteChunkToSpare(arena_chunk_t* aChunk) {
 }
 
 arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
-  arena_run_t* run;
-  arena_chunk_map_t* mapelm;
-
   MOZ_ASSERT(aSize <= gMaxLargeClass);
   MOZ_ASSERT((aSize & gPageSizeMask) == 0);
 
   // Search the arena's chunks for the best fit.
-  mapelm = mRunsAvail.SearchOrNext(aSize);
+  arena_chunk_map_t* mapelm = mRunsAvail.SearchOrNext(aSize);
   if (mapelm) {
     arena_chunk_t* chunk = GetChunkForPtr(mapelm);
     size_t pageind = (uintptr_t(mapelm) - uintptr_t(chunk->mPageMap)) /
                      sizeof(arena_chunk_map_t);
 
     MOZ_ASSERT((chunk->mPageMap[pageind].bits & CHUNK_MAP_BUSY) == 0);
-    run = (arena_run_t*)(uintptr_t(chunk) + (pageind << gPageSize2Pow));
+    arena_run_t* run =
+        (arena_run_t*)(uintptr_t(chunk) + (pageind << gPageSize2Pow));
     mRunsAvail.Remove(mapelm);
+
+    // Update page map.
+    if (!SplitAndAllocRun(run, aSize, aLarge, aZero)) {
+      mRunsAvail.Insert(mapelm);
+      return nullptr;
+    }
+    return run;
   } else if (!mSpares.isEmpty()) {
     arena_chunk_t* chunk = mSpares.popFront();
     MOZ_ASSERT(!chunk->mIsPurging);
 
+    arena_run_t* run = (arena_run_t*)(uintptr_t(chunk) +
+                                      (gChunkHeaderNumPages << gPageSize2Pow));
+    MOZ_ASSERT((chunk->mPageMap[gChunkHeaderNumPages].bits & CHUNK_MAP_BUSY) ==
+               0);
+
+    // If the chunk is dirty it must be in mChunksDirty for
+    // SplitAndAllocRun() to work correctly, so this runs before
+    // SplitAndAllocRun(), even if SplitAndAllocRun() removes the chunk drom
+    // mChunksDirty anyway..
     if (chunk->mNumDirty) {
       MOZ_ASSERT(!mChunksDirty.ElementProbablyInList(chunk));
       mChunksDirty.pushFront(chunk);
     }
 
-    run = (arena_run_t*)(uintptr_t(chunk) +
-                         (gChunkHeaderNumPages << gPageSize2Pow));
-    MOZ_ASSERT((chunk->mPageMap[gChunkHeaderNumPages].bits & CHUNK_MAP_BUSY) ==
-               0);
-    mapelm = &chunk->mPageMap[gChunkHeaderNumPages];
+    if (!SplitAndAllocRun(run, aSize, aLarge, aZero)) {
+      // On failure rather than put the chunk back in mSpares, release it
+      // altogether.  Since we're obviously running low on memory anyway.
+      RemoveChunk(chunk);
+      arena_chunk_dealloc(mChunkAllocator, (void*)chunk, kChunkSize);
+      return nullptr;
+    }
+
+    return run;
   } else {
     // No usable runs.  Create a new chunk from which to allocate
     // the run.
@@ -1178,16 +1196,15 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
     }
 
     InitChunk(chunk, aSize >> gPageSize2Pow);
-    run = (arena_run_t*)(uintptr_t(chunk) +
-                         (gChunkHeaderNumPages << gPageSize2Pow));
-    mapelm = &chunk->mPageMap[gChunkHeaderNumPages];
+    arena_run_t* run = (arena_run_t*)(uintptr_t(chunk) +
+                                      (gChunkHeaderNumPages << gPageSize2Pow));
+
+    bool result = SplitAndAllocRun(run, aSize, aLarge, aZero);
+    MOZ_RELEASE_ASSERT(result,
+                       "SplitAndAllocRun() won't fail because InitChunk should "
+                       "have left enough pages committed");
+    return run;
   }
-  // Update page map.
-  if (!SplitAndAllocRun(run, aSize, aLarge, aZero)) {
-    mRunsAvail.Insert(mapelm);
-    return nullptr;
-  }
-  return run;
 }
 
 void arena_t::UpdateMaxDirty() {
@@ -1290,7 +1307,7 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 #endif
 
 ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats,
-                                const Maybe<std::function<bool()>>& aKeepGoing)
+                                purge_keep_going_t aKeepGoing, void* aClosure)
     MOZ_EXCLUDES(mLock) {
   mLock.Lock();
 
@@ -1318,7 +1335,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats,
   chunk = PurgeGetDirtyChunk(aCond, aStats);
   mLock.Unlock();
   if (chunk) {
-    return PurgeDirtyPages(chunk, aCond, aStats, aKeepGoing);
+    return PurgeDirtyPages(chunk, aCond, aStats, aKeepGoing, aClosure);
   }
 
   return ReachedThresholdOrBusy;
@@ -1403,9 +1420,11 @@ arena_chunk_t* arena_t::PurgeGetDirtyChunk(PurgeCondition aCond,
   return chunk;
 }
 
-ArenaPurgeResult arena_t::PurgeDirtyPages(
-    arena_chunk_t* aChunk, PurgeCondition aCond, PurgeStats& aStats,
-    const Maybe<std::function<bool()>>& aKeepGoing) MOZ_EXCLUDES(mLock) {
+ArenaPurgeResult arena_t::PurgeDirtyPages(arena_chunk_t* aChunk,
+                                          PurgeCondition aCond,
+                                          PurgeStats& aStats,
+                                          purge_keep_going_t aKeepGoing,
+                                          void* aClosure) MOZ_EXCLUDES(mLock) {
   // True if we should continue purging memory from this arena.
   bool continue_purge_arena = true;
 
@@ -1467,7 +1486,7 @@ ArenaPurgeResult arena_t::PurgeDirtyPages(
 
     // Check budget outside any lock, after the madvise/decommit which is the
     // potentially expensive operation.
-    keep_going = aKeepGoing ? (*aKeepGoing)() : true;
+    keep_going = aKeepGoing ? aKeepGoing(aClosure) : true;
 
     bool arena_is_dying;
     {
@@ -1507,7 +1526,8 @@ ArenaPurgeResult arena_t::PurgeDirtyPages(
 
 ArenaPurgeResult arena_t::PurgeLoop(PurgeCondition aCond, const char* aCaller,
                                     uint32_t aReuseGraceMS,
-                                    Maybe<std::function<bool()>> aKeepGoing) {
+                                    purge_keep_going_t aKeepGoing,
+                                    void* aClosure) {
   PurgeStats purge_stats(mId, mLabel, aCaller);
 
 #ifdef MOZJEMALLOC_PROFILING_CALLBACKS
@@ -1524,12 +1544,11 @@ ArenaPurgeResult arena_t::PurgeLoop(PurgeCondition aCond, const char* aCaller,
   uint64_t now;
   ArenaPurgeResult pr;
   do {
-    pr = Purge(aCond, purge_stats, aKeepGoing);
+    pr = Purge(aCond, purge_stats, aKeepGoing, aClosure);
     now = aReuseGraceMS ? GetTimestampNS() : 0;
-  } while (
-      pr == NotDone &&
-      (!aReuseGraceMS || (now - mLastSignificantReuseNS >= reuseGraceNS)) &&
-      (!aKeepGoing || (*aKeepGoing)()));
+  } while (pr == NotDone &&
+           (!aReuseGraceMS || (now - mLastPageReuseNS >= reuseGraceNS)) &&
+           (!aKeepGoing || aKeepGoing(aClosure)));
 
 #ifdef MOZJEMALLOC_PROFILING_CALLBACKS
   if (callbacks) {
@@ -2207,7 +2226,7 @@ void* arena_t::MallocSmall(size_t aSize, bool aZero) {
     mStats.operations++;
   }
   if (num_dirty_after < num_dirty_before) {
-    NotifySignificantReuse();
+    NotifyPageReuse();
   }
   if (!aZero) {
     ApplyZeroOrJunk(ret, aSize);
@@ -2237,7 +2256,7 @@ void* arena_t::MallocLarge(size_t aSize, bool aZero) {
     mStats.operations++;
   }
   if (num_dirty_after < num_dirty_before) {
-    NotifySignificantReuse();
+    NotifyPageReuse();
   }
 
   if (!aZero) {
@@ -2308,7 +2327,7 @@ void* arena_t::PallocLarge(size_t aAlignment, size_t aSize, size_t aAllocSize) {
     mStats.operations++;
   }
   if (num_dirty_after < num_dirty_before) {
-    NotifySignificantReuse();
+    NotifyPageReuse();
   }
   // Note that since Bug 1488780we don't attempt purge dirty memory on this code
   // path. In general there won't be dirty memory above the threshold after an
@@ -2778,13 +2797,13 @@ inline void arena_t::MayDoOrQueuePurge(purge_action_t aAction,
   }
 }
 
-inline void arena_t::NotifySignificantReuse() {
+inline void arena_t::NotifyPageReuse() {
   // Note that there is a chance here for a race between threads calling
   // GetTimeStampNS in a different order than writing it to the Atomic,
-  // resulting in mLastSignificantReuseNS going potentially backwards.
+  // resulting in mLastPageReuseNS going potentially backwards.
   // Our use case is not sensitive to small deviations, the worse that can
   // happen is a slightly earlier purge.
-  mLastSignificantReuseNS = GetTimestampNS();
+  mLastPageReuseNS = GetTimestampNS();
 }
 
 void arena_t::RallocShrinkLarge(arena_chunk_t* aChunk, void* aPtr, size_t aSize,
@@ -2850,7 +2869,7 @@ bool arena_t::RallocGrowLarge(arena_chunk_t* aChunk, void* aPtr, size_t aSize,
     }
   }
   if (num_dirty_after < num_dirty_before) {
-    NotifySignificantReuse();
+    NotifyPageReuse();
   }
   return true;
 }
@@ -2944,7 +2963,7 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate)
       // fraction of opt_dirty_max.
       mMaxDirtyBase((aParams && aParams->mMaxDirty) ? aParams->mMaxDirty
                                                     : (opt_dirty_max / 8)),
-      mLastSignificantReuseNS(GetTimestampNS()),
+      mLastPageReuseNS(GetTimestampNS()),
       mChunkAllocator(&gSystemChunkAllocator) {
   MaybeMutex::DoLock doLock = MaybeMutex::MUST_LOCK;
   if (aParams) {
@@ -4030,9 +4049,9 @@ inline bool MozJemalloc::moz_enable_deferred_purge(bool aEnabled) {
 }
 
 inline may_purge_now_result_t MozJemalloc::moz_may_purge_now(
-    bool aPeekOnly, uint32_t aReuseGraceMS,
-    const Maybe<std::function<bool()>>& aKeepGoing) {
-  return gArenas.MayPurgeSteps(aPeekOnly, aReuseGraceMS, aKeepGoing);
+    bool aPeekOnly, uint32_t aReuseGraceMS, purge_keep_going_t aKeepGoing,
+    void* aClosure) {
+  return gArenas.MayPurgeSteps(aPeekOnly, aReuseGraceMS, aKeepGoing, aClosure);
 }
 
 inline void ArenaCollection::AddToOutstandingPurges(arena_t* aArena) {
@@ -4060,8 +4079,8 @@ inline bool ArenaCollection::RemoveFromOutstandingPurges(arena_t* aArena) {
 }
 
 may_purge_now_result_t ArenaCollection::MayPurgeSteps(
-    bool aPeekOnly, uint32_t aReuseGraceMS,
-    const Maybe<std::function<bool()>>& aKeepGoing) {
+    bool aPeekOnly, uint32_t aReuseGraceMS, purge_keep_going_t aKeepGoing,
+    void* aClosure) {
   // This only works on the main thread because it may process main-thread-only
   // arenas.
   MOZ_ASSERT(IsOnMainThreadWeak());
@@ -4075,7 +4094,7 @@ may_purge_now_result_t ArenaCollection::MayPurgeSteps(
       return may_purge_now_result_t::Done;
     }
     for (arena_t& arena : mOutstandingPurges) {
-      if (now - arena.mLastSignificantReuseNS >= reuseGraceNS) {
+      if (now - arena.mLastPageReuseNS >= reuseGraceNS) {
         found = &arena;
         break;
       }
@@ -4094,8 +4113,8 @@ may_purge_now_result_t ArenaCollection::MayPurgeSteps(
     mOutstandingPurges.remove(found);
   }
 
-  ArenaPurgeResult pr =
-      found->PurgeLoop(PurgeIfThreshold, __func__, aReuseGraceMS, aKeepGoing);
+  ArenaPurgeResult pr = found->PurgeLoop(PurgeIfThreshold, __func__,
+                                         aReuseGraceMS, aKeepGoing, aClosure);
 
   if (pr == ArenaPurgeResult::NotDone) {
     // If there's more work to do we re-insert the arena into the purge queue.
@@ -4121,7 +4140,7 @@ may_purge_now_result_t ArenaCollection::MayPurgeSteps(
   // Even if there is no other arena that needs work, let the caller just call
   // us again and we will do the above checks then and return their result.
   // Note that in the current surrounding setting this may (rarely) cause a
-  // new slice of our idle task runner if we are exceeding idle budget.
+  // new slice of the lazy purge task if it has to yield.
   return may_purge_now_result_t::NeedsMore;
 }
 

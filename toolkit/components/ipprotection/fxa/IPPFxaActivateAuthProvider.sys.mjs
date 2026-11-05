@@ -223,11 +223,7 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
    * @returns {Promise<TokenHandle|null>}
    */
   async getToken(abortSignal = null) {
-    let tasks = [
-      lazy.fxAccounts.getOAuthToken({
-        scope: ["profile", "https://identity.mozilla.com/apps/vpn"],
-      }),
-    ];
+    let tasks = [lazy.fxAccounts.getOAuthToken({ service: "vpn" })];
     if (abortSignal) {
       abortSignal.throwIfAborted();
       tasks.push(

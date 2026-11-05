@@ -55,7 +55,6 @@ add_setup(async function () {
   Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", true);
   Services.prefs.setBoolPref("network.http.http3.enable", true);
   Services.prefs.setBoolPref("network.socket.attach_mock_network_layer", true);
-  Services.prefs.setIntPref("logging.nsHttp", 5);
 
   h2Server = new NodeHTTP2Server();
   await h2Server.start();
@@ -72,7 +71,6 @@ add_setup(async function () {
     Services.prefs.clearUserPref(
       "network.http.http3.alt-svc-mapping-for-testing"
     );
-    Services.prefs.clearUserPref("logging.nsHttp");
     override.clearOverrides();
     mockController.clearBlockedUDPAddr();
     mockController.clearFailedUDPAddr();

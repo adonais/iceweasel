@@ -1014,7 +1014,7 @@ class Dumper_Mac(Dumper):
         dsymbundle = file + ".dSYM"
         if os.path.exists(dsymbundle):
             shutil.rmtree(dsymbundle)
-        dsymutil = buildconfig.substs["DSYMUTIL"]
+        dsymutil = os.environ.get("DSYMUTIL") or buildconfig.substs["DSYMUTIL"]
         # dsymutil takes --arch=foo instead of -a foo like everything else
         cmd = (
             [dsymutil] + [a.replace("-a ", "--arch=") for a in self.archs if a] + [file]
@@ -1058,8 +1058,9 @@ class Dumper_Mac(Dumper):
             print("Unexpected files in .dSYM bundle %s" % (files,), file=sys.stderr)
             return False
 
+        otool = os.environ.get("OTOOL") or buildconfig.substs["OTOOL"]
         otool_out = subprocess.check_output(
-            [buildconfig.substs["OTOOL"], "-l", os.path.join(contents_dir, files[0])],
+            [otool, "-l", os.path.join(contents_dir, files[0])],
             universal_newlines=True,
         )
         if "sectname __debug_info" not in otool_out:

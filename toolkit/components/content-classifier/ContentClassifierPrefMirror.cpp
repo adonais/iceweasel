@@ -70,7 +70,8 @@ constexpr char kMinorExceptionsEngine[] = "minor-exceptions";
 
 // Maps a content classifier engine name (see ContentClassifierService.cpp,
 // kFeatures) onto the ETP prefs that gate it in normal and private-browsing
-// contexts. An engine joins the mirrored list when its gating pref is true.
+// contexts. An engine joins the mirrored list when its gating pref is true, or
+// unconditionally when it has none.
 struct EngineMapping {
   const char* mEngine;
   const char* mNormalPref;
@@ -103,12 +104,12 @@ constexpr EngineMapping kProtectionMappings[] = {
 // so order is not load-bearing the way it is for kProtectionMappings, but we
 // keep the two in sync to avoid surprises.
 constexpr EngineMapping kAnnotationMappings[] = {
-    {"cryptominers", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
-    {"fingerprinters", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
-    {"social-trackers", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
+    // url-classifier creates its cryptomining, fingerprinting and social
+    // tracking annotation features unconditionally; only tracking annotation
+    // is gated by annotate_channels.
+    {"cryptominers", nullptr, nullptr},
+    {"fingerprinters", nullptr, nullptr},
+    {"social-trackers", nullptr, nullptr},
     // trackers and trackers-content are one feature (TrackingAnnotation) in
     // url-classifier, split in two here.
     {"trackers", "privacy.trackingprotection.annotate_channels",
@@ -144,7 +145,7 @@ void BuildEngineList(Span<const EngineMapping> aMappings, bool aPrivateBrowsing,
   for (const auto& mapping : aMappings) {
     const char* gatingPref =
         aPrivateBrowsing ? mapping.mPBMPref : mapping.mNormalPref;
-    if (Preferences::GetBool(gatingPref, false)) {
+    if (!gatingPref || Preferences::GetBool(gatingPref, false)) {
       if (!aOut.IsEmpty()) {
         aOut.Append(',');
       }

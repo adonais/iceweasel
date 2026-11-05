@@ -24,7 +24,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction
@@ -107,7 +106,7 @@ internal const val PROMPT_FRAGMENT_TAG = "mozac_feature_sitepermissions_prompt_d
 class SitePermissionsFeature(
     private val context: Context,
     @set:VisibleForTesting internal var sessionId: String? = null,
-    private val storage: SitePermissionsStorage = OnDiskSitePermissionsStorage(context),
+    private val storage: SitePermissionsStorage,
     var sitePermissionsRules: SitePermissionsRules? = null,
     private val fragmentManager: FragmentManager,
     var promptsStyling: PromptsStyling? = null,
@@ -115,10 +114,10 @@ class SitePermissionsFeature(
     override val onNeedToRequestPermissions: OnNeedToRequestPermissions,
     val onShouldShowRequestPermissionRationale: (permission: String) -> Boolean,
     private val store: BrowserStore,
+    private val coroutineScope: CoroutineScope,
     private val exitFullscreenUseCase: SessionUseCases.ExitFullScreenUseCase = SessionUseCases(store).exitFullscreen,
     private val shouldShowDoNotAskAgainCheckBox: Boolean = true,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val shouldHide: () -> Boolean = { false },
 ) : LifecycleAwareFeature, PermissionsFeature {
     @VisibleForTesting
@@ -136,11 +135,6 @@ class SitePermissionsFeature(
 
     private val logger = Logger("SitePermissionsFeature")
 
-    internal val ioCoroutineScope by lazy { coroutineScopeInitializer() }
-
-    internal var coroutineScopeInitializer = {
-        CoroutineScope(ioDispatcher)
-    }
     private var sitePermissionScope: CoroutineScope? = null
     private var appPermissionScope: CoroutineScope? = null
     private var loadingScope: CoroutineScope? = null
@@ -462,7 +456,7 @@ class SitePermissionsFeature(
         contentState: ContentState,
         request: PermissionRequest,
         status: SitePermissions.Status,
-        coroutineScope: CoroutineScope = ioCoroutineScope,
+        coroutineScope: CoroutineScope = this@SitePermissionsFeature.coroutineScope,
     ) {
         if (contentState.private) {
             return
@@ -505,7 +499,6 @@ class SitePermissionsFeature(
     internal suspend fun onContentPermissionRequested(
         permissionRequest: PermissionRequest,
         origin: String,
-        coroutineScope: CoroutineScope = ioCoroutineScope,
     ): SitePermissionsDialogFragment? {
         // We want to warranty that all media permissions have the required system
         // permissions are granted first, otherwise, we reject the request
@@ -522,10 +515,7 @@ class SitePermissionsFeature(
             return null
         }
 
-        val permissionFromStorage =
-            withContext(coroutineScope.coroutineContext) {
-                storage.findSitePermissionsBy(origin, private = tab.content.private)
-            }
+        val permissionFromStorage = storage.findSitePermissionsBy(origin, private = tab.content.private)
         val prompt =
             if (shouldApplyRules(permissionFromStorage)) {
                 handleRuledFlow(permissionRequest, origin)
@@ -533,7 +523,7 @@ class SitePermissionsFeature(
                 handleNoRuledFlow(permissionFromStorage, permissionRequest, origin)
             }
 
-        return if (prompt == null) {
+        return if (prompt == null || cannotShowPrompt()) {
             null
         } else {
             // If we are in fullscreen, then exit to show the permission prompt.
@@ -544,6 +534,9 @@ class SitePermissionsFeature(
             prompt
         }
     }
+
+    /** Whether a prompt cannot currently be committed to [fragmentManager]. */
+    private fun cannotShowPrompt(): Boolean = fragmentManager.isDestroyed || fragmentManager.isStateSaved
 
     @VisibleForTesting
     internal fun handleNoRuledFlow(

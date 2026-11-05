@@ -528,7 +528,7 @@ void nsMenuX::MenuOpenedAsync() {
   // Open the node.
   if (mContent->IsElement()) {
     mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::open,
-                                   u"true"_ns, true);
+                                   u"true"_ns, true, IsKnownNewAttr::No);
   }
 
   RefPtr<nsIContent> popupContent = GetMenuPopupContent();

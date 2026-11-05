@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_SerialManagerChild_h
 #define mozilla_dom_SerialManagerChild_h
 
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/PSerialManagerChild.h"
 #include "mozilla/dom/SerialPortChild.h"
 #include "mozilla/dom/SerialPortInfo.h"

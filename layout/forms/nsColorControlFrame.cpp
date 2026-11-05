@@ -88,7 +88,7 @@ void nsColorControlFrame::UpdateColor() {
   // Set the color CSS property of the swatch element to this color.
   mColorContent->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
                          u"color:"_ns + color,
-                         /* aNotify */ true);
+                         /* aNotify */ true, dom::IsKnownNewAttr::No);
 }
 
 nsresult nsColorControlFrame::AttributeChanged(int32_t aNameSpaceID,

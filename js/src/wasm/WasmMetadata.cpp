@@ -249,6 +249,24 @@ bool CodeMetadata::getFuncName(NameContext ctx, uint32_t funcIndex,
   return AppendFunctionIndexName(funcIndex, name);
 }
 
+CoreExternType CodeMetadata::getExternType(DefinitionKind kind,
+                                           uint32_t index) const {
+  switch (kind) {
+    case DefinitionKind::Function:
+      return CoreExternType::func(getFuncTypeDef(index));
+    case DefinitionKind::Table:
+      return CoreExternType::table(tables[index].type);
+    case DefinitionKind::Memory:
+      return CoreExternType::memory(memories[index].limits);
+    case DefinitionKind::Global:
+      return CoreExternType::global(globals[index].globalType());
+    case DefinitionKind::Tag:
+      return CoreExternType::tag(tags[index].type);
+    default:
+      MOZ_CRASH();
+  }
+}
+
 // CodeMetadata helpers -- memory accounting.
 
 size_t CodeMetadata::sizeOfExcludingThis(
@@ -278,6 +296,44 @@ CodeTailMetadata::CodeTailMetadata(const CodeMetadata& codeMeta)
   this->codeMeta = &codeMeta;
   inliningBudget.lock().get() =
       InliningHeuristics::moduleInliningBudget(codeMeta.codeSectionSize());
+}
+
+bool ModuleMetadata::buildModuleType(SharedCoreModuleType* result) const {
+  // Imported items come first in each index space, in import order.
+  CoreImportTypeVector importTypes;
+  if (!importTypes.reserve(imports.length())) {
+    return false;
+  }
+  uint32_t numImportsOfKind[size_t(DefinitionKind::Tag) + 1] = {};
+  for (const Import& imp : imports) {
+    uint32_t index = numImportsOfKind[size_t(imp.kind)]++;
+    CacheableName module;
+    CacheableName field;
+    if (!imp.module.clone(&module) || !imp.field.clone(&field)) {
+      return false;
+    }
+    importTypes.infallibleAppend(
+        CoreImportType{std::move(module), std::move(field),
+                       codeMeta->getExternType(imp.kind, index)});
+  }
+
+  MutableCoreInstanceType instanceType = js_new<CoreInstanceType>();
+  if (!instanceType) {
+    return false;
+  }
+  for (const Export& exp : exports) {
+    CacheableName name;
+    if (!exp.fieldName().clone(&name) ||
+        !instanceType->addExport(
+            std::move(name),
+            codeMeta->getExternType(exp.kind(), exp.index()))) {
+      return false;
+    }
+  }
+
+  *result = js_new<CoreModuleType>(codeMeta->types, std::move(importTypes),
+                                   std::move(instanceType));
+  return !!*result;
 }
 
 // ModuleMetadata helpers -- memory accounting.

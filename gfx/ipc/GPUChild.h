@@ -109,7 +109,7 @@ class GPUChild final : public mozilla::ipc::CrashReporterHelper<GPUChild>,
 
   void OnInitComplete(const GPUDeviceData& aData);
 
-  GPUProcessHost* mHost;
+  RefPtr<GPUProcessHost> mHost;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;
   bool mGPUReady;
   bool mUnexpectedShutdown = false;

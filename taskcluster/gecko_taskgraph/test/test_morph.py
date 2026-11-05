@@ -224,6 +224,39 @@ def test_make_index_tasks(make_taskgraph, graph_config):
 
 
 @pytest.mark.parametrize(
+    "enable_always_target,should_raise",
+    (
+        pytest.param(False, False, id="always target disabled"),
+        pytest.param(["docker-image"], True, id="docker-image always targeted"),
+        pytest.param(True, True, id="everything always targeted"),
+    ),
+)
+def test_add_eager_cache_index_tasks_missing_docker_image(
+    make_taskgraph, graph_config, enable_always_target, should_raise
+):
+    task = Task(
+        kind="toolchain",
+        label="a",
+        attributes={"eager_indexes": ["gecko.cache.a"]},
+        task={},
+    )
+    taskgraph, label_to_taskid = make_taskgraph({task.label: task})
+    params = Parameters(strict=False, enable_always_target=enable_always_target)
+
+    if should_raise:
+        with pytest.raises(RuntimeError):
+            morph.add_eager_cache_index_tasks(
+                taskgraph, label_to_taskid, params, graph_config
+            )
+    else:
+        new_taskgraph, new_label_to_taskid = morph.add_eager_cache_index_tasks(
+            taskgraph, label_to_taskid, params, graph_config
+        )
+        assert new_label_to_taskid == {"a": "a-tid"}
+        assert set(new_taskgraph.tasks) == {"a"}
+
+
+@pytest.mark.parametrize(
     "project,has_ccov,expected_task_added",
     (
         pytest.param("mozilla-central", True, True, id="with ccov tasks"),

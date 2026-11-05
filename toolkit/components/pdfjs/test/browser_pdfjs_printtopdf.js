@@ -202,12 +202,6 @@ async function printToPDFAndParse(browser, printData) {
   });
 }
 
-// Exercise both PDF-backend preference values.
-const PRINT_BACKENDS = [
-  { skpdf: true, name: "Skia" },
-  { skpdf: false, name: "Cairo" },
-];
-
 // Expected text after compatibility and whitespace normalization.
 const TEXT_ENTRIES = [
   { text: "Hello", expected: ["Hello"] },
@@ -224,45 +218,37 @@ add_task(async function test_printToPDF_text() {
     async browser => {
       await waitForPdfJS(browser, pdfUrl);
 
-      for (const { skpdf, name } of PRINT_BACKENDS) {
-        await SpecialPowers.pushPrefEnv({
-          set: [["print.experimental.skpdf", skpdf]],
-        });
+      const pages = await printToPDFAndParse(
+        browser,
+        TEXT_ENTRIES.map(({ text }) => ({
+          data: {
+            width: 200,
+            height: 80,
+            text,
+            color: "#000000",
+            fontSize: 24,
+          },
+        }))
+      );
 
-        const pages = await printToPDFAndParse(
-          browser,
-          TEXT_ENTRIES.map(({ text }) => ({
-            data: {
-              width: 200,
-              height: 80,
-              text,
-              color: "#000000",
-              fontSize: 24,
-            },
-          }))
-        );
+      Assert.equal(
+        pages.length,
+        TEXT_ENTRIES.length,
+        `The generated PDF should have one page per entry`
+      );
 
-        Assert.equal(
-          pages.length,
-          TEXT_ENTRIES.length,
-          `[${name}] The generated PDF should have one page per entry`
-        );
-
-        // Avoid masking a page-count failure with an undefined access.
-        const count = Math.min(pages.length, TEXT_ENTRIES.length);
-        for (let i = 0; i < count; i++) {
-          // Normalize compatibility forms and ignore extracted whitespace.
-          const extracted = pages[i].text.normalize("NFKC").replace(/\s+/g, "");
-          for (const expected of TEXT_ENTRIES[i].expected) {
-            Assert.stringContains(
-              extracted,
-              expected.normalize("NFKC").replace(/\s+/g, ""),
-              `[${name}] Page ${i + 1} should contain the expected text`
-            );
-          }
+      // Avoid masking a page-count failure with an undefined access.
+      const count = Math.min(pages.length, TEXT_ENTRIES.length);
+      for (let i = 0; i < count; i++) {
+        // Normalize compatibility forms and ignore extracted whitespace.
+        const extracted = pages[i].text.normalize("NFKC").replace(/\s+/g, "");
+        for (const expected of TEXT_ENTRIES[i].expected) {
+          Assert.stringContains(
+            extracted,
+            expected.normalize("NFKC").replace(/\s+/g, ""),
+            `Page ${i + 1} should contain the expected text`
+          );
         }
-
-        await SpecialPowers.popPrefEnv();
       }
 
       await waitForPdfJSClose(browser);
@@ -289,38 +275,28 @@ add_task(async function test_printToPDF_vertical_alignment() {
         },
       });
 
-      for (const { skpdf, name } of PRINT_BACKENDS) {
-        await SpecialPowers.pushPrefEnv({
-          set: [["print.experimental.skpdf", skpdf]],
-        });
+      const pages = await printToPDFAndParse(browser, [
+        entry({}),
+        entry({ verticalAlign: "top" }),
+      ]);
 
-        const pages = await printToPDFAndParse(browser, [
-          entry({}),
-          entry({ verticalAlign: "top" }),
-        ]);
+      Assert.equal(
+        pages.length,
+        2,
+        `The generated PDF should have one page per entry`
+      );
 
-        Assert.equal(
-          pages.length,
-          2,
-          `[${name}] The generated PDF should have one page per entry`
-        );
+      // The first non-blank item gives where the line starts.
+      const [center, top] = pages.map(
+        ({ items }) => items.find(item => item.str.trim() !== "") ?? {}
+      );
+      info(`Positions: ` + JSON.stringify({ center, top }));
 
-        // The first non-blank item gives where the line starts.
-        const [center, top] = pages.map(
-          ({ items }) => items.find(item => item.str.trim() !== "") ?? {}
-        );
-        info(`[${name}] Positions: ` + JSON.stringify({ center, top }));
-
-        Assert.less(
-          center.y,
-          top.y,
-          `[${name}] Top-aligned text should sit above centered text`
-        );
-
-        await SpecialPowers.popPrefEnv();
-      }
-
-      await waitForPdfJSClose(browser);
+      Assert.less(
+        center.y,
+        top.y,
+        `Top-aligned text should sit above centered text`
+      );
     }
   );
 });
@@ -338,49 +314,36 @@ add_task(async function test_printToPDF_svg() {
         '<line x1="10" y1="10" x2="90" y2="90" stroke="#123456" ' +
         'stroke-width="4"/></svg>';
       const svgUrl = "data:image/svg+xml," + encodeURIComponent(svg);
+      const pages = await printToPDFAndParse(browser, [
+        { data: { width: 100, height: 100, svgUrl } },
+      ]);
 
-      for (const { skpdf, name } of PRINT_BACKENDS) {
-        await SpecialPowers.pushPrefEnv({
-          set: [["print.experimental.skpdf", skpdf]],
-        });
+      Assert.equal(pages.length, 1, `The generated PDF should have one page`);
 
-        const pages = await printToPDFAndParse(browser, [
-          { data: { width: 100, height: 100, svgUrl } },
-        ]);
+      const { ops, args } = pages[0];
+      info(`Operators: ` + ops.join(", "));
 
+      Assert.ok(
+        ops.some(op => VECTOR_PATH_OPS.has(op)),
+        `The SVG line should be drawn with vector path operators`
+      );
+      Assert.ok(
+        !ops.some(op => IMAGE_OPS.has(op)),
+        `The SVG line should not be rasterized into an image`
+      );
+
+      const strokeIndex = ops.indexOf("setStrokeRGBColor");
+      Assert.greater(
+        strokeIndex,
+        -1,
+        `The SVG line should set an explicit stroke color`
+      );
+      if (strokeIndex !== -1) {
         Assert.equal(
-          pages.length,
-          1,
-          `[${name}] The generated PDF should have one page`
+          args[strokeIndex][0],
+          "#123456",
+          `The stroke color should match the one from the SVG`
         );
-
-        const { ops, args } = pages[0];
-        info(`[${name}] Operators: ` + ops.join(", "));
-
-        Assert.ok(
-          ops.some(op => VECTOR_PATH_OPS.has(op)),
-          `[${name}] The SVG line should be drawn with vector path operators`
-        );
-        Assert.ok(
-          !ops.some(op => IMAGE_OPS.has(op)),
-          `[${name}] The SVG line should not be rasterized into an image`
-        );
-
-        const strokeIndex = ops.indexOf("setStrokeRGBColor");
-        Assert.greater(
-          strokeIndex,
-          -1,
-          `[${name}] The SVG line should set an explicit stroke color`
-        );
-        if (strokeIndex !== -1) {
-          Assert.equal(
-            args[strokeIndex][0],
-            "#123456",
-            `[${name}] The stroke color should match the one from the SVG`
-          );
-        }
-
-        await SpecialPowers.popPrefEnv();
       }
 
       await waitForPdfJSClose(browser);

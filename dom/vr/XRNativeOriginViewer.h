@@ -23,7 +23,7 @@ class XRNativeOriginViewer : public XRNativeOrigin {
   gfx::QuaternionDouble GetOrientation() override;
 
  private:
-  ~XRNativeOriginViewer() = default;
+  ~XRNativeOriginViewer();
   RefPtr<gfx::VRDisplayClient> mDisplay;
 };
 

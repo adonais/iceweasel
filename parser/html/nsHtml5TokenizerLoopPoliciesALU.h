@@ -7,6 +7,9 @@
 
 #include "mozilla/Utf16.h"
 
+#include "nsHtml5Tokenizer.h"
+
+class nsHtml5Highlighter;
 /**
  * This policy does not report tokenizer transitions anywhere and does not
  * track line and column numbers. To be used for innerHTML. Non-SIMD version.

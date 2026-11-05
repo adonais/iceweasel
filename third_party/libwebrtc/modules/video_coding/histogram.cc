@@ -17,7 +17,8 @@
 
 namespace webrtc {
 namespace video_coding {
-Histogram::Histogram(size_t num_buckets, size_t max_num_values) {
+Histogram::Histogram(size_t num_buckets, size_t max_num_values)
+    : max_num_values_(max_num_values) {
   RTC_DCHECK_GT(num_buckets, 0);
   RTC_DCHECK_GT(max_num_values, 0);
   buckets_.resize(num_buckets);
@@ -36,7 +37,7 @@ void Histogram::Add(size_t value) {
   }
 
   ++buckets_[value];
-  index_ = (index_ + 1) % values_.capacity();
+  index_ = (index_ + 1) % max_num_values_;
 }
 
 size_t Histogram::InverseCdf(float probability) const {

@@ -1,8 +1,4 @@
 [DEFAULT]
-dupe-manifest=true
-prefs = [
-  "browser.settings-redesign.enabled=false",
-]
 support-files = [
   "head.js",
 ]

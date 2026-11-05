@@ -7,6 +7,7 @@ package mozilla.components.feature.awesomebar.provider
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.runTest
+import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.storage.HistoryStorage
 import mozilla.components.concept.storage.SearchResult
@@ -89,6 +90,19 @@ class HistoryStorageSuggestionProviderTest {
         val suggestions = provider.onInputChanged("moz")
         assertEquals(1, suggestions.size)
         assertEquals("http://www.mozilla.com/", suggestions[0].description)
+    }
+
+    @Test
+    fun `WHEN a history storage suggestion is returned THEN it is flagged as a HISTORY suggestion`() = runTest {
+        val history: HistoryStorage = mock()
+        Mockito.doReturn(listOf(SearchResult("id", "http://www.mozilla.com/", 10)))
+            .`when`(history)
+            .getSuggestions(eq("moz"), Mockito.anyInt())
+        val provider = HistoryStorageSuggestionProvider(history, mock())
+
+        val suggestions = provider.onInputChanged("moz")
+        assertEquals(1, suggestions.size)
+        assertTrue(suggestions[0].flags.contains(AwesomeBar.Suggestion.Flag.HISTORY))
     }
 
     @Test

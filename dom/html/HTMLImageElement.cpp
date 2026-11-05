@@ -204,6 +204,9 @@ bool HTMLImageElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       ParseFetchPriority(aValue, aResult);
       return true;
     }
+    if (aAttribute == nsGkAtoms::referrerpolicy) {
+      return ParseReferrerAttribute(aValue, aResult);
+    }
     if (ParseImageAttribute(aAttribute, aValue, aResult)) {
       return true;
     }

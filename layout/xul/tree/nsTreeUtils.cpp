@@ -96,8 +96,9 @@ nsIContent* nsTreeUtils::GetDescendantChild(nsIContent* aContainer,
 nsresult nsTreeUtils::UpdateSortIndicators(dom::Element* aColumn,
                                            const nsAString& aDirection) {
   aColumn->SetAttr(kNameSpaceID_None, nsGkAtoms::sortDirection, aDirection,
-                   true);
-  aColumn->SetAttr(kNameSpaceID_None, nsGkAtoms::sortActive, u"true"_ns, true);
+                   true, dom::IsKnownNewAttr::No);
+  aColumn->SetAttr(kNameSpaceID_None, nsGkAtoms::sortActive, u"true"_ns, true,
+                   dom::IsKnownNewAttr::No);
 
   // Unset sort attribute(s) on the other columns
   nsCOMPtr<nsIContent> parentContent = aColumn->GetParent();

@@ -5,6 +5,12 @@
     <title>MozBoxGroup Tests</title>
     <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
     <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+    <!-- testName, testRole and gAccService come from the a11y mochitest tree
+         (accessible/tests/mochitest), added as support-files. common.js starts
+         the a11y service. -->
+    <script src="common.js"></script>
+    <script src="name.js"></script>
+    <script src="role.js"></script>
     <script
       type="module"
       src="chrome://browser/content/preferences/widgets/setting-control.mjs"
@@ -20,6 +26,9 @@
     ></script>
     <script src="lit-test-helpers.js"></script>
     <script>
+      /* import-globals-from ../../../../accessible/tests/mochitest/common.js */
+      /* import-globals-from ../../../../accessible/tests/mochitest/name.js */
+      /* import-globals-from ../../../../accessible/tests/mochitest/role.js */
       let html;
       let MozLitElement;
       let testHelpers = new LitTestHelpers();
@@ -36,6 +45,24 @@
         ({ html } = await testHelpers.setupLit());
         ({ MozLitElement } =
           await import("chrome://global/content/lit-utils.mjs"));
+        const mockL10nSource = L10nFileSource.createMock(
+          "moz-box-group-test",
+          "app",
+          ["en-US"],
+          "/localization/{locale}/",
+          [
+            {
+              path: "/localization/en-US/moz-box-group-test.ftl",
+              source: `moz-box-group-reorderable =
+  .aria-label = Fluent reorderable items`,
+            },
+          ]
+        );
+        L10nRegistry.getInstance().registerSources([mockL10nSource]);
+        MozXULElement.insertFTLIfNeeded("moz-box-group-test.ftl");
+        SimpleTest.registerCleanupFunction(() => {
+          L10nRegistry.getInstance().removeSources([mockL10nSource.name]);
+        });
         let templateFn = () => html`
           <moz-box-group>
             <moz-box-item label="item"></moz-box-item>
@@ -697,7 +724,43 @@
         );
       });
 
+      add_task(async function testMozBoxGroupReorderableFluentAriaLabel() {
+        const FLUENT_LISTBOX_LABEL = "Fluent reorderable items";
+        let renderTarget = await testHelpers.renderTemplate(html`
+          <moz-box-group
+            type="reorderable-list"
+            data-l10n-id="moz-box-group-reorderable"
+          >
+            <moz-box-item label="item"></moz-box-item>
+          </moz-box-group>
+        `);
+        let boxGroup = renderTarget.querySelector("moz-box-group");
+
+        await document.l10n.translateFragment(boxGroup);
+        await boxGroup.updateComplete;
+
+        let list = boxGroup.shadowRoot.querySelector("ol");
+        is(
+          list.getAttribute("aria-label"),
+          FLUENT_LISTBOX_LABEL,
+          "Fluent aria-label is forwarded to the reorderable list."
+        );
+        await TestUtils.waitForCondition(
+          () => gAccService.getAccessibleFor(list),
+          "Accessible is created for the Fluent-labelled listbox."
+        );
+        testName(list, FLUENT_LISTBOX_LABEL);
+        is(
+          gAccService.getAccessibleFor(boxGroup)?.name ?? "",
+          "",
+          "Fluent aria-label does not name the box-group host."
+        );
+      });
+
       add_task(async function testMozBoxGroupReorderable() {
+        const INITIAL_LISTBOX_LABEL = "Initial reorderable items";
+        const UPDATED_LISTBOX_LABEL = "Updated reorderable items";
+
         class TestReorderable extends MozLitElement {
           static properties = { items: { type: Array } };
           constructor() {
@@ -713,6 +776,7 @@
             return html`<moz-box-group
               @reorder=${this.onReorder}
               type="reorderable-list"
+              aria-label=${INITIAL_LISTBOX_LABEL}
             >
               ${this.items}
             </moz-box-group>`;
@@ -774,6 +838,41 @@
           "listbox",
           "Reorderable list has role=listbox."
         );
+        await TestUtils.waitForCondition(
+          () => gAccService.getAccessibleFor(list),
+          "Accessible is created for the reorderable listbox."
+        );
+        testRole(list, ROLE_LISTBOX);
+        testName(list, INITIAL_LISTBOX_LABEL);
+        is(
+          gAccService.getAccessibleFor(boxGroup)?.name ?? "",
+          "",
+          "Reorderable box-group host has no accessible name."
+        );
+        is(
+          list.getAttribute("aria-label"),
+          INITIAL_LISTBOX_LABEL,
+          "Reorderable list has its initial aria-label."
+        );
+
+        boxGroup.setAttribute("aria-label", UPDATED_LISTBOX_LABEL);
+        await boxGroup.updateComplete;
+        is(
+          list.getAttribute("aria-label"),
+          UPDATED_LISTBOX_LABEL,
+          "Reorderable list updates its aria-label."
+        );
+        await TestUtils.waitForCondition(
+          () => getAccessible(list)?.name === UPDATED_LISTBOX_LABEL,
+          "Accessible name updates for the reorderable listbox."
+        );
+        testName(list, UPDATED_LISTBOX_LABEL);
+        is(
+          gAccService.getAccessibleFor(boxGroup)?.name ?? "",
+          "",
+          "Reorderable box-group host has no accessible name after updating."
+        );
+
         boxGroup.shadowRoot.querySelectorAll("li").forEach(li => {
           is(
             li.getAttribute("role"),

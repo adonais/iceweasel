@@ -188,7 +188,7 @@ window. It runs a SQL query through rusqlite, and the cost is almost entirely di
 
 The query it runs scans `moz_places` for records that need uploading:
 
-```sql
+```text
 SELECT ... FROM moz_places
 WHERE (sync_change_counter > 0 OR sync_status != {Normal})
   AND NOT hidden

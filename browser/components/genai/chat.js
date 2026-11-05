@@ -42,11 +42,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
-  "sidebarVisibilityPref",
-  "sidebar.visibility"
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
   "onboardingConfig",
   "browser.ml.chat.onboarding.config",
   JSON.stringify({
@@ -401,14 +396,6 @@ function showOnboarding(length) {
     sibling;
     sibling = sibling.nextElementSibling
   ) {
-    if (
-      sibling.id === "header" &&
-      lazy.sidebarVisibilityPref === "hide-launcher"
-    ) {
-      // The sidebar switcher needs to stay accessible during onboarding.
-      sibling.inert = false;
-      continue;
-    }
     sibling.inert = true;
   }
   const script = document.head.appendChild(document.createElement("script"));

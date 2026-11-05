@@ -1148,7 +1148,7 @@ class TreeMetadataEmitter(LoggingMixin):
                 if symbol == "SOURCES":
                     context_flags = context_srcs[f]
                     if context_flags:
-                        all_flags[full_path] = context_flags
+                        all_flags[full_path] = (f, context_flags)
 
                 if isinstance(f, SourcePath) and not os.path.exists(full_path):
                     raise SandboxValidationError(
@@ -1178,7 +1178,7 @@ class TreeMetadataEmitter(LoggingMixin):
                 )
 
         no_pgo = context.get("NO_PGO")
-        no_pgo_sources = [f for f, flags in all_flags.items() if flags.no_pgo]
+        no_pgo_sources = [f for f, (_, flags) in all_flags.items() if flags.no_pgo]
         if no_pgo:
             if no_pgo_sources:
                 raise SandboxValidationError(
@@ -1285,10 +1285,20 @@ class TreeMetadataEmitter(LoggingMixin):
                 for suffix, srcs in ctxt_sources["WASM_SOURCES"].items():
                     wasm_linkable.sources[suffix] += srcs
 
-        for f, flags in sorted(all_flags.items()):
-            if flags.flags:
+        for f, (path, flags) in sorted(all_flags.items()):
+            if flags.flags or flags.object_deps:
                 ext = mozpath.splitext(f)[1]
-                yield PerSourceFlag(context, f, flags.flags)
+                deps = []
+                for d in flags.object_deps:
+                    p = Path(context, d)
+                    if isinstance(p, SourcePath) and not os.path.exists(p.full_path):
+                        raise SandboxValidationError(
+                            f"Dependency of {mozpath.basename(f)} does not exist: "
+                            f"{p.full_path}",
+                            context,
+                        )
+                    deps.append(p)
+                yield PerSourceFlag(context, path, flags.flags, deps)
 
         # If there are any C++ sources, set all the linkables defined here
         # to require the C++ linker.

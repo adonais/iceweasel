@@ -35,6 +35,8 @@ async function cleanupStorage(selRecords) {
 add_setup(async function () {
   // Security codes are only handled once the feature is rolled out. Roll it out
   // for the whole file so each task can toggle CVV_PREF on its own.
+  // The security code is supported only while the Rust store serves.
+  await switchCreditCardStore({ rust: true });
   await SpecialPowers.pushPrefEnv({ set: [[SUPPORTED_PREF, "on"]] });
 });
 

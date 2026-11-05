@@ -10,13 +10,11 @@ import mozilla.appservices.RustComponentsInitializer
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCard
 import mozilla.components.concept.storage.CreditCardEntry
-import mozilla.components.concept.storage.CreditCardNumber
 import mozilla.components.concept.storage.CreditCardValidationDelegate
 import mozilla.components.concept.storage.NewCreditCardFields
 import mozilla.components.concept.storage.UpdatableAddressFields
 import mozilla.components.concept.storage.UpdatableCreditCardFields
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
-import mozilla.components.support.ktx.kotlin.last4Digits
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -52,25 +50,19 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
     }
 
     @Test
-    fun `GIVEN a newly added credit card WHEN decrypt is called THEN it returns the plain credit card number`() =
+    fun `GIVEN a newly added credit card WHEN it is read back THEN it contains the plain credit card number`() =
         runTest {
-            val plaintextNumber = CreditCardNumber.Plaintext("4111111111111111")
             val creditCardFields =
                 NewCreditCardFields(
                     billingName = "Jon Doe",
-                    plaintextCardNumber = plaintextNumber,
-                    cardNumberLast4 = "1111",
+                    cardNumber = "4111111111111111",
                     expiryMonth = 12,
                     expiryYear = 2028,
                     cardType = "amex",
                 )
             val creditCard = storage.addCreditCard(creditCardFields)
-            val key = delegate.getOrGenerateKey()
 
-            assertEquals(
-                plaintextNumber,
-                delegate.decrypt(key, creditCard.encryptedCardNumber),
-            )
+            assertEquals("4111111111111111", creditCard.cardNumber)
         }
 
     @Test
@@ -136,8 +128,7 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
                     creditCardFields =
                         NewCreditCardFields(
                             billingName = billingName,
-                            plaintextCardNumber = CreditCardNumber.Plaintext(cardNumber),
-                            cardNumberLast4 = cardNumber.last4Digits(),
+                            cardNumber = cardNumber,
                             expiryMonth = expiryMonth,
                             expiryYear = expiryYear,
                             cardType = cardType,
@@ -168,8 +159,7 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
                 storage.addCreditCard(
                     NewCreditCardFields(
                         billingName = billingName,
-                        plaintextCardNumber = CreditCardNumber.Plaintext(cardNumber),
-                        cardNumberLast4 = "1111",
+                        cardNumber = cardNumber,
                         expiryMonth = expiryMonth,
                         expiryYear = expiryYear,
                         cardType = cardType,
@@ -187,8 +177,7 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
                     creditCardFields =
                         UpdatableCreditCardFields(
                             billingName = billingName,
-                            cardNumber = CreditCardNumber.Plaintext("4111111111111111"),
-                            cardNumberLast4 = "4111111111111111".last4Digits(),
+                            cardNumber = "4111111111111111",
                             expiryMonth = expiryMonth,
                             expiryYear = expiryYear,
                             cardType = cardType,

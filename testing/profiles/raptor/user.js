@@ -7,6 +7,25 @@
 // prevents normandy from running updates during the tests
 user_pref("app.normandy.enabled", false);
 
+// Disable the preloaded new-tab page and its background process.
+user_pref("browser.newtab.preload", false);
+
+// Disable Safe Browsing list updates.
+user_pref("browser.safebrowsing.update.enabled", false);
+
+// Disable captive-portal detection requests.
+user_pref("network.captive-portal-service.enabled", false);
+
+// Disable background network-connectivity probes.
+user_pref("network.connectivity-service.enabled", false);
+
+// Disable the profile backup service.
+user_pref("browser.backup.enabled", false);
+
+// Defer periodic session store saves for one hour.
+user_pref("browser.sessionstore.interval", 3600000);
+user_pref("browser.sessionstore.interval.idle", 3600000);
+
 // Avoid the status panel indicating loading state which messes up
 // screenshots.
 user_pref("browser.tabs.hideStatusPanel", true);

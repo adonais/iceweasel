@@ -234,3 +234,62 @@ add_task(async function testSameDomainCancelPrefEnabled() {
 add_task(async function testSameDomainAcceptPrefEnabled() {
   await trigger401AndHandle(true, false, true);
 });
+
+/**
+ * Opens a popup showing an error page, then navigates it to a 401 from its
+ * opener, see bug 1847625.
+ *
+ * @param {string} popupURL - a blocked port URL that shows an error page.
+ * @param {boolean} crossDomain - whether popupURL has a different base domain
+ *        than the 401.
+ */
+async function trigger401FromErrorPage(popupURL, crossDomain) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.disable_open_during_load", false]],
+  });
+  await BrowserTestUtils.withNewTab(TEST_PATH, async browser => {
+    let tabOpened = BrowserTestUtils.waitForEvent(
+      gBrowser.tabContainer,
+      "TabOpen"
+    );
+    await SpecialPowers.spawn(browser, [popupURL], url => {
+      content.wrappedJSObject.popup = content.open(url, "popup");
+    });
+    let tab = (await tabOpened).target;
+    await BrowserTestUtils.waitForErrorPage(tab.linkedBrowser);
+
+    let dialogShown = TestUtils.topicObserved("common-dialog-loaded");
+    await SpecialPowers.spawn(browser, [AUTH_URL], url => {
+      content.wrappedJSObject.popup.location = url;
+    });
+    await dialogShown;
+    let dialog = gBrowser.getTabDialogBox(tab.linkedBrowser)._tabDialogManager
+      ._topDialog;
+    Assert.equal(
+      dialog._overlay.getAttribute("hideContent"),
+      crossDomain ? "true" : null,
+      "Dialog overlay hides the error page only for a cross domain 401"
+    );
+    Assert.equal(
+      gURLBar.value,
+      UrlbarTestUtils.trimURL(crossDomain ? AUTH_URL : popupURL),
+      "Correct location is displayed"
+    );
+    dialog._frame.contentDocument.getElementById("commonDialog").cancelDialog();
+    BrowserTestUtils.removeTab(tab);
+  });
+  await new Promise(resolve => {
+    Services.clearData.deleteData(
+      Ci.nsIClearDataService.CLEAR_AUTH_CACHE,
+      resolve
+    );
+  });
+}
+
+add_task(async function testCrossDomainFromErrorPage() {
+  await trigger401FromErrorPage("https://example.net:25/", true);
+});
+
+add_task(async function testSameDomainFromErrorPage() {
+  await trigger401FromErrorPage("https://example.org:25/", false);
+});

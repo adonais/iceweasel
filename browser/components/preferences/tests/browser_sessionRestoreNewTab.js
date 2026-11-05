@@ -17,7 +17,7 @@ add_task(async function test_checkbox_hidden_when_showSetting_false() {
     set: [[PREF_SHOW_SETTING, false]],
   });
 
-  let tab = await openPrefsTab("general");
+  let tab = await openPrefsTab("home");
   let doc = tab.linkedBrowser.contentDocument;
   let settingControl = doc.querySelector(
     "#setting-control-sessionRestoreNewTab"
@@ -39,7 +39,7 @@ add_task(async function test_checkbox_visible_when_showSetting_true() {
     ],
   });
 
-  let tab = await openPrefsTab("general");
+  let tab = await openPrefsTab("home");
   let doc = tab.linkedBrowser.contentDocument;
   let settingControl = doc.querySelector(
     "#setting-control-sessionRestoreNewTab"
@@ -65,7 +65,7 @@ add_task(async function test_checkbox_disabled_when_startup_page_not_restore() {
     ],
   });
 
-  let tab = await openPrefsTab("general");
+  let tab = await openPrefsTab("home");
   let doc = tab.linkedBrowser.contentDocument;
   let checkbox = doc.querySelector("#sessionRestoreNewTab");
 
@@ -84,7 +84,7 @@ add_task(async function test_checkbox_toggles_pref() {
     ],
   });
 
-  let tab = await openPrefsTab("general");
+  let tab = await openPrefsTab("home");
   let doc = tab.linkedBrowser.contentDocument;
   let checkbox = doc.querySelector("#sessionRestoreNewTab");
   Assert.ok(checkbox, "Checkbox exists");

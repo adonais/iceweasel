@@ -92,6 +92,8 @@ run-if = [
 
 ["test_permmanager_oa_strip.js"]
 
+["test_permmanager_policy.js"]
+
 ["test_permmanager_reentrant_removal.js"]
 
 ["test_permmanager_remote.js"]

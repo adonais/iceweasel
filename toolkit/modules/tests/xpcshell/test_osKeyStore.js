@@ -42,6 +42,23 @@ add_task(async function test_encrypt_decrypt() {
   Assert.equal(testText, plainText);
 });
 
+add_task(async function test_unlocking_is_announced_once() {
+  const unlocked = [];
+  const observer = () => unlocked.push(OSKeyStore.isLoggedIn);
+  Services.obs.addObserver(observer, OSKeyStore.UNLOCKED_TOPIC);
+  try {
+    // As a session starts: nothing has used the store yet.
+    OSKeyStore._isLocked = true;
+    await OSKeyStore.ensureLoggedIn();
+    Assert.deepEqual(unlocked, [true], "unlocking is announced, once unlocked");
+
+    await OSKeyStore.decrypt(cipherText, "testing");
+    Assert.deepEqual(unlocked, [true], "using an unlocked store is not");
+  } finally {
+    Services.obs.removeObserver(observer, OSKeyStore.UNLOCKED_TOPIC);
+  }
+});
+
 add_task(async function test_reauth() {
   let canTest = OSKeyStoreTestUtils.canTestOSKeyStoreLogin();
   if (!canTest) {

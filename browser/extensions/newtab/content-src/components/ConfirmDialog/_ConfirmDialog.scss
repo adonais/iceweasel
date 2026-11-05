@@ -1,15 +1,13 @@
-.nova-enabled ~ .confirmation-dialog {
-  // @nova-cleanup(merge-styles): Merge into .confirmation-dialog
-  border-radius: var(--border-radius-large);
-}
-
 .confirmation-dialog {
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-small);
+  // @backward-compat { version 160 }
+  // The --dialog-* tokens are only defined from Firefox 160, so older versions
+  // fall back to the --popup-* tokens they alias.
+  border: var(--border-width) solid var(--dialog-border-color, var(--popup-border-color));
+  border-radius: var(--dialog-border-radius, var(--popup-border-radius));
   padding: 0;
   width: 400px;
-  box-shadow: var(--popup-box-shadow);
-  background: var(--newtab-background-color-secondary);
+  box-shadow: var(--dialog-box-shadow, var(--popup-box-shadow));
+  background-color: var(--dialog-background-color, var(--popup-background-color));
 
   &::backdrop {
     background: var(--newtab-overlay-color);

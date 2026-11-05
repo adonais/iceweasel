@@ -99,6 +99,8 @@ bool SourceSurfaceWebgl::ForceReadFromPBO() {
   return false;
 }
 
+DrawTargetWebgl* SourceSurfaceWebgl::GetTarget() const { return mDT.get(); }
+
 uint8_t* SourceSurfaceWebgl::GetData() {
   if (!EnsureData()) {
     return nullptr;

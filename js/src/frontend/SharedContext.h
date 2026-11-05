@@ -8,6 +8,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Span.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -309,6 +310,11 @@ inline EvalSharedContext* SharedContext::asEvalContext() {
 
 enum class HasHeritage { No, Yes };
 
+struct InlinedZeroField {
+  TaggedParserAtomIndex name;
+  bool isPrivate;
+};
+
 class SuspendableContext : public SharedContext {
  public:
   SuspendableContext(FrontendContext* fc, Kind kind,
@@ -378,6 +384,9 @@ class FunctionBox : public SuspendableContext {
   // This field is copied to ScriptStencil, and shouldn't be modified after the
   // copy.
   MemberInitializers memberInitializers_ = MemberInitializers::Invalid();
+
+  // See: MemberInitializers::hasInlinedZeroFields
+  mozilla::Span<const InlinedZeroField> inlinedZeroFields_;
 
  public:
   // True if bytecode will be emitted for this function in the current
@@ -676,6 +685,13 @@ class FunctionBox : public SuspendableContext {
       copyUpdatedImmutableFlags();
       copyUpdatedMemberInitializers();
     }
+  }
+
+  mozilla::Span<const InlinedZeroField> inlinedZeroFields() const {
+    return inlinedZeroFields_;
+  }
+  void setInlinedZeroFields(mozilla::Span<const InlinedZeroField> fields) {
+    inlinedZeroFields_ = fields;
   }
 
   ScriptIndex index() const { return funcDataIndex_; }

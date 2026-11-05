@@ -843,6 +843,11 @@ angle::CallCapture CaptureGetTranslatedShaderSourceANGLE(const State &glState,
                                                          GLsizei *length,
                                                          GLchar *source);
 
+// GL_ANGLE_trim_memory
+angle::CallCapture CaptureTrimMemoryANGLE(const State &glState,
+                                          bool isCallValid,
+                                          MemoryTrimLevel trimLevelPacked);
+
 // GL_ANGLE_vulkan_image
 angle::CallCapture CaptureAcquireTexturesANGLE(const State &glState,
                                                bool isCallValid,
@@ -909,11 +914,6 @@ angle::CallCapture CaptureCopySubTextureCHROMIUM(const State &glState,
                                                  GLboolean unpackFlipY,
                                                  GLboolean unpackPremultiplyAlpha,
                                                  GLboolean unpackUnmultiplyAlpha);
-
-// GL_CHROMIUM_framebuffer_mixed_samples
-angle::CallCapture CaptureCoverageModulationCHROMIUM(const State &glState,
-                                                     bool isCallValid,
-                                                     GLenum components);
 
 // GL_CHROMIUM_lose_context
 angle::CallCapture CaptureLoseContextCHROMIUM(const State &glState,
@@ -2506,6 +2506,8 @@ angle::CallCapture CaptureMinSampleShadingOES(const State &glState,
 // GL_OES_shader_multisample_interpolation
 
 // GL_OES_standard_derivatives
+
+// GL_OES_stencil8
 
 // GL_OES_surfaceless_context
 

@@ -249,14 +249,7 @@ class ScriptModule extends RootBiDiModule {
       userContexts = new Set();
 
       for (const userContextId of userContextIds) {
-        const internalId =
-          lazy.UserContextManager.getInternalIdById(userContextId);
-
-        if (internalId === null) {
-          throw new lazy.error.NoSuchUserContextError(
-            `User context with id: ${userContextId} doesn't exist`
-          );
-        }
+        const internalId = this._getUserContextInternalId(userContextId);
 
         userContexts.add(internalId);
       }
@@ -879,7 +872,7 @@ class ScriptModule extends RootBiDiModule {
 
   #buildReturnValue(evaluationResult) {
     evaluationResult = lazy.processExtraData(
-      this.messageHandler.sessionId,
+      this.messageHandler.internalSessionId,
       evaluationResult
     );
 
@@ -1326,6 +1319,10 @@ class ScriptModule extends RootBiDiModule {
         this.#subscribeEvent(value);
       }
     }
+  }
+
+  static get supportedCommandsInRestrictedSession() {
+    return ["callFunction", "disown", "evaluate"];
   }
 
   static get supportedEvents() {

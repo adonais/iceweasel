@@ -183,7 +183,8 @@ enum class IsolationBehavior {
   PrivilegedMozilla,
   // Load this URI explicitly in the parent process.
   Parent,
-  // Load this URI wherever the browsing context is currently loaded. This is
+  // Load this URI wherever the browsing context is currently loaded, so long as
+  // the load was triggered by that remote type or the parent process. This is
   // generally used for error pages.
   Anywhere,
   // May only be returned for subframes. Inherits the remote type of the parent
@@ -593,8 +594,7 @@ already_AddRefed<nsIURI> GetAboutReaderURL(nsIURI* aURI) {
     if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(readerUri), readerSpec)) &&
         // about:reader only loads http(s) and file documents; see
         // AboutReader.sys.mjs.
-        (readerUri->SchemeIs("http") || readerUri->SchemeIs("https") ||
-         readerUri->SchemeIs("file"))) {
+        (net::SchemeIsHttpOrHttps(readerUri) || readerUri->SchemeIs("file"))) {
       return readerUri.forget();
     }
   }
@@ -640,8 +640,20 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     isNullPrincipalPrecursor = true;
   }
 
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+
+  // Get the remote type which is responsible for triggering this navigation.
+  RemoteType triggeringRemoteType;
+  rv = loadInfo->GetTriggeringRemoteType(triggeringRemoteType);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
+            ("failed to get channel triggering remote type"));
+    return Err(rv);
+  }
+
   NavigationIsolationOptions options;
-  options.mReplaceBrowsingContext = aHasCOOPMismatch;
+  // Replace the new tab's context to match the response's isolation.
+  options.mReplaceBrowsingContext = aHasCOOPMismatch || aForNewTab;
   options.mShouldCrossOriginIsolate =
       ShouldCrossOriginIsolate(aChannel, aParentWindow);
 
@@ -654,6 +666,12 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     if (NS_WARN_IF(!resultPrincipal->GetIsNullPrincipal())) {
       MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
               ("invalid remote type override on non-null principal"));
+      return Err(NS_ERROR_DOM_SECURITY_ERR);
+    }
+
+    if (NS_WARN_IF(!triggeringRemoteType.IsNotRemote())) {
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
+              ("invalid remote type override from non-parent process"));
       return Err(NS_ERROR_DOM_SECURITY_ERR);
     }
 
@@ -696,7 +714,6 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   // behaviour for loads which meet the requirements.
   if (StaticPrefs::browser_tabs_remote_systemTriggeredAboutBlankAnywhere() &&
       NS_IsAboutBlank(aChannelCreationURI)) {
-    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
     if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
         resultOrPrecursor->GetIsNullPrincipal()) {
       MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
@@ -753,6 +770,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
       // load there.
       bool isUIResource = false;
       if (aCurrentRemoteType.IsNotRemote() &&
+          triggeringRemoteType.IsNotRemote() &&
           (aChannelCreationURI->SchemeIs("about") ||
            (NS_SUCCEEDED(NS_URIChainHasFlags(
                 aChannelCreationURI, nsIProtocolHandler::URI_IS_UI_RESOURCE,
@@ -771,6 +789,19 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
                                          /* aForChannelCreationURI */ false,
                                          /* aIsWorker */ false);
     }
+  }
+
+  // Redirect `Anywhere` loads into a shared web remote type if not triggered by
+  // `aCurrentRemoteType` or the parent process.
+  if (behavior == IsolationBehavior::Anywhere &&
+      !triggeringRemoteType.IsNotRemote() &&
+      triggeringRemoteType != aCurrentRemoteType) {
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
+            ("Unexpected Anywhere page load triggered by %s onto %s, forcing "
+             "web remote type",
+             triggeringRemoteType.Stringify().get(),
+             aCurrentRemoteType.Stringify().get()));
+    behavior = IsolationBehavior::ForceWebRemoteType;
   }
 
   // If we're currently loaded in the extension process, and are going to switch
@@ -893,9 +924,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   // where we may have multiple documents with the same principal in different
   // processes. Those have been handled above, and will not be reaching here.
   //
-  // If we're doing a replace load or opening a new tab, we won't be staying in
-  // the same BrowsingContextGroup, so ignore this step.
-  if (!options.mReplaceBrowsingContext && !aForNewTab) {
+  // When replacing the BrowsingContext, ignore the old group's processes.
+  if (!options.mReplaceBrowsingContext) {
     // Helper for efficiently determining if a given origin is same-site. This
     // will attempt to do a fast equality check, and will only fall back to
     // computing the site-origin for content principals.

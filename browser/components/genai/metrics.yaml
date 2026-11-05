@@ -1091,3 +1091,71 @@ selection_menu:
       smart_window:
         type: boolean
         description: Whether the menu was shown in Smart Window.
+
+  option_toggled:
+    type: event
+    description: >
+      An action in the text selection actions menu, or the menu itself, was
+      turned on or off.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069167
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069167
+    data_sensitivity:
+      - interaction
+    expires: never
+    notification_emails:
+      - scunnane@mozilla.com
+      - fx-search-telemetry@mozilla.com
+    send_in_pings:
+      - events
+    extra_keys:
+      action:
+        type: string
+        description: Which action was toggled, e.g., ai, search, copy, master.
+      enabled:
+        type: boolean
+        description: Whether the action was turned on or off.
+      source:
+        type: string
+        description: >
+          Where the toggle happened, e.g., menu, settings, uncheck_all,
+          context_menu.
+
+  search_enabled:
+    type: boolean
+    lifetime: application
+    description: >
+      Indicates if the text selection actions menu would show the search
+      action.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069167
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069167
+    data_sensitivity:
+      - interaction
+    expires: never
+    notification_emails:
+      - scunnane@mozilla.com
+      - fx-search-telemetry@mozilla.com
+    send_in_pings:
+      - metrics
+
+  enabled:
+    type: boolean
+    lifetime: application
+    description: >
+      Indicates if the text selection actions menu is turned on in the user's
+      settings. Always false while the Highlight to Search feature gate is off.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069156
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D334183
+    data_sensitivity:
+      - interaction
+    expires: never
+    notification_emails:
+      - scunnane@mozilla.com
+      - fx-search-telemetry@mozilla.com
+    send_in_pings:
+      - metrics

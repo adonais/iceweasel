@@ -13,10 +13,13 @@ import android.content.Intent
  * @param appIntent the [Intent] to launch.
  * @param fallbackUrl the fallback URL if launch failed or denied by user.
  * @param appName the target application name.
+ * @param sourceUrl the URL of the page the launch was requested from, or null when the launch was not requested from a
+ *   page.
  */
 data class AppIntentState(
     val url: String,
     val appIntent: Intent?,
     val fallbackUrl: String?,
     val appName: String?,
+    val sourceUrl: String?,
 )

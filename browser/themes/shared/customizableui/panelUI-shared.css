@@ -1131,7 +1131,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 }
 
 .fxa-menu-sync-status-title {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin: 0;
 }
 
@@ -1242,10 +1241,8 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     .avatar-container::after {
       content: "";
       position: absolute;
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       top: calc(var(--icon-size) - 6px);
       /* Avatar icon size minus its circle width minus half of the little circle icon size */
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       left: calc(var(--icon-size) - 1px - 6px / 2);
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       height: 6px;
@@ -1326,12 +1323,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 
 #PanelUI-fxa-menu-relay-button {
   list-style-image: url(chrome://browser/content/logos/relay-monochrome.svg);
-}
-
-.PanelUI-fxa-menu-share-firefox-button {
-  list-style-image: url(chrome://browser/content/logos/share-firefox.svg);
-  -moz-context-properties: fill;
-  fill: currentColor;
 }
 
 #PanelUI-fxa-menu-vpn-button {
@@ -1474,7 +1465,6 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
   margin: 0;
   text-align: center;
   text-shadow: none;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-width: 15em;
   margin-top: var(--space-medium);
 }
@@ -1525,7 +1515,6 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
 
 #PanelUI-remotetabs[mainview] {
   /* panel anchored to toolbar button might be too skinny */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   min-width: 19em;
 
   .PanelUI-remotetabs-notabsforclient-label {
@@ -2012,7 +2001,6 @@ toolbarbutton[itemtype="showinactivebutton"] {
   }
 
   &:is(:not([cui-areatype="toolbar"]), [overflowedItem="true"]) > toolbarbutton:not(.toolbarbutton-1)[disabled] {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     opacity: var(--button-opacity-disabled);
     /* Override toolbarbutton.css which sets the color to GrayText */
     color: inherit;
@@ -2572,28 +2560,44 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   position: relative;
 }
 
-/* Reset/Restart Private Browsing Panel */
+/* Reset/Restart Private Browsing Panel, and the fire button panel */
 
-#reset-pbm-panel {
+#reset-pbm-panel,
+#fire-button-panel {
   max-width: var(--menu-panel-width-wide);
 }
 
-#reset-pbm-panel-container {
+#reset-pbm-panel-container,
+#fire-button-panel-container {
   padding: var(--space-large) var(--space-large) 0;
   gap: var(--space-small);
 }
 
-#reset-pbm-panel-header > description {
+#reset-pbm-panel-header > description,
+#fire-button-panel-header > description {
   margin-bottom: 0;
 }
 
 #reset-pbm-panel-header > description,
 #reset-pbm-panel-description,
-#reset-pbm-panel-footer {
+#reset-pbm-panel-footer,
+#fire-button-panel-header > description,
+#fire-button-panel-description,
+#fire-button-panel-choose-description,
+#fire-button-panel-footer-row {
   margin-inline: 0;
 }
 
-#reset-pbm-panel-header > description {
+/* The "Choose…" link sits on the same row as the buttons, pushed to the
+   opposite end. moz-button-group right-aligns its own contents. */
+#fire-button-panel-footer-row {
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-small);
+}
+
+#reset-pbm-panel-header > description,
+#fire-button-panel-header > description {
   font-weight: var(--font-weight-heading);
 }
 
@@ -2986,7 +2990,6 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   fill: var(--appmenu-profiles-theme-bg);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   stroke: var(--appmenu-profiles-theme-fg);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border: 4px solid var(--panel-background-color);
   border-radius: var(--border-radius-circle);
 }

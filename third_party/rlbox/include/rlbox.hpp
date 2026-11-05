@@ -65,7 +65,7 @@ public:
   inline auto unverified_safe_because(const char (&reason)[N]) const
   {
     RLBOX_UNUSED(reason);
-    static_assert(!std::is_pointer_v<T>,
+    static_assert(!std::is_pointer_v<std::remove_all_extents_t<T>>,
                   "unverified_safe_because does not support pointers. Use "
                   "unverified_safe_pointer_because.");
     return UNSAFE_unverified();
@@ -90,7 +90,8 @@ public:
 
     auto ret = UNSAFE_unverified();
     if (ret != nullptr) {
-      size_t bytes = sizeof(T_Pointed) * count;
+      size_t bytes = detail::checked_multiply(
+        count, sizeof(T_Pointed), "Overflow in buffer size computation");
       detail::check_sandbox_pointer_range_is_contained<T_Sbx>(ret, bytes);
     }
     return ret;
@@ -380,17 +381,28 @@ public:
     if constexpr (std::is_pointer_v<T>) {
       auto ptr = this->impl().get_raw_value();
 
+      detail::dynamic_check(ptr, "Tried to index a null tainted pointer");
+
       // increment the target by size of the data structure
-      auto target =
-        reinterpret_cast<uintptr_t>(ptr) + raw_rhs * sizeof(*this->impl());
-      auto no_overflow = rlbox_sandbox<T_Sbx>::is_in_same_sandbox(
+      auto target = static_cast<uintptr_t>(reinterpret_cast<uintptr_t>(ptr) +
+                                           raw_rhs * sizeof(*this->impl()));
+      auto no_overflow_start = rlbox_sandbox<T_Sbx>::is_in_same_sandbox(
         ptr, reinterpret_cast<const void*>(target));
       detail::dynamic_check(
-        no_overflow,
+        no_overflow_start,
         "Pointer arithmetic overflowed a pointer beyond sandbox memory");
 
       auto target_wrap = tainted<const T, T_Sbx>::internal_factory(
         reinterpret_cast<const T>(target));
+
+      auto target_end = detail::checked_add(
+        target, sizeof(*target_wrap) - 1, "Pointer end calculation overflow");
+      auto no_overflow_end = rlbox_sandbox<T_Sbx>::is_in_same_sandbox(
+        ptr, reinterpret_cast<const void*>(target_end));
+      detail::dynamic_check(
+        no_overflow_end,
+        "Pointer arithmetic overflowed a pointer beyond sandbox memory");
+
       return *target_wrap;
     } else {
       using T_Rhs_Unsigned = std::make_unsigned_t<decltype(raw_rhs)>;
@@ -630,8 +642,9 @@ public:
       "fundamental or enum types. For other types, call "
       "copy_and_verify on each element --- a[i].copy_and_verify(...)");
 
+    tainted<T, T_Sbx> t_start = this->impl();
     std::unique_ptr<T_CopyAndVerifyRangeEl[]> target =
-      copy_and_verify_range_helper(count);
+      t_start.copy_and_verify_range_helper(count);
     return verifier(std::move(target));
   }
 
@@ -654,7 +667,8 @@ public:
 
     using T_VerifParam = detail::func_first_arg_t<T_Func>;
 
-    auto start = impl().get_raw_value();
+    tainted<T, T_Sbx> t_start = this->impl();
+    auto start = t_start.get_raw_value();
     if_constexpr_named(
       cond1,
       std::is_same_v<T_VerifParam, std::unique_ptr<char[]>> ||
@@ -668,9 +682,10 @@ public:
       // does not have a null and we try to copy all the memory out of the
       // sandbox however, copy_and_verify_range ensures that we never copy
       // memory outsider the range
-      auto str_len = std::strlen(start) + 1;
+      auto str_len = detail::checked_add(
+        std::strlen(start), static_cast<size_t>(1), "String Size overflow");
       std::unique_ptr<T_CopyAndVerifyRangeEl[]> target =
-        copy_and_verify_range_helper(str_len);
+        t_start.copy_and_verify_range_helper(str_len);
 
       // ensure the string has a trailing null
       target[str_len - 1] = '\0';
@@ -688,7 +703,8 @@ public:
       // does not have a null and we try to copy all the memory out of the
       // sandbox however, copy_and_verify_range ensures that we never copy
       // memory outsider the range
-      auto str_len = std::strlen(start) + 1;
+      auto str_len = detail::checked_add(
+        std::strlen(start), static_cast<size_t>(1), "String Size overflow");
 
       const char* checked_start = (const char*)verify_range_helper(str_len);
       if (checked_start == nullptr) {

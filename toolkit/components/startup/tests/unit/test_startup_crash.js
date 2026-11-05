@@ -21,6 +21,7 @@ function run_test() {
   test_trackStartupCrashBegin_safeMode();
   test_trackStartupCrashEnd_safeMode();
   test_maxResumed();
+  test_trackStartupCrashBegin_profilePathEnv();
   resetTestEnv(0);
 
   prefService.clearUserPref(pref_always_use_safe_mode);
@@ -327,4 +328,32 @@ function test_maxResumed() {
   // should remain the same since the last startup was not a crash
   Assert.equal(max_resumed + 2, prefService.getIntPref(pref_recent_crashes));
   Assert.ok(!appStartup.automaticSafeModeNecessary);
+}
+
+function test_trackStartupCrashBegin_profilePathEnv() {
+  // restart with XRE_PROFILE_PATH after 1 crash (1 minute ago), no other recent
+  let replacedLockTime = Date.now() - 60 * 1000;
+  resetTestEnv(replacedLockTime);
+  prefService.setIntPref(
+    pref_last_success,
+    ms_to_s(replacedLockTime) - 60 * 60
+  ); // last success - 1 hour ago
+  Services.env.set("XRE_PROFILE_PATH", PathUtils.tempDir);
+  Assert.throws(
+    () => appStartup.trackStartupCrashBegin(),
+    /NS_ERROR_NOT_AVAILABLE/
+  );
+  // the profile lock can't tell whether the last startup crashed
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+
+  // same with XRE_PROFILE_PATH emptied, as startup leaves it for processes
+  // it launches
+  resetTestEnv(replacedLockTime);
+  prefService.setIntPref(
+    pref_last_success,
+    ms_to_s(replacedLockTime) - 60 * 60
+  ); // last success - 1 hour ago
+  Services.env.set("XRE_PROFILE_PATH", "");
+  Assert.ok(!appStartup.trackStartupCrashBegin());
+  Assert.equal(1, prefService.getIntPref(pref_recent_crashes));
 }

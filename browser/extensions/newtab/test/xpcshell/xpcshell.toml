@@ -19,6 +19,8 @@ support-files = ["topstories.json"]
 
 ["test_AdsFeed.js"]
 
+["test_ExtensionWidgetsFeed.js"]
+
 ["test_ExternalComponentsFeed.js"]
 
 ["test_HighlightsFeed.js"]
@@ -30,6 +32,8 @@ support-files = ["topstories.json"]
 ["test_ListsFeed.js"]
 
 ["test_LocalInferredRanking.js"]
+
+["test_LocationInterestGrid.js"]
 
 ["test_NewTabAttributionFeed.js"]
 
@@ -81,6 +85,8 @@ support-files = ["../schemas/*.schema.json"]
 ["test_TopSitesFeed_frecencyRanking.js"]
 
 ["test_TopSitesFeed_glean.js"]
+
+["test_TravelFeed.js"]
 
 ["test_WallpaperFeed.js"]
 tags = "remote-settings"

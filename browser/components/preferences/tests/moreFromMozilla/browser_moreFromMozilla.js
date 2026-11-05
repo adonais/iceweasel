@@ -3,131 +3,117 @@
 
 "use strict";
 
-let { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
+let mockFxA, unmockFxA;
 
-const TOTAL_PROMO_CARDS_COUNT = 6;
-
-// The Relay promo is only shown if the default FxA instance is detected, and
-// tests override it to a dummy address, so we need to make the dummy address
-// appear like it's the default (using the actual default instance might cause a
-// remote connection, crashing the test harness).
-add_setup(mockDefaultFxAInstance);
-
-add_task(async function testDefaultUIWithoutTemplatePref() {
-  await clearPolicies();
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
-    leaveOpen: true,
-  });
-  let doc = gBrowser.contentDocument;
-  let tab = gBrowser.selectedTab;
-
-  let moreFromMozillaCategory = doc.getElementById(
-    "category-more-from-mozilla"
-  );
-  ok(moreFromMozillaCategory, "The category exists");
-  ok(!moreFromMozillaCategory.hidden, "The category is not hidden");
-
-  moreFromMozillaCategory.activate();
-
-  let productCards = doc.querySelectorAll(".mozilla-product-item.simple");
-  Assert.ok(productCards, "Default UI uses simple template");
-  Assert.equal(
-    productCards.length,
-    TOTAL_PROMO_CARDS_COUNT,
-    "All product cards displayed"
-  );
-
-  const expectedUrl = "https://www.mozilla.org/firefox/browsers/mobile/";
-  let tabOpened = BrowserTestUtils.waitForNewTab(gBrowser, url =>
-    url.startsWith(expectedUrl)
-  );
-  let mobileLink = doc.getElementById("default-fxMobile");
-  mobileLink.click();
-  let openedTab = await tabOpened;
-  Assert.ok(gBrowser.selectedBrowser.documentURI.spec.startsWith(expectedUrl));
-
-  let searchParams = new URL(gBrowser.selectedBrowser.documentURI.spec)
-    .searchParams;
-  Assert.equal(
-    searchParams.get("utm_source"),
-    "about-prefs",
-    "expected utm_source sent"
-  );
-  Assert.equal(
-    searchParams.get("utm_campaign"),
-    "morefrommozilla",
-    "utm_campaign set"
-  );
-  Assert.equal(
-    searchParams.get("utm_medium"),
-    "firefox-desktop",
-    "utm_medium set"
-  );
-  Assert.equal(
-    searchParams.get("utm_content"),
-    "default-global",
-    "default utm_content set"
-  );
-  Assert.ok(
-    !searchParams.has("entrypoint_variation"),
-    "entrypoint_variation should not be set"
-  );
-  Assert.ok(
-    !searchParams.has("entrypoint_experiment"),
-    "entrypoint_experiment should not be set"
-  );
-  BrowserTestUtils.removeTab(openedTab);
-  BrowserTestUtils.removeTab(tab);
+add_setup(async function () {
+  let { mock, unmock } = await mockDefaultFxAInstance();
+  mockFxA = mock;
+  unmockFxA = unmock;
 });
 
-add_task(async function testDefaulEmailClick() {
+add_task(async function test_config_renders_with_expected_cards() {
   await clearPolicies();
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
-    leaveOpen: true,
-  });
-  let doc = gBrowser.contentDocument;
-  let tab = gBrowser.selectedTab;
+  let {
+    grid,
+    mobilePromo,
+    monitorPromoCard,
+    vpnPromoCard,
+    relayPromoCard,
+    mdnCard,
+    soloCard,
+    thunderbirdCard,
+    newProductsCard,
+  } = await getPromoCards();
 
-  let moreFromMozillaCategory = doc.getElementById(
-    "category-more-from-mozilla"
+  ok(grid, "The products-grid container exists");
+
+  ok(mobilePromo, "Firefox Mobile moz-promo is present");
+  ok(
+    mobilePromo.imageSrc.includes("more-from-mozilla-qr-code"),
+    "QR code image src is set on the moz-promo"
   );
-  moreFromMozillaCategory.activate();
 
-  const expectedUrl = "https://www.mozilla.org/firefox/mobile/get-app/?v=mfm";
-  let sendEmailLink = doc.getElementById("default-qr-code-send-email");
-
-  Assert.ok(
-    sendEmailLink.href.startsWith(expectedUrl),
-    `Expected URL ${sendEmailLink.href}`
+  ok(monitorPromoCard, "Mozilla Monitor card is present");
+  is(
+    monitorPromoCard.localName,
+    "moz-card",
+    "Monitor card is a moz-card element"
+  );
+  ok(
+    monitorPromoCard.querySelector("moz-box-link"),
+    "Monitor card contains a moz-box-link"
   );
 
-  let searchParams = new URL(sendEmailLink.href).searchParams;
-  Assert.equal(searchParams.get("v"), "mfm", "expected send email param set");
-  BrowserTestUtils.removeTab(tab);
+  ok(vpnPromoCard, "VPN card is present");
+  ok(relayPromoCard, "Relay card is present");
+  ok(mdnCard, "MDN card is present");
+  ok(soloCard, "Solo card is present");
+  ok(thunderbirdCard, "Thunderbird card is present");
+  ok(newProductsCard, "Mozilla New Products card is present");
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-/**
- * Test that we don't show moreFromMozilla pane when it's disabled.
- */
-add_task(async function testwhenPrefDisabled() {
+add_task(async function test_vpn_hidden_when_disabled() {
+  await clearPolicies();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.vpn_promo.enabled", false]],
+  });
+
+  let { vpnPromoCard, monitorPromoCard } = await getPromoCards();
+  ok(!vpnPromoCard, "The VPN promo card is not visible");
+  ok(monitorPromoCard, "The Monitor card is visible");
+
+  Services.prefs.clearUserPref("browser.vpn_promo.enabled");
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function test_vpn_hidden_in_disallowed_region() {
+  await clearPolicies();
+  setupRegions("SY");
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.vpn_promo.enabled", true]],
+  });
+
+  let { vpnPromoCard, monitorPromoCard } = await getPromoCards();
+  ok(!vpnPromoCard, "VPN promo is hidden in disallowed region");
+  ok(monitorPromoCard, "The Monitor card is visible");
+
+  setupRegions(initialHomeRegion, initialCurrentRegion);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function test_relay_hidden_with_custom_fxa() {
+  await clearPolicies();
+  unmockFxA();
+
+  let { relayPromoCard } = await getPromoCards();
+  ok(!relayPromoCard, "The Relay promo card is not visible");
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  mockFxA();
+});
+
+add_task(async function test_when_pref_disabled() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.preferences.moreFromMozilla", false]],
   });
 
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI("paneSync", {
     leaveOpen: true,
   });
-  let doc = gBrowser.contentDocument;
 
-  let moreFromMozillaCategory = doc.getElementById(
-    "category-more-from-mozilla"
+  let doc = gBrowser.contentDocument;
+  ok(
+    !doc.querySelector(
+      '#categories moz-page-nav-button[view="paneMoreFromMozilla"]'
+    ),
+    "More from Mozilla nav button is not present when pref is disabled"
   );
-  ok(moreFromMozillaCategory, "The category exists");
-  ok(moreFromMozillaCategory.hidden, "The category is hidden");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_aboutpreferences_event_telemetry() {
@@ -136,184 +122,42 @@ add_task(async function test_aboutpreferences_event_telemetry() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.preferences.moreFromMozilla", true]],
   });
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI("paneSync", {
     leaveOpen: true,
   });
 
   let doc = gBrowser.contentDocument;
-  let moreFromMozillaCategory = doc.getElementById(
-    "category-more-from-mozilla"
+  let navButton = doc.querySelector(
+    '#categories moz-page-nav-button[view="paneMoreFromMozilla"]'
   );
+  ok(navButton, "moreFromMozilla nav button is present");
 
-  let viewChangedPromise = BrowserTestUtils.waitForEvent(
-    moreFromMozillaCategory,
-    "change-view"
+  let paneShownPromise = BrowserTestUtils.waitForEvent(
+    doc,
+    "paneshown",
+    false,
+    e => e.detail.category === "paneMoreFromMozilla"
   );
-  moreFromMozillaCategory.activate();
-  await viewChangedPromise;
+  navButton.activate();
+  await paneShownPromise;
 
   let showInitialEvents = Glean.aboutpreferences.showInitial.testGetValue();
   let showClickEvents = Glean.aboutpreferences.showClick.testGetValue();
-  Assert.equal(showInitialEvents.length, 1, "One show initial");
-  Assert.equal(showClickEvents.length, 1, "One show click");
+  Assert.equal(showInitialEvents.length, 1, "One show initial event");
+  Assert.equal(showClickEvents.length, 1, "One show click event");
   Assert.equal(
     showInitialEvents[0].extra.value,
-    "paneGeneral",
-    "Show initial on general"
+    "paneSync",
+    "Show initial on sync"
   );
   Assert.equal(
     showClickEvents[0].extra.value,
     "paneMoreFromMozilla",
     "Show click on More from Mozilla"
   );
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-add_task(async function test_aboutpreferences_simple_template() {
-  await clearPolicies();
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.preferences.moreFromMozilla", true],
-      ["browser.preferences.moreFromMozilla.template", "simple"],
-    ],
-  });
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
-    leaveOpen: true,
-  });
-
-  let doc = gBrowser.contentDocument;
-  let moreFromMozillaCategory = doc.getElementById(
-    "category-more-from-mozilla"
-  );
-
-  moreFromMozillaCategory.activate();
-
-  let productCards = doc.querySelectorAll(".mozilla-product-item");
-  Assert.ok(productCards, "The product cards from simple template found");
-  Assert.equal(
-    productCards.length,
-    TOTAL_PROMO_CARDS_COUNT,
-    "All product cards displayed"
-  );
-
-  let qrCodeButtons = doc.querySelectorAll(".qr-code-box:not([hidden])");
-  Assert.equal(qrCodeButtons.length, 1, "1 qr-code box displayed");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-add_task(async function test_aboutpreferences_clickBtnVPN() {
-  await clearPolicies();
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.preferences.moreFromMozilla", true],
-      ["browser.preferences.moreFromMozilla.template", "simple"],
-    ],
-  });
-  await openPreferencesViaOpenPreferencesAPI("paneMoreFromMozilla", {
-    leaveOpen: true,
-  });
-
-  let doc = gBrowser.contentDocument;
-  let tab = gBrowser.selectedTab;
-
-  let productCards = doc.querySelectorAll(".mozilla-product-item.simple");
-  Assert.ok(productCards, "Simple template loaded");
-
-  const expectedUrl = "https://www.mozilla.org/products/vpn/";
-  let tabOpened = BrowserTestUtils.waitForNewTab(gBrowser, url =>
-    url.startsWith(expectedUrl)
-  );
-
-  let vpnButton = doc.getElementById("simple-mozillaVPN");
-  vpnButton.click();
-
-  let openedTab = await tabOpened;
-  Assert.ok(gBrowser.selectedBrowser.documentURI.spec.startsWith(expectedUrl));
-
-  let searchParams = new URL(gBrowser.selectedBrowser.documentURI.spec)
-    .searchParams;
-  Assert.equal(
-    searchParams.get("utm_source"),
-    "about-prefs",
-    "expected utm_source sent"
-  );
-  Assert.equal(
-    searchParams.get("utm_campaign"),
-    "morefrommozilla",
-    "utm_campaign set"
-  );
-  Assert.equal(
-    searchParams.get("utm_medium"),
-    "firefox-desktop",
-    "utm_medium set"
-  );
-  Assert.equal(
-    searchParams.get("utm_content"),
-    "fxvt-113-a-global",
-    "utm_content set"
-  );
-  Assert.equal(
-    searchParams.get("entrypoint_experiment"),
-    "morefrommozilla-experiment-1846",
-    "entrypoint_experiment set"
-  );
-  Assert.equal(
-    searchParams.get("entrypoint_variation"),
-    "treatment-simple",
-    "entrypoint_variation set"
-  );
-  BrowserTestUtils.removeTab(openedTab);
-  BrowserTestUtils.removeTab(tab);
-});
-
-add_task(async function test_aboutpreferences_clickBtnMobile() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.preferences.moreFromMozilla", true],
-      ["browser.preferences.moreFromMozilla.template", "simple"],
-    ],
-  });
-  await openPreferencesViaOpenPreferencesAPI("paneMoreFromMozilla", {
-    leaveOpen: true,
-  });
-
-  let doc = gBrowser.contentDocument;
-  let tab = gBrowser.selectedTab;
-
-  let productCards = doc.querySelectorAll("vbox.simple");
-  Assert.ok(productCards, "Simple template loaded");
-
-  const expectedUrl = "https://www.mozilla.org/firefox/browsers/mobile/";
-
-  let mobileUrl = new URL(doc.getElementById("simple-fxMobile").href);
-
-  Assert.ok(mobileUrl.href.startsWith(expectedUrl));
-
-  let searchParams = mobileUrl.searchParams;
-  Assert.equal(
-    searchParams.get("utm_source"),
-    "about-prefs",
-    "expected utm_source sent"
-  );
-  Assert.equal(
-    searchParams.get("utm_campaign"),
-    "morefrommozilla",
-    "utm_campaign set"
-  );
-  Assert.equal(
-    searchParams.get("utm_medium"),
-    "firefox-desktop",
-    "utm_medium set"
-  );
-  Assert.equal(
-    searchParams.get("utm_content"),
-    "fxvt-113-a-global",
-    "default-global",
-    "utm_content set"
-  );
-
-  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_aboutpreferences_search() {
@@ -326,114 +170,18 @@ add_task(async function test_aboutpreferences_search() {
     leaveOpen: true,
   });
 
-  await runSearchInput("Relay");
+  await runSearchInput("More from Mozilla");
 
   let doc = gBrowser.contentDocument;
-  let tab = gBrowser.selectedTab;
-
-  let productCards = doc.querySelectorAll(".mozilla-product-item");
-  Assert.equal(
-    productCards.length,
-    TOTAL_PROMO_CARDS_COUNT,
-    "All products in the group are found"
+  let moreFromMozillaPane = doc.querySelector(
+    'setting-pane[data-category="paneMoreFromMozilla"]'
   );
-  let [mobile, monitor, vpn, relay] = productCards;
-  Assert.ok(BrowserTestUtils.isHidden(mobile), "Mobile hidden");
-  Assert.ok(BrowserTestUtils.isHidden(monitor), "Monitor hidden");
-  Assert.ok(BrowserTestUtils.isHidden(vpn), "VPN hidden");
-  Assert.ok(BrowserTestUtils.isVisible(relay), "Relay shown");
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-add_task(async function test_aboutpreferences_clickBtnRelay() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.preferences.moreFromMozilla", true]],
-  });
-  await openPreferencesViaOpenPreferencesAPI("paneMoreFromMozilla", {
-    leaveOpen: true,
-  });
-
-  let doc = gBrowser.contentDocument;
-  let tab = gBrowser.selectedTab;
-
-  let expectedUrl = new URL("https://relay.firefox.com");
-  expectedUrl.searchParams.set("utm_source", "about-prefs");
-  expectedUrl.searchParams.set("utm_campaign", "morefrommozilla");
-  expectedUrl.searchParams.set("utm_medium", "firefox-desktop");
-  expectedUrl.searchParams.set("utm_content", "fxvt-113-a-global");
-  expectedUrl.searchParams.set(
-    "entrypoint_experiment",
-    "morefrommozilla-experiment-1846"
+  ok(moreFromMozillaPane, "moreFromMozilla setting-pane is in the DOM");
+  ok(
+    BrowserTestUtils.isVisible(moreFromMozillaPane),
+    "moreFromMozilla section is visible in search results for 'More from Mozilla'"
   );
-  expectedUrl.searchParams.set("entrypoint_variation", "treatment-simple");
 
-  let tabOpened = BrowserTestUtils.waitForDocLoadAndStopIt(
-    expectedUrl.toString(),
-    gBrowser,
-    channel => {
-      Assert.equal(
-        channel.originalURI.spec,
-        expectedUrl.toString(),
-        "URL matched"
-      );
-      return true;
-    }
-  );
-  doc.getElementById("simple-firefoxRelay").click();
-
-  await tabOpened;
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  BrowserTestUtils.removeTab(tab);
-});
-
-add_task(async function show_solo_more_from_mozilla() {
-  await clearPolicies();
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.preferences.moreFromMozilla", true],
-      ["browser.preferences.moreFromMozilla.template", "simple"],
-    ],
-  });
-  await openPreferencesViaOpenPreferencesAPI("paneMoreFromMozilla", {
-    leaveOpen: true,
-  });
-
-  let doc = gBrowser.contentDocument;
-  let tab = gBrowser.selectedTab;
-
-  const soloCard = doc.getElementById("solo-ai");
-  let soloBtn = doc.getElementById("simple-soloAI");
-
-  Assert.ok(BrowserTestUtils.isVisible(soloCard), "Solo card is shown");
-  Assert.ok(
-    BrowserTestUtils.isVisible(soloBtn),
-    "Solo button rendered on page"
-  );
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-add_task(async function show_mdn_more_from_mozilla() {
-  await clearPolicies();
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.preferences.moreFromMozilla", true],
-      ["browser.preferences.moreFromMozilla.template", "simple"],
-    ],
-  });
-  await openPreferencesViaOpenPreferencesAPI("paneMoreFromMozilla", {
-    leaveOpen: true,
-  });
-
-  let doc = gBrowser.contentDocument;
-  let tab = gBrowser.selectedTab;
-
-  const mdnCard = doc.getElementById("mdn");
-  let mdnBtn = doc.getElementById("simple-mdn");
-
-  Assert.ok(BrowserTestUtils.isVisible(mdnCard), "MDN card is shown");
-  Assert.ok(BrowserTestUtils.isVisible(mdnBtn), "MDN button rendered on page");
-
-  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
 });

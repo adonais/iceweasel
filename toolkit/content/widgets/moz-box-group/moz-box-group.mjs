@@ -21,6 +21,7 @@ export const GROUP_TYPES = {
  * @property {string} type
  *   The type of the group, either "list", "reorderable-list", or undefined.
  *   Note that "reorderable-list" only works with moz-box-item elements for now.
+ * @property {string} ariaLabel - Accessible name for the reorderable listbox.
  * @slot default - Slot for rendering various moz-box-* elements.
  * @slot static - Slot for rendering non-reorderable moz-box-item elements.
  * @slot <index> - Slots used to assign moz-box-* elements to <li> elements when
@@ -42,6 +43,7 @@ export class MozBoxGroup extends MozLitElement {
 
   static properties = {
     type: { type: String },
+    ariaLabel: { type: String, fluent: true, mapped: true },
     listItems: { type: Array, state: true },
     staticItems: { type: Array, state: true },
   };
@@ -115,6 +117,7 @@ export class MozBoxGroup extends MozLitElement {
       return staticHtml`<${listTag}
           tabindex="-1"
           role=${ifDefined(isReorderable ? "listbox" : undefined)}
+          aria-label=${ifDefined(isReorderable ? this.ariaLabel : undefined)}
           class="list scroll-container"
           aria-orientation="vertical"
           @keydown=${this.handleKeydown}

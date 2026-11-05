@@ -93,5 +93,33 @@ export class BackendError extends Error {
     this.backendError = backendError;
     this.name = `${capitalizedBackend}BackendError`;
     this.backendName = backendName;
+    // An API client reports why the service refused a request through the
+    // HTTP status and the body's error field. Keep both on the error itself
+    // so they survive toMsg() and reach the caller.
+    if (typeof backendError?.status === "number") {
+      this.status = backendError.status;
+    }
+    if (backendError?.error !== undefined && backendError?.error !== null) {
+      this.error = backendError.error;
+    }
+  }
+
+  /**
+   * PromiseWorker sends an error that has toMsg() as this object instead of
+   * letting the DOM reduce it to a message. MLEngineChild registers the
+   * matching deserializer under the `exn` name.
+   *
+   * @returns {object}
+   */
+  toMsg() {
+    return {
+      exn: "BackendError",
+      name: this.name,
+      message: this.message,
+      backendName: this.backendName,
+      stack: this.stack,
+      ...(this.status !== undefined && { status: this.status }),
+      ...(this.error !== undefined && { error: this.error }),
+    };
   }
 }

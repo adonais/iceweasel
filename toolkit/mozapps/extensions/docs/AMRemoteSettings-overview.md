@@ -116,14 +116,14 @@ RemoteSettings service side have been changed, and document new controlled setti
 - Add a new test to cover the expected behaviors on the new remotely controlled settings, the following RemoteSettings
   documentation page provides some useful pointers:
 
-  - <https://firefox-source-docs.mozilla.org/services/settings/index.html#unit-tests>
+  - [Unit tests](/services/settings/index.md#unit-tests)
 
 - Refer to the RemoteSettings docs for more details about managing the JSONSchema for the `"main/addons-manager-settings"`
   collection and how to test it interactively in a Firefox instance:
 
   - <https://remote-settings.readthedocs.io/en/latest/getting-started.html>
-  - <https://firefox-source-docs.mozilla.org/services/settings/index.html#create-new-remote-settings>
-  - <https://firefox-source-docs.mozilla.org/services/settings/index.html#remote-settings-dev-tools>
+  - [Create new remote settings](/services/settings/index.md#create-new-remote-settings)
+  - [Remote Settings Dev Tools](/services/settings/index.md#remote-settings-dev-tools)
 
 (json-schema)=
 

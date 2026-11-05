@@ -7,9 +7,9 @@
  */
 
 import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   DEFAULT_FORM_HISTORY_PARAM:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",

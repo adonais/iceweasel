@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/1387b2c480b55ecca
  2 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/modules/video_coding/codecs/vp8/libvpx_vp8_decoder.cc b/modules/video_coding/codecs/vp8/libvpx_vp8_decoder.cc
-index ee52e72680..e5b9d2d39b 100644
+index f9d0cb0aa5..db211bbeb7 100644
 --- a/modules/video_coding/codecs/vp8/libvpx_vp8_decoder.cc
 +++ b/modules/video_coding/codecs/vp8/libvpx_vp8_decoder.cc
-@@ -50,7 +50,7 @@ const char kVp8PostProcArmFieldTrial[] = "WebRTC-VP8-Postproc-Config-Arm";
+@@ -51,7 +51,7 @@ const char kVp8PostProcArmFieldTrial[] = "WebRTC-VP8-Postproc-Config-Arm";
  const char kVp8PostProcFieldTrial[] = "WebRTC-VP8-Postproc-Config";
  
  #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || \

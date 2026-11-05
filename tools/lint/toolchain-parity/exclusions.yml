@@ -1,0 +1,22 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+---
+# Toolchain/fetch families that are known to be missing platform variants.
+#
+# Only add an entry here if the gap is genuinely intentional (and ideally
+# documented as such nearby) or tracked in a follow-up bug -- this is not a
+# general-purpose way to silence the linter. Prefer actually fixing the gap:
+# add the missing variant(s), or a toolchain-alias if another build already
+# covers it (see taskcluster/kinds/toolchain/mozcheck.yml for an example of
+# both), over adding an exclusion here.
+toolchain:
+    - 7zz
+    - gn
+    - libdmg
+    - nasm
+    - node-24
+    - pkgconf
+    - upx
+    - winchecksec
+fetch: []

@@ -183,9 +183,7 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
       // => peer does not support.
       RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking not supported by peer.";
       state_ = State::OFF;
-      // TODO: bugs.webrtc.org/367395350 - We should call CallCompleteCallback
-      // here but this causes a slew of failed tests. Investigate why!
-      // CallCompleteCallback(/*success=*/false);
+      CallCompleteCallback(/*success=*/false);
       return;
     }
     // We sent dtls piggybacked and got something in return => peer does

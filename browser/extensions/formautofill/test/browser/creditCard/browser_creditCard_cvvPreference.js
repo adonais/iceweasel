@@ -17,6 +17,11 @@ async function withPaymentsPane(callback) {
   );
 }
 
+add_setup(async function () {
+  // The security code is supported only while the Rust store serves.
+  await switchCreditCardStore({ rust: true });
+});
+
 add_task(async function test_hidden_when_not_supported() {
   await SpecialPowers.pushPrefEnv({ set: [[CVV_SUPPORTED_PREF, "off"]] });
 
@@ -25,6 +30,23 @@ add_task(async function test_hidden_when_not_supported() {
   });
 
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_hidden_while_json_store_serves() {
+  await switchCreditCardStore({ rust: false });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [CVV_SUPPORTED_PREF, "on"],
+      [CVV_ENABLED_PREF, true],
+    ],
+  });
+
+  await withPaymentsPane(async ({ settingControl }) => {
+    ok(settingControl.hidden, "Security codes checkbox should be hidden");
+  });
+
+  await SpecialPowers.popPrefEnv();
+  await switchCreditCardStore({ rust: true });
 });
 
 add_task(async function test_reflects_pref_when_supported() {

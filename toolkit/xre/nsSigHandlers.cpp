@@ -210,7 +210,7 @@ static bool SummarizeXErrorMessage(const nsACString& aMessage,
 }
 
 static void HandleGLibMessage(GLogLevelFlags aLogLevel,
-                              const nsDependentCString& aMessage) {
+                              const nsCString& aMessage) {
   if (MOZ_UNLIKELY(IsCrashyGtkMessage(aMessage))) {
     nsAutoCString reason;
     if (!SummarizeXErrorMessage(aMessage, reason)) {
@@ -232,6 +232,13 @@ static void HandleGLibMessage(GLogLevelFlags aLogLevel,
       (G_LOG_LEVEL_ERROR | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION)) {
     NS_DebugBreak(NS_DEBUG_ASSERTION, aMessage.get(), "glib assertion",
                   __FILE__, __LINE__);
+    // GLib aborts on G_LOG_LEVEL_ERROR right after the writer returns, and
+    // that abort leaves no crash reason. Crash here so the message is kept.
+    if (aLogLevel & G_LOG_LEVEL_ERROR) {
+      MOZ_CRASH_UNSAFE_PRINTF(
+          "(%s) %s", mozilla::widget::GetDesktopEnvironmentIdentifier().get(),
+          aMessage.get());
+    }
   } else if (aLogLevel & (G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_WARNING)) {
     NS_DebugBreak(NS_DEBUG_WARNING, aMessage.get(), "glib warning", __FILE__,
                   __LINE__);
@@ -251,9 +258,14 @@ GLogWriterOutput glib_log_writer_func(GLogLevelFlags flags,
   static const GLogWriterFunc sLogWriterDefault =
       (GLogWriterFunc)dlsym(RTLD_DEFAULT, "g_log_writer_default");
   for (gsize i = 0; i < n_fields; ++i) {
-    if (!strcmp(fields[i].key, "MESSAGE") && fields[i].length < 0) {
-      HandleGLibMessage(flags,
-                        nsDependentCString((const char*)fields[i].value));
+    if (!strcmp(fields[i].key, "MESSAGE") && fields[i].value) {
+      const char* value = (const char*)fields[i].value;
+      // A negative length means the value is NUL-terminated.
+      if (fields[i].length < 0) {
+        HandleGLibMessage(flags, nsDependentCString(value));
+      } else {
+        HandleGLibMessage(flags, nsCString(value, fields[i].length));
+      }
       break;
     }
   }

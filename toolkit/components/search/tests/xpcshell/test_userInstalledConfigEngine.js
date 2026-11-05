@@ -37,23 +37,6 @@ const CONFIG = [
   },
 ];
 
-const OVERRIDES_CONFIG = [
-  {
-    identifier: "additional",
-    urls: {
-      search: {
-        params: [
-          { name: "new_param", value: "new_value" },
-          { name: "pc", value: "{partnerCode}" },
-        ],
-      },
-    },
-    partnerCode: "new_partner_code",
-    telemetrySuffix: "tsfx",
-    clickUrl: "https://example.org/somewhere",
-  },
-];
-
 async function assertEngines(expectedNumber, message) {
   let engines = await SearchService.getVisibleEngines();
   Assert.equal(engines.length, expectedNumber, message);
@@ -96,29 +79,6 @@ add_task(async function update() {
 
   await restartSearchService();
   await assertEngines(2, "Engine is persisted after restart");
-});
-
-// search-config-overrides-v2 does currently not work with
-// user installed config engines.
-add_task(async function overridesConfigNotApplied() {
-  await SearchTestUtils.updateRemoteSettingsConfig(CONFIG, OVERRIDES_CONFIG);
-  let engine = SearchService.getEngineById("additional");
-  Assert.equal(
-    engine.getSubmission("foo").uri.spec,
-    "https://example.net/?pc=old_partner_code&q=foo",
-    "Uses old_partner_code initially"
-  );
-
-  await restartSearchService();
-  engine = SearchService.getEngineById("additional");
-
-  Assert.equal(
-    engine.getSubmission("foo").uri.spec,
-    "https://example.net/?pc=old_partner_code&q=foo",
-    "Partner code was not overridden"
-  );
-
-  await SearchTestUtils.updateRemoteSettingsConfig(CONFIG, undefined);
 });
 
 add_task(async function switchRegion() {

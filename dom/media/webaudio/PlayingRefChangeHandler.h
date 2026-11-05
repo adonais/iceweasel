@@ -13,22 +13,9 @@ namespace mozilla::dom {
 class PlayingRefChangeHandler final : public Runnable {
  public:
   enum ChangeType { ADDREF, RELEASE };
-  PlayingRefChangeHandler(AudioNodeTrack* aTrack, ChangeType aChange)
-      : Runnable("dom::PlayingRefChangeHandler"),
-        mTrack(aTrack),
-        mChange(aChange) {}
+  PlayingRefChangeHandler(AudioNodeTrack* aTrack, ChangeType aChange);
 
-  NS_IMETHOD Run() override {
-    RefPtr<AudioNode> node = mTrack->Engine()->NodeMainThread();
-    if (node) {
-      if (mChange == ADDREF) {
-        node->MarkActive();
-      } else if (mChange == RELEASE) {
-        node->MarkInactive();
-      }
-    }
-    return NS_OK;
-  }
+  NS_IMETHOD Run() override;
 
  private:
   RefPtr<AudioNodeTrack> mTrack;

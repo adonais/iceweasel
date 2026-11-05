@@ -5642,9 +5642,15 @@ g.addColorStop(1, 'rgba(0,0,255, 1)');
 ctx.fillStyle = g;
 ctx.fillRect(0, 0, 100, 50);
 // Following tests fail on Windows hardware (datacenter and local laptops), see bug 1657707
-if (!IsWindows()) isPixel(ctx, 25,25, 191,191,63,63, 3);
-if (!IsWindows()) isPixel(ctx, 50,25, 127,127,127,127, 3);
-if (!IsWindows()) isPixel(ctx, 75,25, 63,63,191,191, 3);
+if (!IsWindows()) {
+  for (const x of [25, 50, 75]) {
+    // Sample at the pixel center, allowing for premultiplied quantization.
+    const t = (x + 0.5) / 100;
+    const yellow = Math.round(255 * (1 - t));
+    const blue = Math.round(255 * t);
+    isPixel(ctx, x,25, yellow,yellow,blue,blue, 3);
+  }
+}
 
 
 }

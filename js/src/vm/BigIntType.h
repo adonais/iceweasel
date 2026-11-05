@@ -502,6 +502,13 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   // `high < divisor` so that the result fits in a Digit.
   static Digit digitDiv(Digit high, Digit low, Digit divisor, Digit* remainder);
 
+  // A divide-two-by-one operation that is the same as digitDiv, but faster if
+  // hardware division is unavailable.
+  static inline Digit normalizedDigitInverse(Digit divisor);
+  static inline Digit digitDivByMultiplication(Digit high, Digit low,
+                                               Digit divisor, Digit inverse,
+                                               Digit* remainder);
+
   // Return `(|x| + |y|) * (resultNegative ? -1 : +1)`.
   static BigInt* absoluteAdd(JSContext* cx, Handle<BigInt*> x,
                              Handle<BigInt*> y, bool resultNegative);

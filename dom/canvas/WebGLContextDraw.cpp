@@ -3,12 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <algorithm>
+#include <memory>
 
 #include "GLContext.h"
 #include "MozFramebuffer.h"
 #include "WebGLBuffer.h"
 #include "WebGLContext.h"
-#include "WebGLContextUtils.h"
 #include "WebGLFormats.h"
 #include "WebGLFramebuffer.h"
 #include "WebGLProgram.h"
@@ -1057,7 +1057,7 @@ void WebGLContext::DrawElementsInstanced(const GLenum mode,
           [[unlikely]] {
         // ANGLE does range validation even when it doesn't need to.
         // With MOZ_GL_ABORT_ON_ERROR, we need to catch it or hit assertions.
-        errorScope.reset(new gl::GLContext::LocalErrorScope(*gl));
+        errorScope = std::make_unique<gl::GLContext::LocalErrorScope>(*gl);
       }
 
       if (indexCount && instanceCount) {

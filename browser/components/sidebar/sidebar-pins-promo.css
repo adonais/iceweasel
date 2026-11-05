@@ -10,6 +10,7 @@
   --promo-light-icon-border: var(--color-violet-50);
   --promo-dark-icon-border: var(--color-violet-0);
   --icon-height: 52px;
+  position: relative;
 }
 
 .promo-card {

@@ -4,8 +4,13 @@
 
 
 import mozunit
+import pytest
 
-from gecko_taskgraph.util.bugbug import BUGBUG_BASE_URL, push_schedules
+from gecko_taskgraph.util.bugbug import (
+    BUGBUG_BASE_URL,
+    push_schedules,
+    start_push_schedules,
+)
 
 
 def test_group_translation(responses):
@@ -52,6 +57,29 @@ def test_group_translation(responses):
     responses.reset()
     push_schedules(branch, rev)
     assert push_schedules.cache_info().currsize == 1
+
+
+def test_start_push_schedules_success(responses):
+    branch = "autoland"
+    rev = "abcdef"
+    url = BUGBUG_BASE_URL + f"/push/{branch}/{rev}/schedules"
+
+    responses.add(responses.GET, url, json={"groups": {"dom/indexedDB": 1}})
+
+    future = start_push_schedules(branch, rev)
+    assert future.result(timeout=10) == {"groups": {"dom/indexedDB": 1}}
+
+
+def test_start_push_schedules_failure(responses):
+    branch = "autoland"
+    rev = "abcdef"
+    url = BUGBUG_BASE_URL + f"/push/{branch}/{rev}/schedules"
+
+    responses.add(responses.GET, url, status=404)
+
+    future = start_push_schedules(branch, rev)
+    with pytest.raises(Exception):
+        future.result(timeout=10)
 
 
 if __name__ == "__main__":

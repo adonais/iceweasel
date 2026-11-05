@@ -258,12 +258,15 @@ abstract class EngineSession(private val delegate: Observable<Observer> = Observ
          * @param appIntent The Android Intent that was requested. web content (as opposed to via the browser chrome).
          * @param fallbackUrl the fallback URL if launch failed or denied by user.
          * @param appName the target application name.
+         * @param sourceUrl The URL of the page the launch was requested from, or null when the launch was not requested
+         *   from a page.
          */
         fun onLaunchIntentRequest(
             url: String,
             appIntent: Intent?,
             fallbackUrl: String?,
             appName: String?,
+            sourceUrl: String?,
         ) = Unit
 
         /**

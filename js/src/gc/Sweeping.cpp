@@ -2815,8 +2815,13 @@ void GCRuntime::endSweepPhase(bool destroyingRuntime) {
     AutoLockSweepingLock lock(rt);
     callFinalizeCallbacks(rt->gcContext(), JSFINALIZE_COLLECTION_END);
 
-    if (allCCVisibleZonesWereCollected()) {
-      grayBitsValid = true;
+    if (grayBitsInvalid) {
+      if (grayBitsInvalid & GrayBitsInvalidatedInCurrentGC) {
+        grayBitsInvalid &= ~GrayBitsInvalidatedInCurrentGC;
+        MOZ_ASSERT(grayBitsInvalid == GrayBitsInvalid);
+      } else if (allCCVisibleZonesWereCollected()) {
+        grayBitsInvalid = 0;
+      }
     }
   }
 

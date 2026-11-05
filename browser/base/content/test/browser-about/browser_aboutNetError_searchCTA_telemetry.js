@@ -11,6 +11,9 @@
 const { SearchService } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/search/SearchService.sys.mjs"
 );
+const { SearchUtils } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/search/SearchUtils.sys.mjs"
+);
 const { SearchUITestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SearchUITestUtils.sys.mjs"
 );
@@ -34,12 +37,24 @@ function stubEngineSupported(supported) {
 
 add_setup(async function () {
   pinSearchCTADecisionDeadline();
+
+  let partnerDetails = {};
+  if (SearchUtils.configV3FeatureGate) {
+    partnerDetails = {
+      partner: {
+        default: { code: "foo" },
+        errorpage: { code: "", telemetrySuffix: "com-nocodes" },
+      },
+    };
+  } else {
+    partnerDetails = { partnerCode: "foo" };
+  }
   await SearchTestUtils.updateRemoteSettingsConfig([
     {
       // Temporary conflict with a normal engine to check that the partner code is removed for now.
       identifier: "google",
       base: {
-        partnerCode: "foo",
+        ...partnerDetails,
         classification: "general",
         urls: {
           search: {

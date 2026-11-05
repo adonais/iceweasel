@@ -5,6 +5,8 @@
 #ifndef txOwningArray_h_
 #define txOwningArray_h_
 
+#include "nsTArray.h"
+
 // Class acting like a nsTArray except that it deletes its objects
 // on destruction. It does not however delete its objects on operations
 // like RemoveElementsAt or on |array[i] = bar|.

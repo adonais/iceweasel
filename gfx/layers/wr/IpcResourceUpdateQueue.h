@@ -157,6 +157,10 @@ class IpcResourceUpdateQueue {
 
   void DeleteSnapshotImage(wr::SnapshotImageKey aKey);
 
+  // Moves a snapshot image created by another bridge of this process to aKey.
+  void AdoptSnapshotImage(wr::SnapshotImageKey aFrom,
+                          wr::SnapshotImageKey aKey);
+
   bool AddRawFont(wr::FontKey aKey, mozilla::Range<uint8_t> aBytes,
                   uint32_t aIndex);
 

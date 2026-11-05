@@ -147,7 +147,7 @@ android-fullstack:
         # GeckoView tests (from android-geckoview preset)
         - "^source-test-mozlint eslint$ | rejected-words$ | file-perm$ | file-whitespace$"
         # Miscellaneous Tests
-        - "^test-android !shippable '64 'em-14 'gtest | 'cpp | junit-fis"
+        - "^test-android !shippable '64 'em-14 !zygote 'gtest | 'cpp | 'geckoview-junit"
         # Mochitests
         - "^test-android !shippable !cf !gli !iso      'em-14 'media | 'plain"
         - "^test-android !shippable !cf !gli !iso !swr 'hw 'media 'debug"
@@ -173,7 +173,7 @@ android-geckoview:
         # Lint
         - "^source-test-mozlint android-lints$ | eslint$ | rejected-words$ | file-perm$ | file-whitespace$"
         # Miscellaneous Tests
-        - "^test-android !shippable '64 'em-14 'gtest | 'cpp | junit-fis"
+        - "^test-android !shippable '64 'em-14 !zygote 'gtest | 'cpp | 'geckoview-junit"
         # Mochitests
         - "^test-android !shippable !cf !gli !iso      'em-14 'media | 'plain"
         - "^test-android !shippable !cf !gli !iso !swr 'hw 'media 'debug"
@@ -406,6 +406,21 @@ wpt-linux-opt:
     description: Like wpt-all-platforms, but runs only linux opt tests.
     query: *wpt-all-platforms-query
     intersect_query: ["linux64 'opt"]
+
+media-emesigned-artifact:
+    selector: fuzzy
+    description: >-
+        Run the EME WPT jobs which require VMP signed builds on Windows and
+        macOS. Try builds are only dep signed, so the latest signed builds
+        from mozilla-central are reused, while the test packages come from
+        artifact builds of the try push.
+    query:
+        - "'emesigned !-cf"
+    full: true
+    artifact: true
+    use_indexed_tasks:
+        - "build-signing-win64-shippable/opt=gecko.v2.mozilla-central.signed.shippable.latest.firefox.win64-opt"
+        - "repackage-macosx64-shippable/opt=gecko.v2.mozilla-central.shippable.latest.firefox.macosx64-shippable-repackage"
 
 media-full:
     selector: fuzzy

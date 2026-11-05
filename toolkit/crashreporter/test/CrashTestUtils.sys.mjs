@@ -59,11 +59,6 @@ CrashTestUtils.crash = lib.declare(
   ctypes.void_t,
   ctypes.int16_t
 );
-CrashTestUtils.saveAppMemory = lib.declare(
-  "SaveAppMemory",
-  ctypes.default_abi,
-  ctypes.uint64_t
-);
 CrashTestUtils.enablePHC = lib.declare(
   "EnablePHC",
   ctypes.default_abi,
@@ -88,13 +83,6 @@ CrashTestUtils.dumpHasStream = lib.declare(
 
 CrashTestUtils.dumpHasInstructionPointerMemory = lib.declare(
   "DumpHasInstructionPointerMemory",
-  ctypes.default_abi,
-  ctypes.bool,
-  ctypes.char.ptr
-);
-
-CrashTestUtils.dumpCheckMemory = lib.declare(
-  "DumpCheckMemory",
   ctypes.default_abi,
   ctypes.bool,
   ctypes.char.ptr

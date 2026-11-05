@@ -14,13 +14,12 @@ support-files = [
   "autoconfig-remote.jsc",
 ]
 run-if = [
-  "!msix", # AutoConfig is not supported in MSIX builds (bug 1807926)
+  # AutoConfig is a desktop feature, and is not supported in MSIX builds
+  # (bug 1807926). One condition, as run-if entries are OR'd (bug 1989470).
+  "os != 'android' && !msix",
 ]
 
 ["test_autoconfig.js"]
-skip-if = [
-  "os == 'android' && os_version == '14' && arch == 'x86_64' && debug && !fission", # Bug 1982954
-]
 
 ["test_autoconfig_custom_path.js"]
 run-if = [
@@ -34,23 +33,12 @@ run-if = [
 
 ["test_autoconfig_no_sandbox.js"]
 run-sequentially = ["true"] # fails more than 50% of the time in parallel
-skip-if = [
-  "os == 'android' && os_version == '14' && arch == 'x86_64' && debug && !fission", # Bug 1982954
-]
 
 ["test_autoconfig_nonascii.js"]
 run-sequentially = ["true"] # fails 70% of the time in parallel
-skip-if = [
-  "os == 'android' && os_version == '14' && arch == 'x86_64' && debug && !fission", # Bug 1982954
-]
 
 ["test_autoconfig_profile_prefs.js"]
 run-sequentially = ["true"] # shares GreD/autoconfig.cfg with the other tests
-skip-if = [
-  # resetPrefs() does not restore the defaults that GeckoView ships in the APK,
-  # which trips the debug-only `once` mirror check in InitOncePrefs.
-  "os == 'android'",
-]
 
 ["test_autoconfig_sysconfd.js"]
 run-if = [

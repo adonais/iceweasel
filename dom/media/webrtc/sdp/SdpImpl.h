@@ -38,7 +38,7 @@ class SdpImpl : public Sdp {
   const SdpMediaSection& GetMediaSection(size_t level) const override final;
   SdpMediaSection& GetMediaSection(size_t level) override final;
 
-  SdpMediaSection& AddMediaSection(const SdpMediaSection::MediaType media,
+  SdpMediaSection& AddMediaSection(const SdpMediaSection::MediaTypeInfo media,
                                    const SdpDirectionAttribute::Direction dir,
                                    const uint16_t port,
                                    const SdpMediaSection::Protocol proto,

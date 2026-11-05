@@ -10,12 +10,14 @@
 
 #include "mozilla/Casting.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RangedPtr.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
 
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <iterator>
 #include <limits>
@@ -65,6 +67,7 @@ using namespace js;
 
 using mozilla::Abs;
 using mozilla::AsciiAlphanumericToNumber;
+using mozilla::FloorLog2;
 using mozilla::IsAsciiAlphanumeric;
 using mozilla::IsAsciiDigit;
 using mozilla::MaxNumberValue;
@@ -881,6 +884,72 @@ static size_t Int32ToCString(Int32ToCStringBuf* cbuf, T i) {
   return Int32ToCString<T, Base>(cbuf->sbuf, i);
 }
 
+// https://commaok.xyz/post/lookup_tables/
+// https://lemire.me/blog/2025/01/07/counting-the-digits-of-64-bit-integers/
+//
+// The above blog posts give the lookup table directly, but we can compute it at
+// compile time. For x with k = FloorLog2(x), (x + CountDigitsTable[k]) >> 32 is
+// the number of decimal digits in x. The high word holds the digit count of 2^k
+// and the low word carries into it exactly when x reaches the next power of 10.
+static constexpr auto CountDigitsTable = [] {
+  std::array<uint64_t, 32> table{};
+  uint64_t pow10 = 10;
+  uint64_t digits = 1;
+  for (size_t k = 0; k < table.size(); k++) {
+    while (pow10 <= (uint64_t{1} << k)) {
+      pow10 *= 10;
+      digits++;
+    }
+    table[k] =
+        pow10 <= UINT32_MAX ? ((digits + 1) << 32) - pow10 : digits << 32;
+  }
+  return table;
+}();
+static constexpr size_t CountDigits(uint32_t x) {
+  return (x + CountDigitsTable[FloorLog2(x)]) >> 32;
+}
+static_assert(CountDigits(0) == 1);
+static_assert(CountDigits(1) == 1);
+static_assert(CountDigits(9) == 1);
+static_assert(CountDigits(10) == 2);
+static_assert(CountDigits(99) == 2);
+static_assert(CountDigits(100) == 3);
+static_assert(CountDigits(999) == 3);
+static_assert(CountDigits(1000) == 4);
+static_assert(CountDigits(9999) == 4);
+static_assert(CountDigits(10000) == 5);
+static_assert(CountDigits(99999) == 5);
+static_assert(CountDigits(100000) == 6);
+static_assert(CountDigits(999999) == 6);
+static_assert(CountDigits(1000000) == 7);
+static_assert(CountDigits(9999999) == 7);
+static_assert(CountDigits(10000000) == 8);
+static_assert(CountDigits(99999999) == 8);
+static_assert(CountDigits(100000000) == 9);
+static_assert(CountDigits(999999999) == 9);
+static_assert(CountDigits(1000000000) == 10);
+static_assert(CountDigits(INT32_MAX) == 10);
+static_assert(CountDigits(UINT32_MAX) == 10);
+
+static bool AppendInt32ToStringBuilder(StringBuilder& sb, int32_t i) {
+  MOZ_ASSERT(sb.isUnderlyingBufferLatin1());
+
+  const size_t len = CountDigits(Abs(i)) + (i < 0);
+  if (!sb.growByUninitialized(len)) {
+    return false;
+  }
+
+  char* end = reinterpret_cast<char*>(sb.end<Latin1Char>());
+  char* appendPtr = end - len;
+
+  mozilla::DebugOnly<std::to_chars_result> result =
+      std::to_chars(appendPtr, end, i);
+  MOZ_ASSERT(result.value.ec == std::errc());
+  MOZ_ASSERT(result.value.ptr == end);
+
+  return true;
+}
+
 template <AllowGC allowGC>
 static JSString* NumberToStringWithBase(JSContext* cx, double d, int32_t base);
 
@@ -1557,6 +1626,46 @@ static size_t FracNumberToCString(ToCStringBuf* cbuf, double d) {
   return len;
 }
 
+static bool AppendFracNumberToStringBuilder(StringBuilder& sb, double d) {
+  MOZ_ASSERT(sb.isUnderlyingBufferLatin1());
+#ifdef DEBUG
+  {
+    int32_t dummy;
+    MOZ_ASSERT(!NumberEqualsInt32(d, &dummy));
+  }
+#endif
+
+  static constexpr size_t maxSize = JS::MaximumNumberToStringLength;
+  if (sb.spareCapacity() < maxSize) {
+    // Fall back to the slow path if this path would reallocate
+    ToCStringBuf buf;
+    size_t len = FracNumberToCString(&buf, d);
+    return sb.append(buf.sbuf, len);
+  }
+  if (!sb.growByUninitialized(maxSize)) {
+    return false;
+  }
+
+  char* end = reinterpret_cast<char*>(sb.end<Latin1Char>());
+  char* appendPtr = end - maxSize;
+
+  const double_conversion::DoubleToStringConverter& converter =
+      double_conversion::DoubleToStringConverter::EcmaScriptConverter();
+  double_conversion::StringBuilder builder(appendPtr, maxSize);
+  MOZ_ALWAYS_TRUE(converter.ToShortest(d, &builder));
+
+  size_t len = builder.position();
+
+  // Unnecessarily adds a zero termination byte, which can't be avoided because
+  // builder's destructor will add it if we don't add it here. This byte is
+  // accounted for in JS::MaximumNumberToStringLength
+  mozilla::DebugOnly<char*> result = builder.Finalize();
+  MOZ_ASSERT(appendPtr == result);
+
+  sb.shrinkBy(maxSize - len);
+  return true;
+}
+
 void JS::NumberToString(double d, char (&out)[MaximumNumberToStringLength]) {
   int32_t i;
   if (NumberEqualsInt32(d, &i)) {
@@ -1587,6 +1696,13 @@ char* js::NumberToCString(ToCStringBuf* cbuf, double d, size_t* length) {
     *length = len;
   }
   return cbuf->sbuf;
+}
+
+static bool AppendNumberToStringBuilder(StringBuilder& sb, double d) {
+  MOZ_ASSERT(sb.isUnderlyingBufferLatin1());
+  int32_t i;
+  return NumberEqualsInt32(d, &i) ? AppendInt32ToStringBuilder(sb, i)
+                                  : AppendFracNumberToStringBuilder(sb, d);
 }
 
 char* js::Int32ToCString(Int32ToCStringBuf* cbuf, int32_t value,
@@ -1838,7 +1954,15 @@ template JSLinearString* js::Int32ToStringWithBase<NoGC>(JSContext* cx,
                                                          bool lowerCase);
 
 bool js::NumberValueToStringBuilder(const Value& v, StringBuilder& sb) {
-  /* Convert to C-string. */
+  // If we can, write directly into the string builder to save a copy.
+  if (sb.isUnderlyingBufferLatin1()) {
+    if (v.isInt32()) {
+      return AppendInt32ToStringBuilder(sb, v.toInt32());
+    }
+    return AppendNumberToStringBuilder(sb, v.toDouble());
+  }
+
+  // Write into a stack C-string buffer and inflate.
   ToCStringBuf cbuf;
   const char* cstr;
   size_t cstrlen;

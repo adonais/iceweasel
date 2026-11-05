@@ -8,6 +8,7 @@
 #include "mozilla/MacroArgs.h"  // MOZ_CONCAT
 
 #include "builtin/Eval.h"
+#include "builtin/MapObject.h"
 #include "builtin/ModuleObject.h"  // js::GetOrCreateModuleMetaObject
 #include "builtin/Object.h"        // js::ObjectCreateWithTemplate
 #include "builtin/Promise.h"       // js::AsyncFunctionAwait

@@ -856,6 +856,7 @@ if (rtc_include_tests) {
       "../../../api/audio:aec3_config",
       "../../../api/environment",
       "../../../rtc_base:random",
+      "../../../system_wrappers:metrics",
       "../../../test:create_test_environment",
       "../../../test:test_support",
     ]

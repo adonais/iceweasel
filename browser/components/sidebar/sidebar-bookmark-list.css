@@ -19,7 +19,6 @@
   position: absolute;
   inset-inline: 0;
   height: 1px;
-  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--color-accent-primary);
   border-radius: var(--border-radius-xsmall);
   pointer-events: none;

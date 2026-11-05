@@ -407,6 +407,10 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
                   audioStats->retransmitted_packets_sent);
               local.mRetransmittedBytesSent.Construct(
                   audioStats->retransmitted_bytes_sent);
+              if (audioStats->target_bitrate_bps > 0) {
+                local.mTargetBitrate.Construct(
+                    static_cast<double>(audioStats->target_bitrate_bps));
+              }
             } else {
               local.mPacketsSent.Construct(0);
               local.mBytesSent.Construct(0);
@@ -415,13 +419,6 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
               local.mRetransmittedPacketsSent.Construct(0);
               local.mRetransmittedBytesSent.Construct(0);
             }
-            /*
-             * Potential new stats that are now available upstream.
-             * Note: when we last tried exposing this we were getting
-             * targetBitrate for audio was ending up as 0. We did not
-             * investigate why.
-            local.mTargetBitrate.Construct(audioStats->target_bitrate_bps);
-             */
             if (!report->mOutboundRtpStreamStats.AppendElement(std::move(local),
                                                                fallible)) {
               mozalloc_handle_oom(0);
@@ -525,8 +522,6 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
                   streamStats->rtp_stats.retransmitted.packets);
               local.mRetransmittedBytesSent.Construct(
                   streamStats->rtp_stats.retransmitted.payload_bytes);
-              local.mTotalEncodedBytesTarget.Construct(
-                  videoStats->total_encoded_bytes_target);
               local.mFrameWidth.Construct(streamStats->width);
               local.mFrameHeight.Construct(streamStats->height);
               local.mFramesPerSecond.Construct(streamStats->encode_frame_rate);
@@ -534,6 +529,10 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
               local.mHugeFramesSent.Construct(streamStats->huge_frames_sent);
               local.mTotalEncodeTime.Construct(
                   double(streamStats->total_encode_time_ms) / 1000.);
+              if (streamStats->target_bitrate) {
+                local.mTargetBitrate.Construct(
+                    streamStats->target_bitrate->bps<double>());
+              }
             } else {
               local.mPacketsSent.Construct(0);
               local.mBytesSent.Construct(0);
@@ -545,17 +544,12 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
               local.mHeaderBytesSent.Construct(0);
               local.mRetransmittedPacketsSent.Construct(0);
               local.mRetransmittedBytesSent.Construct(0);
-              local.mTotalEncodedBytesTarget.Construct(0);
               local.mFramesSent.Construct(0);
               local.mHugeFramesSent.Construct(0);
               local.mTotalEncodeTime.Construct(0);
             }
             aConduit->GetAssociatedLocalRtxSSRC(ssrc).apply(
                 [&](const auto rtxSsrc) { local.mRtxSsrc.Construct(rtxSsrc); });
-            /*
-             * Potential new stats that are now available upstream.
-            local.mTargetBitrate.Construct(videoStats->target_media_bitrate_bps);
-             */
             if (!report->mOutboundRtpStreamStats.AppendElement(std::move(local),
                                                                fallible)) {
               mozalloc_handle_oom(0);

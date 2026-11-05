@@ -8,6 +8,7 @@
 
 #include "IPv4Parser.h"
 #include "ipc/IPCMessageUtils.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ScopeExit.h"
@@ -568,12 +569,12 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
   //
   // [scheme://][username[:password]@]host[:port]/path[?query_string][#ref]
 
-  uint32_t approxLen = 0;
+  CheckedInt<uint32_t> approxLen = 0;
 
   // the scheme is already ASCII
   if (mScheme.mLen > 0) {
-    approxLen +=
-        mScheme.mLen + 3;  // includes room for "://", which we insert always
+    approxLen += int32_t(mScheme.mLen) +
+                 3;  // includes room for "://", which we insert always
   }
 
   // encode URL segments; convert UTF-8 to origin charset and possibly escape.
@@ -680,7 +681,8 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
 
   // The encoded string could be longer than the original input, so we need
   // to check the final URI isn't longer than the max length.
-  if (approxLen + 1 > StaticPrefs::network_standard_url_max_length()) {
+  if (!(approxLen + 1).isValid() ||
+      approxLen.value() + 1 > StaticPrefs::network_standard_url_max_length()) {
     return NS_ERROR_MALFORMED_URI;
   }
 
@@ -688,7 +690,7 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
   // generate the normalized URL string
   //
   // approxLen should be correct or 1 high
-  if (!mSpec.SetLength(approxLen + 1,
+  if (!mSpec.SetLength(approxLen.value() + 1,
                        fallible)) {  // buf needs a trailing '\0' below
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -874,11 +876,11 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
   mSpec.SetLength(mPath.mPos + mPath.mLen);
   ResetSpecHash();
 
-  if (MOZ_UNLIKELY(mSpec.Length() > approxLen)) {
+  if (MOZ_UNLIKELY(mSpec.Length() > approxLen.value())) {
     nsPrintfCString msg(
         "approxLen:%X, mSpecLen:%zX, scheme (%X,%X), host (%X,%X), path "
         "(%X,%X)",
-        approxLen, mSpec.Length(), (uint32_t)mScheme.mPos,
+        approxLen.value(), mSpec.Length(), (uint32_t)mScheme.mPos,
         (int32_t)mScheme.mLen, (uint32_t)mHost.mPos, (int32_t)mHost.mLen,
         (uint32_t)mPath.mPos, (int32_t)mPath.mLen);
     CrashReporter::RecordAnnotationNSCString(
@@ -974,6 +976,11 @@ int32_t nsStandardURL::ReplaceSegment(uint32_t pos, uint32_t len,
     mSpec.Replace(pos, len, val);
   }
   return val.Length() - len;
+}
+
+bool nsStandardURL::ExceedsMaxLength(uint32_t aOldLen, uint32_t aNewLen) const {
+  return mSpec.Length() - aOldLen + aNewLen >
+         StaticPrefs::network_standard_url_max_length();
 }
 
 nsresult nsStandardURL::ParseURL(const char* spec, int32_t specLen) {
@@ -1656,6 +1663,9 @@ nsresult nsStandardURL::SetUserPass(const nsACString& input) {
   if (mUsername.mLen < 0 && mPassword.mLen < 0) {
     // no existing user:pass
     if (!buf.IsEmpty()) {
+      if (ExceedsMaxLength(0, buf.Length())) {
+        return NS_ERROR_MALFORMED_URI;
+      }
       mSpec.Insert(buf, mHost.mPos);
       mUsername.mPos = mHost.mPos;
       shift = buf.Length();
@@ -1672,6 +1682,9 @@ nsresult nsStandardURL::SetUserPass(const nsACString& input) {
     if (buf.IsEmpty()) {
       // remove `@` character too
       userpassLen++;
+    }
+    if (ExceedsMaxLength(userpassLen, buf.Length())) {
+      return NS_ERROR_MALFORMED_URI;
     }
     mSpec.Replace(mAuthority.mPos, userpassLen, buf);
     shift = buf.Length() - userpassLen;
@@ -1743,6 +1756,9 @@ nsresult nsStandardURL::SetUsername(const nsACString& input) {
 
   if (mUsername.mLen < 0 && mPassword.mLen < 0) {
     MOZ_ASSERT(!escUsername.IsEmpty(), "Should not be empty at this point");
+    if (ExceedsMaxLength(0, escUsername.Length() + 1)) {
+      return NS_ERROR_MALFORMED_URI;
+    }
     mUsername.mPos = mAuthority.mPos;
     mSpec.Insert(escUsername + "@"_ns, mUsername.mPos);
     shift = escUsername.Length() + 1;
@@ -1753,6 +1769,9 @@ nsresult nsStandardURL::SetUsername(const nsACString& input) {
 
     if (mPassword.mLen < 0 && escUsername.IsEmpty()) {
       len++;  // remove the @ character too
+    }
+    if (ExceedsMaxLength(len, escUsername.Length())) {
+      return NS_ERROR_MALFORMED_URI;
     }
     shift = ReplaceSegment(pos, len, escUsername);
     mUsername.mLen = escUsername.Length() > 0 ? escUsername.Length() : -1;
@@ -1836,15 +1855,24 @@ nsresult nsStandardURL::SetPassword(const nsACString& input) {
 
   if (mPassword.mLen < 0) {
     if (mUsername.mLen > 0) {
+      if (ExceedsMaxLength(0, escPassword.Length() + 1)) {
+        return NS_ERROR_MALFORMED_URI;
+      }
       mPassword.mPos = mUsername.mPos + mUsername.mLen + 1;
       mSpec.Insert(":"_ns + escPassword, mPassword.mPos - 1);
       shift = escPassword.Length() + 1;
     } else {
+      if (ExceedsMaxLength(0, escPassword.Length() + 2)) {
+        return NS_ERROR_MALFORMED_URI;
+      }
       mPassword.mPos = mAuthority.mPos + 1;
       mSpec.Insert(":"_ns + escPassword + "@"_ns, mPassword.mPos - 1);
       shift = escPassword.Length() + 2;
     }
   } else {
+    if (ExceedsMaxLength(mPassword.mLen, escPassword.Length())) {
+      return NS_ERROR_MALFORMED_URI;
+    }
     shift = ReplaceSegment(mPassword.mPos, mPassword.mLen, escPassword);
   }
 
@@ -2006,6 +2034,10 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
     return NS_ERROR_MALFORMED_URI;
   }
 
+  if (ExceedsMaxLength(mHost.mLen < 0 ? 0 : mHost.mLen, len)) {
+    return NS_ERROR_MALFORMED_URI;
+  }
+
   if (mHost.mLen < 0) {
     int port_length = 0;
     if (mPort != -1) {
@@ -2073,7 +2105,9 @@ nsresult nsStandardURL::SetPort(int32_t port) {
     port = -1;
   }
 
-  ReplacePortInSpec(port);
+  if (!ReplacePortInSpec(port)) {
+    return NS_ERROR_MALFORMED_URI;
+  }
 
   mPort = port;
   return NS_OK;
@@ -2086,8 +2120,11 @@ nsresult nsStandardURL::SetPort(int32_t port) {
  *  - Calling InvalidateCache (since our mSpec is changing).
  *  - Checking whether aNewPort is mDefaultPort (in which case the
  *    caller should pass aNewPort=-1).
+ *
+ * Returns false, leaving mSpec unchanged, if the new spec would exceed
+ * network.standard-url.max-length.
  */
-void nsStandardURL::ReplacePortInSpec(int32_t aNewPort) {
+bool nsStandardURL::ReplacePortInSpec(int32_t aNewPort) {
   NS_ASSERTION(aNewPort != mDefaultPort || mDefaultPort == -1,
                "Caller should check its passed-in value and pass -1 instead of "
                "mDefaultPort, to avoid encoding default port into mSpec");
@@ -2112,6 +2149,9 @@ void nsStandardURL::ReplacePortInSpec(int32_t aNewPort) {
     buf.Assign(':');
     buf.AppendInt(aNewPort);
   }
+  if (ExceedsMaxLength(replacedLen, buf.Length())) {
+    return false;
+  }
   // Perform the replacement:
   mSpec.Replace(replacedStart, replacedLen, buf);
 
@@ -2119,6 +2159,7 @@ void nsStandardURL::ReplacePortInSpec(int32_t aNewPort) {
   int32_t shift = buf.Length() - replacedLen;
   mAuthority.mLen += shift;
   ShiftFromPath(shift);
+  return true;
 }
 
 nsresult nsStandardURL::SetPathQueryRef(const nsACString& input) {
@@ -2927,6 +2968,23 @@ nsresult nsStandardURL::SetQueryWithEncoding(const nsACString& input,
     queryLen--;
   }
 
+  // encode query if necessary
+  nsAutoCString buf;
+  bool encoded;
+  nsSegmentEncoder encoder(encoding);
+  encoder.EncodeSegmentCount(query, URLSegment(0, queryLen), esc_Query, buf,
+                             encoded);
+  if (encoded) {
+    query = buf.get();
+    queryLen = buf.Length();
+  }
+
+  // Check the final length after encoding, including any '?' to insert
+  if (mQuery.mLen < 0 ? ExceedsMaxLength(0, queryLen + 1)
+                      : ExceedsMaxLength(mQuery.mLen, queryLen)) {
+    return NS_ERROR_MALFORMED_URI;
+  }
+
   if (mQuery.mLen < 0) {
     if (mRef.mLen < 0) {
       mQuery.mPos = mSpec.Length();
@@ -2939,23 +2997,6 @@ nsresult nsStandardURL::SetQueryWithEncoding(const nsACString& input,
     // the insertion pushes these out by 1
     mPath.mLen++;
     mRef.mPos++;
-  }
-
-  // encode query if necessary
-  nsAutoCString buf;
-  bool encoded;
-  nsSegmentEncoder encoder(encoding);
-  encoder.EncodeSegmentCount(query, URLSegment(0, queryLen), esc_Query, buf,
-                             encoded);
-  if (encoded) {
-    query = buf.get();
-    queryLen = buf.Length();
-  }
-
-  // Check the final length after encoding
-  if (mSpec.Length() - mQuery.mLen + queryLen >
-      StaticPrefs::network_standard_url_max_length()) {
-    return NS_ERROR_MALFORMED_URI;
   }
 
   int32_t shift = ReplaceSegment(mQuery.mPos, mQuery.mLen, query, queryLen);
@@ -3009,13 +3050,6 @@ nsresult nsStandardURL::SetRef(const nsACString& input) {
     refLen--;
   }
 
-  if (mRef.mLen < 0) {
-    mSpec.Append('#');
-    ++mPath.mLen;  // Include the # in the path.
-    mRef.mPos = mSpec.Length();
-    mRef.mLen = 0;
-  }
-
   // If percent encoding is necessary, `ref` will point to `buf`'s content.
   // `buf` needs to outlive any use of the `ref` pointer.
   nsAutoCString buf;
@@ -3028,10 +3062,17 @@ nsresult nsStandardURL::SetRef(const nsACString& input) {
     refLen = buf.Length();
   }
 
-  // Check the final length after encoding
-  if (mSpec.Length() - mRef.mLen + refLen >
-      StaticPrefs::network_standard_url_max_length()) {
+  // Check the final length after encoding, including any '#' to append
+  if (mRef.mLen < 0 ? ExceedsMaxLength(0, refLen + 1)
+                    : ExceedsMaxLength(mRef.mLen, refLen)) {
     return NS_ERROR_MALFORMED_URI;
+  }
+
+  if (mRef.mLen < 0) {
+    mSpec.Append('#');
+    ++mPath.mLen;  // Include the # in the path.
+    mRef.mPos = mSpec.Length();
+    mRef.mLen = 0;
   }
 
   int32_t shift = ReplaceSegment(mRef.mPos, mRef.mLen, ref, refLen);
@@ -3113,6 +3154,9 @@ nsresult nsStandardURL::SetFileNameInternal(const nsACString& input) {
 
       if (mBasename.mLen < 0) {
         // insert new filename
+        if (ExceedsMaxLength(0, newFilename.Length())) {
+          return NS_ERROR_MALFORMED_URI;
+        }
         mBasename.mPos = mDirectory.mPos + mDirectory.mLen;
         mSpec.Insert(newFilename, mBasename.mPos);
         shift = newFilename.Length();
@@ -3121,6 +3165,9 @@ nsresult nsStandardURL::SetFileNameInternal(const nsACString& input) {
         uint32_t oldLen = uint32_t(mBasename.mLen);
         if (mExtension.mLen >= 0) {
           oldLen += (mExtension.mLen + 1);
+        }
+        if (ExceedsMaxLength(oldLen, newFilename.Length())) {
+          return NS_ERROR_MALFORMED_URI;
         }
         mSpec.Replace(mBasename.mPos, oldLen, newFilename);
         shift = newFilename.Length() - oldLen;

@@ -20,7 +20,6 @@
 #include <span>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "api/field_trials_view.h"
 #include "api/rtp_packet_sender.h"
 #include "api/transport/network_types.h"
@@ -139,7 +138,7 @@ class PacingController {
   void SetCongested(bool congested);
 
   // Sets the pacing rates. Must be called once before packets can be sent.
-  ABSL_DEPRECATED("Use SetPacerConfig")
+  [[deprecated("Use SetPacerConfig")]]
   void SetPacingRates(DataRate pacing_rate, DataRate padding_rate);
   void SetPacerConfig(PacerConfig pacer_config);
 
@@ -156,7 +155,7 @@ class PacingController {
   // The pacer is allowed to send enqued packets in bursts and can build up a
   // packet "debt" that correspond to approximately the send rate during
   // 'burst_interval'.
-  ABSL_DEPRECATED("Use SetPacerConfig")
+  [[deprecated("Use SetPacerConfig")]]
   void SetSendBurstInterval(TimeDelta burst_interval);
 
   // A probe may be sent without first waing for a media packet.

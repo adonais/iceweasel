@@ -1015,37 +1015,6 @@ TEST_F(AudioSinkWrapperReuseTest, ConsecutiveSeeksReuseStream) {
   }
 }
 
-// Pausing, seeking while paused, then resuming to play must keep the audio
-// stream's playing state consistent, so a later pause does not stop an
-// already-stopped stream. Consistency is checked implicitly: the trailing
-// pause/resume/pause runs through AudioStream::Pause()/Resume(), which assert
-// mState != STOPPED ("Already Pause()ed.") and mState != STARTED ("Already
-// Start()ed.") on the non-keep-running path. If the paused-seek reuse left the
-// logical playing state out of sync with the physical stream, one of those
-// MOZ_ASSERTs would fire; the test passing without crashing is the check.
-TEST_F(AudioSinkWrapperReuseTest, PauseAfterPausedSeekReuse) {
-  CreateWrapper();
-  Start(media::TimeUnit::Zero());
-  EXPECT_EQ(mInits, 1);
-
-  // Pause playback, then seek while still paused with reuse on.
-  mWrapper->SetPlaying(false);
-  SeekStop();
-  EXPECT_EQ(mDestroys, 0) << "stream should be stashed, not destroyed";
-
-  // Resume to the seek target and play again.
-  Start(media::TimeUnit::FromSeconds(10));
-  EXPECT_EQ(mInits, 1) << "stream should be reused, not recreated";
-
-  // A later pause/resume cycle must remain consistent: these calls reach
-  // AudioStream::Pause()/Resume(), whose MOZ_ASSERTs on mState would trip if
-  // the reuse had left the logical playing state stale.
-  mWrapper->SetPlaying(false);
-  mWrapper->SetPlaying(true);
-  mWrapper->SetPlaying(false);
-  ProcessPending();
-}
-
 // A seek resume must never let the reported clock lead the audible audio,
 // because the audio stream's position accounts for output-device latency and
 // the system clock does not. Shared by both seek-resume paths, a freshly
@@ -1077,35 +1046,34 @@ TEST_F(AudioSinkWrapperReuseTest, SeekResumeClockFollowsAudibleReusedStream) {
   RunSeekResumeClockFollowsAudible(ReuseStream::Enabled);
 }
 
-// A pause before the seek stops the backend, discarding its queued audio.
-// Waiting for audio that will never play would leave the clock an
-// output-latency window behind for the rest of playback.
-TEST_F(AudioSinkWrapperReuseTest, SeekResumeAfterPauseIgnoresDiscardedAudio) {
+TEST_F(AudioSinkWrapperReuseTest, SeekResumeAfterPauseRecreatesStream) {
   CreateWrapper(ReuseStream::Enabled, MockCubeb::RunningMode::Manual);
   mCubeb->SetDefaultOutputLatencyFrames(OutputLatencyFrames());
   const media::TimeUnit target = media::TimeUnit::FromSeconds(10);
 
   ASSERT_NO_FATAL_FAILURE(PlayFromZeroToSteadyState());
-
-  // Pause first, so the seek resume restarts a stopped backend rather than
-  // taking over a running one.
   mWrapper->SetPlaying(false);
   SeekAndResumeAt(target);
+  ASSERT_EQ(mDestroys, 1) << "a stream stopped by a pause must not be reused";
 
-  EXPECT_EQ(mInits, 1) << "the stream must be reused, not recreated";
-  EXPECT_EQ(mDestroys, 0) << "the stream must be reused, not recreated";
+  ExpectClockHoldsAtTargetWhileSilent(target, ReuseStream::Disabled);
+  ASSERT_NO_FATAL_FAILURE(ExpectClockFollowsAudioOncePlaying(target));
+}
 
-  ASSERT_EQ(DriveCallback(kCallbackFrames),
-            MockCubebStream::KeepProcessing::Yes);
-  const media::TimeUnit expected =
-      target +
-      media::TimeUnit(CheckedInt64(kCallbackFrames), mInfo.mAudio.mRate);
-  // The frame history converts frames to microseconds with integer division, so
-  // allow the one microsecond that truncation costs.
-  EXPECT_NEAR(mWrapper->GetPosition().ToMicroseconds(),
-              expected.ToMicroseconds(), 1)
-      << "the clock advances by exactly the post-seek callback rather than "
-         "waiting out audio the backend had already discarded";
+TEST_F(AudioSinkWrapperReuseTest, SeekAfterPauseAndResumeReusesStream) {
+  CreateWrapper();
+  Start(media::TimeUnit::Zero());
+  mWrapper->SetPlaying(false);
+  mWrapper->SetPlaying(true);
+  ProcessPending();
+
+  SeekStop();
+  EXPECT_EQ(mDestroys, 0)
+      << "a resumed stream should be stashed, not destroyed";
+
+  Start(media::TimeUnit::FromSeconds(10));
+  EXPECT_EQ(mInits, 1) << "a resumed stream should be reused, not recreated";
+  EXPECT_EQ(mDestroys, 0);
 }
 
 // A seek resume that begins while muted has no audio sink, so playback advances

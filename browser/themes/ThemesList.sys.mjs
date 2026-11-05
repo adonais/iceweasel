@@ -422,9 +422,13 @@ class ThemesList {
 
       const installUrl = repoAddon.sourceURI.spec;
       const installName = repoAddon.name;
+      const installVersion = repoAddon.version;
 
       install = await lazy.AddonManager.getInstallForURL(installUrl, {
+        id: themeId,
         name: installName,
+        type: "theme",
+        version: installVersion,
         telemetryInfo: {
           source: this.#installSource,
           method: "FirefoxThemesList",

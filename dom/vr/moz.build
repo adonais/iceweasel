@@ -63,3 +63,12 @@ LOCAL_INCLUDES += ["/dom/base"]
 
 MOCHITEST_MANIFESTS += ["test/mochitest/mochitest.toml"]
 REFTEST_MANIFESTS += ["test/reftest/reftest.list"]
+
+SOURCE_HEADERS += [
+    "XRInputSpace.h",
+    "XRNativeOriginFixed.h",
+    "XRNativeOriginLocal.h",
+    "XRNativeOriginLocalFloor.h",
+    "XRNativeOriginTracker.h",
+    "XRNativeOriginViewer.h",
+]

@@ -72,3 +72,22 @@ LOCAL_INCLUDES += [
 # ROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 
 XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]
+
+SOURCE_HEADERS += [
+    "ReadableByteStreamControllerAbstract.h",
+    "ReadableStreamAbstract.h",
+    "ReadableStreamBYOBReaderAbstract.h",
+    "ReadableStreamDefaultControllerAbstract.h",
+    "ReadableStreamDefaultReaderAbstract.h",
+    "ReadableStreamGenericReaderAbstract.h",
+    "ReadableStreamPipeTo.h",
+    "ReadableStreamTee.h",
+    "ReadIntoRequest.h",
+    "StreamUtils.h",
+    "TeeState.h",
+    "TransformStreamAbstract.h",
+    "TransformStreamDefaultControllerAbstract.h",
+    "WritableStreamAbstract.h",
+    "WritableStreamDefaultControllerAbstract.h",
+    "WritableStreamDefaultWriterAbstract.h",
+]

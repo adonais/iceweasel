@@ -9,6 +9,7 @@
 #include "mozilla/intl/ICU4CGlue.h"
 
 #include <cstring>
+#include <memory>
 
 #if !MOZ_SYSTEM_ICU
 #  include "calendar/ICU4XChineseCalendar.h"
@@ -158,12 +159,12 @@ static Result<UniquePtr<icu::Calendar>, ICUError> CreateCalendarReplacement(
 
   UniquePtr<icu::Calendar> replacement = nullptr;
   if (std::strcmp(type, "chinese") == 0) {
-    replacement.reset(
-        new calendar::ICU4XChineseCalendar(timeZone, locale, status));
+    replacement = std::make_unique<calendar::ICU4XChineseCalendar>(
+        timeZone, locale, status);
   } else {
     MOZ_ASSERT(std::strcmp(type, "dangi") == 0);
-    replacement.reset(
-        new calendar::ICU4XDangiCalendar(timeZone, locale, status));
+    replacement = std::make_unique<calendar::ICU4XDangiCalendar>(
+        timeZone, locale, status);
   }
   if (replacement == nullptr) {
     return Err(ICUError::OutOfMemory);

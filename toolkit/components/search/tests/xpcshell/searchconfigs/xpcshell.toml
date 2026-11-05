@@ -28,10 +28,10 @@ requesttimeoutfactor = 5  # Slow and high CPU use on Linux and Windows
 support-files = [
   "../../../schema/search-config-icons-schema.json",
   "../../../schema/search-config-icons-ui-schema.json",
-  "../../../schema/search-config-overrides-v2-schema.json",
-  "../../../schema/search-config-overrides-v2-ui-schema.json",
   "../../../schema/search-config-v2-schema.json",
   "../../../schema/search-config-v2-ui-schema.json",
+  "../../../schema/search-config-v3-schema.json",
+  "../../../schema/search-config-v3-ui-schema.json",
   "../../../schema/search-default-override-allowlist-schema.json",
   "../../../schema/search-default-override-allowlist-ui-schema.json",
 ]
@@ -39,7 +39,6 @@ support-files = [
 ["test_searchconfig_validates.js"]
 support-files = [
   "../../../schema/search-config-icons-schema.json",
-  "../../../schema/search-config-overrides-v2-schema.json",
   "../../../schema/search-config-v2-schema.json",
   "../../../schema/search-default-override-allowlist-schema.json",
 ]

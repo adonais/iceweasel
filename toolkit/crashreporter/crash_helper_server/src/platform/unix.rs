@@ -8,7 +8,7 @@ use nix::{
     libc::_exit,
     unistd::{fork, getpid, setsid, write, ForkResult},
 };
-use std::{ffi::CStr, io::stdout, os::fd::AsFd};
+use std::{ffi::OsStr, io::stdout, os::fd::AsFd};
 
 pub(crate) const PROXY_RENDEZ_VOUS: bool = false;
 
@@ -60,6 +60,6 @@ pub(crate) unsafe fn daemonize() {
     _exit(if rv.is_ok_and(|rv| rv == 4) { 0 } else { 1 });
 }
 
-pub(crate) fn get_client_handle(_handle: &CStr) -> Result<Option<ProcessHandle>> {
+pub(crate) fn get_client_handle(_handle: &OsStr) -> Result<Option<ProcessHandle>> {
     Ok(None)
 }

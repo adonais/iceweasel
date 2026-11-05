@@ -17,6 +17,7 @@ task-defaults:
     worker:
         env:
             PYTHONPATH: "testing/mozbase/mozdevice:third_party/python/six"
+            PYTHONUNBUFFERED: "1"
 
     run:
         clone-with: hg
@@ -1160,3 +1161,150 @@ hw-a55-foreground-resource-chrome:
             --android
             --output $MOZ_FETCHES_DIR/../artifacts
             --hooks testing/performance/android-resource/hooks_android_resource.py
+
+hw-a55-aarch64-shippable-startup-fenix-cold-search-widget-first-frame:
+    worker-type: t-lambda-perf-a55
+    run-on-projects: []
+    description: Run android search widget startup perftest on Fenix on a Samsung A55
+    treeherder:
+        symbol: perftest-fenix(search-widget)
+        tier: 2
+    platform: android-hw-a55-14-0-aarch64-shippable/opt
+    attributes:
+        cron: false
+    fetches:
+        build:
+            - artifact: target.arm64-v8a.apk
+              extract: false
+    require-build:
+        android-hw-a55-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --flavor custom-script
+            --app fenix
+            testing/performance/mobile-startup/search-widget.sh
+            --android-install-apk $MOZ_FETCHES_DIR/target.arm64-v8a.apk
+            --output $MOZ_FETCHES_DIR/../artifacts
+            --perfherder
+
+hw-a55-aarch64-shippable-startup-chrome-m-cold-search-widget-first-frame:
+    worker-type: t-lambda-perf-a55
+    run-on-projects: []
+    description: Run android search widget startup perftest on Chrome on a Samsung A55
+    treeherder:
+        symbol: perftest-chrome(search-widget)
+        tier: 2
+    platform: android-hw-a55-14-0-aarch64-shippable/opt
+    attributes:
+        cron: true
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --flavor custom-script
+            --app chrome-m
+            testing/performance/mobile-startup/search-widget.sh
+            --output $MOZ_FETCHES_DIR/../artifacts
+            --perfherder
+
+hw-p6-aarch64-shippable-startup-fenix-cold-search-widget-first-frame:
+    worker-type: t-bitbar-gw-perf-p6
+    run-on-projects: []
+    description: Run android search widget startup perftest on Fenix on a Pixel6
+    treeherder:
+        symbol: perftest-fenix(search-widget)
+        tier: 2
+    platform: android-hw-p6-13-0-aarch64-shippable/opt
+    attributes:
+        cron: false
+    fetches:
+        build:
+            - artifact: target.arm64-v8a.apk
+              extract: false
+    require-build:
+        android-hw-p6-13-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --flavor custom-script
+            --app fenix
+            testing/performance/mobile-startup/search-widget.sh
+            --android-install-apk $MOZ_FETCHES_DIR/target.arm64-v8a.apk
+            --output $MOZ_FETCHES_DIR/../artifacts
+            --perfherder
+
+hw-p6-aarch64-shippable-startup-chrome-m-cold-search-widget-first-frame:
+    worker-type: t-bitbar-gw-perf-p6
+    run-on-projects: []
+    description: Run android search widget startup perftest on Chrome on a Pixel6
+    treeherder:
+        symbol: perftest-chrome(search-widget)
+        tier: 2
+    platform: android-hw-p6-13-0-aarch64-shippable/opt
+    attributes:
+        cron: true
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --flavor custom-script
+            --app chrome-m
+            testing/performance/mobile-startup/search-widget.sh
+            --output $MOZ_FETCHES_DIR/../artifacts
+            --perfherder
+
+hw-s24-aarch64-shippable-startup-fenix-cold-search-widget-first-frame:
+    worker-type: t-bitbar-gw-perf-s24
+    run-on-projects: []
+    description: Run android search widget startup perftest on Fenix on a Samsung S24
+    treeherder:
+        symbol: perftest-fenix(search-widget)
+        tier: 2
+    platform: android-hw-s24-14-0-aarch64-shippable/opt
+    attributes:
+        cron: false
+    fetches:
+        build:
+            - artifact: target.arm64-v8a.apk
+              extract: false
+    require-build:
+        android-hw-s24-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --flavor custom-script
+            --app fenix
+            testing/performance/mobile-startup/search-widget.sh
+            --android-install-apk $MOZ_FETCHES_DIR/target.arm64-v8a.apk
+            --output $MOZ_FETCHES_DIR/../artifacts
+            --perfherder
+
+hw-s24-aarch64-shippable-startup-chrome-m-cold-search-widget-first-frame:
+    worker-type: t-bitbar-gw-perf-s24
+    run-on-projects: []
+    description: Run android search widget startup perftest on Chrome on a Samsung S24
+    treeherder:
+        symbol: perftest-chrome(search-widget)
+        tier: 2
+    platform: android-hw-s24-14-0-aarch64-shippable/opt
+    attributes:
+        cron: true
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --flavor custom-script
+            --app chrome-m
+            testing/performance/mobile-startup/search-widget.sh
+            --output $MOZ_FETCHES_DIR/../artifacts
+            --perfherder

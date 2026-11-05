@@ -12,3 +12,7 @@ EXPORTS += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "FuzzerTestHarness.h",
+]

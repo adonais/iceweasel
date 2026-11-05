@@ -8,6 +8,8 @@ glean-parser:
     exclude:
         - mobile/android/android-components/samples/glean/metrics.yaml
         - mobile/android/android-components/samples/glean/samples-glean-library/metrics.yaml
+        # Merged into generated_metrics.yaml by glean_metrics.py.
+        - toolkit/crashreporter/crashping/static_metrics.yaml
     extensions:
         - yaml
     support-files:

@@ -42,3 +42,13 @@ LOCAL_INCLUDES += [
 ]
 
 FINAL_LIBRARY = "xul-gtest"
+
+SOURCE_HEADERS += [
+    "APZCBasicTester.h",
+    "APZCTreeManagerTester.h",
+    "APZTestAccess.h",
+    "APZTestCommon.h",
+    "InputUtils.h",
+    "MockHitTester.h",
+    "TestWRScrollData.h",
+]

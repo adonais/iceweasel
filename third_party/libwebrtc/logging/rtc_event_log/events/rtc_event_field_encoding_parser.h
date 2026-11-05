@@ -19,7 +19,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "api/units/timestamp.h"
 #include "logging/rtc_event_log/events/fixed_length_encoding_parameters_v3.h"
@@ -121,10 +120,10 @@ class EventParser {
 template <typename T,
           typename E,
           std::enable_if_t<std::is_integral<T>::value, bool> = true>
-ABSL_MUST_USE_RESULT RtcEventLogParseStatus
-PopulateRtcEventMember(const std::span<uint64_t> values,
-                       T E::* member,
-                       std::span<E> output) {
+[[nodiscard]] RtcEventLogParseStatus PopulateRtcEventMember(
+    const std::span<uint64_t> values,
+    T E::* member,
+    std::span<E> output) {
   size_t batch_size = values.size();
   RTC_CHECK_EQ(output.size(), batch_size);
   for (size_t i = 0; i < batch_size; ++i) {
@@ -137,11 +136,11 @@ PopulateRtcEventMember(const std::span<uint64_t> values,
 template <typename T,
           typename E,
           std::enable_if_t<std::is_integral<T>::value, bool> = true>
-ABSL_MUST_USE_RESULT RtcEventLogParseStatus
-PopulateRtcEventMember(const std::span<uint8_t> positions,
-                       const std::span<uint64_t> values,
-                       std::optional<T> E::* member,
-                       std::span<E> output) {
+[[nodiscard]] RtcEventLogParseStatus PopulateRtcEventMember(
+    const std::span<uint8_t> positions,
+    const std::span<uint64_t> values,
+    std::optional<T> E::* member,
+    std::span<E> output) {
   size_t batch_size = positions.size();
   RTC_CHECK_EQ(output.size(), batch_size);
   RTC_CHECK_LE(values.size(), batch_size);
@@ -163,10 +162,10 @@ PopulateRtcEventMember(const std::span<uint8_t> positions,
 template <typename T,
           typename E,
           std::enable_if_t<std::is_enum<T>::value, bool> = true>
-ABSL_MUST_USE_RESULT RtcEventLogParseStatus
-PopulateRtcEventMember(const std::span<uint64_t> values,
-                       T E::* member,
-                       std::span<E> output) {
+[[nodiscard]] RtcEventLogParseStatus PopulateRtcEventMember(
+    const std::span<uint64_t> values,
+    T E::* member,
+    std::span<E> output) {
   size_t batch_size = values.size();
   RTC_CHECK_EQ(output.size(), batch_size);
   for (size_t i = 0; i < batch_size; ++i) {
@@ -181,10 +180,10 @@ PopulateRtcEventMember(const std::span<uint64_t> values,
 
 // Same as above, but for string fields.
 template <typename E>
-ABSL_MUST_USE_RESULT RtcEventLogParseStatus
-PopulateRtcEventMember(const std::span<absl::string_view> values,
-                       std::string E::* member,
-                       std::span<E> output) {
+[[nodiscard]] RtcEventLogParseStatus PopulateRtcEventMember(
+    const std::span<absl::string_view> values,
+    std::string E::* member,
+    std::span<E> output) {
   size_t batch_size = values.size();
   RTC_CHECK_EQ(output.size(), batch_size);
   for (size_t i = 0; i < batch_size; ++i) {
@@ -196,10 +195,10 @@ PopulateRtcEventMember(const std::span<absl::string_view> values,
 // Same as above, but for Timestamp fields.
 // N.B. Assumes that the encoded value uses millisecond precision.
 template <typename E>
-ABSL_MUST_USE_RESULT RtcEventLogParseStatus
-PopulateRtcEventTimestamp(const std::span<uint64_t>& values,
-                          Timestamp E::* timestamp,
-                          std::span<E> output) {
+[[nodiscard]] RtcEventLogParseStatus PopulateRtcEventTimestamp(
+    const std::span<uint64_t>& values,
+    Timestamp E::* timestamp,
+    std::span<E> output) {
   size_t batch_size = values.size();
   RTC_CHECK_EQ(batch_size, output.size());
   for (size_t i = 0; i < batch_size; ++i) {

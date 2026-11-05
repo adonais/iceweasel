@@ -13,24 +13,21 @@ import {
   UrlbarProvider,
   UrlbarUtils,
 } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
-});
-
-ChromeUtils.defineLazyGetter(lazy, "SQL_ADAPTIVE_QUERY", () => {
-  // Constants to support an alternative frecency algorithm.
-  const PAGES_USE_ALT_FRECENCY =
-    lazy.PlacesUtils.history.isAlternativeFrecencyEnabled;
-  const PAGES_FRECENCY_FIELD = PAGES_USE_ALT_FRECENCY
-    ? "alt_frecency"
-    : "frecency";
-  return `/* do not warn (bug 487789) */
+  SQL_ADAPTIVE_QUERY: () => {
+    // Constants to support an alternative frecency algorithm.
+    const PAGES_USE_ALT_FRECENCY =
+      lazy.PlacesUtils.history.isAlternativeFrecencyEnabled;
+    const PAGES_FRECENCY_FIELD = PAGES_USE_ALT_FRECENCY
+      ? "alt_frecency"
+      : "frecency";
+    return `/* do not warn (bug 487789) */
    SELECT h.url,
           h.title,
           EXISTS(SELECT 1 FROM moz_bookmarks WHERE fk = h.id) AS bookmarked,
@@ -67,6 +64,7 @@ ChromeUtils.defineLazyGetter(lazy, "SQL_ADAPTIVE_QUERY", () => {
                             NULL)
    ORDER BY rank DESC, ${PAGES_FRECENCY_FIELD} DESC
    LIMIT :maxResults`;
+  },
 });
 
 /**

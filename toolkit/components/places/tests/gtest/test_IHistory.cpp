@@ -270,7 +270,7 @@ void test_visituri_inserts() {
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
 
   history->VisitURI(nullptr, visitedURI, lastURI, mozilla::IHistory::TOP_LEVEL,
-                    0);
+                    0, 0);
 
   RefPtr<VisitURIObserver> finisher = new VisitURIObserver();
   finisher->WaitForNotification();
@@ -293,12 +293,12 @@ void test_visituri_updates() {
   RefPtr<VisitURIObserver> finisher;
 
   history->VisitURI(nullptr, visitedURI, lastURI, mozilla::IHistory::TOP_LEVEL,
-                    0);
+                    0, 0);
   finisher = new VisitURIObserver();
   finisher->WaitForNotification();
 
   history->VisitURI(nullptr, visitedURI, lastURI, mozilla::IHistory::TOP_LEVEL,
-                    0);
+                    0, 0);
   finisher = new VisitURIObserver();
   finisher->WaitForNotification();
 
@@ -316,10 +316,10 @@ void test_visituri_preserves_shown_and_typed() {
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
 
   history->VisitURI(nullptr, visitedURI, lastURI, mozilla::IHistory::TOP_LEVEL,
-                    0);
+                    0, 0);
   // this simulates the uri visit happening in a frame.  Normally frame
   // transitions would be hidden unless it was previously loaded top-level
-  history->VisitURI(nullptr, visitedURI, lastURI, 0, 0);
+  history->VisitURI(nullptr, visitedURI, lastURI, 0, 0, 0);
 
   RefPtr<VisitURIObserver> finisher = new VisitURIObserver(2);
   finisher->WaitForNotification();
@@ -337,7 +337,7 @@ void test_visituri_creates_visit() {
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
 
   history->VisitURI(nullptr, visitedURI, lastURI, mozilla::IHistory::TOP_LEVEL,
-                    0);
+                    0, 0);
   RefPtr<VisitURIObserver> finisher = new VisitURIObserver();
   finisher->WaitForNotification();
 
@@ -360,7 +360,7 @@ void test_visituri_frecency() {
   RefPtr<WaitForNotificationSpinner> spinner =
       new WaitForNotificationSpinner(PlacesEventType::Pages_rank_changed);
   history->VisitURI(nullptr, visitedURI, nullptr, mozilla::IHistory::TOP_LEVEL,
-                    0);
+                    0, 0);
   RefPtr<VisitURIObserver> finisher = new VisitURIObserver();
   finisher->WaitForNotification();
   spinner->SpinUntilCompleted();
@@ -377,7 +377,7 @@ void test_visituri_hidden() {
     nsCOMPtr<nsIURI> visitedURI = new_test_uri();
     nsCOMPtr<nsINavHistoryService> navHistory = do_get_NavHistory();
     navHistory->MarkPageAsFollowedLink(visitedURI);
-    history->VisitURI(nullptr, visitedURI, nullptr, 0, 0);
+    history->VisitURI(nullptr, visitedURI, nullptr, 0, 0, 0);
     RefPtr<VisitURIObserver> finisher = new VisitURIObserver();
     finisher->WaitForNotification();
     PlaceRecord place;
@@ -388,7 +388,7 @@ void test_visituri_hidden() {
   // Insert a redirect.
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
   history->VisitURI(nullptr, visitedURI, nullptr,
-                    mozilla::IHistory::TOP_LEVEL | IHistory::REDIRECT_SOURCE,
+                    mozilla::IHistory::TOP_LEVEL | IHistory::REDIRECT_SOURCE, 0,
                     0);
   {
     RefPtr<VisitURIObserver> finisher = new VisitURIObserver();
@@ -400,7 +400,7 @@ void test_visituri_hidden() {
 
   // Now add a non-hidden visit to the hidden page, check it gets unhidden.
   history->VisitURI(nullptr, visitedURI, nullptr, mozilla::IHistory::TOP_LEVEL,
-                    0);
+                    0, 0);
   {
     RefPtr<VisitURIObserver> finisher = new VisitURIObserver();
     finisher->WaitForNotification();
@@ -411,7 +411,7 @@ void test_visituri_hidden() {
 
   // Add another hidden visit, it should stay unhidden.
   history->VisitURI(nullptr, visitedURI, nullptr,
-                    mozilla::IHistory::TOP_LEVEL | IHistory::REDIRECT_SOURCE,
+                    mozilla::IHistory::TOP_LEVEL | IHistory::REDIRECT_SOURCE, 0,
                     0);
   {
     RefPtr<VisitURIObserver> finisher = new VisitURIObserver();
@@ -432,7 +432,7 @@ void test_visituri_transition_typed() {
 
   navHistory->MarkPageAsTyped(visitedURI);
   history->VisitURI(nullptr, visitedURI, lastURI, mozilla::IHistory::TOP_LEVEL,
-                    0);
+                    0, 0);
   RefPtr<VisitURIObserver> finisher = new VisitURIObserver();
   finisher->WaitForNotification();
 
@@ -451,7 +451,7 @@ void test_visituri_transition_embed() {
   nsCOMPtr<nsIURI> lastURI = new_test_uri();
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
 
-  history->VisitURI(nullptr, visitedURI, lastURI, 0, 0);
+  history->VisitURI(nullptr, visitedURI, lastURI, 0, 0, 0);
   RefPtr<VisitURIObserver> finisher = new VisitURIObserver();
   finisher->WaitForNotification();
 
@@ -471,7 +471,7 @@ void test_new_visit_adds_place_guid() {
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
   nsCOMPtr<IHistory> history = do_get_IHistory();
   nsresult rv = history->VisitURI(nullptr, visitedURI, nullptr,
-                                  mozilla::IHistory::TOP_LEVEL, 0);
+                                  mozilla::IHistory::TOP_LEVEL, 0, 0);
   do_check_success(rv);
   RefPtr<VisitURIObserver> finisher = new VisitURIObserver();
   finisher->WaitForNotification();

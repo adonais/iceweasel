@@ -5,7 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  IdpSandbox: "resource://gre/modules/media/IdpSandbox.sys.mjs",
+  IdpSandbox: "moz-src:///dom/media/IdpSandbox.sys.mjs",
 });
 
 /**

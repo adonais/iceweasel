@@ -19,6 +19,33 @@ pub fn error_to_string(error: impl Error) -> String {
     message
 }
 
+pub(crate) fn request_device_error_to_ffi(
+    err: wgpu_core_remote_types::RequestDeviceError,
+) -> crate::RequestDeviceError {
+    use crate::FfiRequestDeviceErrorType as Ty;
+    use wgpu_core_remote_types::RequestDeviceError as E;
+    let (ty, message) = match err {
+        E::UnsupportedFeature(message) => (Ty::TypeError, message),
+        E::FailedLimit(message) => (Ty::OperationError, message),
+        E::Other(message) => (Ty::OperationError, message),
+    };
+    crate::RequestDeviceError { ty, message }
+}
+
+pub(crate) fn pipeline_error_to_ffi(
+    err: wgpu_core_remote_types::PipelineError,
+) -> crate::PipelineError {
+    use wgpu_core_remote_types::PipelineError as E;
+    let (is_validation_error, error) = match err {
+        E::Validation(message) => (true, message),
+        E::Internal(message) => (false, message),
+    };
+    crate::PipelineError {
+        is_validation_error,
+        error,
+    }
+}
+
 #[derive(Debug, thiserror::Error, Serialize, Deserialize)]
 #[error("{message}")]
 pub struct GPUError<'a> {

@@ -6,8 +6,6 @@ package mozilla.components.feature.top.sites
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.withContext
 import mozilla.components.feature.top.sites.db.PinnedSiteEntity
 import mozilla.components.feature.top.sites.db.TopSiteDatabase
 import mozilla.components.feature.top.sites.db.toPinnedSite
@@ -33,18 +31,17 @@ class PinnedSiteStorage(
     suspend fun addAllPinnedSites(
         topSites: List<Pair<String, String>>,
         isDefault: Boolean = false,
-    ) =
-        withContext(IO) {
-            val siteEntities = topSites.map { (title, url) ->
-                PinnedSiteEntity(
-                    title = title,
-                    url = url,
-                    isDefault = isDefault,
-                    createdAt = currentTimeMillis(),
-                )
-            }
-            pinnedSiteDao.insertAllPinnedSites(siteEntities)
+    ) {
+        val siteEntities = topSites.map { (title, url) ->
+            PinnedSiteEntity(
+                title = title,
+                url = url,
+                isDefault = isDefault,
+                createdAt = currentTimeMillis(),
+            )
         }
+        pinnedSiteDao.insertAllPinnedSites(siteEntities)
+    }
 
     /**
      * Adds a new pinned site.
@@ -54,33 +51,28 @@ class PinnedSiteStorage(
      * @param isDefault Whether or not the pinned site added should be a default pinned site. This is used to identify
      *   pinned sites that are added by the application.
      */
-    suspend fun addPinnedSite(title: String, url: String, isDefault: Boolean = false) =
-        withContext(IO) {
-            val entity =
-                PinnedSiteEntity(
-                    title = title,
-                    url = url,
-                    isDefault = isDefault,
-                    createdAt = currentTimeMillis(),
-                )
-            entity.id = pinnedSiteDao.insertPinnedSite(entity)
-        }
+    suspend fun addPinnedSite(title: String, url: String, isDefault: Boolean = false) {
+        val entity =
+            PinnedSiteEntity(
+                title = title,
+                url = url,
+                isDefault = isDefault,
+                createdAt = currentTimeMillis(),
+            )
+        pinnedSiteDao.insertPinnedSite(entity)
+    }
 
     /** Returns a list of all the pinned sites. */
-    suspend fun getPinnedSites(): List<TopSite> =
-        withContext(IO) {
-            pinnedSiteDao.getPinnedSites().map { entity -> entity.toTopSite() }
-        }
+    suspend fun getPinnedSites(): List<TopSite> = pinnedSiteDao.getPinnedSites().map { entity -> entity.toTopSite() }
 
     /**
      * Removes the given pinned site.
      *
      * @param site The pinned site.
      */
-    suspend fun removePinnedSite(site: TopSite) =
-        withContext(IO) {
-            pinnedSiteDao.deletePinnedSite(site.toPinnedSite())
-        }
+    suspend fun removePinnedSite(site: TopSite) {
+        pinnedSiteDao.deletePinnedSite(site.toPinnedSite())
+    }
 
     /**
      * Updates the given pinned site.
@@ -89,17 +81,13 @@ class PinnedSiteStorage(
      * @param title The new title for the top site.
      * @param url The new url for the top site.
      */
-    suspend fun updatePinnedSite(site: TopSite, title: String, url: String) =
-        withContext(IO) {
-            val pinnedSite = site.toPinnedSite()
-            pinnedSite.title = title
-            pinnedSite.url = url
-            pinnedSiteDao.updatePinnedSite(pinnedSite)
-        }
+    suspend fun updatePinnedSite(site: TopSite, title: String, url: String) {
+        val pinnedSite = site.toPinnedSite()
+        pinnedSite.title = title
+        pinnedSite.url = url
+        pinnedSiteDao.updatePinnedSite(pinnedSite)
+    }
 
     /** Returns a count of pinned sites. */
-    suspend fun getPinnedSitesCount(): Int =
-        withContext(IO) {
-            pinnedSiteDao.getPinnedSitesCount()
-        }
+    suspend fun getPinnedSitesCount(): Int = pinnedSiteDao.getPinnedSitesCount()
 }

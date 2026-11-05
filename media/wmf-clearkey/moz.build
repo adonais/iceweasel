@@ -48,3 +48,19 @@ if CONFIG["CC_TYPE"] == "clang-cl":
 GeckoSharedLibrary("wmfclearkey")
 
 TEST_DIRS += ["gtest"]
+
+SOURCE_HEADERS += [
+    "WMFClearKeyActivate.h",
+    "WMFClearKeyCDM.h",
+    "WMFClearKeyCDMAccess.h",
+    "WMFClearKeyCDMFactory.h",
+    "WMFClearKeyContentEnabler.h",
+    "WMFClearKeyDecryptor.h",
+    "WMFClearKeyInputTrustAuthority.h",
+    "WMFClearKeyOutputPolicy.h",
+    "WMFClearKeySession.h",
+    "WMFClearKeyTrustedInput.h",
+    "WMFClearKeyUtils.h",
+    "WMFDecryptedBlock.h",
+    "WMFPMPServer.h",
+]

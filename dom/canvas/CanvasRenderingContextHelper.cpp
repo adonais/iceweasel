@@ -159,113 +159,142 @@ CanvasRenderingContextHelper::CreateContextHelper(
   return ret.forget();
 }
 
-already_AddRefed<nsISupports> CanvasRenderingContextHelper::GetOrCreateContext(
-    JSContext* aCx, const nsAString& aContextId,
-    JS::Handle<JS::Value> aContextOptions, ErrorResult& aRv) {
-  CanvasContextType contextType;
-  if (!CanvasUtils::GetCanvasContextType(aContextId, &contextType))
-    return nullptr;
-
-  return GetOrCreateContext(aCx, contextType, aContextOptions, aRv);
+bool CanvasRenderingContextOptions::Init(JSContext* aCx,
+                                         CanvasContextType aContextType,
+                                         JS::Handle<JS::Value> aContextOptions,
+                                         ErrorResult& aRv) {
+  // https://html.spec.whatwg.org/multipage/canvas.html#dom-canvas-getcontext-dev
+  // Step 1. If options is not an object, then set options to null.
+  JS::Rooted<JS::Value> options(RootingCx(), aContextOptions);
+  if (!options.isObject()) {
+    options.setNull();
+  }
+  switch (aContextType) {
+    case CanvasContextType::Canvas2D:
+    case CanvasContextType::OffscreenCanvas2D: {
+      CanvasRenderingContext2DSettings attributes;
+      if (!attributes.Init(aCx, options)) {
+        aRv.Throw(NS_ERROR_UNEXPECTED);
+        return false;
+      }
+      mVariant = AsVariant(std::move(attributes));
+      return true;
+    }
+    case CanvasContextType::WebGL1:
+    case CanvasContextType::WebGL2: {
+      WebGLContextAttributes attributes;
+      if (!attributes.Init(aCx, options)) {
+        aRv.Throw(NS_ERROR_UNEXPECTED);
+        return false;
+      }
+      mVariant = AsVariant(std::move(attributes));
+      return true;
+    }
+    default:
+      return true;
+  }
 }
 
-already_AddRefed<nsISupports> CanvasRenderingContextHelper::GetOrCreateContext(
-    JSContext* aCx, CanvasContextType aContextType,
-    JS::Handle<JS::Value> aContextOptions, ErrorResult& aRv) {
-  if (!mCurrentContext) {
-    // This canvas doesn't have a context yet.
-    RefPtr<nsICanvasRenderingContextInternal> context;
-    context = CreateContext(aContextType);
-    if (!context) {
-      aRv.ThrowUnknownError("Failed to create context");
-      return nullptr;
-    }
+bool CanvasRenderingContextHelper::GetOrCreateContext(
+    CanvasContextType aContextType,
+    const CanvasRenderingContextOptions& aOptions, ErrorResult& aRv) {
+  if (mCurrentContext) {
+    // We already have a context of some type. Ensure the type matches.
+    return aContextType == mCurrentContextType;
+  }
 
-    // Ensure that the context participates in CC.  Note that returning a
-    // CC participant from QI doesn't addref.
-    nsXPCOMCycleCollectionParticipant* cp = nullptr;
-    CallQueryInterface(context, &cp);
-    if (!cp) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return nullptr;
-    }
+  // This canvas doesn't have a context yet.
+  nsCOMPtr<nsICanvasRenderingContextInternal> context =
+      CreateContext(aContextType);
+  if (!context) {
+    aRv.ThrowUnknownError("Failed to create context");
+    return false;
+  }
 
-    mCurrentContext = std::move(context);
-    mCurrentContextType = aContextType;
+  // Ensure that the context participates in CC.  Note that returning a
+  // CC participant from QI doesn't addref.
+  nsXPCOMCycleCollectionParticipant* cp = nullptr;
+  CallQueryInterface(context, &cp);
+  if (!cp) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return false;
+  }
 
-    // https://html.spec.whatwg.org/multipage/canvas.html#dom-canvas-getcontext-dev
-    // Step 1. If options is not an object, then set options to null.
-    JS::Rooted<JS::Value> options(RootingCx(), aContextOptions);
-    if (!options.isObject()) {
-      options.setNull();
-    }
+  mCurrentContext = context;
+  mCurrentContextType = aContextType;
 
-    nsresult rv = UpdateContext(aCx, options, aRv);
-    if (NS_FAILED(rv)) {
-      // See bug 645792 and bug 1215072.
-      // We want to throw only if dictionary initialization fails,
-      // so only in case aRv has been set to some error value.
-      if (aContextType == CanvasContextType::WebGL1) {
-        glean::canvas::webgl_success
-            .EnumGet(glean::canvas::WebglSuccessLabel::eFalse)
-            .Add();
-      } else if (aContextType == CanvasContextType::WebGL2) {
-        glean::canvas::webgl2_success
-            .EnumGet(glean::canvas::Webgl2SuccessLabel::eFalse)
-            .Add();
-      } else if (aContextType == CanvasContextType::WebGPU) {
-        // Telemetry::Accumulate(Telemetry::CANVAS_WEBGPU_SUCCESS, 0);
-      }
-      return nullptr;
-    }
+  if (!InitOrUpdateContext(context, &aOptions)) {
+    // Ensure the current context is cleared before attempting to throw any
+    // deferred context creation error.
+    mCurrentContext = nullptr;
+
+    // See bug 645792 and bug 1215072.
+    // We want to throw only if dictionary initialization fails,
+    // so only in case aRv has been set to some error value.
     if (aContextType == CanvasContextType::WebGL1) {
       glean::canvas::webgl_success
-          .EnumGet(glean::canvas::WebglSuccessLabel::eTrue)
+          .EnumGet(glean::canvas::WebglSuccessLabel::eFalse)
           .Add();
     } else if (aContextType == CanvasContextType::WebGL2) {
       glean::canvas::webgl2_success
-          .EnumGet(glean::canvas::Webgl2SuccessLabel::eTrue)
+          .EnumGet(glean::canvas::Webgl2SuccessLabel::eFalse)
           .Add();
     } else if (aContextType == CanvasContextType::WebGPU) {
-      // Telemetry::Accumulate(Telemetry::CANVAS_WEBGPU_SUCCESS, 1);
+      // Telemetry::Accumulate(Telemetry::CANVAS_WEBGPU_SUCCESS, 0);
     }
-  } else if (!CanCreateContext()) {
-    // Ensure the canvas has not been detached via a transfer.
-    aRv.ThrowInvalidStateError("Cannot create context for detached canvas.");
-    return nullptr;
-  } else {
-    // We already have a context of some type.
-    if (aContextType != mCurrentContextType) return nullptr;
+
+    context->MaybeThrowContextCreationError();
+    return false;
   }
 
-  nsCOMPtr<nsICanvasRenderingContextInternal> context = mCurrentContext;
-  return context.forget();
+  if (aContextType == CanvasContextType::WebGL1) {
+    glean::canvas::webgl_success
+        .EnumGet(glean::canvas::WebglSuccessLabel::eTrue)
+        .Add();
+  } else if (aContextType == CanvasContextType::WebGL2) {
+    glean::canvas::webgl2_success
+        .EnumGet(glean::canvas::Webgl2SuccessLabel::eTrue)
+        .Add();
+  } else if (aContextType == CanvasContextType::WebGPU) {
+    // Telemetry::Accumulate(Telemetry::CANVAS_WEBGPU_SUCCESS, 1);
+  }
+
+  AfterUpdateContext();
+  return true;
 }
 
-nsresult CanvasRenderingContextHelper::UpdateContext(
-    JSContext* aCx, JS::Handle<JS::Value> aNewContextOptions,
-    ErrorResult& aRvForDictionaryInit) {
-  if (!mCurrentContext) return NS_OK;
+bool CanvasRenderingContextHelper::InitOrUpdateContext(
+    const nsCOMPtr<nsICanvasRenderingContextInternal>& aContext,
+    const CanvasRenderingContextOptions* aOptions) {
+  // In case mCurrentContext is accidentally cleared by a recursive update, the
+  // caller must prove it has a distinct strong reference that will survive.
+  MOZ_ASSERT(&aContext != &mCurrentContext);
 
   CSSIntSize sz = GetWidthHeight();
 
-  nsCOMPtr<nsICanvasRenderingContextInternal> currentContext = mCurrentContext;
+  aContext->SetOpaqueValueFromOpaqueAttr(GetOpaqueAttr());
 
-  currentContext->SetOpaqueValueFromOpaqueAttr(GetOpaqueAttr());
-
-  nsresult rv = currentContext->SetContextOptions(aCx, aNewContextOptions,
-                                                  aRvForDictionaryInit);
+  // Only set options if updated during creation.
+  nsresult rv = aOptions ? aContext->SetContextOptions(*aOptions) : NS_OK;
   if (NS_FAILED(rv)) {
-    mCurrentContext = nullptr;
-    return rv;
+    return false;
   }
 
-  rv = currentContext->SetDimensions(sz.width, sz.height);
+  rv = aContext->SetDimensions(sz.width, sz.height);
   if (NS_FAILED(rv)) {
-    mCurrentContext = nullptr;
+    return false;
   }
+  return true;
+}
 
-  return rv;
+void CanvasRenderingContextHelper::UpdateContext() {
+  nsCOMPtr<nsICanvasRenderingContextInternal> context = mCurrentContext;
+  if (!context || InitOrUpdateContext(context, nullptr)) {
+    AfterUpdateContext();
+  } else {
+    mCurrentContext = nullptr;
+    context->MaybeThrowContextCreationError();
+  }
 }
 
 nsresult CanvasRenderingContextHelper::ParseParams(

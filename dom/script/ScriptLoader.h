@@ -478,6 +478,18 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
    */
   static JS::loader::ScriptFetchInfo* GetActiveScriptFetchInfo(JSContext* aCx);
 
+  /*
+   * Associate a ScriptFetchInfo with a classic script loaded by system code,
+   * such as message manager scripts and subscripts, using the script URL as the
+   * base URL. This allows the script to resolve module specifiers.
+   *
+   * This is not used by ScriptLoader itself. ScriptLoader::EvaluateScript does
+   * the equivalent by calling ScriptFetchInfo::AssociateWithScript with the
+   * ScriptFetchInfo of the request.
+   */
+  static void AssociateFetchInfoWithSystemClassicScript(
+      JS::Handle<JSScript*> aScript, nsIURI* aURI);
+
   Document* GetDocument() const { return mDocument; }
 
   nsIURI* GetBaseURI() const override;

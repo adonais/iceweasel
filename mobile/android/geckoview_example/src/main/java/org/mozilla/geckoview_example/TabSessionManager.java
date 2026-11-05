@@ -101,6 +101,7 @@ public class TabSessionManager {
     if (isCurrentSession(session) && mCurrentSessionIndex == mTabSessions.size() - 1) {
       --mCurrentSessionIndex;
     }
+    PipSessionHolder.closeWindowFor(session);
     session.close();
     mTabSessions.remove(session);
   }

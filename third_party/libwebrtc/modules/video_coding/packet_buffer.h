@@ -19,7 +19,6 @@
 #include <set>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "api/rtp_packet_info.h"
 #include "api/video/video_codec_type.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
@@ -79,9 +78,8 @@ class PacketBuffer {
   PacketBuffer(size_t start_buffer_size, size_t max_buffer_size);
   ~PacketBuffer();
 
-  ABSL_MUST_USE_RESULT InsertResult
-  InsertPacket(std::unique_ptr<Packet> packet);
-  ABSL_MUST_USE_RESULT InsertResult InsertPadding(int64_t seq_num);
+  [[nodiscard]] InsertResult InsertPacket(std::unique_ptr<Packet> packet);
+  [[nodiscard]] InsertResult InsertPadding(int64_t seq_num);
 
   // Clear all packets older than |seq_num|. Returns the number of packets
   // cleared.

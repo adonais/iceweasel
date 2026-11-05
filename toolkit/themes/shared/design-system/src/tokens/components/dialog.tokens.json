@@ -1,0 +1,23 @@
+{
+  "background": {
+    "color": {
+      "value": "{popup.background.color}"
+    }
+  },
+  "border": {
+    "radius": {
+      "value": "{popup.border.radius}"
+    },
+    "color": {
+      "value": "{popup.border.color}"
+    }
+  },
+  "box": {
+    "shadow": {
+      "value": "{popup.box.shadow}"
+    }
+  },
+  "padding": {
+    "value": "{space.large}"
+  }
+}

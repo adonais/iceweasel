@@ -5,6 +5,7 @@
 import { render } from "@testing-library/react";
 import { actionTypes as at } from "common/Actions.mjs";
 import { useWidgetTelemetry } from "content-src/components/Widgets/useWidgetTelemetry";
+import { SpaceActiveContext } from "content-src/lib/SpaceActiveContext";
 
 const WEATHER_WIDGET = { id: "weather", telemetryName: "weather" };
 const FOCUS_TIMER_WIDGET = { id: "focusTimer", telemetryName: "focus_timer" };
@@ -74,6 +75,27 @@ describe("useWidgetTelemetry", () => {
         widget_name: "weather",
         widget_size: "medium",
       });
+    });
+
+    it("does not observe until the enclosing space is active", () => {
+      const tree = spaceActive => (
+        <SpaceActiveContext.Provider value={spaceActive}>
+          <TestComponent
+            dispatch={dispatch}
+            widget={WEATHER_WIDGET}
+            widgetSize="medium"
+            onRender={() => {}}
+          />
+        </SpaceActiveContext.Provider>
+      );
+      const { container, rerender } = render(tree(false));
+      expect(observerStub).not.toHaveBeenCalled();
+
+      rerender(tree(true));
+      const [observerInstance] = observerStub.mock.instances;
+      expect(observerInstance.observe).toHaveBeenCalledWith(
+        container.querySelector("div")
+      );
     });
 
     it("does not dispatch a second impression after the first", () => {

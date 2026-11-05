@@ -1340,9 +1340,10 @@ void AllocationSequence::DisableEquivalentPhases(const Network* network,
                      })) {
     *flags |= PORTALLOCATOR_DISABLE_UDP;
   }
-  // Similarly we need to check both the protocol used by an existing Port and
-  // its type.
-  if (absl::c_any_of(session_->ports_,
+  // TCP is the final phase, so a running sequence with TCP enabled also
+  // covers this work even before its port exists.
+  if ((state_ == kRunning && !IsFlagSet(PORTALLOCATOR_DISABLE_TCP)) ||
+      absl::c_any_of(session_->ports_,
                      [this](const BasicPortAllocatorSession::PortData& p) {
                        return !p.pruned() && p.port()->Network() == network_ &&
                               p.port()->GetProtocol() == PROTO_TCP &&

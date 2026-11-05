@@ -22,7 +22,7 @@ For more specific, technical details of implementation, read {doc}`architecture-
 
 ## Governance
 
-See [Bookmarks & History (Places)](https://firefox-source-docs.mozilla.org/mots/index.html#bookmarks-history)
+See [Bookmarks & History (Places)](/mots/index.md#bookmarks--history)
 
 ## Table of Contents
 

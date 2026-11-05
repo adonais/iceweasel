@@ -12,10 +12,13 @@
 #include "secerr.h"
 
 #include "cpputil.h"
+#include "json_reader.h"
 #include "nss_scoped_ptrs.h"
 
-#include "testvectors/chachapoly-vectors.h"
+#include "testvectors_base/test-structs.h"
+#include "testvectors_base/chachapoly-vectors_base.h"
 #include "gtest/gtest.h"
+#include "pk11_import.h"
 
 namespace nss_test {
 
@@ -39,6 +42,17 @@ static const uint8_t kExpectedXor[sizeof(kData)] = {
     0xd8, 0x15, 0xd3, 0xb3, 0xe9, 0x34, 0x3b, 0x7a,
     0x24, 0xf6, 0x5f, 0xd7, 0x95, 0x3d, 0xd3, 0x51};
 static const size_t kTagLen = 16;
+
+struct ChaChaWycheproofTestVector {
+  uint64_t id;
+  std::vector<uint8_t> key;
+  std::vector<uint8_t> iv;
+  std::vector<uint8_t> aad;
+  std::vector<uint8_t> msg;
+  std::vector<uint8_t> ct;
+  std::vector<uint8_t> tag;
+  bool valid;
+};
 
 class Pkcs11ChaCha20Poly1305Test
     : public ::testing::TestWithParam<ChaChaTestVector> {
@@ -217,8 +231,8 @@ class Pkcs11ChaCha20Poly1305Test
                        static_cast<unsigned int>(testvector.key.size())};
 
     // Import key.
-    ScopedPK11SymKey key(PK11_ImportSymKey(slot.get(), kMech, PK11_OriginUnwrap,
-                                           CKA_ENCRYPT, &keyItem, nullptr));
+    ScopedPK11SymKey key(nss_test::ImportSymKey(
+        slot.get(), kMech, PK11_OriginUnwrap, CKA_ENCRYPT, &keyItem, nullptr));
     EXPECT_TRUE(!!key);
 
     // Check.
@@ -391,7 +405,76 @@ class Pkcs11ChaCha20Poly1305Test
     return;
   }
 
- protected:
+  void RunWycheproof() {
+    WycheproofHeader("chacha20_poly1305", "CHACHA20-POLY1305",
+                     "aead_test_schema_v1.json",
+                     [this](JsonReader& r) { RunWycheproofGroup(r); });
+  }
+
+ private:
+  void RunWycheproofGroup(JsonReader& r) {
+    std::vector<ChaChaWycheproofTestVector> tests;
+    uint64_t iv_size = 0;
+
+    while (r.NextItem()) {
+      std::string n = r.ReadLabel();
+      if (n == "") {
+        break;
+      }
+
+      if (n == "ivSize") {
+        iv_size = r.ReadInt();
+      } else if (n == "keySize") {
+        ASSERT_EQ(256U, r.ReadInt());
+      } else if (n == "tagSize") {
+        ASSERT_EQ(kTagLen * 8, r.ReadInt());
+      } else if (n == "source") {
+        r.SkipValue();
+      } else if (n == "type") {
+        ASSERT_EQ("AeadTest", r.ReadString());
+      } else if (n == "tests") {
+        WycheproofReadTests(r, &tests, ReadWycheproofTestAttr);
+      } else {
+        FAIL() << "unknown label in group: " << n;
+      }
+    }
+
+    for (auto& t : tests) {
+      std::cout << "Running test " << t.id << std::endl;
+      std::vector<uint8_t> ct_and_tag(t.ct);
+      ct_and_tag.insert(ct_and_tag.end(), t.tag.begin(), t.tag.end());
+      // Only 96-bit nonces are supported. Every test case with a different
+      // nonce size is invalid.
+      ChaChaTestVector vec = {static_cast<uint32_t>(t.id),
+                              t.msg,
+                              t.aad,
+                              t.key,
+                              t.iv,
+                              ct_and_tag,
+                              !t.valid,
+                              iv_size != 96};
+      EncryptDecrypt(vec);
+    }
+  }
+
+  static void ReadWycheproofTestAttr(ChaChaWycheproofTestVector& t,
+                                     const std::string& n, JsonReader& r) {
+    if (n == "key") {
+      t.key = r.ReadHex();
+    } else if (n == "iv") {
+      t.iv = r.ReadHex();
+    } else if (n == "aad") {
+      t.aad = r.ReadHex();
+    } else if (n == "msg") {
+      t.msg = r.ReadHex();
+    } else if (n == "ct") {
+      t.ct = r.ReadHex();
+    } else if (n == "tag") {
+      t.tag = r.ReadHex();
+    } else {
+      FAIL() << "unknown test key: " << n;
+    }
+  }
 };
 
 TEST_F(Pkcs11ChaCha20Poly1305Test, GenerateEncryptDecrypt) {
@@ -425,7 +508,7 @@ TEST_F(Pkcs11ChaCha20Poly1305Test, Xor) {
   ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
   SECItem keyItem = {siBuffer, toUcharPtr(kKeyData),
                      static_cast<unsigned int>(sizeof(kKeyData))};
-  ScopedPK11SymKey key(PK11_ImportSymKey(
+  ScopedPK11SymKey key(nss_test::ImportSymKey(
       slot.get(), kMechXor, PK11_OriginUnwrap, CKA_ENCRYPT, &keyItem, nullptr));
   EXPECT_TRUE(!!key);
 
@@ -460,9 +543,9 @@ TEST_F(Pkcs11ChaCha20Poly1305Test, XorLegacy) {
   ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
   SECItem keyItem = {siBuffer, toUcharPtr(kKeyData),
                      static_cast<unsigned int>(sizeof(kKeyData))};
-  ScopedPK11SymKey key(PK11_ImportSymKey(slot.get(), kMechXorLegacy,
-                                         PK11_OriginUnwrap, CKA_ENCRYPT,
-                                         &keyItem, nullptr));
+  ScopedPK11SymKey key(nss_test::ImportSymKey(slot.get(), kMechXorLegacy,
+                                              PK11_OriginUnwrap, CKA_ENCRYPT,
+                                              &keyItem, nullptr));
   EXPECT_TRUE(!!key);
 
   SECItem ctrNonceItem = {siBuffer, toUcharPtr(kXorParamsLegacy),
@@ -588,8 +671,7 @@ TEST_P(Pkcs11ChaCha20Poly1305Test, TestVectors) { EncryptDecrypt(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(NSSTestVector, Pkcs11ChaCha20Poly1305Test,
                          ::testing::ValuesIn(kChaCha20Vectors));
 
-INSTANTIATE_TEST_SUITE_P(WycheproofTestVector, Pkcs11ChaCha20Poly1305Test,
-                         ::testing::ValuesIn(kChaCha20WycheproofVectors));
+TEST_F(Pkcs11ChaCha20Poly1305Test, WycheproofVectors) { RunWycheproof(); }
 
 // basic message interface it's the most common configuration
 TEST_F(Pkcs11ChaCha20Poly1305Test, ChaCha201305MessageInterfaceBasic) {
@@ -602,6 +684,46 @@ TEST_F(Pkcs11ChaCha20Poly1305Test, ChaCha201305MessageInterfaceBasic) {
 TEST_F(Pkcs11ChaCha20Poly1305Test,
        ChaCha20Poly1305MessageInterfaceSeparateTags) {
   MessageInterfaceTest(CKM_CHACHA20_POLY1305, 16, PR_TRUE);
+}
+
+// PK11_AEADOp must reject ChaCha20-Poly1305 tags that are not 16 bytes long,
+// rather than reading or writing 16 bytes through the tag pointer.
+TEST_F(Pkcs11ChaCha20Poly1305Test, AEADOpInvalidTagLength) {
+  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+  SECItem key_item = {siBuffer, toUcharPtr(kKeyData),
+                      static_cast<unsigned int>(sizeof(kKeyData))};
+  ScopedPK11SymKey key(nss_test::ImportSymKey(
+      slot.get(), kMech, PK11_OriginUnwrap, CKA_ENCRYPT, &key_item, nullptr));
+  ASSERT_TRUE(!!key);
+  SECItem empty = {siBuffer, NULL, 0};
+
+  for (bool simulate : {false, true}) {
+    for (CK_ATTRIBUTE_TYPE op : {CKA_ENCRYPT, CKA_DECRYPT}) {
+      ScopedPK11Context context(PK11_CreateContextBySymKey(
+          kMech, CKA_NSS_MESSAGE | op, key.get(), &empty));
+      ASSERT_NE(nullptr, context);
+      if (simulate) {
+        ASSERT_EQ(SECSuccess, _PK11_ContextSetAEADSimulation(context.get()));
+      }
+
+      for (size_t tag_len : {0, 1, 15, 17}) {
+        std::vector<uint8_t> nonce(kNonce, kNonce + sizeof(kNonce));
+        std::vector<uint8_t> in(kData, kData + sizeof(kData));
+        std::vector<uint8_t> out(sizeof(kData));
+        std::vector<uint8_t> tag(tag_len);
+        int out_len = 0;
+        EXPECT_EQ(SECFailure,
+                  PK11_AEADOp(context.get(), CKG_NO_GENERATE, 0, nonce.data(),
+                              nonce.size(), nullptr, 0, out.data(), &out_len,
+                              out.size(), tag.data(), tag.size(), in.data(),
+                              in.size()))
+            << "simulate=" << simulate << " op=" << op
+            << " tag_len=" << tag_len;
+        EXPECT_EQ(SEC_ERROR_INVALID_ARGS, PORT_GetError());
+        EXPECT_EQ(0, out_len);
+      }
+    }
+  }
 }
 
 }  // namespace nss_test

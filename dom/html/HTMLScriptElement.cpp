@@ -70,6 +70,8 @@ nsresult HTMLScriptElement::BindToTree(BindContext& aContext,
 }
 
 void HTMLScriptElement::UnbindFromTree(UnbindContext& aContext) {
+  RenderBlockingElementUnbindFromTree(aContext);
+
   // https://html.spec.whatwg.org/#script-processing-model:html-element-removing-steps
   if (mFrozen && GetScriptIsSpeculationRules()) {
     if (auto* doc = GetComposedDoc()) {
@@ -98,6 +100,10 @@ bool HTMLScriptElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
     if (aAttribute == nsGkAtoms::fetchpriority) {
       ParseFetchPriority(aValue, aResult);
       return true;
+    }
+
+    if (aAttribute == nsGkAtoms::referrerpolicy) {
+      return ParseReferrerAttribute(aValue, aResult);
     }
 
     if (aAttribute == nsGkAtoms::blocking &&
@@ -143,6 +149,11 @@ void HTMLScriptElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
   if (nsGkAtoms::src == aName && kNameSpaceID_None == aNamespaceID) {
     mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
         this, nsAttrValueOrString(aValue).String(), aMaybeScriptedPrincipal);
+  }
+  if (kNameSpaceID_None == aNamespaceID &&
+      (aName == nsGkAtoms::type || aName == nsGkAtoms::async ||
+       aName == nsGkAtoms::defer || aName == nsGkAtoms::blocking)) {
+    UnblockRenderingIfNotPotentiallyRenderBlocking();
   }
   return nsGenericHTMLElement::AfterSetAttr(
       aNamespaceID, aName, aValue, aOldValue, aMaybeScriptedPrincipal, aNotify);
@@ -365,13 +376,23 @@ nsDOMTokenList* HTMLScriptElement::Blocking() {
 }
 
 bool HTMLScriptElement::IsPotentiallyRenderBlocking() {
-  return BlockingContainsRender();
+  if (BlockingContainsRender()) {
+    return true;
+  }
 
-  // TODO: handle implicitly potentially render blocking
   // https://html.spec.whatwg.org/#implicitly-potentially-render-blocking
   // A script element el is implicitly potentially render-blocking if el's type
   // is "classic", el is parser-inserted, and el does not have an async or defer
-  // attribute.
+  // attribute. Parser-inserted means created by the document's parser.
+  if (!IsFromDocumentParser(GetParserCreated())) {
+    return false;
+  }
+
+  if (mKind != JS::loader::ScriptKind::eClassic) {
+    return false;
+  }
+
+  return !Async() && !Defer();
 }
 
 }  // namespace mozilla::dom

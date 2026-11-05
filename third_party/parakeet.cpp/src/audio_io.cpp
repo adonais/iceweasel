@@ -1,5 +1,4 @@
 #include "audio_io.hpp"
-#include "common.hpp"
 #include <cmath>
 
 namespace pk {
@@ -21,9 +20,15 @@ std::vector<float> resample_linear(const std::vector<float>& in, int in_sr, int 
 }
 
 bool load_audio_16k_mono(const std::string& path, Audio& out) {
-    // Firefox-local: dr_wav.h is not vendored, so WAV-file loading is
-    // unsupported here. Firefox only feeds PCM directly (transcribe_pcm*).
-    PK_LOG("load_audio_16k_mono: WAV file loading not supported in this build: %s", path.c_str());
+    (void)path;
+    (void)out;
+    return false;
+}
+
+bool load_audio_16k_mono_from_memory(const void* data, size_t size, Audio& out) {
+    (void)data;
+    (void)size;
+    (void)out;
     return false;
 }
 

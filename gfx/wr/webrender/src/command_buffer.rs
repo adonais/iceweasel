@@ -11,7 +11,8 @@ use crate::gpu_types::QuadSegment;
 use crate::prim_store::storage;
 use crate::segment::EdgeMask;
 use crate::transform::GpuTransformId;
-use crate::visibility::PrimitiveDrawHeader;
+use crate::prim_store::PrimitiveInstanceIndex;
+use crate::visibility::{BackdropCaptureIndex, PrimitiveDrawHeader};
 
 /// A tightly packed command stored in a command buffer
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -492,32 +493,47 @@ pub enum CommandBufferBuilderKind {
     Invalid,
 }
 
+/// A backdrop-filter capture open on a surface: each primitive prepared on the
+/// surface that is behind the element is drawn into the capture too.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct OpenBackdropCapture {
+    pub index: BackdropCaptureIndex,
+    /// The area of the surface the capture's filters sample.
+    pub region: PictureRect,
+    /// The `BackdropCapture` primitive. Primitives painted before the element
+    /// have lower instance indices.
+    pub capture_instance_index: PrimitiveInstanceIndex,
+    /// The command buffer the capture's task draws from.
+    pub cmd_buffer_index: CommandBufferIndex,
+    /// The render tasks the primitives drawn into the capture depend on, which
+    /// its task has to depend on too.
+    pub dependencies: Vec<RenderTaskId>,
+    /// Whether the primitive being prepared on the surface is drawn into the
+    /// capture, so that the render tasks it makes the surface depend on are
+    /// added to its dependencies too.
+    pub drawn_into: bool,
+}
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CommandBufferBuilder {
     pub kind: CommandBufferBuilderKind,
 
-    /// If a command buffer establishes a sub-graph, then at the end of constructing
-    /// the surface, the parent surface is supplied as an input dependency, and the
-    /// parent surface gets a duplicated (existing) task with the same location, and
-    /// with the sub-graph output as an input dependency.
-    pub establishes_sub_graph: bool,
-
-    /// If this surface builds a sub-graph, it will mark a task in the filter sub-graph
-    /// as a resolve source for the input from the parent surface.
-    pub resolve_source: Option<RenderTaskId>,
-
     /// List of render tasks that depend on the task that will be created for this builder.
     pub extra_dependencies: Vec<RenderTaskId>,
+
+    /// The backdrop-filter captures open on this surface.
+    pub backdrop_captures: Vec<OpenBackdropCapture>,
 }
 
 impl CommandBufferBuilder {
     pub fn empty() -> Self {
         CommandBufferBuilder {
             kind: CommandBufferBuilderKind::Invalid,
-            establishes_sub_graph: false,
-            resolve_source: None,
             extra_dependencies: Vec::new(),
+            backdrop_captures: Vec::new(),
         }
     }
 
@@ -529,16 +545,14 @@ impl CommandBufferBuilder {
             kind: CommandBufferBuilderKind::Tiled {
                 tiles,
             },
-            establishes_sub_graph: false,
-            resolve_source: None,
             extra_dependencies: Vec::new(),
+            backdrop_captures: Vec::new(),
         }
     }
 
     /// Construct a simple command buffer builder.
     pub fn new_simple(
         render_task_id: RenderTaskId,
-        establishes_sub_graph: bool,
         root_task_id: Option<RenderTaskId>,
         dirty_rect: PictureRect,
     ) -> Self {
@@ -548,9 +562,8 @@ impl CommandBufferBuilder {
                 root_task_id,
                 dirty_rect,
             },
-            establishes_sub_graph,
-            resolve_source: None,
             extra_dependencies: Vec::new(),
+            backdrop_captures: Vec::new(),
         }
     }
 }

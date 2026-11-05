@@ -27,6 +27,10 @@
 
 class nsFileRandomAccessStream;
 
+namespace mozilla::security::lockstore {
+class LockstoreService;
+}
+
 namespace mozilla {
 
 /**
@@ -277,6 +281,7 @@ class IOUtils final {
   struct InternalFileInfo;
   struct InternalWriteOpts;
   class MozLZ4;
+  class Encryption;
   class EventQueue;
   class State;
 
@@ -319,31 +324,42 @@ class IOUtils final {
    * @param aOffset     The offset to start reading from.
    * @param aMaxBytes   If |Some|, then only read up this this number of bytes,
    *                    otherwise attempt to read the whole file.
-   * @param aDecompress If true, decompress the bytes read from disk before
-   *                    returning the result to the caller.
-   * @param aBufferKind The kind of buffer to allocate.
+   * @param aDecompress    If true, decompress the bytes read from disk before
+   *                       returning the result to the caller.
+   * @param aDecryptKeyId If non-empty, decrypt the bytes read from disk
+   *                       (before decompression) using the Keystore DEK
+   *                       named by this string. A file lacking the
+   *                       encryption header is returned unchanged.
+   * @param aLockstore     The Keystore service, obtained on the calling
+   *                       thread. May be null when |aDecryptKeyId| is empty.
+   * @param aBufferKind    The kind of buffer to allocate.
    *
    * @return A buffer containing the entire (decompressed) file contents, or an
    *         error.
    */
-  static Result<JsBuffer, IOError> ReadSync(nsIFile* aFile,
-                                            const uint64_t aOffset,
-                                            const Maybe<uint32_t> aMaxBytes,
-                                            const bool aDecompress,
-                                            BufferKind aBufferKind);
+  static Result<JsBuffer, IOError> ReadSync(
+      nsIFile* aFile, const uint64_t aOffset, const Maybe<uint32_t> aMaxBytes,
+      const bool aDecompress, const nsCString& aDecryptKeyId,
+      security::lockstore::LockstoreService* aLockstore,
+      BufferKind aBufferKind);
 
   /**
    * Attempts to read the entire file at |aPath| as a UTF-8 string.
    *
-   * @param aFile       The location of the file.
-   * @param aDecompress If true, decompress the bytes read from disk before
-   *                    returning the result to the caller.
+   * @param aFile          The location of the file.
+   * @param aDecompress    If true, decompress the bytes read from disk before
+   *                       returning the result to the caller.
+   * @param aDecryptKeyId If non-empty, decrypt using the Keystore DEK
+   *                       named by this string.
+   * @param aLockstore     The Keystore service. May be null when
+   *                       |aDecryptKeyId| is empty.
    *
    * @return The (decompressed) contents of the file re-encoded as a UTF-16
    *         string.
    */
-  static Result<JsBuffer, IOError> ReadUTF8Sync(nsIFile* aFile,
-                                                const bool aDecompress);
+  static Result<JsBuffer, IOError> ReadUTF8Sync(
+      nsIFile* aFile, const bool aDecompress, const nsCString& aDecryptKeyId,
+      security::lockstore::LockstoreService* aLockstore);
 
   /**
    * Attempt to write the entirety of |aByteArray| to the file at |aPath|.
@@ -353,13 +369,17 @@ class IOUtils final {
    * @param aFile  The location of the file.
    * @param aByteArray The data to write to the file.
    * @param aOptions   Options to modify the way the write is completed.
+   * @param aLockstore The Keystore service to encrypt with when
+   *                   |aOptions.mEncrypt| is set, obtained on the calling
+   *                   thread by the entry point. May be null otherwise.
    *
    * @return The number of bytes written to the file, or an error if the write
    *         failed or was incomplete.
    */
   static Result<uint32_t, IOError> WriteSync(
       nsIFile* aFile, const Span<const uint8_t>& aByteArray,
-      const InternalWriteOpts& aOptions);
+      const InternalWriteOpts& aOptions,
+      security::lockstore::LockstoreService* aLockstore);
 
   /**
    * Attempts to move the file located at |aSourceFile| to |aDestFile|.
@@ -738,6 +758,7 @@ struct IOUtils::InternalWriteOpts {
   dom::WriteMode mMode;
   bool mFlush = false;
   bool mCompress = false;
+  nsCString mEncryptKeyId;
   size_t mLengthHint = 0;
 
   static Result<InternalWriteOpts, IOUtils::IOError> FromBinding(
@@ -778,6 +799,49 @@ class IOUtils::MozLZ4 {
    */
   static Result<IOUtils::JsBuffer, IOError> Decompress(
       Span<const uint8_t> aFileContents, IOUtils::BufferKind);
+};
+
+/**
+ * Whole-file encryption transform, composing with |MozLZ4| compression
+ * (compress-then-encrypt on write, decrypt-then-decompress on read).
+ *
+ * The crypto and key material are owned by the in-tree Keystore
+ * (security/lockstore); this class only frames the ciphertext and routes
+ * to the Keystore's synchronous C++ tier. The on-disk layout is:
+ *
+ *  - MAGIC_NUMBER (8 bytes)
+ *  - the self-describing blob returned by the Keystore's encrypt
+ *    ([cipher_suite_id][nonce][ciphertext+tag])
+ *
+ * A LocalKey KEK and a fixed DEK are created on first use.
+ */
+class IOUtils::Encryption {
+ public:
+  static constexpr std::array<uint8_t, 8> MAGIC_NUMBER{
+      {'m', 'o', 'z', 'E', 'n', 'c', '0', '\0'}};
+  static constexpr size_t VERSION_OFFSET = 6;
+  static constexpr uint8_t CURRENT_VERSION = '0';
+
+  static bool IsEncrypted(Span<const uint8_t> aData);
+
+  /**
+   * Encrypts |aPlaintext| and returns a byte array (magic header + Keystore
+   * blob) whose contents may be written to disk.
+   */
+  static Result<nsTArray<uint8_t>, IOError> Encrypt(
+      Span<const uint8_t> aPlaintext,
+      security::lockstore::LockstoreService* aLockstore,
+      const nsACString& aKeyId);
+
+  /**
+   * If |aFileContents| carries the encryption header, strips it and returns
+   * the decrypted content. If the header is absent, returns the contents
+   * unchanged (so unencrypted/legacy files read transparently).
+   */
+  static Result<IOUtils::JsBuffer, IOError> Decrypt(
+      Span<const uint8_t> aFileContents,
+      security::lockstore::LockstoreService* aLockstore,
+      const nsACString& aKeyId, IOUtils::BufferKind);
 };
 
 class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker,

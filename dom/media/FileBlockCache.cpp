@@ -356,6 +356,7 @@ void FileBlockCache::PerformBlockIOs() {
     // overwrites the mBlockChanges entry for this block while we drop
     // mDataMutex to take mFileMutex.
     int32_t blockIndex = mChangeIndexList.front();
+    mChangeIndexList.pop_front();
     RefPtr<BlockChange> change = mBlockChanges[blockIndex];
     MOZ_ASSERT(change,
                "Change index list should only contain entries for blocks "
@@ -374,7 +375,6 @@ void FileBlockCache::PerformBlockIOs() {
         MoveBlockInFile(change->mSourceBlockIndex, blockIndex);
       }
     }
-    mChangeIndexList.pop_front();  // MonitorAutoUnlock above
     // If a new change has not been made to the block while we dropped
     // mDataMutex, clear reference to the old change. Otherwise, the old
     // reference has been cleared already.

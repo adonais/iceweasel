@@ -120,11 +120,6 @@ CK_BBOOL pk11_HasAttributeSet_Lock(PK11SlotInfo *slot,
                                    PRBool haslock);
 CK_RV PK11_GetAttributes(PLArenaPool *arena, PK11SlotInfo *slot,
                          CK_OBJECT_HANDLE obj, CK_ATTRIBUTE *attr, int count);
-int PK11_NumberCertsForCertSubject(CERTCertificate *cert);
-SECStatus PK11_TraverseCertsForSubject(CERTCertificate *cert,
-                                       SECStatus (*callback)(CERTCertificate *, void *), void *arg);
-SECStatus PK11_GetKEAMatchedCerts(PK11SlotInfo *slot1,
-                                  PK11SlotInfo *slot2, CERTCertificate **cert1, CERTCertificate **cert2);
 SECStatus PK11_TraverseCertsInSlot(PK11SlotInfo *slot,
                                    SECStatus (*callback)(CERTCertificate *, void *), void *arg);
 SECStatus PK11_LookupCrls(CERTCrlHeadNode *nodes, int type, void *wincx);

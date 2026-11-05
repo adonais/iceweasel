@@ -388,7 +388,8 @@ void nsSplitterFrameInner::MouseUp(nsPresContext* aPresContext,
     // if the state is dragging then make it Open.
     if (newState == State::Dragging) {
       mOuter->mContent->AsElement()->SetAttr(kNameSpaceID_None,
-                                             nsGkAtoms::state, u""_ns, true);
+                                             nsGkAtoms::state, u""_ns, true,
+                                             dom::IsKnownNewAttr::No);
     }
 
     mPressed = false;
@@ -457,9 +458,9 @@ void nsSplitterFrameInner::MouseDrag(nsPresContext* aPresContext,
         if (supportsAfter) {
           RefPtr<Element> outer = mOuter->mContent->AsElement();
           outer->SetAttr(kNameSpaceID_None, nsGkAtoms::substate, u"after"_ns,
-                         true);
+                         true, dom::IsKnownNewAttr::No);
           outer->SetAttr(kNameSpaceID_None, nsGkAtoms::state, u"collapsed"_ns,
-                         true);
+                         true, dom::IsKnownNewAttr::No);
         }
 
       } else if (pastBegin) {
@@ -467,9 +468,9 @@ void nsSplitterFrameInner::MouseDrag(nsPresContext* aPresContext,
         if (supportsBefore) {
           RefPtr<Element> outer = mOuter->mContent->AsElement();
           outer->SetAttr(kNameSpaceID_None, nsGkAtoms::substate, u"before"_ns,
-                         true);
+                         true, dom::IsKnownNewAttr::No);
           outer->SetAttr(kNameSpaceID_None, nsGkAtoms::state, u"collapsed"_ns,
-                         true);
+                         true, dom::IsKnownNewAttr::No);
         }
       }
     }
@@ -477,8 +478,9 @@ void nsSplitterFrameInner::MouseDrag(nsPresContext* aPresContext,
     // if we are not in a collapsed position and we are not dragging make sure
     // we are dragging.
     if (currentState != State::Dragging) {
-      mOuter->mContent->AsElement()->SetAttr(
-          kNameSpaceID_None, nsGkAtoms::state, u"dragging"_ns, true);
+      mOuter->mContent->AsElement()->SetAttr(kNameSpaceID_None,
+                                             nsGkAtoms::state, u"dragging"_ns,
+                                             true, dom::IsKnownNewAttr::No);
     }
     AdjustChildren(aPresContext);
   }
@@ -806,7 +808,8 @@ nsresult nsSplitterFrameInner::MouseMove(Event* aMouseEvent) {
 
   nsCOMPtr<nsIDOMEventListener> kungfuDeathGrip(this);
   mOuter->mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::state,
-                                         u"dragging"_ns, true);
+                                         u"dragging"_ns, true,
+                                         dom::IsKnownNewAttr::No);
 
   RemoveListener();
   mDragging = true;

@@ -15,7 +15,7 @@ describe("SmartWindowSwitcherTelemetry", () => {
     sb = sinon.createSandbox();
 
     Services.fog.testResetFOG();
-    sb.stub(AIWindowAccountAuth, "isSignedIn").resolves(true);
+    sb.stub(AuthProvider, "isSignedIn").resolves(true);
   });
 
   afterEach(async () => {
@@ -28,7 +28,7 @@ describe("SmartWindowSwitcherTelemetry", () => {
 
   describe("launch_command_invoked event", () => {
     it("records launch_command_invoked when switching the current window", async () => {
-      sb.stub(AIWindowAccountAuth, "ensureAIWindowAccess").resolves(true);
+      sb.stub(AuthProvider, "maybeSignIn").resolves(true);
       win = await BrowserTestUtils.openNewBrowserWindow();
 
       const launched = await AIWindow.launchWindow(
@@ -55,7 +55,7 @@ describe("SmartWindowSwitcherTelemetry", () => {
     });
 
     it("records launch_command_invoked when opening a new window", async () => {
-      sb.stub(AIWindowAccountAuth, "canAccessAIWindow").resolves(true);
+      sb.stub(AuthProvider, "hasToSConsent").get(() => true);
       win = await BrowserTestUtils.openNewBrowserWindow();
 
       const newWinPromise = BrowserTestUtils.waitForNewWindow();
@@ -92,8 +92,8 @@ describe("SmartWindowSwitcherTelemetry", () => {
     });
 
     it("records fxa=false when the user is not signed in", async () => {
-      AIWindowAccountAuth.isSignedIn.resolves(false);
-      sb.stub(AIWindowAccountAuth, "ensureAIWindowAccess").resolves(false);
+      AuthProvider.isSignedIn.resolves(false);
+      sb.stub(AuthProvider, "maybeSignIn").resolves(false);
       win = await BrowserTestUtils.openNewBrowserWindow();
 
       const launched = await AIWindow.launchWindow(
@@ -122,7 +122,7 @@ describe("SmartWindowSwitcherTelemetry", () => {
       await SpecialPowers.pushPrefEnv({
         set: [["browser.smartwindow.isDefaultWindow", true]],
       });
-      sb.stub(AIWindowAccountAuth, "ensureAIWindowAccess").resolves(true);
+      sb.stub(AuthProvider, "maybeSignIn").resolves(true);
       win = await BrowserTestUtils.openNewBrowserWindow();
 
       await AIWindow.onFirstWindowReady(win);

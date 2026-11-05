@@ -164,6 +164,17 @@ class TestingMixin(
     tests and Talos.
     """
 
+    python_constraints = "requirements-mozbase.txt"
+
+    def query_python_constraints(self):
+        return [
+            os.path.join(
+                self.query_abs_dirs()["abs_test_install_dir"],
+                "config",
+                self.python_constraints,
+            )
+        ]
+
     installer_url = None
     installer_path = None
     binary_path = None

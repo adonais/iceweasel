@@ -1035,21 +1035,72 @@ async function expectWarningText(browser, expectedText) {
   ok(true, `Got expected warning text: ${expectedText}`);
 }
 
-async function testDialog(url, testFn, arg = undefined) {
-  // Skip this step for test cards that lack an encrypted
-  // number since they will fail to decrypt.
-  if (
-    url == EDIT_CREDIT_CARD_DIALOG_URL &&
-    arg &&
-    arg.record &&
-    arg.record["cc-number-encrypted"]
-  ) {
-    arg.record = Object.assign({}, arg.record, {
-      "cc-number": await OSKeyStore.decrypt(
-        arg.record["cc-number-encrypted"],
-        "testing"
-      ),
+// Whether the Rust credit card store is the one serving, which
+// rustCreditCard/browser.toml sets for a second run of the credit card tests.
+// A test has to ask when it asserts on the OS key store's own behaviour or
+// telemetry, neither of which covers the store that holds its key in NSS.
+const RUST_CREDIT_CARD_STORE = Services.prefs.getBoolPref(
+  "extensions.formautofill.creditCards.storage.rust.enabled",
+  false
+);
+
+let gCreditCardRustEnabledWas;
+
+/**
+ * Serve credit cards from the store asked for, the way a pref flip switches
+ * them at runtime: set ...rust.enabled and wait for the migration to set
+ * ...rust.active. For a test that needs a particular store whichever manifest
+ * runs it, since only the Rust store supports the security code. The store the
+ * test started on is restored when it ends.
+ *
+ * @param {object} options
+ * @param {boolean} options.rust Whether the Rust store should serve.
+ */
+async function switchCreditCardStore({ rust }) {
+  const enabledPref =
+    "extensions.formautofill.creditCards.storage.rust.enabled";
+  // The pref observer that runs the switch is added by initialize().
+  await formAutofillStorage.initialize();
+  if (gCreditCardRustEnabledWas === undefined) {
+    gCreditCardRustEnabledWas = Services.prefs.getBoolPref(enabledPref, false);
+    registerCleanupFunction(async () => {
+      Services.prefs.setBoolPref(enabledPref, gCreditCardRustEnabledWas);
+      await formAutofillStorage._creditCardSwitch;
     });
+  }
+  Services.prefs.setBoolPref(enabledPref, rust);
+  await formAutofillStorage._creditCardSwitch;
+  is(
+    Services.prefs.getBoolPref(
+      "extensions.formautofill.creditCards.storage.rust.active",
+      false
+    ),
+    rust,
+    `credit cards are served by the ${rust ? "Rust" : "JSON"} store`
+  );
+}
+
+/**
+ * The number behind a stored card, in the clear.
+ *
+ * Asked of the collection rather than of a key store: each store encrypts
+ * under its own key, so which one reads a record back depends on which one
+ * wrote it.
+ *
+ * @param {object} record A card as the collection handed it out.
+ * @returns {Promise<?string>} The number, or null if the record holds none.
+ */
+async function decryptCreditCardNumber(record) {
+  return formAutofillStorage.creditCards.decryptField(record, "cc-number");
+}
+
+async function testDialog(url, testFn, arg = undefined) {
+  if (url == EDIT_CREDIT_CARD_DIALOG_URL && arg?.record) {
+    // A test card that holds no number keeps the one it carries.
+    const number = await decryptCreditCardNumber(arg.record);
+    if (number) {
+      arg.record = Object.assign({}, arg.record, { "cc-number": number });
+    }
   }
   const win = window.openDialog(url, null, "width=600,height=600", {
     ...arg,
@@ -1868,6 +1919,30 @@ if (
         false
       ),
       "the Rust store served addresses, so this run exercised it"
+    );
+  });
+}
+
+// rustCreditCard/browser.toml runs these tests a second time with
+// extensions.formautofill.creditCards.storage.rust.enabled set. That pref only
+// asks: FormAutofillStorage serves credit cards from the JSON store until the
+// migration completes and sets ...rust.active, and reports nothing when it does
+// not, so a run that never reached the Rust store would pass. Asserted after
+// the test rather than before it, so that the store is the one the test's own
+// reads and writes went to.
+if (
+  Services.prefs.getBoolPref(
+    "extensions.formautofill.creditCards.storage.rust.enabled",
+    false
+  )
+) {
+  registerCleanupFunction(function rust_served_the_credit_cards() {
+    Assert.ok(
+      Services.prefs.getBoolPref(
+        "extensions.formautofill.creditCards.storage.rust.active",
+        false
+      ),
+      "the Rust store served credit cards, so this run exercised it"
     );
   });
 }

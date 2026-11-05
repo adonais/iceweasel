@@ -9,6 +9,10 @@ if CONFIG["OS_TARGET"] != "Android":
         "pingsender.cpp",
     ]
 
+    SOURCE_HEADERS += [
+        "pingsender.h",
+    ]
+
     LOCAL_INCLUDES += [
         "/toolkit/crashreporter/google-breakpad/src",
     ]

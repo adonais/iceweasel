@@ -12,9 +12,11 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <set>
 #include <span>
 #include <utility>
 #include <variant>
@@ -73,7 +75,9 @@ void PrintTo(const Resolution& res, std::ostream* os) {
 namespace {
 using ::testing::Gt;
 using ::testing::IsEmpty;
+using ::testing::IsNull;
 using ::testing::Not;
+using ::testing::NotNull;
 
 using Capabilities = VideoEncoderFactoryInterface::Capabilities;
 using PredictionConstraints = Capabilities::PredictionConstraints;
@@ -81,6 +85,7 @@ using BufferSpaceType = PredictionConstraints::BufferSpaceType;
 using InputConstraints = Capabilities::InputConstraints;
 using BitrateControl = Capabilities::BitrateControl;
 using RateControlMode = VideoEncoderFactoryInterface::RateControlMode;
+using CbrSetting = VideoEncoderFactoryInterface::CbrSetting;
 using Performance = Capabilities::Performance;
 using StaticEncoderSettings =
     VideoEncoderFactoryInterface::StaticEncoderSettings;
@@ -321,6 +326,13 @@ scoped_refptr<VideoFrameBuffer> CreateAndPopulateFrameBuffer(
   }
 }
 
+// CBR settings that any encoder supporting CBR mode is expected to accept.
+// The tests below derive their invalid settings from these.
+constexpr StaticEncoderSettings::Cbr kValidCbrSettings = {
+    .max_buffer_size = TimeDelta::Millis(1000),
+    .target_buffer_size = TimeDelta::Millis(600),
+    .max_intra_bitrate_factor = 3.0};
+
 class VideoEncoderFunctionalTest
     : public ::testing::TestWithParam<FactoryCreator> {
  protected:
@@ -329,6 +341,28 @@ class VideoEncoderFunctionalTest
   void SetUp() override {
     factory_ = GetParam()();
     decoder_factory_ = CreateTestDecoderFactory();
+  }
+
+  // Whether the encoder runs in CBR mode and honors `setting`. Settings that
+  // are not honored may be ignored entirely, including their validation.
+  bool HonorsCbrSetting(CbrSetting setting) const {
+    Capabilities capabilities = factory_->GetEncoderCapabilities();
+    const BitrateControl& bitrate_control = capabilities.bitrate_control();
+    return bitrate_control.rc_modes().contains(RateControlMode::kCbr) &&
+           bitrate_control.supported_cbr_settings().contains(setting);
+  }
+
+  std::unique_ptr<VideoEncoderInterface> CreateCbrEncoder(
+      const StaticEncoderSettings::Cbr& cbr) {
+    return factory_->CreateEncoder(
+        StaticEncoderSettingsBuilder()
+            .MaxEncodeDimensions(kDefaultResolution)
+            .EncodingFormat(
+                factory_->GetEncoderCapabilities().encoding_formats()[0])
+            .RcMode(cbr)
+            .MaxNumberOfThreads(1)
+            .Build(),
+        {});
   }
 
   Environment env_;
@@ -386,7 +420,7 @@ TEST_P(VideoEncoderFunctionalTest, ValidScalingFactors) {
 
 TEST_P(VideoEncoderFunctionalTest, ValidSupportedFrameTypes) {
   Capabilities capabilities = factory_->GetEncoderCapabilities();
-  const std::vector<FrameType>& supported_frame_types =
+  const std::set<FrameType>& supported_frame_types =
       capabilities.prediction_constraints().supported_frame_types();
   EXPECT_THAT(supported_frame_types, testing::Contains(FrameType::kKeyframe));
   EXPECT_THAT(supported_frame_types, testing::Contains(FrameType::kDeltaFrame));
@@ -440,9 +474,92 @@ TEST_P(VideoEncoderFunctionalTest, ValidQpRange) {
 
 TEST_P(VideoEncoderFunctionalTest, ValidRateControlModes) {
   Capabilities capabilities = factory_->GetEncoderCapabilities();
-  const std::vector<RateControlMode>& rc_modes =
+  const std::set<RateControlMode>& rc_modes =
       capabilities.bitrate_control().rc_modes();
   EXPECT_FALSE(rc_modes.empty());
+}
+
+TEST_P(VideoEncoderFunctionalTest, ValidCbrSettings) {
+  Capabilities capabilities = factory_->GetEncoderCapabilities();
+  const BitrateControl& bitrate_control = capabilities.bitrate_control();
+  if (!bitrate_control.rc_modes().contains(RateControlMode::kCbr)) {
+    EXPECT_THAT(bitrate_control.supported_cbr_settings(), IsEmpty());
+  }
+}
+
+TEST_P(VideoEncoderFunctionalTest, AcceptsValidCbrSettings) {
+  if (!factory_->GetEncoderCapabilities().bitrate_control().rc_modes().contains(
+          RateControlMode::kCbr)) {
+    GTEST_SKIP() << "Encoder does not support CBR mode.";
+  }
+  EXPECT_THAT(CreateCbrEncoder(kValidCbrSettings), NotNull());
+}
+
+// An encoder must reject CBR settings that are out of range, so that a caller
+// does not end up with an encoder silently doing something else than asked.
+// Only the settings an encoder claims to honor are checked, the ones it
+// ignores it may also ignore the validation of.
+TEST_P(VideoEncoderFunctionalTest, RejectsCbrWithZeroMaxBufferSize) {
+  if (!HonorsCbrSetting(CbrSetting::kBufferSizes)) {
+    GTEST_SKIP() << "Encoder does not use the CBR buffer sizes.";
+  }
+  StaticEncoderSettings::Cbr cbr = kValidCbrSettings;
+  cbr.max_buffer_size = TimeDelta::Zero();
+  EXPECT_THAT(CreateCbrEncoder(cbr), IsNull());
+}
+
+TEST_P(VideoEncoderFunctionalTest, RejectsCbrWithNegativeMaxBufferSize) {
+  if (!HonorsCbrSetting(CbrSetting::kBufferSizes)) {
+    GTEST_SKIP() << "Encoder does not use the CBR buffer sizes.";
+  }
+  StaticEncoderSettings::Cbr cbr = kValidCbrSettings;
+  cbr.max_buffer_size = -kValidCbrSettings.max_buffer_size;
+  EXPECT_THAT(CreateCbrEncoder(cbr), IsNull());
+}
+
+TEST_P(VideoEncoderFunctionalTest, RejectsCbrWithInfiniteMaxBufferSize) {
+  if (!HonorsCbrSetting(CbrSetting::kBufferSizes)) {
+    GTEST_SKIP() << "Encoder does not use the CBR buffer sizes.";
+  }
+  StaticEncoderSettings::Cbr cbr = kValidCbrSettings;
+  cbr.max_buffer_size = TimeDelta::PlusInfinity();
+  EXPECT_THAT(CreateCbrEncoder(cbr), IsNull());
+}
+
+TEST_P(VideoEncoderFunctionalTest, RejectsCbrWithZeroTargetBufferSize) {
+  if (!HonorsCbrSetting(CbrSetting::kBufferSizes)) {
+    GTEST_SKIP() << "Encoder does not use the CBR buffer sizes.";
+  }
+  StaticEncoderSettings::Cbr cbr = kValidCbrSettings;
+  cbr.target_buffer_size = TimeDelta::Zero();
+  EXPECT_THAT(CreateCbrEncoder(cbr), IsNull());
+}
+
+TEST_P(VideoEncoderFunctionalTest, RejectsCbrWithTargetBufferSizeAboveMax) {
+  if (!HonorsCbrSetting(CbrSetting::kBufferSizes)) {
+    GTEST_SKIP() << "Encoder does not use the CBR buffer sizes.";
+  }
+  StaticEncoderSettings::Cbr cbr = kValidCbrSettings;
+  cbr.target_buffer_size = cbr.max_buffer_size + TimeDelta::Millis(1);
+  EXPECT_THAT(CreateCbrEncoder(cbr), IsNull());
+}
+
+TEST_P(VideoEncoderFunctionalTest, RejectsCbrWithIntraBitrateFactorBelowOne) {
+  if (!HonorsCbrSetting(CbrSetting::kMaxIntraBitrateFactor)) {
+    GTEST_SKIP() << "Encoder does not limit the size of intra frames.";
+  }
+  StaticEncoderSettings::Cbr cbr = kValidCbrSettings;
+  cbr.max_intra_bitrate_factor = 0.5;
+  EXPECT_THAT(CreateCbrEncoder(cbr), IsNull());
+}
+
+TEST_P(VideoEncoderFunctionalTest, RejectsCbrWithInfiniteIntraBitrateFactor) {
+  if (!HonorsCbrSetting(CbrSetting::kMaxIntraBitrateFactor)) {
+    GTEST_SKIP() << "Encoder does not limit the size of intra frames.";
+  }
+  StaticEncoderSettings::Cbr cbr = kValidCbrSettings;
+  cbr.max_intra_bitrate_factor = std::numeric_limits<double>::infinity();
+  EXPECT_THAT(CreateCbrEncoder(cbr), IsNull());
 }
 
 TEST_P(VideoEncoderFunctionalTest, ValidEffortLevelRange) {
@@ -456,7 +573,7 @@ TEST_P(VideoEncoderFunctionalTest, ValidEffortLevelRange) {
 
 TEST_P(VideoEncoderFunctionalTest, EncodesAndDecodesKeyframe) {
   Capabilities capabilities = factory_->GetEncoderCapabilities();
-  const std::vector<RateControlMode>& rc_modes =
+  const std::set<RateControlMode>& rc_modes =
       capabilities.bitrate_control().rc_modes();
   ASSERT_FALSE(rc_modes.empty())
       << "Encoder must support at least one RC mode.";
@@ -507,10 +624,10 @@ TEST_P(VideoEncoderFunctionalTest, SupportsAllReferenceBuffers) {
   if (num_buffers < 1) {
     GTEST_SKIP() << "Encoder doesn't support reference buffers.";
   }
-  const std::vector<FrameType>& supported_frame_types =
+  const std::set<FrameType>& supported_frame_types =
       capabilities.prediction_constraints().supported_frame_types();
-  if (!absl::c_linear_search(supported_frame_types, FrameType::kKeyframe) ||
-      !absl::c_linear_search(supported_frame_types, FrameType::kDeltaFrame)) {
+  if (!supported_frame_types.contains(FrameType::kKeyframe) ||
+      !supported_frame_types.contains(FrameType::kDeltaFrame)) {
     GTEST_SKIP() << "Encoder must support keyframe and delta frame.";
   }
 
@@ -901,9 +1018,9 @@ TEST_P(VideoEncoderFunctionalTest, SupportsIndependentSpatialLayers) {
       capabilities.prediction_constraints().buffer_space_type();
 
   if (buffer_space_type == BufferSpaceType::kSingleKeyframe) {
-    const std::vector<FrameType>& supported_frame_types =
+    const std::set<FrameType>& supported_frame_types =
         capabilities.prediction_constraints().supported_frame_types();
-    if (!absl::c_linear_search(supported_frame_types, FrameType::kStartFrame)) {
+    if (!supported_frame_types.contains(FrameType::kStartFrame)) {
       GTEST_SKIP() << "kSingleKeyframe encoder must support start frames.";
     }
   }
@@ -1669,9 +1786,9 @@ TEST_P(VideoEncoderFunctionalTest, SkipMidLayer) {
 // clearing all references).
 TEST_P(VideoEncoderFunctionalTest, EncodesAndDecodesStartFrame) {
   Capabilities capabilities = factory_->GetEncoderCapabilities();
-  const std::vector<FrameType>& supported_types =
+  const std::set<FrameType>& supported_types =
       capabilities.prediction_constraints().supported_frame_types();
-  if (!absl::c_linear_search(supported_types, FrameType::kStartFrame)) {
+  if (!supported_types.contains(FrameType::kStartFrame)) {
     GTEST_SKIP() << "Encoder doesn't support StartFrame.";
   }
 
@@ -1706,9 +1823,9 @@ TEST_P(VideoEncoderFunctionalTest, EncodesAndDecodesStartFrame) {
 // comparable to a Keyframe.
 TEST_P(VideoEncoderFunctionalTest, KeyframeAndStartFrameAreApproximatelyEqual) {
   Capabilities capabilities = factory_->GetEncoderCapabilities();
-  const std::vector<FrameType>& supported_types =
+  const std::set<FrameType>& supported_types =
       capabilities.prediction_constraints().supported_frame_types();
-  if (!absl::c_linear_search(supported_types, FrameType::kStartFrame)) {
+  if (!supported_types.contains(FrameType::kStartFrame)) {
     GTEST_SKIP() << "Encoder doesn't support StartFrame.";
   }
 
@@ -2042,8 +2159,8 @@ TEST_P(VideoEncoderFunctionalTest, SupportsAllEncodingFormats) {
 TEST_P(VideoEncoderFunctionalTest, SupportsConstantQp) {
   Capabilities capabilities = factory_->GetEncoderCapabilities();
   const BitrateControl& bc = capabilities.bitrate_control();
-  const std::vector<RateControlMode>& rc_modes = bc.rc_modes();
-  if (!absl::c_linear_search(rc_modes, RateControlMode::kCqp)) {
+  const std::set<RateControlMode>& rc_modes = bc.rc_modes();
+  if (!rc_modes.contains(RateControlMode::kCqp)) {
     GTEST_SKIP() << "CQP rate control mode is not supported.";
   }
 
@@ -2102,8 +2219,8 @@ TEST_P(VideoEncoderFunctionalTest, SupportsConstantQp) {
 TEST_P(VideoEncoderFunctionalTest, SupportsConstantBitrate) {
   Capabilities capabilities = factory_->GetEncoderCapabilities();
   const BitrateControl& bc = capabilities.bitrate_control();
-  const std::vector<RateControlMode>& rc_modes = bc.rc_modes();
-  if (!absl::c_linear_search(rc_modes, RateControlMode::kCbr)) {
+  const std::set<RateControlMode>& rc_modes = bc.rc_modes();
+  if (!rc_modes.contains(RateControlMode::kCbr)) {
     GTEST_SKIP() << "CBR rate control mode is not supported.";
   }
 
@@ -2119,7 +2236,8 @@ TEST_P(VideoEncoderFunctionalTest, SupportsConstantBitrate) {
           .MaxEncodeDimensions(kDefaultResolution)
           .EncodingFormat({.sub_sampling = EncodingFormat::SubSampling::k420,
                            .bit_depth = 8})
-          .CbrRcMode(TimeDelta::Millis(1000), TimeDelta::Millis(600))
+          .CbrRcMode(TimeDelta::Millis(1000), TimeDelta::Millis(600),
+                     /*max_intra_bitrate_factor=*/3.0)
           .MaxNumberOfThreads(1)
           .Build();
 
@@ -2231,14 +2349,15 @@ TEST_P(VideoEncoderFunctionalTest, HigherEffortLevelYieldsHigherQualityFrames) {
   }
 
   TestConfig config;
-  const std::vector<RateControlMode>& rc_modes =
+  const std::set<RateControlMode>& rc_modes =
       capabilities.bitrate_control().rc_modes();
-  if (absl::c_linear_search(rc_modes, RateControlMode::kCbr)) {
+  if (rc_modes.contains(RateControlMode::kCbr)) {
     config.static_settings =
         StaticEncoderSettingsBuilder()
             .MaxEncodeDimensions({.width = 640, .height = 360})
             .EncodingFormat(capabilities.encoding_formats()[0])
-            .CbrRcMode(TimeDelta::Millis(1000), TimeDelta::Millis(600))
+            .CbrRcMode(TimeDelta::Millis(1000), TimeDelta::Millis(600),
+                       /*max_intra_bitrate_factor=*/3.0)
             .MaxNumberOfThreads(1)
             .Build();
     config.rate_options = FrameEncodeSettings::Cbr{

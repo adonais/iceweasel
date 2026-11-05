@@ -513,3 +513,48 @@ test.nested:
       category:
         description: Some example categories
         labels: ['cat1', 'cat2', 'catred', 'catblu']
+
+  labeled_custom_dist:
+    type: labeled_custom_distribution
+    expires: never
+    description: |
+      A multi-line
+      description
+    lifetime: ping
+    notification_emails:
+      - glean-team@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/TODO/
+    data_reviews:
+      - https://example.com
+    range_min: 0
+    range_max: 100
+    bucket_count: 100
+
+  labeled_memory_dist:
+    type: labeled_memory_distribution
+    expires: never
+    description: |
+      A multi-line
+      description
+    lifetime: ping
+    notification_emails:
+      - glean-team@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/TODO/
+    data_reviews:
+      - https://example.com
+
+  labeled_timing_dist:
+    type: labeled_timing_distribution
+    expires: never
+    description: |
+      A multi-line
+      description
+    lifetime: ping
+    notification_emails:
+      - glean-team@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/TODO/
+    data_reviews:
+      - https://example.com

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<head>
+<title>Shut down accessibility after the accessibility crashtests</title>
+
+  <script>
+    async function shutdown() {
+      if (!SpecialPowers.Services.appinfo.accessibilityEnabled) {
+        // Leave reftest-wait so that this test times out and fails.
+        dump("### Error : Accessibility is expected to be enabled.\n");
+        return;
+      }
+
+      let observe = (subject, topic, data) => {
+        SpecialPowers.removeObserver(observe, "a11y-init-or-shutdown");
+        data === "0" && document.documentElement.removeAttribute("class");
+      };
+      SpecialPowers.addObserver(observe, "a11y-init-or-shutdown");
+
+      // Release the reference stashed by first_test_to_load_testsuite.html in
+      // the parent process.
+      // Force garbage collection. We try really hard to garbage collect
+      // everythin here to ensure that all a11y xpcom bits are shut down and
+      // avoid intermittent timeouts.
+      await SpecialPowers.spawnChrome([], () => {
+        delete browsingContext.topChromeWindow.wrappedJSObject
+          .gA11yCrashtestService;
+        for (let i = 0; i < 2; ++i) {
+          Cu.forceGC();
+          Cu.forceShrinkingGC();
+          Cu.forceCC();
+        }
+      });
+    }
+  </script>
+</head>
+<body onload="shutdown();"></body>
+</html>

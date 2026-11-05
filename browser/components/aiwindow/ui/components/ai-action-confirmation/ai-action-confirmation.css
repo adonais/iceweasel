@@ -19,7 +19,6 @@
 }
 
 .action-confirmation-wrapper {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--ai-action-confirmation-background-color);
   border: var(--border-width) solid var(--border-color-transparent);
   border-radius: var(--border-radius-large);
@@ -153,7 +152,6 @@
     inset-block-end: 0;
     inset-inline: 0;
     block-size: var(--size-item-medium);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background: linear-gradient(to top, var(--ai-action-confirmation-background-color), transparent);
     pointer-events: none;
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */

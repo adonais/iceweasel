@@ -4,6 +4,8 @@
 
 #include "ChannelWrapper.h"
 
+#include <memory>
+
 #include "jsapi.h"
 #include "xpcpublic.h"
 
@@ -103,7 +105,7 @@ ChannelListHolder::~ChannelListHolder() {
 static LinkedList<ChannelWrapper>* GetChannelList() {
   static UniquePtr<ChannelListHolder> sChannelList;
   if (!sChannelList && !PastShutdownPhase(ShutdownPhase::XPCOMShutdown)) {
-    sChannelList.reset(new ChannelListHolder());
+    sChannelList = std::make_unique<ChannelListHolder>();
     ClearOnShutdown(&sChannelList, ShutdownPhase::XPCOMShutdown);
   }
   return sChannelList.get();

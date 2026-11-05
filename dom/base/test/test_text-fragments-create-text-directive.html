@@ -121,6 +121,10 @@
        term. Exact matching must be used regardless of the length. -->
   <p id="longWordWithLeadingPunctuation">"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</p>
   <p id="longWordWithTrailingPunctuation">bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".</p>
+  <p id="cjkWordInWord">
+    篮球场地 <span id="cjkWordInWordTarget">场地</span>
+    longWordToEncouragePrefixDisambiguation
+  </p>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const empty = document.createTextNode("");
@@ -526,6 +530,15 @@
           textDirective: "text=creatorNacTarget",
         },
         {
+          name: "CJK word as substring in other word",
+          startContainer: cjkWordInWordTarget.firstChild,
+          startOffset: 0,
+          endContainer: cjkWordInWordTarget.firstChild,
+          endOffset: cjkWordInWordTarget.firstChild.length,
+          content: "场地",
+          textDirective: "text=%E5%9C%BA%E5%9C%B0-,%E5%9C%BA%E5%9C%B0",
+        },
+        {
           name: "Word boundary extension must stop at <br> element",
           startContainer: brWordBoundaryBr.nextSibling,
           startOffset: 0,
@@ -855,6 +868,10 @@
 
     async function runTests() {
       try {
+        // Every test case navigates, so repeated runs hit the navigation rate limit.
+        await SpecialPowers.pushPrefEnv({
+          set: [["dom.navigation.navigationRateLimit.count", 0]],
+        });
         testRangeBoundariesAreEqual();
         await basicTests();
         await testEmptyRange();

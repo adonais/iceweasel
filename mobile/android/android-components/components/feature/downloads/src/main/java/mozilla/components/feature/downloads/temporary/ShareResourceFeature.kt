@@ -5,9 +5,12 @@
 package mozilla.components.feature.downloads.temporary
 
 import android.content.Context
+import android.os.SystemClock
 import androidx.annotation.VisibleForTesting
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
@@ -18,6 +21,9 @@ import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.state.state.content.ShareResourceState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.fetch.Client
+import mozilla.components.feature.downloads.facts.ShareResourceFacts
+import mozilla.components.feature.downloads.facts.emitShareDurationFact
+import mozilla.components.feature.downloads.facts.emitShareFailedFact
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.ktx.android.content.shareLocalPdf
@@ -84,30 +90,49 @@ class ShareResourceFeature(
     @VisibleForTesting
     internal fun startSharing(internetResource: ShareResourceState) {
         val coroutineExceptionHandler = coroutineExceptionHandler("Share")
+        var startedAt = 0L
 
-        scope?.launch(coroutineExceptionHandler) {
-            when (internetResource) {
-                is ShareResourceState.InternetResource -> {
-                    withTimeout(operationTimeoutMs) {
-                        val download = download(internetResource)
-                        shareInternetResource(
-                            contentType = internetResource.contentType,
-                            filePath = download.canonicalPath,
-                        )
+        scope
+            ?.launch(coroutineExceptionHandler) {
+                startedAt = SystemClock.elapsedRealtime()
+
+                when (internetResource) {
+                    is ShareResourceState.InternetResource -> {
+                        withTimeout(operationTimeoutMs) {
+                            val download = download(internetResource)
+                            shareInternetResource(
+                                contentType = internetResource.contentType,
+                                filePath = download.canonicalPath,
+                            )
+                        }
                     }
-                }
-                is ShareResourceState.DirectResource -> {
-                    withTimeout(operationTimeoutMs) {
-                        val download = downloadDirectResource(internetResource.response)
-                        shareInternetResource(
-                            contentType = internetResource.contentType,
-                            filePath = download.canonicalPath,
-                        )
+                    is ShareResourceState.DirectResource -> {
+                        withTimeout(operationTimeoutMs) {
+                            val download = downloadDirectResource(internetResource.response)
+                            shareInternetResource(
+                                contentType = internetResource.contentType,
+                                filePath = download.canonicalPath,
+                            )
+                        }
                     }
+                    is ShareResourceState.LocalResource ->
+                        shareLocalPdf(internetResource.url, internetResource.contentType)
                 }
-                is ShareResourceState.LocalResource -> shareLocalPdf(internetResource.url, internetResource.contentType)
             }
-        }
+            ?.invokeOnCompletion { cause ->
+                when (cause) {
+                    null ->
+                        emitShareDurationFact(
+                            shareState = internetResource,
+                            durationMs = SystemClock.elapsedRealtime() - startedAt,
+                        )
+                    is TimeoutCancellationException ->
+                        emitShareFailedFact(internetResource, ShareResourceFacts.FailureReason.TIMEOUT)
+                    is CancellationException ->
+                        emitShareFailedFact(internetResource, ShareResourceFacts.FailureReason.CANCELLED)
+                    else -> emitShareFailedFact(internetResource, ShareResourceFacts.FailureReason.ERROR)
+                }
+            }
     }
 
     @VisibleForTesting

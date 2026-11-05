@@ -26,6 +26,8 @@ support-files = [
 
 ["test_aboutmemory7.xhtml"]
 
+["test_aboutmemory8.xhtml"]
+
 ["test_collectorLogAnalyzer.xhtml"]
 
 ["test_dumpGCAndCCLogsToFile.xhtml"]

@@ -803,6 +803,7 @@ export class _ASRouter {
       multiProfileMessageBlocklist: [],
       messageImpressions: {},
       screenImpressions: {},
+      previousSessionEnd: 0,
       messages: [],
       groups: [],
       errors: [],
@@ -832,8 +833,7 @@ export class _ASRouter {
     if (lazy.TARGETING_PREFERENCES.includes(prefName)) {
       let invalidMessages = [];
       // Notify all tabs of messages that have become invalid after pref change
-      const context = this._getMessagesContext();
-      const targetingContext = new lazy.TargetingContext(context);
+      const targetingContext = new lazy.TargetingContext();
 
       for (const msg of this.state.messages.filter(this.isUnblockedMessage)) {
         if (!msg.targeting) {
@@ -1348,17 +1348,16 @@ export class _ASRouter {
   }
 
   updateTargetingParameters() {
-    return this.getTargetingParameters(
-      lazy.ASRouterTargeting.Environment,
-      this._getMessagesContext()
-    ).then(targetingParameters => ({
-      ...this.state,
-      providerPrefs: lazy.ASRouterPreferences.providers,
-      userPrefs: lazy.ASRouterPreferences.getAllUserPreferences(),
-      targetingParameters,
-      errors: this.errors,
-      devtoolsEnabled: lazy.ASRouterPreferences.devtoolsEnabled,
-    }));
+    return this.getTargetingParameters(lazy.ASRouterTargeting.Environment).then(
+      targetingParameters => ({
+        ...this.state,
+        providerPrefs: lazy.ASRouterPreferences.providers,
+        userPrefs: lazy.ASRouterPreferences.getAllUserPreferences(),
+        targetingParameters,
+        errors: this.errors,
+        devtoolsEnabled: lazy.ASRouterPreferences.devtoolsEnabled,
+      })
+    );
   }
 
   getMessageById(id) {
@@ -1397,9 +1396,9 @@ export class _ASRouter {
 
   /**
    * Used by ASRouter Admin returns all ASRouterTargeting.Environment
-   * and ASRouter._getMessagesContext parameters and values
+   * parameters and values
    */
-  async getTargetingParameters(environment, localContext) {
+  async getTargetingParameters(environment, localContext = {}) {
     // Resolve objects that may contain promises.
     async function resolve(object) {
       if (typeof object === "object" && object !== null) {
@@ -1455,24 +1454,6 @@ export class _ASRouter {
         event_context: {},
       },
     });
-  }
-
-  // Return an object containing targeting parameters used to select messages
-  _getMessagesContext() {
-    const { messageImpressions, previousSessionEnd, screenImpressions } =
-      this.state;
-
-    return {
-      get messageImpressions() {
-        return messageImpressions;
-      },
-      get previousSessionEnd() {
-        return previousSessionEnd;
-      },
-      get screenImpressions() {
-        return screenImpressions;
-      },
-    };
   }
 
   async evaluateExpression({ expression, context }) {
@@ -2208,8 +2189,6 @@ export class _ASRouter {
       return returnAll ? messages : null;
     }
 
-    const context = this._getMessagesContext();
-
     // Find a message that matches the targeting context as well as the trigger context (if one is provided)
     // If no trigger is provided, we should find a message WITHOUT a trigger property defined.
     return lazy.ASRouterTargeting.findMatchingMessage({
@@ -2219,7 +2198,6 @@ export class _ASRouter {
         param: triggerParam,
         context: triggerContext,
       },
-      context,
       onError: this._handleTargetingError,
       ordered,
       shouldCache,

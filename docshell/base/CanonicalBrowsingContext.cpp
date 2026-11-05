@@ -3130,24 +3130,38 @@ void CanonicalBrowsingContext::HistoryCommitIndexAndLength(
   shistory->NotifyOnHistoryCommit();
 }
 
-void CanonicalBrowsingContext::DeactivateDocuments() {
+void CanonicalBrowsingContext::DeactivateDocuments(
+    const SessionHistoryInfo* aPageSwapTargetInfo,
+    NavigationType aNavigationType, bool aForUnload) {
   MOZ_DIAGNOSTIC_ASSERT(IsTop() && mozilla::BFCacheInParent() &&
-                        GetContentParent());
+                        (IsInProcess() || GetContentParent()));
   if (IsInProcess()) {
-    BrowsingContext::DeactivateDocuments();
+    BrowsingContext::DeactivateDocuments(aPageSwapTargetInfo, aNavigationType,
+                                         aForUnload);
   } else {
-    Group()->EachParent([&](ContentParent* aContentParent) {
-      (void)aContentParent->SendDeactivateDocuments(this);
+    Maybe<SessionHistoryInfo> targetInfo =
+        aPageSwapTargetInfo ? Some(*aPageSwapTargetInfo) : Nothing();
+    Group()->EachParent([this, &targetInfo, aNavigationType,
+                         aForUnload](ContentParent* aContentParent) {
+      (void)aContentParent->SendDeactivateDocuments(
+          this, targetInfo, aNavigationType, aForUnload);
     });
 
-    PreOrderWalk([&](BrowsingContext* aContext) {
-      aContext->Canonical()->SetIsInBFCache(/* aIsInBFCache */ true);
-      aContext->Canonical()->SetIsEnteringBFCache(
-          /* aIsEnteringBFCache */ true);
-    });
+    // When the old document unloads (aForUnload) it is destroyed rather than
+    // persisted, so don't mark the subtree as entering/in BFCache.
+    if (!aForUnload) {
+      PreOrderWalk([&](BrowsingContext* aContext) {
+        aContext->Canonical()->SetIsInBFCache(/* aIsInBFCache */ true);
+        aContext->Canonical()->SetIsEnteringBFCache(
+            /* aIsEnteringBFCache */ true);
+      });
+    }
   }
 
-  if (GetCurrentWindowGlobal() && GetCurrentWindowGlobal()->Fullscreen()) {
+  // The unload of the old document exits fullscreen, so only a document that
+  // enters BFCache needs this.
+  if (!aForUnload && GetCurrentWindowGlobal() &&
+      GetCurrentWindowGlobal()->Fullscreen()) {
     GetCurrentWindowGlobal()->ExitTopChromeDocumentFullscreen();
   }
 }
@@ -3180,12 +3194,14 @@ void CanonicalBrowsingContext::ReactivateDocuments(
     Group()->EachParent([&](ContentParent* aContentParent) {
       nsTArray<SessionHistoryInfo> newSHIs;
       Maybe<SessionHistoryInfo> reactivatedEntry;
+      Maybe<PreviousSessionHistoryInfo> previousEntry;
       if (GetContentParent() == aContentParent && Navigation::IsAPIEnabled()) {
         newSHIs.AppendElements(std::move(topNewSHIs));
         reactivatedEntry.emplace(mActiveEntry->Info());
+        previousEntry = previousEntryForActivation;
       }
-      (void)aContentParent->SendReactivateDocuments(
-          this, reactivatedEntry, newSHIs, previousEntryForActivation);
+      (void)aContentParent->SendReactivateDocuments(this, reactivatedEntry,
+                                                    newSHIs, previousEntry);
     });
 
     UpdateCurrentTopByBrowserId(this);

@@ -23,6 +23,7 @@
 #include "libANGLE/formatutils.h"
 #include "libANGLE/validationES.h"
 #include "libANGLE/validationES3.h"
+#include "platform/autogen/FrontendFeatures_autogen.h"
 
 using namespace angle;
 
@@ -505,22 +506,23 @@ bool ValidateES3TexImageParametersBase(const Context *context,
     {
         if (context->getState().isTextureBoundToActivePLS(texture->id()))
         {
-            ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kActivePLSBackingTexture);
+            ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kPLSActiveBackingTextureModification);
             return false;
         }
     }
     else
     {
-        if (!ValidateNoActivePLSConflict(context, entryPoint, texture->id()))
+        if (texture->getImmutableFormat())
         {
+            ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kTextureIsImmutable);
             return false;
         }
-    }
 
-    if (texture->getImmutableFormat() && !isSubImage)
-    {
-        ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kTextureIsImmutable);
-        return false;
+        if (!ValidateNotAttachmentWithActivePLS(context, entryPoint, texture->id()))
+        {
+            // Error already generated.
+            return false;
+        }
     }
 
     // Validate texture formats
@@ -645,87 +647,20 @@ bool ValidateES3TexImageParametersBase(const Context *context,
     }
 
     GLenum sizeCheckFormat = isSubImage ? format : internalformat;
-    if (!ValidImageDataSize(context, entryPoint, texType, width, height, depth, sizeCheckFormat,
-                            type, pixels, outImageSize))
+    if (!ValidImageDataSize(context, entryPoint, texType, width, height, depth, isSubImage,
+                            sizeCheckFormat, type, pixels, outImageSize))
     {
         return false;
     }
 
-    // Check for pixel unpack buffer related API errors
-    Buffer *pixelUnpackBuffer = context->getState().getTargetBuffer(BufferBinding::PixelUnpack);
-    if (pixelUnpackBuffer != nullptr)
+    if (context->isHardenedContext())
     {
-        if ((context->isWebGL() || context->isHardenedContext()) &&
-            pixelUnpackBuffer->hasTFBBindingConflict())
+        if (!isSubImage &&
+            !ValidateHardenedContextTextureLevelRedefine(context, entryPoint, texture, level, width,
+                                                         height, depth, actualFormatInfo))
         {
-            ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION,
-                                   kPixelUnpackBufferBoundForTransformFeedback);
+            // Error already generated
             return false;
-        }
-
-        // ...data is not evenly divisible into the number of bytes needed to store in memory a
-        // datum
-        // indicated by type.
-        {
-            size_t offset            = reinterpret_cast<size_t>(pixels);
-            size_t dataBytesPerPixel = static_cast<size_t>(GetTypeInfo(type).bytes);
-
-            if ((offset % dataBytesPerPixel) != 0)
-            {
-                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kDataTypeNotAligned);
-                return false;
-            }
-        }
-
-        // ...the buffer object's data store is currently mapped but not persistently.
-        if (pixelUnpackBuffer->isMapped() && !pixelUnpackBuffer->isPersistentlyMapped())
-        {
-            ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kBufferMapped);
-            return false;
-        }
-    }
-
-    if (context->isWebGL() || context->isHardenedContext())
-    {
-        // Define:
-        //   DataStoreWidth  = (GL_UNPACK_ROW_LENGTH ? GL_UNPACK_ROW_LENGTH : width)
-        //   DataStoreHeight = (GL_UNPACK_IMAGE_HEIGHT ? GL_UNPACK_IMAGE_HEIGHT : height)
-        //
-        // WebGL 2.0 imposes the following additional constraints:
-        //
-        // 1) texImage2D and texSubImage2D generate INVALID_OPERATION if:
-        //      GL_UNPACK_SKIP_PIXELS + width > DataStoreWidth
-        //    except for texImage2D if no GL_PIXEL_UNPACK_BUFFER is
-        //    bound and _pixels_ is null.
-        //
-        // 2) texImage3D and texSubImage3D generate INVALID_OPERATION if:
-        //      GL_UNPACK_SKIP_PIXELS + width > DataStoreWidth
-        //      GL_UNPACK_SKIP_ROWS + height > DataStoreHeight
-        //    except for texImage3D if no GL_PIXEL_UNPACK_BUFFER is
-        //    bound and _pixels_ is null.
-        if (!pixelUnpackBuffer && !pixels && !isSubImage)
-        {
-            // Exception case for texImage2D or texImage3D, above.
-        }
-        else
-        {
-            const auto &unpack   = context->getState().getUnpackState();
-            GLint dataStoreWidth = unpack.rowLength ? unpack.rowLength : width;
-            if (unpack.skipPixels + width > dataStoreWidth)
-            {
-                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kInvalidUnpackParametersForWebGL);
-                return false;
-            }
-            if (target == TextureTarget::_3D || target == TextureTarget::_2DArray)
-            {
-                // Note that CubeMapArray is not supported as a texture target in WebGL.
-                GLint dataStoreHeight = unpack.imageHeight ? unpack.imageHeight : height;
-                if (unpack.skipRows + height > dataStoreHeight)
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kInvalidUnpackParametersForWebGL);
-                    return false;
-                }
-            }
         }
     }
 
@@ -1320,8 +1255,9 @@ bool ValidateES3TexStorageParametersTexObject(const Context *context,
         return false;
     }
 
-    if (!ValidateNoActivePLSConflict(context, entryPoint, texture->id()))
+    if (!ValidateNotAttachmentWithActivePLS(context, entryPoint, texture->id()))
     {
+        // Error already generated.
         return false;
     }
 
@@ -2923,7 +2859,7 @@ bool ValidateCopyBufferSubData(const Context *context,
         return false;
     }
 
-    if ((context->isWebGL() || context->isHardenedContext()) &&
+    if (context->isHardenedContext() &&
         (readBuffer->hasTFBBindingConflict() || writeBuffer->hasTFBBindingConflict()))
     {
         ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kBufferBoundForTransformFeedback);
@@ -3057,7 +2993,7 @@ bool ValidateRenderbufferStorageMultisample(const Context *context,
     // format if samples is greater than zero. In ES3.1(section 9.2.5), it can support integer
     // multisample renderbuffer, but the samples should not be greater than MAX_INTEGER_SAMPLES.
     const InternalFormat &formatInfo = GetSizedInternalFormatInfo(internalformat);
-    if (formatInfo.isInt())
+    if (formatInfo.stencilBits == 0 && formatInfo.isInt())
     {
         if ((samples > 0 && context->getClientVersion() == ES_3_0) ||
             samples > context->getCaps().maxIntegerSamples)

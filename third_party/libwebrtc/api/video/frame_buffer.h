@@ -98,7 +98,6 @@ class FrameBuffer {
   void UpdateDroppedFramesAndDiscardedPackets(FrameIterator begin_it,
                                               FrameIterator end_it);
 
-  const bool legacy_frame_id_jump_behavior_;
   const size_t max_size_;
   FrameMap frames_;
   std::optional<TemporalUnit> next_decodable_temporal_unit_;

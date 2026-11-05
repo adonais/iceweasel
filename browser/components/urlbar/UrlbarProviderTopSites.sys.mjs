@@ -13,9 +13,7 @@ import {
   UrlbarUtils,
 } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",

@@ -16,7 +16,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
-    run-on-repo-type: [hg]
     description: Build OpenH264 plugin
     treeherder:
         kind: build
@@ -36,7 +35,6 @@ task-defaults:
               path: /builds/worker/artifacts/public/
               type: directory
     run:
-        clone-with: hg
         using: run-task
         checkout: true
         command: "$GECKO_PATH/taskcluster/scripts/openh264/build.sh"

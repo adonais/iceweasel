@@ -76,3 +76,16 @@ LOCAL_INCLUDES += [
 
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=format"]
+
+SOURCE_HEADERS += [
+    "ExecutionTracerIntegration.h",
+    "SandboxPrivate.h",
+    "XPCForwards.h",
+    "XPCInlines.h",
+    "XPCJSWeakReference.h",
+    "XPCLog.h",
+    "XPCMaps.h",
+    "XPCModule.h",
+    "xpcprivate.h",
+    "XPCWrapper.h",
+]

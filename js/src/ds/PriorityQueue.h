@@ -22,12 +22,12 @@ template <class T, class P, size_t MinInlineCapacity = 0,
 class PriorityQueue {
   Vector<T, MinInlineCapacity, AllocPolicy> heap;
 
-  PriorityQueue(const PriorityQueue&) = delete;
-  PriorityQueue& operator=(const PriorityQueue&) = delete;
-
  public:
   explicit PriorityQueue(AllocPolicy ap = AllocPolicy())
       : heap(std::move(ap)) {}
+
+  PriorityQueue(const PriorityQueue&) = delete;
+  PriorityQueue& operator=(const PriorityQueue&) = delete;
 
   [[nodiscard]] bool reserve(size_t capacity) { return heap.reserve(capacity); }
 

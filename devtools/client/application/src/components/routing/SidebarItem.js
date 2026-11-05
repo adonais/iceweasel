@@ -36,12 +36,16 @@ const ICONS = {
     "chrome://devtools/skin/images/debugging-workers.svg",
   [PAGE_TYPES.SESSION_HISTORY]:
     "chrome://devtools/skin/images/application-session-history.svg",
+  // TODO: Create a dedicated icon for the speculative loads
+  [PAGE_TYPES.SPECULATIVE_LOADS]:
+    "chrome://devtools/skin/images/animation-fast-track.svg",
 };
 
 const LOCALIZATION_IDS = {
   [PAGE_TYPES.MANIFEST]: "sidebar-item-manifest",
   [PAGE_TYPES.SERVICE_WORKERS]: "sidebar-item-service-workers",
   [PAGE_TYPES.SESSION_HISTORY]: "sidebar-item-session-history",
+  [PAGE_TYPES.SPECULATIVE_LOADS]: "sidebar-item-speculative-loads",
 };
 
 class SidebarItem extends PureComponent {

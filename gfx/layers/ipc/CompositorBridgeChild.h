@@ -131,7 +131,7 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
    */
   void SetForceSyncFlushRendering(bool aForceSyncFlushRendering);
 
-  bool SendStartFrameTimeRecording(const int32_t& bufferSize,
+  bool SendStartFrameTimeRecording(const uint32_t& bufferSize,
                                    uint32_t* startIndex);
   bool SendStopFrameTimeRecording(const uint32_t& startIndex,
                                   nsTArray<float>* intervals);

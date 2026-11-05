@@ -4,11 +4,12 @@
 
 #include "NetworkLoadHandler.h"
 
+#include <memory>
+
 #include "CacheLoadHandler.h"  // CachePromiseHandler
 #include "js/loader/ModuleLoadRequest.h"
 #include "js/loader/ScriptLoadRequest.h"
 #include "mozilla/Encoding.h"
-#include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/InternalResponse.h"
@@ -153,20 +154,13 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     // if we are not in a ServiceWorker, and the principal is not null, then
     // the loading principal must subsume the worker principal if it is not a
     // nullPrincipal (sandbox).
-    //
-    // This does not hold for an addon worker principal when
-    // extensions.web_accessible_workers.deprecated_behavior is enabled; see
-    // bug 1767455.
-    MOZ_ASSERT(
-        !loadingPrincipal || loadingPrincipal->GetIsNullPrincipal() ||
-        principal->GetIsNullPrincipal() ||
-        loadingPrincipal->Subsumes(principal) ||
-        (StaticPrefs::extensions_web_accessible_workers_deprecated_behavior() &&
-         principal->GetIsAddonPrincipal()));
+    MOZ_ASSERT(!loadingPrincipal || loadingPrincipal->GetIsNullPrincipal() ||
+               principal->GetIsNullPrincipal() ||
+               loadingPrincipal->Subsumes(principal));
   }
 #endif
 
-  // We don't mute the main worker script becase we've already done
+  // We don't mute the main worker script because we've already done
   // same-origin checks on them so we should be able to see their errors.
   // Note that for data: url, where we allow it through the same-origin check
   // but then give it a different origin.
@@ -285,18 +279,14 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     // URL must exactly match the final worker script URL in order to
     // properly set the referrer header on fetch/xhr requests.  If bug 1340694
     // is ever fixed this can be removed.
-    rv = mWorkerRef->Private()->SetPrincipalsAndCSPFromChannel(channel);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(mWorkerRef->Private()->SetPrincipalsAndPolicyContainerFromChannel(
+        channel));
 
-    nsCOMPtr<nsIContentSecurityPolicy> csp = mWorkerRef->Private()->GetCsp();
-    // We did inherit CSP in bug 1223647. If we do not already have a CSP, we
-    // should get it from the HTTP headers on the worker script.
-    if (!csp) {
-      rv = mWorkerRef->Private()->SetCSPFromHeaderValues(tCspHeaderValue,
-                                                         tCspROHeaderValue);
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else {
-      csp->EnsureEventTarget(mWorkerRef->Private()->MainThreadEventTarget());
+    // Set CSP from the header if we don't inherit the Policy-Container from the
+    // channel.
+    if (!CSP_ShouldResponseInheritCSP(channel)) {
+      MOZ_TRY(mWorkerRef->Private()->SetCSPFromHeaderValues(tCspHeaderValue,
+                                                            tCspROHeaderValue));
     }
 
     mWorkerRef->Private()->UpdateReferrerInfoFromHeader(tRPHeaderCValue);
@@ -424,7 +414,7 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   MOZ_TRY(ssm->GetChannelResultPrincipal(channel,
                                          getter_AddRefs(channelPrincipal)));
 
-  UniquePtr<PrincipalInfo> principalInfo(new PrincipalInfo());
+  auto principalInfo = std::make_unique<PrincipalInfo>();
   MOZ_TRY(PrincipalToPrincipalInfo(channelPrincipal, principalInfo.get()));
 
   ir->SetPrincipalInfo(std::move(principalInfo));

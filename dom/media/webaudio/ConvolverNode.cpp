@@ -4,6 +4,8 @@
 
 #include "ConvolverNode.h"
 
+#include <memory>
+
 #include "AlignmentUtils.h"
 #include "AudioNodeEngine.h"
 #include "AudioNodeTrack.h"
@@ -458,9 +460,9 @@ void ConvolverNode::SetBuffer(JSContext* aCx, AudioBuffer* aBuffer,
     const size_t MaxFFTSize = 32768;
 
     bool allocationFailure = false;
-    UniquePtr<WebCore::Reverb> reverb(new WebCore::Reverb(
+    auto reverb = std::make_unique<WebCore::Reverb>(
         data, MaxFFTSize, !Context()->IsOffline(), mNormalize,
-        aBuffer->SampleRate(), &allocationFailure));
+        aBuffer->SampleRate(), &allocationFailure);
     if (!allocationFailure) {
       ns->SetReverb(reverb.release(), data.ChannelCount());
     } else {

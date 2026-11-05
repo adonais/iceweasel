@@ -745,7 +745,7 @@ TEST(TransportFeedbackAdapterCongestionFeedbackTest,
   ASSERT_THAT(adapted_feedback->packet_feedbacks, SizeIs(2));
   EXPECT_THAT(adapted_feedback->packet_feedbacks[0].ecn, EcnMarking::kCe);
   EXPECT_THAT(adapted_feedback->packet_feedbacks[1].ecn, EcnMarking::kEct1);
-  EXPECT_TRUE(adapted_feedback->transport_supports_ecn);
+  EXPECT_FALSE(adapted_feedback->HasPacketWithBleachedEct1());
 }
 
 TEST(TransportFeedbackAdapterCongestionFeedbackTest,
@@ -783,7 +783,7 @@ TEST(TransportFeedbackAdapterCongestionFeedbackTest,
 }
 
 TEST(TransportFeedbackAdapterCongestionFeedbackTest,
-     ReportTransportDoesNotSupportEcnIfFeedbackContainNotEctPacket) {
+     ReportBleachedEct1IfEct1PacketIsReceivedAsNotEct) {
   TransportFeedbackAdapter adapter;
 
   const PacketTemplate packets[] = {
@@ -814,8 +814,80 @@ TEST(TransportFeedbackAdapterCongestionFeedbackTest,
       BuildRtcpCongestionControlFeedbackPacket(packets);
   std::optional<TransportPacketsFeedback> adapted_feedback =
       adapter.ProcessCongestionControlFeedback(rtcp_feedback, TimeNow());
-  EXPECT_FALSE(adapted_feedback->transport_supports_ecn);
+  EXPECT_TRUE(adapted_feedback->HasPacketWithBleachedEct1());
   ASSERT_THAT(adapted_feedback->packet_feedbacks, SizeIs(2));
+}
+
+TEST(TransportFeedbackAdapterCongestionFeedbackTest,
+     DoesNotReportBleachedEct1IfNotEctPacketIsReceivedAsNotEct) {
+  TransportFeedbackAdapter adapter;
+
+  // A packet that was sent as Not-ECT is expected to be received as Not-ECT.
+  // That says nothing about whether the path bleaches ECT(1).
+  const PacketTemplate packets[] = {{
+      .transport_sequence_number = 1,
+      .rtp_sequence_number = 101,
+      .send_as_ect1 = false,
+      .ecn = EcnMarking::kNotEct,
+      .send_timestamp = Timestamp::Millis(100),
+      .receive_timestamp = Timestamp::Millis(200),
+  }};
+
+  for (const PacketTemplate& packet : packets) {
+    adapter.AddPacket(CreatePacketToSend(packet), packet.pacing_info,
+                      /*overhead=*/0u, TimeNow());
+
+    adapter.ProcessSentPacket(SentPacketInfo(packet.transport_sequence_number,
+                                             packet.send_timestamp.ms()));
+  }
+
+  rtcp::CongestionControlFeedback rtcp_feedback =
+      BuildRtcpCongestionControlFeedbackPacket(packets);
+  std::optional<TransportPacketsFeedback> adapted_feedback =
+      adapter.ProcessCongestionControlFeedback(rtcp_feedback, TimeNow());
+  ASSERT_THAT(adapted_feedback->packet_feedbacks, SizeIs(1));
+  EXPECT_FALSE(adapted_feedback->HasPacketWithBleachedEct1());
+}
+
+TEST(TransportFeedbackAdapterCongestionFeedbackTest,
+     DoesNotReportBleachedEct1IfEct1PacketIsLost) {
+  TransportFeedbackAdapter adapter;
+
+  // A lost packet is reported with a defaulted Not-ECT marking. Treating that
+  // as bleaching would turn every burst of loss into a permanent verdict that
+  // the path does not support ECN.
+  const PacketTemplate packets[] = {
+      {
+          .transport_sequence_number = 1,
+          .rtp_sequence_number = 101,
+          .send_as_ect1 = true,
+          .ecn = EcnMarking::kEct1,
+          .send_timestamp = Timestamp::Millis(100),
+          .receive_timestamp = Timestamp::Millis(200),
+      },
+      {
+          .transport_sequence_number = 2,
+          .rtp_sequence_number = 102,
+          .send_as_ect1 = true,
+          .send_timestamp = Timestamp::Millis(110),
+          .receive_timestamp = Timestamp::PlusInfinity(),
+      }};
+
+  for (const PacketTemplate& packet : packets) {
+    adapter.AddPacket(CreatePacketToSend(packet), packet.pacing_info,
+                      /*overhead=*/0u, TimeNow());
+
+    adapter.ProcessSentPacket(SentPacketInfo(packet.transport_sequence_number,
+                                             packet.send_timestamp.ms()));
+  }
+
+  rtcp::CongestionControlFeedback rtcp_feedback =
+      BuildRtcpCongestionControlFeedbackPacket(packets);
+  std::optional<TransportPacketsFeedback> adapted_feedback =
+      adapter.ProcessCongestionControlFeedback(rtcp_feedback, TimeNow());
+  ASSERT_THAT(adapted_feedback->packet_feedbacks, SizeIs(2));
+  ASSERT_FALSE(adapted_feedback->packet_feedbacks[1].IsReceived());
+  EXPECT_FALSE(adapted_feedback->HasPacketWithBleachedEct1());
 }
 
 TEST(TransportFeedbackAdapterCongestionFeedbackTest,

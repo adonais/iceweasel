@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Test login autocomplete with related realms</title>
+  <script src="/tests/SimpleTest/GleanTest.js"></script>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <script src="/tests/SimpleTest/EventUtils.js"></script>
   <script type="text/javascript" src="../../../satchel/test/satchel_common.js"></script>
@@ -52,6 +53,7 @@ Login Manager test: related realms autocomplete
   });
 
   add_named_task("form related domain menuitems", async () => {
+    await GleanTest.testResetFOG();
     const form = setContentForTask(formTemplate);
     const autofillResult = await formAutofillResult(form.id);
     is(autofillResult, "no_saved_logins", "form has not been filled due to no saved logins");
@@ -66,13 +68,12 @@ Login Manager test: related realms autocomplete
     const expectedMenuItems = ["relatedUser1", "subUser1"];
     checkAutoCompleteResults(autocompleteItems, expectedMenuItems, window.location.host, "Check all menuitems are displayed correctly");
 
-    const acEvents = await getTelemetryEvents({ process: "parent", filterProps: TelemetryFilterPropsAC, clear: true });
-    is(acEvents.length, 1, "One autocomplete event");
-    checkACTelemetryEvent(acEvents[0], form.uname, {
-      "hadPrevious": "0",
-      "login": expectedMenuItems.length + "",
-      "loginsFooter": "1"
-    });
+    const events = await GleanTest.formAutocomplete.showLogins.testGetValue();
+    is(1, events.length, "One autocomplete event");
+    is("0", events[0].extra.hadPrevious);
+    is(expectedMenuItems.length.toString(), events[0].extra.login);
+    is("1", events[0].extra.loginsFooter);
+
     checkLoginForm(form.uname, "", form.pword, ""); // value shouldn't update just by opening
 
     synthesizeKey("KEY_ArrowDown"); // first item

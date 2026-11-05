@@ -4,20 +4,130 @@
 <script>
 const InspectorUtils = SpecialPowers.InspectorUtils;
 
-ok(!CSS.supports("-moz-window-transform: unset"), "-moz-window-transform is only available to chrome and UA sheets");
+ok(
+  !CSS.supports("-moz-window-transform: unset"),
+  "-moz-window-transform is only available to chrome and UA sheets"
+);
 for (let chrome of [true, false]) {
-  is(InspectorUtils.supports("-moz-window-transform: unset", { chrome }), chrome, "InspectorUtils.supports should properly report to support chrome-only properties");
+  is(
+    InspectorUtils.supports("-moz-window-transform: unset", { chrome }),
+    chrome,
+    "InspectorUtils.supports should properly report to support chrome-only properties"
+  );
 }
 
-ok(!CSS.supports("-moz-top-layer: auto"), "-moz-top-layer is only available to UA sheets");
-ok(!CSS.supports("selector(:-moz-inert)"), "-moz-inert is an UA-only pseudo-class");
+ok(
+  !CSS.supports("-moz-top-layer: auto"),
+  "-moz-top-layer is only available to UA sheets"
+);
+ok(
+  !CSS.supports("selector(:-moz-inert)"),
+  "-moz-inert is an UA-only pseudo-class"
+);
 for (let userAgent of [true, false]) {
-  is(InspectorUtils.supports("-moz-top-layer: auto", { userAgent }), userAgent, "InspectorUtils.supports should properly report to support UA properties");
-  is(InspectorUtils.supports("selector(:-moz-inert)", { userAgent }), userAgent, "InspectorUtils.supports should properly report to support UA-only selectors");
+  is(
+    InspectorUtils.supports("-moz-top-layer: auto", { userAgent }),
+    userAgent,
+    "InspectorUtils.supports should properly report to support UA properties"
+  );
+  is(
+    InspectorUtils.supports("selector(:-moz-inert)", { userAgent }),
+    userAgent,
+    "InspectorUtils.supports should properly report to support UA-only selectors"
+  );
 }
 
-ok(!CSS.supports("width: 100"), "width shouldn't allow unitless lengths in non-quirks, and in CSS.supports");
+ok(
+  !CSS.supports("width: 100"),
+  "width shouldn't allow unitless lengths in non-quirks, and in CSS.supports"
+);
 for (let quirks of [true, false]) {
-  is(InspectorUtils.supports("width: 100", { quirks }), quirks, "InspectorUtils.supports should allow quirks if told to do so");
+  is(
+    InspectorUtils.supports("width: 100", { quirks }),
+    quirks,
+    "InspectorUtils.supports should allow quirks if told to do so"
+  );
 }
+
+info("Check that passing rule impacts the returned value")
+
+const sheet = new CSSStyleSheet();
+sheet.replaceSync(`
+  html {
+    @media screen {
+      container-name: main;
+    }
+    @scope (body) {
+      color: red;
+    }
+  }
+  @position-try --pt {}
+`);
+
+// sanity check
+is(sheet.cssRules.length, 2, "Got expected number of rules in the stylesheet");
+const [cssRule, cssPositionTryRule] = sheet.cssRules;
+const [mediaRule, scopeRule] = cssRule.cssRules;
+const [cssNestedDeclarationsInMedia] = mediaRule.cssRules;
+const [cssNestedDeclarationsInScope] = scopeRule.cssRules;
+
+is(
+  SpecialPowers.ChromeUtils.getClassName(cssRule),
+  "CSSStyleRule",
+  `cssRule has expected type`
+);
+is(
+  SpecialPowers.ChromeUtils.getClassName(cssPositionTryRule),
+  "CSSPositionTryRule",
+  `cssPositionTryRule has expected type`
+);
+is(
+  SpecialPowers.ChromeUtils.getClassName(mediaRule),
+  "CSSMediaRule",
+  `mediaRule has expected type`
+);
+is(
+  SpecialPowers.ChromeUtils.getClassName(scopeRule),
+  "CSSScopeRule",
+  `scopeRule has expected type`
+);
+is(
+  SpecialPowers.ChromeUtils.getClassName(cssNestedDeclarationsInMedia),
+  "CSSNestedDeclarations",
+  `cssNestedDeclarationsInMedia has expected type`
+);
+is(
+  SpecialPowers.ChromeUtils.getClassName(cssNestedDeclarationsInScope),
+  "CSSNestedDeclarations",
+  `cssNestedDeclarationsInScope has expected type`
+);
+
+ok(
+  InspectorUtils.supports("top: 0 !important", {}),
+  "InspectorUtils.supports allow !important declaration"
+);
+ok(
+  InspectorUtils.supports("top: 0 !important", {rule: cssRule}),
+  "InspectorUtils.supports properly report support for specific rule (e.g. !important values are valid in CSSStyleRule)"
+);
+ok(
+  InspectorUtils.supports("top: 0", {rule: cssPositionTryRule}),
+  "InspectorUtils.supports properly report support for specific rule"
+);
+ok(
+  !InspectorUtils.supports("top: 0 !important", {rule: cssPositionTryRule}),
+  "InspectorUtils.supports properly report no support for invalid values for specific rule (e.g. !important values not valid in @position-try)"
+);
+ok(
+  !InspectorUtils.supports("color: red", {rule: cssPositionTryRule}),
+  "InspectorUtils.supports properly report no support for specific rule (e.g. `color` not valid in @position-try)"
+);
+ok(
+  InspectorUtils.supports("color: red", {rule: cssNestedDeclarationsInMedia}),
+  "InspectorUtils.supports properly report support for specific rule (e.g. `color` valid in CSSNestedDeclarations)"
+);
+ok(
+  InspectorUtils.supports("color: red", {rule: cssNestedDeclarationsInScope}),
+  "InspectorUtils.supports properly report support for specific rule (e.g. `color` valid in CSSScopeRule)"
+);
 </script>

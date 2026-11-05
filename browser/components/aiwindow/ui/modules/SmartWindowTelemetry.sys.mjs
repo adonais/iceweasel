@@ -27,6 +27,8 @@ const PREF_MEMORIES_FROM_HISTORY =
   "browser.smartwindow.memories.generateFromHistory";
 const PREF_IS_DEFAULT_WINDOW = "browser.smartwindow.isDefaultWindow";
 const PREF_SMARTWINDOW_ENABLED = "browser.smartwindow.enabled";
+const PREF_SIDEBAR_OPEN_BY_DEFAULT =
+  "browser.smartwindow.sidebar.openByDefault";
 const lazy = {};
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -69,6 +71,14 @@ XPCOMUtils.defineLazyPreferenceGetter(
   () => SmartWindowTelemetry.updateEnabledMetric()
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "sidebarOpenByDefault",
+  PREF_SIDEBAR_OPEN_BY_DEFAULT,
+  true,
+  () => SmartWindowTelemetry.recordSidebarOpenByDefaultChange()
+);
+
 ChromeUtils.defineESModuleGetters(lazy, {
   getModelForChoice:
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
@@ -89,6 +99,7 @@ export const SmartWindowTelemetry = {
     this.updateMemoriesFromHistoryMetric();
     this.updateSetDefaultOptinMetric();
     this.updateEnabledMetric();
+    this.updateSidebarOpenByDefaultMetric();
   },
 
   updateMemoriesFromConversationMetric() {
@@ -111,6 +122,17 @@ export const SmartWindowTelemetry = {
 
   updateEnabledMetric() {
     Glean.smartWindow.enabled.set(lazy.smartWindowEnabled);
+  },
+
+  updateSidebarOpenByDefaultMetric() {
+    Glean.smartWindow.sidebarOpenByDefault.set(lazy.sidebarOpenByDefault);
+  },
+
+  recordSidebarOpenByDefaultChange() {
+    this.updateSidebarOpenByDefaultMetric();
+    Glean.smartWindow.sidebarOpenByDefaultChange.record({
+      enabled: lazy.sidebarOpenByDefault,
+    });
   },
 
   async updateModelMetric() {

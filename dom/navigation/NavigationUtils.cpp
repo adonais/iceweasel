@@ -6,7 +6,13 @@
 
 #include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
+#include "nsContentUtils.h"
 #include "nsDocShellLoadTypes.h"
+#include "nsIChannel.h"
+#include "nsILoadInfo.h"
+#include "nsIPrincipal.h"
+#include "nsIRedirectHistoryEntry.h"
+#include "nsIScriptSecurityManager.h"
 
 namespace mozilla::dom {
 
@@ -77,6 +83,67 @@ Maybe<NavigationType> NavigationUtils::NavigationTypeFromLoadType(
       // This is an invalid load type.
       return {};
   }
+}
+
+/* static */ bool NavigationUtils::HasCrossOriginRedirect(
+    nsIChannel* aChannel) {
+  if (!aChannel) {
+    return false;
+  }
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  if (!loadInfo || loadInfo->RedirectChain().IsEmpty()) {
+    return false;
+  }
+  nsCOMPtr<nsIPrincipal> resultPrincipal;
+  if (NS_FAILED(nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+          aChannel, getter_AddRefs(resultPrincipal))) ||
+      !resultPrincipal) {
+    return false;
+  }
+  for (const nsCOMPtr<nsIRedirectHistoryEntry>& entry :
+       loadInfo->RedirectChain()) {
+    nsCOMPtr<nsIPrincipal> entryPrincipal;
+    entry->GetPrincipal(getter_AddRefs(entryPrincipal));
+    bool sameOrigin = false;
+    if (entryPrincipal &&
+        NS_SUCCEEDED(entryPrincipal->Equals(resultPrincipal, &sameOrigin)) &&
+        !sameOrigin) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/* static */ bool
+NavigationUtils::CanInitiateOutboundCrossDocumentViewTransition(
+    uint32_t aLoadType, bool aSameOrigin, nsIChannel* aChannel) {
+  // https://drafts.csswg.org/css-view-transitions-2/#navigation-can-trigger-a-cross-document-view-transition
+  // Step 1 is up to the user agent, and the callers check step 2.
+  Maybe<NavigationType> navType = NavigationTypeFromLoadType(aLoadType);
+  // Step 3.
+  if (navType.isNothing() || *navType == NavigationType::Reload) {
+    return false;
+  }
+  // Step 4.
+  if (!aSameOrigin) {
+    return false;
+  }
+  // Step 5. The channel creates a new document, so its latest entry is null.
+  if (HasCrossOriginRedirect(aChannel)) {
+    return false;
+  }
+  // Step 6.
+  if (*navType == NavigationType::Traverse) {
+    return true;
+  }
+  // Step 7.
+  UserNavigationInvolvement involvement = UserNavigationInvolvement::None;
+  if (aChannel) {
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+    involvement = loadInfo->GetUserNavigationInvolvement();
+  }
+  // Step 8.
+  return involvement != UserNavigationInvolvement::BrowserUI;
 }
 
 }  // namespace mozilla::dom

@@ -30,6 +30,14 @@ extern mozilla::LazyLogModule gWidgetDragLog;
 #  define LOGDRAGSERVICE(...)
 #endif
 
+nsDragSessionGtk::DragTaskGtk::~DragTaskGtk() = default;
+
+void nsDragSessionGtk::DragTaskGtk::Reset() {
+  mType = eDragTaskNone;
+  mWindow = nullptr;
+  mDragContext = nullptr;
+}
+
 ClipboardTargets nsDragSessionGtk::DragTaskGtk::GetTargets() {
   return ClipboardTargets(gdk_drag_context_list_targets(mDragContext));
 }

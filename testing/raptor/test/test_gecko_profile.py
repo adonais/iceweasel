@@ -19,6 +19,53 @@ raptor_dir = os.path.join(os.path.dirname(here), "raptor")
 sys.path.insert(0, raptor_dir)
 
 from gecko_profile import GeckoProfile
+from raptor_profiling import _profile_archive_paths
+
+
+def test_profile_archive_paths():
+    test_config = {"name": "nav-bench", "type": "pageload"}
+    single_profile = [
+        {
+            "path": "/results/pages/example/first/data/geckoProfile-1.json.gz",
+            "type": "cold",
+        }
+    ]
+    assert _profile_archive_paths(test_config, single_profile) == [
+        os.path.join("nav-bench-pageload-cold", "browser-cycle-1.json.gz")
+    ]
+
+    profiles = [
+        single_profile[0],
+        {
+            "path": "/results/pages/example/second/data/geckoProfile-1.json.gz",
+            "type": "cold",
+        },
+        {
+            "path": "/results/pages/example/third/data/geckoProfile-2.json.gz",
+            "type": "cold",
+        },
+    ]
+    assert _profile_archive_paths(test_config, profiles) == [
+        os.path.join("nav-bench-pageload-cold", "first", "browser-cycle-1.json.gz"),
+        os.path.join("nav-bench-pageload-cold", "second", "browser-cycle-1.json.gz"),
+        os.path.join("nav-bench-pageload-cold", "third", "browser-cycle-2.json.gz"),
+    ]
+
+    warm_profile = [
+        {
+            "path": "/results/pages/example/warm/data/geckoProfile-1.json.gz",
+            "type": "warm",
+        }
+    ]
+    assert _profile_archive_paths(test_config, warm_profile) == [
+        os.path.join("nav-bench-pageload-warm", "page-cycle-1.json.gz")
+    ]
+
+    # A suffix states the archived profile's own compression, e.g. once a
+    # gzipped profile has been symbolicated into plain JSON.
+    assert _profile_archive_paths(test_config, warm_profile, [".json"]) == [
+        os.path.join("nav-bench-pageload-warm", "page-cycle-1.json")
+    ]
 
 
 @patch("logger.logger.RaptorLogger.info")

@@ -129,19 +129,19 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> UnpremultiplyReverse_SIMD(
   // by 2 as a side-effect of being shifted for storage. Thus the output scale
   // of doing a normal multiply by the high portion and the VQDMULH by the low
   // portion are both doubled and can be safely added together. The resulting
-  // sum just needs to be halved (via VHADD) to thus cancel out the doubling.
-  // All this combines to produce a reciprocal multiply of the form:
-  // rb = ((rb * hi) + ((rb * lo * 2) >> 16)) / 2
-  auto rb = vhaddq_u16(vmulq_u16(aRb, q1234lohi.val[1]),
-                       vreinterpretq_u16_s16(vqdmulhq_s16(
-                           vreinterpretq_s16_u16(aRb),
-                           vreinterpretq_s16_u16(q1234lohi.val[0]))));
+  // sum just needs to be rounded and halved (via VRHADD) to cancel the
+  // doubling. All this combines to produce a reciprocal multiply of the form:
+  // rb = ((rb * hi) + ((rb * lo * 2) >> 16) + 1) / 2
+  auto rb = vrhaddq_u16(vmulq_u16(aRb, q1234lohi.val[1]),
+                        vreinterpretq_u16_s16(vqdmulhq_s16(
+                            vreinterpretq_s16_u16(aRb),
+                            vreinterpretq_s16_u16(q1234lohi.val[0]))));
 
-  // ga = ((ga * hi) + ((ga * lo * 2) >> 16)) / 2
-  auto ga = vhaddq_u16(vmulq_u16(aGa, q1234lohi.val[1]),
-                       vreinterpretq_u16_s16(vqdmulhq_s16(
-                           vreinterpretq_s16_u16(aGa),
-                           vreinterpretq_s16_u16(q1234lohi.val[0]))));
+  // ga = ((ga * hi) + ((ga * lo * 2) >> 16) + 1) / 2
+  auto ga = vrhaddq_u16(vmulq_u16(aGa, q1234lohi.val[1]),
+                        vreinterpretq_u16_s16(vqdmulhq_s16(
+                            vreinterpretq_s16_u16(aGa),
+                            vreinterpretq_s16_u16(q1234lohi.val[0]))));
 
   // Combine to the final pixel with ((rb | (ga << 8)) & ~0xFF000000) | (aSrc &
   // 0xFF000000), which inserts back in the original alpha value unchanged.

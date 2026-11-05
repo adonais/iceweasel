@@ -45,10 +45,10 @@ Maybe<ScalarID> ScalarIdForMetric(uint32_t aId) {
     case 20: { // test.nested.datetime_metric
       return Some(ScalarID::SOME_STILL_OTHER_STRING_SCALAR);
     }
-    case 26: { // test.nested.quantity_metric
+    case 29: { // test.nested.quantity_metric
       return Some(ScalarID::TELEMETRY_TEST_MIRROR_FOR_QUANTITY);
     }
-    case 30: { // test.nested.uuid_metric
+    case 33: { // test.nested.uuid_metric
       return Some(ScalarID::SOME_OTHER_STRING_SCALAR);
     }
     default: {

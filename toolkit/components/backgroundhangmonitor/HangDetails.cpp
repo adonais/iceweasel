@@ -689,6 +689,12 @@ Result<Ok, nsresult> WriteHangDetailsToFile(HangDetails& aDetails,
 
 NS_IMETHODIMP
 ProcessHangStackRunnable::Run() {
+  PersistedToDisk persistedToDisk = PersistedToDisk::No;
+  if (mPermahangFile &&
+      WriteHangDetailsToFile(mHangDetails, mPermahangFile).isOk()) {
+    persistedToDisk = PersistedToDisk::Yes;
+  }
+
   // NOTE: Reading module information can take a long time, which is why we do
   // it off-main-thread.
   if (mHangDetails.stack().modules().IsEmpty()) {
@@ -696,7 +702,7 @@ ProcessHangStackRunnable::Run() {
   }
 
   RefPtr<nsHangDetails> hangDetails =
-      new nsHangDetails(std::move(mHangDetails), mPersistedToDisk);
+      new nsHangDetails(std::move(mHangDetails), persistedToDisk);
   hangDetails->Submit();
 
   return NS_OK;

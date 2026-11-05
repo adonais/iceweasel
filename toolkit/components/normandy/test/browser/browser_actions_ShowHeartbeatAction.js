@@ -3,8 +3,8 @@
 const { BaseAction } = ChromeUtils.importESModule(
   "resource://normandy/actions/BaseAction.sys.mjs"
 );
-const { ClientEnvironment } = ChromeUtils.importESModule(
-  "resource://normandy/lib/ClientEnvironment.sys.mjs"
+const { ClientEnvironmentBase } = ChromeUtils.importESModule(
+  "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs"
 );
 const { Heartbeat } = ChromeUtils.importESModule(
   "resource://normandy/lib/Heartbeat.sys.mjs"
@@ -285,7 +285,7 @@ add_task(async function postAnswerUrlUserIdIfRequested() {
   const urlWithId = new URL(await action.generatePostAnswerURL(recipeWithId));
   is(
     urlWithId.searchParams.get("userId"),
-    ClientEnvironment.userId,
+    ClientEnvironmentBase.legacyRandomizationId,
     "clientId should be included"
   );
 
@@ -314,7 +314,7 @@ decorate_task(
     );
     is(
       action.generateSurveyId(recipeWithId),
-      `test-id::${ClientEnvironment.userId}`,
+      `test-id::${ClientEnvironmentBase.legacyRandomizationId}`,
       "userId should be included if requested"
     );
   }

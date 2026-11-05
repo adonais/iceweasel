@@ -121,10 +121,10 @@ void ResolveOrReject(Promise& aPromise, nsPrinterBase& aPrinter,
 
 }  // namespace mozilla
 
-template <typename T, typename... Args>
+template <typename T, typename... TArgs, typename... Args>
 nsresult nsPrinterBase::AsyncPromiseAttributeGetter(
     JSContext* aCx, Promise** aResultPromise, AsyncAttribute aAttribute,
-    BackgroundTask<T, Args...> aBackgroundTask, Args... aArgs) {
+    BackgroundTask<T, TArgs...> aBackgroundTask, Args&&... aArgs) {
   MOZ_ASSERT(NS_IsMainThread());
 
   return mozilla::AsyncPromiseAttributeGetter(

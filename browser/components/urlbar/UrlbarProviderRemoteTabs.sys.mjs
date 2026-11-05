@@ -10,42 +10,33 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   SyncedTabs: "resource://services-sync/SyncedTabs.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
+  weaveXPCService() {
+    try {
+      let service = Cc["@mozilla.org/weave/service;1"].getService(
+        Ci.nsISupports
+      );
+      return /** @type {any} */ (service).wrappedJSObject;
+    } catch (ex) {
+      // The app didn't build Sync.
+    }
+    return null;
+  },
+  showRemoteIconsPref: {
+    pref: "services.sync.syncedTabs.showRemoteIcons",
+    default: true,
+  },
+  syncUsernamePref: { pref: "services.sync.username" },
 });
 
 // By default, we add remote tabs that have been used more recently than this
 // time ago. Any remaining remote tabs are added in queue if no other results
 // are found.
 const RECENT_REMOTE_TAB_THRESHOLD_MS = 72 * 60 * 60 * 1000; // 72 hours.
-
-ChromeUtils.defineLazyGetter(lazy, "weaveXPCService", function () {
-  try {
-    return Cc["@mozilla.org/weave/service;1"].getService(Ci.nsISupports)
-      .wrappedJSObject;
-  } catch (ex) {
-    // The app didn't build Sync.
-  }
-  return null;
-});
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "showRemoteIconsPref",
-  "services.sync.syncedTabs.showRemoteIcons",
-  true
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "syncUsernamePref",
-  "services.sync.username"
-);
 
 // from MDN...
 function escapeRegExp(string) {

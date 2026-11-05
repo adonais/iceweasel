@@ -47,6 +47,10 @@ class CredentialsContainer final : public nsISupports, public nsWrapperCache {
   void EnsureWebAuthnHandler();
   void EnsureDigitalCredentialHandler();
 
+  // Checks if the current document state is valid for credential management
+  // API. If not, fails the promise with an error and returns false.
+  bool CheckState(Promise& aPromise);
+
   nsCOMPtr<nsPIDOMWindowInner> mParent;
   RefPtr<WebAuthnHandler> mWebAuthnHandler;
   RefPtr<DigitalCredentialHandler> mDigitalCredentialHandler;

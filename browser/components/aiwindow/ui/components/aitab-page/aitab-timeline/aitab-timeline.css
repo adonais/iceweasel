@@ -18,6 +18,7 @@
 .aitab-timeline-intro {
   display: grid;
   gap: var(--space-xsmall);
+  line-height: 1; /* otherwise the title won't be vertically aligned with the items */
 }
 
 .aitab-timeline-items {
@@ -56,27 +57,25 @@
   line-height: 1.5;
 }
 
-@container aitab-page (width >= 900px) {
+@media (width > 900px) {
   .aitab-timeline {
-    grid-template-columns: max-content max-content 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+
+  .aitab-timeline-items {
+    grid-template-columns: fit-content(150px) minmax(0, 1fr);
+    column-gap: var(--space-xxlarge);
+  }
+
+  .aitab-timeline-item {
+    grid-column: 1 / -1;
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   }
 
   .aitab-timeline-intro {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     padding-inline-end: var(--aitab-timeline-intro-gutter);
-  }
-
-  .aitab-timeline-items {
-    grid-column-start: 2;
-    grid-column-end: -1;
-    grid-template-columns: subgrid;
-  }
-
-  .aitab-timeline-item {
-    grid-column-start: 1;
-    grid-column-end: -1;
-    align-items: start;
-    grid-template-columns: subgrid;
   }
 
   .aitab-timeline-date {

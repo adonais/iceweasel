@@ -73,6 +73,17 @@ enum PrefersReducedMotionOverride {
 };
 
 /**
+ * CSS prefers-contrast values override.
+ */
+enum PrefersContrastOverride {
+  "none",
+  "no-preference",
+  "more",
+  "less",
+  "custom",
+};
+
+/**
  * Allowed overrides of platform/pref default behaviour for touch events.
  */
 enum TouchEventsOverride {
@@ -254,6 +265,9 @@ interface BrowsingContext {
 
   // Forced-colors simulation, for DevTools
   [SetterThrows] attribute ForcedColorsOverride forcedColorsOverride;
+
+  // Contrast simulation, for DevTools.
+  [SetterThrows] attribute PrefersContrastOverride prefersContrastOverride;
 
   // Animation playbackRate multiplier, for Devtools
   [SetterThrows] attribute double animationsPlayBackRateMultiplier;

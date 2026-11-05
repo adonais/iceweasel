@@ -128,7 +128,6 @@
   gap: var(--space-medium);
   padding: var(--space-small) var(--space-medium);
   border-radius: var(--border-radius-medium);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--sff-pill-bg-color);
 
   &:is(:hover, :active) {
@@ -147,7 +146,6 @@
   cursor: pointer;
 
   :host([subfocused]) & {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-color: var(--sff-pill-bg-color-focus);
     outline: var(--focus-outline);
   }
@@ -201,13 +199,11 @@
 }
 
 .source-favicon-single {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-end: calc(-1 * var(--space-xsmall));
 }
 
 /* sff loader */
 .sff-loader {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--sff-pill-bg-color);
   border-radius: var(--border-radius-large);
   display: flex;

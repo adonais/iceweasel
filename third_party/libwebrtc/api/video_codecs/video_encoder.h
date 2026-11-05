@@ -189,6 +189,11 @@ class RTC_EXPORT VideoEncoder {
     // considerably, especially if `requested_resolution_alignment` is large.
     bool apply_alignment_to_all_simulcast_layers;
 
+    // The largest frame size, in pixels, the encoder is able to encode. If
+    // set, InitEncode with a larger resolution, or Encode with a larger frame,
+    // may fail. Unset means no known limit.
+    std::optional<size_t> max_pixels_per_frame;
+
     // If true, encoder supports working with a native handle (e.g. texture
     // handle for hw codecs) rather than requiring a raw I420 buffer.
     bool supports_native_handle;
@@ -386,7 +391,7 @@ class RTC_EXPORT VideoEncoder {
   // TODO(bugs.webrtc.org/10720): After updating downstream projects and posting
   // an announcement to discuss-webrtc, remove the three-parameters variant
   // and make the two-parameters variant pure-virtual.
-  /* ABSL_DEPRECATED("bugs.webrtc.org/10720") */ virtual int32_t InitEncode(
+  /* [[deprecated("bugs.webrtc.org/10720")]] */ virtual int32_t InitEncode(
       const VideoCodec* codec_settings,
       int32_t number_of_cores,
       size_t max_payload_size);

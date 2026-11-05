@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="timeout" content="long">
   <title>Test for Bug 1783641</title>
+  <link rel="help" href="https://searchfox.org/wubkat/rev/9f15525873b30ca4f5ab8fc924c897919489bd4b/Source/WebCore/editing/DeleteSelectionCommand.cpp#357">
   <script src=/resources/testharness.js></script>
   <script src=/resources/testharnessreport.js></script>
   <script src="/resources/testdriver.js"></script>
@@ -14,6 +15,12 @@
       font-size: 12px;
       padding: 0px;
       width: 200px;
+    }
+    .inlineHost {
+      display: inline;
+    }
+    .preserveSpaces {
+      white-space: pre-wrap;
     }
   </style>
 </head>
@@ -37,6 +44,7 @@
     }, "Test setup");
     const placeHolder = document.getElementById("placeholder");
     const deleteKey = "\uE017";
+    const backspaceKey = "\uE003";
 
     function waitForRender() {
       return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -70,20 +78,21 @@
       };
 
       /**
-       * Places a double click in `editableElement` at exactly the end of `aPlaceHolderText` and press delete.
-       * `aPlaceholderText` therefore should contain the same text as the value of the `editableElement`
+       * Places a double click in `editableElement` at exactly the end of `aPlaceHolderText` on line `aLine`.
+       * `aPlaceholderText` therefore should contain the same text as the line of the `editableElement`
        * up to the point where the doubleclick should happen.
        *
        * If `aSelectionValue` is defined, the selection created by the double click is compared to `aSelectionValue`.
        */
-      const doubleClickAndDelete = async (aPlaceHolderText, aSelectionValue = undefined) => {
+      const doubleClickAt = async (aPlaceHolderText, aSelectionValue = undefined, aLine = 0) => {
         placeHolder.innerHTML = aPlaceHolderText;
         editableElement.focus();
         await waitForRender();
         const absInputPos = editableElement.getBoundingClientRect();
+        const lineHeight = placeHolder.getBoundingClientRect().height;
         selectionOffset = {
           x: placeHolder.getBoundingClientRect().width,
-          y: Math.floor(placeHolder.getBoundingClientRect().height / 2)
+          y: Math.floor(lineHeight * aLine + lineHeight / 2)
         };
         await (new test_driver.Actions()
           // for some reason this still doesn't work:
@@ -103,9 +112,33 @@
         if (aSelectionValue !== undefined) {
           assert_equals(getSelection(), aSelectionValue, "Wrong selection value!");
         }
+      };
+
+      /**
+       * Double clicks as `doubleClickAt` and presses delete afterwards.
+       */
+      const doubleClickAndDelete = async (aPlaceHolderText, aSelectionValue = undefined, aLine = 0) => {
+        await doubleClickAt(aPlaceHolderText, aSelectionValue, aLine);
         return test_driver.send_keys(editableElement, deleteKey);
       };
       if (editableElement.tagName.toLowerCase() == "div") {
+        promise_test(async t => {
+          setValue("one two three");
+          await doubleClickAt("one tw", "two");
+          editableElement.addEventListener("beforeinput", t.step_func(() => {
+            const range = document.createRange();
+            range.setStart(editableElement.firstChild, "one ".length);
+            range.setEnd(editableElement.firstChild, "one two".length);
+            const selection = document.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }), { once: true });
+          await test_driver.send_keys(editableElement, backspaceKey);
+          await waitForRender();
+          assert_equals(editableElement.textContent.replace(/\u00a0/g, " "), "one  three",
+            "Changing the selection during beforeinput must disable smart delete.");
+        }, `${editableElement.tagName}: Smart delete must use the selection after beforeinput.`);
+
         promise_test(async t => {
           setValue("<p>abc def<span></span></p>");
           await doubleClickAndDelete("abc de", "def");
@@ -171,6 +204,12 @@
       "only if selection is created by double click.");
 
       promise_test(async t => {
+        editableElement.classList.add("preserveSpaces");
+        placeHolder.classList.add("preserveSpaces");
+        t.add_cleanup(() => {
+          editableElement.classList.remove("preserveSpaces");
+          placeHolder.classList.remove("preserveSpaces");
+        });
         setValue("one  two three");
         await doubleClickAndDelete("one  tw", "two");
         await waitForRender();
@@ -182,6 +221,12 @@
       }, `${editableElement.tagName}: Only one whitespace character should be removed when there are multiple.`);
 
       promise_test(async t => {
+        editableElement.classList.add("preserveSpaces");
+        placeHolder.classList.add("preserveSpaces");
+        t.add_cleanup(() => {
+          editableElement.classList.remove("preserveSpaces");
+          placeHolder.classList.remove("preserveSpaces");
+        });
         setValue("one  two");
         await doubleClickAndDelete("one  tw", "two");
         await waitForRender();
@@ -216,6 +261,283 @@
       }, `${editableElement.tagName}: Remove a word after punctuation should remove the whitespace.`);
 
       promise_test(async t => {
+        setValue("one ,two three");
+        await doubleClickAndDelete("one ,tw", "two");
+        await waitForRender();
+        assert_equals(
+          getValue(),
+          "one ,three",
+          "The following whitespace must be removed when there is no preceding whitespace!"
+        );
+        if (editableElement.tagName.toLowerCase() == "div") {
+          const selection = document.getSelection();
+          assert_true(selection.isCollapsed, "Selection must be collapsed after deletion!");
+          assert_equals(
+            selection.anchorNode.textContent.substring(0, selection.anchorOffset),
+            "one ,",
+            "The caret must be placed after the punctuation!"
+          );
+        } else {
+          assert_equals(editableElement.selectionStart, "one ,".length, "The caret must be placed after the punctuation!");
+          assert_equals(editableElement.selectionEnd, "one ,".length, "Selection must be collapsed after deletion!");
+        }
+      }, `${editableElement.tagName}: Removing a word directly after punctuation should remove the following whitespace.`);
+
+      promise_test(async t => {
+        setValue("one two three");
+        await doubleClickAt("one tw", "two");
+        await test_driver.send_keys(editableElement, "x");
+        await waitForRender();
+        assert_equals(
+          getValue(),
+          "one x three",
+          "Typing over the selected word must keep the surrounding whitespace!"
+        );
+      }, `${editableElement.tagName}: Typing over a double-click selection should not remove any whitespace.`);
+
+      promise_test(async t => {
+        await SpecialPowers.pushPrefEnv({
+          set: [["editor.word_select.delete_space_after_doubleclick_selection", false]]
+        });
+        t.add_cleanup(() => SpecialPowers.popPrefEnv());
+        setValue("one two three");
+        await doubleClickAndDelete("one tw", "two");
+        assert_equals(getValue().replace(/&nbsp;/g, " "), "one  three",
+          "Disabling smart delete must preserve both surrounding spaces!");
+      }, `${editableElement.tagName}: The pref disables smart delete for double-click selections.`);
+
+      promise_test(async t => {
+        setValue("one two three");
+        await doubleClickAt("one tw", "two");
+        const isDiv = editableElement.tagName.toLowerCase() == "div";
+        let targetText;
+        editableElement.addEventListener("beforeinput", t.step_func(event => {
+          assert_equals(event.inputType, "deleteByCut");
+          if (!isDiv) {
+            return;
+          }
+          const ranges = event.getTargetRanges();
+          assert_equals(ranges.length, 1);
+          const range = document.createRange();
+          range.setStart(ranges[0].startContainer, ranges[0].startOffset);
+          range.setEnd(ranges[0].endContainer, ranges[0].endOffset);
+          targetText = range.toString();
+        }), { once: true });
+        SpecialPowers.doCommand(window, "cmd_cut");
+        await waitForRender();
+        if (isDiv) {
+          assert_equals(targetText, " two", "The target range must include the adjacent whitespace!");
+        }
+        assert_equals(getValue(), "one three",
+          "Cutting a double-clicked word must remove the adjacent whitespace!");
+      }, `${editableElement.tagName}: Cutting a double-click selection should remove one whitespace.`);
+
+      promise_test(async t => {
+        await SpecialPowers.pushPrefEnv({
+          set: [["layout.word_select.eat_space_to_next_word", true]]
+        });
+        t.add_cleanup(() => SpecialPowers.popPrefEnv());
+        setValue("one two three");
+        await doubleClickAndDelete("one tw", "two ");
+        await waitForRender();
+        assert_equals(
+          getValue(),
+          "one three",
+          "No additional whitespace must be removed when the selection already contains one!"
+        );
+      }, `${editableElement.tagName}: Removing a word whose selection already contains the following whitespace ` +
+      "should not remove more whitespace.");
+
+      if (editableElement.tagName.toLowerCase() == "div") {
+        promise_test(async t => {
+          setValue("one<br>two three");
+          await doubleClickAndDelete("tw", "two", 1);
+          await waitForRender();
+          assert_equals(
+            getValue(),
+            "one<br>three",
+            "The whitespace after the word must be removed when the word starts a line!"
+          );
+        }, `${editableElement.tagName}: Removing a word after a line break should remove the following whitespace.`);
+
+        promise_test(async t => {
+          setValue("<pre>one\ntwo three</pre>");
+          await doubleClickAndDelete("tw", "two", 1);
+          await waitForRender();
+          assert_equals(
+            getValue(),
+            "<pre>one three</pre>",
+            "A preceding preformatted newline is the leading whitespace!"
+          );
+        }, `${editableElement.tagName}: Removing a word after a preformatted line break should remove that newline.`);
+
+        for (const { html, clickAt, word, expected } of [
+          { html: "one   two three", clickAt: "one tw", word: "two", expected: "one three" },
+          { html: "one   two", clickAt: "on", word: "one", expected: "two" },
+          { html: "one <b>  two</b> three", clickAt: "one tw", word: "two", expected: "one three" },
+          { html: "<b>one</b> <i>  </i>two", clickAt: "on", word: "one", expected: "two" },
+          { html: "<pre>one\ntwo</pre>", clickAt: "on", word: "one", expected: "\ntwo" },
+        ]) {
+          promise_test(async t => {
+            setValue(html);
+            await doubleClickAt(clickAt);
+            assert_equals(getSelection().trim(), word);
+            await test_driver.send_keys(editableElement, deleteKey);
+            assert_equals(editableElement.innerText.replace(/\u00a0/g, " "), expected);
+          }, `${editableElement.tagName}: Smart delete uses rendered whitespace in ${html}`);
+        }
+
+        promise_test(async t => {
+          setValue("<div>one</div><div>two three</div>");
+          await doubleClickAndDelete("tw", "two", 1);
+          await waitForRender();
+          assert_equals(
+            getValue(),
+            "<div>one</div><div>three</div>",
+            "The whitespace after the word must be removed when the word starts a block!"
+          );
+        }, `${editableElement.tagName}: Removing a word at the start of a block should remove the following whitespace.`);
+
+        promise_test(async t => {
+          setValue("<b>one,</b>two three");
+          await doubleClickAndDelete("one,tw", "two");
+          await waitForRender();
+          assert_equals(
+            getValue(),
+            "<b>one,</b>three",
+            "The following whitespace must be removed when punctuation is in another element!"
+          );
+        }, `${editableElement.tagName}: Removing a word directly after punctuation in a preceding inline element ` +
+        "should remove the following whitespace.");
+
+        promise_test(async t => {
+          await SpecialPowers.pushPrefEnv({
+            set: [["layout.word_select.eat_space_to_next_word", true]]
+          });
+          t.add_cleanup(() => SpecialPowers.popPrefEnv());
+          setValue("one <b>two</b> three");
+          await doubleClickAndDelete("one tw", "two ");
+          assert_equals(editableElement.textContent, "one three",
+            "Whitespace selected across an inline boundary prevents further extension!");
+        }, `${editableElement.tagName}: Whitespace already selected in another text node prevents smart delete.`);
+
+        for (const { key, inputType } of [
+          { key: deleteKey, inputType: "deleteContentForward" },
+          { key: backspaceKey, inputType: "deleteContentBackward" },
+        ]) {
+          for (const { html, clickAt, word, deletedText, result } of [
+            {
+              html: "one <b>two</b> three",
+              clickAt: "one tw",
+              word: "two",
+              deletedText: " two",
+              result: "one three",
+            },
+            {
+              html: "<b>one</b> two",
+              clickAt: "on",
+              word: "one",
+              deletedText: "one ",
+              result: "two",
+            },
+            {
+              html: "one   <b>two</b> three",
+              clickAt: "one tw",
+              word: " two",
+              deletedText: "   two",
+              result: "one three",
+            },
+            {
+              html: "<b>one,</b>two three",
+              clickAt: "one,tw",
+              word: "two",
+              deletedText: "two ",
+              result: "one,three",
+            },
+          ]) {
+            promise_test(async t => {
+              setValue(html);
+              await doubleClickAt(clickAt, word);
+              let targetText;
+              editableElement.addEventListener("beforeinput", t.step_func(event => {
+                assert_equals(event.inputType, inputType);
+                const ranges = event.getTargetRanges();
+                assert_equals(ranges.length, 1);
+                const range = document.createRange();
+                range.setStart(ranges[0].startContainer, ranges[0].startOffset);
+                range.setEnd(ranges[0].endContainer, ranges[0].endOffset);
+                targetText = range.toString();
+              }), { once: true });
+              await test_driver.send_keys(editableElement, key);
+              assert_equals(targetText, deletedText, "The target range must include the adjacent whitespace!");
+              assert_equals(editableElement.textContent.replace(/\u00a0/g, " "), result);
+              assert_true(document.getSelection().isCollapsed);
+              document.execCommand("undo");
+              assert_equals(getValue(), html, "Undo must restore the word, whitespace, and inline markup!");
+            }, `${editableElement.tagName}: ${inputType} across inline boundaries in ${html}`);
+          }
+        }
+
+        promise_test(async t => {
+          const html = "one <b>two</b> three";
+          setValue(html);
+          await doubleClickAt("one tw", "two");
+          let beforeInputFired = false;
+          editableElement.addEventListener("beforeinput", event => {
+            beforeInputFired = true;
+            event.preventDefault();
+          }, { once: true });
+          let inputFired = false;
+          const onInput = () => { inputFired = true; };
+          editableElement.addEventListener("input", onInput);
+          t.add_cleanup(() => editableElement.removeEventListener("input", onInput));
+          await test_driver.send_keys(editableElement, deleteKey);
+          assert_true(beforeInputFired);
+          assert_false(inputFired, "Canceled deletion must not fire input!");
+          assert_equals(getValue(), html, "Canceled deletion must preserve the whitespace and markup!");
+          assert_equals(getSelection(), "two", "Computing target ranges must not extend the actual selection!");
+        }, `${editableElement.tagName}: Canceling smart delete preserves the double-click selection.`);
+
+        promise_test(async t => {
+          editableElement.classList.add("inlineHost");
+          t.add_cleanup(() => editableElement.classList.remove("inlineHost"));
+          setValue("one two");
+          await doubleClickAndDelete("on", "one");
+          assert_equals(editableElement.textContent, "two",
+            "The first word in an inline editing host must take the following whitespace!");
+        }, `${editableElement.tagName}: Smart delete at the start of an inline editing host.`);
+
+        promise_test(async t => {
+          setValue("one two three");
+          let targetRanges;
+          editableElement.addEventListener("beforeinput", event => {
+            targetRanges = event.getTargetRanges();
+          }, { once: true });
+          await doubleClickAndDelete("one tw", "two");
+          await waitForRender();
+          assert_equals(getValue(), "one three", "The whitespace before the word must be removed!");
+          assert_equals(targetRanges.length, 1, "There must be exactly one target range!");
+          const textNode = editableElement.firstChild;
+          assert_equals(targetRanges[0].startContainer, textNode, "Wrong startContainer!");
+          assert_equals(targetRanges[0].startOffset, "one".length, "The target range must start before the whitespace!");
+          assert_equals(targetRanges[0].endContainer, textNode, "Wrong endContainer!");
+          assert_equals(targetRanges[0].endOffset, "one two".length, "The target range must end after the word!");
+        }, `${editableElement.tagName}: The target range of beforeinput should contain the whitespace which will be removed.`);
+      }
+      if (editableElement.tagName.toLowerCase() == "textarea") {
+        promise_test(async t => {
+          setValue("one\ntwo three");
+          await doubleClickAndDelete("tw", "two", 1);
+          await waitForRender();
+          assert_equals(
+            getValue(),
+            "one three",
+            "A preceding newline is the leading whitespace!"
+          );
+        }, `${editableElement.tagName}: Removing a word after a line break should remove that newline.`);
+      }
+
+      promise_test(async t => {
         setValue("one\u00A0two, three"); // adds a &nbsp;
         await doubleClickAndDelete("one tw", "two");
         await waitForRender();
@@ -225,6 +547,37 @@
           "The whitespace between words must be removed when a word is selected and deleted!"
         );
       }, `${editableElement.tagName}: Removing a word between a &nbsp; and punctuation should remove the nbsp character.`);
+
+      for (const { separator, expected, description } of [
+        { separator: "\f", expected: "one three", description: "form feed" },
+        { separator: "\u2003", expected: "one\u2003three", description: "em space" },
+      ]) {
+        promise_test(async t => {
+          setValue(`one${separator}two three`);
+          await doubleClickAndDelete(`one${separator}tw`, "two");
+          await waitForRender();
+          assert_equals(getValue(), expected);
+        }, `${editableElement.tagName}: Smart delete uses the WebKit whitespace classification for ${description}.`);
+      }
+
+      if (editableElement.tagName.toLowerCase() == "div") {
+        for (const { html, clickAt, word, expected } of [
+          { html: "one &#xC; two three", clickAt: "one &#xC; tw", word: "two", expected: "one \f three" },
+          { html: "one&#xC; two three", clickAt: "one&#xC; tw", word: "two", expected: "one\f three" },
+          { html: "one &#xC;two three", clickAt: "one &#xC;tw", word: "two", expected: "one  three" },
+          { html: "one two &#xC; three", clickAt: "one two &#xC; thr", word: "three", expected: "one two \f" },
+          { html: "one two&#xC; three", clickAt: "one two&#xC; thr", word: "three", expected: "one two\f" },
+          { html: "one two &#xC;three", clickAt: "one two &#xC;th", word: "three", expected: "one two " },
+        ]) {
+          promise_test(async t => {
+            setValue(html);
+            await doubleClickAndDelete(clickAt, word);
+            await waitForRender();
+            assert_equals(getValue().replace(/&nbsp;/g, " "), expected,
+              "Only the white-space or form feed adjacent to the word must be removed!");
+          }, `${editableElement.tagName}: Smart delete handles form feed in ${html}.`);
+        }
+      }
 
       if (editableElement.tagName.toLowerCase() == "div") {
         promise_test(async t => {

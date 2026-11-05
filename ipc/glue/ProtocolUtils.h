@@ -61,7 +61,7 @@ enum {
   ACCEPT_INVITE_MESSAGE_TYPE = kuint16max - 16,
   REQUEST_INTRODUCTION_MESSAGE_TYPE = kuint16max - 15,
   INTRODUCE_MESSAGE_TYPE = kuint16max - 14,
-  BROADCAST_MESSAGE_TYPE = kuint16max - 13,
+  DEAD_PROXY_MESSAGE_TYPE = kuint16max - 13,
   EVENT_MESSAGE_TYPE = kuint16max - 12,
 
   // Message types used by MessageChannel

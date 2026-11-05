@@ -1,4 +1,4 @@
-From 39936d4df96118522c9360c3def12bc55ad3d302 Mon Sep 17 00:00:00 2001
+From 931bd2a94488df938c07131a279286a1b1538bee Mon Sep 17 00:00:00 2001
 From: teoxoy <28601907+teoxoy@users.noreply.github.com>
 Date: Mon, 11 May 2026 10:45:36 +0200
 Subject: [PATCH] call `SafeDelete` only if `onDestroy` has not errored
@@ -8,10 +8,10 @@ Subject: [PATCH] call `SafeDelete` only if `onDestroy` has not errored
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/src/libANGLE/renderer/d3d/TextureD3D.cpp b/src/libANGLE/renderer/d3d/TextureD3D.cpp
-index a0e6708..7ec45b4 100644
+index d91d61c5d..aaafd862c 100644
 --- a/src/libANGLE/renderer/d3d/TextureD3D.cpp
 +++ b/src/libANGLE/renderer/d3d/TextureD3D.cpp
-@@ -888,7 +888,10 @@ angle::Result TextureD3D::releaseTexStorage(
+@@ -1059,7 +1059,10 @@ angle::Result TextureD3D::releaseTexStorage(
      onStateChange(angle::SubjectMessage::StorageReleased);
  
      auto err = mTexStorage->onDestroy(context);

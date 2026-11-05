@@ -240,6 +240,12 @@ class VideoSendStreamImpl : public webrtc::VideoSendStream,
   DataRate encoder_target_rate_ RTC_GUARDED_BY(thread_checker_);
   double encoder_bitrate_priority_ RTC_GUARDED_BY(thread_checker_);
 
+  // Resources added via AddAdaptationResource(). Only used to implement
+  // GetAdaptationResources(); the encoder owns its own list of resources,
+  // which includes internally created ones.
+  std::vector<scoped_refptr<Resource>> adaptation_resources_
+      RTC_GUARDED_BY(thread_checker_);
+
   ScopedTaskSafety worker_queue_safety_;
 };
 }  // namespace internal

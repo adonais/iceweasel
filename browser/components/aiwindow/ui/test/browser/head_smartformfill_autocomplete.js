@@ -113,7 +113,7 @@ async function cleanupSmartFormFillAutocompleteTest(context) {
     get: async () => MOCK_RS_RECORDS,
   });
 
-  context.mockEngineManager?.rejectAllRequests();
+  await context.mockEngineManager?.rejectAllRequests();
   context.mockEngineManager?.cleanupMocks();
 
   try {

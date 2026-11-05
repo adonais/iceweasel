@@ -42,8 +42,6 @@ class RtpVideoSenderInterface : public EncodedImageCallback,
 
   virtual void DeliverRtcp(std::span<const uint8_t> packet) = 0;
 
-  virtual void OnBitrateAllocationUpdated(
-      const VideoBitrateAllocation& bitrate) = 0;
   virtual void OnVideoLayersAllocationUpdated(
       const VideoLayersAllocation& allocation) = 0;
   virtual void OnBitrateUpdated(BitrateAllocationUpdate update,

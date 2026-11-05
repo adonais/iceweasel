@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.pwa.db
 
-import androidx.annotation.WorkerThread
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -14,23 +13,18 @@ import androidx.room.Update
 /** Internal DAO for accessing [ManifestEntity] instances. */
 @Dao
 internal interface ManifestDao {
-    @WorkerThread
     @Query("SELECT * from manifests WHERE start_url = :startUrl")
-    fun getManifest(startUrl: String): ManifestEntity?
+    suspend fun getManifest(startUrl: String): ManifestEntity?
 
-    @WorkerThread
     @Query("SELECT * from manifests WHERE :url LIKE scope||'%' ORDER BY LENGTH(scope) DESC")
-    fun getManifestsByScope(url: String): List<ManifestEntity>
+    suspend fun getManifestsByScope(url: String): List<ManifestEntity>
 
-    @WorkerThread
     @Query("SELECT count(start_url) from manifests WHERE :url LIKE scope||'%' AND used_at > :thresholdMs")
-    fun hasRecentManifest(url: String, thresholdMs: Long): Int
+    suspend fun hasRecentManifest(url: String, thresholdMs: Long): Int
 
-    @WorkerThread
     @Query("SELECT count(start_url) from manifests WHERE used_at > :thresholdMs")
-    fun recentManifestsCount(thresholdMs: Long): Int
+    suspend fun recentManifestsCount(thresholdMs: Long): Int
 
-    @WorkerThread
     @Query(
         """
         SELECT * from manifests
@@ -39,17 +33,14 @@ internal interface ManifestDao {
         ORDER BY used_at DESC
     """
     )
-    fun getRecentShareableManifests(deadline: Long): List<ManifestEntity>
+    suspend fun getRecentShareableManifests(deadline: Long): List<ManifestEntity>
 
-    @WorkerThread @Insert(onConflict = OnConflictStrategy.REPLACE) fun insertManifest(manifest: ManifestEntity): Long
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertManifest(manifest: ManifestEntity): Long
 
-    @WorkerThread @Update fun updateManifest(manifest: ManifestEntity)
+    @Update suspend fun updateManifest(manifest: ManifestEntity)
 
-    @WorkerThread
-    @Query("DELETE FROM manifests WHERE start_url IN (:startUrls)")
-    fun deleteManifests(startUrls: List<String>)
+    @Query("DELETE FROM manifests WHERE start_url IN (:startUrls)") suspend fun deleteManifests(startUrls: List<String>)
 
-    @WorkerThread
     @Query("SELECT * from manifests WHERE used_at > :expiresAt ORDER BY LENGTH(scope)")
-    fun getInstalledScopes(expiresAt: Long): List<ManifestEntity>
+    suspend fun getInstalledScopes(expiresAt: Long): List<ManifestEntity>
 }

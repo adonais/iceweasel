@@ -1,0 +1,86 @@
+<!doctype html>
+<head>
+<meta charset=utf-8>
+<title>Test TimelineRangeOffset when CSS Typed OM is disabled</title>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="../testcommon.js"></script>
+</head>
+<body>
+<div id="log"></div>
+<script>
+"use strict";
+
+// Something which looks like a polyfilled CSSUnitValue.
+const fakeOffset = { value: 10, unit: "percent", toString: () => "10%" };
+
+promise_test(async t => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["layout.css.typed-om.enabled", false]],
+  });
+
+  const div = document.createElement("div");
+  document.body.appendChild(div);
+  t.add_cleanup(() => div.remove());
+
+  assert_false("CSSNumericValue" in window,
+               "CSSNumericValue should not be exposed");
+
+  const anim = div.animate(null, {
+    rangeStart: { rangeName: "contain", offset: fakeOffset },
+    rangeEnd: { rangeName: "cover" },
+  });
+  // Per spec, when reading the attribute, the returned value is either a
+  // TimelineRangeOffset or the DOMString "normal". However, we disable CSS
+  // Typed OM here, so we still return TimelineRangeOffset but without offset.
+  assert_equals(anim.rangeStart.rangeName, "contain",
+                "rangeStart sets rangeName properly");
+  assert_equals(anim.rangeStart.offset, undefined,
+                "rangeStart returns TimelineRangeOffset without offset");
+  assert_equals(anim.rangeEnd.rangeName, "cover",
+                "rangeEnd sets rangeName properly");
+  assert_equals(anim.rangeEnd.offset, undefined,
+                "rangeEnd returns TimelineRangeOffset without offset");
+
+  const anim2 = div.animate(null, {
+    rangeStart: "normal",
+    rangeEnd: {},
+  });
+  assert_equals(anim2.rangeStart, "normal");
+  assert_equals(anim2.rangeEnd, "normal",
+                "empty rangeEnd falls back to normal");
+}, "Element.animate() with TimelineRangeOffset doesn't throw and ignores " +
+   "the offset");
+
+promise_test(async t => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["layout.css.typed-om.enabled", false]],
+  });
+
+  const div = document.createElement("div");
+  document.body.appendChild(div);
+  t.add_cleanup(() => div.remove());
+
+  const anim = div.animate(null, {
+    rangeStart: "contain",
+    rangeEnd: "cover 90%",
+  });
+
+  assert_equals(anim.rangeStart.rangeName, "contain");
+  assert_equals(anim.rangeStart.offset, undefined,
+                "rangeStart doesn't expose offset");
+  assert_equals(anim.rangeEnd.rangeName, "cover");
+  assert_equals(anim.rangeEnd.offset, undefined,
+                "rangeEnd doesn't expose offset");
+
+  anim.rangeStart = { rangeName: "exit", offset: fakeOffset };
+  anim.rangeEnd = { rangeName: "exit" };
+  assert_equals(anim.rangeStart.rangeName, "exit");
+  assert_equals(anim.rangeStart.offset, undefined);
+  assert_equals(anim.rangeEnd.rangeName, "exit");
+  assert_equals(anim.rangeEnd.offset, undefined);
+}, "Setting Animation.rangeStart/rangeEnd with TimelineRangeOffset doesn't " +
+   "throw and ignores the offset");
+
+</script>
+</body>

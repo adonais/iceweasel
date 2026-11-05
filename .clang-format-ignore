@@ -1,5 +1,6 @@
 # Mess up line matching tests
 build/clang-plugin/tests/*
+build/clang-plugin/alpha/tests/*
 # The two templates cannot be formatted
 config/gcc-stl-wrapper.template.h
 config/msvc-stl-wrapper.template.h

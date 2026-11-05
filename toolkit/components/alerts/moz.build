@@ -40,3 +40,8 @@ JAR_MANIFESTS += ["jar.mn"]
 
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Alerts Service")
+
+SOURCE_HEADERS += [
+    "nsAlertsService.h",
+    "nsXULAlerts.h",
+]

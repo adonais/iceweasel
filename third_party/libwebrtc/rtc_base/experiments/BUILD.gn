@@ -181,6 +181,17 @@ rtc_library("corruption_detection_frame_selector_settings") {
   ]
 }
 
+rtc_library("retransmit_flushed_packets_settings") {
+  sources = [
+    "retransmit_flushed_packets_settings.cc",
+    "retransmit_flushed_packets_settings.h",
+  ]
+  deps = [
+    ":field_trial_parser",
+    "../../api:field_trials_view",
+  ]
+}
+
 if (rtc_include_tests && !build_with_chromium) {
   rtc_library("experiments_unittests") {
     testonly = true
@@ -199,6 +210,7 @@ if (rtc_include_tests && !build_with_chromium) {
       "quality_scaler_settings_unittest.cc",
       "quality_scaling_experiment_unittest.cc",
       "rate_control_settings_unittest.cc",
+      "retransmit_flushed_packets_settings_unittest.cc",
       "struct_parameters_parser_unittest.cc",
     ]
     deps = [
@@ -213,6 +225,7 @@ if (rtc_include_tests && !build_with_chromium) {
       ":quality_scaler_settings",
       ":quality_scaling_experiment",
       ":rate_control_settings",
+      ":retransmit_flushed_packets_settings",
       "../../api:field_trials",
       "../../api:field_trials_view",
       "../../api/units:data_rate",

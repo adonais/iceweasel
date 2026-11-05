@@ -9,16 +9,18 @@
 #ifndef mozilla_image_DecodePool_h
 #define mozilla_image_DecodePool_h
 
+#include "mozilla/AwakeTimeStamp.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
 #include "nsIObserver.h"
-#include "nsStringFwd.h"
 
 class nsIThread;
 class nsIThreadPool;
+class nsIURI;
 
 namespace mozilla {
 namespace image {
@@ -66,7 +68,7 @@ class DecodePool final : public nsIObserver {
    * immediately.
    * @return true if the task was run sync, false otherwise.
    */
-  bool SyncRunIfPreferred(IDecodingTask* aTask, const nsCString& aURI);
+  bool SyncRunIfPreferred(IDecodingTask* aTask, nsIURI* aURI);
 
   /**
    * Run @aTask synchronously. This does not guarantee that @aTask will complete
@@ -74,7 +76,7 @@ class DecodePool final : public nsIObserver {
    * to run synchronously, it may recover by scheduling an async task to finish
    * up the work when the remaining data is available.
    */
-  void SyncRunIfPossible(IDecodingTask* aTask, const nsCString& aURI);
+  void SyncRunIfPossible(IDecodingTask* aTask, nsIURI* aURI);
 
   /**
    * Returns an event target interface to the DecodePool's I/O thread. Callers
@@ -84,6 +86,13 @@ class DecodePool final : public nsIObserver {
    * @return An nsISerialEventTarget interface to the thread pool's I/O thread.
    */
   already_AddRefed<nsISerialEventTarget> GetIOEventTarget();
+
+#ifdef XP_WIN
+  /// Bracket Windows Shell calls made on the I/O thread, so that a call still
+  /// in flight at shutdown can be reported.
+  static void NoteShellCallStarted();
+  static void NoteShellCallFinished();
+#endif
 
  private:
   friend class DecodePoolWorker;
@@ -95,9 +104,14 @@ class DecodePool final : public nsIObserver {
   static uint32_t sNumCores;
   bool mShuttingDown = false;
 
-  // mMutex protects mIOThread.
+  // mMutex protects mIOThread and the shell call state.
   Mutex mMutex;
   nsCOMPtr<nsIThread> mIOThread MOZ_GUARDED_BY(mMutex);
+#ifdef XP_WIN
+  // Start time of the in-flight Windows Shell call, if any.
+  Maybe<AwakeTimeStamp> mShellCallStart MOZ_GUARDED_BY(mMutex);
+  bool mShellCallStartedInShutdown MOZ_GUARDED_BY(mMutex) = false;
+#endif
 };
 
 }  // namespace image

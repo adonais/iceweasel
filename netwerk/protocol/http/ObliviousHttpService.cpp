@@ -34,8 +34,6 @@ ObliviousHttpService::ObliviousHttpService()
                      false);
     obs->AddObserver(this, "network:trr-confirmation", false);
   }
-
-  ReadPrefs("*"_ns);
 }
 
 static constexpr nsLiteralCString kTRRohttpConfigURIPref =
@@ -43,7 +41,20 @@ static constexpr nsLiteralCString kTRRohttpConfigURIPref =
 static constexpr nsLiteralCString kTRRohttpRelayURIPref =
     "network.trr.ohttp.relay_uri"_ns;
 
+nsresult ObliviousHttpService::Init() {
+  ReadPrefs("*"_ns);
+  return NS_OK;
+}
+
 void ObliviousHttpService::FetchConfig(bool aConfigURIChanged) {
+  // This service is created during nsDNSService::Init, so fetching the config
+  // synchronously would re-enter the DNS service before it's initialized.
+  (void)NS_DispatchToMainThread(NewRunnableMethod<bool>(
+      "ObliviousHttpService::FetchConfig", this,
+      &ObliviousHttpService::FetchConfigInternal, aConfigURIChanged));
+}
+
+void ObliviousHttpService::FetchConfigInternal(bool aConfigURIChanged) {
   auto scopeExit = MakeScopeExit([&] {
     nsCOMPtr<nsIObserverService> obs(mozilla::services::GetObserverService());
     if (!obs) {

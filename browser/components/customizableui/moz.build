@@ -7,7 +7,11 @@ DIRS += [
 ]
 
 MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
-BROWSER_CHROME_MANIFESTS += ["test/browser.toml", "test/browserSidebarRevamp.toml"]
+BROWSER_CHROME_MANIFESTS += [
+    "test/browser.toml",
+    "test/browserFireButton.toml",
+    "test/browserSidebarRevamp.toml",
+]
 XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
 
 TESTING_JS_MODULES += [

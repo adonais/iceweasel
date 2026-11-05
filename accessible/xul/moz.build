@@ -56,3 +56,16 @@ else:
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "XULAlertAccessible.h",
+    "XULComboboxAccessible.h",
+    "XULElementAccessibles.h",
+    "XULFormControlAccessible.h",
+    "XULListboxAccessible.h",
+    "XULMenuAccessible.h",
+    "XULSelectControlAccessible.h",
+    "XULTabAccessible.h",
+    "XULTreeAccessible.h",
+    "XULTreeGridAccessible.h",
+]

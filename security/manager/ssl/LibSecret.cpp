@@ -12,6 +12,7 @@
 
 #include "MainThreadUtils.h"
 #include "mozilla/Base64.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/Logging.h"
 #include "prlink.h"
@@ -145,7 +146,19 @@ struct ScopedMaybeDelete {
 
 typedef std::unique_ptr<char, ScopedMaybeDelete<char>> ScopedPassword;
 
-LibSecret::LibSecret() = default;
+LibSecret::LibSecret() : mCancellable(dont_AddRef(g_cancellable_new())) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (PastShutdownPhase(ShutdownPhase::XPCOMWillShutdown)) {
+    g_cancellable_cancel(mCancellable);
+    return;
+  }
+  // g_cancellable_cancel() is thread-safe. If a prompt is pending, libsecret
+  // dismisses it and the blocked call returns once the keyring daemon
+  // confirms.
+  RunOnShutdown(
+      [cancellable = mCancellable] { g_cancellable_cancel(cancellable); },
+      ShutdownPhase::XPCOMWillShutdown);
+}
 
 LibSecret::~LibSecret() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -186,10 +199,8 @@ nsresult LibSecret::StoreSecret(const nsACString& aSecret,
   GUniquePtr<GError> error;
   bool stored = secret_password_store_sync(
       &kSchema, SECRET_COLLECTION_DEFAULT, PromiseFlatCString(aLabel).get(),
-      PromiseFlatCString(base64).get(),
-      nullptr,  // GCancellable
-      getter_Transfers(error), "string", PromiseFlatCString(aLabel).get(),
-      nullptr);
+      PromiseFlatCString(base64).get(), mCancellable, getter_Transfers(error),
+      "string", PromiseFlatCString(aLabel).get(), nullptr);
   if (error) {
     MOZ_LOG(gLibSecretLog, LogLevel::Debug, ("Error storing secret"));
     return NS_ERROR_FAILURE;
@@ -204,8 +215,7 @@ nsresult LibSecret::DeleteSecret(const nsACString& aLabel) {
     return NS_ERROR_FAILURE;
   }
   GUniquePtr<GError> error;
-  (void)secret_password_clear_sync(&kSchema,
-                                   nullptr,  // GCancellable
+  (void)secret_password_clear_sync(&kSchema, mCancellable,
                                    getter_Transfers(error), "string",
                                    PromiseFlatCString(aLabel).get(), nullptr);
   if (error && !(error->domain == secret_error_get_quark() &&
@@ -225,11 +235,9 @@ nsresult LibSecret::RetrieveSecret(const nsACString& aLabel,
   }
   GUniquePtr<GError> error;
   aSecret.Truncate();
-  ScopedPassword s(
-      secret_password_lookup_sync(&kSchema,
-                                  nullptr,  // GCancellable
-                                  getter_Transfers(error), "string",
-                                  PromiseFlatCString(aLabel).get(), nullptr));
+  ScopedPassword s(secret_password_lookup_sync(
+      &kSchema, mCancellable, getter_Transfers(error), "string",
+      PromiseFlatCString(aLabel).get(), nullptr));
   if (error) {
     // TODO the API is broken. We may end up in this case if the key
     // ring is locked and then we will try to overwrite it and lose data!

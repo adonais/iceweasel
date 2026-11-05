@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <functional>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -84,7 +85,8 @@ class JsepTrackNegotiatedDetails {
 
 class JsepTrack {
  public:
-  JsepTrack(mozilla::SdpMediaSection::MediaType type, sdp::Direction direction)
+  JsepTrack(mozilla::SdpMediaSection::MediaTypeInfo type,
+            sdp::Direction direction)
       : mType(type),
         mDirection(direction),
         mActive(false),
@@ -148,14 +150,18 @@ class JsepTrack {
       }
       mEarlyRtpExtensions = rhs.mEarlyRtpExtensions;
       if (rhs.mNegotiatedDetails) {
-        mNegotiatedDetails.reset(
-            new JsepTrackNegotiatedDetails(*rhs.mNegotiatedDetails));
+        mNegotiatedDetails = std::make_unique<JsepTrackNegotiatedDetails>(
+            *rhs.mNegotiatedDetails);
       }
     }
     return *this;
   }
 
   virtual mozilla::SdpMediaSection::MediaType GetMediaType() const {
+    return mType.type;
+  }
+
+  virtual mozilla::SdpMediaSection::MediaTypeInfo GetMediaTypeInfo() const {
     return mType;
   }
 
@@ -199,6 +205,8 @@ class JsepTrack {
   void ForEachEarlyRecvCodec(UnaryFunction func) {
     std::for_each(mEarlyRecvCodecs.begin(), mEarlyRecvCodecs.end(), func);
   }
+
+  bool HasEarlyRecvCodecs() const { return !mEarlyRecvCodecs.empty(); }
 
   // For a receive track, the recv-usable RTP header extensions from the
   // local m-section last passed to RecvTrackSetLocal(). Used for early
@@ -307,7 +315,8 @@ class JsepTrack {
   bool IsRtxEnabled(
       const std::vector<UniquePtr<JsepCodecDescription>>& codecs) const;
 
-  mozilla::SdpMediaSection::MediaType mType;
+  // Carries type, also carries the extended type info for unknown media types
+  mozilla::SdpMediaSection::MediaTypeInfo mType;
   // These are the ids that everyone outside of JsepSession care about
   std::vector<std::string> mStreamIds;
   std::string mTrackId;

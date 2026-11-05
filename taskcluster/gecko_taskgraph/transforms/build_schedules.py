@@ -40,8 +40,8 @@ def set_build_schedules_optimization(config, tasks):
             family = platform_family(task["attributes"]["build_platform"])
             schedules = [family]
 
-            if "android" not in family:
-                # These are not GeckoView builds, so are associated with Firefox.
+            if family not in ("android", "ios"):
+                # These are not GeckoView or iOS builds, so are associated with Firefox.
                 schedules.append("firefox")
 
         task["optimization"] = {"build": schedules}

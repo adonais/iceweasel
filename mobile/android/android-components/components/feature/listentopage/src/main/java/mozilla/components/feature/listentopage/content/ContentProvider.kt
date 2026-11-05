@@ -4,14 +4,14 @@
 
 package mozilla.components.feature.listentopage.content
 
+import java.util.Locale
 import kotlinx.coroutines.CancellationException
 
 /**
  * The article a listening session reads out.
  *
  * @property text The article text, as plain prose.
- * @property languageTag BCP 47 language tag of the article, used to pick a voice, or an empty string when the page
- * - *
+ * @property languageTag BCP 47 language tag of the article, used to pick a voice and to find sentence boundaries.
  */
 data class Content(
     val text: String,
@@ -32,21 +32,26 @@ fun interface ContentProvider {
         /**
          * Creates a [ContentProvider] that derives [Content] from the given extractors.
          *
-         * A failure of either extractor fails the returned [Result].
+         * A failure of the content or metadata extractor fails the returned [Result]. The article language is the one
+         * the page declares in metadata, else the fallback language.
          *
          * @param pageContentExtractor Extracts the article text.
-         * @param pageMetadataExtractor Extracts the metadata the article language is read from.
+         * @param pageMetadataExtractor Extracts the metadata the declared article language is read from.
+         * @param fallbackLanguageTag Provides the BCP 47 tag used when the page declares no usable language. Called
+         *   each time content is retrieved, so it can follow language changes.
          */
         @Suppress("TooGenericExceptionCaught")
         fun fromPage(
             pageContentExtractor: PageContentExtractor,
             pageMetadataExtractor: PageMetadataExtractor,
+            fallbackLanguageTag: () -> String,
         ) = ContentProvider { tabId ->
             try {
                 val metadata = pageMetadataExtractor.getPageMetadata(tabId).getOrThrow()
                 val text = pageContentExtractor.getPageContent(tabId).getOrThrow()
+                val languageTag = metadata.languageTag.asLanguageTagOrNull() ?: fallbackLanguageTag()
 
-                Result.success(Content(text = text, languageTag = metadata.languageTag))
+                Result.success(Content(text = text, languageTag = languageTag))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
@@ -55,3 +60,7 @@ fun interface ContentProvider {
         }
     }
 }
+
+/** This language tag in the form everything downstream works from, or `null` when it names no language. */
+private fun String.asLanguageTagOrNull(): String? =
+    trim().replace('_', '-').takeIf { Locale.forLanguageTag(it).language.isNotEmpty() }

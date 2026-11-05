@@ -41,6 +41,7 @@ enum class SframeEncryptionLevel {
 struct SframeDescriptor {
   // Wire-format constants for the 1-byte descriptor.
   static constexpr size_t kSize = 1;
+  static constexpr size_t kNumBits = 8;
   // Bit indices within the sframe header descriptor byte.
   static constexpr size_t kSBit = 7;
   static constexpr size_t kEBit = 6;

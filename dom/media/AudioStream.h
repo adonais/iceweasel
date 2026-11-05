@@ -341,6 +341,8 @@ class AudioStream final {
   // the audio stream alive and reusable instead of tearing it down.
   void SetKeepRunningMode(bool aKeepRunning);
 
+  bool IsCubebStarted() const { return mCubebStarted; }
+
   // Rebase the clock of the reused stream so the reported time resumes from the
   // seek target. Does not touch the ended promise.
   void RebaseLive();

@@ -82,6 +82,10 @@
 
     &[uidensity="compact"] {
       --tab-margin-block: 4px;
+
+      @media -moz-pref("sidebar.verticalTabs") {
+        --tab-margin-block: 2px;
+      }
     }
   }
 
@@ -296,6 +300,12 @@ tab-split-view-wrapper[dragtarget] {
     max-width: var(--tab-max-width);
     transition: var(--tab-width-transition);
 
+    @media (prefers-reduced-motion: no-preference) {
+      &[tabdrop-samewindow] {
+        transition: var(--tab-width-transition), var(--tab-dragover-transition);
+      }
+    }
+
     &:not([fadein]) {
       max-width: 0.1px;
       min-width: 0.1px;
@@ -321,10 +331,15 @@ tab-split-view-wrapper[dragtarget] {
 
     @media (prefers-reduced-motion: no-preference) {
       :not(tab-group:active) > &[fadein]:not(:active, [multiselected]),
-      &[multiselected-move-together],
-      &[tabdrop-samewindow] {
+      &[multiselected-move-together] {
         transition: var(--tab-dragover-transition);
       }
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    &[tabdrop-samewindow] {
+      transition: var(--tab-dragover-transition);
     }
   }
 
@@ -728,6 +743,7 @@ tab-split-view-wrapper[dragtarget] {
       &[selected]:-moz-window-inactive {
         background-image:
           image(var(--audio-overlay-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color-inactive));
+        color: var(--tab-text-color-selected);
       }
 
       &:hover {
@@ -812,6 +828,7 @@ tab-split-view-wrapper[dragtarget] {
 
         &:-moz-window-inactive {
           background-image: image(var(--audio-overlay-extra-background)), image(var(--toolbox-background-color-inactive));
+          color: var(--toolbox-text-color-inactive);
         }
 
         &[selected] {
@@ -821,6 +838,7 @@ tab-split-view-wrapper[dragtarget] {
         &[selected]:-moz-window-inactive {
           background-image:
             image(var(--audio-overlay-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color-inactive));
+          color: var(--tab-text-color-selected);
         }
 
         &:hover {
@@ -1537,7 +1555,8 @@ tab-group > tab-split-view-wrapper {
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    #tabbrowser-tabs[movingtab] &:not(:active) {
+    #tabbrowser-tabs[movingtab] &:not(:active),
+    &[tabdrop-samewindow] {
       transition: var(--tab-dragover-transition);
     }
   }
@@ -1811,18 +1830,6 @@ tab-group > tab-split-view-wrapper {
   }
 }
 
-/* During expand-on-hover collapse animation, keep split-tab icons
-   constrained to the collapsed pill geometry to avoid mid-transition drifting. */
-:root[sidebar-expand-on-hover]
-  #tabbrowser-tabbox[sidebar-ongoing-animations]
-  #tabbrowser-tabs[orient="vertical"]
-  tab-split-view-wrapper
-  .tabbrowser-tab
-  .tab-content {
-  width: var(--tab-collapsed-background-width);
-  justify-content: center;
-}
-
 /* Drag/drop of split-view-wrapped tabs */
 #tabbrowser-tabs[orient="vertical"] tab-split-view-wrapper {
   &[small-stack] {
@@ -2058,7 +2065,8 @@ tab-group {
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    #tabbrowser-tabs[movingtab] &:not(:active) {
+    #tabbrowser-tabs[movingtab] &:not(:active),
+    &[tabdrop-samewindow] {
       transition: var(--tab-dragover-transition);
     }
   }
@@ -2452,7 +2460,6 @@ tab-group {
     font-size: 0;
     width: 16px;
     height: 16px;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     padding: var(--focus-outline-offset);
     border: var(--focus-outline-width) solid transparent;
     border-radius: var(--border-radius-medium);
@@ -2591,6 +2598,7 @@ tab-group {
       margin-block: 0 -16px;
 
       @media -moz-pref("browser.nova.enabled") {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-paired-color-tokens -- a text-free fade over the scrolled tabs */
         background-image: linear-gradient(to top, transparent, var(--toolbox-background-color));
         /* Clear of the content area's rounded corner, then fade in. */
         mask-image: linear-gradient(to right, transparent 8px, black calc(2 * 8px), black calc(100% - 2 * 8px), transparent calc(100% - 8px));
@@ -2864,13 +2872,6 @@ tab-group {
       }
     }
   }
-
-  /* Collapsing holds the launcher at its expanded width so that clip-path has
-  something to clip, so the divider would otherwise be drawn around the width
-  it is animating away from. Wait for the real width to be restored. */
-  #sidebar-container[sidebar-ongoing-animations] #tabbrowser-tabs:not([expanded]) > & {
-    background-image: none;
-  }
 }
 
 #tabbrowser-tabs[orient="vertical"] {
@@ -2883,6 +2884,13 @@ tab-group {
    */
   --tab-padding-block-start: 3px;
   --tab-padding-block-end: 2px;
+
+  @media -moz-pref("browser.nova.enabled") {
+    :root[uidensity="compact"] & {
+      --tab-padding-block-start: 0px;
+      --tab-padding-block-end: 0px;
+    }
+  }
 
   min-height: 0;
   display: flex;
@@ -3161,12 +3169,6 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
 
 #alltabs-button {
   list-style-image: url("chrome://browser/skin/search-tabs.svg");
-
-  @media (-moz-platform: windows) {
-    #TabsToolbar & {
-      list-style-image: url("chrome://global/skin/icons/arrow-down.svg");
-    }
-  }
 
   #tabbrowser-tabs[hiddensoundplaying] ~ & > .toolbarbutton-badge-stack > .toolbarbutton-badge {
     background: transparent url(chrome://browser/skin/tabbrowser/tab-audio-playing-small.svg);

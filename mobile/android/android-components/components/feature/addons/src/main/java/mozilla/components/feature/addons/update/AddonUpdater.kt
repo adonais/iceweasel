@@ -14,7 +14,6 @@ import android.os.IBinder
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import androidx.annotation.VisibleForTesting
-import androidx.annotation.WorkerThread
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.edit
@@ -593,8 +592,7 @@ class DefaultAddonUpdater(
          *
          * @param updateAttempt the [AddonUpdater.UpdateAttempt] to be stored.
          */
-        @WorkerThread
-        internal fun saveOrUpdate(updateAttempt: AddonUpdater.UpdateAttempt) {
+        internal suspend fun saveOrUpdate(updateAttempt: AddonUpdater.UpdateAttempt) {
             database.updateAttemptDao().insertOrUpdate(updateAttempt.toEntity())
         }
 
@@ -603,8 +601,7 @@ class DefaultAddonUpdater(
          *
          * @param addonId the id to be used as filter in the search.
          */
-        @WorkerThread
-        fun findUpdateAttemptBy(addonId: String): AddonUpdater.UpdateAttempt? {
+        suspend fun findUpdateAttemptBy(addonId: String): AddonUpdater.UpdateAttempt? {
             return database.updateAttemptDao().getUpdateAttemptFor(addonId)?.toUpdateAttempt()
         }
 
@@ -613,8 +610,7 @@ class DefaultAddonUpdater(
          *
          * @param addonId the id of the [AddonUpdater.UpdateAttempt] to be deleted from the storage.
          */
-        @WorkerThread
-        internal fun remove(addonId: String) {
+        internal suspend fun remove(addonId: String) {
             database.updateAttemptDao().deleteUpdateAttempt(addonId)
         }
     }

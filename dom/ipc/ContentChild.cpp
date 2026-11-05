@@ -114,6 +114,7 @@
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/layers/ContentProcessController.h"
 #include "mozilla/layers/ImageBridgeChild.h"
+#include "mozilla/layers/LayerTreeLog.h"
 #include "mozilla/layout/RemotePrintJobChild.h"
 #include "mozilla/loader/ScriptCacheActors.h"
 #include "mozilla/media/MediaChild.h"
@@ -1451,14 +1452,13 @@ mozilla::ipc::IPCResult ContentChild::RecvRequestMemoryReport(
 
 mozilla::ipc::IPCResult ContentChild::RecvDecodeImage(
     NotNull<nsIURI*> aURI, const ImageIntSize& aSize, const bool& aStretch,
-    const ColorScheme& aColorScheme, DecodeImageResolver&& aResolver) {
+    const ColorScheme& aColorScheme, NotNull<nsIPrincipal*> aPrincipal,
+    DecodeImageResolver&& aResolver) {
   // We're about to decode a potentially untrusted image.
   MaybeBecomeUntrusted();
 
   auto size = aSize.ToUnknownSize();
-  // TODO(Bug 1999930): Investigate using  a content-principal for
-  // moz-remote-image: requests
-  image::FetchDecodedImage(aURI, size, nsContentUtils::GetSystemPrincipal())
+  image::FetchDecodedImage(aURI, size, aPrincipal)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [size, aStretch, aColorScheme,
@@ -1599,6 +1599,8 @@ mozilla::ipc::IPCResult ContentChild::RecvInitRendering(
     Endpoint<PRemoteMediaManagerChild>&& aVideoManager,
     nsTArray<uint32_t>&& namespaces) {
   MOZ_ASSERT(namespaces.Length() == 4);
+  LAYERTREE_LOG("Initializing rendering, compositor manager namespace {}",
+                namespaces[0]);
   const uint32_t compositorManagerNamespace = namespaces[0];
   const uint32_t compositorBridgeNamespace = namespaces[1];
   const uint32_t imageBridgeNamespace = namespaces[2];
@@ -1648,6 +1650,8 @@ mozilla::ipc::IPCResult ContentChild::RecvReinitRendering(
     Endpoint<PRemoteMediaManagerChild>&& aVideoManager,
     nsTArray<uint32_t>&& namespaces) {
   MOZ_ASSERT(namespaces.Length() == 4);
+  LAYERTREE_LOG("Reinitializing rendering, compositor manager namespace {}",
+                namespaces[0]);
   const uint32_t compositorManagerNamespace = namespaces[0];
   const uint32_t compositorBridgeNamespace = namespaces[1];
   const uint32_t imageBridgeNamespace = namespaces[2];
@@ -1696,6 +1700,7 @@ mozilla::ipc::IPCResult ContentChild::RecvReinitRendering(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvReinitRenderingForDeviceReset() {
+  LAYERTREE_LOG("Reinitializing rendering for device reset");
   gfxPlatform::GetPlatform()->CompositorUpdated();
 
   nsTArray<RefPtr<BrowserChild>> tabs = BrowserChild::GetAll();
@@ -2826,9 +2831,11 @@ mozilla::ipc::IPCResult ContentChild::RecvInitBlobURLs(
     nsTArray<BlobURLRegistrationData>&& aRegistrations) {
   for (uint32_t i = 0; i < aRegistrations.Length(); ++i) {
     BlobURLRegistrationData& registration = aRegistrations[i];
-    BlobURLProtocolHandler::AddDataEntryChild(registration.url(),
-                                              registration.principal(),
-                                              registration.partitionKey());
+    if (NS_FAILED(BlobURLProtocolHandler::AddDataEntryChild(
+            registration.url(), registration.principal(),
+            registration.partitionKey()))) {
+      return IPC_FAIL(this, "Conflicting Blob URL principal");
+    }
     // If we have received an already-revoked blobURL, we have to keep it alive
     // for a while (see BlobURLProtocolHandler) in order to support pending
     // operations such as navigation, download and so on.
@@ -3268,7 +3275,10 @@ mozilla::ipc::IPCResult ContentChild::RecvPWebBrowserPersistDocumentConstructor(
 mozilla::ipc::IPCResult ContentChild::RecvBlobURLRegistration(
     const nsCString& aURI, nsIPrincipal* aPrincipal,
     const nsCString& aPartitionKey) {
-  BlobURLProtocolHandler::AddDataEntryChild(aURI, aPrincipal, aPartitionKey);
+  if (NS_FAILED(BlobURLProtocolHandler::AddDataEntryChild(aURI, aPrincipal,
+                                                          aPartitionKey))) {
+    return IPC_FAIL(this, "Conflicting Blob URL principal");
+  }
   return IPC_OK();
 }
 
@@ -4676,15 +4686,62 @@ mozilla::ipc::IPCResult ContentChild::RecvStopLoad(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvDeactivateDocuments(
-    const MaybeDiscarded<BrowsingContext>& aContext) {
+    const MaybeDiscarded<BrowsingContext>& aContext,
+    const Maybe<SessionHistoryInfo>& aPageSwapTargetInfo,
+    const NavigationType& aNavigationType, const bool aForUnload) {
   if (aContext.IsNullOrDiscarded()) {
     return IPC_OK();
   }
   BrowsingContext* browsingContext = aContext.get();
   MOZ_DIAGNOSTIC_ASSERT(browsingContext->IsTopContent());
 
-  browsingContext->DeactivateDocuments();
+  browsingContext->DeactivateDocuments(aPageSwapTargetInfo.ptrOr(nullptr),
+                                       aNavigationType, aForUnload);
 
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+ContentChild::RecvBeginOutboundCrossDocumentViewTransition(
+    const MaybeDiscarded<BrowsingContext>& aContext,
+    const Maybe<SessionHistoryInfo>& aPageSwapTargetInfo,
+    const NavigationType& aNavigationType, const TabId& aSnapshotTargetTab,
+    BeginOutboundCrossDocumentViewTransitionResolver&& aResolver) {
+  if (aContext.IsNullOrDiscarded()) {
+    aResolver(true);
+    return IPC_OK();
+  }
+  BrowsingContext* browsingContext = aContext.get();
+  // Both top-level and subframe navigations can drive an outbound
+  // cross-document view transition.
+  MOZ_DIAGNOSTIC_ASSERT(browsingContext->IsContent());
+  RefPtr<nsDocShell> docShell =
+      nsDocShell::Cast(browsingContext->GetDocShell());
+  if (!docShell) {
+    aResolver(true);
+    return IPC_OK();
+  }
+
+  docShell->BeginDeferredOutboundCrossDocumentViewTransition(
+      aPageSwapTargetInfo.ptrOr(nullptr), aNavigationType,
+      uint64_t(aSnapshotTargetTab),
+      [resolver = std::move(aResolver)] { resolver(true); });
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentChild::RecvFirePageSwap(
+    const MaybeDiscarded<BrowsingContext>& aContext,
+    const Maybe<SessionHistoryInfo>& aPageSwapTargetInfo,
+    const NavigationType& aNavigationType) {
+  if (aContext.IsNullOrDiscarded()) {
+    return IPC_OK();
+  }
+  if (RefPtr<nsDocShell> docShell =
+          nsDocShell::Cast(aContext.get()->GetDocShell())) {
+    docShell->FirePageSwapWithoutTransition(aPageSwapTargetInfo.ptrOr(nullptr),
+                                            aNavigationType);
+  }
   return IPC_OK();
 }
 
@@ -4700,6 +4757,8 @@ mozilla::ipc::IPCResult ContentChild::RecvReactivateDocuments(
   }
   RefPtr browsingContext = aContext.get();
   MOZ_DIAGNOSTIC_ASSERT(browsingContext->IsTopContent());
+  MOZ_DIAGNOSTIC_ASSERT(browsingContext->IsInProcess() ||
+                        !aPreviousEntryForActivation);
 
   browsingContext->ReactivateDocuments(aReactivatedEntry, aNewSHEs,
                                        aPreviousEntryForActivation);

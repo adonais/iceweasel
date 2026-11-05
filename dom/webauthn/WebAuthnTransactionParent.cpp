@@ -22,26 +22,15 @@
 
 namespace mozilla::dom {
 
-nsresult AssembleClientData(WindowGlobalParent* aManager,
-                            const nsACString& aType,
+nsresult AssembleClientData(const nsACString& aType, const nsACString& aOrigin,
+                            const nsACString& aTopOrigin,
+                            const bool aCrossOrigin,
                             const nsTArray<uint8_t>& aChallenge,
                             /* out */ nsACString& aJsonOut) {
   nsAutoCString challengeBase64;
   nsresult rv =
       Base64URLEncode(aChallenge.Length(), aChallenge.Elements(),
                       Base64URLEncodePaddingPolicy::Omit, challengeBase64);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsIPrincipal* principal = aManager->DocumentPrincipal();
-  nsIPrincipal* topPrincipal =
-      aManager->TopWindowContext()->DocumentPrincipal();
-
-  bool crossOrigin = !principal->Equals(topPrincipal);
-
-  nsAutoCString origin;
-  rv = GetWebAuthnClientDataOrigin(principal, origin);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -58,19 +47,14 @@ nsresult AssembleClientData(WindowGlobalParent* aManager,
   // Steps 4 and 5
   w.StringProperty("challenge", challengeBase64);
   // Steps 6 and 7
-  w.StringProperty("origin", origin);
+  w.StringProperty("origin", aOrigin);
   // Steps 8 - 10
-  w.BoolProperty("crossOrigin", crossOrigin);
+  w.BoolProperty("crossOrigin", aCrossOrigin);
   // Step 11. The description of the algorithm says "If topOrigin is present",
   // but the definition of topOrigin says that topOrigin "is set only if [...]
   // crossOrigin is true." so we use the latter condition instead.
-  if (crossOrigin) {
-    nsCString topOrigin;
-    rv = topPrincipal->GetWebExposedOriginSerialization(topOrigin);
-    if (NS_FAILED(rv)) {
-      return NS_ERROR_FAILURE;
-    }
-    w.StringProperty("topOrigin", topOrigin);
+  if (aCrossOrigin) {
+    w.StringProperty("topOrigin", aTopOrigin);
   }
   w.End();
 
@@ -317,9 +301,20 @@ void WebAuthnTransactionParent::ContinueWithRegister(
   nsIPrincipal* principal = manager->DocumentPrincipal();
   uint64_t aTransactionId = mTransactionId.ref();
 
+  nsIPrincipal* topPrincipal = manager->TopWindowContext()->DocumentPrincipal();
+
+  bool isCrossOrigin = !principal->Equals(topPrincipal);
+
+  nsCString topOrigin;
+  nsresult rv = topPrincipal->GetWebExposedOriginSerialization(topOrigin);
+  if (NS_FAILED(rv)) {
+    aResolver(NS_ERROR_FAILURE);
+    return;
+  }
+
   nsCString clientDataJSON;
-  nsresult rv = AssembleClientData(manager, "webauthn.create"_ns,
-                                   aInfo.Challenge(), clientDataJSON);
+  rv = AssembleClientData("webauthn.create"_ns, aOrigin, topOrigin,
+                          isCrossOrigin, aInfo.Challenge(), clientDataJSON);
   if (NS_FAILED(rv)) {
     aResolver(NS_ERROR_FAILURE);
     mTransactionId.reset();
@@ -466,8 +461,9 @@ void WebAuthnTransactionParent::ContinueWithRegister(
 
   uint64_t browsingContextId = manager->GetBrowsingContext()->Top()->Id();
   bool privateBrowsing = principal->GetIsInPrivateBrowsing();
-  auto args = MakeRefPtr<WebAuthnRegisterArgs>(aOrigin, clientDataJSON,
-                                               privateBrowsing, aInfo);
+  auto args =
+      MakeRefPtr<WebAuthnRegisterArgs>(aOrigin, topOrigin, isCrossOrigin,
+                                       clientDataJSON, privateBrowsing, aInfo);
   rv = mWebAuthnService->MakeCredential(aTransactionId, browsingContextId, args,
                                         promiseHolder);
   if (NS_FAILED(rv)) {
@@ -580,9 +576,20 @@ void WebAuthnTransactionParent::ContinueWithSign(
     }
   }
 
+  nsIPrincipal* topPrincipal = manager->TopWindowContext()->DocumentPrincipal();
+
+  bool isCrossOrigin = !principal->Equals(topPrincipal);
+
+  nsCString topOrigin;
+  nsresult rv = topPrincipal->GetWebExposedOriginSerialization(topOrigin);
+  if (NS_FAILED(rv)) {
+    aResolver(NS_ERROR_FAILURE);
+    return;
+  }
+
   nsCString clientDataJSON;
-  nsresult rv = AssembleClientData(manager, "webauthn.get"_ns,
-                                   aInfo.Challenge(), clientDataJSON);
+  rv = AssembleClientData("webauthn.get"_ns, aOrigin, topOrigin, isCrossOrigin,
+                          aInfo.Challenge(), clientDataJSON);
   if (NS_FAILED(rv)) {
     aResolver(NS_ERROR_FAILURE);
     mTransactionId.reset();
@@ -738,8 +745,9 @@ void WebAuthnTransactionParent::ContinueWithSign(
 
   uint64_t browsingContextId = manager->GetBrowsingContext()->Top()->Id();
   bool privateBrowsing = principal->GetIsInPrivateBrowsing();
-  auto args = MakeRefPtr<WebAuthnSignArgs>(aOrigin, clientDataJSON,
-                                           privateBrowsing, aInfo);
+  auto args =
+      MakeRefPtr<WebAuthnSignArgs>(aOrigin, topOrigin, isCrossOrigin,
+                                   clientDataJSON, privateBrowsing, aInfo);
   rv = mWebAuthnService->GetAssertion(transactionId, browsingContextId, args,
                                       promiseHolder);
   if (NS_FAILED(rv)) {

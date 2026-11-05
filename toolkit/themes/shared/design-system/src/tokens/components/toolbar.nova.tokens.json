@@ -19,12 +19,6 @@
     },
     "background": {
       "color": {
-        "@base": {
-          "value": {
-            "nativeTheme": "light-dark(rgba(0, 0, 0, 0.05), {color.black.alpha.30})",
-            "default": "{toolbar.background.color}"
-          }
-        },
         "focus": {
           "value": {
             "nativeTheme": "Field",

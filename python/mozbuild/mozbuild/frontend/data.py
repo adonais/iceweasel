@@ -1101,15 +1101,18 @@ class LocalInclude(ContextDerived):
 
 
 class PerSourceFlag(ContextDerived):
-    """Describes compiler flags specified for individual source files."""
+    """Describes compiler flags and dependencies specified for individual source
+    files."""
 
-    __slots__ = ("file_name", "flags")
+    __slots__ = ("path", "file_name", "flags", "object_deps")
 
-    def __init__(self, context, file_name, flags):
+    def __init__(self, context, path, flags, object_deps=()):
         ContextDerived.__init__(self, context)
 
-        self.file_name = file_name
+        self.path = path
+        self.file_name = path.full_path
         self.flags = flags
+        self.object_deps = object_deps
 
 
 class JARManifest(ContextDerived):
@@ -1590,6 +1593,7 @@ class GeneratedFile(ContextDerived):
                 ".asm",
                 ".c",
                 ".cpp",
+                ".dat",  # ICU data, read by icu_data.S via .incbin
                 ".inc",
                 ".m",
                 ".mm",

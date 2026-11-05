@@ -251,7 +251,7 @@ private:
       int64_t ns = duration_cast<nanoseconds>(exit_time - enter_time).count();
       {
 #  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
-        RLBOX_ACQUIRE_UNIQUE_GUARD(transition_times_lock);
+        RLBOX_ACQUIRE_UNIQUE_GUARD(lock, transition_times_lock);
 #  endif
         sandbox.transition_times.push_back(
           rlbox_transition_timing{ rlbox_transition::CALLBACK,
@@ -347,30 +347,6 @@ private:
                                          T_Args... args)
   {
     return this_ptr->impl_create_sandbox(std::forward<T_Args>(args)...);
-  }
-
-  template<typename T>
-  T checked_add(T aLhs, T aRhs, const char* aErrorMsg)
-  {
-    static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
-
-    T ret = aLhs + aRhs;
-    bool has_overflow = ret < aLhs;
-    detail::dynamic_check(!has_overflow, aErrorMsg);
-
-    return ret;
-  }
-
-  template<typename T>
-  T checked_multiply(T aLhs, T aRhs, const char* aErrorMsg)
-  {
-    static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
-
-    T ret = aLhs * aRhs;
-    bool has_overflow = (aLhs != 0) && ((ret / aLhs) != aRhs);
-    detail::dynamic_check(!has_overflow, aErrorMsg);
-
-    return ret;
   }
 
 public:
@@ -565,7 +541,7 @@ public:
                                          std::numeric_limits<uint32_t>::max(),
                                        "Tried to allocate an object over 4GB.");
     }
-    const size_t total_size = checked_multiply(
+    const size_t total_size = detail::checked_multiply(
       static_cast<size_t>(count), sizeof(T), "Malloc object size too large");
     if constexpr (sizeof(size_t) == 4) {
       // On a 32-bit platform, we need to make sure that total_size is not >=4GB
@@ -587,9 +563,10 @@ public:
     detail::dynamic_check(is_pointer_in_sandbox_memory(ptr),
                           "Malloc returned pointer outside the sandbox memory");
 
-    auto ptr_end = checked_add(reinterpret_cast<uintptr_t>(ptr),
-                               reinterpret_cast<uintptr_t>(total_size - 1),
-                               "Malloc object end too large");
+    auto ptr_end =
+      detail::checked_add(reinterpret_cast<uintptr_t>(ptr),
+                          reinterpret_cast<uintptr_t>(total_size - 1),
+                          "Malloc object end too large");
     detail::dynamic_check(
       is_pointer_in_sandbox_memory(reinterpret_cast<const char*>(ptr_end)),
       "Malloc returned a pointer whose range goes beyond sandbox memory");
@@ -787,7 +764,7 @@ public:
       int64_t ns = duration_cast<nanoseconds>(exit_time - enter_time).count();
       {
 #  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
-        RLBOX_ACQUIRE_UNIQUE_GUARD(transition_times_lock);
+        RLBOX_ACQUIRE_UNIQUE_GUARD(lock, transition_times_lock);
 #  endif
         transition_times.push_back(rlbox_transition_timing{
           rlbox_transition::INVOKE, func_name, func_ptr, ns });
@@ -1065,7 +1042,7 @@ public:
   inline int64_t get_total_ns_time_in_sandbox_and_transitions()
   {
 #  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
-    RLBOX_ACQUIRE_SHARED_GUARD(transition_times_lock);
+    RLBOX_ACQUIRE_SHARED_GUARD(lock, transition_times_lock);
 #  endif
     int64_t ret = 0;
     for (auto& transition_time : transition_times) {
@@ -1080,7 +1057,7 @@ public:
   inline void clear_transition_times()
   {
 #  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
-    RLBOX_ACQUIRE_UNIQUE_GUARD(transition_times_lock);
+    RLBOX_ACQUIRE_UNIQUE_GUARD(lock, transition_times_lock);
 #  endif
     transition_times.clear();
   }

@@ -10,6 +10,10 @@ const { UrlbarTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/UrlbarTestUtils.sys.mjs"
 );
 
+const { CustomizableUITestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/CustomizableUITestUtils.sys.mjs"
+);
+
 let resetTelemetry = async () => {
   // Ensure the tab movements deferred task has an idle moment to fire.
   await new Promise(resolve => ChromeUtils.idleDispatch(resolve));
@@ -20,6 +24,9 @@ let resetTelemetry = async () => {
 /** @type {Window} */
 let win;
 
+/** @type {CustomizableUITestUtils} */
+let gCUITestUtils;
+
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -29,6 +36,7 @@ add_setup(async () => {
   });
   win = await BrowserTestUtils.openNewBrowserWindow();
   win.gTabsPanel.init();
+  gCUITestUtils = new CustomizableUITestUtils(win);
   registerCleanupFunction(async () => {
     await BrowserTestUtils.closeWindow(win);
     await SpecialPowers.popPrefEnv();
@@ -494,6 +502,36 @@ async function closeTabsMenu() {
 }
 
 /**
+ * @returns {Promise<PanelView>}
+ */
+async function openAppMenuTabGroupsList() {
+  await gCUITestUtils.openMainMenu();
+  let subView = win.PanelMultiView.getViewNode(
+    win.document,
+    "appMenu-tabGroupsListView"
+  );
+  let viewShown = BrowserTestUtils.waitForEvent(subView, "ViewShown");
+  win.PanelMultiView.getViewNode(
+    win.document,
+    "appMenu-tab-groups-button"
+  ).click();
+  await viewShown;
+  await subView.querySelector("tab-groups-list").updateComplete;
+  return subView;
+}
+
+/**
+ * @returns {Promise<void>}
+ */
+async function closeAppMenu() {
+  let panel = win.PanelUI.panel;
+  if (panel.state == "closed") {
+    return;
+  }
+  await gCUITestUtils.hideMainMenu();
+}
+
+/**
  * Returns a new basic, unnamed tab group that is fully loaded in the browser
  * and in session state.
  *
@@ -573,6 +611,60 @@ add_task(async function test_tabOverflowContextMenu_deleteOpenTabGroup() {
   await resetTelemetry();
 });
 
+add_task(
+  async function test_appMenuTabGroupsListContextMenu_deleteOpenTabGroup() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.tabs.groups.alternateMenu", true]],
+    });
+    await resetTelemetry();
+
+    info("set up an open tab group to be deleted");
+    let openGroup = await makeTabGroup();
+    let openGroupId = openGroup.id;
+
+    info("delete the open tab group");
+    let subView = await openAppMenuTabGroupsList();
+    let tabGroupButton = subView.querySelector(
+      `[data-tab-group-id="${openGroupId}"]`
+    );
+
+    let menu = await getContextMenu(
+      tabGroupButton,
+      "open-tab-group-context-menu"
+    );
+
+    let tabGroupRemoved = BrowserTestUtils.waitForEvent(
+      openGroup,
+      "TabGroupRemoved"
+    );
+    menu.querySelector("#open-tab-group-context-menu_delete").click();
+    await closeContextMenu(menu);
+    await tabGroupRemoved;
+
+    let tabGroupDeleteEvents = Glean.tabgroup.delete.testGetValue();
+    Assert.equal(
+      tabGroupDeleteEvents.length,
+      1,
+      "should have recorded one tabgroup.delete event"
+    );
+
+    let [openTabGroupDeleteEvent] = tabGroupDeleteEvents;
+
+    Assert.deepEqual(
+      openTabGroupDeleteEvent.extra,
+      {
+        source: "appmenu_group_list",
+        id: openGroupId,
+      },
+      "should have recorded the correct source and ID for the open tab group"
+    );
+
+    await closeAppMenu();
+    await resetTelemetry();
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
 async function waitForReopenRecord() {
   return TestUtils.waitForCondition(() => {
     let tabGroupReopenTelemetry = Glean.tabgroup.reopen.testGetValue();
@@ -646,6 +738,52 @@ async function doReopenTests(useVerticalTabs) {
   await resetTelemetry();
   await saveAndCloseGroup(win.gBrowser.getTabGroupById(groupId));
 
+  info("Restoring from app menu tab groups list");
+  await waitForNoActiveGroups();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.groups.alternateMenu", true]],
+  });
+  let subView = await openAppMenuTabGroupsList();
+  let appMenuGroupButton = subView.querySelector(
+    `[data-tab-group-id="${groupId}"]`
+  );
+  appMenuGroupButton.click();
+  await waitForReopenRecord();
+  assertReopenEvent({
+    id: groupId,
+    source: "appmenu_group_list",
+    layout: expectedLayout,
+    type: "saved",
+  });
+  await resetTelemetry();
+  await saveAndCloseGroup(win.gBrowser.getTabGroupById(groupId));
+
+  info("Restoring from app menu tab groups list context menu");
+  await waitForNoActiveGroups();
+  let appMenuSubView = await openAppMenuTabGroupsList();
+  let appMenuContextGroupButton = appMenuSubView.querySelector(
+    `[data-tab-group-id="${groupId}"]`
+  );
+  let savedGroupContextMenu = await getContextMenu(
+    appMenuContextGroupButton,
+    "saved-tab-group-context-menu"
+  );
+  savedGroupContextMenu
+    .querySelector("#saved-tab-group-context-menu_openInThisWindow")
+    .click();
+  await closeContextMenu(savedGroupContextMenu);
+  await waitForReopenRecord();
+  assertReopenEvent({
+    id: groupId,
+    source: "appmenu_group_list",
+    layout: expectedLayout,
+    type: "saved",
+  });
+  await resetTelemetry();
+  await closeAppMenu();
+  await SpecialPowers.popPrefEnv();
+  await saveAndCloseGroup(win.gBrowser.getTabGroupById(groupId));
+
   info("restoring saved group via undoClosetab");
   await waitForNoActiveGroups();
   SessionWindowUI.undoCloseTab(win, undefined, SessionStore.getWindowId(win));
@@ -710,6 +848,84 @@ add_task(async function test_reopenSavedGroupTelemetry() {
   info("Perform reopen tests in vertical tabs mode");
   await doReopenTests(true);
 });
+
+add_task(
+  async function test_tabOverflowContextMenu_reopenSavedGroupInNewWindow() {
+    await resetTelemetry();
+
+    let group = await makeTabGroup("tab-overflow-reopen-new-window-test");
+    let groupId = await saveAndCloseGroup(group);
+
+    info("reopen the saved group into a new window from the overflow menu");
+    let allTabsMenu = await openTabsMenu();
+    let groupButton = allTabsMenu.querySelector(
+      `#allTabsMenu-groupsView [data-tab-group-id="${groupId}"]`
+    );
+    let menu = await getContextMenu(
+      groupButton,
+      "saved-tab-group-context-menu"
+    );
+    let newWindowPromise = BrowserTestUtils.waitForNewWindow();
+    menu.querySelector("#saved-tab-group-context-menu_openInNewWindow").click();
+    await closeContextMenu(menu);
+    await closeTabsMenu();
+    let newWindow = await newWindowPromise;
+
+    await waitForReopenRecord();
+    assertReopenEvent({
+      id: groupId,
+      source: "tab_overflow",
+      layout: win.gBrowser.tabContainer.verticalMode
+        ? "vertical"
+        : "horizontal",
+      type: "saved",
+    });
+
+    await removeTabGroup(newWindow.gBrowser.getTabGroupById(groupId));
+    await BrowserTestUtils.closeWindow(newWindow);
+    await resetTelemetry();
+  }
+);
+
+add_task(
+  async function test_appMenuTabGroupsListContextMenu_reopenSavedGroupInNewWindow() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.tabs.groups.alternateMenu", true]],
+    });
+    await resetTelemetry();
+
+    let group = await makeTabGroup("appmenu-reopen-new-window-test");
+    let groupId = await saveAndCloseGroup(group);
+
+    info("reopen the saved group into a new window from the app menu list");
+    let subView = await openAppMenuTabGroupsList();
+    let groupButton = subView.querySelector(`[data-tab-group-id="${groupId}"]`);
+    let menu = await getContextMenu(
+      groupButton,
+      "saved-tab-group-context-menu"
+    );
+    let newWindowPromise = BrowserTestUtils.waitForNewWindow();
+    menu.querySelector("#saved-tab-group-context-menu_openInNewWindow").click();
+    await closeContextMenu(menu);
+    let newWindow = await newWindowPromise;
+
+    await waitForReopenRecord();
+    assertReopenEvent({
+      id: groupId,
+      source: "appmenu_group_list",
+      layout: win.gBrowser.tabContainer.verticalMode
+        ? "vertical"
+        : "horizontal",
+      type: "saved",
+    });
+
+    await closeAppMenu();
+    await removeTabGroup(newWindow.gBrowser.getTabGroupById(groupId));
+    await BrowserTestUtils.closeWindow(newWindow);
+    await resetTelemetry();
+    await SpecialPowers.popPrefEnv();
+  }
+);
 
 add_task(async function test_tabContextMenu_addTabsToGroup() {
   await resetTelemetry();
@@ -977,6 +1193,18 @@ add_task(async function test_groupInteractions() {
     Glean.tabgroup.groupInteractions.open_tabmenu.testGetValue(),
     1,
     "`open_tabmenu` metric should increment"
+  );
+
+  info("reopen saved tab group virtually from the app menu group list");
+  await saveAndCloseGroup(group);
+  group = SessionStore.openSavedTabGroup(groupId, win, {
+    source: "appmenu_group_list",
+  });
+  groupTabs = group.tabs;
+  Assert.equal(
+    Glean.tabgroup.groupInteractions.open_appmenu_list.testGetValue(),
+    1,
+    "`open_appmenu_list` metric should increment"
   );
 
   Assert.equal(

@@ -6,23 +6,17 @@
 
 do_get_profile(); // must be called before getting nsIX509CertDB
 
-function add_tests_in_mode(mode) {
-  add_test(function set_mode() {
-    info(`setting CT to mode ${mode}`);
-    Services.prefs.setIntPref(
-      "security.pki.certificate_transparency.mode",
-      mode
-    );
-    run_next_test();
-  });
+async function run_tests_in_mode(mode) {
+  info(`setting CT to mode ${mode}`);
+  Services.prefs.setIntPref("security.pki.certificate_transparency.mode", mode);
 
-  add_ct_test(
+  await ctTest(
     "ct-via-ocsp.example.com",
     Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_COMPLIANT,
     true
   );
 
-  add_ct_test(
+  await ctTest(
     "ct-via-tls.example.com",
     Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_COMPLIANT,
     true
@@ -30,14 +24,14 @@ function add_tests_in_mode(mode) {
 
   // One of the presented SCTs has a signature that has been tampered with, so
   // overall there are not enough SCTs to be compliant with the policy.
-  add_ct_test(
+  await ctTest(
     "ct-tampered.example.com",
     Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS,
     mode == CT_MODE_COLLECT_TELEMETRY
   );
 }
 
-function run_test() {
+add_task(async function run_test() {
   // Make the test root appear to be a built-in root, so that certificate
   // transparency is checked.
   let rootCert = constructCertFromFile("test_ct/test-ca.pem");
@@ -46,8 +40,7 @@ function run_test() {
     rootCert.sha256Fingerprint
   );
 
-  add_tls_server_setup("OCSPStaplingServer", "test_ct");
-  add_tests_in_mode(CT_MODE_COLLECT_TELEMETRY);
-  add_tests_in_mode(CT_MODE_ENFORCE);
-  run_next_test();
-}
+  await asyncStartTLSTestServer("OCSPStaplingServer", "test_ct", true);
+  await run_tests_in_mode(CT_MODE_COLLECT_TELEMETRY);
+  await run_tests_in_mode(CT_MODE_ENFORCE);
+});

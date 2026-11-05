@@ -913,7 +913,7 @@ static WrFiltersStatus WrFilterOpSVGFEDisplacementMap(
     return WrFiltersStatus::BLOB_FALLBACK;
   }
   aWrFilters.filters.AppendElement(wr::FilterOp::SVGFEDisplacementMap(
-      aGraphNode, aAttributes.mScale,
+      aGraphNode, aAttributes.mScale.Width(), aAttributes.mScale.Height(),
       static_cast<uint32_t>(aAttributes.mXChannel),
       static_cast<uint32_t>(aAttributes.mYChannel)));
   return WrFiltersStatus::SVGFE;

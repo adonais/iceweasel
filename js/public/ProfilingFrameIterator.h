@@ -301,17 +301,28 @@ class ProfiledFrameRange {
   Iter begin() const { return Iter(*this, 0); }
   Iter end() const { return Iter(*this, depth_); }
 
+  // These frames apply to all samples from the position passed to
+  // GetProfiledFrames up to and including this position. In later samples,
+  // the address belongs to code that was placed there afterwards. UINT64_MAX
+  // if no code was placed at this address afterwards.
+  uint64_t lastSamplePosition() const { return lastSamplePos_; }
+
  private:
-  friend JS_PUBLIC_API ProfiledFrameRange GetProfiledFrames(JSContext* cx,
-                                                            void* addr);
+  friend JS_PUBLIC_API ProfiledFrameRange
+  GetProfiledFrames(JSContext* cx, void* addr, uint64_t samplePositionInBuffer);
 
   ProfiledFrameRange(JSRuntime* rt, void* addr,
-                     js::jit::JitcodeGlobalEntry* entry)
-      : rt_(rt), addr_(addr), entry_(entry), depth_(0) {}
+                     js::jit::JitcodeGlobalEntry* entry, uint64_t lastSamplePos)
+      : rt_(rt),
+        addr_(addr),
+        entry_(entry),
+        lastSamplePos_(lastSamplePos),
+        depth_(0) {}
 
   JSRuntime* rt_;
   void* addr_;
   js::jit::JitcodeGlobalEntry* entry_;
+  uint64_t lastSamplePos_;
   // Maximum inlining depth. This must match InlineScriptTree::MaxDepth.
   // We can't use InlineScriptTree::MaxDepth directly here because this is a
   // public header and InlineScriptTree.h is private.
@@ -320,8 +331,13 @@ class ProfiledFrameRange {
   uint32_t depth_;
 };
 
-// Returns a range that can be iterated over using C++ ranged for loops.
-JS_PUBLIC_API ProfiledFrameRange GetProfiledFrames(JSContext* cx, void* addr);
+// Returns the frames for the JIT code address |addr| in the sample that starts
+// at |samplePositionInBuffer| in the profiler buffer. The same address can
+// belong to different code in different samples, because the memory of
+// collected code can be reused for new code. The result is a range that can be
+// iterated over using C++ ranged for loops.
+JS_PUBLIC_API ProfiledFrameRange
+GetProfiledFrames(JSContext* cx, void* addr, uint64_t samplePositionInBuffer);
 
 }  // namespace JS
 

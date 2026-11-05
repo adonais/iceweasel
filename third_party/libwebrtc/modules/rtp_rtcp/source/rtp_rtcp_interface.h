@@ -28,7 +28,6 @@
 #include "api/transport/network_types.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "api/video/video_bitrate_allocation.h"
 #include "modules/include/module_fec_types.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
@@ -442,9 +441,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   // Store the sent packets, needed to answer to a Negative acknowledgment
   // requests.
   virtual void SetStorePacketsStatus(bool enable, uint16_t numberToStore) = 0;
-
-  virtual void SetVideoBitrateAllocation(
-      const VideoBitrateAllocation& bitrate) = 0;
 
   // **************************************************************************
   // Video

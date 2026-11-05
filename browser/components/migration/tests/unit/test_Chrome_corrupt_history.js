@@ -3,7 +3,7 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-let rootDir = do_get_file("chromefiles/", true);
+let rootDir = do_get_tempdir();
 
 const SOURCE_PROFILE_DIR = "Library/Application Support/Google/Chrome/Default/";
 const PROFILE = {
@@ -21,21 +21,6 @@ add_setup(async function setup_fake_paths() {
     pathId = "Home";
   }
   registerFakePath(pathId, rootDir);
-
-  let file = do_get_file(`${SOURCE_PROFILE_DIR}HistoryCorrupt`);
-  file.copyTo(file.parent, "History");
-
-  registerCleanupFunction(() => {
-    let historyFile = do_get_file(`${SOURCE_PROFILE_DIR}History`, true);
-    try {
-      historyFile.remove(false);
-    } catch (ex) {
-      // It is ok if this doesn't exist.
-      if (ex.result != Cr.NS_ERROR_FILE_NOT_FOUND) {
-        throw ex;
-      }
-    }
-  });
 
   let subDirs =
     AppConstants.platform == "linux" ? ["google-chrome"] : ["Google", "Chrome"];
@@ -59,9 +44,14 @@ add_setup(async function setup_fake_paths() {
     createAncestor: true,
     ignoreExisting: true,
   });
+  await IOUtils.writeJSON(
+    PathUtils.join(target.parent.path, "Local State"),
+    []
+  );
+
+  do_get_file(`${SOURCE_PROFILE_DIR}HistoryCorrupt`).copyTo(target, "History");
 
   target.append("Bookmarks");
-  await IOUtils.remove(target.path, { ignoreAbsent: true });
 
   let bookmarksData = createChromeBookmarkStructure();
   await IOUtils.writeJSON(target.path, bookmarksData);

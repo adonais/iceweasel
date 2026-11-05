@@ -293,6 +293,8 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvSetSeekThreshold(
 
 void RemoteDecoderParent::ActorDestroy(ActorDestroyReason aWhy) {
   MOZ_ASSERT(OnManagerThread());
+  // Ensure a decoder still being created is shut down when it is ready.
+  mShutdown = true;
   AbortPendingRequests();
   if (mDecoder) {
     mDecoder->Shutdown();

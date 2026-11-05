@@ -7,37 +7,38 @@
 // name and paths, so all we need to pass between processes are
 // 2-bytes-per-character strings.
 
-use std::ffi::{OsStr, OsString};
-
-use crate::BreakpadString;
+use std::{
+    ffi::OsString,
+    os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, OwnedHandle, RawHandle},
+    str::FromStr,
+};
 
 pub type Pid = u32;
 pub type BreakpadChar = u16;
-pub type BreakpadRawData = *const u16;
+pub type BreakpadRawData = RawHandle;
 
 pub struct BreakpadData {
-    data: OsString,
+    handle: OwnedHandle,
 }
 
 impl BreakpadData {
-    /// Create a new instance of the BreakpadData object from a Windows wide-char nul-terminated string
+    /// Create a new instance of the BreakpadData object from a Windows HANDLE.
     ///
     /// # Safety
     ///
-    /// `raw` must point to a valid Windows wide-char nul-terminated string
+    /// `raw` must be a valid handle to a named pipe.
     pub unsafe fn new(raw: BreakpadRawData) -> BreakpadData {
         BreakpadData {
-            data: <OsString as BreakpadString>::from_ptr(raw),
+            handle: OwnedHandle::from_raw_handle(raw),
         }
     }
 
     pub fn into_raw(self) -> BreakpadRawData {
-        self.data.into_raw()
+        self.handle.into_raw_handle()
     }
-}
 
-impl AsRef<OsStr> for BreakpadData {
-    fn as_ref(&self) -> &OsStr {
-        &self.data
+    pub fn serialize(&self) -> OsString {
+        let raw_handle = self.handle.as_raw_handle() as usize;
+        OsString::from_str(raw_handle.to_string().as_ref()).unwrap()
     }
 }

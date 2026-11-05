@@ -1,0 +1,58 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-block-size: var(--button-size-icon-small);
+  padding: var(--widget-header-padding, var(--space-medium));
+}
+
+::slotted([slot="leading"]) {
+  flex: 0 0 auto;
+}
+
+slot[name="trailing"] {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-small);
+  margin-inline-start: auto;
+
+  &:not(:has-slotted) {
+    display: none;
+  }
+}
+
+#menu-button {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+
+slot[name="trailing"]:has-slotted + #menu-button {
+  margin-inline-start: 0;
+}
+
+@container style(--widget-size: small) {
+  ::slotted(moz-badge[slot="leading"]),
+  slot[name="trailing"].with-menu {
+    display: none;
+  }
+
+  slot[name="trailing"]:has-slotted + #menu-button {
+    margin-inline-start: auto;
+  }
+}
+
+#heading {
+  min-inline-size: var(--size-item-xlarge);
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight);
+  color: var(--text-color-deemphasized);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

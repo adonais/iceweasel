@@ -39,9 +39,12 @@
 #include "GMPPlatform.h"
 #include "GMPServiceParent.h"
 #include "nsIClassifiedChannel.h"
+#include "nsIComponentManager.h"
 #include "nsIXULRuntime.h"
+#include "nsThreadManager.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
+#include "nsXPCOM.h"
 
 #if defined(__APPLE__) && defined(__aarch64__)
 #  define HAS_PROCESS_ENERGY
@@ -150,9 +153,21 @@ void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
                         uint64_t aWakeCount) {
   ProcessType processType = gThisProcessType;
 
-  // Glean now (de)registers its threads, so on shutdown of the dispatcher
-  // thread we need to avoid calling back into Glean.
-  if (aThreadName.EqualsLiteral("glean.dispatcher")) {
+  // Glean now (de)registers its threads, which results in trying to record CPU
+  // usage. We can't do that from the dispatcher or when Glean itself is
+  // shutting down.
+  if (aThreadName.EqualsLiteral("glean.dispatcher") ||
+      aThreadName.EqualsLiteral("glean.shutdown")) {
+    return;
+  }
+
+  // Without XPCOM running, Glean is either shut down or will never be
+  // initialized (e.g. a remoting client), and recording could start its
+  // dispatcher thread while the process is exiting. The thread manager alone
+  // is not enough: on Windows, EnsureMTA initializes it without XPCOM.
+  nsCOMPtr<nsIComponentManager> compMgr;
+  if (!nsThreadManager::get().AllowNewXPCOMThreads() ||
+      NS_FAILED(NS_GetComponentManager(getter_AddRefs(compMgr)))) {
     return;
   }
 

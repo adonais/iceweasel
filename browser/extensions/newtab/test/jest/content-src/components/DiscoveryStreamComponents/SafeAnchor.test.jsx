@@ -47,6 +47,23 @@ describe("Discovery Stream <SafeAnchor>", () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
+  it("should report an open intent on right-click and middle-click only", () => {
+    const onLinkOpenIntent = jest.fn();
+    const { container } = render(
+      <SafeAnchor
+        url="https://example.com"
+        onLinkOpenIntent={onLinkOpenIntent}
+      />
+    );
+    const link = container.querySelector("a");
+
+    fireEvent.contextMenu(link);
+    fireEvent(link, new MouseEvent("auxclick", { bubbles: true, button: 1 }));
+    fireEvent(link, new MouseEvent("auxclick", { bubbles: true, button: 2 }));
+
+    expect(onLinkOpenIntent).toHaveBeenCalledTimes(2);
+  });
+
   it("should dispatch an event on click", () => {
     const dispatch = jest.fn();
     const { container } = render(<SafeAnchor dispatch={dispatch} />);
@@ -69,6 +86,38 @@ describe("Discovery Stream <SafeAnchor>", () => {
     expect(dispatch.mock.calls[0][0].data).toHaveProperty(
       "dwell_label",
       "story_organic"
+    );
+  });
+
+  it("should hand the same dwell_id to the action and to onLinkClick", () => {
+    const dispatch = jest.fn();
+    const onLinkClick = jest.fn();
+    const { container } = render(
+      <SafeAnchor
+        dispatch={dispatch}
+        dwellLabel="story_organic"
+        onLinkClick={onLinkClick}
+      />
+    );
+
+    fireEvent.click(container.querySelector("a"));
+
+    const { dwell_id } = dispatch.mock.calls[0][0].data;
+    expect(typeof dwell_id).toBe("number");
+    expect(onLinkClick.mock.calls[0][1]).toBe(dwell_id);
+  });
+
+  it("should give each click its own dwell_id", () => {
+    const dispatch = jest.fn();
+    const { container } = render(
+      <SafeAnchor dispatch={dispatch} dwellLabel="story_organic" />
+    );
+
+    fireEvent.click(container.querySelector("a"));
+    fireEvent.click(container.querySelector("a"));
+
+    expect(dispatch.mock.calls[0][0].data.dwell_id).not.toBe(
+      dispatch.mock.calls[1][0].data.dwell_id
     );
   });
 

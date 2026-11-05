@@ -8,6 +8,8 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/StaticMutex.h"
+#include "mozilla/gfx/Point.h"
+#include "mozilla/gfx/Types.h"
 #include "nsString.h"
 #include "nsTHashMap.h"
 #include "nsThreadUtils.h"
@@ -250,6 +252,22 @@ class MCSInfo final {
       const MediaCodecsSupported& aSupportedCodecs, const MediaCodec& aCodec);
   static bool SupportsHardwareEncode(
       const MediaCodecsSupported& aSupportedCodecs, const MediaCodec& aCodec);
+
+#ifdef MOZ_WIDGET_ANDROID
+  // Returns the subset of aSupport, the support reported for aCodec with 8-bit
+  // content, which remains for aColorDepth. MediaCodec decoding is limited to
+  // what the platform advertises, while software decoding for codecs other than
+  // H264 and HEVC uses our own decoders and supports any color depth.
+  static DecodeSupportSet GetMediaCodecDecodeSupportForColorDepth(
+      const MediaCodec& aCodec, const DecodeSupportSet& aSupport,
+      gfx::ColorDepth aColorDepth);
+
+  // Returns aSupport, the support reported for aCodec, without hardware
+  // decoding if aSize is larger than any hardware decoder supports.
+  static DecodeSupportSet GetMediaCodecDecodeSupportForSize(
+      const MediaCodec& aCodec, const DecodeSupportSet& aSupport,
+      const gfx::IntSize& aSize);
+#endif
 
   MCSInfo(MCSInfo const&) = delete;
   void operator=(MCSInfo const&) = delete;

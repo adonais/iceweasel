@@ -35,7 +35,7 @@ export class PersistentCache {
   /**
    * Get a value from the cache.
    *
-   * @param {string} key (optional) The cache key. If not provided, we return the full cache.
+   * @param {string} [key] The cache key. If not provided, we return the full cache.
    * @returns {Promise<object>} The cached data.
    */
   async get(key) {

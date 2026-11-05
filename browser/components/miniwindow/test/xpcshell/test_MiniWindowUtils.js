@@ -4,50 +4,14 @@
 
 "use strict";
 
-// MiniWindowUtils.computeTransform and computeWindowRectForScreen are pure math
-// over a crop rect, so they are tested here rather than in a browser test.
+// MiniWindowUtils.computeWindowRectForScreen and resolveOverlapConflicts are
+// pure math over rects, so they are tested here rather than in a browser test.
 // computeWindowRect itself needs a real window and a real screen, and stays
 // covered by browser/browser_framing.js and browser/browser_placement.js.
 
 const { MiniWindowUtils } = ChromeUtils.importESModule(
   "moz-src:///browser/components/miniwindow/MiniWindowUtils.sys.mjs"
 );
-
-add_task(async function test_compute_transform() {
-  let { scale, tx, ty } = MiniWindowUtils.computeTransform(1000, {
-    left: 50,
-    top: 20,
-    width: 500,
-    height: 300,
-  });
-  Assert.equal(scale, 2, "computeTransform scales to fill the window width");
-  Assert.equal(tx, -50, "computeTransform translates by -crop.left");
-  Assert.equal(ty, -20, "computeTransform translates by -crop.top");
-
-  let identity = MiniWindowUtils.computeTransform(800, {
-    left: 0,
-    top: 0,
-    width: 800,
-    height: 600,
-  });
-  Assert.equal(identity.scale, 1, "identity scale for a whole-viewport crop");
-  Assert.equal(identity.tx, 0, "identity tx");
-  Assert.equal(identity.ty, 0, "identity ty");
-
-  // fullZoom folds into scale + translate: crop CSS px map to zoom chrome px.
-  let zoomed = MiniWindowUtils.computeTransform(
-    1000,
-    { left: 50, top: 20, width: 500, height: 300 },
-    2
-  );
-  Assert.equal(
-    zoomed.scale,
-    1,
-    "zoom halves the fill scale (1000 / (500 * 2))"
-  );
-  Assert.equal(zoomed.tx, -100, "zoom scales translateX by fullZoom");
-  Assert.equal(zoomed.ty, -40, "zoom scales translateY by fullZoom");
-});
 
 // A 1512x945 Retina Mac avail rect, below the menu bar. defaultCSSScaleFactor
 // and contentsScaleFactor are both 2 there, so desktop px and CSS px coincide.

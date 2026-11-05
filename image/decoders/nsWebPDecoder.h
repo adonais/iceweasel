@@ -55,10 +55,11 @@ class nsWebPDecoder final : public Decoder {
   /// received, if and only if the iterator is discontiguous.
   Vector<uint8_t> mBufferedData;
 
-  /// The libwebp output buffer descriptor pointing to the decoded data.
-  WebPDecBuffer mBuffer;
+  /// The libwebp decoder configuration and output buffer descriptor. libwebp
+  /// keeps pointers into this, so it must outlive mDecoder.
+  WebPDecoderConfig mConfig;
 
-  /// The libwebp incremental decoder descriptor, wraps mBuffer.
+  /// The libwebp incremental decoder descriptor, wraps mConfig.output.
   WebPIDecoder* mDecoder;
 
   /// Blend method for the current frame.

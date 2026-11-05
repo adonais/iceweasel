@@ -171,11 +171,6 @@ ifeq ($(MOZ_WIDGET_TOOLKIT),android)
 recurse_pre-export: mobile/android/pre-export
 endif
 
-ifeq ($(TARGET_ENDIANNESS),big)
-config/external/icu/data/target-objects: config/external/icu/data/$(MDDEPDIR)/icudt$(MOZ_ICU_VERSION)b.dat.stub
-config/external/icu/data/$(MDDEPDIR)/icudt$(MOZ_ICU_VERSION)b.dat.stub: config/external/icu/icupkg/host
-endif
-
 ifdef ENABLE_CLANG_PLUGIN
 # Only target rules use the clang plugin.
 $(filter %/target %/target-objects,$(filter-out config/export config/host build/unix/stdc++compat/% build/clang-plugin/%,$(compile_targets))) security/rlbox/pre-compile media/libsoundtouch/src/pre-compile: build/clang-plugin/host build/clang-plugin/tests/target-objects

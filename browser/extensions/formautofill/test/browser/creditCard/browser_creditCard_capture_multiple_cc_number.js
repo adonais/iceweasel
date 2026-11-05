@@ -46,9 +46,8 @@ async function expectSavedCreditCards(expectedCreditCards) {
   for (let i = 0; i < expectedCreditCards.length; i++) {
     for (const [key, value] of Object.entries(expectedCreditCards[i])) {
       if (key == "cc-number") {
-        creditcards[i]["cc-number"] = await OSKeyStore.decrypt(
-          creditcards[i]["cc-number-encrypted"],
-          "testing"
+        creditcards[i]["cc-number"] = await decryptCreditCardNumber(
+          creditcards[i]
         );
       }
       is(creditcards[i][key] ?? "", value, `field ${key} should be equal`);

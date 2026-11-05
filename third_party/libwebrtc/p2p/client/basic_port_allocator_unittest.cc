@@ -1106,6 +1106,26 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsWithMinimumStepDelay) {
       HasCandidate(candidates_, IceCandidateType::kHost, "tcp", kClientAddr));
 }
 
+TEST_F(BasicPortAllocatorTest,
+       NetworkChangeDuringGatheringDoesNotDuplicateTcp) {
+  ResetWithNoServersOrNat();
+  AddInterface(kClientAddr);
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_THAT(waiter_.Until([&] { return candidates_.size(); }, Eq(1U)),
+              IsRtcOk());
+  ASSERT_EQ(candidates_.front().protocol(), UDP_PROTOCOL_NAME);
+  ASSERT_FALSE(candidate_allocation_done_);
+
+  network_manager_.NotifyNetworksChanged();
+  network_manager_.NotifyNetworksChanged();
+  ASSERT_TRUE(waiter_.Until([&] { return candidate_allocation_done_; }));
+  EXPECT_EQ(candidates_.size(), 2U);
+  EXPECT_EQ(ports_.size(), 2U);
+  EXPECT_EQ(CountPorts(ports_, IceCandidateType::kHost, PROTO_TCP, kClientAddr),
+            1);
+}
+
 // Test that when the same network interface is brought down and up, the
 // port allocator session will restart a new allocation sequence if
 // it is not stopped.

@@ -33,6 +33,7 @@ rtc_library("speech_level_estimator") {
     "../../../rtc_base:checks",
     "../../../rtc_base:logging",
     "../../../rtc_base:safe_minmax",
+    "../../../rtc_base/experiments:field_trial_parser",
   ]
 }
 
@@ -303,10 +304,13 @@ if (rtc_include_tests) {
   rtc_cc_test("speech_level_estimator_experimental_unittest") {
     sources = [ "speech_level_estimator_experimental_unittest.cc" ]
     deps = [
+      ":common",
       ":speech_level_estimator",
       "..:apm_logging",
+      "../../../api:field_trials",
       "../../../api/audio:audio_processing",
       "../../../rtc_base:checks",
+      "../../../test:create_test_field_trials",
       "../../../test:test_support",
     ]
     configs += [ "..:apm_debug_dump" ]

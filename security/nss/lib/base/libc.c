@@ -112,32 +112,5 @@ nsslibc_memequal(const void *a, const void *b, PRUint32 len,
 }
 
 /*
- * nsslibc_memcmp
- */
-
-NSS_IMPLEMENT PRInt32
-nsslibc_memcmp(const void *a, const void *b, PRUint32 len, PRStatus *statusOpt)
-{
-    int v;
-
-#ifdef NSSDEBUG
-    if ((((void *)NULL == a) || ((void *)NULL == b))) {
-        nss_SetError(NSS_ERROR_INVALID_POINTER);
-        if ((PRStatus *)NULL != statusOpt) {
-            *statusOpt = PR_FAILURE;
-        }
-        return -2;
-    }
-#endif /* NSSDEBUG */
-
-    if ((PRStatus *)NULL != statusOpt) {
-        *statusOpt = PR_SUCCESS;
-    }
-
-    v = memcmp(a, b, len);
-    return (PRInt32)v;
-}
-
-/*
  * offsetof is a preprocessor definition
  */

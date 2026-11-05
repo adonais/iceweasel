@@ -9,7 +9,7 @@ local-network-access:
   description: |
     A ping representing Local Network Access (LNA) connection attempts and
     permission prompt interactions. This ping does not include client_id for
-    privacy. Only collected in early Beta and Nightly builds.
+    privacy.
   include_client_id: false
   metadata:
     include_info_sections: false
@@ -17,6 +17,7 @@ local-network-access:
       - ohttp
   bugs:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2076717
   data_reviews:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916#c5
   notification_emails:

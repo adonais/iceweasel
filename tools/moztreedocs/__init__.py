@@ -40,6 +40,7 @@ def read_build_config(docdir):
     # Only define the parts we need.
     class fakeconfig:
         topsrcdir = build.topsrcdir
+        substs = {}
 
     variables = ("SPHINX_TREES", "SPHINX_PYTHON_PACKAGE_DIRS")
     reader = BuildReader(fakeconfig())

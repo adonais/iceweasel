@@ -20,7 +20,6 @@ kind-dependencies:
     - repackage-l10n
 
 task-defaults:
-    run-on-repo-type: [hg]
     description: Attribute release builds
     shipping-phase: promote
     # never run as part of CI
@@ -55,7 +54,6 @@ task-defaults:
         # Each task only processes one installer...this should be quick.
         max-run-time: 600
     run:
-        clone-with: hg
         using: run-task
         cwd: "{checkout}"
         command:

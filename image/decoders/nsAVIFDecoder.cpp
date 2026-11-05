@@ -1028,7 +1028,6 @@ UniquePtr<AVIFDecodedData> Dav1dDecoder::Dav1dPictureToDecodedData(
 
   data->mYChannel = static_cast<uint8_t*>(aPicture->data[0]);
   data->mYStride = aPicture->stride[0];
-  data->mYSkip = aPicture->stride[0] - aPicture->p.w;
   data->mCbChannel = static_cast<uint8_t*>(aPicture->data[1]);
   data->mCrChannel = static_cast<uint8_t*>(aPicture->data[2]);
   data->mCbCrStride = aPicture->stride[1];
@@ -1048,8 +1047,6 @@ UniquePtr<AVIFDecodedData> Dav1dDecoder::Dav1dPictureToDecodedData(
       MOZ_ASSERT_UNREACHABLE("Unknown pixel layout");
   }
 
-  data->mCbSkip = aPicture->stride[1] - aPicture->p.w;
-  data->mCrSkip = aPicture->stride[1] - aPicture->p.w;
   data->mPictureRect = IntRect(0, 0, aPicture->p.w, aPicture->p.h);
   data->mStereoMode = StereoMode::MONO;
   data->mColorDepth = ColorDepthForBitDepth(aPicture->p.bpc);
@@ -1135,15 +1132,9 @@ UniquePtr<AVIFDecodedData> AOMDecoder::AOMImageToToDecodedData(
 
   data->mYChannel = colorImage->planes[AOM_PLANE_Y];
   data->mYStride = colorImage->stride[AOM_PLANE_Y];
-  data->mYSkip = colorImage->stride[AOM_PLANE_Y] -
-                 aom_img_plane_width(colorImage, AOM_PLANE_Y);
   data->mCbChannel = colorImage->planes[AOM_PLANE_U];
   data->mCrChannel = colorImage->planes[AOM_PLANE_V];
   data->mCbCrStride = colorImage->stride[AOM_PLANE_U];
-  data->mCbSkip = colorImage->stride[AOM_PLANE_U] -
-                  aom_img_plane_width(colorImage, AOM_PLANE_U);
-  data->mCrSkip = colorImage->stride[AOM_PLANE_V] -
-                  aom_img_plane_width(colorImage, AOM_PLANE_V);
   data->mPictureRect = gfx::IntRect(0, 0, colorImage->d_w, colorImage->d_h);
   data->mStereoMode = StereoMode::MONO;
   data->mColorDepth = ColorDepthForBitDepth(colorImage->bit_depth);
@@ -1655,9 +1646,13 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
           ("[this=%p] decodedData.mColorRange: %hhd", this,
            static_cast<uint8_t>(decodedData->mColorRange)));
 
+  const auto sizes = decodedData->GetPlaneSizes();
+  if (!sizes) {
+    return AsVariant(NonDecoderResult::SizeOverflow);
+  }
+
   // Technically it's valid but we don't handle it now (Bug 1682318).
-  if (decodedData->mAlpha &&
-      decodedData->mAlpha->mSize != decodedData->YDataSize()) {
+  if (decodedData->mAlpha && decodedData->mAlpha->mSize != sizes->mY) {
     return AsVariant(NonDecoderResult::AlphaYSizeMismatch);
   }
 

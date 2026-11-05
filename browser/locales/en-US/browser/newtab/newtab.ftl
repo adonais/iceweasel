@@ -336,6 +336,15 @@ newtab-custom-widget-search-toggle =
   .label = Search
 newtab-custom-widget-horoscopes-toggle =
   .label = Horoscopes
+# Travel (noun) is a widget on New Tab for searching hotels, flights
+# and car rentals.
+newtab-custom-widget-travel-toggle =
+  .label = Travel
+# Solitaire is a widget on New Tab where you can play solitaire, a card game
+# for one player, also known as patience.
+# Game displays within an iframe with name “Yahoo Solitaire”
+newtab-custom-widget-solitaire-toggle =
+  .label = Solitaire
 newtab-custom-widget-section-title = Widgets
 newtab-custom-widget-section-toggle =
     .label = Widgets
@@ -1262,48 +1271,14 @@ home-prefs-stories-header2 =
 home-prefs-widgets-header =
     .label = Widgets
 
-# Lists is a widget on New Tab, similar to a to-do widget
-home-prefs-lists-header =
-    .label = Lists
-
-# Timer is a widget on New Tab, similar to the Pomodoro timer.
-home-prefs-timer-header =
-    .label = Timer
-
-# Clock is a widget on New Tab that displays time zones around the world.
-home-prefs-clocks-header =
-    .label = Clock
-
-# Privacy is a widget on New Tab that shows tracking protection activity.
-home-prefs-privacy-header =
-    .label = Privacy
-
-# Crossword is a widget on New Tab that shows a daily crossword puzzle.
-home-prefs-crossword-widget-header =
-    .label = Crossword
-
-# Finance is a widget on New Tab that shows stock ticker prices.
-home-prefs-stocks-header2 =
-    .label = Finance
-
-# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
-home-prefs-picture-header =
-    .label = Picture of the day
-
-# Search is a widget on New Tab that shows the user's recent and trending
-# searches.
-home-prefs-search-widget-header =
-    .label = Search
-
-# Horoscopes is a widget on New Tab that shows daily horoscopes.
-home-prefs-horoscopes-header =
-    .label = Horoscopes
-
 home-prefs-mission-message2 =
     .message = Our sponsors support our mission to build a better web.
 
 home-prefs-manage-topics-link2 =
     .label = Manage topics
+
+home-prefs-manage-widgets-link =
+    .label = Manage widgets
 
 home-prefs-choose-wallpaper-link2 =
     .label = Choose a wallpaper
@@ -1687,6 +1662,11 @@ newtab-picture-header = Picture of the day · Wikimedia Commons
 # Shorter title shown at the top of the widget, without the source name.
 newtab-picture-header-main = Picture of the day
 
+# Title shown at the top of the widget, with the date of the picture shown.
+# $date (Date) - the day Wikimedia Commons featured the picture as its picture
+# of the day, shown in numbers (for example 10/8/2026).
+newtab-picture-header-date = Picture of the day: { DATETIME($date, year: "numeric", month: "numeric", day: "numeric") }
+
 # Attribution line shown under the title once a picture loads: an author
 # credit, a link to the picture's source page, and a link to its license.
 # "©" is the copyright symbol.
@@ -1709,30 +1689,30 @@ newtab-picture-widget-open-menu-button =
     .title = Open picture of the day menu
     .aria-label = Open picture of the day menu
 
-# Button that sets the current picture as the New Tab background wallpaper. The
-# button collapses to an icon when not hovered/focused, so .title is its tooltip.
-newtab-picture-set-wallpaper =
+# Button that sets the picture shown in the widget, which may be today’s or the
+# previous day’s, as the New Tab background wallpaper. The button collapses to an
+# icon when not hovered/focused, so .title is its tooltip.
+newtab-picture-set-wallpaper2 =
     .label = Set wallpaper
     .title = Set wallpaper
-    .aria-label = Set today’s picture as your wallpaper
+    .aria-label = Set this picture as your wallpaper
 
 # Context menu item that opens the New Tab customization panel.
 newtab-picture-menu-manage-wallpaper = Manage wallpaper
 
-# Context menu item that hides today’s picture, replacing it with an existing
-# wallpaper.
-newtab-picture-menu-hide-photo = Hide today’s picture
+# Context menu item that hides the picture shown in the widget.
+newtab-picture-menu-hide-photo2 = Hide this picture
 
-# Context menu item that restores today’s picture after it has been hidden.
-newtab-picture-menu-show-photo = Show today’s picture
+# Context menu item that restores the picture after it has been hidden.
+newtab-picture-menu-show-photo2 = Show picture
 
 # Context menu item linking to more information about the widget.
 newtab-picture-menu-learn-more = Learn more
 
 # Icon button shown on the widget once the picture is hidden; restores it.
-newtab-picture-show-button =
-    .title = Show today’s picture
-    .aria-label = Show today’s picture
+newtab-picture-show-button2 =
+    .title = Show picture
+    .aria-label = Show picture
 
 # Shown when there is no new picture to display yet.
 newtab-picture-check-back = Check back tomorrow for a new picture
@@ -1788,12 +1768,45 @@ newtab-recent-searches-empty-trending = Trending searches are not available righ
 # Widget heading; also the widget's accessible name.
 newtab-horoscopes-widget-title = Horoscopes
 
-# Screen reader label for the widget's icon-only menu button.
-newtab-horoscopes-widget-menu-button =
-    .aria-label = Horoscopes options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-horoscopes-widget-open-menu-button =
+    .title = Open horoscopes menu
+    .aria-label = Open horoscopes menu
 
 # Context menu item linking to more information about the widget.
 newtab-horoscopes-menu-learn-more = Learn more
+
+## Strings for the Travel widget
+
+# Widget heading; also the widget's accessible name. Travel (noun) is a
+# widget on New Tab for searching hotels, flights and car rentals.
+newtab-travel-widget-title = Travel
+
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-travel-widget-open-menu-button =
+    .title = Open travel menu
+    .aria-label = Open travel menu
+
+# Context menu item linking to more information about the widget.
+newtab-travel-menu-learn-more = Learn more
+
+## Strings for the Solitaire widget. Solitaire is a widget on New Tab where you
+## can play solitaire, a card game for one player, also known as patience.
+## Game displays within an iframe with name “Yahoo Solitaire”
+
+# Widget heading; also the widget's accessible name.
+newtab-solitaire-widget-title = Solitaire
+
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-solitaire-widget-open-menu-button =
+    .title = Open solitaire menu
+    .aria-label = Open solitaire menu
+
+# Context menu item linking to more information about the widget.
+newtab-solitaire-menu-learn-more = Learn more
 
 ## Strings for the navigable panels that new tab content area can be
 ## split into.

@@ -7,6 +7,7 @@
 #include "mozilla/CSSPropertyId.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/URLExtraData.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSStyleRule.h"
@@ -22,6 +23,18 @@
 namespace mozilla::dom {
 
 namespace {
+
+// Returns whether aText is a valid value to append to the list-valued property
+// aPropertyId. CSS-wide keywords and var() references are not.
+bool IsValidListItem(const CSSPropertyId& aPropertyId, const nsACString& aText,
+                     URLExtraData* aURLExtraData) {
+  RefPtr<StyleLockedDeclarationBlock> block =
+      Servo_DeclarationBlock_Parse(&aPropertyId, &aText, aURLExtraData)
+          .Consume();
+  return block &&
+         !Servo_DeclarationBlock_HasCSSWideKeyword(block, aPropertyId.mId) &&
+         !Servo_DeclarationBlock_HasUnparsedValue(block, aPropertyId.mId);
+}
 
 template <typename Source>
 struct DeclarationTraits;
@@ -89,74 +102,123 @@ JSObject* StylePropertyMap::WrapObject(JSContext* aCx,
 // start of StylePropertyMap Web IDL implementation
 
 // https://drafts.css-houdini.org/css-typed-om/#dom-stylepropertymap-set
-//
-// XXX This is not yet fully implemented and optimized!
 void StylePropertyMap::Set(
     const nsACString& aProperty,
     const Sequence<OwningCSSStyleValueOrUTF8String>& aValues,
     ErrorResult& aRv) {
-  // Step 2.
-  auto propertyId = CSSPropertyId::Parse(aProperty);
-
-  if (!propertyId.IsValid()) {
-    aRv.ThrowTypeError("Invalid property: "_ns + aProperty);
-    return;
-  }
-
-  if (aValues.Length() != 1) {
-    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-    return;
-  }
-
-  const auto& styleValueOrString = aValues[0];
-
-  RefPtr<CSSStyleValue> styleValue;
-
-  if (styleValueOrString.IsCSSStyleValue()) {
-    styleValue = styleValueOrString.GetAsCSSStyleValue();
-  } else {
-    RefPtr<URLExtraData> urlExtraData = mDeclarations.GetURLExtraData();
-    if (!urlExtraData) {
-      aRv.Throw(NS_ERROR_NOT_AVAILABLE);
-      return;
-    }
-
-    styleValue = CSSStyleValue::ParseStyleValue(
-        mParent, aProperty, styleValueOrString.GetAsUTF8String(), urlExtraData,
-        /* aStyleValues */ nullptr, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-  }
-
-  // Step 4
-
-  const auto* valuePropertyId = styleValue->GetPropertyId();
-
-  if (valuePropertyId && *valuePropertyId != propertyId) {
-    aRv.ThrowTypeError("Invalid type for property"_ns);
-    return;
-  }
-
-  nsAutoCString cssText;
-  styleValue->ToCssTextWithProperty(propertyId, cssText);
-  if (cssText.IsEmpty()) {
-    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-    return;
-  }
-
-  // Step 6.
-  Declarations& declarations = mDeclarations;
-
-  // Step 7 & 8 & 9 & 10.
-  declarations.Set(propertyId, cssText, aRv);
+  return SetOrAppend(aProperty, aValues, Mode::Set, aRv);
 }
 
+// https://drafts.css-houdini.org/css-typed-om/#dom-stylepropertymap-append
 void StylePropertyMap::Append(
     const nsACString& aProperty,
     const Sequence<OwningCSSStyleValueOrUTF8String>& aValues,
     ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  return SetOrAppend(aProperty, aValues, Mode::Append, aRv);
+}
+
+void StylePropertyMap::SetOrAppend(
+    const nsACString& aProperty,
+    const Sequence<OwningCSSStyleValueOrUTF8String>& aValues, Mode aMode,
+    ErrorResult& aRv) {
+  // Steps 1 and 2.
+  auto propertyId = CSSPropertyId::Parse(aProperty);
+  if (!propertyId.IsValid()) {
+    return aRv.ThrowTypeError("Invalid property: "_ns + aProperty);
+  }
+
+  nsCString separator;
+  nsAutoCString cssText;
+  auto appendValue = [&](const nsACString& aValue) {
+    if (!cssText.IsEmpty()) {
+      cssText.Append(separator);
+    }
+    cssText.Append(aValue);
+  };
+
+  const bool requiresListValued = aMode == Mode::Append || aValues.Length() > 1;
+  if (requiresListValued) {
+    if (propertyId.IsCustom()) {
+      return aRv.ThrowTypeError("Custom properties are not list-valued: "_ns +
+                                aProperty);
+    }
+    const CSSPropFlags flags = nsCSSProps::PropFlags(propertyId.mId);
+    if (!(flags & CSSPropFlags::IsListValued)) {
+      return aRv.ThrowTypeError("Property is not list-valued: "_ns + aProperty);
+    }
+    separator = flags & CSSPropFlags::IsCommaSeparated ? ", "_ns : " "_ns;
+  }
+
+  if (aValues.IsEmpty()) {
+    if (aMode == Mode::Append) {
+      // TODO: This is not in the spec, but makes some sense, it prevents e.g.
+      // style attribute mutations from happening here.
+      return;
+    }
+    return mDeclarations.Delete(propertyId, aRv);
+  }
+
+  if (aMode == Mode::Append) {
+    // NOTE(emilio): We rejigger a bit the steps because it's not observable
+    // (other than in the error message I guess), as everything throws a
+    // TypeError. It's more convenient to build the value from the beginning.
+    nsTArray<RefPtr<CSSStyleValue>> existingValues;
+    GetAll(propertyId, existingValues, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+
+    // Step 5
+    for (const auto& existingValue : existingValues) {
+      if (existingValue->IsCSSUnparsedValue()) {
+        return aRv.ThrowTypeError(
+            "Cannot append to value with var() references");
+      }
+      nsAutoCString text;
+      existingValue->ToCssTextWithProperty(propertyId, text);
+      if (text.IsEmpty()) {
+        // This is the case for a value from a pending substitution from a
+        // shorthand, for example.
+        return aRv.ThrowTypeError(
+            "Cannot append to value with var() references");
+      }
+      appendValue(text);
+    }
+  }
+
+  auto* urlExtraData = mDeclarations.GetURLExtraData();
+  if (!urlExtraData) {
+    return aRv.ThrowTypeError("Can't find the right base uri for parsing");
+  }
+
+  // Step 4
+  for (const auto& styleValueOrString : aValues) {
+    nsAutoCString text;
+    if (styleValueOrString.IsCSSStyleValue()) {
+      const auto& styleValue = styleValueOrString.GetAsCSSStyleValue();
+      const auto* valuePropertyId = styleValue->GetPropertyId();
+      if (valuePropertyId && *valuePropertyId != propertyId) {
+        return aRv.ThrowTypeError("Invalid type for property");
+      }
+      if (requiresListValued && styleValue->IsCSSUnparsedValue()) {
+        return aRv.ThrowTypeError("Cannot append a CSSUnparsedValue");
+      }
+      styleValue->ToCssTextWithProperty(propertyId, text);
+    } else {
+      text = styleValueOrString.GetAsUTF8String();
+    }
+    // Each value is validated on its own so that values can't combine into
+    // something different once joined.
+    const bool valid = requiresListValued
+                           ? IsValidListItem(propertyId, text, urlExtraData)
+                           : !text.IsEmpty();
+    if (!valid) {
+      return aRv.ThrowTypeError("Invalid value for property: "_ns + text);
+    }
+    appendValue(text);
+  }
+
+  mDeclarations.Set(propertyId, cssText, aRv);
 }
 
 // https://drafts.css-houdini.org/css-typed-om/#dom-stylepropertymap-delete
@@ -220,8 +282,8 @@ void StylePropertyMapReadOnly::Declarations::Set(
 void StylePropertyMapReadOnly::Declarations::Clear(ErrorResult& aRv) {
   switch (mKind) {
     case Kind::Inline:
-      mStyledElement->SetAttr(kNameSpaceID_None, nsGkAtoms::style, u""_ns,
-                              true);
+      mStyledElement->SetAttr(kNameSpaceID_None, nsGkAtoms::style, u""_ns, true,
+                              IsKnownNewAttr::No);
       return;
 
     case Kind::Computed:

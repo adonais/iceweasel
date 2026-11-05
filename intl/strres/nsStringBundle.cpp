@@ -4,6 +4,8 @@
 
 #include "nsStringBundle.h"
 
+#include <memory>
+
 #include "nsID.h"
 #include "nsString.h"
 #include "nsIStringBundle.h"
@@ -907,7 +909,7 @@ bundleCacheEntry_t* nsStringBundleService::insertIntoCache(
   }
 
   if (!cacheEntry) {
-    cacheEntry.reset(new bundleCacheEntry_t());
+    cacheEntry = std::make_unique<bundleCacheEntry_t>();
   }
 
   cacheEntry->mHashKey = aHashKey;

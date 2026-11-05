@@ -27,22 +27,17 @@ class NullDecoderModule : public PlatformDecoderModule {
  public:
   const char* Name() const override { return "Null"; }
   // Decode thread.
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
+  RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override {
-    if (StaticPrefs::media_test_null_decoder_creation_failure()) {
-      return nullptr;
+    MOZ_ASSERT(aParams.IsVideo(), "Audio decoders are unsupported.");
+    if (!aParams.IsVideo() ||
+        StaticPrefs::media_test_null_decoder_creation_failure()) {
+      return CreateDecoderPromiseFrom(nullptr, aParams);
     }
     UniquePtr<DummyDataCreator> creator = MakeUnique<NullVideoDataCreator>();
     RefPtr<MediaDataDecoder> decoder = new DummyMediaDataDecoder(
         std::move(creator), "null media data decoder"_ns, aParams);
-    return decoder.forget();
-  }
-
-  // Decode thread.
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
-      const CreateDecoderParams& aParams) override {
-    MOZ_ASSERT(false, "Audio decoders are unsupported.");
-    return nullptr;
+    return CreateDecoderPromiseFrom(decoder.forget(), aParams);
   }
 
   media::DecodeSupportSet SupportsMimeType(

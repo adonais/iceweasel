@@ -144,9 +144,8 @@ class nsUrlClassifierDBService::FeatureHolder final {
       }
 
       for (const nsCString& table : tables) {
-        TableData* tableData = holder->GetOrCreateTableData(table);
+        RefPtr<TableData> tableData = holder->GetOrCreateTableData(table);
         MOZ_ASSERT(tableData);
-
         featureData->mTables.AppendElement(tableData);
       }
     }
@@ -276,16 +275,15 @@ class nsUrlClassifierDBService::FeatureHolder final {
     NS_DispatchToMainThread(runnable.forget());
   }
 
-  TableData* GetOrCreateTableData(const nsACString& aTable) {
+  already_AddRefed<TableData> GetOrCreateTableData(const nsACString& aTable) {
     for (TableData* tableData : mTableData) {
       if (tableData->mTable == aTable) {
-        return tableData;
+        return do_AddRef(tableData);
       }
     }
 
-    RefPtr<TableData> tableData = new TableData(aTable);
-    mTableData.AppendElement(tableData);
-    return tableData;
+    mTableData.AppendElement(new TableData(aTable));
+    return do_AddRef(mTableData.LastElement());
   }
 
   nsCOMPtr<nsIURI> mURI;
@@ -1071,11 +1069,16 @@ nsresult nsUrlClassifierDBServiceWorker::CacheCompletions(
     }
     if (activeTable) {
       UniquePtr<ProtocolParser> pParse;
+      // ~ProtocolParserProtobuf() is private and required for
+      // std::make_unique<ProtocolParserProtobuf>(...)
+      // see https://github.com/llvm/llvm-project/pull/229802
+      // NOLINTBEGIN(modernize-make-unique)
       if (result->Ver() == CacheResult::V2) {
         pParse.reset(new ProtocolParserV2());
       } else {
         pParse.reset(new ProtocolParserProtobuf());
       }
+      // NOLINTEND(modernize-make-unique)
 
       RefPtr<TableUpdate> tu = pParse->GetTableUpdate(result->table);
 

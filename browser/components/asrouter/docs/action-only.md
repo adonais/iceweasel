@@ -1,6 +1,6 @@
 # ActionOnlyMessage
 
-ActionOnlyMessage is a template for messages that silently execute an allowlisted [Special Message Action](https://firefox-source-docs.mozilla.org/toolkit/components/messaging-system/docs/SpecialMessageActionSchemas/index.html) with no UI. When delivered, ASRouter records a local impression, sends impression telemetry, and executes the action. This templatea should be used with caution, and actions such as `PIN_FIREFOX_TO_TASKBAR` and `SET_DEFAULT_BROWSER` should only be used in cases where an OS level prompt will ask a user's consent to pin or set default, respectively.
+ActionOnlyMessage is a template for messages that silently execute an allowlisted {doc}`Special Message Action </toolkit/components/messaging-system/docs/SpecialMessageActionSchemas/index>` with no UI. When delivered, ASRouter records a local impression, sends impression telemetry, and executes the action. This templatea should be used with caution, and actions such as `PIN_FIREFOX_TO_TASKBAR` and `SET_DEFAULT_BROWSER` should only be used in cases where an OS level prompt will ask a user's consent to pin or set default, respectively.
 
 ## Control Messages
 

@@ -40,6 +40,7 @@ class PlacesVisit final : public PlacesEvent {
   void GetLastKnownTitle(nsString& aLastKnownTitle) {
     aLastKnownTitle = mLastKnownTitle;
   }
+  uint32_t UserContextId() { return mUserContextId; }
 
   // It's convenient for these to be directly available in C++, so just expose
   // them. These are generally passed around with const qualifiers anyway, so
@@ -55,6 +56,7 @@ class PlacesVisit final : public PlacesEvent {
   uint32_t mVisitCount;
   uint32_t mTypedCount;
   nsString mLastKnownTitle;
+  uint32_t mUserContextId = 0;
 
  private:
   ~PlacesVisit() = default;

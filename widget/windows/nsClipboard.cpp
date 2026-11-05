@@ -36,6 +36,7 @@
 #include "nsEscape.h"
 #include "nsIFileProtocolHandler.h"
 #include "nsIInputStream.h"
+#include "nsIMutableArray.h"
 #include "nsIObserverService.h"
 #include "nsISupportsPrimitives.h"
 #include "nsITransferable.h"

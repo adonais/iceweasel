@@ -119,16 +119,16 @@ void SVGTurbulenceRenderer<Type, Stitch, f32x4_t, i32x4_t,
   RandomNumberSource rand(aSeed);
 
   float gradient[4][sBSize][2];
-  for (int32_t k = 0; k < 4; k++) {
-    for (int32_t i = 0; i < sBSize; i++) {
+  for (auto& g_k : gradient) {
+    for (auto& g_k_i : g_k) {
       float a, b;
       do {
         a = float((rand.Next() % (sBSize + sBSize)) - sBSize) / sBSize;
         b = float((rand.Next() % (sBSize + sBSize)) - sBSize) / sBSize;
       } while (a == 0 && b == 0);
       float s = sqrt(a * a + b * b);
-      gradient[k][i][0] = a / s;
-      gradient[k][i][1] = b / s;
+      g_k_i[0] = a / s;
+      g_k_i[1] = b / s;
     }
   }
 

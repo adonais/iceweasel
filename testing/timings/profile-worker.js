@@ -588,17 +588,41 @@ async function fetchResourceProfile(taskId, retryId = 0) {
 
   const url = `${workerData.taskclusterBaseUrl}/api/queue/v1/task/${taskId}/runs/${retryId}/artifacts/public/test_info/profile_resource-usage.json`;
 
-  let response;
-  try {
-    response = await fetch(url);
-  } catch (error) {
-    // Network error (timeout, connection refused, etc.)
-    let message = error.message;
-    if (error.cause) {
-      message += ` (${error.cause.code || error.cause.message})`;
+  let response, profile;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      response = await fetch(url, { signal: AbortSignal.timeout(60 * 1000) });
+      if (response.ok) {
+        profile = await response.json();
+      }
+      break;
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.error(
+          formatTaskMessage(taskId, `JSON parse error - ${error.message}`)
+        );
+        return { error: "parse_error" };
+      }
+      // Network error (timeout, connection refused, etc.)
+      let message = error.message;
+      if (error.cause) {
+        message += ` (${error.cause.code || error.cause.message})`;
+      }
+      // 10 attempts take at most ~21 minutes: 10 timeouts plus the delays below.
+      const willRetry = attempt < 10;
+      console.error(
+        formatTaskMessage(
+          taskId,
+          `Network error - ${message}, ${willRetry ? "will retry" : "giving up"}`
+        )
+      );
+      if (!willRetry) {
+        return { error: "network_error" };
+      }
+      // Exponential backoff: 5s, 10s, 20s, ... up to 2 minutes.
+      const delay = Math.min(5000 * 2 ** (attempt - 1), 120 * 1000);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
-    console.error(formatTaskMessage(taskId, `Network error - ${message}`));
-    return { error: "network_error" };
   }
 
   if (!response.ok) {
@@ -610,16 +634,6 @@ async function fetchResourceProfile(taskId, retryId = 0) {
       )
     );
     return { error: errorType };
-  }
-
-  let profile;
-  try {
-    profile = await response.json();
-  } catch (error) {
-    console.error(
-      formatTaskMessage(taskId, `JSON parse error - ${error.message}`)
-    );
-    return { error: "parse_error" };
   }
 
   // Cache the profile for future use (gzipped)

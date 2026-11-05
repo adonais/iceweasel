@@ -29,6 +29,10 @@ const { ConversationStore } = ChromeUtils.importESModule(
 const { Conversation } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs"
 );
+const { MockEngineManager } = ChromeUtils.importESModule(
+  "resource://testing-common/AIWindowTestUtils.sys.mjs"
+);
+
 // AIWINDOW_URL and openAIWindow come from head.js.
 
 const AITAB_PREF = "browser.smartwindow.aitab.enabled";
@@ -133,8 +137,12 @@ function openDeleteDialog(browser) {
   });
 }
 
+let gMockEngineManager;
 add_setup(async function () {
+  gMockEngineManager = new MockEngineManager();
   await SpecialPowers.pushPrefEnv({ set: [[AITAB_PREF, true]] });
+
+  registerCleanupFunction(() => {});
 });
 
 add_task(async function test_cancelling_the_dialog_keeps_the_page() {
@@ -228,6 +236,72 @@ add_task(async function test_delete_from_the_dialog_removes_the_page() {
 
   await BrowserTestUtils.closeWindow(win);
 });
+
+add_task(async function test_delete_removes_the_page_from_history() {
+  await PlacesUtils.history.clear();
+  await seedPage();
+
+  const bystanderURL = "about:smartpage?page=bystander_page";
+  await PlacesTestUtils.addVisits([PAGE_URL, bystanderURL]);
+
+  const { win, browser } = await openSeededPage();
+  const actor = browser.browsingContext.currentWindowGlobal.getActor("AITab");
+
+  const result = await actor.receiveMessage({ name: "AITab:DeletePage" });
+  Assert.ok(result.success, "The delete reports success");
+
+  Assert.ok(
+    !(await PlacesUtils.history.hasVisits(PAGE_URL)),
+    "The deleted page is removed from history"
+  );
+  Assert.ok(
+    await PlacesUtils.history.hasVisits(bystanderURL),
+    "History for a different generated page is kept"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+  await PlacesUtils.history.clear();
+});
+
+add_task(
+  async function test_delete_removes_history_when_the_tab_closes_midway() {
+    await PlacesUtils.history.clear();
+    await seedPage();
+    await PlacesTestUtils.addVisits([PAGE_URL]);
+
+    const sb = sinon.createSandbox();
+    const { promise: stalled, resolve: release } = Promise.withResolvers();
+    const conversationDelete = sb
+      .stub(ConversationStore, "deleteConversationById")
+      .returns(stalled);
+
+    try {
+      const { win, browser } = await openSeededPage();
+      const actor =
+        browser.browsingContext.currentWindowGlobal.getActor("AITab");
+
+      const deleting = actor.receiveMessage({ name: "AITab:DeletePage" });
+      await TestUtils.waitForCondition(
+        () => conversationDelete.called,
+        "The delete reaches the conversation store"
+      );
+
+      gOpenedWindows.delete(win);
+      await BrowserTestUtils.closeWindow(win);
+      release();
+
+      const result = await deleting;
+      Assert.ok(result.success, "The delete still reports success");
+      Assert.ok(
+        !(await PlacesUtils.history.hasVisits(PAGE_URL)),
+        "The page is removed from history even though its tab closed"
+      );
+    } finally {
+      sb.restore();
+      await PlacesUtils.history.clear();
+    }
+  }
+);
 
 add_task(async function test_delete_ignores_a_page_name_from_content() {
   // The parent reads the page name from the tab's own URL, so a name supplied
@@ -349,6 +423,8 @@ add_task(async function test_a_non_web_link_is_refused() {
 });
 
 registerCleanupFunction(async () => {
+  await gMockEngineManager.rejectAllRequests();
+
   // A task that throws never reaches its own closeWindow(), and a leftover
   // window fails the whole file with "Found an unexpected browser window",
   // which reads louder than the failure that caused it.
@@ -361,4 +437,6 @@ registerCleanupFunction(async () => {
 
   await AITabStore.deleteBySlug(SLUG);
   await ConversationStore.deleteConversationById(CONV_ID);
+
+  gMockEngineManager.cleanupMocks();
 });

@@ -36,3 +36,7 @@ EXPORTS += [
     "nsEmbedCID.h",
     "nsWebBrowser.h",
 ]
+
+SOURCE_HEADERS += [
+    "nsWebBrowserContentPolicy.h",
+]

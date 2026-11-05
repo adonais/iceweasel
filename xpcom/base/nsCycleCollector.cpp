@@ -160,6 +160,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <memory>
 #include <utility>
 
 #include "js/SliceBudget.h"
@@ -4190,7 +4191,7 @@ void nsCycleCollector_startup() {
   CollectorData* data = new CollectorData;
   data->mCollector = new nsCycleCollector();
   data->mContext = nullptr;
-  data->mStats.reset(new mozilla::CycleCollectorStats());
+  data->mStats = std::make_unique<mozilla::CycleCollectorStats>();
 
   sCollectorData.set(data);
 }

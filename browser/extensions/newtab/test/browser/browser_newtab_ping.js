@@ -427,8 +427,6 @@ add_task(async function test_opened_page_dwell_time() {
   fakeNow += 100;
   Services.obs.notifyObservers(null, "user-interaction-active-non-synthesized");
 
-  // Closing the tab fires no location change, so the sample is finalized by
-  // the next activity sweep.
   BrowserTestUtils.removeTab(tab);
   Services.obs.notifyObservers(
     null,
@@ -451,6 +449,135 @@ add_task(async function test_opened_page_dwell_time() {
     "The sample is not in newtab ping storage, so no newtab ping carries it"
   );
 
+  nowStub.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * The same path, but with no activity notification after the page loads:
+ * the real <browser>'s location changes and its tab's TabClose are what
+ * start and end the measurement. A reload in between is the same visit.
+ */
+add_task(async function test_opened_page_dwell_time_follows_the_tab() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.newtabpage.activity-stream.telemetry", true]],
+  });
+
+  Services.fog.testResetFOG();
+  let TelemetryFeed =
+    AboutNewTab.activityStream.store.feeds.get("feeds.telemetry");
+  if (typeof TelemetryFeed.handleDwellLinkOpened !== "function") {
+    Assert.ok(true, "Skipping: this newtab predates opened_page_dwell_time");
+    return;
+  }
+
+  let fakeNow = 0;
+  let nowStub = sandbox.stub(TelemetryFeed, "now").callsFake(() => fakeNow);
+  registerCleanupFunction(() => {
+    Services.obs.notifyObservers(
+      null,
+      "user-interaction-inactive-non-synthesized"
+    );
+  });
+
+  await SimpleTest.promiseFocus(window);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+  // The user is interacting before the click, and no notification follows.
+  Services.obs.notifyObservers(null, "user-interaction-active-non-synthesized");
+  TelemetryFeed.handleDwellLinkOpened({
+    data: {
+      browser: tab.linkedBrowser,
+      dwell_label: "story_organic",
+    },
+  });
+
+  let loaded = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false,
+    "https://example.com/"
+  );
+  BrowserTestUtils.startLoadingURIString(
+    tab.linkedBrowser,
+    "https://example.com/"
+  );
+  await loaded;
+
+  fakeNow = 1000;
+  await BrowserTestUtils.reloadTab(tab);
+
+  fakeNow = 3000;
+  BrowserTestUtils.removeTab(tab);
+
+  let dwell =
+    Glean.newtab.openedPageDwellTime.story_organic.testGetValue("metrics");
+  Assert.equal(dwell?.count, 1, "One sample, the reload did not split it");
+  Assert.equal(
+    dwell?.sum,
+    3000 * 1000000,
+    "Measured from the page loading to the tab closing"
+  );
+
+  nowStub.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Closing a window does not close its tabs one by one, so no TabClose fires
+ * for an opened page still showing in it. The visit has to end anyway, both
+ * to record it and so that tracking it cannot keep the closed window alive.
+ */
+add_task(async function test_opened_page_dwell_time_ends_with_its_window() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.newtabpage.activity-stream.telemetry", true]],
+  });
+  Services.fog.testResetFOG();
+  let TelemetryFeed =
+    AboutNewTab.activityStream.store.feeds.get("feeds.telemetry");
+  if (typeof TelemetryFeed.handleDwellLinkOpened !== "function") {
+    Assert.ok(true, "Skipping: this newtab predates opened_page_dwell_time");
+    return;
+  }
+
+  let fakeNow = 0;
+  let nowStub = sandbox.stub(TelemetryFeed, "now").callsFake(() => fakeNow);
+  let foregroundStub = sandbox
+    .stub(TelemetryFeed, "isDwellTargetInForeground")
+    .returns(true);
+
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  let browser = win.gBrowser.selectedBrowser;
+  Services.obs.notifyObservers(null, "user-interaction-active-non-synthesized");
+  TelemetryFeed.handleDwellLinkOpened({
+    data: { browser, dwell_label: "story_organic" },
+  });
+  let loaded = BrowserTestUtils.browserLoaded(
+    browser,
+    false,
+    "https://example.com/"
+  );
+  BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
+  await loaded;
+
+  fakeNow = 2000;
+  await BrowserTestUtils.closeWindow(win);
+
+  let dwell =
+    Glean.newtab.openedPageDwellTime.story_organic.testGetValue("metrics");
+  Assert.equal(dwell?.count, 1, "Closing the window ended the visit");
+  Assert.equal(
+    dwell?.sum,
+    2000 * 1000000,
+    "Measured from the page loading to the window closing"
+  );
+
+  Services.obs.notifyObservers(
+    null,
+    "user-interaction-inactive-non-synthesized"
+  );
+  foregroundStub.restore();
   nowStub.restore();
   await SpecialPowers.popPrefEnv();
 });

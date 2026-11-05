@@ -701,7 +701,6 @@ scheme = "https"
 ["test_eme_canvas_blocked.html"]
 scheme = "https"
 skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929444
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1707737
 ]
 
@@ -722,7 +721,6 @@ scheme = "https"
 
 ["test_eme_playback.html"]
 skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929444
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1707737
 ]
 
@@ -730,16 +728,11 @@ skip-if = [
 scheme = "https"
 skip-if = [
   "os == 'android'", # bug 1149374
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929444
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1929444
 ]
 
 ["test_eme_pssh_in_moof.html"]
 scheme = "https"
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1929444
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt && socketprocess_e10s", # Bug 1929444
-]
 
 ["test_eme_sample_groups_playback.html"]
 scheme = "https"
@@ -755,7 +748,6 @@ scheme = "https"
 tags = "mtg capturestream"
 scheme = "https"
 skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929444
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1707737
 ]
 
@@ -763,7 +755,6 @@ skip-if = [
 tags = "mtg capturestream"
 scheme = "https"
 skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929444
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1707737
 ]
 
@@ -771,7 +762,6 @@ skip-if = [
 scheme = "https"
 skip-if = [
   "os == 'android'", # bug 1149374
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929444
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1707737
   "xorigin",
 ]
@@ -779,7 +769,6 @@ skip-if = [
 ["test_eme_waitingforkey.html"]
 scheme = "https"
 skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929444
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1707737
   "xorigin",
 ]

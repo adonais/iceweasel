@@ -78,6 +78,12 @@ class nsXMLContentSerializer : public nsIContentSerializer {
     return NS_OK;
   }
 
+  /**
+   * Appends a string by translating entities in the XML attribute mode
+   */
+  [[nodiscard]] static bool AppendAndTranslateEntitiesInXMLAttributeValue(
+      const nsAString& aStr, nsAString& aOutputStr);
+
  protected:
   virtual ~nsXMLContentSerializer();
 
@@ -180,7 +186,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
    * that do not need replacement should map to 0 in aEntityTable.
    */
   template <uint16_t LargestIndex, uint16_t TableLength>
-  [[nodiscard]] bool AppendAndTranslateEntities(
+  [[nodiscard]] static bool AppendAndTranslateEntities(
       const nsAString& aStr, nsAString& aOutputStr,
       const uint8_t (&aEntityTable)[TableLength],
       const char* const aStringTable[]) {

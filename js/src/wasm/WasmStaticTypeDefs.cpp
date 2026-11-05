@@ -40,7 +40,7 @@ bool StaticTypeDefs::init() {
   arrayMutI16->recGroup().AddRef();
 
   ValTypeVector exceptionParams;
-  if (!exceptionParams.append(ValType(RefType::extern_()))) {
+  if (!exceptionParams.emplaceBack(RefType::extern_())) {
     return false;
   }
   jsExceptionTag =
@@ -52,7 +52,7 @@ bool StaticTypeDefs::init() {
 
 #ifdef ENABLE_WASM_JSPI
   ValTypeVector promiseParams;
-  if (!promiseParams.append(ValType(RefType::extern_()))) {
+  if (!promiseParams.emplaceBack(RefType::extern_())) {
     return false;
   }
   jsPromiseTag =

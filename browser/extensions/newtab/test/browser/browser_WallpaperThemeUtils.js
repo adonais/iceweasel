@@ -6,6 +6,12 @@
 const { calculateTheme } = ChromeUtils.importESModule(
   "resource://newtab/lib/Wallpapers/WallpaperThemeUtils.mjs"
 );
+const { PictureOfTheDayFeed } = ChromeUtils.importESModule(
+  "resource://newtab/lib/Widgets/PictureOfTheDayFeed.sys.mjs"
+);
+const { actionTypes: at } = ChromeUtils.importESModule(
+  "resource://newtab/common/Actions.mjs"
+);
 
 async function blobFromRGBA(rgba) {
   const canvas = new OffscreenCanvas(2, 2);
@@ -40,4 +46,35 @@ add_task(async function test_calculateTheme_transparent_pixels_ignored() {
   const blob = await blobFromRGBA(rgba);
   const theme = await calculateTheme(window, blob);
   Assert.equal(theme, "light");
+});
+
+// The parent feed decodes the picture with the window that asked. The decode
+// failing falls back to "light", so only a dark picture can catch it.
+add_task(async function test_pictureOfTheDay_wallpaper_gets_dark_theme() {
+  const rgba = [0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255];
+  const blob = await blobFromRGBA(rgba);
+  const dispatched = [];
+  const feed = new PictureOfTheDayFeed();
+  feed.store = {
+    dispatch: action => dispatched.push(action),
+    getState: () => ({
+      Prefs: {
+        values: {
+          "newtabWallpapers.enabled": true,
+          "newtabWallpapers.customWallpaper.enabled": true,
+        },
+      },
+    }),
+  };
+  feed.currentImageUrl = "https://example.com/picture.png";
+  feed.fetchImage = async () =>
+    new Response(blob, { headers: { "content-type": "image/png" } });
+
+  await feed.onAction({
+    type: at.WIDGETS_PICTURE_SET_WALLPAPER,
+    _target: { window },
+  });
+
+  const upload = dispatched.find(a => a.type === at.WALLPAPER_UPLOAD);
+  Assert.equal(upload?.data.theme, "dark", "saves a dark picture as dark");
 });

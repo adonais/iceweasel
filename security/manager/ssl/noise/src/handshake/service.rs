@@ -5,12 +5,12 @@
 //! Noise XPCOM handshake service
 
 use crate::{
-    ec::convert_to_keypair,
-    handshake::{initiator::CtapCableInitiatorHandshake, responder::CtapCableResponder},
+    ec::{convert_to_keypair, sec1_ec2_key_to_der},
+    handshake::{CtapCableInitiatorHandshake, CtapCableResponder},
     Error, InitiatorHandshake, Responder, Result,
 };
 use nserror::{nsresult, NS_OK};
-use nss_rs::ec::import_ec_private_key_pkcs8;
+use nss_rs::ec::{import_ec_private_key_pkcs8, import_ec_public_key_from_spki};
 use thin_vec::ThinVec;
 use xpcom::{
     interfaces::{nsICtapCableInitiatorHandshake, nsICtapCableResponder},
@@ -70,8 +70,10 @@ impl CtapCableHandshakeService {
             .as_slice()
             .try_into()
             .map_err(|_| Error::InvalidArgument)?;
+        let peer_der = sec1_ec2_key_to_der(peer_pub_key)?;
+        let peer_identity = import_ec_public_key_from_spki(&peer_der)?;
 
-        let responder = Responder::new_qr_initiated(psk, peer_pub_key, initial_message)?;
+        let responder = Responder::new_qr_initiated(psk, &peer_identity, initial_message)?;
         let responder: RefPtr<CtapCableResponder> = responder.into();
         let responder = responder
             .query_interface::<nsICtapCableResponder>()

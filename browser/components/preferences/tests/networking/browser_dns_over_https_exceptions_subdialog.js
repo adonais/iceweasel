@@ -3,9 +3,9 @@ async function dohExceptionsSubdialogOpened(dialogOverlay) {
     "chrome://browser/content/preferences/dialogs/dohExceptions.xhtml"
   );
   const contentDocument = gBrowser.contentDocument;
-  const dohExceptionsButton = SRD_PREF_VALUE
-    ? contentDocument.querySelector("moz-box-button#dohExceptionsButton")
-    : contentDocument.querySelector("button#dohExceptionsButton");
+  const dohExceptionsButton = contentDocument.querySelector(
+    "moz-box-button#dohExceptionsButton"
+  );
   dohExceptionsButton.click();
   const win = await promiseSubDialogLoaded;
   dialogOverlay = content.gSubDialog._topDialog._overlay;

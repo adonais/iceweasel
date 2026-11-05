@@ -327,6 +327,29 @@ add_task(async function test_no_bearer_prefix_uses_hawk() {
   await promiseStopServer(server);
 });
 
+add_task(async function test_access_token_uses_bearer() {
+  for (let useBearer of [true, false]) {
+    Services.prefs.setBoolPref("identity.fxaccounts.auth.useBearer", useBearer);
+
+    let server = httpd_setup({
+      "/oauth": function (request, response) {
+        Assert.equal(request.getHeader("Authorization"), "Bearer access-token");
+        response.setStatusLine(request.httpVersion, 200, "OK");
+      },
+    });
+
+    let url = server.baseURI + "/oauth";
+    let request = new HAWKAuthenticatedRESTRequest(url, {
+      accessToken: "access-token",
+    });
+    let response = await request.get();
+    Assert.equal(200, response.status);
+
+    await promiseStopServer(server);
+  }
+  Services.prefs.clearUserPref("identity.fxaccounts.auth.useBearer");
+});
+
 // turn formatted test vectors into normal hex strings
 function h(hexStr) {
   return hexStr.replace(/\s+/g, "");

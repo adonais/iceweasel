@@ -18,6 +18,7 @@ import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.store.MenuAction
@@ -84,7 +85,13 @@ class MenuMiddlewareTest {
         listOf(
             MenuItemsGroup.Row(
                 id = "settings",
-                items = listOf(StandardMenuItem(Text.String("Settings"), MenuItemTapped(ToolbarMenu.Item.Settings))),
+                items =
+                    listOf(
+                        StandardMenuItem(
+                            MenuItemTitle(Text.String("Settings")),
+                            MenuItemTapped(ToolbarMenu.Item.Settings),
+                        )
+                    ),
             )
         )
 

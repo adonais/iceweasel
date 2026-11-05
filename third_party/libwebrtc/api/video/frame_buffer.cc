@@ -72,10 +72,7 @@ bool IsLastFrameInTemporalUnit(const FrameIteratorT& it) {
 FrameBuffer::FrameBuffer(int max_size,
                          int max_decode_history,
                          const FieldTrialsView& field_trials)
-    : legacy_frame_id_jump_behavior_(
-          !field_trials.IsDisabled("WebRTC-LegacyFrameIdJumpBehavior")),
-      max_size_(max_size),
-      decoded_frame_history_(max_decode_history) {}
+    : max_size_(max_size), decoded_frame_history_(max_decode_history) {}
 
 bool FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
   new_continuous_temporal_units_.clear();
@@ -92,7 +89,7 @@ bool FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
   }
 
   if (frame->Id() <= decoded_frame_history_.GetLastDecodedFrameId()) {
-    if (legacy_frame_id_jump_behavior_ && frame->is_keyframe() &&
+    if (frame->is_keyframe() &&
         AheadOf(frame->RtpTimestamp(),
                 *decoded_frame_history_.GetLastDecodedFrameTimestamp())) {
       TRACE_EVENT2("webrtc",

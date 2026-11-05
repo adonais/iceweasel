@@ -1,0 +1,41 @@
+<!doctype html>
+<html class="reftest-wait">
+<meta charset="utf-8">
+<title>Reference</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<style>
+  @font-face {
+    font-family: Ahem;
+    src: url("Ahem.ttf");
+  }
+  div {
+    font: 20px/40px Ahem;
+    writing-mode: vertical-rl;
+    padding: 0 20px;
+    height: 200px;
+    outline: none;
+  }
+  img {
+    /**
+     * Shifting toward the line-over side by 0.25em lands the image in the same
+     * location as `text-top` without affecting the `alignment-baseline` of the image.
+     */
+    vertical-align: 0.25em;
+    inline-size: 0;
+    block-size: 0.5em;
+  }
+</style>
+<div contenteditable="true" spellcheck="false">abc<img></div>
+<script>
+SimpleTest.waitForFocus(async function() {
+  await document.fonts.ready;
+  const div = document.querySelector("div");
+  div.focus();
+  getSelection().collapse(div, div.childNodes.length);
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      document.documentElement.removeAttribute("class");
+    });
+  });
+});
+</script>

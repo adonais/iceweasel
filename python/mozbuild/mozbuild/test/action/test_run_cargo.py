@@ -4,6 +4,7 @@
 
 import json
 import os
+import sys
 import unittest
 from pathlib import Path
 from shutil import rmtree
@@ -194,6 +195,111 @@ class TestRunCargo(unittest.TestCase):
         rc, _, _ = self._run(["--spec", spec], returncode=1)
         self.assertEqual(rc, 1)
         self.assertFalse((target_dir / "notification-helper.pdb").exists())
+
+    def _test_spec(self, os_arch="Linux", **overrides):
+        config = {
+            "OS_ARCH": os_arch,
+            "RUST_TARGET": "x86_64-unknown-linux-gnu",
+            "MOZ_CARGO_DEFAULT_PROFILE_DIR": "release",
+            "MOZ_CARGO_PROFILE_PREFIX": "release",
+            "DLL_PREFIX": "lib",
+            "DLL_SUFFIX": ".so",
+        }
+        spec = {
+            "config": config,
+            "edge": {
+                "kind": "test",
+                "manifest_path": "/src/Cargo.toml",
+                "working_directory": str(self.tmpdir),
+                "names": ["gkrust"],
+                **overrides,
+            },
+            "topobjdir": str(self.tmpdir),
+            "topsrcdir": "/src",
+        }
+        path = self.tmpdir / "spec.json"
+        path.write_text(json.dumps(spec), encoding="utf-8")
+        dist_bin = self.tmpdir / "dist" / "bin"
+        dist_bin.mkdir(parents=True)
+        for name in ("libnss3.so", "libxul.so", "firefox"):
+            (dist_bin / name).write_bytes(name.encode())
+        return str(path)
+
+    def _deps(self, profile="release"):
+        return self.tmpdir / "x86_64-unknown-linux-gnu" / profile / "deps"
+
+    def test_test_libs_staged(self):
+        self._run(["--spec", self._test_spec()])
+        self.assertEqual(
+            sorted(p.name for p in self._deps().iterdir()),
+            ["libnss3.so", "libxul.so"],
+        )
+
+    def test_test_libs_custom_profile(self):
+        self._run(["--spec", self._test_spec(cargo_profile_suffix="custom")])
+        self.assertEqual(
+            sorted(p.name for p in self._deps("release-custom").iterdir()),
+            ["libnss3.so", "libxul.so"],
+        )
+
+    def test_test_libs_not_staged_on_macos(self):
+        self._run(["--spec", self._test_spec(os_arch="Darwin")])
+        self.assertFalse(self._deps().exists())
+
+    def test_test_libs_not_staged_for_libraries(self):
+        self._run(["--spec", self._test_spec(kind="library")])
+        self.assertFalse(self._deps().exists())
+
+    def _networking(self, config=None, returncode=0, **overrides):
+        base = {
+            "OS_ARCH": "Linux",
+            "RUST_LTO_ELIGIBLE": "1",
+        }
+        spec = self._spec(
+            config={**base, **(config or {})},
+            outputs=["x86_64-unknown-linux-gnu/release/libgkrust.a"],
+            **overrides,
+        )
+        check_binary = mock.MagicMock()
+        check_binary.main.return_value = 5
+        with mock.patch.dict(
+            sys.modules, {"mozbuild.action.check_binary": check_binary}
+        ):
+            rc, _, _ = self._run(["--spec", spec], returncode=returncode)
+        return rc, check_binary.main
+
+    def test_networking_check(self):
+        rc, check = self._networking()
+        self.assertEqual(rc, 5)
+        self.assertEqual(
+            check.call_args.args[0],
+            [
+                "--networking",
+                str(Path("/obj", "x86_64-unknown-linux-gnu/release/libgkrust.a")),
+            ],
+        )
+
+    def test_networking_check_skipped(self):
+        for config, overrides in (
+            ({"OS_ARCH": "Darwin"}, {}),
+            ({"RUST_LTO_ELIGIBLE": ""}, {}),
+            ({}, {"lto": False}),
+            ({}, {"kind": "host-library"}),
+            ({"MOZ_PROFILE_GENERATE": "1"}, {}),
+            ({"RUST_SANCOV_FLAGS": "-Cpasses=sancov-module"}, {}),
+            ({"MOZ_ASAN": "1"}, {}),
+            ({"MOZ_TSAN": "1"}, {}),
+            ({"MOZ_UBSAN": "1"}, {}),
+            ({"MOZ_LTO_RUST_CROSS": "1"}, {}),
+        ):
+            rc, check = self._networking(config, **overrides)
+            self.assertEqual(rc, 0, (config, overrides))
+            self.assertEqual(check.call_count, 0, (config, overrides))
+
+    def test_networking_check_after_failed_build(self):
+        rc, check = self._networking(returncode=2)
+        self.assertEqual(rc, 2)
+        self.assertEqual(check.call_count, 0)
 
     def test_env_rustflags_not_recomposed(self):
         configured = {

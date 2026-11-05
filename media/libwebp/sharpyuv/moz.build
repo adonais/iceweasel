@@ -51,3 +51,11 @@ FINAL_LIBRARY = 'xul'
 
 # We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
+
+SOURCE_HEADERS += [
+	"sharpyuv.h",
+	"sharpyuv_cpu.h",
+	"sharpyuv_csp.h",
+	"sharpyuv_dsp.h",
+	"sharpyuv_gamma.h",
+]

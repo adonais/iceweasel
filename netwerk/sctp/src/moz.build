@@ -78,3 +78,18 @@ LICENSES["sctp"].notice = """
 LICENSED_UNDER += [
     "sctp",
 ]
+
+SOURCE_HEADERS += [
+	"user_atomic.h",
+	"user_environment.h",
+	"user_inpcb.h",
+	"user_ip6_var.h",
+	"user_ip_icmp.h",
+	"user_malloc.h",
+	"user_mbuf.h",
+	"user_queue.h",
+	"user_recv_thread.h",
+	"user_route.h",
+	"user_socketvar.h",
+	"user_uma.h",
+]

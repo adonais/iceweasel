@@ -87,7 +87,6 @@ rtc_library("libaom_av1_encoder") {
     "../../svc:scalability_structures",
     "../../svc:scalable_video_controller",
     "//third_party/abseil-cpp/absl/algorithm:container",
-    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
     "//third_party/abseil-cpp/absl/strings",
@@ -140,8 +139,7 @@ rtc_library("libaom_speed_config_factory") {
 }
 
 if (rtc_include_tests) {
-  rtc_library("av1_svc_config_unittest") {
-    testonly = true
+  rtc_cc_test("av1_svc_config_unittest") {
     sources = [ "av1_svc_config_unittest.cc" ]
     deps = [
       ":av1_svc_config",
@@ -152,8 +150,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("dav1d_decoder_unittest") {
-    testonly = true
+  rtc_cc_test("dav1d_decoder_unittest") {
     sources = [ "dav1d_decoder_unittest.cc" ]
     deps = [
       ":dav1d_decoder",
@@ -170,8 +167,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("libaom_av1_encoder_unittest") {
-    testonly = true
+  rtc_cc_test("libaom_av1_encoder_unittest") {
     sources = [ "libaom_av1_encoder_unittest.cc" ]
     deps = [
       ":av1_svc_config",
@@ -202,10 +198,13 @@ if (rtc_include_tests) {
       "../../../../test:test_support",
       "../../../../test:video_test_support",
     ]
+    data_deps = [ "../../../../resources:video_coding_tests_data" ]
+    if (is_ios) {
+      deps += [ "../../../../resources:video_coding_tests_bundle_data" ]
+    }
   }
 
-  rtc_library("libaom_av1_unittest") {
-    testonly = true
+  rtc_cc_test("libaom_av1_unittest") {
     sources = [ "libaom_av1_unittest.cc" ]
     deps = [
       ":dav1d_decoder",
@@ -235,8 +234,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("libaom_speed_config_factory_unittest") {
-    testonly = true
+  rtc_cc_test("libaom_speed_config_factory_unittest") {
     sources = [ "libaom_speed_config_factory_unittest.cc" ]
     deps = [
       ":libaom_speed_config_factory",
@@ -246,24 +244,5 @@ if (rtc_include_tests) {
       "../../../../rtc_base:checks",
       "../../../../test:test_support",
     ]
-  }
-
-  rtc_library("video_coding_codecs_av1_tests") {
-    testonly = true
-
-    sources = []
-
-    deps = [
-      ":av1_svc_config_unittest",
-      ":dav1d_decoder_unittest",
-    ]
-
-    if (enable_libaom) {
-      deps += [
-        ":libaom_av1_encoder_unittest",
-        ":libaom_av1_unittest",
-        ":libaom_speed_config_factory_unittest",
-      ]
-    }
   }
 }

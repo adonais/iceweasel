@@ -6,7 +6,9 @@
 #include "HWInferenceChild.h"
 #include "mozilla/hwinference/TextGenerationChild.h"
 #include "mozilla/Logging.h"
-#include "mozilla/hwinference/SpeechRecognitionParent.h"
+#ifdef MOZ_WEBSPEECH
+#  include "mozilla/hwinference/SpeechRecognitionParent.h"
+#endif
 
 namespace mozilla::hwinference {
 
@@ -16,6 +18,7 @@ LazyLogModule gHWInferenceLog("HWInference");
 #define LOGE(fmt, ...) \
   MOZ_LOG_FMT(gHWInferenceLog, LogLevel::Error, fmt, ##__VA_ARGS__)
 
+#ifdef MOZ_WEBSPEECH
 ipc::IPCResult HWInferenceChild::RecvNewContentSpeechRecognition(
     Endpoint<hwinference::PSpeechRecognitionParent>&& aEndpoint,
     const dom::ContentParentId& aContentId) {
@@ -34,6 +37,7 @@ ipc::IPCResult HWInferenceChild::RecvNewContentSpeechRecognition(
        fmt::ptr(this), __func__, static_cast<uint64_t>(aContentId));
   return IPC_OK();
 }
+#endif  // MOZ_WEBSPEECH
 
 ipc::IPCResult HWInferenceChild::RecvNewTextGeneration(
     Endpoint<hwinference::PTextGenerationChild>&& aEndpoint,

@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
-  --logins-dialog-shadow: var(--popup-box-shadow);
-  --logins-dialog-border: 1px solid var(--card-border-color);
-  --logins-dialog-border-radius: var(--border-radius-medium);
+  --logins-dialog-shadow: var(--dialog-box-shadow);
+  --logins-dialog-border: var(--border-width) solid var(--dialog-border-color);
+  --logins-dialog-border-radius: var(--dialog-border-radius);
+  --logins-dialog-background-color: var(--dialog-background-color);
 }
 
 html {

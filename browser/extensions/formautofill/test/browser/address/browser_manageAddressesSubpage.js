@@ -168,3 +168,24 @@ add_task(async function test_manageAddresses_watches_storage_changes() {
     });
   });
 });
+
+add_task(async function test_add_button_opens_edit_dialog() {
+  await withManageAddressesPage(async browser => {
+    const win = browser.contentWindow;
+    const addBtn = browser.contentDocument.querySelector(SELECTORS.add);
+    await TestUtils.waitForCondition(
+      () => addBtn && !addBtn.disabled,
+      "Add button never became enabled"
+    );
+
+    const dialogPromise = waitForSubDialogLoad(win, EDIT_ADDRESS_DIALOG_URL);
+    addBtn.click();
+    const dialogWin = await dialogPromise;
+
+    ok(
+      !dialogWin.document.querySelector("#given-name")?.value,
+      "Edit address dialog opens empty"
+    );
+    dialogWin.close();
+  });
+});

@@ -18,7 +18,7 @@
 namespace mozilla {
 namespace net {
 
-LazyLogModule g3PCBExceptionLog("3pcbexception");
+LazyLogModule g3PCBExceptionLog("ThirdPartyCookieBlockingExceptions");
 
 void ThirdPartyCookieBlockingExceptions::Initialize() {
   if (mIsInitialized) {

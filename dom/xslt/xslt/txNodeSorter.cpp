@@ -4,6 +4,8 @@
 
 #include "txNodeSorter.h"
 
+#include <memory>
+
 #include "mozilla/CheckedInt.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsGkAtoms.h"
@@ -40,7 +42,7 @@ nsresult txNodeSorter::addSortElement(Expr* aSelectExpr, Expr* aLangExpr,
                                       Expr* aDataTypeExpr, Expr* aOrderExpr,
                                       Expr* aCaseOrderExpr,
                                       txIEvalContext* aContext) {
-  UniquePtr<SortKey> key(new SortKey);
+  auto key = std::make_unique<SortKey>();
   nsresult rv = NS_OK;
 
   // Select

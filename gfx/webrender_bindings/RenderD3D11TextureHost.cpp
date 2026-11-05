@@ -774,6 +774,7 @@ bool RenderDXGIYCbCrTextureHost::EnsureD3D11Texture2D(ID3D11Device* aDevice) {
   const DXGI_FORMAT expectedFormat = mColorDepth == gfx::ColorDepth::COLOR_8
                                          ? DXGI_FORMAT_R8_UNORM
                                          : DXGI_FORMAT_R16_UNORM;
+  D3D11_TEXTURE2D_DESC descCb{};
   for (int i = 0; i < 3; ++i) {
     // Get the R8 D3D11 texture from shared handle.
     HRESULT hr = device1->OpenSharedResource1(
@@ -801,6 +802,21 @@ bool RenderDXGIYCbCrTextureHost::EnsureD3D11Texture2D(ID3D11Device* aDevice) {
                       << int(mColorDepth) << ") does not match resource ("
                       << desc.Width << "x" << desc.Height << " DXGI "
                       << int(desc.Format) << ")";
+      for (auto& tex : mTextures) {
+        tex = nullptr;
+      }
+      return false;
+    }
+
+    // Make sure the Cr and Cb planes have the same dimensions.
+    if (i == 1) {
+      descCb = desc;
+    } else if (i == 2 &&
+               (desc.Width != descCb.Width || desc.Height != descCb.Height)) {
+      gfxCriticalNote << "RenderDXGIYCbCrTextureHost Cb resource ("
+                      << descCb.Width << "x" << descCb.Height
+                      << ") does not match Cr resource (" << desc.Width << "x"
+                      << desc.Height << ")";
       for (auto& tex : mTextures) {
         tex = nullptr;
       }

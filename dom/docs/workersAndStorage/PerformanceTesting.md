@@ -1,6 +1,6 @@
 # Service Worker Performance Tests
 
-Our performance tests are mochitests running in the [mozperftest](https://firefox-source-docs.mozilla.org/testing/perfdocs/mozperftest.html)
+Our performance tests are mochitests running in the {doc}`mozperftest </testing/perfdocs/mozperftest>`
 harness. Tests reside under {searchfox}`dom/serviceworkers/test/performance`,
 itemized in perftest.toml. Beyond the standard mochitest machinery,
 performance tests define a `perfMetadata` variable at the top level, and call:
@@ -8,7 +8,7 @@ performance tests define a `perfMetadata` variable at the top level, and call:
 `info("perfMetrics", JSON.stringify(metrics));`
 
 to report their results, where *metrics* is a map from testpoint name to scalar
-numeric value. See the [performance scripts documentation](https://firefox-source-docs.mozilla.org/testing/perfdocs/writing.html#mochitest)
+numeric value. See the [performance scripts documentation](/testing/perfdocs/writing.md#mochitest)
 for more.
 
 They can be run via mach perftest, or as normal mochitests via mach test.

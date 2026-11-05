@@ -113,6 +113,11 @@ class DtlsIceIntegrationTest : public dtls_ice_integration_fixture::Base,
 };
 
 TEST_P(DtlsIceIntegrationTest, SmokeTest) {
+  if (!IsBoringSsl() && client_.config.dtls_in_stun &&
+      server_.config.dtls_in_stun) {
+    GTEST_SKIP() << "DTLS-in-STUN needs boringssl.";
+  }
+
   ConfigureEmulatedNetwork(/* pct_loss= */ 0);
   Prepare();
   client_thread()->PostTask([&]() { client_.ice()->MaybeStartGathering(); });
@@ -145,6 +150,11 @@ TEST_P(DtlsIceIntegrationTest, SmokeTest) {
 }
 
 TEST_P(DtlsIceIntegrationTest, AddCandidates) {
+  if (!IsBoringSsl() && client_.config.dtls_in_stun &&
+      server_.config.dtls_in_stun) {
+    GTEST_SKIP() << "DTLS-in-STUN needs boringssl.";
+  }
+
   Prepare();
   client_.ice()->MaybeStartGathering();
   server_.ice()->MaybeStartGathering();
@@ -181,6 +191,11 @@ TEST_P(DtlsIceIntegrationTest, AddCandidates) {
 // "late". This is what happens if the answer sdp comes strictly after ICE has
 // connected. Before this patch, this would disable stun-piggy-backing.
 TEST_P(DtlsIceIntegrationTest, ClientLateCertificate) {
+  if (!IsBoringSsl() && client_.config.dtls_in_stun &&
+      server_.config.dtls_in_stun) {
+    GTEST_SKIP() << "DTLS-in-STUN needs boringssl.";
+  }
+
   client_.store_but_dont_set_remote_fingerprint = true;
   ConfigureEmulatedNetwork(/* pct_loss= */ 0);
   Prepare();
@@ -349,6 +364,11 @@ TEST_P(DtlsIceIntegrationTest, LongRunningTestWithPacketLoss) {
 // Verify that DtlsStunPiggybacking works even if one (or several)
 // of the STUN_BINDING_REQUESTs are so full that dtls does not fit.
 TEST_P(DtlsIceIntegrationTest, AlmostFullSTUN_BINDING) {
+  if (!IsBoringSsl() && client_.config.dtls_in_stun &&
+      server_.config.dtls_in_stun) {
+    GTEST_SKIP() << "DTLS-in-STUN needs boringssl.";
+  }
+
   ConfigureEmulatedNetwork(/* pct_loss= */ 0);
   Prepare();
 

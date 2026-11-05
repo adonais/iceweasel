@@ -101,14 +101,12 @@
 }
 
 #ctrlTab-showAll {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--color-white-alpha-20);
   margin-top: 0.5em;
 }
 
 .ctrlTab-preview:focus > .ctrlTab-preview-inner,
 #ctrlTab-showAll:focus {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--color-black-alpha-70);
   text-shadow: none;
   border-color: #45a1ff;

@@ -71,9 +71,9 @@ export class MessageHandlerFrameChild extends JSWindowActorChild {
 
   async receiveMessage(message) {
     if (message.name === "MessageHandlerFrameParent:sendCommand") {
-      const { sessionId, command } = message.data;
+      const { internalSessionId, command } = message.data;
       const messageHandler =
-        this._registry.getOrCreateMessageHandler(sessionId);
+        this._registry.getOrCreateMessageHandler(internalSessionId);
       try {
         return await messageHandler.handleCommand(command);
       } catch (e) {
@@ -92,10 +92,10 @@ export class MessageHandlerFrameChild extends JSWindowActorChild {
     return null;
   }
 
-  sendCommand(command, sessionId) {
+  sendCommand(command, internalSessionId) {
     return this.sendQuery("MessageHandlerFrameChild:sendCommand", {
       command,
-      sessionId,
+      internalSessionId,
     });
   }
 

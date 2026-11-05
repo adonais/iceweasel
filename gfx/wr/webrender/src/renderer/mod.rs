@@ -81,7 +81,6 @@ use crate::picture::ResolvedSurfaceTexture;
 use crate::profiler::{self, RenderCommandLog, GpuProfileTag, TransactionProfile};
 use crate::profiler::{Profiler, ProfileCounterValue, add_event_marker, add_text_marker, thread_is_being_profiled};
 use crate::device::query::GpuProfiler;
-use crate::render_target::ResolveOp;
 use crate::render_task_graph::RenderTaskGraph;
 use crate::render_task::{RenderTask, RenderTaskKind, ReadbackTask};
 use crate::screen_capture::AsyncScreenshotGrabber;
@@ -132,6 +131,7 @@ pub use gpu_buffer::{GpuBuffer, GpuBufferF, GpuBufferBuilderF, GpuBufferI, GpuBu
 pub use gpu_buffer::{GpuBufferHandle, GpuBufferAddress, GpuBufferBuilder, GpuBufferWriterF};
 pub use gpu_buffer::{GpuBufferDataF, GpuBufferDataI, GpuBufferWriterI};
 use gpu_buffer::{GpuBufferBlockF, GpuBufferBlockI};
+pub use gpu_buffer::{GpuBufferBlockEdge, GpuBufferEdges, PathEdgeBufferBuilder};
 
 /// The size of the array of each type of vertex data texture that
 /// is round-robin-ed each frame during bind_frame_data. Doing this
@@ -317,6 +317,7 @@ pub(crate) enum TextureSampler {
     ClipMask,
     GpuBufferF,
     GpuBufferI,
+    PathEdges,
 }
 
 impl TextureSampler {
@@ -346,6 +347,7 @@ impl Into<TextureSlot> for TextureSampler {
             TextureSampler::ClipMask => TextureSlot(8),
             TextureSampler::GpuBufferF => TextureSlot(9),
             TextureSampler::GpuBufferI => TextureSlot(10),
+            TextureSampler::PathEdges => TextureSlot(11),
         }
     }
 }
@@ -758,8 +760,10 @@ pub struct Renderer {
     gpu_buffer_texture_i: Option<Texture>,
     gpu_buffer_texture_i_too_large: i32,
     gpu_buffer_last_data_i: Vec<GpuBufferBlockI>,
-    vertex_data_textures: Vec<vertex::VertexDataTextures>,
-    current_vertex_data_textures: usize,
+    gpu_buffer_texture_edges: Option<Texture>,
+    gpu_buffer_texture_edges_too_large: i32,
+    gpu_buffer_last_data_edges: Vec<GpuBufferBlockEdge>,
+    vertex_data: vertex::VertexDataRing,
 
     pipeline_info: PipelineInfo,
 
@@ -1498,6 +1502,10 @@ impl Renderer {
             self.device.delete_texture(texture);
         }
         self.gpu_buffer_last_data_i = Vec::new();
+        if let Some(texture) = self.gpu_buffer_texture_edges.take() {
+            self.device.delete_texture(texture);
+        }
+        self.gpu_buffer_last_data_edges = Vec::new();
     }
 
     /// Set a callback for handling external images.
@@ -2495,27 +2503,6 @@ impl Renderer {
         self.device.set_scissor(scissor_rect);
     }
 
-    fn handle_resolves(
-        &mut self,
-        resolve_ops: &[ResolveOp],
-        render_tasks: &RenderTaskGraph,
-        draw_target: DrawTarget,
-    ) {
-        if resolve_ops.is_empty() {
-            return;
-        }
-
-        let _timer = self.gpu_profiler.start_timer(GPU_TAG_BLIT);
-
-        for resolve_op in resolve_ops {
-            self.handle_resolve(
-                resolve_op,
-                render_tasks,
-                draw_target,
-            );
-        }
-    }
-
     fn handle_prims(
         &mut self,
         draw_target: &DrawTarget,
@@ -2605,6 +2592,7 @@ impl Renderer {
     fn handle_clips(
         &mut self,
         draw_target: &DrawTarget,
+        target_kind: RenderTargetKind,
         masks: &ClipMaskInstanceList,
         projection: &default::Transform3D<f32>,
         stats: &mut RendererStats,
@@ -2785,6 +2773,33 @@ impl Renderer {
 
                 self.device.set_scissor(None);
             }
+
+            // Path tiles cover the outside of the path. Both blend modes
+            // multiply the destination by the coverage of the path (see
+            // cs_path_tile), so like the masks above, the order of the clips
+            // does not matter. Alpha targets have no alpha channel to drive
+            // dest-out with in SWGL, so they keep the multiply blend mode.
+            if !masks.path_tiles.is_empty() {
+                if target_kind == RenderTargetKind::Color {
+                    self.set_blend_mode(BlendMode::PremultipliedDestOut, FramebufferKind::Other);
+                }
+
+                self.shaders.borrow_mut().cs_path_tile().bind(
+                    &mut self.device,
+                    projection,
+                    None,
+                    &mut self.renderer_errors,
+                    &mut self.profile,
+                    &mut self.command_log,
+                );
+
+                self.draw_instanced_batch(
+                    &masks.path_tiles,
+                    VertexArrayKind::PathTile,
+                    &BatchTextures::empty(),
+                    stats,
+                );
+            }
         }
     }
 
@@ -2923,120 +2938,6 @@ impl Renderer {
         );
     }
 
-    fn handle_resolve(
-        &mut self,
-        resolve_op: &ResolveOp,
-        render_tasks: &RenderTaskGraph,
-        draw_target: DrawTarget,
-    ) {
-        for src_task_id in &resolve_op.src_task_ids {
-            let src_task = &render_tasks[*src_task_id];
-            let src_info = match src_task.kind {
-                RenderTaskKind::Picture(ref info) => info,
-                _ => panic!("bug: not a picture"),
-            };
-            let src_task_rect = src_task.get_target_rect().to_f32();
-
-            let dest_task = &render_tasks[resolve_op.dest_task_id];
-            let dest_info = match dest_task.kind {
-                RenderTaskKind::Picture(ref info) => info,
-                _ => panic!("bug: not a picture"),
-            };
-            let dest_task_rect = dest_task.get_target_rect().to_f32();
-
-            // If the dest picture is going to a blur target, it may have been
-            // expanded in size so that the downsampling passes don't introduce
-            // sampling error. In this case, we need to ensure we use the
-            // content size rather than the render task size to work out
-            // the intersecting rect to use for the resolve copy.
-            let dest_task_rect = DeviceRect::from_origin_and_size(
-                dest_task_rect.min,
-                dest_info.content_size.to_f32(),
-            );
-
-            // The rect we want to read, in the dest (resolve target) surface's
-            // raster space, normalized to a scale-independent space by dividing
-            // out the dest device pixel scale.
-            let wanted_rect_dest: WorldRect = DeviceRect::from_origin_and_size(
-                dest_info.content_origin,
-                dest_task_rect.size().to_f32(),
-            ).cast_unit() * dest_info.device_pixel_scale.inverse();
-
-            // Map it into the src (parent) surface's raster space. This is the
-            // identity unless the resolve target established a different raster
-            // root than the parent it reads back from (e.g. a backdrop-filter
-            // promoted to a root-snapping raster root inside a scrolled subtree),
-            // in which case it corrects for the offset between the two raster
-            // roots so we read back the region the backdrop actually covers.
-            let wanted_rect: WorldRect =
-                resolve_op.dest_to_src_raster.map_rect(&wanted_rect_dest);
-
-            // Get the rect that is available on the parent surface. It may be smaller
-            // than desired because this is a picture cache tile covering only part of
-            // the wanted rect and/or because the parent surface was clipped.
-            let avail_rect: WorldRect = DeviceRect::from_origin_and_size(
-                src_info.content_origin,
-                src_task_rect.size().to_f32(),
-            ).cast_unit() * src_info.device_pixel_scale.inverse();
-
-            // Both rects are now in the src surface's raster space, so the
-            // intersection is too.
-            if let Some(src_isect_rect) = wanted_rect.intersection(&avail_rect) {
-                let src_int_rect: DeviceRect =
-                    (src_isect_rect * src_info.device_pixel_scale).cast_unit();
-
-                // Map the intersection back into the dest surface's raster space
-                // to work out the region to write on the resolve target.
-                let dest_isect_rect: WorldRect =
-                    resolve_op.dest_to_src_raster.unmap_rect(&src_isect_rect);
-                let dest_int_rect: DeviceRect =
-                    (dest_isect_rect * dest_info.device_pixel_scale).cast_unit();
-
-                // If there is a valid intersection, work out the correct origins and
-                // sizes of the copy rects, and do the blit.
-
-                let src_origin = src_task_rect.min.to_f32() +
-                    src_int_rect.min.to_vector() -
-                    src_info.content_origin.to_vector();
-
-                let src = DeviceIntRect::from_origin_and_size(
-                    src_origin.to_i32(),
-                    src_int_rect.size().round().to_i32(),
-                );
-
-                let dest_origin = dest_task_rect.min.to_f32() +
-                    dest_int_rect.min.to_vector() -
-                    dest_info.content_origin.to_vector();
-
-                let dest = DeviceIntRect::from_origin_and_size(
-                    dest_origin.to_i32(),
-                    dest_int_rect.size().round().to_i32(),
-                );
-
-                let texture_source = TextureSource::TextureCache(
-                    src_task.get_target_texture(),
-                    Swizzle::default(),
-                );
-                let (cache_texture, _) = self.texture_resolver
-                    .resolve(&texture_source).expect("bug: no source texture");
-
-                let read_target = ReadTarget::from_texture(cache_texture);
-
-                // Should always be drawing to picture cache tiles or off-screen surface!
-                debug_assert!(!draw_target.is_default());
-                let device_to_framebuffer = Scale::new(1i32);
-
-                self.device.blit_render_target(
-                    read_target,
-                    src * device_to_framebuffer,
-                    draw_target,
-                    dest * device_to_framebuffer,
-                    TextureFilter::Linear,
-                );
-            }
-        }
-    }
-
     fn draw_picture_cache_target(
         &mut self,
         target: &PictureCacheTarget,
@@ -3142,34 +3043,6 @@ impl Renderer {
                     projection,
                     render_tasks,
                     stats,
-                );
-            }
-            PictureCacheTargetKind::Blit { task_id, sub_rect_offset } => {
-                let src_task = &render_tasks[task_id];
-                let (texture, _swizzle) = self.texture_resolver
-                    .resolve(&src_task.get_texture_source())
-                    .expect("BUG: invalid source texture");
-
-                let src_task_rect = src_task.get_target_rect();
-
-                let p0 = src_task_rect.min + sub_rect_offset;
-                let p1 = p0 + target.dirty_rect.size();
-                let src_rect = DeviceIntRect::new(p0, p1);
-
-                // TODO(gw): In future, it'd be tidier to have the draw target offset
-                //           for DC surfaces handled by `blit_render_target`. However,
-                //           for now they are only ever written to here.
-                let target_rect = target
-                    .dirty_rect
-                    .translate(draw_target.offset().to_vector())
-                    .cast_unit();
-
-                self.device.blit_render_target(
-                    ReadTarget::from_texture(texture),
-                    src_rect.cast_unit(),
-                    draw_target,
-                    target_rect,
-                    TextureFilter::Nearest,
                 );
             }
         }
@@ -3573,13 +3446,6 @@ impl Renderer {
             }
         }
 
-        // Handle any resolves from parent pictures to this target
-        self.handle_resolves(
-            &target.resolve_ops,
-            render_tasks,
-            draw_target,
-        );
-
         // Handle any blits from the texture cache to this target.
         self.handle_blits(
             &target.blits,
@@ -3767,6 +3633,7 @@ impl Renderer {
 
             self.handle_clips(
                 &draw_target,
+                target.target_kind,
                 &target.clip_masks,
                 &projection,
                 stats,
@@ -3804,18 +3671,18 @@ impl Renderer {
     }
 
     /// Draw all the instances in a clip batcher list to the current target.
-    fn bind_frame_data(&mut self, frame: &mut Frame) {
+    fn bind_frame_data(&mut self, frame: &mut Frame, results: &mut RenderResults) {
         tracy_rs::profile_scope!("bind_frame_data");
 
         let _timer = self.gpu_profiler.start_timer(GPU_TAG_SETUP_DATA);
 
-        self.vertex_data_textures[self.current_vertex_data_textures].update(
+        if self.vertex_data.update(
             &mut self.device,
             &mut self.texture_upload_buffer_pool,
             frame,
-        );
-        self.current_vertex_data_textures =
-            (self.current_vertex_data_textures + 1) % VERTEX_DATA_TEXTURE_COUNT;
+        ) {
+            results.vertex_data_uploads += 1;
+        }
 
         if let Some(texture) = &self.gpu_buffer_texture_f {
             self.device.bind_texture(
@@ -3828,6 +3695,14 @@ impl Renderer {
         if let Some(texture) = &self.gpu_buffer_texture_i {
             self.device.bind_texture(
                 TextureSampler::GpuBufferI,
+                &texture,
+                Swizzle::default(),
+            );
+        }
+
+        if let Some(texture) = &self.gpu_buffer_texture_edges {
+            self.device.bind_texture(
+                TextureSampler::PathEdges,
                 &texture,
                 Swizzle::default(),
             );
@@ -4014,17 +3889,25 @@ impl Renderer {
                 &mut self.gpu_buffer_last_data_i,
                 &mut self.texture_upload_buffer_pool,
             );
+            Self::update_gpu_buffer_texture(
+                &mut self.device,
+                &frame.gpu_buffer_edges,
+                &mut self.gpu_buffer_texture_edges,
+                &mut self.gpu_buffer_last_data_edges,
+                &mut self.texture_upload_buffer_pool,
+            );
         }
 
         self.device.set_depth_write(false);
         self.set_blend_mode(BlendMode::None, FramebufferKind::Other);
 
-        self.bind_frame_data(frame);
+        self.bind_frame_data(frame, results);
 
         let bytes_to_mb = 1.0 / 1000000.0;
         let gpu_buffer_bytes_f = frame.gpu_buffer_f.size.to_f32().area() * 16.0;
         let gpu_buffer_bytes_i = frame.gpu_buffer_i.size.to_f32().area() * 16.0;
-        let gpu_buffer_mb = (gpu_buffer_bytes_f + gpu_buffer_bytes_i) as f32 * bytes_to_mb;
+        let gpu_buffer_bytes_edges = frame.gpu_buffer_edges.size.to_f32().area() * 4.0;
+        let gpu_buffer_mb = (gpu_buffer_bytes_f + gpu_buffer_bytes_i + gpu_buffer_bytes_edges) as f32 * bytes_to_mb;
         self.profile.set(profiler::GPU_BUFFER_MEM, gpu_buffer_mb);
 
         // Determine the present mode and dirty rects, if device_size
@@ -4238,6 +4121,14 @@ impl Renderer {
             &mut self.gpu_buffer_texture_i_too_large,
             &mut self.gpu_buffer_last_data_i,
         );
+
+        Self::maybe_evict_gpu_buffer_texture(
+            &mut self.device,
+            frame.gpu_buffer_edges.size.height,
+            &mut self.gpu_buffer_texture_edges,
+            &mut self.gpu_buffer_texture_edges_too_large,
+            &mut self.gpu_buffer_last_data_edges,
+        );
     }
 
     pub fn debug_renderer(&mut self) -> Option<&mut DebugRenderer> {
@@ -4314,9 +4205,10 @@ impl Renderer {
         if let Some(texture) = self.gpu_buffer_texture_i {
             self.device.delete_texture(texture);
         }
-        for textures in self.vertex_data_textures.drain(..) {
-            textures.deinit(&mut self.device);
+        if let Some(texture) = self.gpu_buffer_texture_edges {
+            self.device.delete_texture(texture);
         }
+        self.vertex_data.deinit(&mut self.device);
         self.texture_upload_buffer_pool.deinit(&mut self.device);
         self.staging_texture_pool.delete_textures(&mut self.device);
         self.texture_resolver.deinit(&mut self.device);
@@ -4357,9 +4249,11 @@ impl Renderer {
         }
 
         // Vertex data GPU memory.
-        for textures in &self.vertex_data_textures {
-            report.vertex_data_textures += textures.size_in_bytes();
-        }
+        report.vertex_data_textures += self.vertex_data.gpu_size_in_bytes();
+
+        // CPU-side copy of the last vertex data upload, used to skip redundant
+        // uploads. Grouped with the other CPU-side upload staging memory.
+        report.upload_staging_memory += self.vertex_data.cpu_size_in_bytes();
 
         // Texture cache and render target GPU memory.
         report += self.texture_resolver.report_memory();
@@ -4505,6 +4399,10 @@ pub struct RenderResults {
     /// Number of primitives promoted to underlay compositor surfaces during the
     /// frame. Underlays cancelled later in the frame are still counted here.
     pub compositor_surface_underlays: usize,
+
+    /// Number of times the vertex data textures were uploaded during the frame.
+    /// Zero when the frame produced data identical to the previous upload.
+    pub vertex_data_uploads: usize,
 }
 
 #[cfg(any(feature = "capture", feature = "replay"))]

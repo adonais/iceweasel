@@ -369,3 +369,12 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
         "ServoStyleConsts.h",
         inputs=["/servo/ports/geckolib", "/servo/components/style"],
     )
+
+SOURCE_HEADERS += [
+    "nsCSSVisitedDependentPropList.h",
+    "nsDOMCSSValueList.h",
+    "nsFontFaceUtils.h",
+    "nsROCSSPrimitiveValue.h",
+    "nsTransitionManager.h",
+    "PaintWorkletImpl.h",
+]

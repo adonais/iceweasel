@@ -16,10 +16,16 @@ if CONFIG["OS_ARCH"] == "WINNT":
     SOURCES += [
         "nsAuthSSPI.cpp",
     ]
+    SOURCE_HEADERS += [
+        "nsAuthSSPI.h",
+    ]
     DEFINES["USE_SSPI"] = True
 else:
     UNIFIED_SOURCES += [
         "nsAuthSambaNTLM.cpp",
+    ]
+    SOURCE_HEADERS += [
+        "nsAuthSambaNTLM.h",
     ]
 
 LOCAL_INCLUDES += [
@@ -39,4 +45,11 @@ include("/ipc/chromium/chromium-config.mozbuild")
 LICENSED_UNDER += ["openvision"]
 LICENSED_UNDER["openvision"].paths = [
     "gssapi.h",
+]
+
+SOURCE_HEADERS += [
+    "nsAuth.h",
+    "nsAuthGSSAPI.h",
+    "nsAuthSASL.h",
+    "nsHttpNegotiateAuth.h",
 ]

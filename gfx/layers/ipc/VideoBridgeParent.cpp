@@ -7,6 +7,7 @@
 #include "CompositorThread.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/ipc/Endpoint.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/PTextureParent.h"
 #include "mozilla/layers/TextureHost.h"
 #include "mozilla/layers/VideoBridgeUtils.h"
@@ -268,6 +269,14 @@ already_AddRefed<PTextureParent> VideoBridgeParent::AllocPTextureParent(
   mTextureMap.insert(
       {aSerial, {TextureHost::AsTextureHost(parent), aContentId}});
   return parent.forget();
+}
+
+mozilla::ipc::IPCResult VideoBridgeParent::RecvGetTextureFactoryIdentifier(
+    const dom::ContentParentId& aContentId,
+    GetTextureFactoryIdentifierResolver&& aResolver) {
+  aResolver(CompositorBridgeParent::GetTextureFactoryIdentifierForContent(
+      aContentId));
+  return IPC_OK();
 }
 
 void VideoBridgeParent::RemoveTexture(uint64_t aSerial) {

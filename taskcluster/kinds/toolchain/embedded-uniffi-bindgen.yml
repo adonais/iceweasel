@@ -26,28 +26,33 @@ task-defaults:
             - 'build/rust/toml'
             - 'third_party/application-services/tools/embedded-uniffi-bindgen'
 
-# For Linux platforms target "*-musl" so that the binary will be statically linked.
-
 linux64-embedded-uniffi-bindgen:
     treeherder:
         symbol: TL(eub)
-        platform: linux64/opt
     run:
-        arguments: ['x86_64-unknown-linux-musl']
-    attributes:
-        build_platform: linux64-embedded-uniffi-bindgen
+        arguments: ['x86_64-unknown-linux-gnu']
     fetches:
         toolchain:
-            - linux64-rust-static
+            - linux64-clang-toolchain
+            - linux64-rust-toolchain
+            - sysroot-x86_64-linux-gnu
+
+linux64-aarch64-embedded-uniffi-bindgen:
+    treeherder:
+        symbol: TLA64(eub)
+    run:
+        arguments: ['aarch64-unknown-linux-gnu']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-toolchain
+            - sysroot-aarch64-linux-gnu
 
 macosx64-embedded-uniffi-bindgen:
     treeherder:
         symbol: TM(eub)
-        platform: macosx64/opt
     run:
         arguments: ['x86_64-apple-darwin']
-    attributes:
-        build_platform: macosx64-embedded-uniffi-bindgen
     fetches:
         toolchain:
             - linux64-clang-toolchain
@@ -57,39 +62,19 @@ macosx64-embedded-uniffi-bindgen:
 macosx64-aarch64-embedded-uniffi-bindgen:
     treeherder:
         symbol: TMA64(eub)
-        platform: macosx64-aarch64/opt
     run:
         arguments: ['aarch64-apple-darwin']
-    attributes:
-        build_platform: macosx64-aarch64-embedded-uniffi-bindgen
     fetches:
         toolchain:
             - linux64-clang-toolchain
             - linux64-rust-macos
             - macosx64-sdk-toolchain
 
-win32-embedded-uniffi-bindgen:
-    treeherder:
-        symbol: TW32(eub)
-        platform: win32/opt
-    run:
-        arguments: ['i686-pc-windows-msvc']
-    attributes:
-        build_platform: win32-embedded-uniffi-bindgen
-    fetches:
-        toolchain:
-            - linux64-clang-toolchain
-            - linux64-rust-windows
-            - vs-toolchain
-
 win64-aarch64-embedded-uniffi-bindgen:
     treeherder:
         symbol: TWA64(eub)
-        platform: windows2012-aarch64/opt
     run:
         arguments: ['aarch64-pc-windows-msvc']
-    attributes:
-        build_platform: win64-aarch64-embedded-uniffi-bindgen
     fetches:
         toolchain:
             - linux64-clang-toolchain
@@ -99,11 +84,8 @@ win64-aarch64-embedded-uniffi-bindgen:
 win64-embedded-uniffi-bindgen:
     treeherder:
         symbol: TW64(eub)
-        platform: win64/opt
     run:
         arguments: ['x86_64-pc-windows-msvc']
-    attributes:
-        build_platform: win64-embedded-uniffi-bindgen
     fetches:
         toolchain:
             - linux64-clang-toolchain

@@ -14,9 +14,6 @@ transforms:
 kind-dependencies:
     - build-components
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     sign-build:
         description: Sign component

@@ -29,7 +29,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +43,8 @@ import org.mozilla.focus.ui.menu.CustomDropdownMenu
 import org.mozilla.focus.ui.menu.MenuItem
 import org.mozilla.focus.ui.theme.focusColors
 import org.mozilla.focus.ui.theme.focusDimensions
+
+const val TOP_SITES_ROW_TEST_TAG = "topSitesRow"
 
 /**
  * A list of top sites.
@@ -57,7 +62,11 @@ fun TopSites(
     onRenameTopSiteClicked: (TopSite) -> Unit,
 ) {
     Row(
-        modifier = Modifier.padding(horizontal = focusDimensions.paddingText).size(width = 324.dp, height = 86.dp),
+        modifier =
+            Modifier.semantics { testTagsAsResourceId = true }
+                .testTag(TOP_SITES_ROW_TEST_TAG)
+                .padding(horizontal = focusDimensions.paddingText)
+                .size(width = 324.dp, height = 86.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(28.dp),
     ) {

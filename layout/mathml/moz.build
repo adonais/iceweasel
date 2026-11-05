@@ -54,3 +54,20 @@ JAR_MANIFESTS += ["jar.mn"]
 RESOURCE_FILES.fonts += [
     "mathfont.properties",
 ]
+
+SOURCE_HEADERS += [
+    "nsMathMLAtoms.h",
+    "nsMathMLChar.h",
+    "nsMathMLmencloseFrame.h",
+    "nsMathMLmfracFrame.h",
+    "nsMathMLmmultiscriptsFrame.h",
+    "nsMathMLmoFrame.h",
+    "nsMathMLmpaddedFrame.h",
+    "nsMathMLmrootFrame.h",
+    "nsMathMLmrowFrame.h",
+    "nsMathMLmspaceFrame.h",
+    "nsMathMLmtableFrame.h",
+    "nsMathMLmunderoverFrame.h",
+    "nsMathMLParts.h",
+    "nsMathMLTokenFrame.h",
+]

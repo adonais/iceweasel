@@ -351,6 +351,38 @@ import pytest
             """.strip(),
             id="parallel_skip_does_not_clear_other_test_time",
         ),
+        pytest.param(
+            [
+                (
+                    "suite_start",
+                    {
+                        "manifestA": ["test_foo", "test_bar", "test_baz"],
+                        "manifestB": ["test_something"],
+                    },
+                ),
+                ("test_start", "test_foo"),
+                ("test_end", "test_foo", "OK"),
+                ("assertion_count", "test_foo", 1, 0, 0),
+                ("test_start", "test_bar"),
+                ("test_end", "test_bar", "OK"),
+                ("assertion_count", "test_bar", 1, 2, 3),
+                ("test_start", "test_baz"),
+                ("test_end", "test_baz", "OK"),
+                ("assertion_count", "test_baz", 2, 1, 3),
+                ("test_start", "test_something"),
+                ("test_end", "test_something", "OK"),
+                ("assertion_count", "test_something", 0, 0, 0),
+                ("suite_end",),
+            ],
+            """
+                {"groups": ["manifestA", "manifestB"], "action": "test_groups", "line": 0}
+                {"test": "test_foo", "subtest": null, "group": "manifestA", "status": "FAIL", "expected": "PASS", "message": "assertion count 1 is more than expected 0 assertions", "stack": null, "modifiers": "", "known_intermittent": [], "action": "test_result", "line": 3}
+                {"test": "test_bar", "subtest": null, "group": "manifestA", "status": "PASS", "expected": "FAIL", "message": "assertion count 1 is less than expected 2 to 3 assertions", "stack": null, "modifiers": "", "known_intermittent": [], "action": "test_result", "line": 6}
+                {"group": "manifestA", "status": "ERROR", "duration": 30, "action": "group_result", "line": 13}
+                {"group": "manifestB", "status": "OK", "duration": 10, "action": "group_result", "line": 13}
+            """.strip(),
+            id="unexpected_assertion_count",
+        ),
     ),
 )
 def test_errorsummary(monkeypatch, get_logger, logs, expected):
@@ -378,6 +410,146 @@ def test_errorsummary(monkeypatch, get_logger, logs, expected):
 
         data = json.loads(line)
         assert data == json.loads(expected[i])
+
+
+@pytest.mark.parametrize(
+    "calls,expected_status",
+    (
+        pytest.param(
+            [
+                ("crash", {"test": "test_foo", "quiet": True}),
+                ("test_end", "test_foo", "CRASH", "CRASH"),
+                ("test_end", "test_foo", "OK"),
+            ],
+            "OK",
+            id="quiet_crash_retry_pass",
+        ),
+        pytest.param(
+            [
+                ("crash", {"test": "test_foo", "quiet": True}),
+                ("test_end", "test_foo", "TIMEOUT", "TIMEOUT"),
+                ("test_end", "test_foo", "OK"),
+            ],
+            "OK",
+            id="quiet_crash_timeout_retry_pass",
+        ),
+        pytest.param(
+            [
+                ("crash", {"test": "test_foo"}),
+                ("test_end", "test_foo", "OK"),
+            ],
+            "ERROR",
+            id="crash_then_pass",
+        ),
+        pytest.param(
+            [
+                ("crash", {"test": "test_foo", "quiet": True}),
+                ("test_end", "test_foo", "CRASH", "CRASH"),
+                ("crash", {"test": "test_foo"}),
+                ("test_end", "test_foo", "CRASH"),
+            ],
+            "ERROR",
+            id="quiet_crash_retry_crash",
+        ),
+        pytest.param(
+            [
+                ("crash", {"test": "test_foo", "quiet": True}),
+                ("test_end", "test_foo", "CRASH", "CRASH"),
+                ("test_end", "test_foo", "FAIL"),
+            ],
+            "ERROR",
+            id="quiet_crash_retry_fail",
+        ),
+        pytest.param(
+            [
+                ("test_end", "test_bar", "FAIL"),
+                ("crash", {"test": "test_foo", "quiet": True}),
+                ("test_end", "test_foo", "CRASH", "CRASH"),
+                ("test_end", "test_foo", "OK"),
+            ],
+            "ERROR",
+            id="quiet_crash_other_test_fails",
+        ),
+        pytest.param(
+            [
+                ("test_end", "test_foo", "OK"),
+                ("crash", {"test": "manifestA"}),
+            ],
+            "ERROR",
+            id="crash_attributed_to_group",
+        ),
+    ),
+)
+def test_errorsummary_crash_group_status(get_logger, calls, expected_status):
+    logger = get_logger("errorsummary")
+    logger.suite_start({"manifestA": ["test_foo", "test_bar"]})
+    for call in calls:
+        if call[0] == "crash":
+            logger.crash(signature="signature", **call[1])
+        else:
+            test, status = call[1], call[2]
+            logger.test_start(test)
+            if len(call) > 3:
+                logger.test_end(test, status, expected=call[3])
+            else:
+                logger.test_end(test, status)
+    logger.suite_end()
+
+    lines = [json.loads(l) for l in logger.handlers[0].stream.getvalue().splitlines()]
+    crashes = [l for l in lines if l["action"] == "crash"]
+    group_results = [l for l in lines if l["action"] == "group_result"]
+    assert len(crashes) == sum(1 for c in calls if c[0] == "crash")
+    assert [(g["group"], g["status"]) for g in group_results] == [
+        ("manifestA", expected_status)
+    ]
+
+
+def test_errorsummary_crash_with_group(get_logger):
+    logger = get_logger("errorsummary")
+    logger.suite_start({
+        "manifestA": ["a.html == a-ref.html"],
+        "manifestB": ["b.html == b-ref.html"],
+    })
+    logger.test_start("a.html == a-ref.html")
+    logger.test_end("a.html == a-ref.html", "OK")
+    logger.test_start("b.html == b-ref.html")
+    logger.crash("", "signature", "b.html", group="manifestB")
+    logger.suite_end()
+
+    lines = [
+        json.loads(line) for line in logger.handlers[0].stream.getvalue().splitlines()
+    ]
+    crashes = [line for line in lines if line["action"] == "crash"]
+    assert len(crashes) == 1
+    assert crashes[0]["test"] == "b.html"
+    assert crashes[0]["group"] == "manifestB"
+    group_results = {
+        line["group"]: line["status"]
+        for line in lines
+        if line["action"] == "group_result"
+    }
+    assert group_results == {"manifestA": "OK", "manifestB": "ERROR"}
+
+
+def test_errorsummary_crash_group_overrides_test_mapping(get_logger):
+    logger = get_logger("errorsummary")
+    logger.suite_start({"manifestA": ["test_a"], "manifestB": ["test_b"]})
+    logger.test_start("test_a")
+    logger.test_end("test_a", "OK")
+    logger.crash("", "signature", "test_a", group="manifestB")
+    logger.suite_end()
+
+    lines = [
+        json.loads(line) for line in logger.handlers[0].stream.getvalue().splitlines()
+    ]
+    crashes = [line for line in lines if line["action"] == "crash"]
+    assert [(c["test"], c["group"]) for c in crashes] == [("test_a", "manifestB")]
+    group_results = {
+        line["group"]: line["status"]
+        for line in lines
+        if line["action"] == "group_result"
+    }
+    assert group_results == {"manifestA": "OK", "manifestB": "ERROR"}
 
 
 if __name__ == "__main__":

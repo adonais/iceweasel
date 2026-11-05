@@ -13,9 +13,6 @@ transforms:
 kind-dependencies:
     - release-partner-attribution
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     release-partner-attribution-beetmover:
         from-deps:

@@ -98,7 +98,9 @@
   --chrome-box-shadow: rgba(0, 0, 0, 0.13);
   @media -moz-pref("browser.nova.enabled") {
     @media not ((-moz-native-theme) or (forced-colors)) {
-      --chrome-box-shadow: light-dark(rgba(89, 57, 168, 0.15), rgba(152, 113, 255, 0.15));
+      :root:is([theme-in-app], :not([lwtheme])) & {
+        --chrome-box-shadow: light-dark(rgba(89, 57, 168, 0.15), rgba(152, 113, 255, 0.15));
+      }
     }
   }
 }
@@ -1590,7 +1592,6 @@ toolbar[inactive="true"] .urlbar,
   > panel-item::part(button) {
     /* The --icon-url variable allows setting an icon in JS. */
     background-image: var(--icon-url, url("chrome://global/skin/icons/search-glass.svg"));
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.nova.enabled") {
       /* With Nova, panel-list already has these styles by default; Proton needs
          adjustments to look like a proper menu. panel-item's Proton padding

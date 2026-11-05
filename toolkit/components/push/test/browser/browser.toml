@@ -2,3 +2,4 @@
 support-files = ["head.js"]
 
 ["browser_receive_push_messages.js"]
+skip-if = ["os == 'win' && debug"]

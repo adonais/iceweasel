@@ -65,6 +65,7 @@ RemoteWorkerController::~RemoteWorkerController() {
 
 void RemoteWorkerController::SetWorkerActor(RemoteWorkerParent* aActor) {
   AssertIsOnBackgroundThread();
+  MOZ_ASSERT(!IsTerminated());
   MOZ_ASSERT(!mActor);
   MOZ_ASSERT(aActor);
 

@@ -5,6 +5,7 @@
 /**
  * @import {OpenedConnection} from "resource://gre/modules/Sqlite.sys.mjs"
  * @import {Query} from "./UrlbarProvidersManager.sys.mjs"
+ * @import {UrlbarAutofillData} from "chrome://browser/content/urlbar/UrlbarResult.mjs"
  */
 
 /**
@@ -19,55 +20,38 @@ import {
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AboutPagesUtils: "resource://gre/modules/AboutPagesUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
+  pageFrecencyThreshold: () => {
+    return lazy.PlacesUtils.history.pageFrecencyThreshold(90, 0, true);
+  },
+  historyEnabled: { pref: "places.history.enabled", default: true },
+  frecencyDecayRate: {
+    pref: "places.frecency.decayRate",
+    default: "0.975",
+    onUpdate: () => (gUrlUseCountThreshold = null),
+    /** @param {number|string} val */
+    transform: val => {
+      let rate = typeof val == "string" ? parseFloat(val) : val;
+      return rate > 0 && rate < 1 ? rate : 0.975;
+    },
+  },
+  urlMinPicks: {
+    pref: "browser.urlbar.autoFill.adaptiveHistory.urlMinPicks",
+    default: 3,
+    onUpdate: () => (gUrlUseCountThreshold = null),
+  },
+  urlPicksAgeDays: {
+    pref: "browser.urlbar.autoFill.adaptiveHistory.urlPicksAgeDays",
+    default: 14,
+    onUpdate: () => (gUrlUseCountThreshold = null),
+  },
 });
-
-ChromeUtils.defineLazyGetter(lazy, "pageFrecencyThreshold", () => {
-  return lazy.PlacesUtils.history.pageFrecencyThreshold(90, 0, true);
-});
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "historyEnabled",
-  "places.history.enabled",
-  true
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "frecencyDecayRate",
-  "places.frecency.decayRate",
-  "0.975",
-  () => (gUrlUseCountThreshold = null),
-  val => {
-    let rate = typeof val == "string" ? parseFloat(val) : val;
-    return rate > 0 && rate < 1 ? rate : 0.975;
-  }
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "urlMinPicks",
-  "browser.urlbar.autoFill.adaptiveHistory.urlMinPicks",
-  3,
-  () => (gUrlUseCountThreshold = null)
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "urlPicksAgeDays",
-  "browser.urlbar.autoFill.adaptiveHistory.urlPicksAgeDays",
-  14,
-  () => (gUrlUseCountThreshold = null)
-);
 
 /**
  * Converts a number of picks into the `moz_inputhistory.use_count` a row would
@@ -989,6 +973,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     // `finalCompleteValue` will include it to properly reflect the real URL.
     let finalCompleteValue;
 
+    /** @type {UrlbarAutofillData["type"]} */
     let autofilledType;
     let adaptiveHistoryInput;
 

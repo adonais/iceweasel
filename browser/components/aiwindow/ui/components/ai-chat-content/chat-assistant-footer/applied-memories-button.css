@@ -77,7 +77,6 @@
     --aiwindow-action-row-button-width: 100%;
 
     /* TODO: Bug 2030460 - replace with token when available */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     --aiwindow-memory-item-border-radius: 20px;
     --aiwindow-memory-item-color: var(--text-color);
     --aiwindow-memory-item-font-weight: var(--font-weight);
@@ -188,11 +187,8 @@ moz-button.memories-trigger {
   flex-direction: column;
   gap: var(--aiwindow-popover-gap);
   padding: var(--aiwindow-popover-padding);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background: var(--aiwindow-popover-bg);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-color: var(--aiwindow-popover-border-color);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-radius: var(--aiwindow-popover-border-radius);
   border-width: var(--border-width);
   border-style: solid;
@@ -218,7 +214,6 @@ moz-button.memories-trigger {
   align-self: stretch;
   gap: var(--space-xsmall);
   padding: var(--space-small);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background: var(--aiwindow-callout-background);
   border-color: var(--aiwindow-callout-border-color);
   border-radius: var(--border-radius-medium);
@@ -255,7 +250,6 @@ moz-button.memories-trigger {
 }
 
 .memories-list-item {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--aiwindow-memory-item-bg);
   color: var(--aiwindow-memory-item-color);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */

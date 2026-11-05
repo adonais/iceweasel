@@ -1,0 +1,53 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Completed offline rendering does not keep output alive</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+<script>
+SimpleTest.waitForExplicitFinish();
+
+async function collect() {
+  await new Promise(resolve => SpecialPowers.exactGC(resolve));
+}
+
+async function render() {
+  const context = new OfflineAudioContext(2, 48000, 48000);
+  const source = new ConstantSourceNode(context, {offset: 0.25});
+  source.connect(context.destination);
+  source.start();
+  const completed = new Promise(resolve => {
+    context.addEventListener("complete", event => resolve(event.renderedBuffer),
+                             {once: true});
+  });
+  const promise = context.startRendering();
+  const buffer = await promise;
+  is(await completed, buffer, "The completion event uses the promise result");
+  is(context.state, "closed", "The offline context is closed");
+  is(buffer.getChannelData(0)[0], 0.25, "The first sample is preserved");
+  is(buffer.getChannelData(1)[buffer.length - 1], 0.25,
+     "The last sample is preserved");
+  try {
+    await context.startRendering();
+    ok(false, "A completed render cannot be restarted");
+  } catch (error) {
+    is(error.name, "InvalidStateError", "Restart rejects with InvalidStateError");
+  }
+  return {context, promise, weakBuffer: new WeakRef(buffer)};
+}
+
+async function run() {
+  const result = await render();
+  await collect();
+  ok(result.weakBuffer.deref(), "A caller-held promise keeps its output alive");
+  // Start a new task so WeakRef.deref() no longer keeps the buffer alive.
+  await new Promise(resolve => setTimeout(resolve));
+  result.promise = null;
+  await collect();
+  is(result.weakBuffer.deref(), undefined,
+     "A completed context does not keep a dropped output alive");
+  is(result.context.state, "closed", "The context remains available");
+  is(result.context.length, 48000, "The context retains its length");
+}
+
+run().catch(error => ok(false, String(error))).then(() => SimpleTest.finish());
+</script>

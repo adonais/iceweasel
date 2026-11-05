@@ -16,6 +16,11 @@ export const RESUME_SECTION_EMPTY_REASON = {
   ALL_DISMISSED: "all-dismissed",
 };
 
+const TELEMETRY_EMPTY_STATE = {
+  [RESUME_SECTION_EMPTY_REASON.NO_SUGGESTIONS]: "empty_no_suggestions",
+  [RESUME_SECTION_EMPTY_REASON.ALL_DISMISSED]: "empty_all_dismissed",
+};
+
 /**
  * A collapsible grid of resume cards. Card events bubble to the caller.
  *
@@ -24,21 +29,145 @@ export const RESUME_SECTION_EMPTY_REASON = {
  *   RESUME_SECTION_EMPTY_REASON value), or null/undefined to render nothing
  *   while empty
  * @property {boolean} loading - Whether resume content is still being generated
+ * @property {() => {chat_id: string, location: string, message_seq: number}} getTelemetryContext
+ *   - Returns the values recorded with every Glean event from the section
  */
 export class SmartwindowResumeSection extends MozLitElement {
   static properties = {
     cards: { type: Array },
     emptyReason: { type: String },
     loading: { type: Boolean },
+    getTelemetryContext: { attribute: false },
     expanded: { type: Boolean, state: true },
   };
+
+  #visibilityHandler = null;
+  #displayedFrame = 0;
 
   constructor() {
     super();
     this.cards = [];
     this.emptyReason = null;
     this.loading = false;
+    this.getTelemetryContext = () => ({});
     this.expanded = false;
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.#cancelPendingDisplayed();
+  }
+
+  updated(changedProperties) {
+    super.updated(changedProperties);
+    if (changedProperties.has("loading") && !this.loading) {
+      this.#recordDisplayedWhenSeen();
+    }
+  }
+
+  /**
+   * How many cards the user can see right now. Before "Show more" is
+   * clicked, this is at most two, even if there are more cards.
+   *
+   * @returns {number}
+   */
+  get #visibleCardCount() {
+    return this.expanded
+      ? this.cards.length
+      : Math.min(this.cards.length, COLLAPSED_CARD_COUNT);
+  }
+
+  /**
+   * Records Glean event "resume_cards_displayed" after loading if the section
+   * is visible, once the tab is shown and the parent has re-rendered.
+   */
+  #recordDisplayedWhenSeen() {
+    this.#cancelPendingDisplayed();
+    if (this.ownerDocument.hidden) {
+      this.#visibilityHandler = () => this.#recordDisplayedWhenSeen();
+      this.ownerDocument.addEventListener(
+        "visibilitychange",
+        this.#visibilityHandler,
+        { once: true }
+      );
+      return;
+    }
+
+    this.#displayedFrame = requestAnimationFrame(() => {
+      this.#displayedFrame = 0;
+      if (
+        (!this.cards.length && !this.emptyReason) ||
+        !this.checkVisibility()
+      ) {
+        return;
+      }
+      Glean.smartWindow.resumeCardsDisplayed.record({
+        ...this.getTelemetryContext(),
+        state: this.cards.length
+          ? "cards"
+          : TELEMETRY_EMPTY_STATE[this.emptyReason],
+        cards: this.#visibleCardCount,
+        total_cards: this.cards.length,
+      });
+    });
+  }
+
+  #cancelPendingDisplayed() {
+    if (this.#visibilityHandler) {
+      this.ownerDocument.removeEventListener(
+        "visibilitychange",
+        this.#visibilityHandler
+      );
+      this.#visibilityHandler = null;
+    }
+    if (this.#displayedFrame) {
+      cancelAnimationFrame(this.#displayedFrame);
+      this.#displayedFrame = 0;
+    }
+  }
+
+  /**
+   * Records Glean event "resume_card_action". Card events reach the section
+   * before ai-window acts on them, so the card is still in `cards`.
+   *
+   * @param {"resume"|"card_click"|"open_tabs"|"snooze"|"dismiss"} action - The
+   *   action the user took.
+   * @param {string} journeyId - The card the user clicked.
+   */
+  #recordCardAction(action, journeyId) {
+    Glean.smartWindow.resumeCardAction.record({
+      ...this.getTelemetryContext(),
+      action,
+      position: this.cards.findIndex(({ memory }) => memory.id === journeyId),
+    });
+  }
+
+  #onCardResume = ({ detail }) => {
+    this.#recordCardAction(
+      detail.source === "resume_button" ? "resume" : "card_click",
+      detail.journeyId
+    );
+  };
+
+  #onCardDismiss = ({ detail }) => {
+    this.#recordCardAction("dismiss", detail.journeyId);
+  };
+
+  #onCardMenuItemSelected = ({ detail }) => {
+    this.#recordCardAction(detail.itemId, detail.journeyId);
+  };
+
+  /**
+   * Records Glean event "resume_section_action".
+   *
+   * @param {"show_more"|"show_less"|"hide_section"} action - The action the
+   *   user took.
+   */
+  #recordSectionAction(action) {
+    Glean.smartWindow.resumeSectionAction.record({
+      ...this.getTelemetryContext(),
+      action,
+    });
   }
 
   #dispatch(type, detail) {
@@ -52,10 +181,12 @@ export class SmartwindowResumeSection extends MozLitElement {
   }
 
   #onToggleClick = () => {
+    this.#recordSectionAction(this.expanded ? "show_less" : "show_more");
     this.expanded = !this.expanded;
   };
 
   #onHideClick = () => {
+    this.#recordSectionAction("hide_section");
     this.#dispatch("hide", { reason: this.emptyReason });
   };
 
@@ -193,7 +324,13 @@ export class SmartwindowResumeSection extends MozLitElement {
             `
           : nothing}
       </div>
-      <div class="resume-section-grid">
+      <div
+        class="resume-section-grid"
+        @smartwindow-resume-card:resume=${this.#onCardResume}
+        @smartwindow-resume-card:dismiss=${this.#onCardDismiss}
+        @smartwindow-resume-card:menu-item-selected=${this
+          .#onCardMenuItemSelected}
+      >
         ${visibleCards.map(
           ({ content, memory }) => html`
             <smartwindow-resume-card

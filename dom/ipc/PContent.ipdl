@@ -41,9 +41,9 @@ include protocol PURLClassifierLocal;
 include protocol PURLClassifierLocalByName;
 include protocol PVRManager;
 include protocol PRemoteMediaManager;
-#ifndef ANDROID
+#if !defined(ANDROID) && defined(MOZ_WEBSPEECH)
 include protocol PSpeechRecognition;
-#endif  // !ANDROID
+#endif  // !ANDROID && MOZ_WEBSPEECH
 include protocol PRemoteWorkerDebuggerManager;
 include protocol PRemoteWorkerService;
 include protocol PProfiler;
@@ -646,7 +646,8 @@ child:
     async DecodeImage(nsIURI aURI,
                       ImageIntSize aSize,
                       bool aStretch,
-                      ColorScheme aColorScheme)
+                      ColorScheme aColorScheme,
+                      nsIPrincipal aPrincipal)
         returns (nsresult rv, IPCImage? image);
 
 #if defined(XP_WIN)
@@ -1029,10 +1030,10 @@ child:
                                    MediaControlAction aAction);
 
     /**
-     * Dispatch an audio-focus interrupt (suspend or resume) to a browsing
-     * context tree so its audible sources react to a focus change. This is
-     * distinct from a media-control key: it is not user-initiated and reaches
-     * uncontrollable sources as well.
+     * Dispatch an audio-focus interrupt to a browsing context tree so its
+     * audible sources react to a focus change. This is distinct from a
+     * media-control key: it is not user-initiated and reaches uncontrollable
+     * sources as well.
      */
     async UpdateMediaSessionInterrupt(MaybeDiscardedBrowsingContext aContext,
                                       AudioFocusInterruptAction aAction);
@@ -1073,11 +1074,29 @@ child:
     async Reload(MaybeDiscardedBrowsingContext aContext, uint32_t aReloadFlags);
     async StopLoad(MaybeDiscardedBrowsingContext aContext, uint32_t aStopFlags);
 
-    async DeactivateDocuments(MaybeDiscardedBrowsingContext aContext);
+    async DeactivateDocuments(MaybeDiscardedBrowsingContext aContext,
+                              SessionHistoryInfo? aPageSwapTargetInfo,
+                              NavigationType aNavigationType, bool aForUnload);
+
+    // Fires pageswap with an outbound view transition in the old document and
+    // captures its state in the next rendering update. The reply comes after
+    // the capture, or right away if there is nothing to capture.
+    // aSnapshotTargetTab is the tab of a document restored from BFCache that
+    // takes the snapshots, or 0.
+    async BeginOutboundCrossDocumentViewTransition(
+        MaybeDiscardedBrowsingContext aContext,
+        SessionHistoryInfo? aPageSwapTargetInfo,
+        NavigationType aNavigationType,
+        TabId aSnapshotTargetTab) returns (bool unused);
     async ReactivateDocuments(MaybeDiscardedBrowsingContext aContext,
                               SessionHistoryInfo? aReactivatedEntry,
                               SessionHistoryInfo[] aNewSHEs,
                               PreviousSessionHistoryInfo? aPreviousEntryForActivation);
+    // Fires pageswap without a view transition, for a navigation that does not
+    // use BeginOutboundCrossDocumentViewTransition.
+    async FirePageSwap(MaybeDiscardedBrowsingContext aContext,
+                       SessionHistoryInfo? aPageSwapTargetInfo,
+                       NavigationType aNavigationType);
 
     async OnAllowAccessFor(MaybeDiscardedBrowsingContext aParentContext,
                            nsCString aTrackingOrigin,
@@ -1203,7 +1222,9 @@ parent:
 
 #ifndef ANDROID
     async AcquireHWInferenceProcess();
+#ifdef MOZ_WEBSPEECH
     async CreateSpeechRecognition(Endpoint<PSpeechRecognitionParent> endpoint);
+#endif
 
     // One call per AcquireHWInferenceProcess. The process is shut down once
     // nothing holds it anymore.
@@ -1234,8 +1255,6 @@ parent:
 
     sync SyncMessage(nsString aMessage, StructuredCloneData aData)
       returns (StructuredCloneData[] retval);
-
-    async AddSecurityState(MaybeDiscardedWindowContext aContext, uint32_t aStateFlags);
 
     // Creates a helper for forwarding data from an nsExternalAppHandler
     // running in the content process, to one running in the parent

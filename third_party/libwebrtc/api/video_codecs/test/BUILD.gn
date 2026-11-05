@@ -9,12 +9,22 @@
 import("../../../webrtc.gni")
 
 if (rtc_include_tests) {
+  rtc_library("temporal_layer_pattern_for_test") {
+    testonly = true
+    sources = [
+      "temporal_layer_pattern_for_test.cc",
+      "temporal_layer_pattern_for_test.h",
+    ]
+    deps = [ "../../../rtc_base:checks" ]
+  }
+
   rtc_library("video_codecs_api_unittests") {
     testonly = true
     sources = [
       "builtin_video_encoder_factory_unittest.cc",
       "h264_profile_level_id_unittest.cc",
       "sdp_video_format_unittest.cc",
+      "temporal_layer_pattern_for_test_unittest.cc",
       "video_codec_test_utils.h",
       "video_codec_unittest.cc",
       "video_decoder_software_fallback_wrapper_unittest.cc",
@@ -29,6 +39,7 @@ if (rtc_include_tests) {
     }
 
     deps = [
+      ":temporal_layer_pattern_for_test",
       ":video_decoder_factory_template_tests",
       ":video_encoder_factory_template_tests",
       "..:builtin_video_decoder_factory",

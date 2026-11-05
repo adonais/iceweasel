@@ -48,7 +48,7 @@ pub(super) fn render_default(default: &DefaultValue) -> Result<String> {
                 format!("new {name}()")
             }
             Type::Optional { .. } => "null".to_string(),
-            Type::Map { .. } => "{}".to_string(),
+            Type::Map { .. } => "new Map()".to_string(),
             Type::Sequence { .. } => "[]".to_string(),
             Type::Custom { builtin, .. } => {
                 return render_default(&DefaultValue::Default(TypeNode {
@@ -72,7 +72,7 @@ fn js_lit(lit: &Literal) -> String {
         Literal::Int(num, radix, _) => number_lit(radix, num).to_string(),
         Literal::Float(num, _) => num.clone(),
         Literal::Enum(name, typ) => enum_lit(&typ.ty, name),
-        Literal::EmptyMap => "{}".to_string(),
+        Literal::EmptyMap => "new Map()".to_string(),
         Literal::EmptySet => "new Set()".to_string(),
         Literal::EmptySequence => "[]".to_string(),
         Literal::Some { inner } => inner.js_lit.clone(),

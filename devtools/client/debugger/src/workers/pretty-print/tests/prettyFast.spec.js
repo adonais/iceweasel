@@ -247,6 +247,18 @@ const cases = [
     input: "'\\''\n",
   },
   {
+    name: "Escaping double quote character in double quoted strings",
+    input: '"\\""\n',
+  },
+  {
+    name: "Keeping double quotes around strings",
+    input: 'var foo = "abc" + \'def\' + "it\'s";\n',
+  },
+  {
+    name: "Double quotes inside single quoted strings",
+    input: "var foo = 'say \"hi\"';\n",
+  },
+  {
     name: "Escaping backslashes in template strings",
     input: "`\\\\`\n",
   },

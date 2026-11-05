@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 :host {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-size-tokens */
   --progress-height: 10px;
   --progress-border-width: 0.5px;
   --progress-color: var(--icon-color-success);
@@ -31,7 +30,6 @@
   border-radius: var(--border-radius-circle);
 
   &::-moz-progress-bar {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/no-non-semantic-token-usage */
     background-color: var(--progress-color);
     border: var(--progress-border-width) solid var(--card-border-color);
     border-radius: var(--border-radius-circle);
@@ -66,24 +64,21 @@
   width: var(--progress-height);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   height: var(--progress-height);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/no-non-semantic-token-usage */
   background-color: var(--progress-color);
   border-radius: var(--border-radius-circle);
   position: absolute;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/use-size-tokens */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   top: var(--progress-border-width);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/use-size-tokens */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   inset-inline-start: var(--progress-border-width);
 }
 
 @media (forced-colors) {
   #progress-bar {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-color: SelectedItemText;
     border-color: var(--border-color);
 
     &::-moz-progress-bar {
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       background-color: SelectedItem;
       border-color: var(--border-color);
       box-shadow: none;
@@ -91,7 +86,6 @@
   }
 
   #min-progress {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-color: SelectedItem;
   }
 }

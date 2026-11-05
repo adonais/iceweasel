@@ -73,3 +73,19 @@ EXPORTS.mozilla.dom += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "DefaultCodecPreferences.h",
+    "MediaTransportHandler.h",
+    "MediaTransportHandlerIPC.h",
+    "PacketDumper.h",
+    "PeerConnectionCtx.h",
+    "PeerConnectionImpl.h",
+    "RemoteTrackSource.h",
+    "RTCStatsIdGenerator.h",
+    "RTCTransformEventRunnable.h",
+    "WebrtcGlobalChild.h",
+    "WebrtcGlobalInformation.h",
+    "WebrtcGlobalParent.h",
+    "WebrtcGlobalStatsHistory.h",
+]

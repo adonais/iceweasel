@@ -70,7 +70,7 @@ described by number 1 below.
    types of Search Engines.
 
 3. The `SearchService` creates new instances of {searchfox}`SearchEngines <toolkit/components/search/SearchEngine.sys.mjs>`
-   by making an [Add-on, Open Search, or Enterprise Policy Search Engine](https://firefox-source-docs.mozilla.org/toolkit/search/SearchEngines.html).
+   by making an {doc}`Add-on, Open Search, or Enterprise Policy Search Engine </toolkit/search/SearchEngines>`.
 
 4. The `SearchService` returns the engines to the caller that requested it.
    E.g. the `SearchService` passes the default Search Engine back to

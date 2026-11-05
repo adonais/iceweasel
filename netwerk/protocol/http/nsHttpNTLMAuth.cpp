@@ -26,14 +26,19 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/HttpAuthUtils.h"
 #include "nsCRT.h"
+#include "nsICancelable.h"
 #include "nsIChannel.h"
+#include "nsIHttpAuthenticatorCallback.h"
 #include "nsNetUtil.h"
+#include "nsProxyRelease.h"
 #include "nsQueryObject.h"
+#include "nsThreadUtils.h"
 #include "nsUnicharUtils.h"
 
 namespace mozilla {
@@ -127,7 +132,7 @@ class nsNTLMSessionState final : public nsISupports {
   ~nsNTLMSessionState() = default;
 
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
 };
 NS_IMPL_ISUPPORTS0(nsNTLMSessionState)
 
@@ -142,15 +147,20 @@ class nsNTLMContinuationState final : public nsISupports {
 
  public:
   NS_INLINE_DECL_STATIC_IID(NS_NTLMCONTINUATIONSTATE_IID)
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
 
   nsNTLMContinuationState(already_AddRefed<nsIAuthModule> aModule,
-                          bool aUseNative)
-      : mModule(aModule), mUseNative(aUseNative) {}
+                          bool aUseNative, bool aAllowDefaultCredentials)
+      : mModule(aModule),
+        mUseNative(aUseNative),
+        mAllowDefaultCredentials(aAllowDefaultCredentials) {}
 
   const nsCOMPtr<nsIAuthModule> mModule;
   // Whether mModule is the native NTLM implementation or the internal one.
   const bool mUseNative;
+  // Whether the prefs let this host use the logged-in user's identity.
+  // Decided on the main thread, since GenerateCredentials may run off it.
+  const bool mAllowDefaultCredentials;
 };
 NS_IMPL_ISUPPORTS(nsNTLMContinuationState, nsNTLMContinuationState)
 
@@ -192,6 +202,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
 
     // Use the native NTLM if available
     bool useNative = true;
+    bool allowDefaultCredentials = false;
 
 #ifdef MOZ_AUTH_EXTENSION
     // Check to see if we should default to our generic NTLM auth module
@@ -200,11 +211,11 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
     // instantiate a native NTLM module the last time, so skip trying again.
     bool forceGeneric = ForceGenericNTLM();
     if (!forceGeneric && !*sessionState) {
+      allowDefaultCredentials = CanUseDefaultCredentials(channel, isProxyAuth);
       // Check for approved default credentials hosts and proxies. If
       // *continuationState is non-null, the last authentication attempt
       // failed so skip default credential use.
-      if (!*continuationState &&
-          CanUseDefaultCredentials(channel, isProxyAuth)) {
+      if (!*continuationState && allowDefaultCredentials) {
         // Try logging in with the user's default credentials. If
         // successful, |identityInvalid| is false, which will trigger
         // a default credentials attempt once we return.
@@ -261,12 +272,187 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
 
     // A non-null continuation state implies that we failed to authenticate.
     // Blow away the old authentication state, and use the new one.
-    RefPtr<nsNTLMContinuationState> state =
-        new nsNTLMContinuationState(module.forget(), useNative);
+    RefPtr<nsNTLMContinuationState> state = new nsNTLMContinuationState(
+        module.forget(), useNative, allowDefaultCredentials);
     state.forget(continuationState);
   }
   return NS_OK;
 }
+
+namespace {
+
+// Cancel() may run on the main thread at any point, including while the
+// background thread is still filling in the result, so all of the state below
+// is guarded by mMutex. The callback is always invoked with the lock dropped,
+// and only ever once, since whoever takes mCallback out of the member wins.
+class NTLMGetNextTokenCompleteEvent final : public nsIRunnable,
+                                            public nsICancelable {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  explicit NTLMGetNextTokenCompleteEvent(
+      nsIHttpAuthenticatorCallback* aCallback)
+      : mMutex("NTLMGetNextTokenCompleteEvent.mMutex"), mCallback(aCallback) {}
+
+  nsresult DispatchSuccess(const nsACString& aCreds, uint32_t aFlags,
+                           already_AddRefed<nsISupports> aSessionState,
+                           already_AddRefed<nsISupports> aContinuationState) {
+    MOZ_ASSERT(!NS_IsMainThread());
+    {
+      MutexAutoLock lock(mMutex);
+      mCreds = aCreds;
+      mFlags = aFlags;
+      mResult = NS_OK;
+      mSessionState = aSessionState;
+      mContinuationState = aContinuationState;
+    }
+    return NS_DispatchToMainThread(this, NS_DISPATCH_NORMAL);
+  }
+
+  nsresult DispatchError(already_AddRefed<nsISupports> aSessionState,
+                         already_AddRefed<nsISupports> aContinuationState) {
+    MOZ_ASSERT(!NS_IsMainThread());
+    {
+      MutexAutoLock lock(mMutex);
+      mResult = NS_ERROR_FAILURE;
+      mSessionState = aSessionState;
+      mContinuationState = aContinuationState;
+    }
+    return NS_DispatchToMainThread(this, NS_DISPATCH_NORMAL);
+  }
+
+  NS_IMETHODIMP Run() override {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    nsCOMPtr<nsIHttpAuthenticatorCallback> callback;
+    nsCString creds;
+    uint32_t flags;
+    nsresult result;
+    nsCOMPtr<nsISupports> sessionState;
+    nsCOMPtr<nsISupports> continuationState;
+    {
+      MutexAutoLock lock(mMutex);
+      if (mCancelled) {
+        return NS_OK;
+      }
+      callback = std::move(mCallback);
+      creds = mCreds;
+      flags = mFlags;
+      result = mResult;
+      sessionState = std::move(mSessionState);
+      continuationState = std::move(mContinuationState);
+    }
+
+    if (callback) {
+      callback->OnCredsGenerated(creds, flags, result, sessionState,
+                                 continuationState);
+    }
+    return NS_OK;
+  }
+
+  NS_IMETHODIMP Cancel(nsresult aReason) override {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    nsCOMPtr<nsIHttpAuthenticatorCallback> callback;
+    nsCString creds;
+    uint32_t flags;
+    {
+      MutexAutoLock lock(mMutex);
+      mCancelled = true;
+      callback = std::move(mCallback);
+      creds = mCreds;
+      flags = mFlags;
+    }
+
+    if (callback) {
+      callback->OnCredsGenerated(creds, flags, aReason, nullptr, nullptr);
+    }
+    return NS_OK;
+  }
+
+ private:
+  virtual ~NTLMGetNextTokenCompleteEvent() = default;
+
+  Mutex mMutex;
+  nsCOMPtr<nsIHttpAuthenticatorCallback> mCallback MOZ_GUARDED_BY(mMutex);
+  nsCString mCreds MOZ_GUARDED_BY(mMutex);
+  uint32_t mFlags MOZ_GUARDED_BY(mMutex) = 0;
+  nsresult mResult MOZ_GUARDED_BY(mMutex) = NS_OK;
+  bool mCancelled MOZ_GUARDED_BY(mMutex) = false;
+  nsCOMPtr<nsISupports> mSessionState MOZ_GUARDED_BY(mMutex);
+  nsCOMPtr<nsISupports> mContinuationState MOZ_GUARDED_BY(mMutex);
+};
+
+inline nsISupports* ToSupports(NTLMGetNextTokenCompleteEvent* aEvent) {
+  return static_cast<nsIRunnable*>(aEvent);
+}
+
+NS_IMPL_ISUPPORTS(NTLMGetNextTokenCompleteEvent, nsIRunnable, nsICancelable)
+
+class NTLMGetNextTokenRunnable final : public mozilla::Runnable {
+  ~NTLMGetNextTokenRunnable() override = default;
+
+ public:
+  NTLMGetNextTokenRunnable(
+      nsMainThreadPtrHandle<nsIHttpAuthenticableChannel>& aAuthChannel,
+      const nsACString& aChallenge, bool aIsProxyAuth, const nsAString& aDomain,
+      const nsAString& aUsername, const nsAString& aPassword,
+      nsISupports* aSessionState, nsISupports* aContinuationState,
+      nsMainThreadPtrHandle<NTLMGetNextTokenCompleteEvent>& aCompleteEvent)
+      : mozilla::Runnable("NTLMGetNextTokenRunnable"),
+        mAuthChannel(aAuthChannel),
+        mChallenge(aChallenge),
+        mIsProxyAuth(aIsProxyAuth),
+        mDomain(aDomain),
+        mUsername(aUsername),
+        mPassword(aPassword),
+        mSessionState(aSessionState),
+        mContinuationState(aContinuationState),
+        mCompleteEvent(aCompleteEvent) {}
+
+  NS_IMETHODIMP Run() override {
+    MOZ_ASSERT(!NS_IsMainThread());
+
+    nsCString creds;
+    uint32_t flags;
+
+    nsCOMPtr<nsIHttpAuthenticator> authenticator = new nsHttpNTLMAuth();
+
+    nsISupports* sessionState = mSessionState;
+    nsISupports* continuationState = mContinuationState;
+    nsresult rv = authenticator->GenerateCredentials(
+        mAuthChannel, mChallenge, mIsProxyAuth, mDomain, mUsername, mPassword,
+        &sessionState, &continuationState, &flags, creds);
+
+    if (mSessionState != sessionState) {
+      mSessionState = sessionState;
+    }
+    if (mContinuationState != continuationState) {
+      mContinuationState = continuationState;
+    }
+
+    if (NS_FAILED(rv)) {
+      return mCompleteEvent->DispatchError(mSessionState.forget(),
+                                           mContinuationState.forget());
+    }
+
+    return mCompleteEvent->DispatchSuccess(creds, flags, mSessionState.forget(),
+                                           mContinuationState.forget());
+  }
+
+ private:
+  nsMainThreadPtrHandle<nsIHttpAuthenticableChannel> mAuthChannel;
+  nsCString mChallenge;
+  bool mIsProxyAuth;
+  nsString mDomain;
+  nsString mUsername;
+  nsString mPassword;
+  nsCOMPtr<nsISupports> mSessionState;
+  nsCOMPtr<nsISupports> mContinuationState;
+  nsMainThreadPtrHandle<NTLMGetNextTokenCompleteEvent> mCompleteEvent;
+};
+
+}  // anonymous namespace
 
 NS_IMETHODIMP
 nsHttpNTLMAuth::GenerateCredentialsAsync(
@@ -275,7 +461,28 @@ nsHttpNTLMAuth::GenerateCredentialsAsync(
     bool isProxyAuth, const nsAString& domain, const nsAString& username,
     const nsAString& password, nsISupports* sessionState,
     nsISupports* continuationState, nsICancelable** aCancellable) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  NS_ENSURE_ARG(aCallback);
+  NS_ENSURE_ARG_POINTER(aCancellable);
+
+  nsMainThreadPtrHandle<nsIHttpAuthenticableChannel> handle(
+      new nsMainThreadPtrHolder<nsIHttpAuthenticableChannel>(
+          "nsIHttpAuthenticableChannel", authChannel, false));
+  nsMainThreadPtrHandle<NTLMGetNextTokenCompleteEvent> cancelEvent(
+      new nsMainThreadPtrHolder<NTLMGetNextTokenCompleteEvent>(
+          "NTLMGetNextTokenRunnable::mCompleteEvent",
+          new NTLMGetNextTokenCompleteEvent(aCallback), false));
+
+  nsCOMPtr<nsIRunnable> runnable = new NTLMGetNextTokenRunnable(
+      handle, challenge, isProxyAuth, domain, username, password, sessionState,
+      continuationState, cancelEvent);
+
+  nsresult rv = NS_DispatchBackgroundTask(
+      runnable, nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  RefPtr<NTLMGetNextTokenCompleteEvent> cancelable(cancelEvent.get());
+  cancelable.forget(aCancellable);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -304,6 +511,7 @@ nsHttpNTLMAuth::GenerateCredentials(
   }
   nsCOMPtr<nsIAuthModule> module = state->mModule;
   const bool useNative = state->mUseNative;
+  const bool allowDefaultCredentials = state->mAllowDefaultCredentials;
 
   void *inBuf, *outBuf;
   uint32_t inBufLen, outBufLen;
@@ -314,7 +522,7 @@ nsHttpNTLMAuth::GenerateCredentials(
     // An empty user or password makes nsAuthSSPI::Init authenticate as the
     // logged-in user, which only CanUseDefaultCredentials() hosts may do.
     if (useNative && (user.IsEmpty() || pass.IsEmpty()) &&
-        !CanUseDefaultCredentials(authChannel, isProxyAuth)) {
+        !allowDefaultCredentials) {
       LOG(("Not using default credentials for an untrusted host\n"));
       return NS_ERROR_ABORT;
     }

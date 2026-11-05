@@ -26,8 +26,11 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PermissionsPolicy)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-PermissionsPolicy::PermissionsPolicy(nsINode* aNode) : mParentNode(aNode) {}
+PermissionsPolicy::PermissionsPolicy(nsINode* aNode)
+    : mPolicyOwnerNode(aNode) {}
 
+// https://www.w3.org/TR/permissions-policy/#define-inherited-policy-in-container
+// 9.7.1 Documents without a container already skip this function,
 void PermissionsPolicy::InheritPolicy(PermissionsPolicy* aParentPolicy) {
   MOZ_ASSERT(aParentPolicy);
 
@@ -50,23 +53,59 @@ void PermissionsPolicy::InheritPolicy(PermissionsPolicy* aParentPolicy) {
       dest->mParentAllowedAllFeatures.AppendElement(featureName);
     }
 
-    // If the destination has a declared feature (via the HTTP header or 'allow'
-    // attribute) we allow the feature if the destination allows it and the
-    // parent allows its origin or the destinations' one.
-    if (dest->HasDeclaredFeature(featureName) &&
-        dest->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
-      if (!src->AllowsFeatureInternal(featureName, src->mDefaultOrigin) &&
-          !src->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
+    // for iframes we only inherit policy and bail out early, documents are
+    // handled below
+    if (!src->mPolicyOwnerNode || !src->mPolicyOwnerNode->IsDocument()) {
+      // we want to carry denied features to child document
+      if (!src->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
         dest->SetInheritedDeniedFeature(featureName);
       }
       return;
     }
 
-    // If there was not a declared feature, we allow the feature if the parent
-    // PermissionsPolicy allows the current origin.
-    if (!src->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
+    // 9.7.2: The parent policy must allow the parent's own origin.
+    if (!src->GetFeatureValueForOrigin(featureName, src->mDefaultOrigin)) {
       dest->SetInheritedDeniedFeature(featureName);
+      return;
     }
+
+    // 9.7.3: The parent policy must also allow the child origin.
+    if (!src->GetFeatureValueForOrigin(featureName, dest->mDefaultOrigin)) {
+      dest->SetInheritedDeniedFeature(featureName);
+      return;
+    }
+
+    // 9.7.4: Container attributes have already been parsed into mFeatures
+
+    // 9.7.5: An explicit container declaration determines whether to allow.
+    for (const Feature& feature : dest->mFeatures) {
+      if (feature.Name().Equals(featureName)) {
+        if (!feature.Allows(dest->mDefaultOrigin)) {
+          dest->SetInheritedDeniedFeature(featureName);
+        }
+        return;
+      }
+    }
+
+    const auto defaultAllowList =
+        PermissionsPolicyUtils::DefaultAllowListFeature(featureName);
+    // 9.7.6: Default '*' allows every origin.
+    if (defaultAllowList ==
+        PermissionsPolicyUtils::PermissionsPolicyValue::eAll) {
+      return;
+    }
+
+    // 9.7.7: Default 'self' allows only a same-origin child.
+    bool isSameOrigin = false;
+    dest->mDefaultOrigin->Equals(src->mDefaultOrigin, &isSameOrigin);
+    if (defaultAllowList ==
+            PermissionsPolicyUtils::PermissionsPolicyValue::eSelf &&
+        isSameOrigin) {
+      return;
+    }
+
+    // 9.7.8: Otherwise, deny inheritance.
+    dest->SetInheritedDeniedFeature(featureName);
   });
 }
 
@@ -95,6 +134,27 @@ void PermissionsPolicy::InheritPolicy(
   }
 
   InheritPolicy(permissionsPolicy);
+}
+
+// https://www.w3.org/TR/permissions-policy/#get-feature-value-for-origin
+bool PermissionsPolicy::GetFeatureValueForOrigin(const nsAString& aFeatureName,
+                                                 nsIPrincipal* aOrigin) const {
+  MOZ_ASSERT(aOrigin);
+
+  // 9.8.1: TODO: Support report-only policy
+  // 9.8.2: An inherited denial cannot be overridden.
+  if (HasInheritedDeniedFeature(aFeatureName)) {
+    return false;
+  }
+
+  // 9.8.3: If declared, match the requested origin against the feature
+  // allowlist.
+  if (HasDeclaredFeature(aFeatureName)) {
+    return AllowsFeatureInternal(aFeatureName, aOrigin);
+  }
+
+  // 9.8.4: otherwise return enabled
+  return true;
 }
 
 void PermissionsPolicy::SetInheritedDeniedFeature(

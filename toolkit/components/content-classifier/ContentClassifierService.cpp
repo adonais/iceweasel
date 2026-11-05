@@ -107,7 +107,8 @@ constexpr ContentClassifierFeature kFeatures[] = {
      NS_ERROR_FINGERPRINTING_URI, false, true,
      Some(nsIScopedPrefs::
               PRIVACY_TRACKINGPROTECTION_CONTENT_FINGERPRINTING_ENABLED),
-     &ContentClassifierFeatureUtils::IsThirdPartyUnlessAnnotating, nullptr},
+     &ContentClassifierFeatureUtils::IsNonPassiveThirdPartyUnlessAnnotating,
+     nullptr},
     {"email-trackers"_ns, Span<const nsLiteralCString>(kEmailTrackersListIds),
      nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_EMAILTRACKING,
      nsIWebProgressListener::STATE_LOADED_EMAILTRACKING_LEVEL_1_CONTENT,

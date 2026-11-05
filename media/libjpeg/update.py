@@ -327,16 +327,14 @@ def update_version_strings():
         print("ERROR: moz.yaml not found.")
         return False
     moz_yaml = moz_yaml_path.read_text()
-    yaml_m = re.search(r'revision:\s*"([^"]*)"', moz_yaml)
+    # mach vendor rewrites the revision without quotes, so accept either form.
+    revision_re = re.compile(r'^([ \t]*revision:[ \t]*)"?([^"\s]*)"?[ \t]*$', re.MULTILINE)
+    yaml_m = revision_re.search(moz_yaml)
     if not yaml_m:
         print("ERROR: Could not find revision field in moz.yaml.")
         ok = False
-    elif yaml_m.group(1) != version:
-        moz_yaml, n5 = re.subn(
-            r'(revision:\s*)"[^"]*"',
-            rf'\g<1>"{version}"',
-            moz_yaml,
-        )
+    elif yaml_m.group(2) != version:
+        moz_yaml, n5 = revision_re.subn(rf'\g<1>"{version}"', moz_yaml)
         if n5 != 1:
             print(
                 f"ERROR: Unexpected substitution count in moz.yaml "
@@ -347,7 +345,7 @@ def update_version_strings():
     if ok:
         jconfig_path.write_text(jconfig)
         jconfigint_path.write_text(jconfigint)
-        if yaml_m and yaml_m.group(1) != version:
+        if yaml_m and yaml_m.group(2) != version:
             moz_yaml_path.write_text(moz_yaml)
 
     return ok

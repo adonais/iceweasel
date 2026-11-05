@@ -7,10 +7,8 @@ const PREF_NAME = "browser.link.open_newwindow.override.external";
 const PREF_VALUE_FEATURE_OFF = Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_BACKGROUND;
 const PREF_VALUE_FEATURE_ON = Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT;
 
-const TABS_PANE = SRD_PREF_VALUE ? "paneTabsBrowsing" : "paneGeneral";
-const BROWSER_UI_PANE = SRD_PREF_VALUE
-  ? Glean.browserUiInteraction.preferencesPaneTabsBrowsing
-  : Glean.browserUiInteraction.preferencesPaneGeneral;
+const TABS_PANE = "paneTabsBrowsing";
+const BROWSER_UI_PANE = Glean.browserUiInteraction.preferencesPaneTabsBrowsing;
 
 let resetTelemetry = async () => {
   await Services.fog.testFlushAllChildren();

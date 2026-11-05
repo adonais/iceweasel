@@ -6,6 +6,8 @@ package mozilla.components.feature.listentopage
 
 import java.util.Locale
 import kotlin.math.abs
+import mozilla.components.feature.listentopage.PlaybackSpeed.Companion.Default
+import mozilla.components.feature.listentopage.playback.ArticleMeasurements
 import mozilla.components.lib.state.State
 
 /**
@@ -23,6 +25,9 @@ import mozilla.components.lib.state.State
  * @property voiceState State relating to narrator voice.
  * @property playbackState State relating to the audio being played.
  * @property articleProgress How far through the whole article the playback has gotten.
+ * @property articleMeasurements What the article's length is estimated from, or `null` while nothing is being
+ *   synthesized.
+ * @property playlist Which chunks have been handed to the player, and how its reports are read.
  */
 data class ListenState(
     val tabId: String? = null,
@@ -35,6 +40,8 @@ data class ListenState(
     val voiceState: VoiceState = VoiceState(),
     val playbackState: PlaybackState = PlaybackState(),
     val articleProgress: ArticleProgress = ArticleProgress(),
+    internal val articleMeasurements: ArticleMeasurements? = null,
+    internal val playlist: Playlist = Playlist(),
 ) : State
 
 /** The expanded or compact player. */
@@ -43,18 +50,19 @@ enum class PlayerMode {
     Compact,
 }
 
-/** The ways a session can fail. */
+/** The ways a session can fail. These errors are reported inside the player. */
 sealed interface ListenError {
-    /** No installed, network-free voice exists for the article language. Reported as a snackbar, with no player. */
+
+    /** No installed, network-free voice exists for the article language. */
     data object NoOfflineVoice : ListenError
 
-    /** The page gave back no usable text. Reported as a snackbar, with no player. */
+    /** The page gave back no usable text. */
     data object ContentUnavailable : ListenError
 
-    /** The synthesizer failed part-way through. Reported as a dialog over the player. */
+    /** The synthesizer failed part-way through. */
     data object SynthesisFailed : ListenError
 
-    /** The player failed part-way through. Reported as a dialog over the player. */
+    /** The player failed part-way through. */
     data object PlaybackFailed : ListenError
 }
 
@@ -123,8 +131,7 @@ data class PlaybackState(
 /**
  * Current chunk state related to playback.
  *
- * @property index Which chunk of the article it is. The player holds the article as one playlist in reading order, so
- *   the item it is on is the chunk it is on.
+ * @property index Which chunk of the article the player is on.
  * @property durationMs How long it is, or `null` while the player does not know yet.
  */
 data class ChunkState(
@@ -182,12 +189,16 @@ enum class PlaybackSpeed(val multiplier: Float) {
  *   have not, so it moves as the article is synthesized.
  * @property chunkDurationsMs How long each chunk lasts, in reading order. These lengths change as additional chunks are
  *   synthesized, so this should match what was last reported to the player.
+ * @property barPosition Where the progress bar is drawn, or `null` to draw it at [positionMs] of [durationMs]. It can
+ *   be ahead of that while the article has just been estimated longer, so that the bar does not go back.
  */
 data class ArticleProgress(
     val positionMs: Long = 0,
     val durationMs: Long = 0,
     val chunkDurationsMs: List<Long> = emptyList(),
+    val barPosition: Float? = null,
 ) {
+    /** How far along the progress bar is, between 0 and 1. */
     val fraction: Float
-        get() = if (durationMs <= 0) 0f else (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
+        get() = barPosition ?: if (durationMs <= 0) 0f else (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
 }

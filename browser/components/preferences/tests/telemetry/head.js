@@ -6,6 +6,4 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-// paneSync is the default settings pane when browser.settings-redesign.enabled
-// is true.
-const DEFAULT_PANE = SRD_PREF_VALUE ? "paneSync" : "paneGeneral";
+const DEFAULT_PANE = "paneSync";

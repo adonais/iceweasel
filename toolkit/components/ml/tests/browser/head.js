@@ -26,10 +26,6 @@ const { getInferenceProcessInfo } = ChromeUtils.importESModule(
   "chrome://global/content/ml/Utils.sys.mjs"
 );
 
-const { splitContext } = ChromeUtils.importESModule(
-  "resource://gre/modules/shared/FormAutofillML.sys.mjs"
-);
-
 const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
@@ -981,11 +977,15 @@ function readRequestBody(request) {
  * @param {boolean} [options.holdStreamOpenAfterFinish] - When true, the
  *   streaming tool-call turn stops talking after finish_reason and never closes
  *   the connection, so the client is the only thing that can end the turn.
+ * @param {{status: number, body: object}|null} [options.errorResponse] - When
+ *   set, every request is answered with this HTTP status and JSON body instead
+ *   of a completion.
  */
 function startMockOpenAI({
   echo = "This gets echoed.",
   onRequest = null,
   holdStreamOpenAfterFinish = false,
+  errorResponse = null,
 } = {}) {
   const server = new HttpServer();
 
@@ -998,6 +998,18 @@ function startMockOpenAI({
     // Call the onRequest callback if provided to allow test inspection
     if (onRequest) {
       onRequest(request);
+    }
+
+    if (errorResponse) {
+      info("[openai] Answering with error status " + errorResponse.status);
+      response.setStatusLine(request.httpVersion, errorResponse.status, "");
+      response.setHeader(
+        "Content-Type",
+        "application/json; charset=utf-8",
+        false
+      );
+      response.write(JSON.stringify(errorResponse.body));
+      return;
     }
 
     let bodyText = "";

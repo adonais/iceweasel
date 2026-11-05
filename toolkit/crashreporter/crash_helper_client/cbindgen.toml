@@ -16,6 +16,12 @@ include_guard = "crash_helper_client_ffi_generated_h"
 "target_os = macos" = "XP_MACOSX"
 "target_os = windows" = "XP_WIN"
 
+[export]
+include = ["RawHandle"]
+
+[export.rename]
+"RawHandle" = "HANDLE"
+
 [parse]
 parse_deps = true
 include = ["crash_helper_common"]

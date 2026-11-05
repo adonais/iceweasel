@@ -1427,7 +1427,7 @@ networking:
   trr_connection_cycle_count:
     type: labeled_counter
     description: >
-      Number of times we cycled the TRR connection during a subsession.
+      Number of times we cycled the TRR connection.
       Keyed by TRR provider URL.
     bugs:
       - https://bugzil.la/1737198

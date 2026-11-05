@@ -727,7 +727,7 @@ SurfaceFromElementResult ImageBitmap::SurfaceFrom(uint32_t aSurfaceFlags) {
 
   IntSize imageSize(mData->GetSize());
   IntRect imageRect(IntPoint(0, 0), imageSize);
-  bool hasCropRect = mPictureRect.IsEqualEdges(imageRect);
+  bool hasCropRect = !mPictureRect.IsEqualEdges(imageRect);
 
   bool wantExactSize =
       bool(aSurfaceFlags & nsLayoutUtils::SFE_EXACT_SIZE_SURFACE);

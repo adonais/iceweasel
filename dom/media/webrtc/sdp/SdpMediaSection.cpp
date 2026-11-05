@@ -59,6 +59,29 @@ void SdpMediaSection::RemoveFmtp(const std::string& pt) {
   attrList.SetAttribute(std::move(fmtps));
 }
 
+void SdpMediaSection::RemoveUnlistedPayloadTypeAttributes() {
+  SdpAttributeList& attrList = GetAttributeList();
+
+  if (attrList.HasAttribute(SdpAttribute::kFmtpAttribute)) {
+    auto fmtps = MakeUnique<SdpFmtpAttributeList>(attrList.GetFmtp());
+    std::erase_if(fmtps->mFmtps, [&](const SdpFmtpAttributeList::Fmtp& aFmtp) {
+      return !HasFormat(aFmtp.format);
+    });
+    if (fmtps->mFmtps.empty()) {
+      attrList.RemoveAttribute(SdpAttribute::kFmtpAttribute);
+    } else {
+      attrList.SetAttribute(std::move(fmtps));
+    }
+  }
+
+  SdpRtcpFbAttributeList rtcpfbs(GetRtcpFbs());
+  std::erase_if(rtcpfbs.mFeedbacks,
+                [&](const SdpRtcpFbAttributeList::Feedback& aFeedback) {
+                  return aFeedback.pt != "*" && !HasFormat(aFeedback.pt);
+                });
+  SetRtcpFbs(rtcpfbs);
+}
+
 const SdpRtpmapAttributeList::Rtpmap* SdpMediaSection::FindRtpmap(
     const std::string& pt) const {
   auto& attrs = GetAttributeList();

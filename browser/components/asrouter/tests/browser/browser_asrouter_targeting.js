@@ -28,6 +28,7 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
+  PushService: "resource://gre/modules/PushService.sys.mjs",
   QueryCache: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   ReinstallCheck: "moz-src:///browser/components/ReinstallCheck.sys.mjs",
@@ -49,6 +50,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/taskbartabs/TaskbarTabsPin.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   TelemetrySession: "resource://gre/modules/TelemetrySession.sys.mjs",
+  WebPushTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
 });
 
 const { DefaultBrowserCheck } = ChromeUtils.importESModule(
@@ -635,6 +637,108 @@ add_task(async function check_allowedNotificationOrigins() {
   PermissionTestUtils.remove("https://example.org", "desktop-notification");
 });
 
+add_task(async function check_activeWebPushSubscriptionCount() {
+  const COUNT_PREF = "messaging-system.activeWebPushSubscriptionCount";
+  const message = {
+    id: "foo",
+    targeting: "activeWebPushSubscriptionCount > 0",
+  };
+  const sandbox = sinon.createSandbox();
+  const isReady = sandbox.stub(PushService, "isReady").get(() => true);
+  const getAll = sandbox.stub(PushService, "getAllUnexpiredNonSystem");
+  await SpecialPowers.pushPrefEnv({ set: [[COUNT_PREF, 5]] });
+
+  getAll.resolves([]);
+  is(
+    await ASRouterTargeting.Environment.activeWebPushSubscriptionCount,
+    0,
+    "Should be 0 when there are no subscriptions"
+  );
+  ok(
+    !(await ASRouterTargeting.findMatchingMessage({ messages: [message] })),
+    "Should not match when there are no subscriptions"
+  );
+  is(
+    Services.prefs.getIntPref(COUNT_PREF),
+    0,
+    "Should save the count once push is ready"
+  );
+
+  getAll.resolves([{}, {}]);
+  is(
+    await ASRouterTargeting.Environment.activeWebPushSubscriptionCount,
+    2,
+    "Should return the count from the push service"
+  );
+  is(
+    await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+    message,
+    "Should match when there is an active subscription"
+  );
+  is(Services.prefs.getIntPref(COUNT_PREF), 2, "Should save the new count");
+
+  getAll.resetHistory();
+  isReady.get(() => false);
+  is(
+    await ASRouterTargeting.Environment.activeWebPushSubscriptionCount,
+    2,
+    "Should return the saved count before push is ready"
+  );
+  ok(getAll.notCalled, "Should not query push before it is ready");
+
+  await SpecialPowers.pushPrefEnv({ set: [["dom.push.enabled", false]] });
+  is(
+    await ASRouterTargeting.Environment.activeWebPushSubscriptionCount,
+    0,
+    "Should be 0 when push is disabled, regardless of the saved count"
+  );
+  await SpecialPowers.popPrefEnv();
+
+  isReady.get(() => true);
+  getAll.rejects(new Error("the push database is broken"));
+  await Assert.rejects(
+    ASRouterTargeting.Environment.activeWebPushSubscriptionCount,
+    /the push database is broken/,
+    "An unexpected failure propagates instead of being reported as 0"
+  );
+  is(
+    Services.prefs.getIntPref(COUNT_PREF),
+    2,
+    "A failure should not overwrite the saved count"
+  );
+
+  await SpecialPowers.popPrefEnv();
+  sandbox.restore();
+});
+
+add_task(async function check_pushServiceReady_updatesWebPushRecipes() {
+  const sandbox = sinon.createSandbox();
+  const ready = sandbox.stub(PushService, "ready").resolves();
+  const stub = sandbox
+    .stub(ExperimentAPI, "updateRecipesForFeatures")
+    .resolves();
+
+  await WebPushTargeting.init();
+
+  Assert.ok(ready.calledOnce, "Waits for the push service to be ready");
+  Assert.ok(
+    stub.calledOnceWithExactly("push-service-activated", ["includeForWebPush"]),
+    "Nimbus re-evaluates the web push recipes when the push service starts"
+  );
+
+  stub.resetHistory();
+  ready.resetHistory();
+  await SpecialPowers.pushPrefEnv({ set: [["dom.push.enabled", false]] });
+  await WebPushTargeting.init();
+  Assert.ok(
+    ready.notCalled && stub.notCalled,
+    "Does nothing when push is disabled"
+  );
+  await SpecialPowers.popPrefEnv();
+
+  sandbox.restore();
+});
+
 add_task(async function check_needsUpdate() {
   QueryCache.queries.CheckBrowserNeedsUpdate.setUp(true);
 
@@ -793,7 +897,7 @@ add_task(async function check_recentSearchCount() {
 });
 
 add_task(async function checkisDefaultBrowser() {
-  const expected = ShellService.isDefaultBrowser();
+  const expected = await ShellService.isDefaultBrowserAsync();
   const result = await ASRouterTargeting.Environment.isDefaultBrowser;
   is(typeof result, "boolean", "isDefaultBrowser should be a boolean value");
   is(
@@ -1413,7 +1517,7 @@ add_task(async function check_current_tab_installed_as_web_app() {
   // By default, Taskbar Tabs will try and pin this to the taskbar, but we
   // don't want to do that in this test.
   const sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsPin, "pinTaskbarTab");
+  sandbox.stub(TaskbarTabsPin, "pinTaskbarTab").resolves({});
   sandbox.stub(TaskbarTabsPin, "unpinTaskbarTab");
 
   const kUri = "https://example.com";
@@ -1456,7 +1560,7 @@ add_task(async function check_current_tab_installed_as_web_app() {
 
 add_task(async function check_installed_web_apps_count() {
   const sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsPin, "pinTaskbarTab");
+  sandbox.stub(TaskbarTabsPin, "pinTaskbarTab").resolves({});
   sandbox.stub(TaskbarTabsPin, "unpinTaskbarTab");
 
   const kUri1 = "https://example.com";
@@ -1547,6 +1651,36 @@ add_task(async function check_has_active_ai_window_true() {
 
   win.document.documentElement.removeAttribute("ai-window");
   await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function check_is_auto_tab_grouping_available() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.enable", true],
+      ["browser.ml.checkForMemory", false],
+      ["browser.smartwindow.autoTabGrouping.enabled", true],
+      ["browser.smartwindow.autoTabGrouping.supportedLocales", "en"],
+    ],
+  });
+  is(
+    await ASRouterTargeting.Environment.isAutoTabGroupingAvailable,
+    true,
+    "Organize Tabs is available in a supported locale"
+  );
+
+  // Only French is supported here, and tests run in en-US, so the feature is
+  // unavailable.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.autoTabGrouping.supportedLocales", "fr"]],
+  });
+  is(
+    await ASRouterTargeting.Environment.isAutoTabGroupingAvailable,
+    false,
+    "Organize Tabs is unavailable when the app locale is not supported"
+  );
+
+  await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();
 });
 
@@ -2075,6 +2209,25 @@ add_task(async function test_alltabsButtonAreaType_removed() {
   CustomizableUI.reset();
 });
 
+add_task(async function test_forgetButtonAreaType_default() {
+  is(
+    await ASRouterTargeting.Environment.forgetButtonAreaType,
+    null,
+    "Should return null while the button is in the palette"
+  );
+});
+
+add_task(async function test_forgetButtonAreaType_added() {
+  CustomizableUI.addWidgetToArea("panic-button", CustomizableUI.AREA_NAVBAR);
+
+  is(
+    await ASRouterTargeting.Environment.forgetButtonAreaType,
+    "toolbar",
+    "Should return name of container once the button has been added"
+  );
+  CustomizableUI.reset();
+});
+
 add_task(async function test_creditCardsSaved() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -2579,7 +2732,7 @@ add_task(async function check_totalSearches() {
 });
 
 add_task(async function checkisDefaultBrowserUncached() {
-  const expected = ShellService.isDefaultBrowser();
+  const expected = await ShellService.isDefaultBrowserAsync();
   const result = await ASRouterTargeting.Environment.isDefaultBrowserUncached;
   is(
     typeof result,

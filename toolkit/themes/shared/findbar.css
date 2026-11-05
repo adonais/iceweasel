@@ -93,7 +93,6 @@ xul|findbar {
   width: 18em;
   box-sizing: border-box;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     border-radius: var(--border-radius-small);
     border: 1px solid var(--input-border-color);
@@ -145,7 +144,6 @@ xul|findbar {
   border-radius: var(--border-radius-circle);
   padding: var(--space-xsmall) var(--space-small);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     border-radius: var(--border-radius-small);
     padding: 4px 7px;
@@ -235,7 +233,6 @@ xul|findbar {
     background-color: var(--toolbarbutton-background-color-active, rgba(190, 190, 190, 0.4));
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     border-radius: var(--border-radius-small);
     width: 24px;

@@ -634,8 +634,8 @@ nsresult CacheLoadHandler::DataReceivedFromCache(
     // XXX: force the partitionedPrincipal to be equal to the response one.
     // This is OK for now because we don't want to expose partitionedPrincipal
     // functionality in ServiceWorkers yet.
-    rv = mWorkerRef->Private()->SetPrincipalsAndCSPOnMainThread(
-        responsePrincipal, responsePrincipal, loadGroup, nullptr);
+    rv = mWorkerRef->Private()->SetPrincipalsOnMainThread(
+        responsePrincipal, responsePrincipal, loadGroup);
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
 
     rv = mWorkerRef->Private()->SetCSPFromHeaderValues(
@@ -664,8 +664,9 @@ nsresult CacheLoadHandler::DataReceived() {
       // XHR Params Allowed
       mWorkerRef->Private()->SetXHRParamsAllowed(parent->XHRParamsAllowed());
 
-      // Set ContentSecurityPolicy
-      nsresult rv = mWorkerRef->Private()->SetCsp(parent->GetCsp());
+      // Set Policy-Container
+      nsresult rv = mWorkerRef->Private()->SetPolicyContainerOnMainThread(
+          parent->GetPolicyContainer());
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }

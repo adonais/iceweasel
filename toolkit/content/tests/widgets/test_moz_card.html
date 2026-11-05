@@ -359,6 +359,64 @@
 
         assertCoverImageCardDisplay(card, "none");
       });
+
+      add_task(async function testTreeItem() {
+        let card = await generateCard({
+          type: "accordion",
+          heading: testHeading,
+          "aria-level": "2",
+          "aria-posinset": "3",
+          "aria-setsize": "7",
+        });
+        card.treeItem = true;
+        await card.updateComplete;
+
+        let summary = card.summaryEl;
+        let article = card.shadowRoot.querySelector("article");
+        is(
+          summary.getAttribute("role"),
+          "treeitem",
+          "The summary has the role"
+        );
+        ok(
+          !card.detailsEl.hasAttribute("role"),
+          "The details element keeps its native semantics, so its expanded state changes are reported"
+        );
+        is(
+          article.getAttribute("role"),
+          "none",
+          "The article is presentational"
+        );
+        ok(
+          !article.hasAttribute("aria-labelledby"),
+          "The presentational article is not labelled"
+        );
+        is(summary.getAttribute("aria-level"), "2", "The level moves");
+        is(summary.getAttribute("aria-posinset"), "3", "The position moves");
+        is(summary.getAttribute("aria-setsize"), "7", "The size moves");
+        ok(
+          !card.hasAttribute("aria-level") &&
+            !card.hasAttribute("aria-posinset") &&
+            !card.hasAttribute("aria-setsize"),
+          "The attributes are removed from the card itself"
+        );
+
+        card.headingLevel = 2;
+        await card.updateComplete;
+        is(
+          card.headingEl.localName,
+          "span",
+          "The heading is a span even when a heading level is set"
+        );
+
+        let defaultCard = await generateCard({ heading: testHeading });
+        defaultCard.treeItem = true;
+        await defaultCard.updateComplete;
+        ok(
+          !defaultCard.shadowRoot.querySelector("article").hasAttribute("role"),
+          "A default card ignores treeItem"
+        );
+      });
     </script>
   </body>
 </html>

@@ -58,6 +58,13 @@ SyncModuleLoader::SyncModuleLoader(SyncScriptLoader* aScriptLoader,
 
 SyncModuleLoader::~SyncModuleLoader() { MOZ_ASSERT(mLoadRequests.isEmpty()); }
 
+already_AddRefed<ScriptFetchOptions>
+SyncModuleLoader::CreateDefaultScriptFetchOptions() {
+  RefPtr<ScriptFetchOptions> options = ScriptFetchOptions::CreateDefault();
+  options->SetTriggeringPrincipal(GetGlobalObject()->PrincipalOrNull());
+  return options.forget();
+}
+
 already_AddRefed<ModuleLoadRequest> SyncModuleLoader::CreateRequest(
     JSContext* aCx, nsIURI* aURI, JS::Handle<JSObject*> aModuleRequest,
     JS::Handle<JS::Value> aHostDefined, JS::Handle<JS::Value> aPayload,

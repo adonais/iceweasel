@@ -20,10 +20,7 @@ class AndroidDecoderModule : public PlatformDecoderModule {
   static already_AddRefed<PlatformDecoderModule> Create(
       CDMProxy* aProxy = nullptr);
 
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-      const CreateDecoderParams& aParams) override;
-
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+  RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override;
 
   media::DecodeSupportSet SupportsMimeType(
@@ -49,6 +46,11 @@ class AndroidDecoderModule : public PlatformDecoderModule {
  private:
   explicit AndroidDecoderModule(CDMProxy* aProxy = nullptr);
   virtual ~AndroidDecoderModule() = default;
+
+  RefPtr<CreateDecoderPromise> CreateVideoDecoder(
+      const CreateDecoderParams& aParams);
+  RefPtr<CreateDecoderPromise> CreateAudioDecoder(
+      const CreateDecoderParams& aParams);
 
   RefPtr<MediaDrmCDMProxy> mProxy;
 };

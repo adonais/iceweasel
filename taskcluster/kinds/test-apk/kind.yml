@@ -16,7 +16,6 @@ kind-dependencies:
     - build-fat-aar
 
 task-defaults:
-    run-on-repo-type: [hg]
     attributes:
         build_platform: android
         retrigger: true
@@ -33,7 +32,6 @@ task-defaults:
         build-fat-aar:
             - target.maven.zip
     run:
-        clone-with: hg
         using: gradlew
     treeherder:
         kind: test

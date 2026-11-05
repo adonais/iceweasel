@@ -149,6 +149,35 @@ export var PushService = {
     return this._activated;
   },
 
+  _notifyReady: null,
+  _ready: null,
+
+  /**
+   * Whether the push service has finished activating.
+   *
+   * @type {boolean}
+   */
+  get isReady() {
+    return this._state > PUSH_SERVICE_ACTIVATING;
+  },
+
+  /**
+   * Resolves once the push service has finished activating.
+   *
+   * @returns {Promise<void>}
+   */
+  ready() {
+    if (this.isReady) {
+      return Promise.resolve();
+    }
+    if (!this._ready) {
+      this._ready = new Promise(resolve => {
+        this._notifyReady = resolve;
+      });
+    }
+    return this._ready;
+  },
+
   _makePendingKey(aPageRecord) {
     return aPageRecord.scope + "|" + aPageRecord.originAttributes;
   },
@@ -197,6 +226,11 @@ export var PushService = {
       this._activated = null;
     }
     this._state = aNewState;
+    if (this._notifyReady && aNewState > PUSH_SERVICE_ACTIVATING) {
+      this._notifyReady();
+      this._notifyReady = null;
+      this._ready = null;
+    }
   },
 
   async _changeStateOfflineEvent(offline, calledFromConnEnabledEvent) {
@@ -1042,6 +1076,31 @@ export var PushService = {
 
   getAllUnexpired() {
     return this._db.getAllUnexpired();
+  },
+
+  /**
+   * Returns the unexpired subscriptions, excluding system subscriptions such
+   * as the one held by Firefox Accounts.
+   *
+   * Resolves with an empty array when push has not started, is
+   * disabled, or fails to activate.
+   *
+   * @returns {Promise<PushRecord[]>}
+   */
+  async getAllUnexpiredNonSystem() {
+    if (!prefs.getBoolPref("connection.enabled")) {
+      return [];
+    }
+    try {
+      await this._checkActivated();
+    } catch {
+      return [];
+    }
+    if (!this._db) {
+      return [];
+    }
+    let records = await this.getAllUnexpired();
+    return records.filter(record => !record.systemRecord);
   },
 
   _sendRequest(action, ...params) {

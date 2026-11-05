@@ -21,9 +21,6 @@ not-for-build-platforms:
     - macosx64/opt
     - macosx64/debug
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     l10n-signing:
         from-deps:

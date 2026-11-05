@@ -1298,6 +1298,7 @@ ChromeUtils.defineLazyGetter(gEditItemOverlay, "_folderTree", () => {
           data-l10n-id="bookmark-overlay-folders-tree"
           editable="true"
           disableUserActions="true"
+          noentertoggle=""
           hidecolumnpicker="true">
       <treecols>
         <treecol anonid="title" flex="1" primary="true" hideheader="true"/>

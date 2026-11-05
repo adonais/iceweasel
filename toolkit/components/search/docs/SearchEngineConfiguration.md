@@ -20,8 +20,6 @@ to clients can be [viewed live]. There are additional remote settings buckets
 with information for each search engine. These buckets are listed below.
 
 - [search-config-icons] is a mapping of icons to a search engine.
-- [search-config-overrides-v2] contains information that may override engines
-  properties in search-config-v2.
 
 ## Configuration Schema
 
@@ -34,6 +32,5 @@ An outline of the schemas may be found on the [Search Configuration Schema] page
 [json schema]: https://json-schema.org/
 [search configuration schema]: SearchConfigurationSchema.md
 [search-config-icons]: https://firefox.settings.services.mozilla.com/v1/buckets/main/collections/search-config-icons/records
-[search-config-overrides-v2]: https://firefox.settings.services.mozilla.com/v1/buckets/main/collections/search-config-overrides-v2/records
 [search-default-override-allowlist]: https://firefox.settings.services.mozilla.com/v1/buckets/main/collections/search-default-override-allowlist/records
 [viewed live]: https://firefox.settings.services.mozilla.com/v1/buckets/main/collections/search-config-v2/records

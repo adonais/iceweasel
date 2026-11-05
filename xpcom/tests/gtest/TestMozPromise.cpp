@@ -88,7 +88,7 @@ struct DtorTracker {
 };
 
 template <typename FunctionType>
-void RunOnTaskQueue(TaskQueue* aQueue, FunctionType aFun) {
+void RunOnTaskQueue(TaskQueue* aQueue, FunctionType&& aFun) {
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       "RunOnTaskQueue", std::forward<FunctionType>(aFun));
   (void)aQueue->Dispatch(r.forget());

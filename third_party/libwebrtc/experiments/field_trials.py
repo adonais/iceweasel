@@ -92,9 +92,6 @@ ACTIVE_FIELD_TRIALS: FrozenSet[FieldTrial] = frozenset([
     FieldTrial('WebRTC-Dav1dDecoder-CropToRenderResolution',
                405341160,
                date(2026, 3, 21)),
-    FieldTrial('WebRTC-DisableRtxRateLimiter',
-               42225500,
-               date(2024, 4, 1)),
     FieldTrial('WebRTC-DisableSslGroupIds',
                404763475,
                date(2025,9,1)),
@@ -200,6 +197,9 @@ ACTIVE_FIELD_TRIALS: FrozenSet[FieldTrial] = frozenset([
     FieldTrial('WebRTC-ReceiveBufferSize',
                42225927,
                date(2024, 4, 1)),
+    FieldTrial('WebRTC-RetransmitFlushedPackets',
+               564720400,
+               date(2027, 4, 1)),
     FieldTrial('WebRTC-RtcEventLogEncodeNetEqSetMinimumDelayKillSwitch',
                42225058,
                date(2024, 4, 1)),
@@ -712,9 +712,6 @@ POLICY_EXEMPT_FIELD_TRIALS: FrozenSet[FieldTrial] = frozenset([
     FieldTrial('WebRTC-KeyframeInterval',
                42220470,
                INDEFINITE),
-    FieldTrial('WebRTC-LegacyFrameIdJumpBehavior',
-               42223541,
-               date(2024, 4, 1)),
     FieldTrial('WebRTC-LegacySimulcastLayerLimit',
                42233936,
                INDEFINITE),
@@ -893,7 +890,7 @@ POLICY_EXEMPT_FIELD_TRIALS: FrozenSet[FieldTrial] = frozenset([
 ])  # yapf: disable
 
 POLICY_EXEMPT_FIELD_TRIALS_DIGEST: str = \
-    '6af303162ccd3db0d047e3dd57d8d6f80a277034'
+    'c896c26970b042620c2ccc9b337aa2c958e9705c'
 
 REGISTERED_FIELD_TRIALS: FrozenSet[FieldTrial] = ACTIVE_FIELD_TRIALS.union(
     POLICY_EXEMPT_FIELD_TRIALS)

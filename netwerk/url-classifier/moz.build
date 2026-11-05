@@ -78,3 +78,24 @@ LOCAL_INCLUDES += [
 FINAL_LIBRARY = "xul"
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "nsChannelClassifier.h",
+    "UrlClassifierFeatureAntiFraudAnnotation.h",
+    "UrlClassifierFeatureBase.h",
+    "UrlClassifierFeatureConsentManagerAnnotation.h",
+    "UrlClassifierFeatureCryptominingAnnotation.h",
+    "UrlClassifierFeatureCryptominingProtection.h",
+    "UrlClassifierFeatureCustomTables.h",
+    "UrlClassifierFeatureEmailTrackingDataCollection.h",
+    "UrlClassifierFeatureEmailTrackingProtection.h",
+    "UrlClassifierFeatureFingerprintingAnnotation.h",
+    "UrlClassifierFeatureFingerprintingProtection.h",
+    "UrlClassifierFeatureGlobalCache.h",
+    "UrlClassifierFeatureHarmfulAddonProtection.h",
+    "UrlClassifierFeaturePhishingProtection.h",
+    "UrlClassifierFeatureSocialTrackingAnnotation.h",
+    "UrlClassifierFeatureSocialTrackingProtection.h",
+    "UrlClassifierFeatureTrackingAnnotation.h",
+    "UrlClassifierFeatureTrackingProtection.h",
+]

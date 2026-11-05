@@ -14,14 +14,7 @@ import { UrlbarResult } from "chrome://browser/content/urlbar/UrlbarResult.mjs";
 
 /**
  * @import {UrlbarSearchStringTokenData} from "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs"
- */
-
-/**
- * @typedef UrlbarSearchModeData
- * @property {Values<typeof UrlbarShared.RESULT_SOURCE>} source
- *   The source from which search mode was entered.
- * @property {string} [engineName]
- *   The search engine name associated with the search mode.
+ * @import {SearchMode} from "moz-src:///browser/components/urlbar/content/UrlbarInputBase.mjs"
  */
 
 // Source of the per-context `id`. Ids only have to be unique among the queries
@@ -39,9 +32,8 @@ export class UrlbarQueryContext {
    *
    * @param {object} options
    *   The initial options for UrlbarQueryContext.
-   * @param {string} options.sapName
-   *   The search access point name of the UrlbarInput for use with telemetry or
-   *   logging, e.g. `urlbar`, `searchbar`.
+   * @param {UrlbarSapName} options.sapName
+   *   The search access point name of the UrlbarInput.
    * @param {string} options.searchString
    *   The string the user entered in autocomplete. Could be the empty string
    *   in the case of the user opening the popup via the mouse.
@@ -249,9 +241,8 @@ export class UrlbarQueryContext {
   results;
 
   /**
-   * @type {string}
-   *   The search access point name of the UrlbarInput for use with telemetry or
-   *   logging, e.g. `urlbar`, `searchbar`.
+   * @type {UrlbarSapName}
+   *   The search access point name of the UrlbarInput.
    */
   sapName;
 
@@ -301,7 +292,7 @@ export class UrlbarQueryContext {
   }
 
   /**
-   * @type {UrlbarSearchModeData}
+   * @type {SearchMode}
    *   Details about the search mode associated with this context.
    */
   searchMode;

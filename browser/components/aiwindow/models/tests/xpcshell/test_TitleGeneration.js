@@ -6,6 +6,10 @@ const { generateChatTitle } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/TitleGeneration.sys.mjs"
 );
 
+const { AuthProvider } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs"
+);
+
 const {
   openAIEngine,
   MODEL_FEATURES,
@@ -77,7 +81,7 @@ function setupStubs(engineRunStub, existingSb) {
     get: sb.stub().resolves(FAKE_RECORDS),
   });
   sb.stub(openAIEngine, "build").resolves(fakeEngineInstance);
-  sb.stub(openAIEngine, "getFxAccountToken").resolves(null);
+  sb.stub(AuthProvider, "getToken").resolves(null);
 
   return { sb, fakeEngineInstance };
 }

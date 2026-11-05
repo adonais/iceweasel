@@ -45,3 +45,11 @@ FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [
     "!/security/rlbox",
 ]
+
+SOURCE_HEADERS += [
+    "CParserContext.h",
+    "nsExpatDriver.h",
+    "nsParser.h",
+    "nsParserMsgUtils.h",
+    "nsScanner.h",
+]

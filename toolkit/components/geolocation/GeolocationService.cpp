@@ -52,9 +52,16 @@ NS_INTERFACE_MAP_END
 NS_IMPL_ADDREF(GeolocationService)
 NS_IMPL_RELEASE(GeolocationService)
 
-nsresult GeolocationService::Init() {
+nsresult GeolocationService::Init(bool aIsOverride) {
   if (!StaticPrefs::geo_enabled()) {
     return NS_ERROR_FAILURE;
+  }
+
+  mIsOverride = aIsOverride;
+  if (mIsOverride) {
+    // Positions come from SetGeolocationServiceOverride, so there is no
+    // platform provider to set up.
+    return NS_OK;
   }
 
   if (XRE_IsContentProcess()) {
@@ -213,6 +220,10 @@ nsresult GeolocationService::StartDevice() {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  if (mIsOverride) {
+    return NS_OK;
+  }
+
   // We do not want to keep the geolocation devices online
   // indefinitely.
   // Close them down after a reasonable period of inactivity.
@@ -277,6 +288,10 @@ bool GeolocationService::HighAccuracyRequested() {
 }
 
 void GeolocationService::UpdateAccuracy(bool aForceHigh) {
+  if (mIsOverride) {
+    return;
+  }
+
   bool highRequired = aForceHigh || HighAccuracyRequested();
 
   if (XRE_IsContentProcess()) {

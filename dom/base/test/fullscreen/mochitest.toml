@@ -44,7 +44,6 @@ support-files = [
 skip-if = [
   "os == 'android'", # same as test_fullscreen-api.html, 1356570
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug",
 ]
 
 ["test_fullscreen-api-rapid-cycle.html"]
@@ -55,10 +54,7 @@ skip-if = [
   "http2",
   "http3",
   "os == 'android'",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1579623, 1776996
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929452
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019404
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && xorigin && verify-standalone",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && xorigin && verify-standalone",
 ]
 
@@ -75,6 +71,5 @@ skip-if = [
 skip-if = [
   "http2",
   "http3",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929452
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019466
 ]

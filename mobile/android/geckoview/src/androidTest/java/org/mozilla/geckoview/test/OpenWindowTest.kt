@@ -66,7 +66,6 @@ class OpenWindowTest : BaseSessionTest() {
             equalTo("granted"),
         )
 
-        val notificationResult = GeckoResult<Void>()
         var notificationShown: WebNotification? = null
 
         sessionRule.delegateDuringNextWait(
@@ -75,12 +74,11 @@ class OpenWindowTest : BaseSessionTest() {
                 override fun onShowNotification(notification: WebNotification) {
                     notificationShown = notification
                     notification.show()
-                    notificationResult.complete(null)
                 }
             }
         )
         mainSession.evaluateJS("showNotification()")
-        sessionRule.waitForResult(notificationResult)
+        sessionRule.waitUntilCalled(WebNotificationDelegate::class, "onShowNotification")
 
         if (teardownAlertsService) {
             mainSession.teardownAlertsService()

@@ -28,6 +28,7 @@
 #  include "jit/ProcessExecutableMemory.h"
 #endif
 
+#include "jit/AtomicOperations.h"
 #include "jit/FlushICache.h"
 #include "jit/JitOptions.h"
 #include "util/Text.h"
@@ -384,34 +385,41 @@ SharedCompileArgs CompileArgs::buildAndReport(JSContext* cx,
   return nullptr;
 }
 
-BytecodeSource::BytecodeSource(const uint8_t* begin, size_t length) {
+struct ModuleRegions {
+  BytecodeRange env;
+  BytecodeRange code;
+  BytecodeRange tail;
+
+  bool operator==(const ModuleRegions& other) const = default;
+};
+
+// Split a module of `length` bytes into regions. Only the bytes in
+// [begin, headersEnd) are read, which must contain every section header up to
+// and including the code section header.
+static ModuleRegions SplitModule(const uint8_t* begin,
+                                 const uint8_t* headersEnd, size_t length) {
   BytecodeRange codeRange;
-  if (!StartsCodeSection(begin, begin + length, &codeRange)) {
-    env_ = BytecodeSpan(begin, length);
-    code_ = BytecodeSpan();
-    tail_ = BytecodeSpan();
-    return;
+  if (!StartsCodeSection(begin, headersEnd, &codeRange)) {
+    return ModuleRegions{BytecodeRange(0, length), BytecodeRange(length, 0),
+                         BytecodeRange(length, 0)};
   }
 
-  BytecodeRange envRange;
-  BytecodeRange tailRange;
-  if (codeRange.end <= length) {
-    envRange = BytecodeRange(0, codeRange.start);
-    tailRange = BytecodeRange(codeRange.end, length - codeRange.end);
-  } else {
-    MOZ_RELEASE_ASSERT(codeRange.start <= length);
+  MOZ_RELEASE_ASSERT(codeRange.start <= length);
+  if (codeRange.end > length) {
     // If the specified code range is larger than the buffer, clamp it to the
     // the buffer size. This buffer will be rejected later.
-    envRange = BytecodeRange(0, codeRange.start);
     codeRange = BytecodeRange(codeRange.start, length - codeRange.start);
-    MOZ_RELEASE_ASSERT(codeRange.end == length);
-    tailRange = BytecodeRange(length, 0);
   }
+  return ModuleRegions{BytecodeRange(0, codeRange.start), codeRange,
+                       BytecodeRange(codeRange.end, length - codeRange.end)};
+}
 
+BytecodeSource::BytecodeSource(const uint8_t* begin, size_t length) {
+  ModuleRegions regions = SplitModule(begin, begin + length, length);
   BytecodeSpan module(begin, length);
-  env_ = envRange.toSpan(module);
-  code_ = codeRange.toSpan(module);
-  tail_ = tailRange.toSpan(module);
+  env_ = regions.env.toSpan(module);
+  code_ = regions.code.toSpan(module);
+  tail_ = regions.tail.toSpan(module);
 }
 
 BytecodeBuffer::BytecodeBuffer(const ShareableBytes* env,
@@ -454,6 +462,58 @@ bool BytecodeBuffer::fromSource(const BytecodeSource& bytecodeSource,
 
   *bytecodeBuffer = BytecodeBuffer(env, code, tail);
   return true;
+}
+
+static bool CopySharedRegion(SharedMem<uint8_t*> module,
+                             const BytecodeRange& region, SharedBytes* bytes) {
+  if (region.isEmpty()) {
+    return true;
+  }
+
+  MutableBytes copy = js_new<ShareableBytes>();
+  if (!copy || !copy->vector.resizeUninitialized(region.size())) {
+    return false;
+  }
+  jit::AtomicOperations::memcpySafeWhenRacy(
+      copy->begin(), module + region.start, region.size());
+  *bytes = copy;
+  return true;
+}
+
+bool BytecodeBuffer::fromSharedMemory(SharedMem<uint8_t*> begin, size_t length,
+                                      BytecodeBuffer* bytecodeBuffer) {
+  // Split the module while it may be concurrently mutated, then copy each
+  // region.
+  const uint8_t* racyBegin = begin.unwrap();
+  ModuleRegions regions = SplitModule(racyBegin, racyBegin + length, length);
+  SharedBytes env;
+  SharedBytes code;
+  SharedBytes tail;
+  if (!CopySharedRegion(begin, regions.env, &env) ||
+      !CopySharedRegion(begin, regions.code, &code) ||
+      !CopySharedRegion(begin, regions.tail, &tail)) {
+    return false;
+  }
+  BytecodeBuffer buffer(env, code, tail);
+
+  // The split only depends on the env region, so check that our copy of it
+  // splits the same way.
+  BytecodeSpan envSpan = buffer.source().envSpan();
+  if (SplitModule(envSpan.data(), envSpan.data() + envSpan.size(), length) ==
+      regions) {
+    *bytecodeBuffer = std::move(buffer);
+    return true;
+  }
+
+  // The module was mutated while we were copying it. Split the concatenation
+  // of the copied regions instead.
+  Bytes module;
+  if (!module.resizeUninitialized(length)) {
+    return false;
+  }
+  buffer.source().copyTo(module.begin());
+  return fromSource(BytecodeSource(module.begin(), module.length()),
+                    bytecodeBuffer);
 }
 
 /*

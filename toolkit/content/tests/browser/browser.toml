@@ -51,11 +51,8 @@ run-if = ["os == 'win'"]
 
 ["browser_bug295977_autoscroll_overflow.js"]
 skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1775543
   "os == 'win' && arch == 'x86'", # Bug 1775543
   "os == 'win' && arch == 'x86_64' && opt", # Bug 1775543
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug",
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && msix", # Bug 2020923
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug",
@@ -143,6 +140,8 @@ tags = "audiochannel"
 ["browser_delay_autoplay_webAudio.js"]
 tags = "audiochannel"
 
+["browser_drawSnapshot_failure.js"]
+
 ["browser_error_registry.js"]
 
 ["browser_f7_caret_browsing.js"]
@@ -155,10 +154,7 @@ tags = "audiochannel"
 
 ["browser_findbar_hidden_beforematch.js"]
 skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1995211
-  "os == 'win' && os_version == '11.26100' && arch == 'x86' && debug", # Bug 1995211
   "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 1995211
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1995211
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1995211
 ]
 
@@ -213,7 +209,6 @@ support-files = [
 ["browser_resume_bkg_video_on_tab_hover.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1775552
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1775552
 ]
 
 ["browser_richlistbox_keyboard.js"]
@@ -239,6 +234,9 @@ support-files = ["file_save_webpage_wrapping.html"]
 ["browser_starting_autoscroll_in_about_content.js"]
 fail-if = [
   "a11y_checks", # Bug 1854538 clicked body.wide-container may not be accessible
+]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2062699
 ]
 
 ["browser_suspend_videos_outside_viewport.js"]

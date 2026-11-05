@@ -101,3 +101,20 @@ AllowCompilerWarnings()
 
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     CFLAGS += ['-std=gnu89']
+
+SOURCE_HEADERS += [
+	"pngdebug.h",
+	"pnginfo.h",
+	"pngstruct.h",
+]
+
+# The libpng license appreciates but does not require an acknowledgment in
+# the product documentation.
+LICENSES += ['libpng']
+LICENSES['libpng'].title = 'libpng License'
+LICENSES['libpng'].acknowledgement = (
+    'The <a href="http://www.libpng.org/pub/png/">libpng</a> graphics library '
+    '(Glenn Randers-Pehrson and team)'
+)
+
+LICENSED_UNDER += ['libpng']

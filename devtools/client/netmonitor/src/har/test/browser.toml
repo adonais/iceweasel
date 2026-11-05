@@ -25,9 +25,6 @@ skip-if = [
 ["browser_net_har_image_priority.js"]
 
 ["browser_net_har_import.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1767273
-]
 
 ["browser_net_har_import_no-mime.js"]
 

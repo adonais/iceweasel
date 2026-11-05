@@ -29,6 +29,7 @@ import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.NAVIGATION_BAR
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.NAVIGATION_BAR_HORIZONTAL_DIVIDER
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
@@ -39,6 +40,7 @@ import mozilla.components.ui.icons.R as iconsR
  *
  * @param actions List of browser [Action]s to be displayed in the navigation bar.
  * @param toolbarGravity [ToolbarGravity] for where the toolbar is being placed on the screen.
+ * @param showDivider Whether to show the divider on the top edge of the navigation bar.
  * @param onInteraction Callback invoked with a [BrowserToolbarEvent] whenever the user interacts with any action in the
  *   navigation bar.
  */
@@ -46,6 +48,7 @@ import mozilla.components.ui.icons.R as iconsR
 fun NavigationBar(
     actions: List<Action> = emptyList(),
     toolbarGravity: ToolbarGravity = Top,
+    showDivider: Boolean = true,
     onInteraction: (BrowserToolbarEvent) -> Unit,
 ) {
     Surface {
@@ -71,8 +74,11 @@ fun NavigationBar(
                 horizontalArrangement = Arrangement.SpaceBetween,
             )
 
-            if (toolbarGravity == Top) {
-                HorizontalDivider(modifier = Modifier.align(Alignment.TopCenter))
+            if (showDivider) {
+                HorizontalDivider(
+                    modifier =
+                        Modifier.align(Alignment.TopCenter).semantics { testTag = NAVIGATION_BAR_HORIZONTAL_DIVIDER }
+                )
             }
         }
     }

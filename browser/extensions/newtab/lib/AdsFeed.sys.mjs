@@ -94,7 +94,6 @@ export class AdsFeed {
 
   async deleteUserAdsData() {
     const state = this.store.getState();
-    const headers = new Headers();
     const endpointBaseUrl = state.Prefs.values[PREF_UNIFIED_ADS_ENDPOINT];
 
     if (!endpointBaseUrl) {
@@ -106,11 +105,9 @@ export class AdsFeed {
       context_id: await lazy.ContextId.request(),
     };
 
-    headers.append("content-type", "application/json");
-
     await this.fetch(endpoint, {
       method: "DELETE",
-      headers,
+      headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
   }
@@ -171,6 +168,8 @@ export class AdsFeed {
   /**
    * This thin wrapper around global.fetch makes it easier for us to write
    * automated tests that simulate responses from this fetch.
+   *
+   * @param {Parameters<typeof fetch>} args
    */
   fetch(...args) {
     return fetch(...args);
@@ -180,7 +179,7 @@ export class AdsFeed {
    * Normalize new Unified Ads API response into
    * previous Contile ads response
    *
-   * @param {Array} data - Array of UAPI placement objects ("newtab_tile_1", etc.)
+   * @param {{[placement: string]: Array}} data - UAPI placements keyed by name ("newtab_tile_1", etc.)
    * @returns {object} - Object containing array of formatted UAPI objects to match legacy Contile system
    */
   _normalizeTileData(data) {
@@ -281,13 +280,14 @@ export class AdsFeed {
    * Fetch data from the Mozilla Ad Routing Service (MARS) unified ads API
    * This function is designed to get whichever ads types are needed (tiles, spocs)
    *
-   * @param {Array} supportedAdTypes
+   * @param {{tiles: boolean, spocs: boolean}} supportedAdTypes
    * @returns {Promise<object>} Response object containing ad information from MARS
    */
   async fetchData(supportedAdTypes) {
     const state = this.store.getState();
-    const headers = new Headers();
-    headers.append("content-type", "application/json");
+    // A plain object, since ObliviousHTTP.ohttpRequest reads headers with
+    // Object.keys, which finds nothing on a Headers instance.
+    const headers = { "content-type": "application/json" };
 
     const endpointBaseUrl = state.Prefs.values[PREF_UNIFIED_ADS_ENDPOINT];
     const marsOhttpEnabled = Services.prefs.getBoolPref(
@@ -312,6 +312,7 @@ export class AdsFeed {
     // Can include both tile and spoc placement data
     let placements = [];
     let responseData;
+    /** @type {{tiles?: Array, spocs?: Array, spocPlacements?: Array}} */
     let returnData = {};
 
     // Determine which data needs to be fetched
@@ -373,6 +374,7 @@ export class AdsFeed {
     const controller = new AbortController();
     const { signal } = controller;
 
+    /** @type {RequestInit} */
     const options = {
       method: "POST",
       headers,
@@ -435,7 +437,7 @@ export class AdsFeed {
         .reduce((acc, key) => {
           acc[key] = responseData[key];
           return acc;
-        }, {});
+        }, /** @type {{[placement: string]: Array}} */ ({}));
 
       returnData.spocs = filteredRespDataNonTiles.newtab_spocs;
     }
@@ -448,7 +450,7 @@ export class AdsFeed {
    * objects into the shape the rest of New Tab consumes today; the mapping goes
    * away once consumers read the ads-client types directly.
    *
-   * @param {Array} supportedAdTypes
+   * @param {{tiles: boolean, spocs: boolean}} supportedAdTypes
    * @param {Array} placements
    * @param {object} prefValues
    * @param {object} returnData

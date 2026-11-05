@@ -1,0 +1,75 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test sendResponse() is ignored warning from a content script runtime.onMessage listener</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/ExtensionTestUtils.js"></script>
+  <script type="text/javascript" src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<script>
+"use strict";
+
+function expectedWarning(extension) {
+  return new RegExp(
+    RegExp.escape(
+      "sendResponse() has no effect because the runtime.onMessage handler " +
+        `has already returned a Promise. (extension: ${extension.id})`
+    )
+  );
+}
+
+add_task(async function test_content_script_sendResponse_warning() {
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      content_scripts: [
+        {
+          matches: ["*://mochi.test/*/file_sample.html"],
+          js: ["content_script.js"],
+        },
+      ],
+    },
+
+    background() {
+      browser.runtime.onMessage.addListener(async (msg, sender) => {
+        browser.test.assertEq("ready", msg, "content script is ready");
+        let response = await browser.tabs.sendMessage(
+          sender.tab.id,
+          "pinging content script"
+        );
+        browser.test.assertEq(
+          undefined,
+          response,
+          "sendResponse() from content script listener is ignored when that listener returns a Promise"
+        );
+        browser.test.sendMessage("done");
+      });
+    },
+
+    files: {
+      "content_script.js"() {
+        browser.runtime.onMessage.addListener(
+          async (msg, sender, sendResponse) => {
+            sendResponse("Hi from content script");
+          }
+        );
+        browser.runtime.sendMessage("ready");
+      },
+    },
+  });
+
+  await extension.startup();
+
+  consoleMonitor.start([{ message: expectedWarning(extension) }]);
+
+  let win = window.open("file_sample.html");
+  await extension.awaitMessage("done");
+  win.close();
+
+  await extension.unload();
+  await consoleMonitor.finished();
+});
+</script>
+</body>
+</html>

@@ -122,33 +122,6 @@ nssItem_Duplicate(NSSItem *obj, NSSArena *arenaOpt, NSSItem *rvOpt)
     return nssItem_Create(arenaOpt, rvOpt, obj->size, obj->data);
 }
 
-#ifdef DEBUG
-/*
- * nssItem_verifyPointer
- *
- * -- fgmr comments --
- *
- * The error may be one of the following values:
- *  NSS_ERROR_INVALID_ITEM
- *
- * Return value:
- *  PR_SUCCESS upon success
- *  PR_FAILURE upon failure
- */
-
-NSS_IMPLEMENT PRStatus
-nssItem_verifyPointer(const NSSItem *item)
-{
-    if (((const NSSItem *)NULL == item) ||
-        (((void *)NULL == item->data) && (item->size > 0))) {
-        nss_SetError(NSS_ERROR_INVALID_ITEM);
-        return PR_FAILURE;
-    }
-
-    return PR_SUCCESS;
-}
-#endif /* DEBUG */
-
 /*
  * nssItem_Equal
  *

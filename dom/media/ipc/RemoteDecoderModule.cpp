@@ -4,6 +4,7 @@
 #include "RemoteDecoderModule.h"
 
 #include "AOMDecoder.h"
+#include "MediaCodecsSupport.h"
 #include "RemoteAudioDecoder.h"
 #include "RemoteMediaDataDecoder.h"
 #include "RemoteMediaManagerChild.h"
@@ -75,6 +76,15 @@ media::DecodeSupportSet RemoteDecoderModule::Supports(
       (!aParams.mCDM && aParams.mConfig.IsAudio() &&
        mLocation != RemoteMediaIn::UtilityProcess_Generic)) {
     support = {};
+  }
+  if (const auto* videoInfo = aParams.mConfig.GetAsVideoInfo()) {
+    const media::MediaCodec codec =
+        media::MCSInfo::GetMediaCodecFromMimeType(aParams.MimeType());
+    support = media::MCSInfo::GetMediaCodecDecodeSupportForSize(
+        codec,
+        media::MCSInfo::GetMediaCodecDecodeSupportForColorDepth(
+            codec, support, videoInfo->mColorDepth),
+        videoInfo->mImage);
   }
 #endif
   MOZ_LOG_FMT(

@@ -52,6 +52,14 @@ class StylePropertyMap final : public StylePropertyMapReadOnly {
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
  private:
+  enum class Mode {
+    Set,
+    Append,
+  };
+  void SetOrAppend(const nsACString& aProperty,
+                   const Sequence<OwningCSSStyleValueOrUTF8String>& aValues,
+                   Mode, ErrorResult& aRv);
+
   virtual ~StylePropertyMap() = default;
 };
 

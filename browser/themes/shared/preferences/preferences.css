@@ -546,7 +546,7 @@ html|label[disabled] {
 }
 
 html|dialog {
-  padding: var(--space-xlarge);
+  padding: var(--dialog-padding);
 }
 
 html|dialog::backdrop,
@@ -556,13 +556,15 @@ html|dialog::backdrop,
 
 html|dialog,
 .dialogBox {
-  border: 1px solid transparent;
-  border-radius: var(--border-radius-medium);
-  box-shadow: var(--popup-box-shadow);
+  border: var(--border-width) solid var(--dialog-border-color);
+  border-radius: var(--dialog-border-radius);
+  box-shadow: var(--dialog-box-shadow);
+  background-color: var(--dialog-background-color);
 }
 
 .dialogBox {
-  background-color: var(--background-color-box);
+  --dialog-resizer-inset: calc(0.3 * var(--dialog-border-radius));
+
   background-clip: content-box;
   color: var(--text-color);
   /* `transparent` will use the dialogText color in high-contrast themes and
@@ -571,15 +573,8 @@ html|dialog,
   margin: 0;
   padding: 0;
   overflow-x: auto;
-}
-
-@media (prefers-color-scheme: dark) {
-  @media not (forced-colors) {
-    html|dialog,
-    .dialogBox {
-      --background-color-canvas: #42414d;
-    }
-  }
+  -moz-scrollbar-inset-inline: 0 var(--dialog-resizer-inset);
+  -moz-scrollbar-inset-block: 0 var(--dialog-resizer-inset);
 }
 
 .dialogBox[resizable="true"] {
@@ -587,6 +582,15 @@ html|dialog,
   overflow: hidden;
   min-height: 20em;
   min-width: 66ch;
+}
+
+.dialogBox.vpnSiteRuleDialogBox {
+  min-width: 24em;
+
+  .dialogFrame {
+    width: 24em;
+    min-width: 24em;
+  }
 }
 
 .dialogTitleBar {
@@ -1590,6 +1594,12 @@ setting-pane[onsearchpane] {
 
 .box-header-bold {
   --box-label-font-weight: var(--font-weight-heading);
+}
+
+/* box-header-bold only reaches the item's own label, so the second column
+   heading, which is slotted, has to be weighted on its own. */
+#notification-sites-list moz-box-item[slot="header"] [slot="actions"] {
+  font-weight: var(--font-weight-heading);
 }
 
 #containers-list {

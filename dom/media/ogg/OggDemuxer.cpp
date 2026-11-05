@@ -5,6 +5,7 @@
 #include "OggDemuxer.h"
 
 #include <algorithm>
+#include <memory>
 
 #include "MediaDataDemuxer.h"
 #include "OggCodecState.h"
@@ -716,7 +717,7 @@ bool OggDemuxer::ReadOggChain(const media::TimeUnit& aLastEndTime) {
     if (mTimedMetadataEvent) {
       mTimedMetadataEvent->Notify(
           TimedMetadata(mDecodedAudioDuration, std::move(tags),
-                        UniquePtr<MediaInfo>(new MediaInfo(mInfo))));
+                        std::make_unique<MediaInfo>(mInfo)));
     }
     // Setup a new TrackInfo so that the MediaFormatReader will flush the
     // current decoder.

@@ -2942,5 +2942,126 @@ TEST_F(JsepTransportControllerTest, CustomRtpTransportFactory) {
   EXPECT_EQ(factory->video_transport_, video_rtp_transport);
 }
 
+TEST_F(JsepTransportControllerTest, IceRolePreservedOnSubsequentAnswer) {
+  CreateJsepTransportController(JsepTransportController::Config());
+
+  // Local Offer (Full ICE) -> Controlling
+  auto local_offer = std::make_unique<SessionDescription>();
+  AddAudioSection(local_offer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
+                  ICEMODE_FULL, CONNECTIONROLE_ACTPASS, nullptr);
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
+
+  auto fake_dtls = static_cast<FakeDtlsTransport*>(
+      transport_controller_->GetDtlsTransport(kAudioMid1));
+  ASSERT_NE(fake_dtls, nullptr);
+  EXPECT_EQ(ICEROLE_CONTROLLING, fake_dtls->fake_ice_transport()->GetIceRole());
+
+  // Remote Answer -> Established
+  auto remote_answer = std::make_unique<SessionDescription>();
+  AddAudioSection(remote_answer.get(), kAudioMid1, kIceUfrag2, kIcePwd2,
+                  ICEMODE_FULL, CONNECTIONROLE_PASSIVE, nullptr);
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
+                  .ok());
+
+  // Subsequent Remote Offer -> Local Answer (No ICE Restart)
+  auto remote_reoffer = std::make_unique<SessionDescription>();
+  AddAudioSection(remote_reoffer.get(), kAudioMid1, kIceUfrag2, kIcePwd2,
+                  ICEMODE_FULL, CONNECTIONROLE_ACTPASS, nullptr);
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kOffer, local_offer.get(),
+                                         remote_reoffer.get())
+                  .ok());
+
+  auto local_reanswer = std::make_unique<SessionDescription>();
+  AddAudioSection(local_reanswer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
+                  ICEMODE_FULL, CONNECTIONROLE_PASSIVE, nullptr);
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kAnswer, local_reanswer.get(),
+                                        remote_reoffer.get())
+                  .ok());
+
+  EXPECT_EQ(ICEROLE_CONTROLLING, fake_dtls->fake_ice_transport()->GetIceRole());
+}
+
+TEST_F(JsepTransportControllerTest, IceRolePreservedOnSubsequentOffer) {
+  CreateJsepTransportController(JsepTransportController::Config());
+
+  // Remote Offer -> Local Answer -> Controlled
+  auto remote_offer = std::make_unique<SessionDescription>();
+  AddAudioSection(remote_offer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
+                  ICEMODE_FULL, CONNECTIONROLE_ACTPASS, nullptr);
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetRemoteDescription(SdpType::kOffer, nullptr, remote_offer.get())
+          .ok());
+
+  auto local_answer = std::make_unique<SessionDescription>();
+  AddAudioSection(local_answer.get(), kAudioMid1, kIceUfrag2, kIcePwd2,
+                  ICEMODE_FULL, CONNECTIONROLE_PASSIVE, nullptr);
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kAnswer, local_answer.get(),
+                                        remote_offer.get())
+                  .ok());
+
+  auto fake_dtls = static_cast<FakeDtlsTransport*>(
+      transport_controller_->GetDtlsTransport(kAudioMid1));
+  ASSERT_NE(fake_dtls, nullptr);
+  EXPECT_EQ(ICEROLE_CONTROLLED, fake_dtls->fake_ice_transport()->GetIceRole());
+
+  // Subsequent Local Offer (No ICE Restart)
+  auto local_reoffer = std::make_unique<SessionDescription>();
+  AddAudioSection(local_reoffer.get(), kAudioMid1, kIceUfrag2, kIcePwd2,
+                  ICEMODE_FULL, CONNECTIONROLE_ACTPASS, nullptr);
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, local_reoffer.get(),
+                                        local_answer.get())
+                  .ok());
+
+  EXPECT_EQ(ICEROLE_CONTROLLED, fake_dtls->fake_ice_transport()->GetIceRole());
+}
+
+TEST_F(JsepTransportControllerTest, IceRoleRedeterminedOnIceRestart) {
+  CreateJsepTransportController(JsepTransportController::Config());
+
+  // Remote Offer -> Local Answer -> Controlled
+  auto remote_offer = std::make_unique<SessionDescription>();
+  AddAudioSection(remote_offer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
+                  ICEMODE_FULL, CONNECTIONROLE_ACTPASS, nullptr);
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetRemoteDescription(SdpType::kOffer, nullptr, remote_offer.get())
+          .ok());
+
+  auto local_answer = std::make_unique<SessionDescription>();
+  AddAudioSection(local_answer.get(), kAudioMid1, kIceUfrag2, kIcePwd2,
+                  ICEMODE_FULL, CONNECTIONROLE_PASSIVE, nullptr);
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kAnswer, local_answer.get(),
+                                        remote_offer.get())
+                  .ok());
+
+  auto fake_dtls = static_cast<FakeDtlsTransport*>(
+      transport_controller_->GetDtlsTransport(kAudioMid1));
+  ASSERT_NE(fake_dtls, nullptr);
+  EXPECT_EQ(ICEROLE_CONTROLLED, fake_dtls->fake_ice_transport()->GetIceRole());
+
+  // Subsequent Local Offer with ICE Restart -> Controlling
+  auto restart_local_offer = std::make_unique<SessionDescription>();
+  AddAudioSection(restart_local_offer.get(), kAudioMid1, kIceUfrag3, kIcePwd3,
+                  ICEMODE_FULL, CONNECTIONROLE_ACTPASS, nullptr);
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer,
+                                        restart_local_offer.get(),
+                                        remote_offer.get())
+                  .ok());
+
+  EXPECT_EQ(ICEROLE_CONTROLLING, fake_dtls->fake_ice_transport()->GetIceRole());
+}
+
 }  // namespace
 }  // namespace webrtc

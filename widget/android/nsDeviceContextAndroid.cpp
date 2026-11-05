@@ -5,7 +5,7 @@
 #include "nsDeviceContextAndroid.h"
 
 #include "mozilla/RefPtr.h"
-#include "mozilla/gfx/PrintTargetPDF.h"
+#include "mozilla/gfx/PrintTargetSkPDF.h"
 #include "nsAnonymousTemporaryFile.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceDefs.h"
@@ -53,7 +53,7 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecAndroid::MakePrintTarget() {
     return s;
   }();
 
-  return PrintTargetPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
+  return PrintTargetSkPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
 }
 
 NS_IMETHODIMP

@@ -16,8 +16,10 @@ if [ -z "$NO_NDK" -a -z "$USE_ARTIFACT" ]; then
     # Make sure that any host binaries we build use whatever libraries clang
     # linked against, rather than what's on the system.
     mk_add_options "export LD_LIBRARY_PATH=$MOZ_FETCHES_DIR/clang/lib"
-    # Enable static analysis plugin
-    export ENABLE_CLANG_PLUGIN=1
+    if [ -z "$DISABLE_CLANG_PLUGIN" ]; then
+        # Enable static analysis plugin
+        export ENABLE_CLANG_PLUGIN=1
+    fi
 fi
 
 ac_add_options --enable-update-channel=${MOZ_UPDATE_CHANNEL}

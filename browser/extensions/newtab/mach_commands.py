@@ -617,29 +617,20 @@ def channel_metrics_diff(command_context, channel):
             glean_utils.output_file_with_key(all_objs, output_fd, options)
             Path(output_file_path).write_text(output_fd.getvalue())
 
-            # 7. Print warnings for any metrics with changed types or new extra_keys
-            changed_metrics = check_existing_metrics(
+            # 7. Print warnings for any metrics with changed types
+            changed_metrics = check_metric_type_changes(
                 main_metrics_yaml, compare_metrics_yaml
             )
             if changed_metrics:
                 print("\nWARNING: Found existing metrics with updated properties:")
                 for category, metrics in changed_metrics.items():
                     print(f"\nCategory: {category}")
-                    for metric, changes in metrics.items():
+                    for metric, change in metrics.items():
                         print(f"  Metric: {metric}")
-                        if "type_change" in changes:
-                            print(
-                                f"      Old type: {changes['type_change']['old_type']}"
-                            )
-                            print(
-                                f"      New type: {changes['type_change']['new_type']}"
-                            )
-                        if "new_extra_keys" in changes:
-                            print(
-                                f"    New extra keys: {', '.join(changes['new_extra_keys'])}"
-                            )
+                        print(f"      Old type: {change['old_type']}")
+                        print(f"      New type: {change['new_type']}")
                 print(
-                    "\nPlease review above warning carefully as existing metrics update cannot be dynamically registered"
+                    "\nPlease review above warning carefully as a type update to existing metrics cannot be dynamically registered"
                 )
 
     except requests.RequestException as e:
@@ -687,10 +678,8 @@ def process_yaml_file(main_yaml, compare_yaml, yaml_type: YamlType, temp_dir_pat
     return file_path
 
 
-def check_existing_metrics(main_yaml, compare_yaml):
-    """Compare metrics that exist in both YAML files for:
-    1. Changes in type property values
-    2. New extra_keys added to event type metrics
+def check_metric_type_changes(main_yaml, compare_yaml):
+    """Compare metrics that exist in both YAML files for changes in type property values.
 
     Args:
         main_yaml: The main YAML file containing metrics
@@ -698,9 +687,7 @@ def check_existing_metrics(main_yaml, compare_yaml):
 
     Returns:
         A dictionary containing metrics with changes, organized by category.
-            Each entry contains either:
-            - type_change: old and new type values
-            - new_extra_keys: list of newly added extra keys for event metrics
+            Each entry contains old_type and new_type values
     """
     changed_metrics = {}
 
@@ -724,30 +711,12 @@ def check_existing_metrics(main_yaml, compare_yaml):
                 main_type = main_metric.get("type")
                 compare_type = compare_metric.get("type")
 
-                changes = {}
-
                 # If types are different, record the change
                 if main_type != compare_type:
-                    changes["type_change"] = {
+                    category_changes[metric] = {
                         "old_type": compare_type,
                         "new_type": main_type,
                     }
-
-                # Check for changes in extra_keys for event metrics
-                if main_type == "event" and "extra_keys" in main_metric:
-                    main_extra_keys = set(main_metric["extra_keys"].keys())
-                    compare_extra_keys = set(
-                        compare_metric.get("extra_keys", {}).keys()
-                    )
-
-                    # Find new extra keys
-                    new_extra_keys = main_extra_keys - compare_extra_keys
-                    if new_extra_keys:
-                        changes["new_extra_keys"] = list(new_extra_keys)
-
-                # Only add the metric if there were any changes
-                if changes:
-                    category_changes[metric] = changes
 
         # Only add the category if there were changes
         if category_changes:

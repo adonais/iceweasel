@@ -12,8 +12,8 @@ addi\\.d   \\$sp, \\$sp, -8
 st\\.d     \\$ra, \\$sp, 0
 addi\\.d   \\$sp, \\$sp, -8
 st\\.d     \\$fp, \\$sp, 0
-or         \\$fp, \\$sp, \\$zero
-st\\.d     \\$s4, \\$fp, 16
+or         \\$fp, \\$sp, \\$zero(
+st\\.d     \\$s4, \\$fp, 16)?
 `,
 
     // Start of epilogue

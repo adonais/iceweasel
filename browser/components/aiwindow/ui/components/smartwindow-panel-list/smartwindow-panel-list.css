@@ -24,7 +24,6 @@ panel-list {
   --panel-item-button-border-radius: var(--border-radius-medium);
   --icon-fill: light-dark(var(--color-violet-50), var(--color-violet-40));
   margin-inline: var(--panel-inline-margin);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-width: var(--panel-max-width);
   white-space: normal;
 
@@ -45,10 +44,8 @@ panel-list {
 @media -moz-pref("browser.nova.enabled") {
   /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
   panel-list {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     --panel-list-border-radius: var(--smartwindow-panel-item-border-radius);
     --panel-section-header-padding-inline-start: var(--size-item-small);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     --panel-item-button-border-radius: var(--smartwindow-panel-item-border-radius);
 
     @media not (forced-colors) {
@@ -77,7 +74,6 @@ panel-list[valign="top"] {
 panel-item.panel-section-header::part(button) {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   color: var(--panel-section-header-color);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: var(--panel-section-header-font-size);
   opacity: 1;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -91,7 +87,6 @@ panel-item.panel-command-footer::part(button) {
 }
 
 panel-item:not(.panel-section-header)::part(button) {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-radius: var(--panel-item-button-border-radius);
   cursor: pointer;
   margin-inline: var(--space-small);
@@ -141,7 +136,6 @@ panel-item::part(label) {
 
 .panel-tab-group-icon {
   /* The design draws the initial smaller on this surface. */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   --tab-group-icon-font-size: 8.2px;
   --tab-group-icon-notch-radius: var(--border-radius-xsmall);
   --tab-group-icon-size: var(--panel-item-icon-size);
@@ -211,7 +205,6 @@ panel-list ai-website-chip::part(chip):focus-visible {
   panel-item::part(button) {
     background-color: transparent;
     margin-inline: 0;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     max-width: 100%;
     padding-block: 0;
     padding-inline: 0;
@@ -301,7 +294,6 @@ panel-list ai-website-chip::part(chip):focus-visible {
   }
 
   panel-item.panel-section-header::part(button) {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     color: var(--panel-list-text-color);
     font-weight: var(--font-weight-heading);
   }

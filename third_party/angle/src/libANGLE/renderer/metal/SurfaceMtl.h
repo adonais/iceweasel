@@ -70,7 +70,7 @@ class SurfaceMtl : public SurfaceImpl
 
     angle::Result initializeContents(const gl::Context *context,
                                      GLenum binding,
-                                     const gl::OwnImageIndex &ownImageIndex) override;
+                                     const gl::ImageIndex &imageIndex) override;
 
     const mtl::TextureRef &getColorTexture() { return mColorTexture; }
     const mtl::Format &getColorFormat() const { return mColorFormat; }
@@ -81,13 +81,9 @@ class SurfaceMtl : public SurfaceImpl
 
     angle::Result getAttachmentRenderTarget(const gl::Context *context,
                                             GLenum binding,
-                                            const gl::OwnImageIndex &ownImageIndex,
+                                            const gl::ImageIndex &imageIndex,
                                             GLsizei samples,
                                             FramebufferAttachmentRenderTarget **rtOut) override;
-    egl::Error attachToFramebuffer(const gl::Context *context,
-                                   gl::Framebuffer *framebuffer) override;
-    egl::Error detachFromFramebuffer(const gl::Context *context,
-                                     gl::Framebuffer *framebuffer) override;
 
   protected:
     // Ensure companion (MS, depth, stencil) textures' size is correct w.r.t color texture.
@@ -143,19 +139,17 @@ class WindowSurfaceMtl : public SurfaceMtl
 
     angle::Result initializeContents(const gl::Context *context,
                                      GLenum binding,
-                                     const gl::OwnImageIndex &ownImageIndex) override;
+                                     const gl::ImageIndex &imageIndex) override;
 
     // size can change with client window resizing
     gl::Extents getSize() const override;
     angle::Result getAttachmentRenderTarget(const gl::Context *context,
                                             GLenum binding,
-                                            const gl::OwnImageIndex &ownImageIndex,
+                                            const gl::ImageIndex &imageIndex,
                                             GLsizei samples,
                                             FramebufferAttachmentRenderTarget **rtOut) override;
-    egl::Error attachToFramebuffer(const gl::Context *context,
-                                   gl::Framebuffer *framebuffer) override;
-    egl::Error detachFromFramebuffer(const gl::Context *context,
-                                     gl::Framebuffer *framebuffer) override;
+    void attachToFramebuffer(const gl::Context *context, gl::Framebuffer *framebuffer) override;
+    void detachFromFramebuffer(gl::Framebuffer *framebuffer) override;
 
     angle::Result ensureCurrentDrawableObtained(const gl::Context *context);
 
@@ -207,7 +201,7 @@ class OffscreenSurfaceMtl : public SurfaceMtl
 
     angle::Result getAttachmentRenderTarget(const gl::Context *context,
                                             GLenum binding,
-                                            const gl::OwnImageIndex &ownImageIndex,
+                                            const gl::ImageIndex &imageIndex,
                                             GLsizei samples,
                                             FramebufferAttachmentRenderTarget **rtOut) override;
 

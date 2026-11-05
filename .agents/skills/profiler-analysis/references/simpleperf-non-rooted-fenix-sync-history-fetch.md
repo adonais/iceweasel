@@ -62,7 +62,7 @@ Self-time in sync window (6.97s - 10.82s):
 58% self time in `pread64` means SQLite is spending most of its time reading pages from disk. This is a
 full table scan of the `moz_places` history database. The query being run is:
 
-```sql
+```text
 SELECT guid, url, id, title, hidden, typed, frecency,
        visit_count_local, visit_count_remote,
        last_visit_date_local, last_visit_date_remote,

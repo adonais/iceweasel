@@ -16,6 +16,8 @@
   <script type="application/javascript"
           src="../relations.js" />
   <script type="application/javascript"
+          src="../name.js" />
+  <script type="application/javascript"
           src="../events.js" />
   <script type="application/javascript"
           src="../browser.js"></script>
@@ -55,6 +57,9 @@
       testRelation(tabs[0], RELATION_LABEL_FOR, panels[0]);
       testRelation(panels[1], RELATION_LABELLED_BY, tabs[1]);
       testRelation(tabs[1], RELATION_LABEL_FOR, panels[1]);
+      // The tab labels the panel for relations, but it shouldn't name it.
+      testName(panels[0], null);
+      testName(panels[1], null);
 
       closeBrowserWindow();
       SimpleTest.finish();

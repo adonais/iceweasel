@@ -24,6 +24,7 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
+#include "mozilla/StyleSheet.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Document.h"
@@ -35,6 +36,7 @@
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsAtom.h"
@@ -75,6 +77,7 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(nsContentSink)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsContentSink)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsContentSink)
+  NS_INTERFACE_MAP_ENTRY_CONCRETE(nsContentSink)
   NS_INTERFACE_MAP_ENTRY(nsICSSLoaderObserver)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsICSSLoaderObserver)
@@ -172,6 +175,8 @@ nsContentSink::StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
     // that if mDeferredLayoutStart is true, that means any subclass
     // StartLayout() stuff that needs to happen has already happened, so
     // we don't need to worry about it.
+    // While the document is still render-blocked this bails out, and
+    // Document::StartLayoutAfterUnblocking starts layout later.
     StartLayout(false);
 
     // Go ahead and try to scroll to our ref if we have one
@@ -207,8 +212,9 @@ nsresult nsContentSink::ProcessHTTPHeaders(nsIChannel* aChannel) {
     mDocument->SetEarlyHints(std::move(earlyHints));
   }
 
-  // Note that the only header we care about is the "link" header, since we
-  // have all the infrastructure for kicking off stylesheet loads.
+  // Note that the only headers we care about are the "link" header, since we
+  // have all the infrastructure for kicking off stylesheet loads, and the
+  // "Speculation-Rules" header for top-level documents.
 
   nsAutoCString linkHeader;
 
@@ -228,6 +234,21 @@ nsresult nsContentSink::ProcessHTTPHeaders(nsIChannel* aChannel) {
     rv = NS_DispatchToCurrentThread(mProcessLinkHeaderEvent.get());
     if (NS_FAILED(rv)) {
       mProcessLinkHeaderEvent.Forget();
+    }
+  }
+
+  // https://html.spec.whatwg.org/#initialise-the-document-object
+  // Step 20. If navigationParams's navigable is a top-level traversable, then
+  // process the `Speculation-Rules` header given document and
+  // navigationParams's response.
+  if (StaticPrefs::dom_speculation_rules_enabled() && mDocShell &&
+      mDocShell->GetBrowsingContext()->IsTop()) {
+    nsAutoCString speculationRulesHeader;
+    rv = httpchannel->GetResponseHeader("Speculation-Rules"_ns,
+                                        speculationRulesHeader);
+    if (NS_SUCCEEDED(rv) && !speculationRulesHeader.IsEmpty()) {
+      mDocument->SpeculationRules().ProcessSpeculationRulesHeader(
+          speculationRulesHeader);
     }
   }
 
@@ -554,8 +575,10 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
   mDeferredLayoutStart = true;
 
   if (!aIgnorePendingSheets &&
-      (WaitForPendingSheets() || mDocument->HasPendingInitialTranslation())) {
-    // Bail out; we'll start layout when the sheets and l10n load
+      (WaitForPendingSheets() || mDocument->HasPendingInitialTranslation() ||
+       mDocument->IsRenderBlocked())) {
+    // Bail out; we'll start layout when the sheets and l10n load, or when
+    // render-blocking elements finish loading
     return;
   }
 

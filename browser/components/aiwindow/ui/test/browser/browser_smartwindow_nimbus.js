@@ -13,6 +13,57 @@ const PREF_SMARTWINDOW_ENABLED = "browser.smartwindow.enabled";
 const PREF_AGENT_ENABLED = "browser.smartwindow.agent.enabled";
 const PREF_AGENT_SUPPORTED_REGIONS =
   "browser.smartwindow.agent.supportedRegions";
+const PREF_AITAB_MENUS = "browser.smartwindow.aitab.menus";
+
+add_task(async function test_nimbus_enables_aitab_menus() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[PREF_AITAB_MENUS, false]],
+  });
+
+  const cleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "smartWindow",
+    value: { aiTabMenus: true },
+  });
+
+  ok(
+    Services.prefs.getBoolPref(PREF_AITAB_MENUS),
+    "Enrollment enables the menus"
+  );
+
+  await cleanup();
+
+  ok(
+    !Services.prefs.getBoolPref(PREF_AITAB_MENUS),
+    "Unenrollment restores disabled menus"
+  );
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_nimbus_disables_aitab_menus() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[PREF_AITAB_MENUS, true]],
+  });
+
+  const cleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "smartWindow",
+    value: { aiTabMenus: false },
+  });
+
+  ok(
+    !Services.prefs.getBoolPref(PREF_AITAB_MENUS),
+    "Enrollment disables the menus"
+  );
+
+  await cleanup();
+
+  ok(
+    Services.prefs.getBoolPref(PREF_AITAB_MENUS),
+    "Unenrollment restores enabled menus"
+  );
+
+  await SpecialPowers.popPrefEnv();
+});
 
 /**
  * Enrolling in the smartWindow feature with isDefault=true sets the

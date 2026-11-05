@@ -43,3 +43,9 @@ TEST_DIRS += ["test/gtest"]
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "CookieStoreNotificationWatcher.h",
+    "CookieStoreNotificationWatcherWrapper.h",
+    "CookieStoreNotifier.h",
+]

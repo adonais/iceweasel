@@ -339,3 +339,90 @@ add_task(async function test_enrolling_transitions_to_ready() {
   await closePanel();
   cleanupService();
 });
+
+/**
+ * Tests that the site inclusion prompt is shown once when the user turns on
+ * the VPN, follows navigation to the current website, and is removed when
+ * dismissed.
+ */
+add_task(async function test_site_inclusion_prompt() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ipProtection.features.siteInclusions", true],
+      ["browser.ipProtection.siteInclusionPromptShown", false],
+      ["browser.ipProtection.userEnabled", false],
+      ["browser.ipProtection.userEnableCount", 0],
+    ],
+  });
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(IPPProxyManager, "start").resolves({ started: true });
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://www.example.com"
+  );
+  let content = await openPanel({ isProtectionEnabled: false, error: "" });
+
+  content.dispatchEvent(
+    new CustomEvent("IPProtection:UserEnable", { bubbles: true })
+  );
+  await setPanelState({ isProtectionEnabled: true });
+
+  let prompt = content.siteInclusionPromptEl;
+  Assert.ok(prompt, "Prompt should be shown after the VPN is turned on");
+  Assert.equal(prompt.localName, "moz-promo", "Prompt should be a moz-promo");
+  Assert.ok(prompt.dismissable, "Prompt should be dismissable");
+  Assert.deepEqual(
+    JSON.parse(prompt.getAttribute("data-l10n-args")),
+    { website: "example.com" },
+    "Prompt should be passed the current website without www."
+  );
+
+  let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  BrowserTestUtils.startLoadingURIString(
+    tab.linkedBrowser,
+    "https://example.org"
+  );
+  await loaded;
+  await content.updateComplete;
+
+  prompt = content.siteInclusionPromptEl;
+  Assert.deepEqual(
+    JSON.parse(prompt.getAttribute("data-l10n-args")),
+    { website: "example.org" },
+    "Prompt should follow navigation to a new website"
+  );
+  Assert.ok(
+    Services.prefs.getBoolPref("browser.ipProtection.siteInclusionPromptShown"),
+    "Prompt should be recorded as shown"
+  );
+
+  await prompt.updateComplete;
+  let dismissed = BrowserTestUtils.waitForEvent(
+    document,
+    "IPProtection:DismissSiteInclusionPrompt"
+  );
+  prompt.closeButton.click();
+  await dismissed;
+  await content.updateComplete;
+
+  Assert.ok(
+    !content.siteInclusionPromptEl,
+    "Prompt should be removed after it is dismissed"
+  );
+
+  content.dispatchEvent(
+    new CustomEvent("IPProtection:UserEnable", { bubbles: true })
+  );
+  await content.updateComplete;
+
+  Assert.ok(
+    !content.siteInclusionPromptEl,
+    "Prompt should not be shown a second time"
+  );
+
+  await closePanel();
+  BrowserTestUtils.removeTab(tab);
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});

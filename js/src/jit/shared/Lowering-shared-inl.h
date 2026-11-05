@@ -892,8 +892,8 @@ LInt64Allocation LIRGeneratorShared::useInt64RegisterOrConstantAtStart(
   return useInt64RegisterOrConstant(mir, /* useAtStart = */ true);
 }
 
-LInt64Allocation LIRGeneratorShared::useInt64RegisterOrZeroAtStart(
-    MDefinition* mir) {
+LInt64Allocation LIRGeneratorShared::useInt64RegisterOrZero(MDefinition* mir,
+                                                            bool useAtStart) {
   if (mir->isConstant() &&
       (mir->toConstant()->isInt32(0) || mir->toConstant()->isInt64(0))) {
 #if defined(JS_NUNBOX32)
@@ -902,7 +902,12 @@ LInt64Allocation LIRGeneratorShared::useInt64RegisterOrZeroAtStart(
     return LInt64Allocation(LAllocation());
 #endif
   }
-  return useInt64Register(mir, /* useAtStart = */ true);
+  return useInt64Register(mir, useAtStart);
+}
+
+LInt64Allocation LIRGeneratorShared::useInt64RegisterOrZeroAtStart(
+    MDefinition* mir) {
+  return useInt64RegisterOrZero(mir, /* useAtStart = */ true);
 }
 
 LInt64Allocation LIRGeneratorShared::useInt64OrConstantAtStart(

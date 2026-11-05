@@ -26,6 +26,11 @@ class HTMLHeadingElement final : public nsGenericHTMLElement {
     return rv;
   }
 
+  void UnbindFromTree(UnbindContext& aContext) override {
+    nsGenericHTMLElement::UnbindFromTree(aContext);
+    UpdateLevel(false);
+  }
+
   bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                       const nsAString& aValue,
                       nsIPrincipal* aMaybeScriptedPrincipal,

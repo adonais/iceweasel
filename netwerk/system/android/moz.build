@@ -12,3 +12,9 @@ FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [
     "/netwerk/base",
 ]
+
+SOURCE_HEADERS += [
+    "AndroidLocalNetworkPermission.h",
+    "AndroidNetworkBlockedReason.h",
+    "nsAndroidNetworkLinkService.h",
+]

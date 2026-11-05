@@ -17,6 +17,9 @@ if CONFIG["CC_TYPE"] == "clang-cl":
     UNIFIED_SOURCES += [
         "WindowsRuntimeLocationChild.cpp",
     ]
+    SOURCE_HEADERS += [
+        "WindowsRuntimeLocationChild.h",
+    ]
 
 SOURCES += [
     "WindowsLegacyLocationChild.cpp",  # includes locationapi.h
@@ -31,3 +34,8 @@ LOCAL_INCLUDES += ["/dom/geolocation"]
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "WindowsLegacyLocationChild.h",
+    "WindowsLocationProvider.h",
+]

@@ -4,46 +4,21 @@
 
 :host {
   display: block;
-}
 
-.status {
-  /* stylelint-disable stylelint-plugin-mozilla/no-base-design-tokens */
-  background-image: linear-gradient(
-    90deg,
-    var(--color-violet-50),
-    var(--color-violet-40) 22%,
-    var(--color-pink-40) 42%,
-    var(--color-pink-30) 52%,
-    var(--color-violet-40) 72%,
-    var(--color-violet-50)
-  );
-  /* stylelint-enable stylelint-plugin-mozilla/no-base-design-tokens */
-  background-size: 200% auto;
-  background-clip: text;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens --
-   * Figma style */
-  color: transparent;
-  animation: aitab-status-shimmer 2s ease-in-out infinite;
-  font-weight: var(--font-weight-bold);
-}
-
-@keyframes aitab-status-shimmer {
-  from {
-    background-position: 100% center;
-  }
-
-  to {
-    background-position: -100% center;
+  @media (forced-colors) {
+    .card {
+      --ai-action-confirmation-background-color: var(--background-color-box);
+    }
   }
 }
 
 .card {
-  background: var(--background-color-box);
+  background-color: var(--ai-action-confirmation-background-color);
   border: var(--border-width) solid var(--border-color-deemphasized);
   border-radius: var(--border-radius-large);
   display: grid;
   gap: var(--space-medium);
-  padding: var(--space-large);
+  padding: var(--space-small);
 }
 
 .title {
@@ -53,12 +28,40 @@
   align-items: center;
   margin: 0;
   overflow-wrap: anywhere;
+  color: var(--text-color);
+  text-decoration: none;
+  border-radius: var(--border-radius-medium);
+
+  &:hover {
+    background-color: var(--button-background-color-menu-hover);
+  }
+}
+
+.title img {
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+p.title {
+  min-width: 0;
+
+  &:hover {
+    background: none;
+  }
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-small);
+  justify-content: end;
+}
+
+.card-title {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .complete-title {
@@ -66,10 +69,15 @@
    * Figma style */
   color: var(--smartwindow-text-color-accent-primary);
   display: flex;
+  align-items: center;
   gap: var(--space-small);
   cursor: pointer;
+  padding: var(--space-xsmall) var(--space-small);
 
   img {
+    -moz-context-properties: fill;
+    fill: currentColor;
+    transform: translateY(-1px);
     width: var(--icon-size-small);
     height: var(--icon-size-small);
   }
@@ -77,20 +85,6 @@
 
 .complete {
   .title {
-    padding: var(--space-xsmall) 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .status {
-    animation: none;
-  }
-}
-
-@media (forced-colors: active) {
-  .status {
-    background-image: none;
-    color: var(--text-color);
-    animation: none;
+    padding: var(--space-xsmall) var(--space-small);
   }
 }

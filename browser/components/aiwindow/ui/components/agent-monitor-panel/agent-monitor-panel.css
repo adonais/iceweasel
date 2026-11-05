@@ -6,6 +6,13 @@
   --monitor-row-background: var(--table-row-background-color);
   --monitor-row-background-new: var(--button-background-color-menu-hover);
   --monitor-row-border-color: var(--card-border-color);
+  --monitor-row-border-color-hover: var(--monitor-row-border-color);
+  --monitor-row-border-color-active: var(--monitor-row-border-color);
+
+  @media (forced-colors) {
+    --monitor-row-border-color-hover: var(--button-border-color-hover);
+    --monitor-row-border-color-active: var(--button-border-color-active);
+  }
 
   display: flex;
   flex-direction: column;
@@ -124,11 +131,13 @@
   &:hover:not([aria-disabled="true"]) {
     background-color: var(--button-background-color-hover);
     color: var(--button-text-color-hover);
+    border-color: var(--monitor-row-border-color-hover);
   }
 
   &:active:not([aria-disabled="true"]) {
     background-color: var(--button-background-color-active);
     color: var(--button-text-color-active);
+    border-color: var(--monitor-row-border-color-active);
   }
 
   &:focus-visible {
@@ -210,18 +219,24 @@
   align-items: center;
   gap: var(--space-medium);
   padding: var(--panel-menuitem-padding);
-  border: none;
-  border-radius: 0;
+  border: var(--border-width) solid var(--button-border-color-ghost);
+  border-radius: var(--border-radius-medium);
   margin: var(--space-xsmall) 0;
-  background-color: transparent;
-  color: inherit;
+  background-color: var(--button-background-color-ghost);
+  color: var(--button-text-color-ghost);
   font: inherit;
   text-align: start;
 
   &:hover:not([disabled]) {
-    background-color: var(--button-background-color-hover);
-    color: var(--button-text-color-hover);
-    border-radius: var(--border-radius-medium);
+    background-color: var(--button-background-color-ghost-hover);
+    color: var(--button-text-color-ghost-hover);
+    border-color: var(--button-border-color-ghost-hover);
+  }
+
+  &:active:not([disabled]) {
+    background-color: var(--button-background-color-ghost-active);
+    color: var(--button-text-color-ghost-active);
+    border-color: var(--button-border-color-ghost-active);
   }
 
   &[disabled] {

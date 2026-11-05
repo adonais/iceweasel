@@ -16,6 +16,7 @@ UNIFIED_SOURCES += [
     "FileSystemBackgroundRequestHandler.cpp",
     "FileSystemChildFactory.cpp",
     "FileSystemDirectoryIteratorFactory.cpp",
+    "FileSystemEntryMetadataArray.cpp",
     "FileSystemManagerChild.cpp",
     "FileSystemRequestHandler.cpp",
     "FileSystemShutdownBlocker.cpp",
@@ -31,3 +32,9 @@ LOCAL_INCLUDES += [
 FINAL_LIBRARY = "xul"
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "FileSystemBackgroundRequestHandler.h",
+    "FileSystemDirectoryIteratorFactory.h",
+    "FileSystemEntryMetadataArray.h",
+]

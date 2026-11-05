@@ -101,14 +101,6 @@ async function test_decoder_doctor_notification(
         }
         ok(notification, "Got decoder-doctor-notification notification");
         if (label?.l10nId) {
-          // Without the following statement, the
-          // test_cannot_initialize_pulseaudio
-          // will permanently fail on Linux.
-          if (label.l10nId === "moz-support-link-text") {
-            MozXULElement.insertFTLIfNeeded(
-              "toolkit/global/mozSupportLink.ftl"
-            );
-          }
           label = await document.l10n.formatValue(label.l10nId);
         }
         if (isLink) {
@@ -148,6 +140,7 @@ async function test_decoder_doctor_notification(
           );
         } else {
           ok(!link, "There should not be a link");
+          await document.l10n.translateFragment(button);
           is(
             button.getAttribute("label"),
             label,
@@ -190,6 +183,13 @@ async function test_decoder_doctor_notification(
   await create_tab_and_test(false);
   // Test cross origin.
   await create_tab_and_test(true);
+}
+
+async function getReportIssueButtonStrings() {
+  let [msg] = await document.l10n.formatMessages([
+    { id: "decoder-doctor-report-issue-button" },
+  ]);
+  return Object.fromEntries(msg.attributes.map(a => [a.name, a.value]));
 }
 
 function tab_checker_for_sumo(expectedPath) {
@@ -235,10 +235,14 @@ add_task(async function test_platform_decoder_not_found() {
   let decoderDoctorReportId = "";
   let isLinux = AppConstants.platform == "linux";
   if (isLinux) {
-    message = gNavigatorBundle.getString("decoder.noCodecsLinux.message");
+    message = await document.l10n.formatValue(
+      "decoder-doctor-no-codecs-linux-message"
+    );
     decoderDoctorReportId = "MediaPlatformDecoderNotFound";
   } else if (AppConstants.platform == "win") {
-    message = gNavigatorBundle.getString("decoder.noHWAcceleration.message");
+    message = await document.l10n.formatValue(
+      "decoder-doctor-no-hw-acceleration-message"
+    );
     decoderDoctorReportId = "MediaWMFNeeded";
   }
 
@@ -249,8 +253,8 @@ add_task(async function test_platform_decoder_not_found() {
       formats: "testFormat",
     },
     message,
-    isLinux ? "" : { l10nId: "moz-support-link-text" },
-    isLinux ? "" : gNavigatorBundle.getString("decoder.noCodecs.accesskey"),
+    isLinux ? "" : { l10nId: "decoder-doctor-learn-how-link" },
+    "",
     true,
     tab_checker_for_sumo("fix-video-audio-problems-firefox-windows")
   );
@@ -260,14 +264,16 @@ add_task(async function test_cannot_initialize_pulseaudio() {
   let message = "";
   // This is only sent on Linux.
   if (AppConstants.platform == "linux") {
-    message = gNavigatorBundle.getString("decoder.noPulseAudio.message");
+    message = await document.l10n.formatValue(
+      "decoder-doctor-no-pulse-audio-message"
+    );
   }
 
   await test_decoder_doctor_notification(
     { type: "cannot-initialize-pulseaudio", formats: "testFormat" },
     message,
-    { l10nId: "moz-support-link-text" },
-    gNavigatorBundle.getString("decoder.noCodecs.accesskey"),
+    { l10nId: "decoder-doctor-learn-how-link" },
+    "",
     true,
     tab_checker_for_sumo("fix-common-audio-and-video-issues")
   );
@@ -277,8 +283,8 @@ add_task(async function test_unsupported_libavcodec() {
   let message = "";
   // This is only sent on Linux.
   if (AppConstants.platform == "linux") {
-    message = gNavigatorBundle.getString(
-      "decoder.unsupportedLibavcodec.message"
+    message = await document.l10n.formatValue(
+      "decoder-doctor-unsupported-libavcodec-message"
     );
   }
 
@@ -298,7 +304,10 @@ add_task(async function test_decode_error() {
       ["browser.fixup.fallback-to-https", false],
     ],
   });
-  let message = gNavigatorBundle.getString("decoder.decodeError.message");
+  let message = await document.l10n.formatValue(
+    "decoder-doctor-decode-error-message"
+  );
+  let { label, accesskey } = await getReportIssueButtonStrings();
   await test_decoder_doctor_notification(
     {
       type: "decode-error",
@@ -307,8 +316,8 @@ add_task(async function test_decode_error() {
       resourceURL: "ResURL",
     },
     message,
-    gNavigatorBundle.getString("decoder.decodeError.button"),
-    gNavigatorBundle.getString("decoder.decodeError.accesskey"),
+    label,
+    accesskey,
     false,
     tab_checker_for_webcompat({
       url: "DocURL",
@@ -331,7 +340,10 @@ add_task(async function test_decode_warning() {
       ],
     ],
   });
-  let message = gNavigatorBundle.getString("decoder.decodeWarning.message");
+  let message = await document.l10n.formatValue(
+    "decoder-doctor-decode-warning-message"
+  );
+  let { label, accesskey } = await getReportIssueButtonStrings();
   await test_decoder_doctor_notification(
     {
       type: "decode-warning",
@@ -340,8 +352,8 @@ add_task(async function test_decode_warning() {
       resourceURL: "ResURL",
     },
     message,
-    gNavigatorBundle.getString("decoder.decodeError.button"),
-    gNavigatorBundle.getString("decoder.decodeError.accesskey"),
+    label,
+    accesskey,
     false,
     tab_checker_for_webcompat({
       url: "DocURL",

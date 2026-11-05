@@ -128,3 +128,20 @@ BROWSER_CHROME_MANIFESTS += [
 ]
 
 TEST_DIRS += ["test/gtest"]
+
+SOURCE_HEADERS += [
+    "ServiceWorkerContainerProxy.h",
+    "ServiceWorkerJob.h",
+    "ServiceWorkerJobQueue.h",
+    "ServiceWorkerPrivate.h",
+    "ServiceWorkerProxy.h",
+    "ServiceWorkerQuotaUtils.h",
+    "ServiceWorkerRegisterJob.h",
+    "ServiceWorkerRegistrationListener.h",
+    "ServiceWorkerRegistrationProxy.h",
+    "ServiceWorkerScriptCache.h",
+    "ServiceWorkerShutdownBlocker.h",
+    "ServiceWorkerUnregisterCallback.h",
+    "ServiceWorkerUnregisterJob.h",
+    "ServiceWorkerUpdateJob.h",
+]

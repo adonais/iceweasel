@@ -103,7 +103,8 @@ pub unsafe extern "C" fn wgpu_client_render_pass_encoder_execute_bundles(
     encoder_id: id::RenderPassEncoderId,
     render_bundles: FfiSlice<'_, id::RenderBundleId>,
 ) {
-    let command = RenderPassEncoderCommand::ExecuteBundles(render_bundles.as_slice().to_vec());
+    let command =
+        RenderPassEncoderCommand::ExecuteBundles(unsafe { render_bundles.as_slice() }.to_vec());
     let message = Message::RenderPassEncoder(encoder_id, command);
     client.queue_message(&message);
 }
@@ -119,7 +120,7 @@ pub unsafe extern "C" fn wgpu_client_render_pass_encoder_set_bind_group(
     let command = RenderPassEncoderCommand::BindingCommand(BindingCommand::SetBindGroup {
         index,
         bind_group,
-        dynamic_offsets: dynamic_offsets.as_slice().to_vec(),
+        dynamic_offsets: unsafe { dynamic_offsets.as_slice() }.to_vec(),
     });
     let message = Message::RenderPassEncoder(encoder_id, command);
     client.queue_message(&message);
@@ -309,7 +310,7 @@ pub unsafe extern "C" fn wgpu_client_compute_pass_encoder_set_bind_group(
     let command = ComputePassEncoderCommand::BindingCommand(BindingCommand::SetBindGroup {
         index,
         bind_group,
-        dynamic_offsets: dynamic_offsets.as_slice().to_vec(),
+        dynamic_offsets: unsafe { dynamic_offsets.as_slice() }.to_vec(),
     });
     let message = Message::ComputePassEncoder(encoder_id, command);
     client.queue_message(&message);

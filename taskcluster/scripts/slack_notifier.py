@@ -90,14 +90,7 @@ SLACK_SUCCESS_MESSAGE_TEMPLATE = Template(
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": " :white_check_mark: Automated smoke test - Google Pixel 3(Android 11)"
-        }
-    },
-    {
-        "type": "section",
-        "text": {
-            "type": "mrkdwn",
-            "text": ":white_check_mark: Automated smoke test - Google Pixel 2(Android 9)"
+            "text": "$TEST_RUN_EMOJI <https://firefox-ci-tc.services.mozilla.com/tasks/$UI_TEST_TASK_ID|View test run>"
         }
     },
     {
@@ -197,3 +190,20 @@ def send_success_notification(success_values, channel_id, options):
 def get_product_icon(product):
     product_map = {"fenix": ":firefox:", "focus": ":firefox_focus:"}
     return product_map.get(product.lower(), ":firefox:")
+
+
+def get_test_run_emoji(task_id, options):
+    """Query Taskcluster for the UI test task state and return a Slack emoji."""
+    if not task_id:
+        return ":grey_question:"
+    try:
+        queue = taskcluster.Queue(options)
+        state = queue.status(task_id)["status"]["state"]
+    except Exception as e:
+        print(f"Could not fetch task state for {task_id}: {e}")
+        return ":grey_question:"
+    if state == "completed":
+        return ":white_check_mark:"
+    if state in ("failed", "exception"):
+        return ":x:"
+    return ":grey_question:"

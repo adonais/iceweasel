@@ -5,13 +5,25 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none';" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src chrome: resource:; style-src chrome: resource:;"
+    />
+    <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
+    <script
+      type="module"
+      src="resource://devtools/client/settings/components/devtools-settings.mjs"
+    ></script>
+    <script
+      type="module"
+      src="resource://devtools/client/settings/components/devtools-settings-pref.mjs"
+    ></script>
     <link rel="localization" href="devtools/preview/settings.ftl" />
     <title data-l10n-id="devtools-settings-title"></title>
   </head>
   <body>
     <main>
-      <h1 data-l10n-id="devtools-settings-title"></h1>
+      <devtools-settings></devtools-settings>
     </main>
   </body>
 </html>

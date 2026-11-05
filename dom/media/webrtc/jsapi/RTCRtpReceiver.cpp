@@ -834,6 +834,10 @@ bool RTCRtpReceiver::CanReceiveEarlyMedia() {
     // preferred direction and can disagree with what was actually applied.
     return false;
   }
+  if (!GetJsepTransceiver().mRecvTrack.HasEarlyRecvCodecs()) {
+    // Nothing to decode with; starting a receive stream would assert.
+    return false;
+  }
   if (mPc->GetSignalingState() != RTCSignalingState::Have_local_offer) {
     // No pending, unanswered local offer right now to be tentative about.
     return false;

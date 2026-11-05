@@ -11,7 +11,7 @@ use crate::{
 
 use std::{
     cell::RefCell,
-    ffi::{CStr, CString, OsString},
+    ffi::{CStr, CString, OsStr, OsString},
     os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle, RawHandle},
     ptr::null_mut,
     rc::Rc,
@@ -99,11 +99,11 @@ impl IPCListener {
 
     /// Deserialize a listener from an argument passed on the command-line.
     /// The resulting listener is ready to accept new connections.
-    pub fn deserialize(string: &CStr, pid: Pid) -> Result<IPCListener, IPCListenerError> {
+    pub fn deserialize(string: &OsStr, pid: Pid) -> Result<IPCListener, IPCListenerError> {
         let server_addr = server_addr(pid);
         let string = string
             .to_str()
-            .map_err(|_e| IPCError::Deserialize(PlatformError::InvalidString))?;
+            .ok_or(IPCError::Deserialize(PlatformError::InvalidString))?;
         let handle = usize::from_str(string)
             .map_err(|_e| IPCError::Deserialize(PlatformError::ParseHandle))?;
         // SAFETY: This is a handle we passed in ourselves.

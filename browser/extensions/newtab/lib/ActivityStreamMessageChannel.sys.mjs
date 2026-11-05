@@ -29,17 +29,29 @@ export const DEFAULT_OPTIONS = {
 };
 
 export class ActivityStreamMessageChannel {
+  /** @type {Function} */
+  dispatch;
+
+  /** @type {string} */
+  pageURL;
+
+  /** @type {string} */
+  outgoingMessageName;
+
+  /** @type {string} */
+  incomingMessageName;
+
   /**
    * ActivityStreamMessageChannel - This module connects a Redux store to the new tab page actor.
    *                  You should use the BroadcastToContent, AlsoToOneContent, and AlsoToMain action creators
    *                  in common/Actions.sys.mjs to help you create actions that will be automatically routed
    *                  to the correct location.
    *
-   * @param  {object} options
-   * @param  {function} options.dispatch The dispatch method from a Redux store
-   * @param  {string} options.pageURL The URL to which the channel is attached, such as about:newtab.
-   * @param  {string} options.outgoingMessageName The name of the message sent to child processes
-   * @param  {string} options.incomingMessageName The name of the message received from child processes
+   * @param  {object} [options] Overrides for DEFAULT_OPTIONS
+   * @param  {function} [options.dispatch] The dispatch method from a Redux store
+   * @param  {string} [options.pageURL] The URL to which the channel is attached, such as about:newtab.
+   * @param  {string} [options.outgoingMessageName] The name of the message sent to child processes
+   * @param  {string} [options.incomingMessageName] The name of the message received from child processes
    */
   constructor(options = {}) {
     Object.assign(this, DEFAULT_OPTIONS, options);
@@ -378,7 +390,7 @@ export class ActivityStreamMessageChannel {
    *             be formatted as Redux actions, and dispatches them to this.store
    *
    * @param  {object} msg A custom message from content
-   * @param  {object} msg.action A Redux action (e.g. {type: "HELLO_WORLD"})
+   * @param  {object} msg.data A Redux action (e.g. {type: "HELLO_WORLD"})
    * @param  {object} msg.target A message target
    * @param  {object} tabDetails details about a loaded tab, similar to onNewTabInit
    */

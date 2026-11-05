@@ -267,6 +267,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
         # Stop the benchmark server if we're running a benchmark test
         if self.benchmark:
             self.benchmark.stop_http_server()
+            self.benchmark = None
 
         if test.get("support_class", None):
             LOG.info("Test support class is cleaning up...")
@@ -1035,6 +1036,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
         env["PYTHON"] = sys.executable
         env["MINIDUMP_SAVE_PATH"] = str(self.crash_directory)
         env["MOZ_REMOTE_SETTINGS_DEVTOOLS"] = "1"
+        env["MOZ_REMOTE_SETTINGS_DISABLED"] = "1"
         if self.browsertime_video and self.browsertime_ffmpeg:
             ffmpeg_dir = os.path.dirname(os.path.abspath(self.browsertime_ffmpeg))
             old_path = env.setdefault("PATH", "")

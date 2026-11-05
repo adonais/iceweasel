@@ -34,6 +34,28 @@ add_task(async function test_smartblock_embed_replaced() {
   await loadSmartblockPageOnTab(tab);
   await clickOnPagePlaceholder(tab);
 
+  // Check telemetry is triggered
+  await TestUtils.waitForCondition(
+    () => Glean.trustpanel.opened.testGetValue(),
+    "Waiting for the open to be recorded"
+  );
+  let trustPanelOpenEvents = Glean.trustpanel.opened.testGetValue();
+  is(
+    trustPanelOpenEvents.length,
+    1,
+    "Trust panel open telemetry has correct number of events"
+  );
+  is(
+    trustPanelOpenEvents[0].extra.opening_reason,
+    "embedPlaceholderButton",
+    "Trust panel open telemetry has correct opening reason"
+  );
+  is(
+    trustPanelOpenEvents[0].extra.smartblock_embed_toggles_shown,
+    "true",
+    "Trust panel open telemetry has correct toggles shown value"
+  );
+
   // Check smartblock section is unhidden
   ok(
     BrowserTestUtils.isVisible(
@@ -73,6 +95,30 @@ add_task(async function test_smartblock_embed_replaced() {
   await embedScriptFinished;
 
   ok(blockedEmbedToggle.pressed, "Unblock toggle should be on");
+
+  // Check toggle telemetry is triggered
+  let smartblockToggledEvents =
+    Glean.trustpanel.smartblockToggled.testGetValue();
+  is(
+    smartblockToggledEvents.length,
+    1,
+    "Smartblock toggle telemetry has correct number of events"
+  );
+  is(
+    smartblockToggledEvents[0].extra.is_block,
+    "false",
+    "Smartblock toggle telemetry has correct is_block value"
+  );
+  is(
+    smartblockToggledEvents[0].extra.shim_id,
+    "EmbedTestShim",
+    "Smartblock toggle telemetry has correct shim id"
+  );
+  is(
+    smartblockToggledEvents[0].extra.opening_reason,
+    "embedPlaceholderButton",
+    "Smartblock toggle telemetry has correct opening reason"
+  );
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     let unloadedEmbed = content.document.querySelector(".broken-embed-content");
@@ -122,6 +168,31 @@ add_task(async function test_smartblock_embed_replaced() {
   await smartblockScriptFinished;
 
   ok(!blockedEmbedToggle.pressed, "Unblock toggle should be off");
+
+  // Check toggle telemetry is triggered
+  smartblockToggledEvents = Glean.trustpanel.smartblockToggled.testGetValue();
+  is(
+    smartblockToggledEvents.length,
+    2,
+    "Smartblock toggle telemetry has correct number of events"
+  );
+  is(
+    smartblockToggledEvents[1].extra.is_block,
+    "true",
+    "Smartblock toggle telemetry has correct is_block value"
+  );
+  is(
+    smartblockToggledEvents[1].extra.shim_id,
+    "EmbedTestShim",
+    "Smartblock toggle telemetry has correct shim id"
+  );
+  // Note: the opening_reason is "unknown" since the test opened the
+  // trust panel directly with a function call
+  is(
+    smartblockToggledEvents[1].extra.opening_reason,
+    "unknown",
+    "Smartblock toggle telemetry has correct opening reason"
+  );
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     // Check that the "embed" was replaced with a placeholder

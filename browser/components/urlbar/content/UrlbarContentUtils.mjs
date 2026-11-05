@@ -2,13 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = typeof ChromeUtils != "undefined" ? {} : null;
+const { XPCOMUtils } =
+  typeof ChromeUtils == "undefined"
+    ? { XPCOMUtils: null }
+    : ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs");
 
-if (lazy) {
-  ChromeUtils.defineESModuleGetters(lazy, {
-    UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  });
-}
+const lazy = XPCOMUtils?.declareLazy({
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+});
 
 /**
  * @import {UrlbarActorPort} from "moz-src:///browser/components/urlbar/actors/UrlbarChild.sys.mjs"
@@ -113,6 +114,23 @@ export class UrlbarContentUtils {
   }
 
   /**
+   * Unwraps an about:reader URL.
+   *
+   * @param {string} url
+   * @returns {string|null}
+   *   The display spec, or null if `url` isn't a well-formed about:reader URL.
+   */
+  static getReaderOriginalDisplaySpec(url) {
+    if (!port()) {
+      let uri = ChromeUtils.importESModule(
+        "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs"
+      ).ReaderMode.getOriginalUrlObjectForDisplay(url);
+      return uri ? uri.displaySpec : null;
+    }
+    return port().getReaderOriginalDisplaySpec(url);
+  }
+
+  /**
    * Unescapes a URI's percent-encoding for display, applying the spoofing
    * protections `decodeURIComponent` doesn't.
    *
@@ -159,6 +177,26 @@ export class UrlbarContentUtils {
       ).UrlbarUtils.getFixupPrimitives(searchString, isPrivate);
     }
     return port().getFixupPrimitives(searchString, isPrivate);
+  }
+
+  /**
+   * Retrieves clipboard data as text.
+   *
+   * @param {number} threshold
+   *   The approximate byte size past which the clipboard is left unread. The
+   *   count is platform-dependent; see `nsIClipboard.getDataIfSmallerThan`.
+   * @param {Window} win
+   *   The chrome window reading the clipboard.
+   * @returns {Promise<?string>}
+   *   The text, or null if it exceeds the threshold or can't be read.
+   */
+  static getClipboardTextIfSmallerThan(threshold, win) {
+    if (!port()) {
+      return ChromeUtils.importESModule(
+        "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs"
+      ).UrlbarUtils.getClipboardTextIfSmallerThan(threshold, win);
+    }
+    return port().getClipboardTextIfSmallerThan(threshold);
   }
 
   /**

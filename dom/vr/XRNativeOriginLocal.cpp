@@ -13,6 +13,8 @@ XRNativeOriginLocal::XRNativeOriginLocal(gfx::VRDisplayClient* aDisplay)
   MOZ_ASSERT(aDisplay);
 }
 
+XRNativeOriginLocal::~XRNativeOriginLocal() = default;
+
 gfx::PointDouble3D XRNativeOriginLocal::GetPosition() {
   // Keep returning {0,0,0} until a position can be found
   if (!mInitialPositionValid) {

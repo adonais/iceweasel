@@ -151,7 +151,7 @@ describe("SmartFormFillModel", () => {
   });
 
   afterEach(async () => {
-    mockEngineMan.rejectAllRequests();
+    await mockEngineMan.rejectAllRequests();
     mockEngineMan.cleanupMocks();
     await SpecialPowers.popPrefEnv();
   });
@@ -594,7 +594,7 @@ describe("SmartFormFillModel", () => {
       );
 
       await mockEngineMan.captureRequest({ purpose: PURPOSE });
-      mockEngineMan.rejectAllRequests();
+      await mockEngineMan.rejectAllRequests();
 
       const result = await requestPromise;
 

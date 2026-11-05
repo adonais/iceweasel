@@ -98,7 +98,6 @@ class IPProtectionControllerTest : BaseSessionTest() {
             listOf(
                 "unauthenticated" to IPProtectionController.SERVICE_STATE_UNAUTHENTICATED,
                 "unavailable" to IPProtectionController.SERVICE_STATE_UNAVAILABLE,
-                "optedout" to IPProtectionController.SERVICE_STATE_OPTED_OUT,
                 "ready" to IPProtectionController.SERVICE_STATE_READY,
             )
         for ((stateString, expectedCode) in states) {

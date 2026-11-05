@@ -5,14 +5,20 @@
 #include "gtest/gtest.h"
 #include "js/PropertyAndElement.h"  // JS_DefineProperty
 #include "jsapi.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/OriginAttributes.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/IPCTransferable.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SimpleGlobalObject.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
+#include "nsGkAtoms.h"
 #include "nsITransferable.h"
 #include "nsNetUtil.h"
 #include "nsTArray.h"
@@ -346,4 +352,77 @@ TEST(DOM_Base_ContentUtils, IPCTransferableDataToTransferable)
       << "kFilePromiseDestFilename should be stripped when filtering";
   EXPECT_TRUE(TransferableHasFlavor(transferable, kFilePromiseDirectoryMime))
       << "kFilePromiseDirectoryMime should be stripped when filtering";
+}
+
+namespace {
+
+class SetFlagMicroTask final : public mozilla::MicroTaskRunnable {
+ public:
+  explicit SetFlagMicroTask(bool* aFlag) : mFlag(aFlag) {}
+  MOZ_CAN_RUN_SCRIPT void Run(mozilla::AutoSlowOperation& aAso) override {
+    *mFlag = true;
+  }
+
+ private:
+  bool* const mFlag;
+};
+
+already_AddRefed<Document> CreateWindowlessDocument() {
+  nsCOMPtr<nsIURI> uri;
+  NS_NewURI(getter_AddRefs(uri), "data:text/html,");
+
+  RefPtr<mozilla::BasePrincipal> principal =
+      mozilla::BasePrincipal::CreateContentPrincipal(
+          uri, mozilla::OriginAttributes());
+  MOZ_RELEASE_ASSERT(principal);
+
+  nsCOMPtr<Document> doc;
+  MOZ_ALWAYS_SUCCEEDS(NS_NewDOMDocument(getter_AddRefs(doc),
+                                        u""_ns,   // aNamespaceURI
+                                        u""_ns,   // aQualifiedName
+                                        nullptr,  // aDoctype
+                                        uri, uri, principal,
+                                        LoadedAsData::No,  // aLoadedAsData
+                                        nullptr,           // aEventObject
+                                        DocumentFlavor::HTML));
+  MOZ_RELEASE_ASSERT(doc);
+  return doc.forget();
+}
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void AppendEmptyScript(Document* aDocument) {
+  RefPtr<Element> script = aDocument->CreateHTMLElement(nsGkAtoms::script);
+  mozilla::IgnoredErrorResult rv;
+  aDocument->AppendChild(*script, rv);
+  MOZ_RELEASE_ASSERT(!rv.Failed());
+}
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void EnterAndLeaveMicroTask() {
+  mozilla::nsAutoMicroTask mt;
+}
+
+}  // namespace
+
+// An empty inline script normally performs a microtask checkpoint, but not in
+// a document without a window, which can't run script.
+TEST(DOM_Base_ContentUtils, EmptyScriptInWindowlessDocumentSkipsCheckpoint)
+{
+  mozilla::CycleCollectedJSContext* ccjs =
+      mozilla::CycleCollectedJSContext::Get();
+  ASSERT_TRUE(ccjs);
+  // Leaving a microtask only performs a checkpoint at the outermost level.
+  ASSERT_EQ(ccjs->MicroTaskLevel(), 0u);
+
+  RefPtr<Document> doc = CreateWindowlessDocument();
+  ASSERT_FALSE(doc->GetInnerWindow());
+
+  bool ran = false;
+  ccjs->DispatchToMicroTask(mozilla::MakeAndAddRef<SetFlagMicroTask>(&ran));
+
+  AppendEmptyScript(doc);
+  EXPECT_FALSE(ran);
+
+  // A plain nsAutoMicroTask does perform the checkpoint, which shows the
+  // microtask really was pending.
+  EnterAndLeaveMicroTask();
+  EXPECT_TRUE(ran);
 }

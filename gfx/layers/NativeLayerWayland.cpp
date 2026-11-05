@@ -37,6 +37,7 @@
 #include "mozilla/layers/SurfacePoolWayland.h"
 #include "mozilla/webrender/RenderDMABUFTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
+#include "mozilla/webrender/RenderWaylandTextureHost.h"
 #include "mozilla/widget/SHMBufSurface.h"
 #include "mozilla/widget/WaylandSurface.h"
 #include "mozilla/widget/nsWaylandDisplay.h"
@@ -1507,7 +1508,13 @@ static RefPtr<BufferSurface> GetBufferSurface(
   if (!aExternalImage) {
     return nullptr;
   }
-  return aExternalImage->AsRenderDMABUFTextureHost()->GetSurface();
+  if (aExternalImage->AsRenderDMABUFTextureHost()) {
+    return aExternalImage->AsRenderDMABUFTextureHost()->GetSurface();
+  } else if (aExternalImage->AsRenderWaylandTextureHost()) {
+    return aExternalImage->AsRenderWaylandTextureHost()->GetSurface();
+  } else {
+    MOZ_CRASH("Unknow texture type");
+  }
 }
 
 RefPtr<BufferSurface> NativeLayerWaylandExternal::GetSurface() {
@@ -1546,8 +1553,8 @@ void NativeLayerWaylandExternal::AttachExternalImage(
   mLastSurface = reinterpret_cast<uintptr_t>(surface.get());
   mIsHDR = surface->IsHDRSurface();
 
-  LOG("NativeLayerWaylandExternal::AttachExternalImage() host [%p] "
-      "DMABufSurface [%p] DMABuf UID %d [%d x %d] HDR %d Opaque %d recycle "
+  LOG("NativeLayerWaylandExternal::AttachExternalImage() host [%s] "
+      "Surface [%p] UID %d [%d x %d] HDR %d Opaque %d recycle "
       "%d",
       aExternalImage->AsRenderDMABUFTextureHost() ? "DMABuf" : "SHMSurface",
       surface.get(), surface->GetUID(), mSize.width, mSize.height, mIsHDR,

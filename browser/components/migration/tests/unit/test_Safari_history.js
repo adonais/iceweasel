@@ -4,7 +4,8 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const HISTORY_TEMPLATE_FILE_PATH = "Library/Safari/HistoryTemplate.db";
-const HISTORY_FILE_PATH = "Library/Safari/History.db";
+
+let gHistoryFilePath;
 
 // We want this to be some recent time, so we'll always add some time to our
 // dates to keep them ~ five days ago.
@@ -36,28 +37,16 @@ const TEST_URLS = [
 ];
 
 async function setupHistoryFile() {
-  removeHistoryFile();
-  let file = do_get_file(HISTORY_TEMPLATE_FILE_PATH);
-  file.copyTo(file.parent, "History.db");
+  await IOUtils.copy(
+    do_get_file(HISTORY_TEMPLATE_FILE_PATH).path,
+    gHistoryFilePath
+  );
   await updateVisitTimes();
-}
-
-function removeHistoryFile() {
-  let file = do_get_file(HISTORY_FILE_PATH, true);
-  try {
-    file.remove(false);
-  } catch (ex) {
-    // It is ok if this doesn't exist.
-    if (ex.result != Cr.NS_ERROR_FILE_NOT_FOUND) {
-      throw ex;
-    }
-  }
 }
 
 async function updateVisitTimes() {
   let cocoaDifference = MS_FROM_REFERENCE_TIME / 1000;
-  let historyFile = do_get_file(HISTORY_FILE_PATH);
-  let dbConn = await Sqlite.openConnection({ path: historyFile.path });
+  let dbConn = await Sqlite.openConnection({ path: gHistoryFilePath });
   await dbConn.execute(
     "UPDATE history_visits SET visit_time = visit_time + :difference;",
     { difference: cocoaDifference }
@@ -66,11 +55,12 @@ async function updateVisitTimes() {
 }
 
 add_setup(async function setup() {
-  registerFakePath("ULibDir", do_get_file("Library/"));
+  let libDir = await copyFixtureDir("Library/");
+  registerFakePath("ULibDir", libDir);
+  gHistoryFilePath = PathUtils.join(libDir.path, "Safari", "History.db");
   await setupHistoryFile();
   registerCleanupFunction(async () => {
     await PlacesUtils.history.clear();
-    removeHistoryFile();
   });
 });
 

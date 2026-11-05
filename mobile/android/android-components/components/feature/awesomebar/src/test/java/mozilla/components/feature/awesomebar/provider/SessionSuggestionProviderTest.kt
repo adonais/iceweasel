@@ -316,6 +316,19 @@ class SessionSuggestionProviderTest {
     }
 
     @Test
+    fun `Falls back to a readable URL for the chip title`() = runTest {
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(createTab(url = "https://mozilla.org/%D1%82%D0%B5%D1%81%D1%82%20a", title = ""))
+                )
+            )
+        val provider = SessionSuggestionProvider(store, mock(), switchToTabDescription = "Switch to tab")
+
+        assertEquals("https://mozilla.org/тест%20a", provider.onInputChanged("mozilla").single().title)
+    }
+
+    @Test
     fun `GIVEN a results uri filter WHEN querying tabs THEN return only the results that pass through the filter`() =
         runTest {
             val store =

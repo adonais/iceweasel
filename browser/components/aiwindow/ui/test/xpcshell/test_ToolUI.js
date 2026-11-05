@@ -428,6 +428,92 @@ add_task(async function test_handleUpdate_cancellation_success() {
 });
 
 /**
+ * Test that "Select all" / "Deselect all" record telemetry for the card they
+ * were clicked on, without changing the card
+ */
+add_task(async function test_handleUpdate_toggle_all_telemetry() {
+  const originalRecord = ToolUITelemetry.recordBrowserActionPromptToggleAll;
+  let recorded = [];
+  ToolUITelemetry.recordBrowserActionPromptToggleAll = data =>
+    recorded.push(data);
+
+  const toggleAll = async (toolUIData, allSelected) => {
+    recorded = [];
+    const conversation = new ChatConversation({});
+    const message = conversation.addAssistantMessage("text", "Confirm?");
+    message.toolUIData = { toolCallId: "toggle-all", ...toolUIData };
+    const result = await ToolUI.handleUpdate(
+      {
+        messageId: message.id,
+        toolCallId: "toggle-all",
+        updateType: "toggle-all-tab-selection",
+        updateData: { allSelected },
+      },
+      conversation,
+      null,
+      "sidebar"
+    );
+    Assert.equal(
+      message.toolUIData.uiType,
+      toolUIData.uiType,
+      "The card is left as it was"
+    );
+    return { result, conversation };
+  };
+
+  try {
+    let { result, conversation } = await toggleAll(
+      {
+        uiType: "website-confirmation",
+        properties: { tabs: [{}, {}] },
+      },
+      true
+    );
+    Assert.equal(result, true, "Select all is handled");
+    Assert.deepEqual(
+      recorded,
+      [
+        {
+          location: "sidebar",
+          chat_id: conversation.id,
+          message_seq: conversation.messageCount,
+          action: "close_tabs",
+          prompt_type: "safety_confirmation",
+          entrypoint: "browser_action",
+          toggle: "select_all",
+          candidates: 2,
+        },
+      ],
+      "Records select all on a chat request card"
+    );
+
+    ({ result } = await toggleAll(
+      {
+        uiType: "tab-group-confirmation",
+        isResumeActivity: true,
+        properties: { actionType: "open_tabs", tabs: [{}, {}, {}] },
+      },
+      false
+    ));
+    Assert.equal(result, true, "Deselect all is handled");
+    Assert.equal(recorded.length, 1, "Records one event");
+    Assert.equal(recorded[0].action, "open_tabs", "Records the card action");
+    Assert.equal(recorded[0].entrypoint, "resume", "Records the resume pill");
+    Assert.equal(recorded[0].toggle, "deselect_all", "Records deselect all");
+    Assert.equal(recorded[0].candidates, 3, "Counts the tabs on the card");
+
+    ({ result } = await toggleAll(
+      { uiType: "ai-action-result", properties: {} },
+      true
+    ));
+    Assert.equal(result, false, "Ignored for a card that is not a picker");
+    Assert.equal(recorded.length, 0, "Records nothing for that card");
+  } finally {
+    ToolUITelemetry.recordBrowserActionPromptToggleAll = originalRecord;
+  }
+});
+
+/**
  * Test that ToolUI.handleUpdate fails confirmation without valid window
  */
 add_task(async function test_handleUpdate_confirmation_no_window() {

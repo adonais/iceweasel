@@ -316,8 +316,7 @@ void Assembler::addPendingJump(BufferOffset src, ImmPtr target,
   // This jump is not patchable at runtime. Extended jump table entry
   // requirements cannot be known until finalization, so to be safe, give each
   // jump and entry. This also causes GC tracing of the target.
-  enoughMemory_ &=
-      pendingJumps_.append(RelativePatch(src, target.value, reloc));
+  enoughMemory_ &= pendingJumps_.emplaceBack(src, target.value, reloc);
 }
 
 void Assembler::PatchWrite_NearCall(CodeLocationLabel start,

@@ -152,16 +152,17 @@ public final class HardwareCodecCapabilityUtils {
     return mimeTypes.toArray(new String[0]);
   }
 
-  // Return list of all decoder-supported MIME types, and optionally all
-  // encoder-supported MIME types, each prefixed with SW or HW indicating
-  // software or hardware support for decoders, and SWE or HWE for encoders.
+  // Return list of all decoder-supported and encoder-supported MIME types,
+  // each prefixed with SW or HW indicating software or hardware support for
+  // decoders, and SWE or HWE for encoders.
+  // Decoders which support a 10-bit profile are additionally listed with
+  // SW10B or HW10B. Hardware video decoders additionally report their largest
+  // supported width and height with HWMAX<width>,<height>.
   @WrapForJNI
-  public static String[] getSupportedMimeTypesWithAccelInfo(final boolean aIncludeEncoders) {
+  public static String[] getSupportedMimeTypesWithAccelInfo() {
     final Set<String> mimeTypes = new HashSet<>();
     addSupportedMimeTypesWithAccelInfo(mimeTypes, getDecoderInfos(), false);
-    if (aIncludeEncoders) {
-      addSupportedMimeTypesWithAccelInfo(mimeTypes, getEncoderInfos(), true);
-    }
+    addSupportedMimeTypesWithAccelInfo(mimeTypes, getEncoderInfos(), true);
     for (final String typeit : mimeTypes) {
       Log.d(LOGTAG, "MIME support: " + typeit);
     }
@@ -175,13 +176,32 @@ public final class HardwareCodecCapabilityUtils {
 
     for (final MediaCodecInfo info : aInfos) {
       for (final String mimeType : info.getSupportedTypes()) {
+        final CodecCapabilities caps = info.getCapabilitiesForType(mimeType);
+        final boolean supports10Bit = !aIsEncoder && supports10BitProfile(mimeType, caps);
         if (!isHardwareAccelerated(info, getSupportedHWCodecPrefixes(mimeType, aIsEncoder))) {
           aMimeTypes.add(swTag + mimeType);
+          if (supports10Bit) {
+            aMimeTypes.add("SW10B " + mimeType);
+          }
           continue;
         }
-        final CodecCapabilities caps = info.getCapabilitiesForType(mimeType);
         if (getSupportsYUV420orNV12(caps) != COLOR_FORMAT_NOT_SUPPORTED) {
           aMimeTypes.add(hwTag + mimeType);
+          if (supports10Bit) {
+            aMimeTypes.add("HW10B " + mimeType);
+          }
+          if (!aIsEncoder) {
+            final MediaCodecInfo.VideoCapabilities video = caps.getVideoCapabilities();
+            if (video != null) {
+              aMimeTypes.add(
+                  "HWMAX"
+                      + video.getSupportedWidths().getUpper()
+                      + ","
+                      + video.getSupportedHeights().getUpper()
+                      + " "
+                      + mimeType);
+            }
+          }
         }
       }
     }
@@ -354,30 +374,17 @@ public final class HardwareCodecCapabilityUtils {
         && getHWCodecCapability(H264_MIME_TYPE, false);
   }
 
-  @WrapForJNI
-  public static boolean decodes10Bit(final String aMimeType) {
-    final MediaCodecList codecs = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
-    for (final MediaCodecInfo info : codecs.getCodecInfos()) {
-      if (info.isEncoder()) {
-        continue;
-      }
-      try {
-        for (final MediaCodecInfo.CodecProfileLevel pl :
-            info.getCapabilitiesForType(aMimeType).profileLevels) {
-          if ((aMimeType.equals(H264_MIME_TYPE)
-                  && pl.profile == MediaCodecInfo.CodecProfileLevel.AVCProfileHigh10)
-              || (aMimeType.equals(VP9_MIME_TYPE) && is10BitVP9Profile(pl.profile))
-              || (aMimeType.equals(HEVC_MIME_TYPE) && is10BitHEVCProfile(pl.profile))
-              || (aMimeType.equals(AV1_MIME_TYPE) && is10BitAV1Profile(pl.profile))) {
-            return true;
-          }
-        }
-      } catch (final IllegalArgumentException e) {
-        // Type not supported.
-        continue;
+  private static boolean supports10BitProfile(
+      final String aMimeType, final CodecCapabilities aCaps) {
+    for (final MediaCodecInfo.CodecProfileLevel pl : aCaps.profileLevels) {
+      if ((aMimeType.equals(H264_MIME_TYPE)
+              && pl.profile == MediaCodecInfo.CodecProfileLevel.AVCProfileHigh10)
+          || (aMimeType.equals(VP9_MIME_TYPE) && is10BitVP9Profile(pl.profile))
+          || (aMimeType.equals(HEVC_MIME_TYPE) && is10BitHEVCProfile(pl.profile))
+          || (aMimeType.equals(AV1_MIME_TYPE) && is10BitAV1Profile(pl.profile))) {
+        return true;
       }
     }
-
     return false;
   }
 

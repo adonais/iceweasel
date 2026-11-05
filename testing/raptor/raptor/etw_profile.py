@@ -59,8 +59,10 @@ class ETWProfile(RaptorProfiling):
 
     """
 
-    def __init__(self, upload_dir, raptor_config, test_config):
-        super().__init__(upload_dir, raptor_config, test_config)
+    def __init__(
+        self, upload_dir, raptor_config, test_config, source_path_mappings=None
+    ):
+        super().__init__(upload_dir, raptor_config, test_config, source_path_mappings)
 
         self.test_name = self.test_config.get("name", "test")
 

@@ -492,6 +492,66 @@ add_task(async function testDefaultViewUnaffectedByGroupByParam() {
     !doc.querySelector("tr.tab-row"),
     "The default view should never render tab-view rows"
   );
+  Assert.equal(
+    doc.defaultView.getComputedStyle(doc.getElementById("process-tfoot"))
+      .display,
+    "none",
+    "The default view should not show the tab view's totals footer"
+  );
 
   BrowserTestUtils.removeTab(tabAboutProcesses);
+});
+
+add_task(async function testTotalsBarShowsTabCountAndSums() {
+  // Anchor tab: about:blank and about:processes' own tab are excluded from the list.
+  let anchorTab = await setupTabWithOriginAndTitle(
+    "https://example.com",
+    "Totals bar anchor"
+  );
+
+  let { tabAboutProcesses, doc } = await openTabView();
+  let totalsRow = doc.querySelector("tr.totals-row");
+  Assert.ok(totalsRow, "Totals row is rendered in the tab view");
+  let countCell = totalsRow.querySelector(".totals-count");
+
+  await doc.l10n.translateRoots();
+  // Baseline includes whatever's already open; only the +2 delta below matters.
+  let baselineCount = parseInt(countCell.textContent, 10);
+
+  let tabOne = await setupTabWithOriginAndTitle(
+    "https://example.org",
+    "Totals bar test 1"
+  );
+  let tabTwo = await setupTabWithOriginAndTitle(
+    "https://example.net",
+    "Totals bar test 2"
+  );
+  await forceTabViewUpdate(tabAboutProcesses);
+  await doc.l10n.translateRoots();
+  Assert.equal(
+    parseInt(countCell.textContent, 10),
+    baselineCount + 2,
+    "The totals bar's tab count includes the two new tabs"
+  );
+
+  let memoryText = totalsRow.querySelector(".memory").textContent;
+  Assert.ok(
+    /^[0-9.]+(B|KB|MB|GB)$/.test(memoryText),
+    `Totals memory "${memoryText}" is formatted as a number + unit, same as row cells`
+  );
+  let cpuCell = totalsRow.querySelector(".cpu");
+  Assert.ok(
+    /^([0-9.]+%|idle|< 0\.1%)$/.test(cpuCell.textContent),
+    `Totals CPU "${cpuCell.textContent}" is formatted as a percent or idle, same as row cells`
+  );
+  Assert.equal(
+    doc.defaultView.getComputedStyle(cpuCell).backgroundImage,
+    "none",
+    "Totals CPU cell has no CPU bar"
+  );
+
+  BrowserTestUtils.removeTab(tabAboutProcesses);
+  BrowserTestUtils.removeTab(tabOne);
+  BrowserTestUtils.removeTab(tabTwo);
+  BrowserTestUtils.removeTab(anchorTab);
 });

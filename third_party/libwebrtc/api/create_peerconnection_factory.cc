@@ -32,7 +32,9 @@
 
 namespace webrtc {
 
-scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+namespace {
+
+scoped_refptr<PeerConnectionFactoryInterface> CreateFactory(
     Thread* network_thread,
     Thread* worker_thread,
     Thread* signaling_thread,
@@ -75,6 +77,50 @@ scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
   EnableMedia(dependencies);
 
   return CreateModularPeerConnectionFactory(std::move(dependencies));
+}
+
+}  // namespace
+
+scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+    Thread* network_thread,
+    Thread* signaling_thread,
+    scoped_refptr<AudioDeviceModule> default_adm,
+    scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
+    std::unique_ptr<VideoEncoderFactory> video_encoder_factory,
+    std::unique_ptr<VideoDecoderFactory> video_decoder_factory,
+    scoped_refptr<AudioMixer> audio_mixer,
+    scoped_refptr<AudioProcessing> audio_processing,
+    std::unique_ptr<AudioFrameProcessor> audio_frame_processor,
+    std::unique_ptr<FieldTrialsView> field_trials) {
+  return CreateFactory(
+      network_thread, /*worker_thread=*/nullptr, signaling_thread,
+      std::move(default_adm), std::move(audio_encoder_factory),
+      std::move(audio_decoder_factory), std::move(video_encoder_factory),
+      std::move(video_decoder_factory), std::move(audio_mixer),
+      std::move(audio_processing), std::move(audio_frame_processor),
+      std::move(field_trials));
+}
+
+scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+    Thread* network_thread,
+    Thread* worker_thread,
+    Thread* signaling_thread,
+    scoped_refptr<AudioDeviceModule> default_adm,
+    scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
+    std::unique_ptr<VideoEncoderFactory> video_encoder_factory,
+    std::unique_ptr<VideoDecoderFactory> video_decoder_factory,
+    scoped_refptr<AudioMixer> audio_mixer,
+    scoped_refptr<AudioProcessing> audio_processing,
+    std::unique_ptr<AudioFrameProcessor> audio_frame_processor,
+    std::unique_ptr<FieldTrialsView> field_trials) {
+  return CreateFactory(
+      network_thread, worker_thread, signaling_thread, std::move(default_adm),
+      std::move(audio_encoder_factory), std::move(audio_decoder_factory),
+      std::move(video_encoder_factory), std::move(video_decoder_factory),
+      std::move(audio_mixer), std::move(audio_processing),
+      std::move(audio_frame_processor), std::move(field_trials));
 }
 
 }  // namespace webrtc

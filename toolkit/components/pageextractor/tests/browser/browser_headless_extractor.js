@@ -114,16 +114,8 @@ add_task(async function test_headless_extraction_never_loads() {
  * challenge page, is reported as a block rather than a timeout.
  */
 add_task(async function test_headless_extraction_cross_site_redirect() {
-  const { PageExtractorParent } = ChromeUtils.importESModule(
-    "resource://gre/actors/PageExtractorParent.sys.mjs"
-  );
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ml.pageExtractor.headlessTimeoutMs", 500]],
-  });
-
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor({
+    readAtDeadline("https://w3c-test.org/", {
       urlString: `https://example.com${TEST_DIR}redirect_to.sjs?https://w3c-test.org/`,
       callback: () =>
         ok(false, "The callback must not run for a page redirected off-site."),
@@ -133,8 +125,6 @@ add_task(async function test_headless_extraction_cross_site_redirect() {
       /ended up at https:\/\/w3c-test\.org\//.test(error.message),
     "The cross-site redirect is reported as a block, not a timeout."
   );
-
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -382,11 +372,8 @@ add_task(async function test_headless_extraction_loopback_port() {
   // eslint-disable-next-line sdl/no-insecure-url
   const requestedOrigin = `http://localhost:${requested.identity.primaryPort}`;
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ml.pageExtractor.headlessTimeoutMs", 500]],
-  });
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor({
+    readAtDeadline(otherServiceUrl, {
       urlString: `${requestedOrigin}/to-another-port`,
       callback: () =>
         ok(false, "The callback must not run for a different local service."),
@@ -395,7 +382,6 @@ add_task(async function test_headless_extraction_loopback_port() {
       error.name === "BlockedError" && error.message.includes(otherServiceUrl),
     "A redirect to another port on the same loopback host is a block."
   );
-  await SpecialPowers.popPrefEnv();
 
   const result = await PageExtractorParent.getHeadlessExtractor({
     urlString: `${requestedOrigin}/to-another-path`,
@@ -513,17 +499,9 @@ add_task(async function test_headless_extraction_offsite_bounce() {
  * github.io: a same-name host can belong to anyone.
  */
 add_task(async function test_headless_extraction_same_name_other_domain() {
-  const { PageExtractorParent } = ChromeUtils.importESModule(
-    "resource://gre/actors/PageExtractorParent.sys.mjs"
-  );
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ml.pageExtractor.headlessTimeoutMs", 500]],
-  });
-
   const target = `https://example.org${TEST_DIR}redirect_target.html`;
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor({
+    readAtDeadline(target, {
       urlString: `https://example.com${TEST_DIR}redirect_to.sjs?${target}`,
       callback: () =>
         ok(false, "The callback must not run for another registrable domain."),
@@ -532,8 +510,6 @@ add_task(async function test_headless_extraction_same_name_other_domain() {
       error.name === "BlockedError" && error.message.includes("example.org"),
     "example.com to example.org is a block, not the same site."
   );
-
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -542,22 +518,15 @@ add_task(async function test_headless_extraction_same_name_other_domain() {
  * alone proves nothing.
  */
 add_task(async function test_headless_extraction_intranet_name_collision() {
-  const { PageExtractorParent } = ChromeUtils.importESModule(
-    "resource://gre/actors/PageExtractorParent.sys.mjs"
-  );
-
   // HTTPS-First would upgrade the http requests before the server could.
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.ml.pageExtractor.headlessTimeoutMs", 500],
-      ["dom.security.https_first", false],
-    ],
+    set: [["dom.security.https_first", false]],
   });
 
   // eslint-disable-next-line sdl/no-insecure-url
   const target = `http://httpsfirst.com${TEST_DIR}redirect_target.html`;
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor({
+    readAtDeadline(target, {
       // eslint-disable-next-line sdl/no-insecure-url
       urlString: `http://httpsfirst.local${TEST_DIR}redirect_to.sjs?${target}`,
       callback: () =>
@@ -578,22 +547,15 @@ add_task(async function test_headless_extraction_intranet_name_collision() {
  * not handed to the callback.
  */
 add_task(async function test_headless_extraction_anonymous_http_downgrade() {
-  const { PageExtractorParent } = ChromeUtils.importESModule(
-    "resource://gre/actors/PageExtractorParent.sys.mjs"
-  );
-
   // HTTPS-First would upgrade the http destination and hide the downgrade.
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.ml.pageExtractor.headlessTimeoutMs", 500],
-      ["dom.security.https_first", false],
-    ],
+    set: [["dom.security.https_first", false]],
   });
 
   // eslint-disable-next-line sdl/no-insecure-url
   const target = `http://www.example.com${TEST_DIR}redirect_target.html`;
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor({
+    readAtDeadline(target, {
       urlString: `https://example.com${TEST_DIR}redirect_to.sjs?${target}`,
       anonymousFetch: true,
       callback: () =>
@@ -604,6 +566,126 @@ add_task(async function test_headless_extraction_anonymous_http_downgrade() {
   );
 
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_headless_extraction_settle_delay() {
+  const { PageExtractorParent } = ChromeUtils.importESModule(
+    "resource://gre/actors/PageExtractorParent.sys.mjs"
+  );
+  const SETTLE_DELAY_MS = 150;
+  const NEVER_MS = 60 * 60 * 1000;
+  const { html } = MLTestUtils.serveHTML();
+  // Each server answers a single request, so every load gets its own page.
+  const readLatePage = async (lateContentMs, settleDelayMs) => {
+    const { url, cleanup } = html`
+      <div id="price">Getting prices</div>
+      <script>
+        setTimeout(() => {
+          document.getElementById("price").textContent = "The price is $299";
+        }, ${lateContentMs});
+      </script>
+    `;
+    try {
+      return await PageExtractorParent.getHeadlessExtractor({
+        urlString: url,
+        settleDelayMs,
+        callback: async pageExtractor => pageExtractor.getText(),
+      });
+    } finally {
+      await cleanup();
+    }
+  };
+
+  is(
+    (await readLatePage(NEVER_MS, 0)).text,
+    "Getting prices",
+    "Without a settle delay the page is read before its late content lands."
+  );
+
+  is(
+    (await readLatePage(SETTLE_DELAY_MS, SETTLE_DELAY_MS)).text,
+    "The price is $299",
+    "With a settle delay the late content is read."
+  );
+});
+
+add_task(
+  async function test_headless_extraction_settle_delay_extends_timeout() {
+    const { PageExtractorParent } = ChromeUtils.importESModule(
+      "resource://gre/actors/PageExtractorParent.sys.mjs"
+    );
+    const HEADLESS_TIMEOUT_MS = 100;
+    const SETTLE_DELAY_MS = 400;
+
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.ml.pageExtractor.headlessTimeoutMs", HEADLESS_TIMEOUT_MS],
+      ],
+    });
+    const { url, cleanup } = MLTestUtils.serveStalledPage();
+
+    try {
+      const start = ChromeUtils.now();
+      await Assert.rejects(
+        PageExtractorParent.getHeadlessExtractor({
+          urlString: url,
+          settleDelayMs: SETTLE_DELAY_MS,
+          callback: () =>
+            ok(
+              false,
+              "The callback must not run for a page that never loaded."
+            ),
+        }),
+        error => error.name === "TimeoutError",
+        "The stalled page still times out."
+      );
+      Assert.greater(
+        ChromeUtils.now() - start,
+        SETTLE_DELAY_MS,
+        "The timeout was extended by the settle delay."
+      );
+    } finally {
+      await cleanup();
+      await SpecialPowers.popPrefEnv();
+    }
+  }
+);
+
+/**
+ * Aborting tears down a headless load instead of waiting out a long settle
+ * delay. The delay far exceeds the test timeout, so a missed abort fails.
+ */
+add_task(async function test_headless_extraction_settle_delay_abort() {
+  const { PageExtractorParent } = ChromeUtils.importESModule(
+    "resource://gre/actors/PageExtractorParent.sys.mjs"
+  );
+  const SETTLE_DELAY_MS = 60 * 60 * 1000;
+  const { html } = MLTestUtils.serveHTML();
+  const { url, cleanup } = html`<div>A page that never settles</div>`;
+  const controller = new AbortController();
+
+  const responded = TestUtils.topicObserved(
+    "http-on-examine-response",
+    subject => subject.QueryInterface(Ci.nsIChannel).URI.spec == url
+  );
+  const extraction = PageExtractorParent.getHeadlessExtractor({
+    urlString: url,
+    settleDelayMs: SETTLE_DELAY_MS,
+    signal: controller.signal,
+    callback: async pageExtractor => pageExtractor.getText(),
+  });
+
+  try {
+    await responded;
+    controller.abort();
+    await Assert.rejects(
+      extraction,
+      error => error.name == "AbortError",
+      "The extraction rejects with an AbortError once the signal aborts."
+    );
+  } finally {
+    await cleanup();
+  }
 });
 
 /**

@@ -283,6 +283,9 @@ class JsepTransportController final {
                                  const SessionDescription* remote_desc)
       RTC_RUN_ON(network_thread_);
 
+  bool HasIceRestart_n(const SessionDescription* local_desc) const
+      RTC_RUN_ON(network_thread_);
+
   // Always called via a blocking call from the signaling thread.
   RTCError SetRemoteDescription_n(SdpType type,
                                   const SessionDescription* local_desc,
@@ -461,6 +464,8 @@ class JsepTransportController final {
   IceGatheringState ice_gathering_state_ = kIceGatheringNew;
 
   const Config config_;
+
+  bool ice_role_initialized_ RTC_GUARDED_BY(network_thread_) = false;
 
   IceConfig ice_config_;
   IceRole ice_role_ = ICEROLE_CONTROLLING;

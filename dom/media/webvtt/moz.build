@@ -31,7 +31,7 @@ XPIDL_SOURCES += [
 
 XPIDL_MODULE = "webvtt"
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "WebVTTParserWrapper.sys.mjs",
 ]
 
@@ -39,7 +39,7 @@ XPCOM_MANIFESTS += [
     "components.conf",
 ]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "vtt.sys.mjs",
 ]
 

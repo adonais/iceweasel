@@ -687,7 +687,7 @@ RefPtr<Element> nsMenuBarX::HideItem(mozilla::dom::Document* aDocument,
   RefPtr<Element> menuElement = aDocument->GetElementById(aID);
   if (menuElement) {
     menuElement->SetAttr(kNameSpaceID_None, nsGkAtoms::hidden, u"true"_ns,
-                         false);
+                         false, dom::IsKnownNewAttr::No);
   }
   return menuElement;
 }

@@ -29,6 +29,7 @@ from taskgraph.util.schema import (
     optionally_keyed_by,
     resolve_keyed_by,
 )
+from taskgraph.util.taskcluster import get_artifact_url
 
 from gecko_taskgraph.optimize.schema import (
     OptimizationSchema,
@@ -653,7 +654,19 @@ def make_job_description(config, tasks):
             jobdesc["fetches"] = task["fetches"]
 
         if task["mozharness"]["requires-signed-builds"] is True:
-            jobdesc["dependencies"]["build-signing"] = task["build-signing-label"]
+            signing_label = task["build-signing-label"]
+            existing_signing_task_id = config.params.get("existing_tasks", {}).get(
+                signing_label
+            )
+            # If the signed build was reused from another push, e.g. with
+            # --use-indexed-tasks, install it directly: the optimizer can't
+            # replace the signing task while the build it depends on still runs.
+            if existing_signing_task_id and "installer-url" not in task["mozharness"]:
+                task["mozharness"]["installer-url"] = get_artifact_url(
+                    existing_signing_task_id, task["mozharness"]["build-artifact-name"]
+                )
+            else:
+                jobdesc["dependencies"]["build-signing"] = signing_label
 
         if "dependencies" in task:
             jobdesc["dependencies"].update(task["dependencies"])

@@ -243,7 +243,7 @@ class nsCocoaUtils {
   // Hides the Menu bar and the Dock. Multiple hide/show requests can be nested.
   static void HideOSChromeOnScreen(bool aShouldHide);
 
-  static nsIWidget* GetHiddenWindowWidget();
+  static already_AddRefed<nsIWidget> GetHiddenWindowWidget();
 
   /**
    * Should the application restore its state because it was launched by the OS

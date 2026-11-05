@@ -925,6 +925,15 @@ void nsUpdateProcessor::StartStagedUpdate() {
 #endif
 }
 
+nsUpdateProcessor::StagedUpdateInfo::StagedUpdateInfo()
+    : mArgc(0), mArgv(nullptr) {}
+nsUpdateProcessor::StagedUpdateInfo::~StagedUpdateInfo() {
+  for (int i = 0; i < mArgc; ++i) {
+    delete[] mArgv[i];
+  }
+  delete[] mArgv;
+}
+
 void nsUpdateProcessor::ShutdownWorkerThread() {
   MOZ_ASSERT(NS_IsMainThread(), "not main thread");
   mWorkerThread->Shutdown();

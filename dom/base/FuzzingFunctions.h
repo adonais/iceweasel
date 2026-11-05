@@ -44,6 +44,12 @@ class FuzzingFunctions final {
 
   static void SpinEventLoopFor(const GlobalObject&, uint32_t aMilliseconds);
 
+  static void Dump(const GlobalObject&, const nsAString& aMessage);
+
+  static int32_t ProcId(const GlobalObject&);
+
+  static void GetRemoteType(const GlobalObject&, nsAString& aRemoteType);
+
  private:
   /**
    * ActivateModifiers() activates aModifiers in the TextInputProcessor.

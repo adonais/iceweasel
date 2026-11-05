@@ -35,6 +35,7 @@ import {
   SERVICE_TYPES,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 import { sanitizeUntrustedContent } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
+import { AuthProvider } from "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import { ExaSearchProvider } from "moz-src:///browser/components/aiwindow/models/search/SearchProviders.sys.mjs";
 import {
@@ -396,7 +397,7 @@ export function validateSearchAnswer(parsed) {
  * @param {string} [params.context]
  * @param {string} params.nowISO
  * @param {SearchResult[]} params.results
- * @param {string} params.fxAccountToken
+ * @param {string} params.token
  * @param {(urls: string[]) => Promise<string[]>} params.readPage - Executes a
  *   page read and returns the extracted text blocks.
  * @param {AbortSignal} [params.signal]
@@ -409,7 +410,7 @@ async function generateAnswer({
   context,
   nowISO,
   results,
-  fxAccountToken,
+  token,
   readPage,
   signal,
   flowId = null,
@@ -440,7 +441,7 @@ async function generateAnswer({
     const { pendingToolCalls } = await conversation.receiveResponse(
       conversation.runWithGenerator({
         streamOptions: { enabled: true },
-        fxAccountToken,
+        token,
         chatId: conversation.id,
         tool_choice: allowReads ? "auto" : "none",
         tools: allowReads ? [GET_PAGE_CONTENT_TOOL] : [],
@@ -508,7 +509,7 @@ async function generateAnswer({
   const response = await conversation.run({
     tool_choice: "none",
     tools: [],
-    fxAccountToken,
+    token,
   });
   return parseAndExtractJSON(response, null);
 }
@@ -594,7 +595,7 @@ export async function runSearchTheWeb(toolParams, conversation, signal, mode) {
   conversation.securityProperties.setPrivateData();
   conversation.securityProperties.setUntrustedInput();
 
-  switch (selectSearchTheWebPath()) {
+  switch (selectSearchTheWebPath(conversation)) {
     case SEARCH_THE_WEB_PATH.ANSWERS:
       return runAnswersSearch(toolParams, conversation, signal);
     case SEARCH_THE_WEB_PATH.FAST:
@@ -680,7 +681,7 @@ async function requestAnswer({ query, conversation, signal }) {
       { role: "system", content: ANSWERS_SYSTEM_PROMPT },
       { role: "user", content: query },
     ],
-    fxAccountToken: await openAIEngine.getFxAccountToken(),
+    token: await AuthProvider.getToken(),
     chatId: conversation.id,
   });
 
@@ -1082,7 +1083,7 @@ async function runGroundedSearch(toolParams, conversation, signal) {
       context,
       nowISO: new Date().toISOString().slice(0, 10),
       results,
-      fxAccountToken: await openAIEngine.getFxAccountToken(),
+      token: await AuthProvider.getToken(),
       readPage,
       signal,
     });

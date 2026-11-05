@@ -8,6 +8,8 @@ with Files("**"):
 DIRS += ['src']
 
 
-LICENSED_UNDER += [
-    "xiph",
-]
+# The text is upstream's COPYING, which names the copyright holders.
+LICENSES += ["speex-resampler"]
+LICENSES["speex-resampler"].title = "Speex Resampler License"
+
+LICENSED_UNDER += ["speex-resampler"]

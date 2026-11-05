@@ -381,6 +381,9 @@ TransportFeedbackAdapter::ProcessCongestionControlFeedback(
         arrival_time_offset = max_expected_ato;
       }
       result.receive_time = current_offset_ - arrival_time_offset;
+      // Note that this deliberately does not look at how the packet was sent,
+      // in order to keep the deprecated `transport_supports_ecn` bit for bit
+      // compatible. Use `HasPacketWithBleachedEct1()` instead.
       supports_ecn &= packet_info.ecn != EcnMarking::kNotEct;
       result.arrival_time_offset = arrival_time_offset;
     }
@@ -456,7 +459,10 @@ TransportFeedbackAdapter::ToTransportFeedback(
   }
   msg.packet_feedbacks = std::move(packet_results);
   msg.data_in_flight = in_flight_.GetOutstandingData(network_route_);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   msg.transport_supports_ecn = supports_ecn;
+#pragma clang diagnostic pop
 
   return msg;
 }

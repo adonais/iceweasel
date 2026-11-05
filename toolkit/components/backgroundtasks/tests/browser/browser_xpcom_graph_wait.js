@@ -102,7 +102,7 @@ const backgroundtaskPhases = {
         // We have a profile marker for this, even though it failed to load!
         "resource:///modules/backgroundtasks/BackgroundTask_wait.sys.mjs",
 
-        "resource://gre/modules/ConsoleAPIStorage.sys.mjs",
+        "moz-src:///dom/console/ConsoleAPIStorage.sys.mjs",
         "resource://gre/modules/Timer.sys.mjs",
 
         // We have a profile marker for this, even though it failed to load!
@@ -112,6 +112,7 @@ const backgroundtaskPhases = {
       ],
       services: [
         "@mozilla.org/consoleAPI-storage;1",
+        "@mozilla.org/network/protocol;1?name=moz-src",
         "@mozilla.org/process/environment;1",
       ],
     },

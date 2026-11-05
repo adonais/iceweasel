@@ -458,7 +458,7 @@ class Loader final {
   // Inserts a style sheet in a document or a ShadowRoot.
   void InsertSheetInTree(StyleSheet& aSheet);
 
-  enum class PendingLoad { No, Yes };
+  enum class TriggeringPendingLoad : bool { No, Yes };
 
  private:
   friend class mozilla::SharedStyleSheetCache;
@@ -476,7 +476,7 @@ class Loader final {
   // Only to be called by `LoadSheet`.
   [[nodiscard]] bool MaybeDeferLoad(SheetLoadData& aLoadData,
                                     SheetState aSheetState,
-                                    PendingLoad aPendingLoad,
+                                    TriggeringPendingLoad aPendingLoad,
                                     const SheetLoadDataHashKey& aKey);
 
   // Only to be called by `LoadSheet`.
@@ -494,7 +494,7 @@ class Loader final {
   // Only to be called by `LoadSheet`.
   [[nodiscard]] nsresult LoadSheetAsyncInternal(
       SheetLoadData& aLoadData, uint64_t aEarlyHintPreloaderId,
-      const SheetLoadDataHashKey& aKey);
+      const SheetLoadDataHashKey& aKey, TriggeringPendingLoad);
 
   // Helpers to conditionally block onload if mDocument is non-null.
   void IncrementOngoingLoadCountAndMaybeBlockOnload() {
@@ -571,7 +571,7 @@ class Loader final {
   // Note: LoadSheet is responsible for setting the sheet to complete on
   // failure.
   nsresult LoadSheet(SheetLoadData&, SheetState, uint64_t aEarlyHintPreloaderId,
-                     PendingLoad = PendingLoad::No);
+                     TriggeringPendingLoad = TriggeringPendingLoad::No);
 
   enum class AllowAsyncParse {
     Yes,
@@ -590,7 +590,7 @@ class Loader final {
 
   // The load of the sheet in the load data is done, one way or another.
   // Do final cleanup.
-  void SheetComplete(SheetLoadData&, nsresult);
+  void SheetComplete(SheetLoadData&, nsresult, TriggeringPendingLoad);
 
   // Notify observers on an individual data. This is different from
   // SheetComplete for loads that are shared.

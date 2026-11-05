@@ -51,14 +51,6 @@ https_first_disabled = true
 ["browser_SitePermissions_tab_urls.js"]
 https_first_disabled = true
 
-["browser_TabUnloader.js"]
-support-files = [
-  "file_webrtc.html",
-  "../../../components/tabbrowser/test/browser/tabs/dummy_page.html",
-  "../../../components/tabbrowser/test/browser/tabs/file_mediaPlayback.html",
-  "../../../base/content/test/browser-general/audio.ogg",
-]
-
 ["browser_Telemetry_numberOfSiteOrigins.js"]
 support-files = ["contain_iframe.html"]
 
@@ -91,7 +83,6 @@ https_first_disabled = true
 ["browser_UsageTelemetry_interaction.js"]
 https_first_disabled = true
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && opt && verify-standalone",
   "os == 'win' && os_version == '11.26200' && opt && verify-standalone",
 ]
 
@@ -103,11 +94,11 @@ https_first_disabled = true
 ["browser_UsageTelemetry_uniqueOriginsVisitedInPast24Hours.js"]
 https_first_disabled = true
 
+["browser_UsageTelemetry_window_opening.js"]
+
 ["browser_aswebauth_session.js"]
 run-if = ["os == 'mac'"]
 support-files = ["browser_aswebauth_form.sjs"]
-
-["browser_preloading_tab_moving.js"]
 
 ["browser_taskbar_preview.js"]
 run-if = [
@@ -115,6 +106,3 @@ run-if = [
 ]
 
 ["browser_urlBar_zoom.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1775794
-]

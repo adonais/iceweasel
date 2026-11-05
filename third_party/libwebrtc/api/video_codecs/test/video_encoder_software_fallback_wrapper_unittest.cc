@@ -157,6 +157,7 @@ class VideoEncoderSoftwareFallbackWrapperTestBase : public ::testing::Test {
       info.implementation_name = implementation_name_;
       if (is_qp_trusted_)
         info.is_qp_trusted = is_qp_trusted_;
+      info.max_pixels_per_frame = max_pixels_per_frame_;
       return info;
     }
 
@@ -169,6 +170,7 @@ class VideoEncoderSoftwareFallbackWrapperTestBase : public ::testing::Test {
     mutable int supports_native_handle_count_ = 0;
     bool supports_native_handle_ = false;
     bool is_qp_trusted_ = false;
+    std::optional<size_t> max_pixels_per_frame_;
     std::string implementation_name_ = "fake-encoder";
     std::optional<VideoFrame> last_video_frame_;
   };
@@ -437,6 +439,40 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
   EXPECT_TRUE(fake_encoder_->GetEncoderInfo().is_qp_trusted.value_or(false));
   UtilizeFallbackEncoder();
   EXPECT_FALSE(fallback_wrapper_->GetEncoderInfo().is_qp_trusted.has_value());
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_->Release());
+}
+
+TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
+       NoMaxPixelsPerFrameWhenFallbackEncoderHasNone) {
+  fake_encoder_->max_pixels_per_frame_ = 640 * 360;
+  EXPECT_FALSE(
+      fallback_wrapper_->GetEncoderInfo().max_pixels_per_frame.has_value());
+}
+
+TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
+       MaxPixelsPerFrameIsTheFallbackEncoders) {
+  fake_sw_encoder_->max_pixels_per_frame_ = 1280 * 720;
+
+  // Default encoder below the fallback's limit.
+  fake_encoder_->max_pixels_per_frame_ = 640 * 360;
+  EXPECT_EQ(fallback_wrapper_->GetEncoderInfo().max_pixels_per_frame,
+            1280u * 720u);
+
+  // Default encoder above the fallback's limit.
+  fake_encoder_->max_pixels_per_frame_ = 1920 * 1080;
+  EXPECT_EQ(fallback_wrapper_->GetEncoderInfo().max_pixels_per_frame,
+            1280u * 720u);
+}
+
+TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
+       MaxPixelsPerFrameUnchangedDuringFallback) {
+  fake_encoder_->max_pixels_per_frame_ = 640 * 360;
+  fake_sw_encoder_->max_pixels_per_frame_ = 1280 * 720;
+  EXPECT_EQ(fallback_wrapper_->GetEncoderInfo().max_pixels_per_frame,
+            1280u * 720u);
+  UtilizeFallbackEncoder();
+  EXPECT_EQ(fallback_wrapper_->GetEncoderInfo().max_pixels_per_frame,
+            1280u * 720u);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_->Release());
 }
 

@@ -23,12 +23,12 @@ class HomeMenuMiddlewareTest {
             )
         val items = store.state.menuGroups.flatMap { it.items }
 
-        store.dispatch(items[0].onClickEvent)
+        store.dispatch(requireNotNull(items[0].onClickEvent))
 
         assertEquals(listOf(HomeMenuItem.Help), handledItems)
         assertEquals(1, dismissCount)
 
-        store.dispatch(items[1].onClickEvent)
+        store.dispatch(requireNotNull(items[1].onClickEvent))
 
         assertEquals(listOf(HomeMenuItem.Help, HomeMenuItem.Settings), handledItems)
         assertEquals(2, dismissCount)

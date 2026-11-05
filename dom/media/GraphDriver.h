@@ -500,6 +500,7 @@ class SystemClockDriver final : public ThreadedDriver {
   SystemClockDriver(GraphInterface* aGraphInterface,
                     GraphDriver* aPreviousDriver, uint32_t aSampleRate);
   virtual ~SystemClockDriver();
+  void RunThread() override;
   SystemClockDriver* AsSystemClockDriver() override { return this; }
   const SystemClockDriver* AsSystemClockDriver() const override { return this; }
   const TimeStamp& IterationTimeStamp() const {

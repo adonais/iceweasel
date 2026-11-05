@@ -392,7 +392,7 @@ std::vector<Codec> LegacyCollectCodecs(const std::vector<AudioCodecSpec>& specs,
   for (const auto& spec : specs) {
     Codec codec = CreateAudioCodec(spec.format);
     if (allocate_pt) {
-      auto pt_or_error = pt_mapper.SuggestMapping(codec, nullptr);
+      auto pt_or_error = pt_mapper.SuggestMapping(codec);
       // We need to do some extra stuff before adding the main codecs to out.
       if (!pt_or_error.ok()) {
         continue;
@@ -429,7 +429,7 @@ std::vector<Codec> LegacyCollectCodecs(const std::vector<AudioCodecSpec>& specs,
             absl::StrCat(codec.id) + "/" + absl::StrCat(codec.id);
         Codec red_codec = CreateAudioCodec(
             {kRedCodecName, codec.clockrate, codec.channels, {{"", red_fmtp}}});
-        red_codec.id = pt_mapper.SuggestMapping(red_codec, nullptr).value();
+        red_codec.id = pt_mapper.SuggestMapping(red_codec).value();
         out.push_back(red_codec);
       } else {
         // We don't know the PT to put into the RED fmtp parameter yet.
@@ -445,7 +445,7 @@ std::vector<Codec> LegacyCollectCodecs(const std::vector<AudioCodecSpec>& specs,
     if (cn.second) {
       Codec cn_codec = CreateAudioCodec({kCnCodecName, cn.first, 1});
       if (allocate_pt) {
-        cn_codec.id = pt_mapper.SuggestMapping(cn_codec, nullptr).value();
+        cn_codec.id = pt_mapper.SuggestMapping(cn_codec).value();
       }
       out.push_back(cn_codec);
     }
@@ -456,7 +456,7 @@ std::vector<Codec> LegacyCollectCodecs(const std::vector<AudioCodecSpec>& specs,
     if (dtmf.second) {
       Codec dtmf_codec = CreateAudioCodec({kDtmfCodecName, dtmf.first, 1});
       if (allocate_pt) {
-        dtmf_codec.id = pt_mapper.SuggestMapping(dtmf_codec, nullptr).value();
+        dtmf_codec.id = pt_mapper.SuggestMapping(dtmf_codec).value();
       }
       out.push_back(dtmf_codec);
     }
@@ -1747,6 +1747,12 @@ void WebRtcVoiceSendChannel::SetFrameEncryptor(
   }
 }
 
+void WebRtcVoiceSendChannel::EnableSframe() {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  sframe_options_.required = true;
+  // TODO(bugs.webrtc.org/479862368): Propagate Sframe options to the streams.
+}
+
 bool WebRtcVoiceSendChannel::InsertDtmf(uint32_t ssrc,
                                         int event,
                                         int duration) {
@@ -2659,6 +2665,12 @@ void WebRtcVoiceReceiveChannel::SetFrameDecryptor(
   if (ssrc == 0) {
     unsignaled_frame_decryptor_ = frame_decryptor;
   }
+}
+
+void WebRtcVoiceReceiveChannel::EnableSframe() {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  sframe_options_.required = true;
+  // TODO(bugs.webrtc.org/479862368): Propagate Sframe options to the streams.
 }
 
 void WebRtcVoiceReceiveChannel::OnPacketReceived(RtpPacketReceived packet) {

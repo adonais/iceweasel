@@ -12,6 +12,10 @@ const {
   "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs"
 );
 
+const { IPPStartupCache } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPPStartupCache.sys.mjs"
+);
+
 const COLLECTION_NAME = "vpn-serverlist";
 
 const TEST_SERVER_1 = {
@@ -333,92 +337,45 @@ add_task(async function test_selectServer() {
   Assert.equal(selected, null, "No server should be selected");
 });
 
-add_task(async function test_initOnStartupCompleted_refreshesStaleCache() {
-  const LOCATIONLIST_CACHE_PREF = "browser.ipProtection.locationListCache";
-  const staleList = [
-    {
-      name: "Stale Country",
-      code: "SC",
-      cities: [
-        {
-          name: "Stale City",
-          code: "SC1",
-          servers: [
-            {
-              hostname: "stale.example.com",
-              port: 443,
-              quarantined: false,
-              protocols: [
-                {
-                  name: "connect",
-                  host: "stale.example.com",
-                  port: 8443,
-                  scheme: "https",
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ];
-  Services.prefs.setCharPref(
-    LOCATIONLIST_CACHE_PREF,
-    JSON.stringify(staleList)
-  );
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref(LOCATIONLIST_CACHE_PREF);
+add_task(async function test_fetches_once_startup_completed_and_ready() {
+  // Reopens the startup cache window the manifest closes for every test. Both
+  // getters are shadowed: the real `state` throws once startup has completed.
+  Object.defineProperty(IPPStartupCache, "isStartupCompleted", {
+    get: () => false,
+    configurable: true,
   });
-
-  const bucketData = await client.get();
-  Assert.greater(
-    bucketData.length,
-    0,
-    "Remote Settings bucket has data available."
-  );
+  Object.defineProperty(IPPStartupCache, "state", {
+    get: () => IPProtectionStates.READY,
+    configurable: true,
+  });
+  setupStubs();
 
   const serverList = new RemoteSettingsServerlist();
   serverList.init();
-  serverList.initOnStartupCompleted();
+  await initServiceToReady();
 
-  // We should have the stale data.
-  Assert.equal(
-    serverList.getLocation("SC")?.country?.code,
-    "SC",
-    "Serverlist starts with the stale cache data."
-  );
-  Assert.equal(
-    serverList.getLocation("US"),
-    null,
-    "Serverlist does not yet reflect the fresh bucket contents."
+  Assert.ok(
+    !serverList.hasList,
+    "A READY carried over from last session should not fetch the list"
   );
 
+  delete IPPStartupCache.isStartupCompleted;
+  delete IPPStartupCache.state;
   const listChanged = waitForEvent(
     serverList,
     "IPProtectionServerlist:ListChanged"
   );
-
-  // When the VPN service is ready to connect, we should re-fetch the
-  // current list and update the cache.
-  const sandbox = sinon.createSandbox();
-  setupStubs(sandbox);
-  await initServiceToReady();
-
+  serverList.initOnStartupCompleted();
   await listChanged;
 
   Assert.equal(
     serverList.getLocation("US")?.country?.code,
     "US",
-    "initOnStartupCompleted refreshes the serverlist from RS when the cache was stale."
-  );
-  Assert.equal(
-    serverList.getLocation("SC"),
-    null,
-    "Stale cache entries are gone after the refresh."
+    "The list should be fetched once startup has completed with the service ready"
   );
 
   serverList.uninit();
-  sandbox.restore();
+  IPProtectionService.uninit();
 });
 
 add_task(async function test_syncRespected() {

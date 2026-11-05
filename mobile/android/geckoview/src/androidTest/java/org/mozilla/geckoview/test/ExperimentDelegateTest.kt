@@ -40,6 +40,7 @@ class ExperimentDelegateTest : BaseSessionTest() {
                 }
             },
         )
+        sessionRule.waitUntilCalled(ExperimentDelegate::class, "onGetExperimentFeature")
     }
 
     /*

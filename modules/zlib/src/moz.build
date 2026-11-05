@@ -36,3 +36,15 @@ AllowCompilerWarnings()
 # ... most warnings, anyway. https://github.com/madler/zlib/issues/633
 if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
     CFLAGS += ["-Wno-deprecated-non-prototype"]
+
+SOURCE_HEADERS += [
+	"crc32.h",
+	"deflate.h",
+	"gzguts.h",
+	"inffast.h",
+	"inffixed.h",
+	"inflate.h",
+	"inftrees.h",
+	"trees.h",
+	"zutil.h",
+]

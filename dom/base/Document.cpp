@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <memory>
 
 #include "AnchorPositioningUtils.h"
 #include "Attr.h"
@@ -42,12 +43,14 @@
 #include "mozAutoDocUpdate.h"
 #include "mozIDOMWindow.h"
 #include "mozIThirdPartyUtil.h"
+#include "mozilla/AntiTrackingOpenerHeuristics.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/AttributeStyles.h"
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/BloomFilter.h"
 #include "mozilla/BounceTrackingProtection.h"
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/Components.h"
@@ -1584,6 +1587,8 @@ Document::Document(const char* aContentType,
       mHasPolicyWithRequireTrustedTypesForDirective(false),
       mClipboardCopyTriggered(false),
       mHasBeenRevealed(false),
+      mSentMayHaveViewTransitionOptIn(false),
+      mOutboundViewTransitionOptInDirty(false),
       mAutoSizesEnabled(StaticPrefs::dom_image_sizes_auto_enabled()),
       mWasFocusedElementRemoved(false),
       mHasScopedCustomElementRegistry(false),
@@ -2333,6 +2338,19 @@ void Document::AccumulatePageLoadTelemetry() {
     }
   }
 
+  // A matching record is not enough; the disposition says it was really used.
+  if (isCacheHit &&
+      GetNavigationTiming()->WasActivatedFromNavigationalPrefetch()) {
+    mPageloadEventData.SetDocumentFeature(
+        performance::pageload_event::DocumentFeature::NAVIGATIONAL_PREFETCH);
+  }
+
+  nsCOMPtr<nsILoadInfo> loadInfo = GetChannel()->LoadInfo();
+  if (loadInfo->GetPrefetchCandidateMatched()) {
+    mPageloadEventData.SetDocumentFeature(
+        performance::pageload_event::NAVIGATIONAL_PREFETCH_ELIGIBLE);
+  }
+
   if (mScriptLoader) {
     mPageloadEventData.set_scriptFromNeckoText(
         mScriptLoader->GetLoadedFromNeckoAsText());
@@ -2538,6 +2556,12 @@ Document::~Document() {
 
   mInDestructor = true;
   mInUnlinkOrDeletion = true;
+
+  // Cancel render-blocking timer
+  if (mRenderBlockingTimer) {
+    mRenderBlockingTimer->Cancel();
+    mRenderBlockingTimer = nullptr;
+  }
 
   mozilla::DropJSObjects(this);
 
@@ -2752,6 +2776,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLazyLoadObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAutoSizeImageObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mElementsObservedForLastRememberedSize)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRenderBlockingElementSet)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDOMImplementation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mImageMaps)
@@ -2878,6 +2903,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLazyLoadObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAutoSizeImageObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mElementsObservedForLastRememberedSize);
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mRenderBlockingElementSet);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreviouslyFocusedContent)
@@ -4335,13 +4361,6 @@ static PermissionsPolicy* GetPermissionsPolicyFromElement(Element* aElement) {
 }
 
 nsresult Document::InitDocPolicy(nsIChannel* aChannel) {
-  // We only use document policy to implement the text fragments spec, so leave
-  // everything at the default value if it isn't enabled. This includes the
-  // behavior for element fragments.
-  if (!StaticPrefs::dom_text_fragments_enabled()) {
-    return NS_OK;
-  }
-
   nsCOMPtr<nsIHttpChannel> httpChannel;
   nsresult rv = GetHttpChannelHelper(aChannel, getter_AddRefs(httpChannel));
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -6658,6 +6677,13 @@ nsresult Document::EditingStateChanged() {
   bool spellRecheckAll = false;
   bool putOffToRemoveScriptBlockerUntilModifyingEditingState = false;
 
+  if (makeWindowEditable && NS_WARN_IF(!IsHTMLOrXHTML())) {
+    // Don't allow editing on non-HTML/XHTML documents.
+    // Return NS_OK so that the setter of designMode on non-HTML documents
+    // does not fail.
+    return NS_OK;
+  }
+
   RefPtr<HTMLEditor> htmlEditor;
   {
     nsAutoEditingState push(this, EditingState::eSettingUp);
@@ -6726,14 +6752,8 @@ nsresult Document::EditingStateChanged() {
 
     // XXX Need to call TearDownEditorOnWindow for all failures.
     htmlEditor = docshell->GetHTMLEditor();
-    if (!htmlEditor) {
-      // Return NS_OK even though we've failed to create an editor here.  This
-      // is so that the setter of designMode on non-HTML documents does not
-      // fail.
-      // This is OK to do because in nsEditingSession::SetupEditorOnWindow() we
-      // would detect that we can't support the mimetype if appropriate and
-      // would fall onto the eEditorErrorCantEditMimeType path.
-      return NS_OK;
+    if (NS_WARN_IF(!htmlEditor)) {
+      return NS_ERROR_FAILURE;
     }
 
     if (collapseSelectionAtBeginningOfDocument) {
@@ -6756,19 +6776,6 @@ nsresult Document::EditingStateChanged() {
   }
 
   if (makeWindowEditable) {
-    // TODO: We should do this earlier in this method.
-    //       Previously, we called `ExecCommand` with `insertBrOnReturn` command
-    //       whose argument is false here.  Then, if it returns error, we
-    //       stopped making it editable.  However, after bug 1697078 fixed,
-    //       `ExecCommand` returns error only when the document is not XHTML's
-    //       nor HTML's.  Therefore, we use same error handling for now.
-    if (MOZ_UNLIKELY(NS_WARN_IF(!IsHTMLOrXHTML()))) {
-      // Editor setup failed. Editing is not on after all.
-      // XXX Should we reset the editable flag on nodes?
-      editSession->TearDownEditorOnWindow(window);
-      mEditingState = EditingState::eOff;
-      return NS_ERROR_DOM_INVALID_STATE_ERR;
-    }
     // Set the editor to not insert <br> elements on return when in <p> elements
     // by default.
     htmlEditor->SetReturnInParagraphCreatesNewParagraph(true);
@@ -7883,6 +7890,10 @@ bool Document::IsRenderingSuppressed() const {
   if (mRenderingSuppressedForViewTransitions) {
     return true;
   }
+  // doc is render-blocked
+  if (IsRenderBlocked()) {
+    return true;
+  }
   // The user agent believes that updating the rendering of doc's node navigable
   // would have no visible effect.
   if (!IsEventHandlingEnabled() && !IsBeingUsedAsImage() && !mDisplayDocument &&
@@ -8177,6 +8188,14 @@ void Document::RemoveChildNode(nsIContent* aKid, bool aNotify,
   MOZ_ASSERT(mCachedRootElement != aKid,
              "Stale pointer in mCachedRootElement, after we tried to clear it "
              "(maybe somebody called GetRootElement() too early?)");
+
+  // This is intentional: stop render-blocking permanently. The parser does not
+  // add a body to a new root element, so the document would otherwise stay
+  // blocked until loading ends or the timeout. A render-blocking element added
+  // later does not block.
+  if (removingRoot && StaticPrefs::dom_element_blocking_enabled()) {
+    StopRenderBlocking();
+  }
 }
 
 void Document::AddStyleSheetToStyleSets(StyleSheet& aSheet) {
@@ -8215,6 +8234,8 @@ void Document::ApplicableStylesChanged(bool aKnownInShadowTree) {
     pc->MarkCounterStylesDirty();
     pc->MarkFontFeatureValuesDirty();
     pc->MarkFontPaletteValuesDirty();
+    // Only document style sheets can contain the @view-transition rule.
+    OutboundViewTransitionRulesChanged();
   }
   pc->RestyleManager()->NextRestyleIsForCSSRuleChanges();
 }
@@ -9229,9 +9250,10 @@ void Document::CreateCustomContentContainerIfNeeded() {
   container->SetIsNativeAnonymousRoot();
   // Do not create an accessible object for the container.
   container->SetAttr(kNameSpaceID_None, nsGkAtoms::role, u"presentation"_ns,
-                     false);
+                     false, IsKnownNewAttr::Yes);
   container->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
-                     u"moz-custom-content-container"_ns, false);
+                     u"moz-custom-content-container"_ns, false,
+                     IsKnownNewAttr::Yes);
   nsAutoScriptBlocker scriptBlocker;
   BindContext context(*root, BindContext::ForNativeAnonymous);
   if (NS_WARN_IF(NS_FAILED(container->BindToTree(context, *root)))) {
@@ -10217,8 +10239,8 @@ void Document::SetTitle(const nsAString& aTitle, ErrorResult& aRv) {
   }
 
   if (rootElement->IsXULElement()) {
-    aRv =
-        rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::title, aTitle, true);
+    aRv = rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::title, aTitle,
+                               true, IsKnownNewAttr::No);
     return;
   }
 
@@ -10586,7 +10608,8 @@ void Document::GetDir(nsAString& aDirection) const {
 void Document::SetDir(const nsAString& aDirection) {
   Element* rootElement = GetHtmlElement();
   if (rootElement) {
-    rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::dir, aDirection, true);
+    rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::dir, aDirection, true,
+                         IsKnownNewAttr::No);
   }
 }
 
@@ -11530,6 +11553,23 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
   CSSToScreenScale defaultScale =
       layoutDeviceScale * LayoutDeviceToScreenScale(1.0);
 
+  if (HasViewportSizeOverrideForMiniWindow()) {
+    // Lay out at exactly the overridden size, ignoring any meta viewport. Start
+    // unzoomed; chrome sets the zoom it wants.
+    //
+    // Use a much lower minimum, or a window narrower than the content at
+    // minimum zoom makes the MobileViewportManager stop scaling the zoom with
+    // the window.
+    CSSToScreenScale minZoom =
+        layoutDeviceScale * LayoutDeviceToScreenScale(0.01f);
+    CSSToScreenScale maxZoom = layoutDeviceScale * ViewportMaxScale();
+    return nsViewportInfo(
+        defaultScale, minZoom, maxZoom, mViewportSizeOverrideForMiniWindow,
+        nsViewportInfo::AutoSizeFlag::FixedSize,
+        nsViewportInfo::AutoScaleFlag::FixedScale,
+        nsViewportInfo::ZoomFlag::AllowZoom, ViewportFitType::Auto);
+  }
+
   auto* bc = GetBrowsingContext();
   const bool inRDM = bc && bc->InRDMPane();
   const bool ignoreMetaTag = [&] {
@@ -11911,6 +11951,24 @@ static InteractiveWidget ParseInteractiveWidget(
     return InteractiveWidget::OverlaysContent;
   }
   return InteractiveWidgetUtils::DefaultInteractiveWidgetMode();
+}
+
+void Document::SetViewportSizeOverrideForMiniWindow(float aWidth,
+                                                    float aHeight) {
+  MOZ_ASSERT(IsTopLevelContentDocument(),
+             "Restricted to top-level content documents");
+  CSSSize size(aWidth, aHeight);
+  if (size == mViewportSizeOverrideForMiniWindow) {
+    return;
+  }
+  mViewportSizeOverrideForMiniWindow = size;
+
+  // Switch to (or back from) a MobileViewportManager that sizes layout from
+  // GetViewportInfo.
+  if (RefPtr<PresShell> presShell = GetPresShell()) {
+    presShell->MaybeRecreateMobileViewportManager(
+        PresShell::MobileViewportManagerUpdate::LayoutViewportSizeMayChange);
+  }
 }
 
 void Document::SetMetaViewportData(UniquePtr<ViewportMetaData> aData) {
@@ -13125,6 +13183,10 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
   }
 
   if (!inFrameLoaderSwap) {
+    // Skip the active view transition now that the document is hidden, after
+    // pagehide. Do not wait for the task that UpdateVisibilityState queues, so
+    // that the skip happens before the document goes into the BFCache.
+    MaybeSkipActiveViewTransition(SkipTransitionReason::DocumentHidden);
     UpdateVisibilityState();
 
     // Submitted here rather than from Destroy(): by teardown the parent process
@@ -13388,8 +13450,20 @@ void Document::SetReadyStateInternal(ReadyState aReadyState,
   if (aUpdateTimingInformation && READYSTATE_LOADING == aReadyState) {
     SetLoadingOrRestoredFromBFCacheTimeStampToNow();
   }
+
+  if (aReadyState == READYSTATE_LOADING &&
+      AllowsAddingRenderBlockingElements()) {
+    EnsureRenderBlockingTimeoutTimer();
+  }
+
   NotifyLoading(mAncestorIsLoading, mReadyState, aReadyState);
+  const bool wasLoading = mReadyState == READYSTATE_LOADING;
   mReadyState = aReadyState;
+  // Leaving "loading" can end render blocking (IsRenderBlocked), which
+  // suppressed rendering; re-arm the rendering phases.
+  if (wasLoading && StaticPrefs::dom_element_blocking_enabled()) {
+    MaybeScheduleRendering();
+  }
   if (aUpdateTimingInformation && mTiming) {
     switch (aReadyState) {
       case READYSTATE_LOADING:
@@ -13422,6 +13496,14 @@ void Document::SetReadyStateInternal(ReadyState aReadyState,
 
   if (aUpdateTimingInformation) {
     RecordNavigationTiming(aReadyState);
+  }
+
+  if (aReadyState != READYSTATE_LOADING) {
+    // https://html.spec.whatwg.org/#stop-parsing
+    // Step 3 sets the ready state to "interactive", and then step 4 pops all
+    // the elements, which processes internal resource links. The parser pops
+    // the elements before the ready state changes, so process the links here.
+    ProcessInternalResourceLinks();
   }
 
   AsyncEventDispatcher::RunDOMEventWhenSafe(
@@ -14765,6 +14847,15 @@ void Document::UnlinkOriginalDocumentIfStatic() {
   MOZ_ASSERT(!mOriginalDocument);
 }
 
+uintptr_t Document::GetRandomSeed() const {
+  // If the document is a static clone, uses the original document's address.
+  // Otherwise, uses this document's address as its random seed.
+  if (const Document* original = GetOriginalDocument()) {
+    return reinterpret_cast<uintptr_t>(original);
+  }
+  return reinterpret_cast<uintptr_t>(this);
+}
+
 nsresult Document::ScheduleFrameRequestCallback(FrameRequestCallback& aCallback,
                                                 uint32_t* aHandle) {
   const bool wasEmpty = mFrameRequestManager.IsEmpty();
@@ -15223,12 +15314,9 @@ already_AddRefed<nsDOMCaretPosition> Document::CaretPositionFromPoint(
     float aX, float aY, const CaretPositionFromPointOptions& aOptions) {
   using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
 
-  nscoord x = nsPresContext::CSSPixelsToAppUnits(aX);
-  nscoord y = nsPresContext::CSSPixelsToAppUnits(aY);
-  nsPoint pt(x, y);
-
   FlushPendingNotifications(FlushType::Layout);
 
+  const nsPoint pt(CSSPixel::ToAppUnits(CSSPoint(aX, aY)));
   PresShell* presShell = GetPresShell();
   if (!presShell) {
     return nullptr;
@@ -15236,7 +15324,7 @@ already_AddRefed<nsDOMCaretPosition> Document::CaretPositionFromPoint(
 
   nsIFrame* rootFrame = presShell->GetRootFrame();
 
-  // XUL docs, unlike HTML, have no frame tree until everything's done loading
+  // XUL docs, unlike HTML, have no frame tree until everything's done loading.
   if (!rootFrame) {
     return nullptr;
   }
@@ -15276,8 +15364,11 @@ already_AddRefed<nsDOMCaretPosition> Document::CaretPositionFromPoint(
     // If the anonymous content node has a child, then we need to make sure
     // that we get the appropriate child, as otherwise the offset may not be
     // correct when we construct a range for it.
+    // TODO(emilio): The code here only works if `anonNode` is either the text
+    // or the editor root, should probably deal with other cases, or bail out...
     if (nsINode* firstChild = anonNode->GetFirstChild()) {
       anonNode = firstChild;
+      offset = offset == 0 ? 0 : firstChild->Length();
     }
     node = nonChrome;
   }
@@ -16759,7 +16850,7 @@ void Document::HidePopoverStackUntil(Element* aEndpoint,
   Span<RefPtr<Element>> toRemain(popoverList.Elements(), lastHideIndex);
 
   // 5. For each popover of toHide: run the hide popover algorithm given
-  // popover, focusPreviousElement, fireEvents, false, and null.
+  // popover, focusPreviousElement, fireEvents, false, null, and document.
   for (RefPtr<Element> popover : mozilla::Reversed(toHide)) {
     HidePopover(*popover, aFocusPreviousElement, aFireEvents,
                 /* aSource */ nullptr, IgnoreErrors());
@@ -16776,7 +16867,7 @@ void Document::HidePopoverStackUntil(Element* aEndpoint,
       continue;
     }
     // 8.2. Run the hide popover algorithm given popover, focusPreviousElement,
-    // false, false, and null.
+    // false, false, null, and document.
     HidePopover(*popover, aFocusPreviousElement, /* aFireEvents */ false,
                 /* aSource */ nullptr, IgnoreErrors());
   }
@@ -16816,11 +16907,11 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   NS_ASSERTION(popoverHTMLEl, "Not a HTML element");
 
   // 1. Let validityResult be the result of running check popover validity
-  // given element, true, and null.
+  // given element, true, and expectedDocument.
   // 2. If validityResult is not true, then run cleanupSteps if throwExceptions
   // and throw, otherwise return.
   if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
-                                           nullptr, aRv)) {
+                                           this, aRv)) {
     return;
   }
 
@@ -16846,12 +16937,8 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
       if (!nestedHide) {
         popoverData->SetIsPopoverHiding(false);
       }
-      // 8.2. If element's popover close watcher is not null, then:
-      // 8.2.1. Destroy element's popover close watcher.
-      // 8.2.2. Set element's popover close watcher to null.
-      popoverData->DestroyCloseWatcher();
     }
-    // 8.3. Decrement document's hiding popover nesting count.
+    // 8.2. Decrement document's hiding popover nesting count.
     DecrementHidingPopoverNestingCount();
   });
 
@@ -16891,10 +16978,10 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     }
 
     // 11.4. Set validityResult to the result of running check popover validity
-    // given element, true, and null.
+    // given element, true, and document.
     // 11.5. If validityResult is not true:
     if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
-                                             nullptr, aRv)) {
+                                             this, aRv)) {
       // 11.5.1. Run cleanupSteps.
       // 11.5.2. If throwExceptions is true and validityResult is a
       // DOMException, then throw validityResult.
@@ -16914,9 +17001,10 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
                                    aSource);
 
     // 12.2. Set validityResult to the result of running check popover validity
-    // given element, true, and null. If not true, run cleanupSteps and return.
+    // given element, true, and document. If not true, run cleanupSteps and
+    // return.
     if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
-                                             nullptr, aRv)) {
+                                             this, aRv)) {
       // (Runs cleanup steps from step 8).
       return;
     }
@@ -16930,6 +17018,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
 
   // 13. Otherwise, remove an element from the top layer immediately given
   // element.
+  MOZ_DIAGNOSTIC_ASSERT(popoverHTMLEl->OwnerDoc() == this);
   RemovePopoverFromTopLayer(aPopover);
 
   if (PopoverData* popoverData = popoverHTMLEl->GetPopoverData()) {
@@ -16976,7 +17065,14 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     popoverHTMLEl->ForgetPreviouslyFocusedElementAfterHidingPopover();
   }
 
-  // 21. Run cleanupSteps.
+  // 21. If element's popover close watcher is not null, then:
+  // 21.1. Destroy element's popover close watcher.
+  // 21.2. Set element's popover close watcher to null.
+  if (PopoverData* popoverData = popoverHTMLEl->GetPopoverData()) {
+    popoverData->DestroyCloseWatcher();
+  }
+
+  // 22. Run cleanupSteps.
 }
 
 nsTArray<RefPtr<Element>> Document::PopoverListOf(
@@ -17713,6 +17809,25 @@ void Document::UpdateVisibilityState(DispatchVisibilityChange aDispatchEvent) {
         NewRunnableMethod("MaybeSkipTransitionAfterVisibilityChange", this,
                           &Document::MaybeSkipTransitionAfterVisibilityChange));
   }
+  // https://drafts.csswg.org/css-view-transitions-2/#page-visibility-change-steps
+  // Step 1.3. Set document's inbound view transition params to null.
+  // Do this only when the document becomes hidden. A document that is restored
+  // from BFCache becomes visible before its reveal, and it needs its params.
+  // TODO: The spec does this in the task that step 1 queues.
+  if (!visible) {
+    mInboundViewTransitionParams = nullptr;
+    // Also drop the params that this unrevealed document did not take yet.
+    // An initial about:blank never takes params, so it must not drop them.
+    if (!mHasBeenRevealed && !IsInitialDocument() &&
+        StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
+      if (nsDocShell* ds = nsDocShell::Cast(GetDocShell())) {
+        ds->TakePendingInboundViewTransitionParams();
+      }
+      if (BrowsingContext* bc = GetBrowsingContext(); bc && bc->IsTop()) {
+        ClearCrossDocViewTransitionParams(bc->BrowserId());
+      }
+    }
+  }
 
   NotifyActivityChanged();
   if (visible) {
@@ -17772,6 +17887,8 @@ void Document::Reveal() {
   // Step 2
   mHasBeenRevealed = true;
 
+  UpdateOutboundViewTransitionOptIn();
+
   if (!StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
     return;
   }
@@ -17779,6 +17896,32 @@ void Document::Reveal() {
   RefPtr<nsGlobalWindowInner> win = nsGlobalWindowInner::Cast(GetInnerWindow());
   if (!win) {
     return;
+  }
+
+  // Take the params that the old document in this docshell captured.
+  if (!mInboundViewTransitionParams) {
+    if (nsDocShell* ds = nsDocShell::Cast(GetDocShell())) {
+      mInboundViewTransitionParams =
+          ds->TakePendingInboundViewTransitionParams();
+    }
+  }
+
+  // If the old top-level document entered BFCache, this document is in another
+  // BrowsingContext with the same browser id.
+  if (!mInboundViewTransitionParams) {
+    if (BrowsingContext* bc = GetBrowsingContext(); bc && bc->IsTop()) {
+      mInboundViewTransitionParams =
+          TakeCrossDocViewTransitionParams(bc->BrowserId());
+    }
+  }
+
+  // Use only params that a same-origin document captured, since cross-site
+  // documents can share a content process.
+  if (mInboundViewTransitionParams &&
+      (!mInboundViewTransitionParams->producerPrincipal ||
+       !NodePrincipal()->Equals(
+           mInboundViewTransitionParams->producerPrincipal))) {
+    mInboundViewTransitionParams = nullptr;
   }
 
   // Step 3, Let transition be the result of resolving inbound cross-document
@@ -17797,6 +17940,7 @@ void Document::Reveal() {
 
   // Step 5, If transition is not null, then: Activate transition.
   if (vt.isSome()) {
+    FlushPendingNotifications(FlushType::Layout);
     nsAutoMicroTask mt;
     vt.ref()->Activate();
   }
@@ -18903,7 +19047,7 @@ void Document::NotifyLayerManagerRecreated() {
 
 XPathEvaluator* Document::XPathEvaluator() {
   if (!mXPathEvaluator) {
-    mXPathEvaluator.reset(new dom::XPathEvaluator(this));
+    mXPathEvaluator = std::make_unique<dom::XPathEvaluator>(this);
   }
   return mXPathEvaluator.get();
 }
@@ -19181,7 +19325,7 @@ void Document::SetUserHasInteracted() {
     wgc->SendUpdateDocumentHasUserInteracted(true);
   }
 
-  MaybeAllowStorageForOpenerAfterUserInteraction(hadPriorUserInteraction);
+  MaybeAllowStorageForOpenerAfterUserInteraction(this, hadPriorUserInteraction);
 }
 
 BrowsingContext* Document::GetBrowsingContext() const {
@@ -19356,104 +19500,6 @@ void Document::SetDocTreeHadMedia() {
   if (topWc && !topWc->IsDiscarded() && !topWc->GetDocTreeHadMedia()) {
     MOZ_ALWAYS_SUCCEEDS(topWc->SetDocTreeHadMedia(true));
   }
-}
-
-void Document::MaybeAllowStorageForOpenerAfterUserInteraction(
-    bool aHadPriorUserInteraction) {
-  if (!CookieJarSettings()->GetRejectThirdPartyContexts()) {
-    return;
-  }
-
-  // This will probably change for project fission, but currently this document
-  // and the opener are on the same process. In the future, we should make this
-  // part async.
-  nsPIDOMWindowInner* inner = GetInnerWindow();
-  if (NS_WARN_IF(!inner)) {
-    return;
-  }
-
-  // Don't trigger navigation heuristic for first-party trackers if the pref
-  // says so.
-  if (StaticPrefs::
-          privacy_restrict3rdpartystorage_heuristic_exclude_third_party_trackers() &&
-      nsContentUtils::IsFirstPartyTrackingResourceWindow(inner)) {
-    return;
-  }
-
-  auto* outer = nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
-  if (NS_WARN_IF(!outer)) {
-    return;
-  }
-
-  RefPtr<BrowsingContext> openerBC = outer->GetOpenerBrowsingContext();
-  if (!openerBC) {
-    // No opener.
-    return;
-  }
-
-  // We want to ensure the following check works for both fission mode and
-  // non-fission mode:
-  // "If the opener is not a 3rd party and if this window is not a 3rd party
-  // with respect to the opener, we should not continue."
-  //
-  // In non-fission mode, the opener and the opened window are in the same
-  // process, we can use AntiTrackingUtils::IsThirdPartyWindow to do the check.
-  // In fission mode, if this window is not a 3rd party with respect to the
-  // opener, they must be in the same process, so we can still use
-  // IsThirdPartyWindow(openerInner) to continue to check if the opener is a 3rd
-  // party.
-  if (openerBC->IsInProcess()) {
-    nsCOMPtr<nsPIDOMWindowOuter> outerOpener = openerBC->GetDOMWindow();
-    if (NS_WARN_IF(!outerOpener)) {
-      return;
-    }
-
-    nsCOMPtr<nsPIDOMWindowInner> openerInner =
-        outerOpener->GetCurrentInnerWindow();
-    if (NS_WARN_IF(!openerInner)) {
-      return;
-    }
-
-    RefPtr<Document> openerDocument = openerInner->GetExtantDoc();
-    if (NS_WARN_IF(!openerDocument)) {
-      return;
-    }
-
-    nsCOMPtr<nsIURI> openerURI = openerDocument->GetDocumentURI();
-    if (NS_WARN_IF(!openerURI)) {
-      return;
-    }
-
-    // If the opener is not a 3rd party and if this window is not
-    // a 3rd party with respect to the opener, we should not continue.
-    if (!AntiTrackingUtils::IsThirdPartyWindow(inner, openerURI) &&
-        !AntiTrackingUtils::IsThirdPartyWindow(openerInner, nullptr)) {
-      return;
-    }
-  }
-
-  RefPtr<Document> self(this);
-  WebIdentityHandler* identityHandler = inner->GetOrCreateWebIdentityHandler();
-  MOZ_ASSERT(identityHandler);
-  identityHandler->IsContinuationWindow()->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [self, openerBC, aHadPriorUserInteraction](
-          const MozPromise<bool, nsresult, true>::ResolveOrRejectValue&
-              result) {
-        if (!result.IsResolve() || !result.ResolveValue()) {
-          if (XRE_IsParentProcess()) {
-            (void)StorageAccessAPIHelper::AllowAccessForOnParentProcess(
-                self->NodePrincipal(), openerBC,
-                ContentBlockingNotifier::eOpenerAfterUserInteraction, nullptr,
-                Some(aHadPriorUserInteraction));
-          } else {
-            (void)StorageAccessAPIHelper::AllowAccessForOnChildProcess(
-                self->NodePrincipal(), openerBC,
-                ContentBlockingNotifier::eOpenerAfterUserInteraction, nullptr,
-                Some(aHadPriorUserInteraction));
-          }
-        }
-      });
 }
 
 namespace {
@@ -20034,14 +20080,60 @@ Maybe<nsTArray<RefPtr<nsAtom>>> Document::ResolveViewTransitionRule() {
   return Some(std::move(types));
 }
 
+void Document::UpdateOutboundViewTransitionOptIn() {
+  // Reveal() sends the first state, so skip the stylesheets that load before
+  // it.
+  if (!mHasBeenRevealed ||
+      !StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
+    return;
+  }
+  mOutboundViewTransitionOptInDirty = false;
+  RefPtr<StyleViewTransitionRule> rule =
+      EnsureStyleSet().GetLastViewTransitionRule();
+  const bool mayHave = rule && Servo_ViewTransitionRule_GetNavigationDescriptor(
+                                   rule) == StyleNavigationType::Auto;
+  if (mayHave == mSentMayHaveViewTransitionOptIn) {
+    return;
+  }
+  mSentMayHaveViewTransitionOptIn = mayHave;
+  if (WindowGlobalChild* wgc = GetWindowGlobalChild()) {
+    wgc->SendSetMayHaveViewTransitionOptIn(mayHave);
+  }
+}
+
+void Document::MaybeUpdateOutboundViewTransitionOptIn() {
+  if (mOutboundViewTransitionOptInDirty) {
+    UpdateOutboundViewTransitionOptIn();
+  }
+}
+
+void Document::OutboundViewTransitionRulesChanged() {
+  if (mHasBeenRevealed &&
+      StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
+    mOutboundViewTransitionOptInDirty = true;
+  }
+}
+
+void Document::StylistUpdated() {
+  // The stylist is up to date, so reading the rules is cheap now.
+  MaybeUpdateOutboundViewTransitionOptIn();
+}
+
 Maybe<RefPtr<ViewTransition>>
 Document::ResolveInboundCrossDocumentViewTransition() {
   // Step 1, 2. Assert fully active and revealed.
-  MOZ_ASSERT(IsFullyActive());
+  // Reveal() may run for a document that is not fully active, so return early
+  // rather than asserting.
+  if (!IsFullyActive()) {
+    // Nothing uses the params after the reveal.
+    mInboundViewTransitionParams = nullptr;
+    return Nothing();
+  }
   MOZ_ASSERT(mHasBeenRevealed);
 
-  // TODO Step 3. Update opt-in state for outbound transitions.
-  // XXX Maybe we don't need that flag and can just check the rule directly.
+  // Step 3. Update the opt-in state for outbound transitions. Gecko checks
+  // this state in SetupOutboundCrossDocumentViewTransition when the navigation
+  // starts.
 
   // Step 4. Let inboundViewTransitionParams be document's inbound params.
   // Step 6. Set document's inbound params to null.
@@ -20070,6 +20162,12 @@ Document::ResolveInboundCrossDocumentViewTransition() {
   mActiveViewTransition = ViewTransition::CreateCrossDocument(
       *this, std::move(inboundParams), resolvedRule.extract());
 
+  // Enable :active-view-transition so that its styles apply during the
+  // transition.
+  if (auto* root = GetRootElement()) {
+    root->AddStates(ElementState::ACTIVE_VIEW_TRANSITION);
+  }
+
   // Step 15. Return transition.
   return Some(mActiveViewTransition);
 }
@@ -20077,6 +20175,303 @@ Document::ResolveInboundCrossDocumentViewTransition() {
 void Document::SetInboundViewTransitionParams(
     UniquePtr<ViewTransitionParams> aParams) {
   mInboundViewTransitionParams = std::move(aParams);
+}
+
+// The captured params by browser id. See StashCrossDocViewTransitionParams.
+using CrossDocVTParamsMap =
+    nsTHashMap<uint64_t, UniquePtr<ViewTransitionParams>>;
+static StaticAutoPtr<CrossDocVTParamsMap> sCrossDocVTParams;
+
+void Document::StashCrossDocViewTransitionParams(
+    uint64_t aBrowserId, UniquePtr<ViewTransitionParams> aParams) {
+  if (!aParams) {
+    return;
+  }
+  if (!sCrossDocVTParams) {
+    sCrossDocVTParams = new CrossDocVTParamsMap();
+    ClearOnShutdown(&sCrossDocVTParams);
+  }
+  sCrossDocVTParams->InsertOrUpdate(aBrowserId, std::move(aParams));
+}
+
+UniquePtr<ViewTransitionParams> Document::TakeCrossDocViewTransitionParams(
+    uint64_t aBrowserId) {
+  if (!sCrossDocVTParams) {
+    return nullptr;
+  }
+  Maybe<UniquePtr<ViewTransitionParams>> extracted =
+      sCrossDocVTParams->Extract(aBrowserId);
+  return extracted ? std::move(*extracted) : nullptr;
+}
+
+void Document::ClearCrossDocViewTransitionParams(
+    uint64_t aBrowserId, Maybe<uint64_t> aProducerBrowsingContextId) {
+  if (!sCrossDocVTParams) {
+    return;
+  }
+  if (aProducerBrowsingContextId) {
+    auto entry = sCrossDocVTParams->Lookup(aBrowserId);
+    if (!entry ||
+        (*entry)->producerBrowsingContextId != *aProducerBrowsingContextId) {
+      return;
+    }
+  }
+  sCrossDocVTParams->Remove(aBrowserId);
+}
+
+already_AddRefed<ViewTransition>
+Document::SetupOutboundCrossDocumentViewTransition() {
+  // https://drafts.csswg.org/css-view-transitions-2/#setup-cross-document-view-transition
+  if (!StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
+    return nullptr;
+  }
+
+  // "can initiate outbound view transition": this document must have been
+  // revealed and its @view-transition rule must opt in.
+  if (!mHasBeenRevealed) {
+    return nullptr;
+  }
+
+  // Step 3-4: Resolve the @view-transition rule. If it resolves to "skip
+  // transition", this document cannot initiate an outbound transition.
+  auto resolvedRule = ResolveViewTransitionRule();
+  if (resolvedRule.isNothing()) {
+    return nullptr;
+  }
+
+  // Step 5: If there's already an active view transition, skip it.
+  if (mActiveViewTransition) {
+    RefPtr<ViewTransition> active = mActiveViewTransition;
+    active->SkipTransition(SkipTransitionReason::ClobberedActiveTransition);
+  }
+
+  // Steps 6-9: Create the outbound transition with the resolved active types
+  // and make it this document's active view transition.
+  RefPtr<ViewTransition> vt = ViewTransition::CreateOutboundCrossDocument(
+      *this, resolvedRule.extract());
+  mActiveViewTransition = vt;
+
+  // Enable :active-view-transition so that its styles apply during the
+  // transition.
+  if (auto* root = GetRootElement()) {
+    root->AddStates(ElementState::ACTIVE_VIEW_TRANSITION);
+  }
+
+  return vt.forget();
+}
+
+// https://html.spec.whatwg.org/#allows-adding-render-blocking-elements
+bool Document::AllowsAddingRenderBlockingElements() const {
+  if (!StaticPrefs::dom_element_blocking_enabled()) {
+    return false;
+  }
+
+  // The spec requires the content type to be exactly "text/html"; this is
+  // narrower than IsHTMLDocument(), which is also true for synthesized image,
+  // media and plain-text documents.
+  if (!GetContentTypeInternal().EqualsLiteral("text/html")) {
+    return false;
+  }
+
+  return !GetBody();
+}
+
+// https://html.spec.whatwg.org/#render-blocked
+bool Document::IsRenderBlocked() const {
+  // The second render-blocked condition (the timeout has not been exceeded) is
+  // tracked by mRenderBlockingStopped.
+  if (!StaticPrefs::dom_element_blocking_enabled() || mRenderBlockingStopped) {
+    return false;
+  }
+
+  // The spec does not check the ready state, so a document without a body is
+  // render-blocked until the timeout, also after parsing. Here a missing body
+  // blocks rendering only while parsing, so that a document renders when
+  // script removes the body or the root element.
+  return !mRenderBlockingElementSet.IsEmpty() ||
+         (AllowsAddingRenderBlockingElements() &&
+          mReadyState == READYSTATE_LOADING);
+}
+
+static void RenderBlockingTimeoutCallback(nsITimer* aTimer, void* aClosure) {
+  RefPtr<Document> doc = static_cast<Document*>(aClosure);
+  doc->StopRenderBlocking();
+}
+
+void Document::EnsureRenderBlockingTimeoutTimer() {
+  if (mRenderBlockingTimer || mRenderBlockingStopped) {
+    return;
+  }
+  NS_NewTimerWithFuncCallback(
+      getter_AddRefs(mRenderBlockingTimer), RenderBlockingTimeoutCallback, this,
+      StaticPrefs::dom_element_blocking_timeout_ms(), nsITimer::TYPE_ONE_SHOT,
+      "Document::RenderBlockingTimeout"_ns);
+}
+
+// https://html.spec.whatwg.org/#block-rendering
+bool Document::BlockRendering(Element& aElement) {
+  if (!StaticPrefs::dom_element_blocking_enabled()) {
+    return false;
+  }
+
+  if (AllowsAddingRenderBlockingElements()) {
+    mRenderBlockingElementSet.Insert(&aElement);
+    EnsureRenderBlockingTimeoutTimer();
+  }
+  return mRenderBlockingElementSet.Contains(&aElement);
+}
+
+void Document::MaybeBlockRendering(Element& aElement) {
+  if (AllowsAddingRenderBlockingElements() &&
+      aElement.IsPotentiallyRenderBlocking()) {
+    BlockRendering(aElement);
+  }
+}
+
+// https://html.spec.whatwg.org/#unblock-rendering
+void Document::UnblockRendering(Element& aElement) {
+  if (!StaticPrefs::dom_element_blocking_enabled()) {
+    return;
+  }
+
+  if (!mRenderBlockingElementSet.EnsureRemoved(&aElement)) {
+    return;
+  }
+  if (auto* link = HTMLLinkElement::FromNode(aElement)) {
+    link->UpdateExpectBlockingFragment(nullptr);
+  }
+
+  if (mRenderBlockingElementSet.IsEmpty()) {
+    StartLayoutAfterUnblocking();
+  }
+}
+
+void Document::StopRenderBlocking() {
+  if (mRenderBlockingStopped) {
+    return;
+  }
+  const bool wasRenderBlocked = IsRenderBlocked();
+  mRenderBlockingStopped = true;
+  for (Element* element : mRenderBlockingElementSet) {
+    if (auto* link = HTMLLinkElement::FromNode(element)) {
+      link->UpdateExpectBlockingFragment(nullptr);
+    }
+  }
+  mRenderBlockingElementSet.Clear();
+  if (mRenderBlockingTimer) {
+    mRenderBlockingTimer->Cancel();
+    mRenderBlockingTimer = nullptr;
+  }
+  if (wasRenderBlocked) {
+    // Only poke the content sink to start the deferred layout when rendering
+    // was actually blocked.
+    StartLayoutAfterUnblocking();
+  }
+}
+
+// https://html.spec.whatwg.org/#process-internal-resource-links
+void Document::ProcessInternalResourceLinks() {
+  if (!StaticPrefs::dom_element_blocking_enabled() ||
+      mRenderBlockingElementSet.IsEmpty()) {
+    return;
+  }
+
+  // ProcessInternalResourceLink may unblock rendering, mutating the set, so
+  // iterate over a snapshot.
+  AutoTArray<RefPtr<HTMLLinkElement>, 4> expectLinks;
+  for (Element* element : mRenderBlockingElementSet) {
+    if (auto* link = HTMLLinkElement::FromNodeOrNull(element);
+        link && link->RelContainsExpect()) {
+      expectLinks.AppendElement(link);
+    }
+  }
+  for (HTMLLinkElement* link : expectLinks) {
+    link->ProcessInternalResourceLink();
+  }
+}
+
+void Document::ProcessInternalResourceLinksWhenSafe() {
+  if (mProcessInternalResourceLinksPending) {
+    return;
+  }
+  mProcessInternalResourceLinksPending = true;
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "Document::ProcessInternalResourceLinksWhenSafe", [self = RefPtr{this}] {
+        self->mProcessInternalResourceLinksPending = false;
+        self->ProcessInternalResourceLinks();
+      }));
+}
+
+void Document::MaybeProcessInternalResourceLinksForElement(Element& aElement) {
+  // No rel=expect link is waiting for a target.
+  if (mExpectedInternalResourceTargets.IsEmpty()) {
+    return;
+  }
+  nsAtom* id = aElement.GetID();
+  nsAtom* name = nullptr;
+  // Only an <a> element can be a target by its name.
+  if (aElement.HasName() && aElement.IsHTMLElement(nsGkAtoms::a)) {
+    if (const nsAttrValue* n = aElement.GetParsedAttr(nsGkAtoms::name)) {
+      name = n->GetAtomValue();
+    }
+  }
+  // Check the Bloom filter first to avoid most hashtable lookups.
+  MOZ_ASSERT(mExpectedInternalResourceTargetsBloom);
+  const auto& bloom = *mExpectedInternalResourceTargetsBloom;
+  if (!((id && bloom.mightContain(id->hash())) ||
+        (name && bloom.mightContain(name->hash())))) {
+    return;
+  }
+  if ((id && mExpectedInternalResourceTargets.Contains(id)) ||
+      (name && mExpectedInternalResourceTargets.Contains(name))) {
+    ProcessInternalResourceLinksWhenSafe();
+  }
+}
+
+void Document::AddExpectedInternalResourceTarget(nsAtom* aFragment) {
+  if (!aFragment) {
+    return;
+  }
+  mExpectedInternalResourceTargets.LookupOrInsert(aFragment, 0) += 1;
+  if (!mExpectedInternalResourceTargetsBloom) {
+    mExpectedInternalResourceTargetsBloom =
+        MakeUnique<mozilla::CountingBloomFilter<8, nsAtom>>();
+  }
+  mExpectedInternalResourceTargetsBloom->add(aFragment->hash());
+}
+
+void Document::RemoveExpectedInternalResourceTarget(nsAtom* aFragment) {
+  if (!aFragment) {
+    return;
+  }
+  if (auto entry = mExpectedInternalResourceTargets.Lookup(aFragment)) {
+    if (--entry.Data() == 0) {
+      entry.Remove();
+    }
+  }
+  if (mExpectedInternalResourceTargetsBloom) {
+    mExpectedInternalResourceTargetsBloom->remove(aFragment->hash());
+  }
+}
+
+void Document::StartLayoutAfterUnblocking() {
+  // Rendering was suppressed while render-blocked (IsRenderingSuppressed), so
+  // nothing has been scheduled since. Re-arm all rendering phases.
+  MaybeScheduleRendering();
+
+  // Start layout if it was deferred while blocked. After parsing ends the
+  // parser is gone, but EndLoad keeps a weak reference to the sink for this.
+  nsCOMPtr<nsIContentSink> sink;
+  if (mParser) {
+    sink = mParser->GetContentSink();
+  } else {
+    sink = do_QueryReferent(mWeakSink);
+  }
+  if (nsCOMPtr<nsContentSink> contentSink = do_QueryInterface(sink)) {
+    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+        "Document::StartLayoutAfterUnblocking",
+        [contentSink] { contentSink->StartLayout(false); }));
+  }
 }
 
 Selection* Document::GetSelection(ErrorResult& aRv) {
@@ -21656,7 +22051,8 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
   aError = nsContentUtils::ParseDocumentHTML(
       *compliantString, doc,
       /* aScriptingEnabledForNoscriptParsing */ false,
-      sanitizeWhileParsing ? sanitizer.get() : nullptr, /* aSafe */ false);
+      sanitizeWhileParsing ? sanitizer.get() : nullptr,
+      nsContentUtils::SanitizerMode::Unsafe);
   if (aError.Failed()) {
     return nullptr;
   }
@@ -21706,7 +22102,8 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
   // <noscript> content is parsed as markup.
   aError = nsContentUtils::ParseDocumentHTML(
       aHTML, doc, /* aScriptingEnabledForNoscriptParsing */ false,
-      sanitizeWhileParsing ? sanitizer.get() : nullptr, /* aSafe */ true);
+      sanitizeWhileParsing ? sanitizer.get() : nullptr,
+      nsContentUtils::SanitizerMode::Safe);
   if (aError.Failed()) {
     return nullptr;
   }

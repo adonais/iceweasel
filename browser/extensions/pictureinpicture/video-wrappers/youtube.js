@@ -39,42 +39,60 @@ class PictureInPictureVideoWrapper {
   }
 
   setCaptionContainerObserver(video, updateCaptionsFunction) {
-    let container = document.getElementById("ytp-caption-window-container");
+    this.removeCaptionContainerObserver();
 
-    if (container) {
+    let player =
+      video.closest("#movie_player, #shorts-player") || video.parentElement;
+    if (!player) {
       updateCaptionsFunction("");
-      const callback = function (mutationsList) {
-        // eslint-disable-next-line no-unused-vars
-        for (const mutation of mutationsList) {
-          let textNodeList = container
-            .querySelector(".captions-text")
-            ?.querySelectorAll(".caption-visual-line");
-          if (!textNodeList) {
-            updateCaptionsFunction("");
-            return;
-          }
-
-          updateCaptionsFunction(
-            Array.from(textNodeList, x => x.textContent).join("\n")
-          );
-        }
-      };
-
-      // immediately invoke the callback function to add subtitles to the PiP window
-      callback([1], null);
-
-      this.captionsObserver = new MutationObserver(callback);
-
-      this.captionsObserver.observe(container, {
-        attributes: false,
-        childList: true,
-        subtree: true,
-      });
+      return;
     }
+
+    let container = null;
+    const updateCaptions = () => {
+      let textNodeList = container
+        ?.querySelector(".captions-text")
+        ?.querySelectorAll(".caption-visual-line");
+      let text = textNodeList
+        ? Array.from(textNodeList, line => line.textContent).join("\n")
+        : "";
+      updateCaptionsFunction(text);
+    };
+
+    const bindContainer = () => {
+      let nextContainer = player.querySelector("#ytp-caption-window-container");
+      if (nextContainer === container) {
+        return;
+      }
+
+      this.captionsObserver?.disconnect();
+      this.captionsObserver = null;
+      container = nextContainer;
+      if (container) {
+        this.captionsObserver = new MutationObserver(updateCaptions);
+        this.captionsObserver.observe(container, {
+          childList: true,
+          subtree: true,
+        });
+      }
+      updateCaptions();
+    };
+
+    // YouTube replaces the caption container during playlist navigation.
+    // Observe its player so unrelated page changes do not trigger lookups.
+    this.containerObserver = new MutationObserver(bindContainer);
+    this.containerObserver.observe(player, {
+      childList: true,
+      subtree: true,
+    });
+    bindContainer();
   }
 
   removeCaptionContainerObserver() {
     this.captionsObserver?.disconnect();
+    this.containerObserver?.disconnect();
+    this.captionsObserver = null;
+    this.containerObserver = null;
   }
 
   shouldHideToggle(video) {

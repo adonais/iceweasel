@@ -6,11 +6,13 @@
 #define mozilla_net_DNSServiceBase_h
 
 #include "mozilla/Atomics.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/net/rust_helper.h"
 #include "nsIObserver.h"
 #include "nsString.h"
 
 class nsIPrefBranch;
+class nsIThreadPool;
 
 namespace mozilla::net {
 
@@ -23,6 +25,9 @@ class DNSServiceBase : public nsIObserver {
   static void DoReadEtcHostsFile(ParsingCallback aCallback);
 
  protected:
+  static nsIThreadPool* GetEtcHostsReaderPool();
+  static StaticRefPtr<nsIThreadPool> sEtcHostsReaderPool;
+
   virtual ~DNSServiceBase() = default;
   void AddPrefObserver(nsIPrefBranch* aPrefs);
   virtual void ReadPrefs(const char* aName);

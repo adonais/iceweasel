@@ -19,6 +19,14 @@
 
 namespace mozilla {
 
+FileMediaResource::FileMediaResource(MediaResourceCallback* aCallback,
+                                     nsIChannel* aChannel, nsIURI* aURI,
+                                     int64_t aSize)
+    : BaseMediaResource(aCallback, aChannel, aURI),
+      mSize(aSize),
+      mLock("FileMediaResource.mLock"),
+      mSizeInitialized(aSize != -1) {}
+FileMediaResource::~FileMediaResource() = default;
 void FileMediaResource::EnsureSizeInitialized() {
   mLock.AssertCurrentThreadOwns();
   NS_ASSERTION(mInput, "Must have file input stream");

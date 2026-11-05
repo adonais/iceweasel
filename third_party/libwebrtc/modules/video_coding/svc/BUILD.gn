@@ -62,7 +62,6 @@ rtc_library("scalability_structures") {
     "../../../rtc_base:checks",
     "../../../rtc_base:logging",
     "../../../rtc_base/system:rtc_export",
-    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }

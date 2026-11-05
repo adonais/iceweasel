@@ -48,6 +48,7 @@ class RenderTextureHostWrapper final : public RenderTextureHostSWGL {
   RenderEGLImageTextureHost* AsRenderEGLImageTextureHost() override;
   RenderTextureHostSWGL* AsRenderTextureHostSWGL() override;
   RenderDMABUFTextureHost* AsRenderDMABUFTextureHost() override;
+  RenderWaylandTextureHost* AsRenderWaylandTextureHost() override;
   void SetIsSoftwareDecodedVideo() override;
   bool IsSoftwareDecodedVideo() override;
   RefPtr<RenderTextureHostUsageInfo> GetOrMergeUsageInfo(

@@ -21,6 +21,8 @@
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/DeviceAttachmentsD3D11.h"
+#include "mozilla/layers/FenceD3D11.h"
+#include "mozilla/layers/SyncObject.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
 
@@ -65,7 +67,6 @@ void DeviceManagerDx::Shutdown() { sInstance = nullptr; }
 
 DeviceManagerDx::DeviceManagerDx()
     : mDeviceLock("gfxWindowsPlatform.mDeviceLock"),
-      mCompositorDeviceSupportsVideo(false),
       mSupportsDCompositionTexture(false) {
   // Set up the D3D11 feature levels we can ask for.
   mFeatureLevels.AppendElement(D3D_FEATURE_LEVEL_11_1);
@@ -928,14 +929,13 @@ void DeviceManagerDx::CreateCompositorDevice(FeatureState& d3d11) {
   }
 
   RefPtr<ID3D11Device> device;
+  bool supportsVideo = true;
   if (!CreateCompositorDeviceHelper(d3d11, adapter, true, device)) {
     // Try again without video support and record that it failed.
-    mCompositorDeviceSupportsVideo = false;
+    supportsVideo = false;
     if (!CreateCompositorDeviceHelper(d3d11, adapter, false, device)) {
       return;
     }
-  } else {
-    mCompositorDeviceSupportsVideo = true;
   }
 
   // Only test this when not using WARP since it can fail and cause
@@ -951,7 +951,18 @@ void DeviceManagerDx::CreateCompositorDevice(FeatureState& d3d11) {
                          "Texture sharing doesn't work",
                          "FEATURE_FAILURE_HW_ANGLE_NEEDS_TEXTURE_SHARING"_ns);
   }
-  if (D3D11Checks::DoesRenderTargetViewNeedRecreating(device)) {
+  using RenderTargetViewCheckResult = D3D11Checks::RenderTargetViewCheckResult;
+  const auto rtvCheckResult =
+      D3D11Checks::DoesRenderTargetViewNeedRecreating(device);
+  if (rtvCheckResult == RenderTargetViewCheckResult::Failed) {
+    // Do not retain this device. Leaving mCompositorDevice null also prevents
+    // CreateDirectCompositionDeviceLocked() from creating a DComp device.
+    d3d11.SetFailed(FeatureStatus::Failed,
+                    "Failed to check render target view recreation",
+                    "FEATURE_FAILURE_D3D11_RTV_CHECK"_ns);
+    return;
+  }
+  if (rtvCheckResult == RenderTargetViewCheckResult::NeedsRecreating) {
     gfxConfig::SetFailed(Feature::D3D11_HW_ANGLE, FeatureStatus::Broken,
                          "RenderTargetViews need recreating",
                          "FEATURE_FAILURE_HW_ANGLE_NEEDS_RTV_RECREATION"_ns);
@@ -971,11 +982,13 @@ void DeviceManagerDx::CreateCompositorDevice(FeatureState& d3d11) {
   uint32_t featureLevel = device->GetFeatureLevel();
   auto formatOptions = D3D11Checks::FormatOptions(device);
   mCompositorDevice = device;
+  CreateCompositorSyncObject();
 
   int32_t sequenceNumber = GetNextDeviceCounter();
   mDeviceStatus = Some(D3D11DeviceStatus(
       false, textureSharingWorks, featureLevel, DxgiAdapterDesc::From(desc),
-      sequenceNumber, formatOptions));
+      sequenceNumber, formatOptions, supportsVideo,
+      layers::FenceD3D11::IsSupportedByDevice(device)));
   mCompositorDevice->SetExceptionMode(0);
 }
 
@@ -1074,11 +1087,13 @@ void DeviceManagerDx::CreateWARPCompositorDevice() {
 
   auto formatOptions = D3D11Checks::FormatOptions(device);
   mCompositorDevice = device;
+  CreateCompositorSyncObject();
 
   int32_t sequenceNumber = GetNextDeviceCounter();
   mDeviceStatus = Some(D3D11DeviceStatus(
       true, textureSharingWorks, featureLevel, DxgiAdapterDesc::From(desc),
-      sequenceNumber, formatOptions));
+      sequenceNumber, formatOptions, /* supportsVideo */ false,
+      layers::FenceD3D11::IsSupportedByDevice(device)));
   mCompositorDevice->SetExceptionMode(0);
 
   reporterWARP.SetSuccessful();
@@ -1150,19 +1165,11 @@ RefPtr<ID3D11Device> DeviceManagerDx::CreateDecoderDevice(
     return nullptr;
   }
 
-  bool isAMD = mDeviceStatus->adapter().VendorId == 0x1002;
-  bool reuseDevice = false;
-  if (gfxVars::ReuseDecoderDevice()) {
-    reuseDevice = true;
-  } else if (isAMD) {
-    reuseDevice = true;
-    gfxCriticalNoteOnce << "Always have to reuse decoder device on AMD";
-  }
-
+  const bool reuseDevice = gfxVars::ReuseDecoderDevice();
   if (reuseDevice) {
     // Use mCompositorDevice for decoder device only for hardware WebRender.
     if (aFlags.contains(DeviceFlag::isHardwareWebRenderInUse) &&
-        mCompositorDevice && mCompositorDeviceSupportsVideo &&
+        mCompositorDevice && mDeviceStatus->supportsVideo() &&
         !mDecoderDevice) {
       mDecoderDevice = mCompositorDevice;
 
@@ -1283,6 +1290,7 @@ void DeviceManagerDx::ResetDevices() {
 void DeviceManagerDx::ResetDevicesLocked() {
   mAdapter = nullptr;
   mCompositorAttachments = nullptr;
+  mCompositorSyncObject = nullptr;
   mCompositorDevice = nullptr;
   mContentDevice = nullptr;
   mCanvasDevice = nullptr;
@@ -1531,6 +1539,30 @@ bool DeviceManagerDx::TextureSharingWorks() {
   return mDeviceStatus->textureSharingWorks();
 }
 
+Maybe<bool> DeviceManagerDx::CompositorDeviceSupportsVideo() {
+  MutexAutoLock lock(mDeviceLock);
+  if (!mDeviceStatus) {
+    return Nothing();
+  }
+  return Some(mDeviceStatus->supportsVideo());
+}
+
+Maybe<bool> DeviceManagerDx::CompositorDeviceSupportsFences() {
+  MutexAutoLock lock(mDeviceLock);
+  if (!mDeviceStatus) {
+    return Nothing();
+  }
+  return Some(mDeviceStatus->supportsFences());
+}
+
+Maybe<uint32_t> DeviceManagerDx::GetCompositorAdapterVendorId() {
+  MutexAutoLock lock(mDeviceLock);
+  if (!mDeviceStatus) {
+    return Nothing();
+  }
+  return Some(mDeviceStatus->adapter().VendorId);
+}
+
 bool DeviceManagerDx::CanInitializeKeyedMutexTextures() {
   MutexAutoLock lock(mDeviceLock);
   return mDeviceStatus && StaticPrefs::gfx_direct3d11_allow_keyed_mutex() &&
@@ -1590,6 +1622,7 @@ void DeviceManagerDx::GetCompositorDevices(
     RefPtr<ID3D11Device>* aOutDevice,
     RefPtr<layers::DeviceAttachmentsD3D11>* aOutAttachments) {
   RefPtr<ID3D11Device> device;
+  RefPtr<layers::SyncObjectHost> syncObject;
   {
     MutexAutoLock lock(mDeviceLock);
     if (!mCompositorDevice) {
@@ -1603,12 +1636,13 @@ void DeviceManagerDx::GetCompositorDevices(
 
     // Otherwise, we'll try to create attachments outside the lock.
     device = mCompositorDevice;
+    syncObject = mCompositorSyncObject;
   }
 
   // We save the attachments object even if it fails to initialize, so the
   // compositor can grab the failure ID.
   RefPtr<layers::DeviceAttachmentsD3D11> attachments =
-      layers::DeviceAttachmentsD3D11::Create(device);
+      layers::DeviceAttachmentsD3D11::Create(device, syncObject);
   {
     MutexAutoLock lock(mDeviceLock);
     if (device != mCompositorDevice) {
@@ -1619,6 +1653,27 @@ void DeviceManagerDx::GetCompositorDevices(
 
   *aOutDevice = device;
   *aOutAttachments = attachments;
+}
+
+void DeviceManagerDx::GetCompositorDeviceAndSyncObject(
+    RefPtr<ID3D11Device>* aOutDevice,
+    RefPtr<layers::SyncObjectHost>* aOutSyncObject) {
+  MutexAutoLock lock(mDeviceLock);
+  *aOutDevice = mCompositorDevice;
+  *aOutSyncObject = mCompositorSyncObject;
+}
+
+void DeviceManagerDx::CreateCompositorSyncObject() {
+  MOZ_ASSERT(mCompositorDevice);
+  mCompositorSyncObject = nullptr;
+
+  RefPtr<layers::SyncObjectHost> syncObject =
+      layers::SyncObjectHost::CreateSyncObjectHost(mCompositorDevice);
+  if (!syncObject->Init()) {
+    gfxCriticalNote << "Failed to initialize the compositor sync object";
+    return;
+  }
+  mCompositorSyncObject = std::move(syncObject);
 }
 
 /* static */

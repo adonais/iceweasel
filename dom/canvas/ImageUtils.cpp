@@ -52,8 +52,12 @@ static Maybe<ImageBitmapFormat> GetImageBitmapFormatFromPlanarYCbCrData(
     layers::PlanarYCbCrData const* aData) {
   MOZ_ASSERT(aData);
 
-  auto ySize = aData->YDataSize();
-  auto cbcrSize = aData->CbCrDataSize();
+  const auto sizes = aData->GetPlaneSizes();
+  if (!sizes) {
+    return Nothing();
+  }
+  const auto& ySize = sizes->mY;
+  const auto& cbcrSize = sizes->mCbCr;
   media::Interval<uintptr_t> YInterval(
       uintptr_t(aData->mYChannel),
       uintptr_t(aData->mYChannel) + ySize.height * aData->mYStride),

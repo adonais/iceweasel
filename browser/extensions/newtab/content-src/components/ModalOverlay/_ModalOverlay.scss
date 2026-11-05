@@ -1,15 +1,13 @@
 .modalOverlayOuter {
-  border: none;
-  box-shadow: var(--popup-box-shadow);
+  // @backward-compat { version 160 }
+  // The --dialog-* tokens are only defined from Firefox 160, so older versions
+  // fall back to the --popup-* tokens they alias.
+  box-shadow: var(--dialog-box-shadow, var(--popup-box-shadow));
   padding: 0;
-  border-radius: var(--border-radius-medium);
+  border-radius: var(--dialog-border-radius, var(--popup-border-radius));
+  border: var(--border-width) solid var(--dialog-border-color, var(--popup-border-color));
 
   &::backdrop {
     background: var(--newtab-overlay-color);
-  }
-
-  .nova-enabled & {
-    // @nova-cleanup(merge-styles): Merge into .modalOverlayOuter
-    border-radius: var(--border-radius-large);
   }
 }

@@ -30,3 +30,8 @@ LOCAL_INCLUDES += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "FilteredContentIterator.h",
+    "nsComposeTxtSrvFilter.h",
+]

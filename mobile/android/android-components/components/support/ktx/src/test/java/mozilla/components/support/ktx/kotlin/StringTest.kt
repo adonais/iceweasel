@@ -86,6 +86,8 @@ class StringTest {
         assertEquals(expectedUrl, "http://mozilla.org".toNormalizedUrl())
         assertEquals(expectedUrl, "  http://mozilla.org  ".toNormalizedUrl())
         assertEquals(expectedUrl, "mozilla.org".toNormalizedUrl())
+        assertEquals("https://mozilla.org/a%20b", "https://mozilla.org/a b".toNormalizedUrl())
+        assertEquals("http://mozilla.org/a%20b", "mozilla.org/a b".toNormalizedUrl())
     }
 
     @Test
@@ -563,6 +565,12 @@ class StringTest {
         "http::double-colon" shortenedShouldBecome "http::double-colon"
         // The largest allowed port is 65,535
         "http://badport:65536/" shortenedShouldBecome "http://badport:65536/"
+    }
+
+    @Test
+    fun `should losslessly decode the path of a url it cannot shorten`() {
+        "http://badport:65536/%D1%82%D0%B5%D1%81%D1%82%20file" shortenedShouldBecome "http://badport:65536/тест%20file"
+        "http://$PUNYCODE.com/%D1%82%D0%B5%D1%81%D1%82" shortenedShouldBecome "$IDN.com"
     }
 
     @Test

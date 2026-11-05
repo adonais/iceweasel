@@ -750,8 +750,8 @@ export class DevToolsStartup {
         id,
         type: "view",
         viewId: panelviewId,
+        l10nId: "toolbar-button-developer",
         shortcutId: "key_toggleToolbox",
-        tooltiptext: "developer-button.tooltiptext2",
         onViewShowing: event => {
           const doc = event.target.ownerDocument;
           const developerItems = lazy.PanelMultiView.getViewNode(

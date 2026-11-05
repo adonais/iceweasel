@@ -122,7 +122,7 @@ export class ClientEnvironmentBase {
   }
 
   // Note that we intend to replace usages of this with client_id in https://bugzilla.mozilla.org/show_bug.cgi?id=1542955
-  static get randomizationId() {
+  static get legacyRandomizationId() {
     let id = Services.prefs.getCharPref("app.normandy.user_id", "");
     if (!id) {
       id = lazy.NormandyUtils.generateUuid();

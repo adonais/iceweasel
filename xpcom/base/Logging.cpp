@@ -285,6 +285,35 @@ bool LimitFileToLessThanSize(const char* aFilename, uint32_t aSize,
   return true;
 }
 
+// Converts megabytes to bytes, clamped so that the result fits in an int32_t.
+// Negative values return 0, which disables the option.
+static int32_t MegabytesToLogSize(const char* aOption, int32_t aMegabytes) {
+  constexpr int32_t kMaxMegabytes = INT32_MAX >> 20;
+  if (aMegabytes < 0) {
+    NS_WARNING(nsPrintfCString("MOZ_LOG: negative %s %d MB (ignoring %s)",
+                               aOption, aMegabytes, aOption)
+                   .get());
+    return 0;
+  }
+  if (aMegabytes > kMaxMegabytes) {
+    NS_WARNING(nsPrintfCString("MOZ_LOG: clamping %s %d MB to %d MB", aOption,
+                               aMegabytes, kMaxMegabytes)
+                   .get());
+    return kMaxMegabytes << 20;
+  }
+  return aMegabytes << 20;
+}
+
+int32_t MaxSizeOptionToBytes(int32_t aMegabytes) {
+  return MegabytesToLogSize("maxsize", aMegabytes);
+}
+
+// Returns the size of each of the kRotateFilesNumber rotated files.
+int32_t RotateOptionToBytes(int32_t aMegabytes) {
+  return MegabytesToLogSize("rotate", aMegabytes) /
+         static_cast<int32_t>(kRotateFilesNumber);
+}
+
 }  // namespace detail
 
 namespace {
@@ -421,9 +450,9 @@ class LogModuleManager {
           } else if (strcmp(aName, "raw") == 0) {
             isRaw = true;
           } else if (strcmp(aName, "rotate") == 0) {
-            rotate = (aValue << 20) / kRotateFilesNumber;
+            rotate = detail::RotateOptionToBytes(aValue);
           } else if (strcmp(aName, "maxsize") == 0) {
-            maxSize = aValue << 20;
+            maxSize = detail::MaxSizeOptionToBytes(aValue);
           } else if (strcmp(aName, "prependheader") == 0) {
             prependHeader = true;
           } else if (strcmp(aName, "profilerstacks") == 0) {
@@ -457,7 +486,7 @@ class LogModuleManager {
     if (maxSize > 0 && !shouldAppend) {
       NS_WARNING(
           "MOZ_LOG: when you limit the log to maxsize, you must use append! "
-          "(ignorning maxsize)");
+          "(ignoring maxsize)");
       maxSize = 0;
     }
 
@@ -509,17 +538,20 @@ class LogModuleManager {
       return;
     }
 
-    const char* filename = aFilename ? aFilename : "";
-    char buf[2048];
-    filename = detail::ExpandLogFileName(filename, buf);
-
     // Can't use rotate or maxsize at runtime yet.
     MOZ_ASSERT(mRotate == 0,
                "We don't allow rotate for runtime logfile changes");
-    mOutFilePath.reset(strdup(filename));
+
+    detail::LogFile* newFile = nullptr;
+    if (aFilename) {
+      char buf[2048];
+      mOutFilePath.reset(strdup(detail::ExpandLogFileName(aFilename, buf)));
+      newFile = OpenFile(false, 0);
+    } else {
+      mOutFilePath.reset(strdup(""));
+    }
 
     // Exchange mOutFile and set it to be released once all the writes are done.
-    detail::LogFile* newFile = OpenFile(false, 0);
     detail::LogFile* oldFile = mOutFile.exchange(newFile);
 
     // Since we don't allow changing the logfile if MOZ_LOG_FILE is already set,
@@ -845,13 +877,6 @@ class LogModuleManager {
       // only once on one thread.
       detail::LogFile* release = mToReleaseFile.exchange(nullptr);
       delete release;
-    }
-  }
-
-  void DisableModules() {
-    OffTheBooksMutexAutoLock guard(mModulesLock);
-    for (auto& m : mModules) {
-      (*(m.GetModifiableData()))->SetLevel(LogLevel::Disabled);
     }
   }
 

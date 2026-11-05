@@ -58,6 +58,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param gravity [ToolbarGravity] for where the toolbar is being placed on the screen.
  * @param backgroundColor Color of the background.
  * @param outlineColor Color of the divider.
+ * @param showDivider Whether to show the divider on the edge of the toolbar facing the webpage.
  * @param editActionsStart List of [Action]s to be displayed at the start of the URL of the edit toolbar.
  * @param editActionsEnd List of [Action]s to be displayed at the end of the URL of the edit toolbar.
  * @param onUrlEdit Will be called when the URL value changes. An updated text value comes as a parameter of the
@@ -76,6 +77,7 @@ fun BrowserEditToolbar(
     gravity: ToolbarGravity = Top,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     outlineColor: Color = DividerDefaults.color,
+    showDivider: Boolean = true,
     editActionsStart: List<Action> = emptyList(),
     editActionsEnd: List<Action> = emptyList(),
     onUrlEdit: (BrowserToolbarQuery) -> Unit = {},
@@ -121,19 +123,21 @@ fun BrowserEditToolbar(
                 )
             }
 
-            HorizontalDivider(
-                modifier =
-                    Modifier.semantics {
-                            testTag = ADDRESSBAR_EDIT_MODE_HORIZONTAL_DIVIDER
-                        }
-                        .align(
-                            when (gravity) {
-                                Top -> Alignment.BottomCenter
-                                Bottom -> Alignment.TopCenter
+            if (showDivider) {
+                HorizontalDivider(
+                    modifier =
+                        Modifier.semantics {
+                                testTag = ADDRESSBAR_EDIT_MODE_HORIZONTAL_DIVIDER
                             }
-                        ),
-                color = outlineColor,
-            )
+                            .align(
+                                when (gravity) {
+                                    Top -> Alignment.BottomCenter
+                                    Bottom -> Alignment.TopCenter
+                                }
+                            ),
+                    color = outlineColor,
+                )
+            }
         }
     }
 }

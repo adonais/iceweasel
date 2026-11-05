@@ -218,12 +218,20 @@ function makeImageBitmap() {
 }
 
 const serializable = [
-  ["DOMException", ["Window", "Worker"], () => new DOMException()],
+  ["DOMException", ["*"], () => new DOMException()],
   ["DOMMatrixReadOnly", ["Window", "Worker"], () => new DOMMatrixReadOnly()],
   ["ImageBitmap", ["Window", "Worker"], makeImageBitmap],
   ["RTCCertificate", ["Window"], generateCertificate],
   ["VideoFrame", ["Window", "DedicatedWorker"], makeVideoFrame],
 ];
+
+if (SpecialPowers.getBoolPref("dom.quota_exceeded_error.enabled")) {
+  serializable.push([
+    "QuotaExceededError",
+    ["*"],
+    () => new QuotaExceededError("", { quota: 1, requested: 2 }),
+  ]);
+}
 
 const transferable = [
   [

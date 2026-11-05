@@ -1179,8 +1179,10 @@ class ProcessReader:
             queue_timeout = None
             if timeout:
                 queue_timeout = timeout - time.time()
+                if queue_timeout <= 0:
+                    raise Empty
             if output_timeout:
-                if queue_timeout:
+                if queue_timeout is not None:
                     queue_timeout = min(queue_timeout, output_timeout)
                 else:
                     queue_timeout = output_timeout

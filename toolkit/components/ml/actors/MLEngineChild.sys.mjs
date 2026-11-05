@@ -50,6 +50,28 @@ const SAFE_OVERRIDE_OPTIONS = [
 ];
 
 /**
+ * Structured clone keeps only an Error's name, message and stack, so the HTTP
+ * status and service error code a BackendError carries are sent beside the
+ * error and reattached by MLEngineParent.
+ *
+ * @param {any} error
+ * @returns {{status?: number, error?: any} | null}
+ */
+function getErrorDetails(error) {
+  if (!error || typeof error !== "object") {
+    return null;
+  }
+  const details = {};
+  if (typeof error.status === "number") {
+    details.status = error.status;
+  }
+  if (error.error !== undefined && error.error !== null) {
+    details.error = error.error;
+  }
+  return Object.keys(details).length ? details : null;
+}
+
+/**
  * The engine child is responsible for the life cycle and instantiation of the local
  * machine learning inference engine.
  */
@@ -659,6 +681,7 @@ class EngineDispatcher {
               requestId,
               response: null,
               error,
+              errorDetails: getErrorDetails(error),
             });
           }
           this.#status = "IDLE";
@@ -830,6 +853,23 @@ class InferenceEngine {
       workerOptions,
       functions
     );
+    // Rebuilds the BackendError a backend threw (see toMsg in Pipeline.mjs),
+    // keeping the status and error code the service reported.
+    worker.ExceptionHandlers.BackendError = data => {
+      const error = new Error(data.message);
+      error.name = data.name;
+      error.backendName = data.backendName;
+      if (data.stack) {
+        error.stack = data.stack;
+      }
+      if ("status" in data) {
+        error.status = data.status;
+      }
+      if ("error" in data) {
+        error.error = data.error;
+      }
+      return error;
+    };
 
     const startTime = ChromeUtils.now();
     const args = [wasm, pipelineOptions];

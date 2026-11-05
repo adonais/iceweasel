@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.top.sites.db
 
-import androidx.annotation.WorkerThread
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -15,15 +14,14 @@ import androidx.room.Update
 /** Internal DAO for accessing [PinnedSiteEntity] instances. */
 @Dao
 internal interface PinnedSiteDao {
-    @WorkerThread @Insert fun insertPinnedSite(site: PinnedSiteEntity): Long
+    @Insert suspend fun insertPinnedSite(site: PinnedSiteEntity): Long
 
-    @WorkerThread @Update fun updatePinnedSite(site: PinnedSiteEntity)
+    @Update suspend fun updatePinnedSite(site: PinnedSiteEntity)
 
-    @WorkerThread @Delete fun deletePinnedSite(site: PinnedSiteEntity)
+    @Delete suspend fun deletePinnedSite(site: PinnedSiteEntity)
 
-    @WorkerThread
     @Transaction
-    fun insertAllPinnedSites(sites: List<PinnedSiteEntity>): List<Long> {
+    suspend fun insertAllPinnedSites(sites: List<PinnedSiteEntity>): List<Long> {
         return sites.map { entity ->
             val id = insertPinnedSite(entity)
             entity.id = id
@@ -31,7 +29,7 @@ internal interface PinnedSiteDao {
         }
     }
 
-    @WorkerThread @Query("SELECT * FROM top_sites") fun getPinnedSites(): List<PinnedSiteEntity>
+    @Query("SELECT * FROM top_sites") suspend fun getPinnedSites(): List<PinnedSiteEntity>
 
-    @Query("SELECT COUNT(*) FROM top_sites") fun getPinnedSitesCount(): Int
+    @Query("SELECT COUNT(*) FROM top_sites") suspend fun getPinnedSitesCount(): Int
 }

@@ -156,16 +156,7 @@ class OSXBootstrapper(OSXAndroidBootstrapper, BaseBootstrapper):
         ensure_command_line_tools()
 
         self.ensure_homebrew_installed()
-        _, hg_modern, _ = self.is_mercurial_modern()
-        if not hg_modern:
-            print(
-                "Mercurial wasn't found or is not sufficiently modern. "
-                "It will be installed with brew"
-            )
-
         packages = ["git", "gnu-tar", "terminal-notifier", "watchman"]
-        if not hg_modern:
-            packages.append("mercurial")
         self._ensure_homebrew_packages(packages)
 
     def install_browser_packages(self, mozconfig_builder):
@@ -275,18 +266,3 @@ class OSXBootstrapper(OSXAndroidBootstrapper, BaseBootstrapper):
 
     def _update_package_manager(self):
         subprocess.check_call([to_optional_str(self.brew), "-v", "update"])
-
-    def _upgrade_package(self, package):
-        self._ensure_homebrew_installed()
-
-        try:
-            subprocess.check_output(
-                [to_optional_str(self.brew), "-v", "upgrade", package],
-                stderr=subprocess.STDOUT,
-            )
-        except subprocess.CalledProcessError as e:
-            if b"already installed" not in e.output:
-                raise
-
-    def upgrade_mercurial(self, current):
-        self._upgrade_package("mercurial")

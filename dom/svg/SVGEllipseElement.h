@@ -39,6 +39,7 @@ class SVGEllipseElement final : public SVGEllipseElementBase {
       const StrokeOptions& aStrokeOptions, const Matrix& aToBoundsSpace,
       const Matrix* aToNonScalingStrokeSpace = nullptr) override;
   already_AddRefed<Path> BuildPath(PathBuilder* aBuilder) override;
+  void GetAsSimpleShape(SimpleShape* aShape) override;
   bool IsClosedLoop() const override { return true; }
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;

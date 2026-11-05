@@ -140,6 +140,20 @@ Maybe<Rect> SVGEllipseElement::GetGeometryBounds(
   return Some(aToBoundsSpace.TransformBounds(rect));
 }
 
+void SVGEllipseElement::GetAsSimpleShape(SimpleShape* aShape) {
+  float x = 0.0f, y = 0.0f, rx = 0.0f, ry = 0.0f;
+  DebugOnly<bool> ok =
+      SVGGeometryProperty::ResolveAll<SVGT::Cx, SVGT::Cy, SVGT::Rx, SVGT::Ry>(
+          this, &x, &y, &rx, &ry);
+  MOZ_ASSERT(ok, "SVGGeometryProperty::ResolveAll failed");
+
+  if (rx <= 0.0f || ry <= 0.0f) {
+    aShape->Reset();
+    return;
+  }
+  aShape->SetEllipse(CSSPoint(x, y), CSSSize(rx, ry));
+}
+
 already_AddRefed<Path> SVGEllipseElement::BuildPath(PathBuilder* aBuilder) {
   float x, y, rx, ry;
 

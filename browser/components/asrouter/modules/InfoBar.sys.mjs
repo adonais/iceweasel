@@ -26,6 +26,15 @@ const FTL_FILES = [
   "browser/termsofuse.ftl",
 ];
 
+/**
+ * Resolves which icon URL to use.
+ */
+function resolveImageSrc(doc, { imageURL, rtlImageURL }) {
+  return rtlImageURL && doc.documentElement.matches(":dir(rtl)")
+    ? rtlImageURL
+    : imageURL;
+}
+
 class InfoBarNotification {
   constructor(message, dispatch) {
     this._dispatch = dispatch;
@@ -75,6 +84,24 @@ class InfoBarNotification {
   }
 
   /**
+   * Resolve inline `<img data-l10n-name>` placeholders parsed out of a
+   * fluent string against message.content.inline_icons.
+   */
+  _resolveInlineImages(doc, root) {
+    const inlineIcons = this.message.content.inline_icons || {};
+    for (const img of root.querySelectorAll("img[data-l10n-name]")) {
+      const icon = inlineIcons[img.dataset.l10nName];
+      const src = icon && resolveImageSrc(doc, icon);
+      if (!src) {
+        img.remove();
+        continue;
+      }
+      img.src = src;
+      img.classList.add("inline-icon");
+    }
+  }
+
+  /**
    * Async helper to render a Fluent string. If the translation contains `<a
    * data-l10n-name>`, it will parse and inject the associated link contained
    * in the message.
@@ -102,6 +129,8 @@ class InfoBarNotification {
       a => a.dataset.l10nName
     );
     this._ensureLinkTemplatesFor(doc, names);
+
+    this._resolveInlineImages(doc, temp);
 
     // Import each node and wire up any anchors it contains
     for (const node of temp.childNodes) {

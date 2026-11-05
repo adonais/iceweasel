@@ -441,14 +441,6 @@ def add_non_gnu_dso_flags(dso_flags, target):
     dso_flags.ldopts.extend(ldopts)
 
 
-@depends(libfuzzer_flags, when=enable_fuzzing)
-def sancov(libfuzzer_flags):
-    for flag in libfuzzer_flags.use_flags:
-        if "-fsanitize-coverage" in flag or "-fsanitize=fuzzer" in flag:
-            return True
-    return False
-
-
 @depends(target, build_environment)
 @imports(_from="os", _import="environ")
 def moz_fix_link_paths(target, build_env):

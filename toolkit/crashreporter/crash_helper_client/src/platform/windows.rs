@@ -85,7 +85,7 @@ impl CrashHelperClient {
         cmd_line.push(" ");
         cmd_line.push(escape_cmd_line_arg(&pid));
         cmd_line.push(" ");
-        cmd_line.push(escape_cmd_line_arg(breakpad_data.as_ref()));
+        cmd_line.push(escape_cmd_line_arg(&breakpad_data.serialize()));
         cmd_line.push(" ");
         cmd_line.push(escape_cmd_line_arg(&minidump_path));
         cmd_line.push(" ");

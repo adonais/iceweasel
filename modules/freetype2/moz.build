@@ -90,3 +90,15 @@ CFLAGS += CONFIG['MOZ_PNG_CFLAGS']
 USE_LIBS += ['mozpng']
 
 FINAL_LIBRARY = 'freetype'
+
+# The FreeType License requires this credit in the product documentation
+# (docs/FTL.TXT).
+LICENSES += ['freetype']
+LICENSES['freetype'].title = 'FreeType License'
+LICENSES['freetype'].acknowledgement = (
+    'Portions of this software are copyright &copy; 1996-2026 '
+    '<a href="https://www.freetype.org/">The FreeType Project</a>. '
+    'All rights reserved.'
+)
+
+LICENSED_UNDER += ['freetype']

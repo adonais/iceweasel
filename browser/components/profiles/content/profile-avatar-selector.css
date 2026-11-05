@@ -12,14 +12,25 @@
   --mover-offset: -8px;
 
   --avatar-selection-width: 100%;
+
+  anchor-name: --avatar-selector;
 }
 
 dialog {
+  position: absolute;
+  position-anchor: --avatar-selector;
+  position-area: end end;
+  max-inline-size: none;
+  max-block-size: none;
+  overflow: visible;
   margin: 0;
   padding: 0;
   border: 0;
   background-color: transparent;
-  z-index: 1;
+
+  &::backdrop {
+    background: transparent;
+  }
 }
 
 .button-group {
@@ -95,6 +106,7 @@ dialog {
 
 .custom-avatar-crop-area {
   overflow: scroll;
+  user-select: none;
 }
 
 #custom-image-input {

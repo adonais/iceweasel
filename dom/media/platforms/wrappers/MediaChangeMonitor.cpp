@@ -919,6 +919,9 @@ RefPtr<PlatformDecoderModule::CreateDecoderPromise> MediaChangeMonitor::Create(
   RefPtr<MediaChangeMonitor> instance = new MediaChangeMonitor(
       aPDMFactory, std::move(changeMonitor), nullptr, updatedParams);
 
+  MOZ_ASSERT_IF(aParams.mOptions.contains(
+                    CreateDecoderParams::Option::AssertCanInstantiate),
+                instance->mChangeMonitor->CanBeInstantiated());
   if (instance->mChangeMonitor->CanBeInstantiated()) {
     RefPtr<PlatformDecoderModule::CreateDecoderPromise> p =
         instance->CreateDecoder()->Then(
@@ -1123,6 +1126,10 @@ bool MediaChangeMonitor::IsHardwareAccelerated(
   if (mDecoder) {
     return mDecoder->IsHardwareAccelerated(aFailureReason);
   }
+  MOZ_ASSERT(!mParams.mOptions.contains(
+                 CreateDecoderParams::Option::AssertCanInstantiate),
+             "Should not get here if the underlying decoder could not be "
+             "instantiated");
 #ifdef MOZ_APPLEMEDIA
   // On mac, we can assume H264 is hardware accelerated for now.
   // This allows MediaCapabilities to report that playback will be smooth.

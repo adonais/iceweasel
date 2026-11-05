@@ -4,6 +4,8 @@
 
 #include "SharedScriptCache.h"
 
+#include <memory>
+
 #include "ScriptLoadHandler.h"  // ScriptLoadHandler
 #include "ScriptLoader.h"       // ScriptLoader
 #include "ScriptTrace.h"        // TRACE_FOR_TEST
@@ -707,7 +709,7 @@ bool SharedScriptCache::EnsureEverHitMap() {
   os->AddObserver(this, "ipc:content-shutdown", /* ownsWeak= */ false);
   os->AddObserver(this, "profile-before-change", /* ownsWeak= */ false);
 
-  mEverHitMap.reset(new EverHitMapType());
+  mEverHitMap = std::make_unique<EverHitMapType>();
   return !!mEverHitMap;
 }
 

@@ -275,6 +275,12 @@ typedef char* caddr_t;
 
 #define SCTP_GET_IF_INDEX_FROM_ROUTE(ro) 1 /* compiles...  TODO use routing socket to determine */
 
+#if defined(__APPLE__) && defined(__POWERPC__)
+#ifndef WORDS_BIGENDIAN
+#define WORDS_BIGENDIAN
+#endif
+#endif
+
 #define BIG_ENDIAN 1
 #define LITTLE_ENDIAN 0
 #ifdef WORDS_BIGENDIAN
@@ -1144,6 +1150,13 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int a
 #endif
 
 #define SCTP_IS_LISTENING(inp) ((inp->sctp_flags & SCTP_PCB_FLAGS_ACCEPTING) != 0)
+
+static inline bool
+in_broadcast(struct in_addr in)
+{
+	return (in.s_addr == htonl(INADDR_BROADCAST) ||
+	        in.s_addr == htonl(INADDR_ANY));
+}
 
 #if defined(__APPLE__) || defined(__DragonFly__) || defined(__linux__) || defined(__native_client__) || defined(__NetBSD__) || defined(_WIN32) || defined(__Fuchsia__) || defined(__EMSCRIPTEN__)
 int

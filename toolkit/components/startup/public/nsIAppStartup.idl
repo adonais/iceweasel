@@ -150,7 +150,7 @@ interface nsIAppStartup : nsISupports
      *        code of 0 will be used.
      *
      * The shutdown is cancelled if there is a hidden window or the user
-     * disallowed a window to be closed. Check shuttingDown afterwards to
+     * disallowed a window to be closed. Check attemptingQuit afterwards to
      * see whether the shutdown started.
      */
     void quit(in uint32_t aMode, [optional] in int32_t aExitCode);

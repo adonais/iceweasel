@@ -15,7 +15,6 @@ kind-dependencies:
     - shippable-l10n
 
 task-defaults:
-    run-on-repo-type: [hg]
     task-context:
         from-custom:
             - release-level

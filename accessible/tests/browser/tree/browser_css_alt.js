@@ -365,3 +365,64 @@ addAccessibleTask(
   },
   { chrome: true, topLevel: true }
 );
+
+/**
+ * Test CSS alt content on ::marker.
+ */
+addAccessibleTask(
+  `
+<style>
+  .alt1::marker {
+    content: "x " / "alt";
+  }
+  .alt2::marker {
+    content: "x " / "ALT";
+  }
+  #emptyAlt::marker {
+    content: "x " / "";
+  }
+  #emptyContent::marker {
+    content: "" / "alt";
+  }
+</style>
+<ul>
+  <li id="alt" class="alt1">alt</li>
+  <li id="emptyAlt">emptyAlt</li>
+  <li id="emptyContent">emptyContent</li>
+</ul>
+  `,
+  async function testMarker(browser, docAcc) {
+    const alt = findAccessibleChildByID(docAcc, "alt");
+    testAccessibleTree(alt, {
+      role: ROLE_LISTITEM,
+      children: [
+        { role: ROLE_LISTITEM_MARKER, name: "alt" },
+        { role: ROLE_TEXT_LEAF, name: "alt" },
+      ],
+    });
+    testAccessibleTree(findAccessibleChildByID(docAcc, "emptyAlt"), {
+      role: ROLE_LISTITEM,
+      children: [{ role: ROLE_TEXT_LEAF, name: "emptyAlt" }],
+    });
+    testAccessibleTree(findAccessibleChildByID(docAcc, "emptyContent"), {
+      role: ROLE_LISTITEM,
+      children: [
+        { role: ROLE_LISTITEM_MARKER, name: "alt" },
+        { role: ROLE_TEXT_LEAF, name: "emptyContent" },
+      ],
+    });
+
+    info("Changing alt class to alt2");
+    const reordered = waitForEvent(EVENT_REORDER, alt);
+    await invokeSetAttribute(browser, "alt", "class", "alt2");
+    await reordered;
+    testAccessibleTree(alt, {
+      role: ROLE_LISTITEM,
+      children: [
+        { role: ROLE_LISTITEM_MARKER, name: "ALT" },
+        { role: ROLE_TEXT_LEAF, name: "alt" },
+      ],
+    });
+  },
+  { chrome: true, topLevel: true }
+);

@@ -46,7 +46,11 @@ void* Pointer::ToPtr(FontList* aFontList,
   // (e.g. via fallback).
   void* result = nullptr;
 
-  if (IsNull()) {
+  // Load the atomic once to derive the block and offset, so a concurrent
+  // rewrite can't tear the two apart.
+  uint32_t blockAndOffset = mBlockAndOffset;
+
+  if (blockAndOffset == kNullValue) {
     return result;
   }
 
@@ -58,7 +62,8 @@ void* Pointer::ToPtr(FontList* aFontList,
     gfxPlatformFontList::PlatformFontList()->Lock();
   }
 
-  uint32_t blockIndex = Block();
+  uint32_t blockIndex = blockAndOffset >> kBlockShift;
+  uint32_t offset = blockAndOffset & kOffsetMask;
 
   // If the Pointer refers to a block we have not yet mapped in this process,
   // we first need to retrieve new block handle(s) from the parent and update
@@ -99,8 +104,8 @@ void* Pointer::ToPtr(FontList* aFontList,
   {
     // Don't create a pointer that's outside what the block has allocated!
     const auto& block = blocks[blockIndex];
-    if (MOZ_LIKELY(Offset() + aSize <= block->Allocated())) {
-      result = static_cast<char*>(block->Memory()) + Offset();
+    if (MOZ_LIKELY(offset + aSize <= block->Allocated())) {
+      result = static_cast<char*>(block->Memory()) + offset;
     }
   }
 

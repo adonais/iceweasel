@@ -46,5 +46,8 @@ if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["CC_TYPE"] == "clang-cl":
 
 if CONFIG["TARGET_ENDIANNESS"] == "big":
     GeneratedFile(
-        data_file["big"], script="convert_icudata.py", inputs=[data_file["little"]]
+        data_file["big"],
+        script="convert_icudata.py",
+        inputs=[data_file["little"]],
+        extra_deps=["!/dist/host/bin/icupkg" + CONFIG["HOST_BIN_SUFFIX"]],
     )

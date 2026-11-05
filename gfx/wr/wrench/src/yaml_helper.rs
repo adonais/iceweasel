@@ -18,6 +18,7 @@ pub trait YamlHelper {
     fn as_vec_u32(&self) -> Option<Vec<u32>>;
     fn as_vec_u64(&self) -> Option<Vec<u64>>;
     fn as_pipeline_id(&self) -> Option<PipelineId>;
+    fn as_embed_policy(&self) -> Option<EmbedPolicy>;
     fn as_rect(&self) -> Option<LayoutRect>;
     fn as_size(&self) -> Option<LayoutSize>;
     fn as_side_offsets(&self) -> Option<LayoutSideOffsets>;
@@ -210,6 +211,14 @@ fn make_skew(
     LayoutTransform::skew(alpha, beta)
 }
 
+fn gradient_alpha_mode(yaml: &Yaml) -> AlphaMode {
+    if yaml["unpremultiplied"].as_bool().unwrap_or(false) {
+        AlphaMode::Unpremultiplied
+    } else {
+        AlphaMode::Premultiplied
+    }
+}
+
 impl YamlHelper for Yaml {
     fn as_f32(&self) -> Option<f32> {
         match *self {
@@ -271,6 +280,19 @@ impl YamlHelper for Yaml {
 
     fn as_pt_to_f32(&self) -> Option<f32> {
         self.as_force_f32().map(|fv| fv * 16. / 12.)
+    }
+
+    fn as_embed_policy(&self) -> Option<EmbedPolicy> {
+        match *self {
+            Yaml::String(ref s) if s == "unrestricted" => Some(EmbedPolicy::Unrestricted),
+            Yaml::Array(ref v) => Some(EmbedPolicy::Restricted(
+                v.iter()
+                    .map(|ns| ns.as_i64().expect("embed-policy takes pipeline namespaces") as u32)
+                    .collect(),
+            )),
+            Yaml::BadValue => None,
+            _ => panic!("embed-policy is either `unrestricted` or a list of pipeline namespaces"),
+        }
     }
 
     fn as_rect(&self) -> Option<LayoutRect> {
@@ -779,7 +801,7 @@ impl YamlHelper for Yaml {
                     let scale = self["scale"].as_f32().unwrap();
                     let x_channel_selector = self["x_channel_selector"].as_i64().unwrap() as u32;
                     let y_channel_selector = self["y_channel_selector"].as_i64().unwrap() as u32;
-                    Some(FilterOp::SVGFEDisplacementMap{node, scale, x_channel_selector, y_channel_selector})
+                    Some(FilterOp::SVGFEDisplacementMap{node, scale_x: scale, scale_y: scale, x_channel_selector, y_channel_selector})
                 },
                 "dropshadow" => {
                     let color = self["color"].as_colorf().unwrap();
@@ -1094,7 +1116,7 @@ impl YamlHelper for Yaml {
             ExtendMode::Clamp
         };
 
-        dl.create_gradient(start.to_vector(), end.to_vector(), stops, extend_mode)
+        dl.create_gradient(start.to_vector(), end.to_vector(), stops, extend_mode, gradient_alpha_mode(self))
     }
 
     fn as_radial_gradient(&self, dl: &mut DisplayListBuilder) -> (RadialGradient, Vec<GradientStop>) {
@@ -1121,7 +1143,7 @@ impl YamlHelper for Yaml {
             ExtendMode::Clamp
         };
 
-        dl.create_radial_gradient(center.to_vector(), radius, stops, extend_mode)
+        dl.create_radial_gradient(center.to_vector(), radius, stops, extend_mode, gradient_alpha_mode(self))
     }
 
     fn as_conic_gradient(&self, dl: &mut DisplayListBuilder) -> (ConicGradient, Vec<GradientStop>) {
@@ -1148,7 +1170,7 @@ impl YamlHelper for Yaml {
             ExtendMode::Clamp
         };
 
-        dl.create_conic_gradient(center.to_vector(), angle, stops, extend_mode)
+        dl.create_conic_gradient(center.to_vector(), angle, stops, extend_mode, gradient_alpha_mode(self))
     }
 
     fn as_complex_clip_regions(&self) -> Vec<ComplexClipRegion> {

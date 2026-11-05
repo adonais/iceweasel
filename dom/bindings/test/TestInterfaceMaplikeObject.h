@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_TestInterfaceMaplikeObject_h
 #define mozilla_dom_TestInterfaceMaplikeObject_h
 
+#include "mozilla/dom/ECMACollectionMixin.h"
 #include "nsCOMPtr.h"
 #include "nsWrapperCache.h"
 
@@ -21,8 +22,11 @@ class TestInterfaceMaplike;
 
 // Implementation of test binding for webidl maplike interfaces, using
 // primitives for key types and objects for value types.
-class TestInterfaceMaplikeObject final : public nsISupports,
-                                         public nsWrapperCache {
+class TestInterfaceMaplikeObject final
+    : public nsISupports,
+      public nsWrapperCache,
+      public mozilla::dom::MaplikeMixin<nsString,
+                                        RefPtr<TestInterfaceMaplike>> {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(TestInterfaceMaplikeObject)

@@ -762,7 +762,7 @@ RTCError ValidateCryptex(
     const ContentInfo* first_media_content = nullptr;
     for (const std::string& name : bundle->content_names()) {
       const ContentInfo* content = description->GetContentByName(name);
-      if (content && content->media_description()->type() != MediaType::DATA) {
+      if (content && IsRtpProtocol(content->media_description()->protocol())) {
         first_media_content = content;
         break;
       }
@@ -1613,7 +1613,7 @@ class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
  public:
   CreateSessionDescriptionObserverOperationWrapper(
       scoped_refptr<CreateSessionDescriptionObserver> observer,
-      std::function<void()> operation_complete_callback,
+      absl::AnyInvocable<void() &&> operation_complete_callback,
       WeakPtr<SdpOfferAnswerHandler> sdp_handler,
       SdpType type)
       : observer_(std::move(observer)),
@@ -1639,11 +1639,11 @@ class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
       sdp_handler_->TraceCreateSessionDescriptionComplete(type_, desc,
                                                           RTCError::OK());
     }
-    // Completing the operation before invoking the observer allows the observer
-    // to execute SetLocalDescription() without delay.
-    operation_complete_callback_();
+    scoped_refptr<CreateSessionDescriptionObserver> observer = observer_;
+    auto operation_complete_callback = std::move(operation_complete_callback_);
+    observer->OnOperationComplete(std::move(operation_complete_callback));
     desc->RelinquishThreadOwnership();
-    observer_->OnSuccess(desc);
+    observer->OnSuccess(desc);
   }
 
   void OnFailure(RTCError error) override {
@@ -1655,8 +1655,10 @@ class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
       sdp_handler_->TraceCreateSessionDescriptionComplete(type_, nullptr,
                                                           error);
     }
-    operation_complete_callback_();
-    observer_->OnFailure(std::move(error));
+    scoped_refptr<CreateSessionDescriptionObserver> observer = observer_;
+    auto operation_complete_callback = std::move(operation_complete_callback_);
+    observer->OnOperationComplete(std::move(operation_complete_callback));
+    observer->OnFailure(std::move(error));
   }
 
  private:
@@ -1664,7 +1666,7 @@ class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
   bool was_called_ = false;
 #endif  // RTC_DCHECK_IS_ON
   scoped_refptr<CreateSessionDescriptionObserver> observer_;
-  std::function<void()> operation_complete_callback_;
+  absl::AnyInvocable<void() &&> operation_complete_callback_;
   const WeakPtr<SdpOfferAnswerHandler> sdp_handler_;
   const SdpType type_;
 };
@@ -2110,14 +2112,11 @@ void SdpOfferAnswerHandler::SetLocalDescription(
           observer->OnSetLocalDescriptionComplete(RTCError(
               RTCErrorType::INTERNAL_ERROR,
               "SetLocalDescription failed because the session was shut down"));
-          operations_chain_callback();
+          observer->OnOperationComplete(std::move(operations_chain_callback));
           return;
         }
         this_weak_ptr->DoSetLocalDescription(std::move(desc), observer);
-        // DoSetLocalDescription() is implemented as a synchronous operation.
-        // The `observer` will already have been informed that it completed, and
-        // we can mark this operation as complete without any loose ends.
-        operations_chain_callback();
+        observer->OnOperationComplete(std::move(operations_chain_callback));
       });
 }
 
@@ -2486,15 +2485,23 @@ void SdpOfferAnswerHandler::UpdateSenderSsrcsFromLocalDescription() {
       // stream". Need to call this so the sender won't attempt to configure
       // a no longer existing stream and run into DCHECKs in the lower
       // layers.
-      worker_tasks.AddWithFinalizer(sender->SetSsrcTask(0));
+      worker_tasks.AddWithFinalizer(sender->SetSsrcTask(0, /*layer_count=*/0));
     } else {
       const std::vector<StreamParams>& streams =
           transceiver->channel_local_streams();
       sender->set_stream_ids(streams[0].stream_ids());
       std::vector<RtpEncodingParameters> encodings =
           sender->init_send_encodings();
+      // The local description is authoritative for the number of send layers.
+      // This is the same view that the media channel has, since the channel
+      // derives its encodings from these same `StreamParams` (see
+      // `CreateRtpParametersWithEncodings()`). Computing it here means the
+      // sender does not have to discover a mismatch on the worker thread,
+      // where the context needed to act on it is gone.
+      std::vector<uint32_t> primary_ssrcs;
+      streams[0].GetPrimarySsrcs(&primary_ssrcs);
       worker_tasks.AddWithFinalizer(
-          sender->SetSsrcTask(streams[0].first_ssrc()));
+          sender->SetSsrcTask(streams[0].first_ssrc(), primary_ssrcs.size()));
       if (!encodings.empty()) {
         transceivers()
             ->StableState(transceiver_ext)
@@ -3543,7 +3550,8 @@ AddIceCandidateResult SdpOfferAnswerHandler::AddIceCandidateInternal(
 
 void SdpOfferAnswerHandler::AddIceCandidate(
     std::unique_ptr<IceCandidate> candidate,
-    std::function<void(RTCError)> callback) {
+    absl::AnyInvocable<void(RTCError, absl::AnyInvocable<void() &&>) &&>
+        callback) {
   TRACE_EVENT0("webrtc", "SdpOfferAnswerHandler::AddIceCandidate");
   RTC_DCHECK_RUN_ON(signaling_thread());
   // Chain this operation. If asynchronous operations are pending on the
@@ -3552,35 +3560,34 @@ void SdpOfferAnswerHandler::AddIceCandidate(
   operations_chain_->ChainOperation(
       [this_weak_ptr = weak_ptr_factory_.GetWeakPtr(),
        candidate = std::move(candidate), callback = std::move(callback)](
-          std::function<void()> operations_chain_callback) {
+          std::function<void()> operations_chain_callback) mutable {
         auto result =
             this_weak_ptr
                 ? this_weak_ptr->AddIceCandidateInternal(candidate.get())
                 : kAddIceCandidateFailClosed;
+        RTCError error = RTCError::OK();
         switch (result) {
           case AddIceCandidateResult::kAddIceCandidateSuccess:
           case AddIceCandidateResult::kAddIceCandidateFailNotReady:
-            // Success!
-            callback(RTCError::OK());
             break;
           case AddIceCandidateResult::kAddIceCandidateFailClosed:
             // Note that the spec says to just abort without resolving the
             // promise in this case, but this layer must return an RTCError.
-            callback(RTCError(
+            error = RTCError(
                 RTCErrorType::INVALID_STATE,
-                "AddIceCandidate failed because the session was shut down"));
+                "AddIceCandidate failed because the session was shut down");
             break;
           case AddIceCandidateResult::kAddIceCandidateFailNoRemoteDescription:
             // Spec: "If remoteDescription is null return a promise rejected
             // with a newly created InvalidStateError."
-            callback(RTCError(RTCErrorType::INVALID_STATE,
-                              "The remote description was null"));
+            error = RTCError(RTCErrorType::INVALID_STATE,
+                             "The remote description was null");
             break;
           case AddIceCandidateResult::kAddIceCandidateFailNullCandidate:
             // TODO(https://crbug.com/935898): Handle end-of-candidates instead
             // of treating null candidate as an error.
-            callback(RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
-                              "Error processing ICE candidate"));
+            error = RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                             "Error processing ICE candidate");
             break;
           case AddIceCandidateResult::kAddIceCandidateFailNotValid:
           case AddIceCandidateResult::kAddIceCandidateFailInAddition:
@@ -3588,15 +3595,17 @@ void SdpOfferAnswerHandler::AddIceCandidate(
             // Spec: "If candidate could not be successfully added [...] Reject
             // p with a newly created OperationError and abort these steps."
             // UNSUPPORTED_OPERATION maps to OperationError.
-            callback(RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
-                              "Error processing ICE candidate"));
+            error = RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                             "Error processing ICE candidate");
             break;
           default:
             RTC_DCHECK_NOTREACHED();
+            error = RTCError(RTCErrorType::INTERNAL_ERROR,
+                             "Unexpected AddIceCandidate result");
+            break;
         }
-        // Declared complete only after `callback` has run, so that two
-        // AddIceCandidate() calls resolve in the order they were chained in.
-        operations_chain_callback();
+        std::move(callback)(std::move(error),
+                            std::move(operations_chain_callback));
       });
 }
 
@@ -3925,6 +3934,12 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
   std::vector<scoped_refptr<MediaStreamInterface>> all_added_streams;
   std::vector<scoped_refptr<MediaStreamInterface>> all_removed_streams;
   std::vector<scoped_refptr<RtpReceiverInterface>> removed_receivers;
+  // Senders whose pre-offer encodings are restored after the channel teardown
+  // tasks below have run.
+  std::vector<std::pair<scoped_refptr<RtpSenderInternal>,
+                        std::vector<RtpEncodingParameters>>>
+      senders_to_restore;
+
   // Keep to-be-removed transceivers alive until after tasks for them have been
   // run.
   std::vector<RtpTransceiverProxyRefPtr> transceivers_to_remove;
@@ -3987,6 +4002,13 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
 
     RTC_DCHECK(transceiver->internal()->mid().has_value());
     network_tasks.Add(transceiver->internal()->GetClearChannelNetworkTask());
+    auto sender_internal = transceiver->internal()->sender_internal();
+    // The channel the sender was configured against is about to go away.
+    // Detach the sender from its send stream first, so that it returns to the
+    // un-negotiated state instead of holding on to an ssrc that no longer
+    // exists.
+    worker_tasks.AddWithFinalizer(
+        sender_internal->SetSsrcTask(0, /*layer_count=*/0));
     worker_tasks.Add(transceiver->internal()->GetDeleteChannelWorkerTask(
         /*stop_senders=*/false));
 
@@ -4003,11 +4025,13 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
         transceivers_to_remove.push_back(transceiver);
       }
     }
-    auto sender_internal = transceiver->internal()->sender_internal();
     if (stable_state.init_send_encodings()) {
-      sender_internal->set_init_send_encodings(
-          stable_state.init_send_encodings().value());
+      // Restore the encodings once the tasks above have run, since detaching
+      // the sender from its send stream clears them.
+      senders_to_restore.emplace_back(std::move(sender_internal),
+                                      *stable_state.init_send_encodings());
     }
+
     transceiver->internal()->SetTransport(nullptr, std::nullopt);
     if (stable_state.has_m_section()) {
       transceiver->internal()->set_mid(stable_state.mid());
@@ -4019,6 +4043,10 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
   RTC_DCHECK(e.ok());  // only void tasks queued.
   e = worker_tasks.Run();
   RTC_DCHECK(e.ok());  // only void tasks queued.
+
+  for (const auto& [sender, encodings] : senders_to_restore) {
+    sender->set_init_send_encodings(encodings);
+  }
   e = transport_controller_s()->RollbackTransports();
   if (!e.ok()) {
     return e;
@@ -5040,12 +5068,14 @@ void SdpOfferAnswerHandler::GetOptionsForOffer(
     RTC_ALLOW_PLAN_B_DEPRECATION_END();
   }
 
-  // Apply ICE restart flag and renomination flag.
+  // Apply ICE restart flag and renomination and dtls-in-stun ICE options.
   bool ice_restart = offer_answer_options.ice_restart || HasNewIceCredentials();
   for (auto& options : session_options->media_description_options) {
     options.transport_options.ice_restart = ice_restart;
     options.transport_options.enable_ice_renomination =
         pc_->configuration()->enable_ice_renomination;
+    options.transport_options.dtls_handshake_in_stun =
+        pc_->CanAttemptDtlsStunPiggybacking();
   }
 
   session_options->rtcp_cname = rtcp_cname_;
@@ -5335,10 +5365,12 @@ void SdpOfferAnswerHandler::GetOptionsForAnswer(
     RTC_ALLOW_PLAN_B_DEPRECATION_END();
   }
 
-  // Apply ICE renomination flag.
+  // Apply renomination and dtls-in-stun ICE options.
   for (auto& options : session_options->media_description_options) {
     options.transport_options.enable_ice_renomination =
         pc_->configuration()->enable_ice_renomination;
+    options.transport_options.dtls_handshake_in_stun =
+        pc_->CanAttemptDtlsStunPiggybacking();
   }
 
   session_options->rtcp_cname = rtcp_cname_;

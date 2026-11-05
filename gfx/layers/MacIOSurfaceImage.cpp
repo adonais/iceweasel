@@ -79,11 +79,16 @@ bool MacIOSurfaceImage::SetData(ImageContainer* aContainer,
       return false;
   }
 
+  const auto sizes = aData.GetPlaneSizes();
+  if (!sizes) {
+    return false;
+  }
+
   RefPtr<MacIOSurfaceRecycleAllocator> allocator =
       aContainer->GetMacIOSurfaceRecycleAllocator();
 
-  auto ySize = aData.YDataSize();
-  auto cbcrSize = aData.CbCrDataSize();
+  const auto& ySize = sizes->mY;
+  const auto& cbcrSize = sizes->mCbCr;
   RefPtr<MacIOSurface> surf = allocator->Allocate(
       ySize, cbcrSize, aData.mChromaSubsampling, aData.mYUVColorSpace,
       aData.mTransferFunction, aData.mColorRange, aData.mColorDepth);

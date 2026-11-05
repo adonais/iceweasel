@@ -137,13 +137,6 @@ public final class GeckoClipboardContentProvider extends ContentProvider {
     }
   }
 
-  /** Drops an opened-but-not-committed session without touching the system clipboard. */
-  /* package */ static void cancelSession(final long sessionId) {
-    synchronized (sLock) {
-      sOpenSessions.remove(sessionId);
-    }
-  }
-
   /**
    * Promotes an open session to a {@link ClipData} ready to install as the primary clip. The
    * session moves from {@link #sOpenSessions} to {@link #sCommittedSessions} so URI lookups
@@ -157,7 +150,7 @@ public final class GeckoClipboardContentProvider extends ContentProvider {
    * same ClipData so callers asking for {@code text/plain} or {@code text/html} after a mixed write
    * still find them. Pass empty / null to skip a flavor.
    */
-  /* package */ static ClipData commitSessionToClipData(
+  private static ClipData commitSessionToClipData(
       final Context context, final long sessionId, final CharSequence text, final String htmlText) {
     final Session session;
     synchronized (sLock) {
@@ -215,6 +208,31 @@ public final class GeckoClipboardContentProvider extends ContentProvider {
       clipData.addItem(new ClipData.Item(payloadUri));
     }
     return clipData;
+  }
+
+  /**
+   * Similar to {@link #commitSessionToClipData}, but also installs the resulting {@link ClipData}
+   * as the system clipboard's primary clip. Returns true on success, false if the session was not
+   * found or had no payloads.
+   */
+  /* package */ static boolean commitSessionToClipboard(
+      final Context context,
+      final long sessionId,
+      final CharSequence text,
+      final String htmlText,
+      final boolean isPrivateData) {
+    synchronized (sLock) {
+      final ClipData clipData = commitSessionToClipData(context, sessionId, text, htmlText);
+      if (clipData != null) {
+        if (Clipboard.setData(context, clipData, isPrivateData)) {
+          return true;
+        }
+      }
+      // No longer needed for this session, so drop it from the open and committed.
+      sOpenSessions.remove(sessionId);
+      sCommittedSessions.remove(sessionId);
+      return false;
+    }
   }
 
   private static Uri buildItemUri(

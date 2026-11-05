@@ -11,7 +11,7 @@
 package org.webrtc;
 
 public class CallSessionFileRotatingLogSink {
-  private long nativeSink;
+  private final NativeLifecycleLock lifecycleLock;
 
   public static byte[] getLogData(String dirPath) {
     if (dirPath == null) {
@@ -26,14 +26,15 @@ public class CallSessionFileRotatingLogSink {
     if (dirPath == null) {
       throw new IllegalArgumentException("dirPath may not be null.");
     }
-    nativeSink = nativeAddSink(dirPath, maxFileSize, severity.ordinal());
+    this.lifecycleLock =
+        new NativeLifecycleLock(
+            "CallSessionFileRotatingLogSink",
+            nativeAddSink(dirPath, maxFileSize, severity.ordinal()));
   }
 
   public void dispose() {
-    if (nativeSink != 0) {
-      nativeDeleteSink(nativeSink);
-      nativeSink = 0;
-    }
+    lifecycleLock.dispose(
+        nativeSink -> nativeDeleteSink(nativeSink));
   }
 
   private static native long nativeAddSink(String dirPath, int maxFileSize, int severity);

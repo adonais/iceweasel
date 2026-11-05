@@ -277,7 +277,6 @@ rtc_library("frame_cadence_adapter") {
     "../rtc_base/task_utils:repeating_task",
     "../system_wrappers",
     "//third_party/abseil-cpp/absl/algorithm:container",
-    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/cleanup",
   ]
 }
@@ -309,7 +308,6 @@ rtc_library("video_stream_buffer_controller") {
     "../rtc_base:macromagic",
     "../rtc_base/system:no_unique_address",
     "../system_wrappers",
-    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
     "//third_party/abseil-cpp/absl/functional:bind_front",
   ]
@@ -641,9 +639,7 @@ if (rtc_include_tests) {
       }
     }
 
-    rtc_library("video_full_stack_tests") {
-      testonly = true
-
+    rtc_cc_test("full_stack_tests") {
       sources = [ "full_stack_tests.cc" ]
       deps = [
         ":video_quality_test",
@@ -659,11 +655,13 @@ if (rtc_include_tests) {
         "config:encoder_config",
         "//third_party/abseil-cpp/absl/flags:flag",
       ]
+      data_deps = [ "../resources:webrtc_perf_tests_data" ]
+      if (is_ios) {
+        deps += [ "../resources:webrtc_perf_tests_bundle_data" ]
+      }
     }
 
-    rtc_library("video_pc_full_stack_tests") {
-      testonly = true
-
+    rtc_cc_test("pc_full_stack_tests") {
       sources = [ "pc_full_stack_tests.cc" ]
       deps = [
         "../api:create_network_emulation_manager",
@@ -691,6 +689,10 @@ if (rtc_include_tests) {
         "../test:test_support",
         "../test/pc/e2e:network_quality_metrics_reporter",
       ]
+      data_deps = [ "../resources:webrtc_perf_tests_data" ]
+      if (is_ios) {
+        deps += [ "../resources:webrtc_perf_tests_bundle_data" ]
+      }
     }
 
     rtc_library("video_loopback_lib") {

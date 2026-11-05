@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <string>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/JSONWriter.h"
 #include "mozilla/Sprintf.h"
@@ -31,12 +33,16 @@ using namespace mozilla::dmd;
 
 MOZ_RUNINIT DMDFuncs::Singleton DMDFuncs::sSingleton;
 
+// The directory the JSON files are written to.
+static const char* sOutputDir = ".";
+
 class FpWriteFunc final : public mozilla::JSONWriteFunc {
  public:
   explicit FpWriteFunc(const char* aFilename) {
-    mFp = fopen(aFilename, "w");
+    std::string path = std::string(sOutputDir) + "/" + aFilename;
+    mFp = fopen(path.c_str(), "w");
     if (!mFp) {
-      fprintf(stderr, "SmokeDMD: can't create %s file: %s\n", aFilename,
+      fprintf(stderr, "SmokeDMD: can't create %s file: %s\n", path.c_str(),
               strerror(errno));
       exit(1);
     }
@@ -369,7 +375,11 @@ void RunTests() {
   TestScan(seven);
 }
 
-int main() {
+int main(int argc, char** argv) {
+  if (argc > 1) {
+    sOutputDir = argv[1];
+  }
+
   RunTests();
 
   return 0;

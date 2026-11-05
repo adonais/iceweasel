@@ -535,7 +535,7 @@ export default [
     "      ▶︎  <value>: Highlight { priority: 0, type: \"highlight\", size: 0 }",
     "    ▶︎  1: glow → Highlight { priority: 0, type: \"highlight\", size: 0 }",
     "    ▶︎  2: anchor → Highlight { priority: 0, type: \"highlight\", size: 0 }",
-    "  ▶︎  <prototype>: HighlightRegistryPrototype { set: set(), clear: clear(), delete: delete(), … }"
+    "  ▶︎  <prototype>: HighlightRegistryPrototype { highlightsFromPoint: highlightsFromPoint(), entries: entries(), keys: keys(), … }"
   ],
 
   // new URLSearchParams([

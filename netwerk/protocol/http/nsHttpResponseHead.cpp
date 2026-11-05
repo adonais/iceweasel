@@ -1200,9 +1200,19 @@ nsresult nsHttpResponseHead::ParseResponseContentLength(
 
 nsresult nsHttpResponseHead::VisitHeaders(
     nsIHttpHeaderVisitor* visitor, nsHttpHeaderArray::VisitorFilter filter) {
+  return VisitHeaders(filter,
+                      [visitor = nsCOMPtr{visitor}](const nsACString& aHeader,
+                                                    const nsACString& aValue) {
+                        return visitor->VisitHeader(aHeader, aValue);
+                      });
+}
+
+nsresult nsHttpResponseHead::VisitHeaders(
+    nsHttpHeaderArray::VisitorFilter aFilter,
+    nsHttpHeaderArray::VisitorCallback aCallback) {
   RecursiveMutexAutoLock monitor(mRecursiveMutex);
   ++mInVisitHeaders;
-  nsresult rv = mHeaders.VisitHeaders(visitor, filter);
+  nsresult rv = mHeaders.VisitHeaders(aFilter, aCallback);
   --mInVisitHeaders;
   return rv;
 }

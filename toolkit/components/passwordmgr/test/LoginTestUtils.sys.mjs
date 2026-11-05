@@ -16,7 +16,6 @@ import { Assert as AssertCls } from "resource://testing-common/Assert.sys.mjs";
 let Assert = AssertCls;
 
 import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
-import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 import { FileTestUtils } from "resource://testing-common/FileTestUtils.sys.mjs";
 
 const LoginInfo = Components.Constructor(
@@ -568,37 +567,6 @@ LoginTestUtils.loginField = {
 LoginTestUtils.generation = {
   LENGTH: 15,
   REGEX: /^[a-km-np-zA-HJ-NP-Z2-9-~!@#$%^&*_+=)}:;"'>,.?\]]{15}$/,
-};
-
-LoginTestUtils.telemetry = {
-  async waitForEventCount(
-    count,
-    process = "content",
-    category = "pwmgr",
-    method = undefined
-  ) {
-    // The test is already unreliable (see bug 1627419 and 1605494) and relied on
-    // the implicit 100ms initial timer of waitForCondition that bug 1596165 removed.
-    await new Promise(resolve => setTimeout(resolve, 100));
-    let events = await TestUtils.waitForCondition(() => {
-      let events = Services.telemetry.snapshotEvents(
-        Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-        false
-      )[process];
-
-      if (!events) {
-        return null;
-      }
-
-      events = events.filter(
-        e => e[1] == category && (!method || e[2] == method)
-      );
-      dump(`Waiting for ${count} events, got ${events.length}\n`);
-      return events.length == count ? events : null;
-    }, "waiting for telemetry event count of: " + count);
-    Assert.equal(events.length, count, "waiting for telemetry event count");
-    return events;
-  },
 };
 
 LoginTestUtils.file = {

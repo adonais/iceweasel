@@ -103,6 +103,14 @@ HistoryWithFailedChecks.args = {
     ...AGENT,
     history: [
       {
+        id: "h-budget",
+        checkedAt: "2026-08-14T09:00:00.000Z",
+        status: "error",
+        resultExplanation: "429 1",
+        conditionMet: false,
+        errorCode: "budget_exceeded",
+      },
+      {
         id: "h-rate-limit",
         checkedAt: "2026-08-13T09:00:00.000Z",
         status: "error",

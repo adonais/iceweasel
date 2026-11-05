@@ -99,12 +99,12 @@ void SVGLineElement::GetMarkPoints(nsTArray<SVGMark>* aMarks) {
   aMarks->AppendElement(SVGMark(gfx::Point(x2, y2), angle, SVGMark::Type::End));
 }
 
-void SVGLineElement::GetAsSimplePath(SimplePath* aSimplePath) {
+void SVGLineElement::GetAsSimpleShape(SimpleShape* aShape) {
   float x1, y1, x2, y2;
   GetAnimatedLengthValues(&x1, &y1, &x2, &y2, nullptr);
 
   MaybeAdjustForZeroLength(x1, y1, x2, y2);
-  aSimplePath->SetLine(x1, y1, x2, y2);
+  aShape->SetLine(CSSPoint(x1, y1), CSSPoint(x2, y2));
 }
 
 already_AddRefed<Path> SVGLineElement::BuildPath(PathBuilder* aBuilder) {

@@ -161,7 +161,7 @@ class TextureHandle : public RefCounted<TextureHandle>,
 
   virtual void Cleanup(SharedContextWebgl& aContext) {}
 
-  virtual ~TextureHandle() {}
+  virtual ~TextureHandle() = default;
 
   bool IsValid() const { return mValid; }
   void Invalidate() { mValid = false; }
@@ -413,7 +413,7 @@ class PathCacheEntry : public CacheEntryImpl<PathCacheEntry> {
                    const StrokeOptions* aStrokeOptions,
                    AAStrokeMode aStrokeMode, const Matrix& aTransform,
                    const IntRect& aBounds, const Point& aOrigin,
-                   HashNumber aHash, float aSigma);
+                   const Point& aPatternOffset, HashNumber aHash, float aSigma);
 
   static HashNumber HashPath(const QuantizedPath& aPath,
                              const Pattern* aPattern, const Matrix& aTransform,
@@ -436,11 +436,30 @@ class PathCacheEntry : public CacheEntryImpl<PathCacheEntry> {
     mSecondaryHandle = std::move(aHandle);
   }
 
+  // Links a texture into which the pattern, if any, was rasterized at the given
+  // offset relative to the unquantized path origin. This hides
+  // CacheEntry::Link so that the offset can't be forgotten.
+  void Link(const RefPtr<TextureHandle>& aHandle, const Point& aPatternOffset) {
+    CacheEntry::Link(aHandle);
+    mPatternOffset = aPatternOffset;
+  }
+
+  // Whether the pattern is rasterized into a texture, as opposed to only
+  // having cached vertex geometry that is drawn with the pattern.
+  bool HasBakedTexture() const {
+    return (mHandle && mHandle->IsValid()) ||
+           (mSecondaryHandle && mSecondaryHandle->IsValid());
+  }
+
  private:
   // The actual path geometry supplied
   QuantizedPath mPath;
   // The transformed origin of the path
   Point mOrigin;
+  // The quantized offset of the pattern relative to the unquantized path origin
+  // at which the pattern was rasterized into a texture. Only meaningful while
+  // HasBakedTexture() is true.
+  Point mPatternOffset;
   // The pattern used to rasterize the path, if not a mask
   UniquePtr<Pattern> mPattern;
   // The StrokeOptions used for stroked paths, if applicable
@@ -463,13 +482,14 @@ class PathCache : public CacheImpl<PathCacheEntry, true> {
       QuantizedPath aPath, const Pattern* aPattern,
       const StrokeOptions* aStrokeOptions, AAStrokeMode aStrokeMode,
       const Matrix& aTransform, const IntRect& aBounds, const Point& aOrigin,
-      float aSigma = -1.0f);
+      const Point& aPatternOffset, float aSigma = -1.0f);
 
   already_AddRefed<PathCacheEntry> FindEntry(
       const QuantizedPath& aPath, const Pattern* aPattern,
       const StrokeOptions* aStrokeOptions, AAStrokeMode aStrokeMode,
       const Matrix& aTransform, const IntRect& aBounds, const Point& aOrigin,
-      float aSigma = -1.0f, bool aHasSecondaryHandle = false);
+      const Point& aPatternOffset, float aSigma = -1.0f,
+      bool aHasSecondaryHandle = false);
 
   void ClearVertexRanges();
 };

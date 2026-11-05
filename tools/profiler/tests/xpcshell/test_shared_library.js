@@ -28,4 +28,15 @@ function run_test() {
   Assert.equal(typeof libxul, "object");
   Assert.ok(typeof libxul.breakpadId === "string" && libxul.breakpadId !== "");
   Assert.ok(typeof libxul.codeId === "string" && libxul.codeId !== "");
+
+  // The main executable must be named, otherwise the front end has no file to
+  // symbolicate its frames from.  It is reported without a name by the dynamic
+  // loader, so each platform has to fill the name in itself.  Android is the
+  // exception: it doesn't do that yet.
+  if (Services.appinfo.OS !== "Android") {
+    const exeFile = Services.dirsvc.get("XREExeF", Ci.nsIFile);
+    const exeLib = libs.find(lib => lib.name === exeFile.leafName);
+    Assert.ok(exeLib, `${exeFile.leafName} should be in the library list`);
+    Assert.notEqual(exeLib.path, "", "the main executable should have a path");
+  }
 }

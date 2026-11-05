@@ -232,3 +232,8 @@ about-glean-store-submitted-pings-select-label = Ping:
 about-glean-store-submitted-pings =
   .label = Store submitted Pings
   .description = Enables storing of submitted Pings in-memory
+
+# Header for a section that shows client information
+about-glean-submitted-ping-client-info-title = Client Info
+# Header for a section that shows Ping information
+about-glean-submitted-ping-ping-info-title = Ping Info

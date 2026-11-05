@@ -73,3 +73,9 @@
 
 ```{js:autofunction} RustDbCrypto.sys.createKey
 ```
+
+```{js:autofunction} RustDbCrypto.sys.createManagedEncdec
+```
+
+```{js:autofunction} RustDbCrypto.sys.createStaticKeyManager
+```

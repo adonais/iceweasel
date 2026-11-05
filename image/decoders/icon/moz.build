@@ -13,6 +13,10 @@ XPCOM_MANIFESTS += [
 
 FINAL_LIBRARY = "xul"
 
+SOURCE_HEADERS += [
+    "nsIconProtocolHandler.h",
+]
+
 include("/ipc/chromium/chromium-config.mozbuild")
 
 EXPORTS += [

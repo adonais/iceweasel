@@ -218,6 +218,40 @@ add_task(async function toolbar_keyboard_activation() {
 });
 
 /**
+ * Tests that a connection kept up for the sites that always use the VPN does
+ * not show the icon as on for a site without an inclusion.
+ */
+add_task(async function toolbar_icon_status_inclusion_mode() {
+  setupService({
+    isReady: true,
+  });
+  IPProtectionService.updateState();
+  await putServerInRemoteSettings();
+
+  let button = document.getElementById(IPProtectionWidget.WIDGET_ID);
+  let { started } = await IPPProxyManager.start(
+    false,
+    false,
+    undefined,
+    IPPMode.MODE_INCLUSION
+  );
+  Assert.ok(started, "Proxy should start in inclusion mode");
+  Assert.ok(
+    !button.classList.contains("ipprotection-on"),
+    "Toolbar icon should not show connected status in inclusion mode"
+  );
+
+  IPPProxyManager.setMode(IPPMode.MODE_FULL);
+  Assert.ok(
+    button.classList.contains("ipprotection-on"),
+    "Toolbar icon should show connected status once widened to full mode"
+  );
+
+  await IPPProxyManager.stop(false);
+  cleanupService();
+});
+
+/**
  * Tests that the toolbar icon in a new window has the previous status.
  */
 add_task(async function toolbar_icon_status_new_window() {

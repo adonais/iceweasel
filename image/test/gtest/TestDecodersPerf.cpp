@@ -184,4 +184,31 @@ MOZ_GTEST_BENCH_F(ImageDecodersPerf_JPG_YCbCr, DownscaleDctOn, [this] {
   CheckDownscaleDct(mTestCase, mSourceBuffer, true);
 });
 
+static void CheckDownscaleWebPScaling(const ImageTestCase& aTestCase,
+                                      SourceBuffer* aSourceBuffer,
+                                      bool aEnabled) {
+  bool oldValue = false;
+  Preferences::GetBool("image.webp.scaled-decoding.enabled", &oldValue);
+  Preferences::SetBool("image.webp.scaled-decoding.enabled", aEnabled);
+  IntSize outputSize(100, 100);
+  WithSingleChunkDecode(aTestCase, aSourceBuffer, Some(outputSize),
+                        [&](image::Decoder* aDecoder) {
+                          CheckDecoderState(aTestCase, aDecoder, outputSize);
+                        });
+  Preferences::SetBool("image.webp.scaled-decoding.enabled", oldValue);
+}
+
+#define IMAGE_GTEST_WEBP_SCALING_BENCH_F(test_fixture)          \
+  MOZ_GTEST_BENCH_F(test_fixture, DownscaleScalingOff, [this] { \
+    CheckDownscaleWebPScaling(mTestCase, mSourceBuffer, false); \
+  });                                                           \
+  MOZ_GTEST_BENCH_F(test_fixture, DownscaleScalingOn, [this] {  \
+    CheckDownscaleWebPScaling(mTestCase, mSourceBuffer, true);  \
+  });
+
+IMAGE_GTEST_WEBP_SCALING_BENCH_F(ImageDecodersPerf_WebP_RgbLossy)
+IMAGE_GTEST_WEBP_SCALING_BENCH_F(ImageDecodersPerf_WebP_RgbLossless)
+IMAGE_GTEST_WEBP_SCALING_BENCH_F(ImageDecodersPerf_WebP_RgbAlphaLossy)
+IMAGE_GTEST_WEBP_SCALING_BENCH_F(ImageDecodersPerf_WebP_RgbAlphaLossless)
+
 }  // namespace

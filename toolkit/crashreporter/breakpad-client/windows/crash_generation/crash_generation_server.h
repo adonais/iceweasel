@@ -68,11 +68,7 @@ class CrashGenerationServer {
 
   // Creates an instance with the given parameters.
   //
-  // Parameter pipe_name: Name of the Windows named pipe
-  // Parameter pipe_sec_attrs Security attributes to set on the pipe. Pass
-  //     NULL to use default security on the pipe. By default, the pipe created
-  //     allows Local System, Administrators and the Creator full control and
-  //     the Everyone group read access on the pipe.
+  // Parameter pipe: The handle created by CreateReportPipe()
   // Parameter connect_callback: Callback for a new client connection.
   // Parameter connect_context: Context for client connection callback.
   // Parameter dump_callback: Callback for a client crash dump request.
@@ -86,8 +82,7 @@ class CrashGenerationServer {
   // parameter.
   // Parameter dump_path: Path for generating dumps; required only if true is
   // passed for generateDumps parameter; NULL can be passed otherwise.
-  CrashGenerationServer(const std::wstring& pipe_name,
-                        SECURITY_ATTRIBUTES* pipe_sec_attrs,
+  CrashGenerationServer(HANDLE pipe,
                         OnClientConnectedCallback connect_callback,
                         void* connect_context,
                         OnClientDumpRequestCallback dump_callback,
@@ -113,6 +108,12 @@ class CrashGenerationServer {
 
   // Read the current dump path, this is thread-safe.
   std::wstring GetPath();
+
+  // Create a named pipe that can be used by clients to report crashes
+  // to a CrashGenerationServer.  The returned handle should be passed
+  // to the CrashGenerationServer constructor, the pipe name should
+  // be passed to the clients' ExceptionHandler.
+  static HANDLE CreateReportPipe(const wchar_t* pipe_name);
 
   void pre_fetch_custom_info(bool do_pre_fetch) {
     pre_fetch_custom_info_ = do_pre_fetch;
@@ -239,12 +240,6 @@ class CrashGenerationServer {
 
   // List of clients.
   std::list<ClientInfo*> clients_;
-
-  // Pipe name.
-  std::wstring pipe_name_;
-
-  // Pipe security attributes
-  SECURITY_ATTRIBUTES* pipe_sec_attrs_;
 
   // Handle to the pipe used for handshake with clients.
   HANDLE pipe_;

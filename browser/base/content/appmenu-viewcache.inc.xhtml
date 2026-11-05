@@ -798,14 +798,6 @@
             </vbox>
           </hbox>
         </toolbarbutton>
-        <toolbarbutton id="PanelUI-fxa-menu-share-firefox" class="fxa-cta-button subviewbutton subviewbutton-iconic">
-          <hbox align="center">
-            <image class="PanelUI-fxa-menu-share-firefox-button ctaMenuLogo" role="presentation" />
-            <vbox flex="1">
-              <label crop="end" data-l10n-id="appmenuitem-share-firefox-title2" />
-            </vbox>
-          </hbox>
-        </toolbarbutton>
       </vbox>
     </vbox>
   </panelview>
@@ -1010,6 +1002,38 @@
                 data-l10n-id="reset-pbm-panel-confirm-button2"
                 ></button>
       </html:moz-button-group>
+    </vbox>
+  </panelview>
+
+  <panelview id="fire-button-panel" class="PanelUI-subView" role="document">
+    <vbox id="fire-button-panel-container" role="alertdialog" aria-labelledby="fire-button-panel-header">
+      <hbox id="fire-button-panel-header">
+        <description data-l10n-id="fire-button-panel-heading" role="heading" aria-level="2"/>
+      </hbox>
+
+      <description id="fire-button-panel-description" data-l10n-id="fire-button-panel-description"/>
+      <description id="fire-button-panel-choose-description" data-l10n-id="fire-button-panel-choose-description"/>
+
+      <hbox id="fire-button-panel-footer-row" class="panel-footer">
+        <!-- A button rather than an anchor: this opens a dialog, it does not
+             navigate anywhere. text-link gives it the link appearance. -->
+        <button id="fire-button-panel-choose-link"
+                class="text-link"
+                data-l10n-id="fire-button-panel-choose-link"
+                ></button>
+        <html:moz-button-group id="fire-button-panel-footer">
+          <html:moz-button id="fire-button-panel-cancel-button"
+                           data-l10n-id="fire-button-panel-cancel-button"
+                           data-l10n-attrs="accesskey"
+                           />
+          <html:moz-button slot="primary"
+                           type="destructive"
+                           id="fire-button-panel-confirm-button"
+                           data-l10n-id="fire-button-panel-confirm-button"
+                           data-l10n-attrs="accesskey"
+                           />
+        </html:moz-button-group>
+      </hbox>
     </vbox>
   </panelview>
 

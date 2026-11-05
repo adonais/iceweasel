@@ -30,7 +30,7 @@ using ::testing::ElementsAreArray;
 // Compose a wire-format SFrame descriptor byte from S/E/T flags using the
 // bit indices declared on `SframeDescriptor`.
 uint8_t MakeDescriptorByte(bool s, bool e, bool t) {
-  std::bitset<8> bits;
+  std::bitset<SframeDescriptor::kNumBits> bits;
   bits.set(SframeDescriptor::kSBit, s);
   bits.set(SframeDescriptor::kEBit, e);
   bits.set(SframeDescriptor::kTBit, t);

@@ -218,9 +218,7 @@ fail-if = [
 ["browser_net_simple-request-data.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1667115
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1667115
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1667115, Bug 2028047
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1667115
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1667115
 ]
 

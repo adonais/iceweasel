@@ -160,7 +160,10 @@ skip-if = [
 subsuite = "speech-recognition"
 tags = "mtg parakeet-asr"
 # No Wayland skip: this asserts the absence of a transcript.
-skip-if = ["verify"]  # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2072688
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
 
 ["test_start_after_error.html"]
 

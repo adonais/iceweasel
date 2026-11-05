@@ -28,3 +28,9 @@ LOCAL_INCLUDES += [
     "/netwerk/base",
     "/netwerk/cache2",
 ]
+
+SOURCE_HEADERS += [
+    "nsAboutBlank.h",
+    "nsAboutCache.h",
+    "nsAboutCacheEntry.h",
+]

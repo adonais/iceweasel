@@ -11,7 +11,6 @@ import { ActionsProvider } from "moz-src:///browser/components/urlbar/ActionsPro
  */
 
 const lazy = XPCOMUtils.declareLazy({
-  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   OpenSearchEngine:
     "moz-src:///toolkit/components/search/OpenSearchEngine.sys.mjs",
   OpenSearchManager:
@@ -74,7 +73,12 @@ class ProviderContextualSearch extends ActionsProvider {
     return "ActionsProviderContextualSearch";
   }
 
-  isActive(queryContext) {
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} _controller
+   * @returns {boolean}
+   */
+  isActive(queryContext, _controller) {
     return (
       queryContext.trimmedSearchString &&
       lazy.UrlbarPrefs.getScotchBonnetPref(ENABLED_PREF) &&
@@ -83,15 +87,20 @@ class ProviderContextualSearch extends ActionsProvider {
     );
   }
 
-  async queryActions(queryContext) {
-    this.#resultEngine = await this.matchEngine(queryContext);
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @returns {Promise<ActionsResult[]>}
+   */
+  async queryActions(queryContext, controller) {
+    this.#resultEngine = await this.matchEngine(queryContext, controller);
     if (this.#resultEngine) {
       return [await this.#createActionResult(this.#resultEngine)];
     }
     return null;
   }
 
-  onSearchSessionEnd() {
+  onSearchSessionEnd(_queryContext, _controller, _details) {
     // We cache the results for a host while the user is typing, clear
     // when the search session ends as the results for the host may
     // change by the next search session.
@@ -116,11 +125,14 @@ class ProviderContextualSearch extends ActionsProvider {
     });
   }
 
-  /*
+  /**
    * Searches for engines that we want to present to the user based on their
    * current host and the search query they have entered.
+   *
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
    */
-  async matchEngine(queryContext) {
+  async matchEngine(queryContext, controller) {
     // First find currently installed engines that match the current query
     // if the user has DuckDuckGo installed and types "duck", offer that.
     let engine = await this.#matchTabToSearchEngine(queryContext);
@@ -133,11 +145,7 @@ class ProviderContextualSearch extends ActionsProvider {
       ? lazy.SearchService.defaultPrivateEngine
       : lazy.SearchService.defaultEngine;
 
-    let browser =
-      lazy.BrowserWindowTracker.getTopWindow()?.gBrowser.selectedBrowser;
-    if (!browser) {
-      return null;
-    }
+    let browser = controller.browserWindow.gBrowser.selectedBrowser;
 
     let host;
     try {
@@ -181,13 +189,11 @@ class ProviderContextualSearch extends ActionsProvider {
     }
 
     // Lastly match any openSearch
-    if (browser) {
-      let openSearchEngines = lazy.OpenSearchManager.getEngines(browser);
-      // We don't need to check if the engine has the same name as the
-      // default engine because OpenSearchManager already handles that.
-      if (openSearchEngines.length) {
-        return { type: OPEN_SEARCH_ENGINE, engine: openSearchEngines[0] };
-      }
+    let openSearchEngines = lazy.OpenSearchManager.getEngines(browser);
+    // We don't need to check if the engine has the same name as the
+    // default engine because OpenSearchManager already handles that.
+    if (openSearchEngines.length) {
+      return { type: OPEN_SEARCH_ENGINE, engine: openSearchEngines[0] };
     }
 
     return null;
@@ -198,7 +204,7 @@ class ProviderContextualSearch extends ActionsProvider {
    * the cache for `visitedEngineDomains` so we can avoid expensive places
    * queries.
    *
-   * @param {window} window
+   * @param {BrowserWindow} window
    *  The browser window where the location change happened.
    * @param {nsIURI} uri
    *  The URI being navigated to.
@@ -340,12 +346,14 @@ class ProviderContextualSearch extends ActionsProvider {
     let { type, engine } = this.#resultEngine;
 
     if (type == OPEN_SEARCH_ENGINE) {
-      let originAttributes;
+      let browser = controller.browserWindow.gBrowser.selectedBrowser;
+      let { privateBrowsingId, userContextId } =
+        browser.contentPrincipal.originAttributes;
+      let originAttributes = { privateBrowsingId, userContextId };
       try {
-        let currentURI = Services.io.newURI(queryContext.currentPage);
-        originAttributes = {
-          firstPartyDomain: Services.eTLD.getSchemelessSite(currentURI),
-        };
+        originAttributes.firstPartyDomain = Services.eTLD.getSchemelessSite(
+          browser.currentURI
+        );
       } catch {}
       let openSearchEngineData = await lazy.loadAndParseOpenSearchEngine(
         Services.io.newURI(engine.uri),

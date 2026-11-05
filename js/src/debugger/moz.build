@@ -31,6 +31,28 @@ UNIFIED_SOURCES = [
 
 if CONFIG["MOZ_EXECUTION_TRACING"]:
     UNIFIED_SOURCES += ["ExecutionTracer.cpp"]
+    SOURCE_HEADERS += [
+        "ExecutionTracer.h",
+    ]
 
 if CONFIG["FUZZING_JS_FUZZILLI"]:
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "DebugAPI-inl.h",
+    "DebugAPI.h",
+    "Debugger-inl.h",
+    "Debugger.h",
+    "DebuggerMemory.h",
+    "DebugScript.h",
+    "Environment-inl.h",
+    "Environment.h",
+    "Frame-inl.h",
+    "Frame.h",
+    "NoExecute.h",
+    "Object-inl.h",
+    "Object.h",
+    "Script-inl.h",
+    "Script.h",
+    "Source.h",
+]

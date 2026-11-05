@@ -207,6 +207,26 @@
       });
 
       /**
+       * Tests that if the migratorKey does not match any of the listed
+       * migrators, the first one stays selected.
+       */
+      add_task(async function test_selection_missing_migrator_key() {
+        gWiz.setState({
+          page: MigrationWizardConstants.PAGES.SELECTION,
+          migrators: MIGRATOR_PROFILE_INSTANCES,
+          showImportAll: false,
+          migratorKey: "some-missing-browser",
+        });
+
+        let selector = gShadowRoot.querySelector("#browser-profile-selector");
+        is(
+          selector.selectedPanelItem.getAttribute("key"),
+          MIGRATOR_PROFILE_INSTANCES[0].key,
+          "The first migrator should be selected."
+        );
+      });
+
+      /**
        * Tests the migration wizard with no resources
        */
       add_task(async function test_no_resources() {

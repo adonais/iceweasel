@@ -1,4 +1,4 @@
-From 9c118e50eb2db17876633d758411c69852c808ab Mon Sep 17 00:00:00 2001
+From e1231a3406b48ebac1d9b892086cbee8f50c3584 Mon Sep 17 00:00:00 2001
 From: Dzmitry Malyshau <dmalyshau@mozilla.com>
 Date: Thu, 5 Dec 2019 13:02:14 -0500
 Subject: [PATCH] Restrict the slow texture upload workaround to 128bit
@@ -10,17 +10,17 @@ Original reports were related to WebRender vertex texture updates that are RGBA3
 
 Co-authored-by: Erich Gubler <erichdongubler@gmail.com>
 ---
- .../platform/autogen/FeaturesD3D_autogen.h    |  6 ++++++
- include/platform/d3d_features.json            |  7 +++++++
- src/libANGLE/renderer/d3d/TextureD3D.cpp      | 21 +++++++++++++++++--
+ .../platform/autogen/FeaturesD3D_autogen.h    |  6 +++++
+ include/platform/d3d_features.json            |  7 ++++++
+ src/libANGLE/renderer/d3d/TextureD3D.cpp      | 23 ++++++++++++++++---
  src/libANGLE/renderer/d3d/TextureD3D.h        |  1 +
- .../renderer/d3d/d3d11/renderer11_utils.cpp   |  6 ++++--
+ .../renderer/d3d/d3d11/renderer11_utils.cpp   |  6 +++--
  util/autogen/angle_features_autogen.cpp       |  1 +
  util/autogen/angle_features_autogen.h         |  1 +
- 7 files changed, 39 insertions(+), 4 deletions(-)
+ 7 files changed, 40 insertions(+), 5 deletions(-)
 
 diff --git a/include/platform/autogen/FeaturesD3D_autogen.h b/include/platform/autogen/FeaturesD3D_autogen.h
-index 8bd269c..5d38b6e 100644
+index 8bd269c37..5d38b6eb0 100644
 --- a/include/platform/autogen/FeaturesD3D_autogen.h
 +++ b/include/platform/autogen/FeaturesD3D_autogen.h
 @@ -32,6 +32,12 @@ struct FeaturesD3D : FeatureSetBase
@@ -37,7 +37,7 @@ index 8bd269c..5d38b6e 100644
          "depthStencilBlitExtraCopy",
          FeatureCategory::D3DWorkarounds,
 diff --git a/include/platform/d3d_features.json b/include/platform/d3d_features.json
-index c718ced..0997289 100644
+index c718cedff..09972897e 100644
 --- a/include/platform/d3d_features.json
 +++ b/include/platform/d3d_features.json
 @@ -21,6 +21,13 @@
@@ -55,21 +55,20 @@ index c718ced..0997289 100644
              "name": "depth_stencil_blit_extra_copy",
              "category": "Workarounds",
 diff --git a/src/libANGLE/renderer/d3d/TextureD3D.cpp b/src/libANGLE/renderer/d3d/TextureD3D.cpp
-index caffb44..a0e6708 100644
+index 01e299c54..d91d61c5d 100644
 --- a/src/libANGLE/renderer/d3d/TextureD3D.cpp
 +++ b/src/libANGLE/renderer/d3d/TextureD3D.cpp
-@@ -281,13 +281,30 @@ angle::Result TextureD3D::setStorageExternalMemory(const gl::Context *context,
+@@ -290,6 +290,23 @@ angle::Result TextureD3D::setStorageExternalMemory(const gl::Context *context,
      return angle::Result::Continue;
  }
  
--bool TextureD3D::shouldUseSetData(const ImageD3D *image) const
 +bool TextureD3D::couldUseSetData() const
- {
-     if (!mRenderer->getFeatures().setDataFasterThanImageUpload.enabled)
-     {
-         return false;
-     }
- 
++{
++    if (!mRenderer->getFeatures().setDataFasterThanImageUpload.enabled)
++    {
++        return false;
++    }
++
 +    if (!mRenderer->getFeatures().setDataFasterThanImageUploadOn128bitFormats.enabled)
 +    {
 +        gl::InternalFormat internalFormat =
@@ -80,17 +79,26 @@ index caffb44..a0e6708 100644
 +    return true;
 +}
 +
-+bool TextureD3D::shouldUseSetData(const ImageD3D *image) const
-+{
+ bool TextureD3D::shouldUseSetData(const gl::ImageIndex &index, const ImageD3D *image) const
+ {
+     if (!isValidIndex(index) || !isImageComplete(index))
+@@ -297,7 +314,7 @@ bool TextureD3D::shouldUseSetData(const gl::ImageIndex &index, const ImageD3D *i
+         return false;
+     }
+ 
+-    if (!mRenderer->getFeatures().setDataFasterThanImageUpload.enabled)
 +    if (!couldUseSetData())
-+    {
-+        return false;
-+    }
-+
-     if (image->isDirty())
      {
          return false;
-@@ -569,7 +586,7 @@ angle::Result TextureD3D::generateMipmapUsingImages(const gl::Context *context,
+     }
+@@ -697,13 +714,13 @@ angle::Result TextureD3D::generateMipmapUsingImages(const gl::Context *context,
+         canCreateRenderTargetForImage(getImageIndex(mBaseLevel, 0)) &&
+         mRenderer->getRendererClass() == RENDERER_D3D11)
+     {
+-        if (!mRenderer->getFeatures().setDataFasterThanImageUpload.enabled)
++        if (!couldUseSetData())
+         {
+             ANGLE_TRY(updateStorage(context));
          }
          ANGLE_TRY(ensureRenderTarget(context));
      }
@@ -100,19 +108,19 @@ index caffb44..a0e6708 100644
          // When making mipmaps with the setData workaround enabled, the texture storage has
          // the image data already. For non-render-target storage, we have to pull it out into
 diff --git a/src/libANGLE/renderer/d3d/TextureD3D.h b/src/libANGLE/renderer/d3d/TextureD3D.h
-index ee2dbe6..fe25217 100644
+index 2e05754bc..bdb338041 100644
 --- a/src/libANGLE/renderer/d3d/TextureD3D.h
 +++ b/src/libANGLE/renderer/d3d/TextureD3D.h
-@@ -227,6 +227,7 @@ class TextureD3D : public TextureImpl, public angle::ObserverInterface
+@@ -241,6 +241,7 @@ class TextureD3D : public TextureImpl, public angle::ObserverInterface
  
      virtual angle::Result updateStorage(const gl::Context *context) = 0;
  
 +    bool couldUseSetData() const;
-     bool shouldUseSetData(const ImageD3D *image) const;
- 
-     angle::Result generateMipmapUsingImages(const gl::Context *context, const GLuint maxLevel);
+     bool shouldUseSetData(const gl::ImageIndex &index, const ImageD3D *image) const;
+     bool isImageSubresourceMatchingStorage(const gl::ImageIndex &index,
+                                            const ImageD3D *image,
 diff --git a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
-index d250ea3..d0be62f 100644
+index a0feee978..6615f095c 100644
 --- a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
 +++ b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
 @@ -2188,8 +2188,10 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
@@ -129,10 +137,10 @@ index d250ea3..d0be62f 100644
  
      ANGLE_FEATURE_CONDITION(features, disableB5G6R5Support,
 diff --git a/util/autogen/angle_features_autogen.cpp b/util/autogen/angle_features_autogen.cpp
-index ed34de9..2e0c9e2 100644
+index 20700bf6a..9a7ec97b7 100644
 --- a/util/autogen/angle_features_autogen.cpp
 +++ b/util/autogen/angle_features_autogen.cpp
-@@ -322,6 +322,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
+@@ -332,6 +332,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
      {Feature::ScalarizeVecAndMatConstructorArgs, "scalarizeVecAndMatConstructorArgs"},
      {Feature::SelectViewInGeometryShader, "selectViewInGeometryShader"},
      {Feature::SetDataFasterThanImageUpload, "setDataFasterThanImageUpload"},
@@ -141,10 +149,10 @@ index ed34de9..2e0c9e2 100644
      {Feature::SetPrimitiveRestartFixedIndexForDrawArrays, "setPrimitiveRestartFixedIndexForDrawArrays"},
      {Feature::SetZeroLevelBeforeGenerateMipmap, "setZeroLevelBeforeGenerateMipmap"},
 diff --git a/util/autogen/angle_features_autogen.h b/util/autogen/angle_features_autogen.h
-index 5d63579..68724b7 100644
+index 9806d537f..765a104d7 100644
 --- a/util/autogen/angle_features_autogen.h
 +++ b/util/autogen/angle_features_autogen.h
-@@ -322,6 +322,7 @@ enum class Feature
+@@ -332,6 +332,7 @@ enum class Feature
      ScalarizeVecAndMatConstructorArgs,
      SelectViewInGeometryShader,
      SetDataFasterThanImageUpload,

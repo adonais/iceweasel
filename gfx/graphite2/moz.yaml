@@ -36,3 +36,7 @@ vendoring:
     - geckoextra
     - src/MozGrMalloc.h
     - src/sources.mozbuild
+
+  patches:
+    - geckoextra/patches/0001-slotmap-end-sentinel.patch
+    - geckoextra/patches/0002-temp-copy.patch

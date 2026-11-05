@@ -17,7 +17,10 @@
   "interventions": [
     {
       "platforms": ["all"],
-      "ua_string": ["add_Chrome"]
+      "ua_string": ["Chrome_with_FxQuantum"],
+      "content_scripts": {
+        "js": ["define_userAgentData.js"]
+      }
     }
   ]
 }

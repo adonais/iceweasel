@@ -85,19 +85,7 @@ class WebGLVertexArray : public WebGLContextBoundObject {
 
   void AttribPointer(const uint32_t index, WebGLBuffer* const buffer,
                      const webgl::VertAttribPointerDesc& desc,
-                     const webgl::VertAttribPointerCalculated& calc) {
-    mDescs[index] = desc;
-
-    auto& binding = mBindings.at(index);
-    binding.buffer = buffer;
-    binding.layout.byteSize = calc.byteSize;
-    binding.layout.byteStride = calc.byteStride;
-    binding.layout.baseType = calc.baseType;
-    binding.layout.byteOffset = desc.byteOffset;
-
-    mAttribIsArrayWithNullBuffer[index] =
-        binding.layout.isArray && !binding.buffer;
-  }
+                     const webgl::VertAttribPointerCalculated& calc);
 
   const auto& AttribBinding(const uint32_t index) const {
     return mBindings.at(index);

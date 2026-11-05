@@ -24,8 +24,6 @@ prefs = [
 
 ["browser_quicksuggest_configuration.js"]
 
-["browser_quicksuggest_contextual_optin.js"]
-
 ["browser_quicksuggest_dynamicSuggestions.js"]
 
 ["browser_quicksuggest_indexes.js"]
@@ -62,6 +60,8 @@ support-files = [
   "moz.png",
   "moz-flipped.png",
 ]
+
+["browser_quicksuggest_temporal.js"]
 
 ["browser_quicksuggest_yelp.js"]
 

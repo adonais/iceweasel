@@ -84,9 +84,6 @@ class ExclusiveData {
   mutable Mutex lock_ MOZ_UNANNOTATED;
   mutable T value_;
 
-  ExclusiveData(const ExclusiveData&) = delete;
-  ExclusiveData& operator=(const ExclusiveData&) = delete;
-
   void acquire() const { lock_.lock(); }
   void release() const { lock_.unlock(); }
 
@@ -112,6 +109,9 @@ class ExclusiveData {
     return *this;
   }
 
+  ExclusiveData(const ExclusiveData&) = delete;
+  ExclusiveData& operator=(const ExclusiveData&) = delete;
+
   /**
    * An RAII class that provides exclusive access to a `ExclusiveData<T>`'s
    * protected inner `T` value.
@@ -124,10 +124,6 @@ class ExclusiveData {
    protected:
     const ExclusiveData* parent_;
     explicit Guard(std::nullptr_t) : parent_(nullptr) {}
-
-   private:
-    Guard(const Guard&) = delete;
-    Guard& operator=(const Guard&) = delete;
 
    public:
     explicit Guard(const ExclusiveData& parent) : parent_(&parent) {
@@ -144,6 +140,9 @@ class ExclusiveData {
       new (this) Guard(std::move(rhs));
       return *this;
     }
+
+    Guard(const Guard&) = delete;
+    Guard& operator=(const Guard&) = delete;
 
     T& get() const {
       MOZ_ASSERT(parent_);

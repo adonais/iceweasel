@@ -494,7 +494,7 @@ export class FfiConverterTypeOhttpConfig extends FfiConverterArrayBuffer {
  * 
  * The supported methods are the limited to what's supported by android-components.
  */
-export const Method = Object.freeze({
+export const Method = Object.freeze(/** @lends Method */ {
     /**
      * GET
      */
@@ -1530,7 +1530,7 @@ export class BackendImpl extends Backend {
         FfiConverterTypeRequest.checkType(request);
         FfiConverterTypeClientSettings.checkType(settings);
         const result = await UniFFIScaffolding.callAsync(
-            273, // uniffi_viaduct_fn_method_backend_send_request
+            289, // uniffi_viaduct_fn_method_backend_send_request
             FfiConverterTypeBackend.lowerReceiver(this),
             FfiConverterTypeRequest.lower(request),
             FfiConverterTypeClientSettings.lower(settings),
@@ -1586,13 +1586,13 @@ export class FfiConverterTypeBackend extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readHandleOrPointer(25))
+        return this.lift(dataStream.readHandleOrPointer(26))
     }
 
     static write(dataStream, value) {
         if (value[uniffiObjectPtr] instanceof UniFFIPointer) {
           // Rust-implemented interface, return the ptr.
-          dataStream.writePointer(25, this.lower(value));
+          dataStream.writePointer(26, this.lower(value));
         } else {
           dataStream.writeInt64(this.lower(value))
         }

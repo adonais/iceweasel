@@ -93,8 +93,9 @@ RefPtr<SharedFTFace> UnscaledFontFreeType::InitFace() {
 }
 
 void UnscaledFontFreeType::GetVariationSettingsFromFace(
-    std::vector<wr::FontVariation>* aVariations, FT_Face aFace) {
-  if (!aFace || !(aFace->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS)) {
+    std::vector<wr::FontVariation>* aVariations, SharedFTFace* aFace) {
+  FT_Face face = aFace ? aFace->GetFace() : nullptr;
+  if (!face || !(face->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS)) {
     return;
   }
 
@@ -122,11 +123,14 @@ void UnscaledFontFreeType::GetVariationSettingsFromFace(
   }
 #endif
 
+  // Even a read-only query must lock the face. FreeType can temporarily
+  // replace and free face->glyph while rendering color glyphs.
+  AutoLockSharedFTFace lock(aFace);
   FT_MM_Var* mmVar = nullptr;
-  if ((*getVar)(aFace, &mmVar) == FT_Err_Ok) {
+  if ((*getVar)(face, &mmVar) == FT_Err_Ok) {
     aVariations->reserve(mmVar->num_axis);
     StackArray<FT_Fixed, 32> coords(mmVar->num_axis);
-    if ((*getCoords)(aFace, mmVar->num_axis, coords.data()) == FT_Err_Ok) {
+    if ((*getCoords)(face, mmVar->num_axis, coords.data()) == FT_Err_Ok) {
       bool changed = false;
       for (uint32_t i = 0; i < mmVar->num_axis; i++) {
         if (coords[i] != mmVar->axis[i].def) {
@@ -140,7 +144,7 @@ void UnscaledFontFreeType::GetVariationSettingsFromFace(
       }
     }
     if (doneVar) {
-      (*doneVar)(aFace->glyph->library, mmVar);
+      (*doneVar)(face->glyph->library, mmVar);
     } else {
       free(mmVar);
     }

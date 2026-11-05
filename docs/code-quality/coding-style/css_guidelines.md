@@ -491,8 +491,9 @@ the `box-shadow` property: consider using a `border` or an
 high-contrast mode. An example of such bug is [bug
 1516767](https://bugzilla.mozilla.org/show_bug.cgi?id=1516767).
 
-Another adjustment to be aware of is that Gecko removes all the
-`background-image` when high contrast mode is enabled. Consider using
+Another adjustment to be aware of is that Gecko drops a `background-image`
+with any layer other than a `url()` when colors are forced, so a gradient
+disappears (see "The forced-color adjustment" below). Consider using
 an actual `<img>` tag (for HTML documents) or `list-style-image`
 (for XUL documents) if rendering the image is important.
 
@@ -564,21 +565,30 @@ and the filter is not the same for every property:
   1740924](https://bugzilla.mozilla.org/show_bug.cgi?id=1740924).
 - A rejected `background-color` becomes the canvas background with its alpha
   preserved. Any other rejected color reverts to its UA value.
+- `box-shadow`, `text-shadow`, `accent-color`, `caret-color`,
+  `scrollbar-color`, `color-scheme` and `border-image-source` revert to their UA
+  value whatever they are set to.
+- A `background-image` with only `url()` and `none` layers is kept, as long as
+  `browser.display.permit_backplate` is on (the default). Any other layer, such
+  as a gradient, reverts the whole declaration to `none`.
 
 The filter therefore fails in both directions, and both shapes exist in the tree:
 
 - **A line drawn with `background-color` vanishes.** An `hr` styled as a 1px
   separator, a `::before` hairline or a divider `div` each become exactly the
   surface they sit on. Drawing the line as a border survives instead, because a
-  rejected border reverts to `currentcolor`. The swap is not geometrically free,
+  rejected border reverts to its UA value: `currentcolor` on most elements,
+  `ButtonBorder` on `button`, `input` and `select`, and `ThreeDFace` on
+  `fieldset`. The swap is not geometrically free,
   though: a used border width floors to whole device pixels where a height does
   not, so keep the box's block size and add `box-sizing: border-box`.
 - **A transparent border used as a spacer becomes a frame.** The
   `border: Npx solid transparent` idiom with `background-clip: padding-box`,
   which insets a background while keeping the full-height hit area, paints an
   `Npx` `CanvasText` box around every element that uses it. Give it a system
-  color matching the surface behind it under `@media (forced-colors)`, and check
-  what that surface actually computes to rather than assuming it is `Canvas`.
+  color matching the surface behind it under `@media (forced-colors: active)`,
+  and check what that surface actually computes to rather than assuming it is
+  `Canvas`.
 
 `forced-color-adjust: none` is not a per-property escape hatch. It inherits, so
 it exempts the element and its whole subtree; reach for it only where the colors
@@ -737,7 +747,7 @@ size and everything after it moves.
 
 The consequences are easy to miss because the default ratio hides them, so set
 `layout.css.devPixelsPerPx` (a string pref; `"-1.0"` restores automatic) and
-check fractional ratios such as 1.25 and 1.5 before calling such a swap neutral.
+check the fractional ratios 1.25, 1.5 and 1.75 before calling such a swap neutral.
 Where padding has to reproduce the snapping, `round(down, X, env(hairline))`
 does it, with a `max(env(hairline), ...)` guard against rounding to zero;
 `browser/themes/shared/urlbar.css` uses that form. The CSSWG has
@@ -748,5 +758,6 @@ and adding `box-sizing: border-box` is the other way to hold a box exactly.
 `env(hairline)` is one device pixel. Like the chrome-only media features it is
 gated on the stylesheet's URL rather than the document's, so it resolves in a
 `chrome://` sheet in either realm and in `about:newtab`'s own CSS, and yields
-nothing in a stylesheet loaded from another origin, where the declaration
-computes to 0.
+nothing in a stylesheet loaded from another origin. There the declaration is
+invalid at computed-value time and acts as `unset`: 0 for `padding` or
+`margin`, but `medium` for a border width with a border style.

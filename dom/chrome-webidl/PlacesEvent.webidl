@@ -148,6 +148,11 @@ interface PlacesVisit : PlacesEvent {
    * and might be null if it is not known.
    */
   readonly attribute DOMString? lastKnownTitle;
+
+  /**
+   * The userContextId of the visit, 0 for the default container.
+   */
+  readonly attribute unsigned long userContextId;
 };
 
 /**

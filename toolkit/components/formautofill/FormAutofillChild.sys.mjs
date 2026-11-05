@@ -1135,6 +1135,22 @@ export class FormAutofillChild extends JSWindowActorChild {
     if (!fieldDetail) {
       return false;
     }
+
+    // Some sites may change the `autocomplete` attribute when a user focuses on a field
+    // (e.g., from `"shipping address-line1"` to `"none"`) and then restore the original
+    // value when the field loses focus. This is intended to suppress the autocomplete dropdown
+    // offered by the browser. Since we don't monitor attribute changes dynamically, we re-check
+    // the live element each time we're about to show the autocomplete dropdown (Bug 2078883).
+    if (
+      lazy.FormAutofill.suppressUnrecognizedAutocomplete &&
+      lazy.FormAutofillUtils.hasUnrecognizedAutocomplete(
+        input,
+        input.getAutocompleteInfo()
+      )
+    ) {
+      return false;
+    }
+
     const fieldName = fieldDetail.fieldName;
     const typeId = lazy.AutofillDataTypes.typeIdForFieldName(fieldName);
     // If the field's autofill feature is pref off, do not search.

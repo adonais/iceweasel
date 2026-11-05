@@ -59,14 +59,6 @@ export async function notifyThemePickerShown(el, isStillVisible = () => true) {
   if (!el.isConnected || !isStillVisible()) {
     return;
   }
-  /**
-   * @backward-compat { version 157 }
-   * Firefox 155 and 156 have the theme-picker element but no shown(), so they
-   * record no shown telemetry. Remove this check once 157 reaches Release.
-   */
-  if (typeof el.shown !== "function") {
-    return;
-  }
   el.shown();
 }
 

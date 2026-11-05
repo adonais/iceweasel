@@ -18,7 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-import { WebVTT } from "resource://gre/modules/vtt.sys.mjs";
+import { WebVTT } from "moz-src:///dom/media/webvtt/vtt.sys.mjs";
 import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
@@ -2579,15 +2579,20 @@ export class PictureInPictureChild extends JSWindowActorChild {
       }
     }
 
-    let loadPromise = new Promise(resolve => {
-      this.contentWindow.addEventListener("load", resolve, {
-        once: true,
-        mozSystemGroup: true,
-        capture: true,
+    // On Android the embedder has already loaded a document in the player session, so there is
+    // nothing to wait for. Reloading would swap the WindowGlobal and destroy this actor before
+    // it could reply to PictureInPicture:SetupPlayer.
+    if (AppConstants.platform != "android") {
+      let loadPromise = new Promise(resolve => {
+        this.contentWindow.addEventListener("load", resolve, {
+          once: true,
+          mozSystemGroup: true,
+          capture: true,
+        });
       });
-    });
-    this.contentWindow.location.reload();
-    await loadPromise;
+      this.contentWindow.location.reload();
+      await loadPromise;
+    }
 
     // We're committed to adding the video to this window now. Ensure we track
     // the content window before we do so, so that the toggle actor can

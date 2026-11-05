@@ -22,9 +22,11 @@ class StaticAnalysisBackend(CompileDBBackend):
         self.non_unified_build = []
 
         # List of directories can be built outside of the unified build system.
-        with open(
-            mozpath.join(self.environment.topsrcdir, "build", "non-unified-compat")
-        ) as fh:
+        non_unified_compat = mozpath.join(
+            self.environment.topsrcdir, "build", "non-unified-compat"
+        )
+        self.backend_input_files.add(non_unified_compat)
+        with open(non_unified_compat) as fh:
             content = fh.readlines()
             self.non_unified_build = [
                 mozpath.join(self.environment.topsrcdir, line.strip())

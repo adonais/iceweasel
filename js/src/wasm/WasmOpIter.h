@@ -1736,8 +1736,8 @@ inline bool OpIter<Policy>::readTryTable(BlockType* type,
     }
 
     // Any captured exnref is the final parameter
-    if (tryTableCatch.captureExnRef && !tryTableCatch.labelType.append(ValType(
-                                           RefType::exn().asNonNullable()))) {
+    if (tryTableCatch.captureExnRef &&
+        !tryTableCatch.labelType.emplaceBack(RefType::exn().asNonNullable())) {
       return false;
     }
 
@@ -3410,7 +3410,7 @@ inline bool OpIter<Policy>::readHandlers(HandlerExprVector* handlers,
           return false;
         }
 
-        handlers->infallibleAppend(HandlerExpr(tagIndex, labelDepth));
+        handlers->infallibleEmplaceBack(tagIndex, labelDepth);
         break;
       }
       case HandlerKind::Switch: {
@@ -3434,7 +3434,7 @@ inline bool OpIter<Policy>::readHandlers(HandlerExprVector* handlers,
           }
         }
 
-        handlers->infallibleAppend(HandlerExpr(tagIndex));
+        handlers->infallibleEmplaceBack(tagIndex);
         break;
       }
       default:

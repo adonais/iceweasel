@@ -9,8 +9,8 @@ origin:
   description: nss
   url: https://hg-edge.mozilla.org/projects/nss
 
-  release: 9a58717486dedde782f9fbe33e7df61b57f27d60 (2026-10-06T19:04:05Z).
-  revision: 9a58717486dedde782f9fbe33e7df61b57f27d60
+  release: 34716626284b2a8ed64f8055734ae7730e902686 (2026-10-21T18:20:38Z).
+  revision: 34716626284b2a8ed64f8055734ae7730e902686
 
   license: MPL-2.0
   license-file: COPYING
@@ -42,4 +42,4 @@ updatebot:
     - type: vendoring
       enabled: true
       frequency: 1 day
-      blocking: 2078885
+      blocking: 2084741

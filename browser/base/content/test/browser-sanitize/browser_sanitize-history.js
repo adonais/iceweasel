@@ -134,3 +134,47 @@ add_task(async function sanitizeStorageAccessPermissions() {
     });
   }
 });
+
+// Tests that if a window refuses to close, for example because the user stays
+// on a page that asked before leaving, nothing is cleared, now or at the next
+// startup.
+add_task(async function keepsHistoryWhenWindowsCannotClose() {
+  const URL = "https://example.com/kept-when-windows-cannot-close";
+  await PlacesTestUtils.addVisits(URL);
+  let pendingBefore = Services.prefs.getStringPref(
+    "privacy.sanitize.pending",
+    "[]"
+  );
+
+  const { PromiseTestUtils } = ChromeUtils.importESModule(
+    "resource://testing-common/PromiseTestUtils.sys.mjs"
+  );
+  // The places shutdown blocker sees the same rejection.
+  PromiseTestUtils.expectUncaughtRejection(/could not close windows/);
+  let originalCanCloseWindow = window.CanCloseWindow;
+  window.CanCloseWindow = () => false;
+  let completed = TestUtils.topicObserved("sanitizer-sanitization-complete");
+  try {
+    await Assert.rejects(
+      Sanitizer.sanitize(["openWindows", "history"]),
+      /could not close windows/,
+      "Sanitizing fails when a window refuses to close"
+    );
+  } finally {
+    window.CanCloseWindow = originalCanCloseWindow;
+    delete window.skipNextCanClose;
+  }
+
+  let [, data] = await completed;
+  Assert.equal(data, "aborted", "The completion notification says why");
+  Assert.ok(
+    await PlacesUtils.history.hasVisits(URL),
+    "History was not cleared"
+  );
+  Assert.equal(
+    Services.prefs.getStringPref("privacy.sanitize.pending", "[]"),
+    pendingBefore,
+    "Nothing is left pending to retry at the next startup"
+  );
+  await PlacesUtils.history.clear();
+});

@@ -401,8 +401,9 @@ void FifoWatcher::OnFileCanReadWithoutBlocking(int aFd) {
 // /data/local/tmp/"aFoldername".
 // Otherwise, it will open a file named aFilename under "NS_OS_TEMP_DIR".
 /* static */
-nsresult nsDumpUtils::OpenTempFile(const nsACString& aFilename, nsIFile** aFile,
-                                   const nsACString& aFoldername, Mode aMode) {
+nsresult nsDumpUtils::OpenTempFile(
+    const nsACString& aFilename, nsIFile** aFile,
+    [[maybe_unused]] const nsACString& aFoldername, Mode aMode) {
 #ifdef ANDROID
   // For Android, first try the downloads directory which is world-readable
   // rather than the temp directory which is not.

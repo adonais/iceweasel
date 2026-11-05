@@ -179,7 +179,7 @@ $side-col-width-px: $col-width-px * 2;
   // rather than border keeps the box identical between the two.
   :is(.lightWallpaper, .darkWallpaper) &::before {
     border-color: transparent;
-    background-color: var(--newtab-layout-panel-background); // stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens
+    background-color: var(--newtab-layout-panel-background);
   }
 }
 

@@ -1070,29 +1070,6 @@ void ExceptionHandler::UpdateNextID() {
   next_minidump_path_c_ = next_minidump_path_.c_str();
 }
 
-void ExceptionHandler::RegisterAppMemory(void* ptr, size_t length) {
-  AppMemoryList::iterator iter =
-    std::find(app_memory_info_.begin(), app_memory_info_.end(), ptr);
-  if (iter != app_memory_info_.end()) {
-    // Don't allow registering the same pointer twice.
-    return;
-  }
-
-  AppMemory app_memory;
-  app_memory.ptr = reinterpret_cast<ULONG64>(ptr);
-  app_memory.length = static_cast<ULONG>(length);
-  app_memory.preallocated = false;
-  app_memory_info_.push_back(app_memory);
-}
-
-void ExceptionHandler::UnregisterAppMemory(void* ptr) {
-  AppMemoryList::iterator iter =
-    std::find(app_memory_info_.begin(), app_memory_info_.end(), ptr);
-  if (iter != app_memory_info_.end()) {
-    app_memory_info_.erase(iter);
-  }
-}
-
 void ExceptionHandler::set_include_context_heap(bool enabled) {
   if (enabled && !include_context_heap_) {
     // Initialize system info used in including context heap regions.

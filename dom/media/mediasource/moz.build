@@ -42,3 +42,10 @@ TEST_DIRS += [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "ContainerParser.h",
+    "MediaSourceUtils.h",
+    "ResourceQueue.h",
+    "SourceBufferResource.h",
+]

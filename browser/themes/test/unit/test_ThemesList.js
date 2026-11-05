@@ -259,26 +259,127 @@ add_task(async function test_updateThemeState_enable_alreadyInstalledTheme() {
   await addon.uninstall();
 });
 
+async function testUpdateThemeStateEnableViaAddonRepository(
+  addonsJSON,
+  manifest,
+  expectedError,
+  description
+) {
+  const descriptionPrefix = `[${description}]: `;
+  const THEME_ID = addonsJSON.results[0].guid;
+  Services.fog.testResetFOG();
+  Assert.strictEqual(
+    Glean.themePicker.change.testGetValue(),
+    null,
+    descriptionPrefix + "theme_picker.change has no value before enabling"
+  );
+
+  // Set things up for the test.
+  const server = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
+  const xpi = AddonTestUtils.createTempWebExtensionFile({ manifest });
+  server.registerFile("/theme.xpi", xpi);
+  AddonTestUtils.registerJSON(server, "/addons.json", addonsJSON);
+
+  Services.prefs.setCharPref(
+    "extensions.getAddons.get.url",
+    "http://example.com/addons.json"
+  );
+
+  const manager = await getThemesList({
+    installSource: TEST_INSTALL_SOURCE,
+  });
+
+  // Attempt to install and enable the theme.
+  let actualError = null;
+  const result = await manager.updateThemeState(THEME_ID, true, {
+    layout: "compact",
+    installListener: {
+      onDownloadFailed(install) {
+        actualError = install.error;
+      },
+    },
+  });
+
+  // Make sure the theme was/wasn't installed as expected.
+  Assert.strictEqual(
+    result,
+    !expectedError,
+    descriptionPrefix + "updateThemeState returns correct result"
+  );
+
+  const addon = await AddonManager.getAddonByID(THEME_ID);
+  Assert.equal(
+    !!addon,
+    !expectedError,
+    descriptionPrefix + "Theme is/isn't installed as expected"
+  );
+
+  Assert.equal(
+    addon?.isActive || false,
+    !expectedError,
+    descriptionPrefix + "Theme is/isn't enabled as expected"
+  );
+
+  const events = Glean.themePicker.change.testGetValue();
+  Assert.equal(
+    events?.length || 0,
+    expectedError ? 0 : 1,
+    descriptionPrefix + "theme_picker.change is recorded iff theme installed"
+  );
+
+  Assert.strictEqual(
+    actualError,
+    expectedError,
+    descriptionPrefix + "expected error (if any) was given"
+  );
+
+  // Further assertions for successfully installed themes.
+  if (!expectedError) {
+    Assert.strictEqual(
+      addon.installTelemetryInfo?.source,
+      TEST_INSTALL_SOURCE,
+      descriptionPrefix +
+        "installTelemetryInfo.source reflects the installSource passed to getThemesList"
+    );
+
+    Assert.strictEqual(
+      addon.installTelemetryInfo?.method,
+      "FirefoxThemesList",
+      descriptionPrefix +
+        "installTelemetryInfo.method is set to FirefoxThemesList"
+    );
+
+    Assert.equal(
+      events[0].extra.property,
+      "theme",
+      descriptionPrefix + "property is theme"
+    );
+    Assert.equal(
+      events[0].extra.theme_id,
+      THEME_ID,
+      descriptionPrefix + "theme_id matches"
+    );
+    Assert.equal(
+      events[0].extra.source,
+      TEST_INSTALL_SOURCE,
+      descriptionPrefix + "source matches installSource"
+    );
+    Assert.equal(
+      events[0].extra.layout,
+      "compact",
+      descriptionPrefix + "layout matches"
+    );
+  }
+
+  // Cleanup.
+  await addon?.uninstall();
+  Services.prefs.clearUserPref("extensions.getAddons.get.url");
+}
+
 add_task(
   async function test_updateThemeState_enable_installViaAddonRepository() {
-    Services.fog.testResetFOG();
-    Assert.strictEqual(
-      Glean.themePicker.change.testGetValue(),
-      null,
-      "theme_picker.change has no value before enabling"
-    );
     const THEME_ID = "nova-sun@mozilla.org";
-    const server = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
-    const xpi = AddonTestUtils.createTempWebExtensionFile({
-      manifest: {
-        name: "Nova Sun",
-        version: "1.0",
-        theme: {},
-        browser_specific_settings: { gecko: { id: THEME_ID } },
-      },
-    });
-    server.registerFile("/theme.xpi", xpi);
-    AddonTestUtils.registerJSON(server, "/addons.json", {
+    const addonsJSON = {
       page_size: 1,
       page_count: 1,
       count: 1,
@@ -295,58 +396,44 @@ add_task(
           },
         },
       ],
-    });
+    };
+    const correctManifest = {
+      name: "Nova Sun",
+      version: "1.0",
+      theme: {},
+      browser_specific_settings: { gecko: { id: THEME_ID } },
+    };
 
-    Services.prefs.setCharPref(
-      "extensions.getAddons.get.url",
-      "http://example.com/addons.json"
-    );
-
-    const manager = await getThemesList({
-      installSource: TEST_INSTALL_SOURCE,
-    });
-    const result = await manager.updateThemeState(THEME_ID, true, {
-      layout: "compact",
-    });
-    Assert.strictEqual(
-      result,
-      true,
-      "returns true after install via AddonRepository"
+    await testUpdateThemeStateEnableViaAddonRepository(
+      addonsJSON,
+      correctManifest,
+      null,
+      "Matching details"
     );
 
-    const addon = await AddonManager.getAddonByID(THEME_ID);
-    Assert.ok(
-      addon?.isActive,
-      "Theme installed and enabled via AddonRepository"
-    );
-    Assert.strictEqual(
-      addon.installTelemetryInfo?.source,
-      TEST_INSTALL_SOURCE,
-      "installTelemetryInfo.source reflects the installSource passed to getThemesList"
-    );
-    Assert.strictEqual(
-      addon.installTelemetryInfo?.method,
-      "FirefoxThemesList",
-      "installTelemetryInfo.method is set to FirefoxThemesList"
+    await testUpdateThemeStateEnableViaAddonRepository(
+      addonsJSON,
+      {
+        ...correctManifest,
+        browser_specific_settings: { gecko: { id: "incorrect@mozilla.org" } },
+      },
+      AddonManager.ERROR_INCORRECT_ID,
+      "Incorrect theme ID"
     );
 
-    const events = Glean.themePicker.change.testGetValue();
-    Assert.equal(
-      events?.length,
-      1,
-      "theme_picker.change is recorded exactly once for a fresh install"
+    await testUpdateThemeStateEnableViaAddonRepository(
+      addonsJSON,
+      { ...correctManifest, version: "2.0" },
+      AddonManager.ERROR_UNEXPECTED_ADDON_VERSION,
+      "Incorrect theme version"
     );
-    Assert.equal(events[0].extra.property, "theme", "property is theme");
-    Assert.equal(events[0].extra.theme_id, THEME_ID, "theme_id matches");
-    Assert.equal(
-      events[0].extra.source,
-      TEST_INSTALL_SOURCE,
-      "source matches installSource"
-    );
-    Assert.equal(events[0].extra.layout, "compact", "layout matches");
 
-    await addon.uninstall();
-    Services.prefs.clearUserPref("extensions.getAddons.get.url");
+    await testUpdateThemeStateEnableViaAddonRepository(
+      addonsJSON,
+      { ...correctManifest, theme: undefined },
+      AddonManager.ERROR_UNEXPECTED_ADDON_TYPE,
+      "Incorrect type for theme"
+    );
   }
 );
 

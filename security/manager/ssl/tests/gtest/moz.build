@@ -10,6 +10,7 @@ SOURCES += [
     "MD4Test.cpp",
     "NSSBenchTest.cpp",
     "OCSPCacheTest.cpp",
+    "ShortWriteTest.cpp",
     "TLSIntoleranceTest.cpp",
 ]
 
@@ -18,7 +19,13 @@ if CONFIG["NIGHTLY_BUILD"] and not CONFIG["MOZ_NO_SMART_CARDS"]:
         "UtilityPKCS11ModuleTest.cpp",
     ]
 
+TEST_HARNESS_FILES.gtest += [
+    "short-write-server.key",
+    "short-write-server.pem",
+]
+
 LOCAL_INCLUDES += [
+    "/netwerk/base",
     "/security/certverifier",
     "/security/manager/ssl",
     "/third_party/rust/cose-c/include",

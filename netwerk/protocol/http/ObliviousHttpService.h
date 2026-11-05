@@ -29,11 +29,13 @@ class ObliviousHttpService final : public nsIObliviousHttpService,
   NS_DECL_NSISTREAMLOADEROBSERVER
 
   ObliviousHttpService();
+  nsresult Init();
 
  private:
   ~ObliviousHttpService() = default;
   void ReadPrefs(const nsACString& whichPref);
   void FetchConfig(bool aConfigURIChanged);
+  void FetchConfigInternal(bool aConfigURIChanged);
 
   DataMutex<ObliviousHttpConfig> mTRRConfig;
 };

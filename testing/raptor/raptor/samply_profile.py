@@ -58,8 +58,10 @@ class SamplyProfile(RaptorProfiling):
             )
             return None
 
-    def __init__(self, upload_dir, raptor_config, test_config):
-        super().__init__(upload_dir, raptor_config, test_config)
+    def __init__(
+        self, upload_dir, raptor_config, test_config, source_path_mappings=None
+    ):
+        super().__init__(upload_dir, raptor_config, test_config, source_path_mappings)
 
         if self.raptor_config.get("app", "") not in SAMPLY_PROFILE_APPS:
             raise RuntimeError(f"Samply profiling only supports: {SAMPLY_PROFILE_APPS}")

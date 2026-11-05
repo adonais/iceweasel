@@ -6,6 +6,11 @@ moz-input-search {
   flex: 1;
 }
 
+.import-history-promo {
+  --promo-image-size: var(--size-image-large);
+  margin-block-end: var(--space-medium);
+}
+
 .menu-button::part(button) {
   margin-inline-start: var(--space-small);
 }

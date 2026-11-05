@@ -873,12 +873,22 @@ bool DnsAndConnectSocket::IsBackup(nsICancelable* dnsRequest) {
   return dnsRequest == mBackupTransport.mDNSRequest;
 }
 
+void DnsAndConnectSocket::ForgetRealTransaction() {
+  MutexAutoLock lock(mTransactionLock);
+  mTransaction = nullptr;
+}
+
 // method for nsIInterfaceRequestor
 NS_IMETHODIMP
 DnsAndConnectSocket::GetInterface(const nsIID& iid, void** result) {
-  if (mTransaction) {
+  RefPtr<nsAHttpTransaction> transaction;
+  {
+    MutexAutoLock lock(mTransactionLock);
+    transaction = mTransaction;
+  }
+  if (transaction) {
     nsCOMPtr<nsIInterfaceRequestor> callbacks;
-    mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
+    transaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
     if (callbacks) {
       return callbacks->GetInterface(iid, result);
     }

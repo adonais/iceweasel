@@ -14,7 +14,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
-    run-on-repo-type: [hg]
     attributes:
         cron: true
     treeherder:
@@ -22,7 +21,6 @@ task-defaults:
         tier: 2
     worker-type: b-linux-docker-xlarge-amd
     run:
-        clone-with: hg
         checkout: true
     worker:
         artifacts:

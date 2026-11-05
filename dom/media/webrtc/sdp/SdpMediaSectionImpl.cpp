@@ -6,6 +6,8 @@
 
 #include <ostream>
 
+#include "SdpMediaSection.h"
+
 #ifdef CRLF
 #  undef CRLF
 #endif
@@ -22,7 +24,7 @@ void SdpBandwidths::Serialize(std::ostream& os) const {
 SdpMediaSectionImpl::SdpMediaSectionImpl(
     const size_t level, UniquePtr<SdpAttributeListImpl>&& attributeList)
     : SdpMediaSection(level),
-      mMediaType(static_cast<MediaType>(0)),
+      mMediaTypeInfo({.type = static_cast<SdpMediaSection::MediaType>(0)}),
       mPort(0),
       mPortCount(0),
       mProtocol(static_cast<Protocol>(0)),
@@ -32,7 +34,7 @@ SdpMediaSectionImpl::SdpMediaSectionImpl(
     const SdpMediaSectionImpl& aOrig,
     UniquePtr<SdpAttributeListImpl>&& attributeList)
     : SdpMediaSection(aOrig),
-      mMediaType(aOrig.mMediaType),
+      mMediaTypeInfo(aOrig.mMediaTypeInfo),
       mPort(aOrig.mPort),
       mPortCount(aOrig.mPortCount),
       mProtocol(aOrig.mProtocol),
@@ -157,13 +159,22 @@ void SdpMediaSectionImpl::AddDataChannel(const std::string& name,
 }
 
 void SdpMediaSectionImpl::Serialize(std::ostream& os) const {
-  os << "m=" << mMediaType << " " << mPort;
+  os << "m=" << mMediaTypeInfo << " " << mPort;
   if (mPortCount) {
     os << "/" << mPortCount;
   }
   os << " " << mProtocol;
-  for (auto i = mFormats.begin(); i != mFormats.end(); ++i) {
-    os << " " << (*i);
+  if (mMediaTypeInfo.type != SdpMediaSection::kUnknown) {
+    for (auto i = mFormats.begin(); i != mFormats.end(); ++i) {
+      os << " " << (*i);
+    }
+  } else {
+    mMediaTypeInfo.unknown.apply([&](const auto& u) {
+      MOZ_ASSERT(mMediaTypeInfo.unknown, "unknown media type must have data");
+      if (!u.formatString.empty()) {
+        os << " " << u.formatString;
+      }
+    });
   }
   os << CRLF;
 

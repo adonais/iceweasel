@@ -6,14 +6,18 @@ with Files("**"):
     BUG_COMPONENT = ("Core", "Machine Learning: Frontend")
 
 BROWSER_CHROME_MANIFESTS += [
+    "test/browser/aitab/browser.toml",
     "test/browser/browser.toml",
     "test/browser/browser_smartwindow.toml",
+    "test/browser/get_page_content/browser.toml",
     "test/browser_perf/perftest.toml",
 ]
 MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
 XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]
 
 MOZ_SRC_FILES += [
+    "actors/AgentMonitorItemChild.sys.mjs",
+    "actors/AgentMonitorItemParent.sys.mjs",
     "actors/AIChatContentChild.sys.mjs",
     "actors/AIChatContentParent.sys.mjs",
     "actors/AISmartBarChild.sys.mjs",
@@ -30,11 +34,11 @@ MOZ_SRC_FILES += [
     "modules/AgentPageDetector.sys.mjs",
     "modules/AgentUI.sys.mjs",
     "modules/AITabConstants.sys.mjs",
+    "modules/AITabHeadingFont.sys.mjs",
     "modules/AITabMigrations.sys.mjs",
     "modules/AITabSql.sys.mjs",
     "modules/AITabStore.sys.mjs",
     "modules/AIWindow.sys.mjs",
-    "modules/AIWindowAccountAuth.sys.mjs",
     "modules/AIWindowConstants.sys.mjs",
     "modules/AIWindowMenu.sys.mjs",
     "modules/AIWindowTabStatesManager.sys.mjs",

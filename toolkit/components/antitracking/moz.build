@@ -9,6 +9,7 @@ JAR_MANIFESTS += ["jar.mn"]
 
 DIRS += [
     "bouncetrackingprotection",
+    "heuristics",
     "scopedprefs",
 ]
 
@@ -43,15 +44,12 @@ XPCOM_MANIFESTS += [
 
 EXPORTS.mozilla = [
     "AntiTrackingIPCUtils.h",
-    "AntiTrackingRedirectHeuristic.h",
     "AntiTrackingUtils.h",
     "ContentBlockingAllowList.h",
     "ContentBlockingLog.h",
     "ContentBlockingNotifier.h",
     "ContentBlockingTelemetryService.h",
     "ContentBlockingUserInteraction.h",
-    "DynamicFpiNavigationHeuristic.h",
-    "DynamicFpiRedirectHeuristic.h",
     "PartitioningExceptionList.h",
     "StorageAccess.h",
     "StorageAccessAPIHelper.h",
@@ -61,15 +59,12 @@ EXPORTS.mozilla = [
 ]
 
 UNIFIED_SOURCES += [
-    "AntiTrackingRedirectHeuristic.cpp",
     "AntiTrackingUtils.cpp",
     "ContentBlockingAllowList.cpp",
     "ContentBlockingLog.cpp",
     "ContentBlockingNotifier.cpp",
     "ContentBlockingTelemetryService.cpp",
     "ContentBlockingUserInteraction.cpp",
-    "DynamicFpiNavigationHeuristic.cpp",
-    "DynamicFpiRedirectHeuristic.cpp",
     "PartitioningExceptionList.cpp",
     "SettingsChangeObserver.cpp",
     "StorageAccess.cpp",
@@ -100,3 +95,9 @@ XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]
 TEST_DIRS += ["test/gtest"]
 
 SPHINX_TREES["anti-tracking"] = "docs"
+
+SOURCE_HEADERS += [
+    "AntiTrackingLog.h",
+    "SettingsChangeObserver.h",
+    "TemporaryAccessGrantObserver.h",
+]

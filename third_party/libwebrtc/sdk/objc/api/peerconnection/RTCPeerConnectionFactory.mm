@@ -61,7 +61,6 @@
 @implementation RTC_OBJC_TYPE (RTCPeerConnectionFactory) {
   std::optional<webrtc::Environment> _env;
   std::unique_ptr<webrtc::Thread> _networkThread;
-  std::unique_ptr<webrtc::Thread> _workerThread;
   std::unique_ptr<webrtc::Thread> _signalingThread;
   BOOL _hasStartedAecDump;
 }
@@ -102,9 +101,6 @@
                                decoderFactory
                audioDevice:
                    (nullable id<RTC_OBJC_TYPE(RTCAudioDevice)>)audioDevice {
-#ifdef HAVE_NO_MEDIA
-  return [self initWithNoMedia];
-#else
   webrtc::PeerConnectionFactoryDependencies dependencies;
   dependencies.env = webrtc::CreateEnvironment();
   dependencies.audio_encoder_factory =
@@ -128,7 +124,6 @@
 #endif
   }
   return [self initWithMediaAndDependencies:dependencies];
-#endif
 }
 
 - (instancetype)initWithNativeDependencies:
@@ -140,11 +135,6 @@
     BOOL result = _networkThread->Start();
     RTC_DCHECK(result) << "Failed to start network thread.";
 
-    _workerThread = webrtc::Thread::Create();
-    _workerThread->SetName("worker_thread", _workerThread.get());
-    result = _workerThread->Start();
-    RTC_DCHECK(result) << "Failed to start worker thread.";
-
     _signalingThread = webrtc::Thread::Create();
     _signalingThread->SetName("signaling_thread", _signalingThread.get());
     result = _signalingThread->Start();
@@ -153,7 +143,6 @@
     // Set fields that are relevant both to 'no media' and 'with media'
     // scenarios.
     dependencies.network_thread = _networkThread.get();
-    dependencies.worker_thread = _workerThread.get();
     dependencies.signaling_thread = _signalingThread.get();
     if (!dependencies.env.has_value()) {
       dependencies.env = webrtc::CreateEnvironment();
@@ -315,7 +304,7 @@
   return [[RTC_OBJC_TYPE(RTCVideoSource) alloc]
         initWithFactory:self
         signalingThread:_signalingThread.get()
-           workerThread:_workerThread.get()
+           workerThread:_networkThread.get()
       nativeVideoSource:webrtc::make_ref_counted<webrtc::ObjCVideoTrackSource>(
                             *_env, forScreenCast)];
 }
@@ -420,7 +409,9 @@
 }
 
 - (webrtc::Thread *)workerThread {
-  return _workerThread.get();
+  // The network thread also acts as the worker thread. See
+  // https://groups.google.com/g/discuss-webrtc/c/Fs_Hd5XNJh0
+  return _networkThread.get();
 }
 
 - (webrtc::Thread *)networkThread {

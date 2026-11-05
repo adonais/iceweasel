@@ -198,6 +198,7 @@ android-arm-shippable/opt:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -229,6 +230,7 @@ android-arm-shippable-lite/opt:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
             PERFHERDER_EXTRA_OPTIONS: lite
     mozconfig:
         platform: android-arm-lite
@@ -401,6 +403,7 @@ android-aarch64-shippable/opt:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -432,6 +435,7 @@ android-aarch64-shippable-lite/opt:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
             PERFHERDER_EXTRA_OPTIONS: lite
     mozconfig:
         platform: android-aarch64-lite
@@ -633,6 +637,7 @@ android-x86_64-shippable/opt:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -664,6 +669,7 @@ android-x86_64-shippable-lite/opt:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
             PERFHERDER_EXTRA_OPTIONS: lite
     mozconfig:
         platform: android-x86_64-lite

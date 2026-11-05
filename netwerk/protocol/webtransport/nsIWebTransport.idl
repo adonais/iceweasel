@@ -14,6 +14,9 @@ interface nsIWebTransportReceiveStream;
 interface nsIWebTransportHash;
 
 %{C++
+namespace mozilla {
+class TimeStamp;
+}
 namespace mozilla::dom {
 class ClientInfo;
 class WebTransportStatsData;
@@ -29,6 +32,7 @@ class WebTransportStreamBase;
 [ptr] native WebTransportSessionPtr(mozilla::net::WebTransportSessionBase);
 [ptr] native WebTransportStreamPtr(mozilla::net::WebTransportStreamBase);
 native Datagram(nsTArray<uint8_t>&&);
+native TimeStamp(mozilla::TimeStamp);
 [ref] native const_MaybeClientInfoRef(const mozilla::Maybe<mozilla::dom::ClientInfo>);
 
 [builtinclass, scriptable, uuid(c20d6e77-8cb1-4838-a88d-fff826080aa3)]
@@ -52,6 +56,9 @@ interface nsIWebTransport : nsISupports {
                     in WebTransportSessionEventListener aListener,
                     [optional] in nsIWebTransport_HTTPVersion aVersion);
 
+  // aHeaderNames and aHeaderValues are parallel arrays of extra request
+  // headers; the caller has already applied the Fetch request-header
+  // restrictions.
   [noscript]
   void asyncConnectWithClient(in nsIURI aURI,
                     in boolean aDedicated,
@@ -62,6 +69,8 @@ interface nsIWebTransport : nsISupports {
                     in WebTransportSessionEventListener aListener,
                     in const_MaybeClientInfoRef aClientInfo,
                     in Array<AString> aProtocols,
+                    in Array<ACString> aHeaderNames,
+                    in Array<ACString> aHeaderValues,
                     in nsIWebTransport_HTTPVersion aVersion);
 
   // Asynchronously get stats. On success (NS_OK), results in exactly one
@@ -72,10 +81,14 @@ interface nsIWebTransport : nsISupports {
   // null aStats.
   void getStats();
 
+  // Largest aOutputLength exportKeyingMaterial() accepts.
+  const unsigned long MAX_KEYING_MATERIAL_LENGTH = 4096;
+
   // Export keying material using TLS exporter (RFC 5705).
   // Returns the exported keying material in the output array.
   void exportKeyingMaterial(in Array<uint8_t> aLabel,
                            in Array<uint8_t> aContext,
+                           in uint32_t aOutputLength,
                            out Array<uint8_t> aKeyingMaterial);
 
   // Close the session.
@@ -89,13 +102,32 @@ interface nsIWebTransport : nsISupports {
   void sendDatagram(in Array<uint8_t> aData, in uint64_t aTrackingId,
                     in uint64_t aSendGroupId, in int64_t aSendOrder);
 
+  // As sendDatagram(), for a datagram written at aTimestamp: outgoingMaxAge
+  // is measured from then, not from when it reaches the queue.
+  [noscript] void sendDatagramAt(in Array<uint8_t> aData,
+                                 in uint64_t aTrackingId,
+                                 in uint64_t aSendGroupId,
+                                 in int64_t aSendOrder,
+                                 in TimeStamp aTimestamp);
+
   void getMaxDatagramSize();
 
   uint64_t getHttpChannelID();
 
+  // Set the outgoing datagram queue's maximum buffered datagram count
+  void setDatagramMaxBufferedDatagrams(in uint32_t aMaxBufferedDatagrams);
+
+  // Set the outgoing datagram queue max age in milliseconds
+  void setDatagramMaxAge(in double aMaxAge);
+
   // Get the negotiated protocol (subprotocol) for the session.
   // Returns empty string if no protocol was negotiated.
   ACString getNegotiatedProtocol();
+
+  // Get the HTTP response headers from the session establishment.
+  // Returns empty arrays if no headers were received.
+  [noscript] void getResponseHeaders(out Array<ACString> aNames,
+                                     out Array<ACString> aValues);
 
   // Register a send group with a caller-provided ID.
   void registerSendGroup(in uint64_t groupId);
@@ -130,8 +162,10 @@ interface WebTransportSessionEventListener : nsISupports {
   void onIncomingBidirectionalStreamAvailable(in nsIWebTransportBidirectionalStream aStream);
   void onIncomingUnidirectionalStreamAvailable(in nsIWebTransportReceiveStream aStream);
 
-  void onStopSending(in uint64_t aStreamId, in nsresult aError);
-  void onResetReceived(in uint64_t aStreamId, in nsresult aError);
+  // aErrorCode is the application error code.  A value above 0xffffffff means
+  // the peer sent no code that maps to one.
+  void onStopSending(in uint64_t aStreamId, in uint64_t aErrorCode);
+  void onResetReceived(in uint64_t aStreamId, in uint64_t aErrorCode);
 
   // When a new datagram has been received.
   void onDatagramReceived(in Array<uint8_t> aData);
@@ -142,6 +176,8 @@ interface WebTransportSessionEventListener : nsISupports {
     UNKNOWN               = 0,
     DROPPED_TOO_MUCH_DATA = 1,
     SENT                  = 2,
+    DROPPED_TOO_OLD       = 3,
+    DROPPED_QUEUE_FULL    = 4,
   };
 
   void onOutgoingDatagramOutCome(

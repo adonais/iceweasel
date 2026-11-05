@@ -2952,6 +2952,66 @@ network.cookies:
     expires: never
 
 network:
+  akamai_document_loads:
+    type: labeled_counter
+    description: >
+      Counts document and frame loads served by Akamai, labeled by whether
+      the response was the Akamai WAF "Access Denied" page (403 with a body
+      referencing errors.edgesuite.net), a different 403 response, or any
+      other response.
+    labels:
+      - ok
+      - forbidden
+      - waf_blocked
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2025212
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2025212
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - vgosu@mozilla.com
+    expires: 165
+
+  akamai_waf_blocked:
+    type: boolean
+    description: >
+      Set to true when a document or frame load served by Akamai is a 403
+      "Access Denied" page from the Akamai WAF (body references
+      errors.edgesuite.net).
+    metadata:
+      permit_non_commutative_operations_over_ipc: true
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2025212
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2025212
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - vgosu@mozilla.com
+    expires: 165
+
+  akamai_waf_blocked_subresource:
+    type: boolean
+    description: >
+      Set to true when a subresource load served by Akamai is a 403
+      "Access Denied" page from the Akamai WAF (body references
+      errors.edgesuite.net).
+    metadata:
+      permit_non_commutative_operations_over_ipc: true
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2025212
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2025212
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - vgosu@mozilla.com
+    expires: 165
+
   id:
     type: custom_distribution
     description: >

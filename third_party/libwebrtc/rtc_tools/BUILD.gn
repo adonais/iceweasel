@@ -347,6 +347,7 @@ if (!build_with_chromium) {
         "../modules/congestion_controller/goog_cc:estimators",
         "../modules/congestion_controller/rtp:transport_feedback",
         "../modules/congestion_controller/scream:scream_v2",
+        "../modules/congestion_controller/scream:scream_v2_parameters",
         "../modules/pacing",
         "../modules/remote_bitrate_estimator",
         "../modules/rtp_rtcp",
@@ -363,7 +364,6 @@ if (!build_with_chromium) {
         "../rtc_base/network:sent_packet",
         "../system_wrappers",
         "//third_party/abseil-cpp/absl/algorithm:container",
-        "//third_party/abseil-cpp/absl/base:core_headers",
         "//third_party/abseil-cpp/absl/functional:bind_front",
         "//third_party/abseil-cpp/absl/strings:string_view",
       ]
@@ -511,7 +511,6 @@ if (rtc_include_tests) {
           "../rtc_base:checks",
           "../rtc_base:logging",
           "../rtc_base:stringutils",
-          "//third_party/abseil-cpp/absl/base:core_headers",
           "//third_party/abseil-cpp/absl/flags:flag",
           "//third_party/abseil-cpp/absl/flags:parse",
           "//third_party/abseil-cpp/absl/flags:usage",

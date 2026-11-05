@@ -297,3 +297,41 @@ add_task(async function test_precedence() {
     "Earlier SitePolicies entry wins"
   );
 });
+
+add_task(async function test_trailing_dot_hostname_container() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Match: ["*.example.com"],
+          Policies: { Container: { id: "work" } },
+        },
+      ],
+    },
+  });
+
+  let policyContainers = ContextualIdentityService.getPolicyIdentities();
+  let work = policyContainers.find(c => c.policyId == "work");
+  ok(work, "Work container exists");
+
+  let bareUri = Services.io.newURI("https://www.example.com/page");
+  equal(
+    Services.policies.getContainerForURI(bareUri),
+    work.userContextId,
+    "Bare hostname returns the container"
+  );
+
+  let trailingDotUri = Services.io.newURI("https://www.example.com./page");
+  equal(
+    Services.policies.getContainerForURI(trailingDotUri),
+    work.userContextId,
+    "Trailing-dot hostname returns the same container"
+  );
+
+  let noMatchUri = Services.io.newURI("https://www.other.com./page");
+  equal(
+    Services.policies.getContainerForURI(noMatchUri),
+    0,
+    "Trailing-dot hostname not in Match returns 0"
+  );
+});

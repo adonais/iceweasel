@@ -33,6 +33,7 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/SVGTextFrame.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/SVGClipPathElement.h"
@@ -406,6 +407,19 @@ SVGUtils::MaskUsage SVGUtils::DetermineMaskUsage(const nsIFrame* aFrame,
       if (clipPathFrame) {
         if (clipPathFrame->IsTrivial()) {
           usage.mShouldApplyClipPath = true;
+          // clipPathUnits="objectBoundingBox" resolves against the union of a
+          // fragmented box's fragments, which a single clip shape positioned
+          // relative to one fragment cannot describe.
+          const bool fragmented =
+              firstFrame != aFrame ||
+              nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aFrame);
+          if (StaticPrefs::gfx_webrender_svg_simple_clips() &&
+              !usage.mShouldGenerateMaskLayer && !fragmented) {
+            CSSRect rect;
+            CSSSize radii;
+            usage.mIsSimpleClipShape = clipPathFrame->GetSimpleClipShape(
+                const_cast<nsIFrame*>(aFrame), &rect, &radii);
+          }
         } else {
           usage.mShouldGenerateClipMaskLayer = true;
         }

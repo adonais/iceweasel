@@ -29,12 +29,6 @@ class CentOSFedoraBootstrapper(LinuxBootstrapper, BaseBootstrapper):
             packages = [p for p in packages if p != "watchman"]
         self.dnf_install(*packages)
 
-    def upgrade_mercurial(self, current):
-        if current is None:
-            self.dnf_install("mercurial")
-        else:
-            self.dnf_update("mercurial")
-
     def dnf_install(self, *packages):
         if which("dnf"):
 

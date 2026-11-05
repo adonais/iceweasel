@@ -413,10 +413,10 @@ index 316e4365d9..4ff8b2d617 100644
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index 0aa31874ce..82e6c7690a 100644
+index cf67941aa0..c1e7e71d3b 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
-@@ -20,6 +20,7 @@ rtc_library("call_interfaces") {
+@@ -24,6 +24,7 @@ rtc_library("call_interfaces") {
    sources = [
      "audio_receive_stream.cc",
      "audio_receive_stream.h",
@@ -424,7 +424,7 @@ index 0aa31874ce..82e6c7690a 100644
      "audio_send_stream.h",
      "audio_state.cc",
      "audio_state.h",
-@@ -32,9 +33,6 @@ rtc_library("call_interfaces") {
+@@ -36,9 +37,6 @@ rtc_library("call_interfaces") {
      "syncable.cc",
      "syncable.h",
    ]
@@ -596,10 +596,10 @@ index 28509654c4..1e2ae94c85 100644
        device_names->push_back(ToUtf8(device.DeviceName));
      }
 diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
-index 645d3490fe..d3cdeab12d 100644
+index afe3d9ebf4..825399a025 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtcp_sender.cc
-@@ -190,7 +190,7 @@ void RTCPSender::SetRTCPStatus(RtcpMode new_method) {
+@@ -186,7 +186,7 @@ void RTCPSender::SetRTCPStatus(RtcpMode new_method) {
      next_time_to_send_rtcp_ = std::nullopt;
    } else if (method_ == RtcpMode::kOff) {
      // When switching on, reschedule the next packet
@@ -701,7 +701,7 @@ index a003a9df74..3fc8044d55 100644
    }
  }
 diff --git a/modules/rtp_rtcp/source/rtp_packet_unittest.cc b/modules/rtp_rtcp/source/rtp_packet_unittest.cc
-index 0e713dcd52..f625dbe0c5 100644
+index 91406572e8..74a2decc4b 100644
 --- a/modules/rtp_rtcp/source/rtp_packet_unittest.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet_unittest.cc
 @@ -143,6 +143,18 @@ constexpr uint8_t kPacketWithMid[] = {
@@ -1392,10 +1392,10 @@ index 849c7ce530..27f1b22422 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 5a8b08cef6..2abcc11c09 100644
+index cd7421c3d0..890683be72 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -531,6 +531,12 @@ rtc_library("logging") {
+@@ -524,6 +524,12 @@ rtc_library("logging") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  

@@ -7,14 +7,18 @@ import datetime
 import logging
 import os
 import re
-import sys
-import warnings
 
 import attr
 from taskcluster.utils import fromNow
 from taskgraph.util.keyed_by import evaluate_keyed_by
-from taskgraph.util.treeherder import join_symbol
-from taskgraph.util.verify import VerificationSequence
+from taskgraph.util.verify import (
+    VerificationSequence,
+    verify_always_optimized,
+    verify_dependency_tiers,
+    verify_routes_notification_filters,
+    verify_task_graph_symbol,
+    verify_trust_domain_v2_routes,
+)
 
 from gecko_taskgraph import GECKO
 from gecko_taskgraph.util.attributes import (
@@ -32,6 +36,13 @@ doc_base_path = os.path.join(GECKO, "taskcluster", "docs")
 
 
 verifications = VerificationSequence()
+
+verifications.add("full_task_graph")(verify_task_graph_symbol)
+verifications.add("full_task_graph")(verify_trust_domain_v2_routes)
+verifications.add("full_task_graph")(verify_routes_notification_filters)
+verifications.add("full_task_graph")(verify_dependency_tiers)
+
+verifications.add("optimized_task_graph")(verify_always_optimized)
 
 
 @attr.s(frozen=True)
@@ -138,140 +149,6 @@ def verify_attributes(task, taskgraph, scratch_pad, graph_config, parameters):
 
 
 @verifications.add("full_task_graph")
-def verify_task_graph_symbol(task, taskgraph, scratch_pad, graph_config, parameters):
-    """
-    This function verifies that tuple
-    (collection.keys(), machine.platform, groupSymbol, symbol) is unique
-    for a target task graph.
-    """
-    if task is None:
-        return
-    task_dict = task.task
-    if "extra" in task_dict:
-        extra = task_dict["extra"]
-        if "treeherder" in extra:
-            treeherder = extra["treeherder"]
-
-            collection_keys = tuple(sorted(treeherder.get("collection", {}).keys()))
-            if len(collection_keys) != 1:
-                raise Exception(
-                    f"Task {task.label} can't be in multiple treeherder collections "
-                    f"(the part of the platform after `/`): {collection_keys}"
-                )
-            platform = treeherder.get("machine", {}).get("platform")
-            group_symbol = treeherder.get("groupSymbol")
-            symbol = treeherder.get("symbol")
-
-            key = (platform, collection_keys[0], group_symbol, symbol)
-            if key in scratch_pad:
-                raise Exception(
-                    "Duplicate treeherder platform and symbol in tasks "
-                    "`{}`and `{}`: {} {}".format(
-                        task.label,
-                        scratch_pad[key],
-                        f"{platform}/{collection_keys[0]}",
-                        join_symbol(group_symbol, symbol),
-                    )
-                )
-            else:
-                scratch_pad[key] = task.label
-
-
-@verifications.add("full_task_graph")
-def verify_trust_domain_v2_routes(
-    task, taskgraph, scratch_pad, graph_config, parameters
-):
-    """
-    This function ensures that any two tasks have distinct ``index.{trust-domain}.v2`` routes.
-    """
-    if task is None:
-        return
-    route_prefix = "index.{}.v2".format(graph_config["trust-domain"])
-    task_dict = task.task
-    routes = task_dict.get("routes", [])
-
-    for route in routes:
-        if route.startswith(route_prefix):
-            if route in scratch_pad:
-                raise Exception(
-                    f"conflict between {task.label}:{scratch_pad[route]} for route: {route}"
-                )
-            else:
-                scratch_pad[route] = task.label
-
-
-@verifications.add("full_task_graph")
-def verify_routes_notification_filters(
-    task, taskgraph, scratch_pad, graph_config, parameters
-):
-    """
-    This function ensures that only understood filters for notifications are
-    specified.
-
-    See: https://firefox-ci-tc.services.mozilla.com/docs/manual/using/task-notifications
-    """
-    if task is None:
-        return
-    route_prefix = "notify."
-    valid_filters = (
-        "on-any",
-        "on-completed",
-        "on-defined",
-        "on-failed",
-        "on-exception",
-        "on-pending",
-        "on-resolved",
-        "on-running",
-        "on-transition",
-    )
-    task_dict = task.task
-    routes = task_dict.get("routes", [])
-
-    for route in routes:
-        if route.startswith(route_prefix):
-            # Get the filter of the route
-            route_filter = route.split(".")[-1]
-            if route_filter not in valid_filters:
-                raise Exception(
-                    f"{task.label} has invalid notification filter ({route_filter})"
-                )
-            if route_filter == "on-any":
-                warnings.warn(
-                    DeprecationWarning(
-                        f"notification filter '{route_filter}' is deprecated. Use "
-                        "'on-transition' or 'on-resolved'."
-                    )
-                )
-
-
-@verifications.add("full_task_graph")
-def verify_dependency_tiers(task, taskgraph, scratch_pad, graph_config, parameters):
-    tiers = scratch_pad
-    if task is not None:
-        tiers[task.label] = (
-            task.task.get("extra", {}).get("treeherder", {}).get("tier", sys.maxsize)
-        )
-    else:
-
-        def printable_tier(tier):
-            if tier == sys.maxsize:
-                return "unknown"
-            return tier
-
-        for current_task in taskgraph.tasks.values():
-            tier = tiers[current_task.label]
-            for d in current_task.dependencies.values():
-                if taskgraph[d].task.get("workerType") == "always-optimized":
-                    continue
-                if "dummy" in taskgraph[d].kind:
-                    continue
-                if tier < tiers[d]:
-                    raise Exception(
-                        f"{current_task.label} (tier {printable_tier(tier)}) cannot depend on {d} (tier {printable_tier(tiers[d])})"
-                    )
-
-
-@verifications.add("full_task_graph")
 def verify_toolchain_resources_in_sparse_profile(
     task, taskgraph, scratch_pad, graph_config, parameters
 ):
@@ -343,17 +220,6 @@ def verify_aliases(task, taskgraph, scratch_pad, graph_config, parameters):
                 )
             else:
                 aliases[full_key] = task.label
-
-
-@verifications.add("optimized_task_graph")
-def verify_always_optimized(task, taskgraph, scratch_pad, graph_config, parameters):
-    """
-    This function ensures that always-optimized tasks have been optimized.
-    """
-    if task is None:
-        return
-    if task.task.get("workerType") == "always-optimized":
-        raise Exception(f"Could not optimize the task {task.label!r}")
 
 
 @verifications.add("full_task_graph", run_on_projects=RELEASE_PROJECTS)

@@ -61,6 +61,7 @@ from mozpack import executables
 from mozpack.files import FileFinder, JarFinder, TarFinder
 from mozpack.mozjar import JarReader, JarWriter
 from mozpack.packager.unpack import UnpackFinder
+from mozversioncontrol import get_repository_object
 
 from mozbuild.artifact_builds import JOB_CHOICES
 from mozbuild.artifact_cache import ArtifactCache
@@ -101,6 +102,27 @@ def _future_result(future):
             return future.result(timeout=0.1)
         except FutureTimeoutError:
             pass
+
+
+def _dmg_tools(log):
+    """Return the libdmg-hfsplus tools that let mozinstall extract a DMG instead
+    of mounting it, which needs access to /Volumes."""
+    from mozbuild.bootstrap import bootstrap_toolchain
+
+    dmg_tool = buildconfig.substs.get("DMG_TOOL") or bootstrap_toolchain(
+        "dmg/dmg", allow_failure=True
+    )
+    hfs_tool = buildconfig.substs.get("HFS_TOOL") or (
+        dmg_tool and bootstrap_toolchain("dmg/hfsplus", allow_failure=True)
+    )
+    if not (dmg_tool and hfs_tool):
+        log(
+            logging.WARN,
+            "artifact",
+            {},
+            "The dmg tools are not available, mounting the DMG instead.",
+        )
+    return dmg_tool, hfs_tool
 
 
 class GeckoJobConfiguration:
@@ -869,7 +891,8 @@ class MacArtifactJob(ArtifactJob):
                 {"tempdir": tempdir},
                 "Unpacking DMG into {tempdir}",
             )
-            mozinstall.install(filename, tempdir)
+            dmg_tool, hfs_tool = _dmg_tools(self.log)
+            mozinstall.install(filename, tempdir, dmg_tool=dmg_tool, hfs_tool=hfs_tool)
 
             bundle_dirs = glob.glob(mozpath.join(tempdir, "*.app"))
             if len(bundle_dirs) != 1:
@@ -1031,11 +1054,13 @@ class UnfilteredProjectPackageArtifactJob(ArtifactJob):
                 {"tempdir": tempdir},
                 "Unpacking into {tempdir}",
             )
-            mozinstall.install(filename, tempdir)
+            is_dmg = filename.endswith(".dmg")
+            dmg_tool, hfs_tool = _dmg_tools(self.log) if is_dmg else (None, None)
+            mozinstall.install(filename, tempdir, dmg_tool=dmg_tool, hfs_tool=hfs_tool)
 
             # Avoid mismatches between local packages (Nightly.app) and CI artifacts
             # (Firefox Nightly.app).
-            if filename.endswith(".dmg"):
+            if is_dmg:
                 bundle_dirs = glob.glob(mozpath.join(tempdir, "*.app"))
             else:
                 bundle_dirs = glob.glob(
@@ -1050,7 +1075,7 @@ class UnfilteredProjectPackageArtifactJob(ArtifactJob):
                 finder = FileFinder(source)
                 for p, f in finder.find("*"):
                     q = p
-                    if filename.endswith(".dmg"):
+                    if is_dmg:
                         q = mozpath.join(self._substs["MOZ_MACBUNDLE_NAME"], q)
                     self.log(
                         logging.DEBUG,
@@ -1566,7 +1591,30 @@ class Artifacts:
 
         return candidate_pushheads
 
+    def _deepen_shallow_clone(self, source_url, rev):
+        vcs = get_repository_object(self._topsrcdir)
+        if not vcs.is_shallow:
+            return
+
+        with build_marker("ArtifactVcs", "deepen shallow clone", log=self.log):
+            self.check_git_output(
+                [
+                    "fetch",
+                    "--no-tags",
+                    f"--deepen={NUM_REVISIONS_TO_QUERY}",
+                    "--filter=tree:0",
+                    source_url,
+                    self.check_git_output(
+                        ["rev-parse", rev], cwd=self._topsrcdir
+                    ).strip(),
+                ],
+                cwd=self._topsrcdir,
+            )
+
     def _get_revisions_from_git(self, rev="HEAD"):
+        if source_url := os.environ.get("MOZ_SOURCE_GIT_REPO"):
+            self._deepen_shallow_clone(source_url, rev)
+
         rev_list = self.check_git_output(
             [
                 "rev-list",

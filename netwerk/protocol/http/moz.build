@@ -195,10 +195,16 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     UNIFIED_SOURCES += [
         "HttpWinUtils.cpp",
     ]
+    SOURCE_HEADERS += [
+        "HttpWinUtils.h",
+    ]
 
 if CONFIG["TARGET_OS"] == "OSX":
     UNIFIED_SOURCES += [
         "MicrosoftEntraSSOUtils.mm",
+    ]
+    SOURCE_HEADERS += [
+        "MicrosoftEntraSSOUtils.h",
     ]
     OS_LIBS += [
         "-framework AuthenticationServices",
@@ -257,3 +263,75 @@ XPCOM_MANIFESTS += [
 ]
 
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "AlternateServices.h",
+    "ASpdySession.h",
+    "BinaryHttpRequest.h",
+    "Capsule.h",
+    "CapsuleDecoder.h",
+    "CapsuleEncoder.h",
+    "CapsuleParser.h",
+    "ConnectionAttempt.h",
+    "ConnectionAttemptPool.h",
+    "ConnectionEntry.h",
+    "ConnectionEstablisher.h",
+    "ConnectionHandle.h",
+    "DnsAndConnectSocket.h",
+    "EarlyHintPreconnect.h",
+    "HappyEyeballsConnectionAttempt.h",
+    "HappyEyeballsConnMgrDelegate.h",
+    "HappyEyeballsTransaction.h",
+    "Http2Compression.h",
+    "Http2HuffmanIncoming.h",
+    "Http2HuffmanOutgoing.h",
+    "Http2Session.h",
+    "Http2Stream.h",
+    "Http2StreamBase.h",
+    "Http2StreamTunnel.h",
+    "Http2WebTransportSession.h",
+    "Http2WebTransportStream.h",
+    "Http3ConnectUDPStream.h",
+    "Http3Session.h",
+    "Http3Stream.h",
+    "Http3StreamBase.h",
+    "Http3StreamTunnel.h",
+    "Http3WebTransportSession.h",
+    "Http3WebTransportStream.h",
+    "HttpConnectionBase.h",
+    "HttpConnectionUDP.h",
+    "HttpLog.h",
+    "HTTPSRecordResolver.h",
+    "InterceptedHttpChannel.h",
+    "MockHttpAuth.h",
+    "NetworkMarker.h",
+    "nsAHttpConnection.h",
+    "nsHttpActivityDistributor.h",
+    "nsHttpAuthCache.h",
+    "nsHttpAuthManager.h",
+    "nsHttpBasicAuth.h",
+    "nsHttpChannel.h",
+    "nsHttpChannelAuthProvider.h",
+    "nsHttpChunkedDecoder.h",
+    "nsHttpConnection.h",
+    "nsHttpConnectionInfo.h",
+    "nsHttpConnectionMgr.h",
+    "nsHttpDigestAuth.h",
+    "nsHttpHandler.h",
+    "nsHttpNTLMAuth.h",
+    "nsHttpTransaction.h",
+    "nsICorsPreflightCallback.h",
+    "ObliviousHttpChannel.h",
+    "ObliviousHttpService.h",
+    "PendingTransactionInfo.h",
+    "PendingTransactionQueue.h",
+    "QuicSocketControl.h",
+    "TlsHandshaker.h",
+    "TLSTransportLayer.h",
+    "TRRServiceChannel.h",
+    "WebTransportCertificateVerifier.h",
+    "WebTransportFlowControl.h",
+    "WebTransportSessionBase.h",
+    "WebTransportStreamBase.h",
+    "ZeroRttHandle.h",
+]

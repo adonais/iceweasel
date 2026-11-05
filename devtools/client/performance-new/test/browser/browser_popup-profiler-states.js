@@ -49,7 +49,7 @@ add_task(async function test() {
   });
 
   await waitUntil(
-    () => !button.classList.contains("profiler-paused"),
+    () => !button.disabled,
     "Waiting until the profiler is no longer paused"
   );
 
@@ -78,7 +78,7 @@ async function checkButtonState(button, { tooltip, active, paused }) {
     `The expected profiler button active state is: ${active}`
   );
   is(
-    button.classList.contains("profiler-paused"),
+    button.disabled,
     paused,
     `The expected profiler button paused state is: ${paused}`
   );

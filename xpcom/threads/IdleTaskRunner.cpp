@@ -137,7 +137,7 @@ void IdleTaskRunner::Run() {
   }
 }
 
-void IdleTaskRunner::TimedOut(nsITimer* aTimer, void* aClosure) {
+void IdleTaskRunner::TimedOut(nsITimer* /*aTimer*/, void* aClosure) {
   RefPtr<IdleTaskRunner> runner = static_cast<IdleTaskRunner*>(aClosure);
   runner->mTimerActive = false;
   runner->Run();
@@ -167,7 +167,7 @@ void IdleTaskRunner::Cancel() {
   mCallback = nullptr;
 }
 
-static void ScheduleTimedOut(nsITimer* aTimer, void* aClosure) {
+static void ScheduleTimedOut(nsITimer* /*aTimer*/, void* aClosure) {
   RefPtr<IdleTaskRunner> runnable = static_cast<IdleTaskRunner*>(aClosure);
   runnable->Schedule(true);
 }

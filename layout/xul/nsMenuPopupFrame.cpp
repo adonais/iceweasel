@@ -2322,8 +2322,10 @@ void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs,
     nsAutoString left, top;
     left.AppendInt(RoundedToInt(aPos).x);
     top.AppendInt(RoundedToInt(aPos).y);
-    popup->SetAttr(kNameSpaceID_None, nsGkAtoms::left, left, false);
-    popup->SetAttr(kNameSpaceID_None, nsGkAtoms::top, top, false);
+    popup->SetAttr(kNameSpaceID_None, nsGkAtoms::left, left, false,
+                   dom::IsKnownNewAttr::No);
+    popup->SetAttr(kNameSpaceID_None, nsGkAtoms::top, top, false,
+                   dom::IsKnownNewAttr::No);
   }
 }
 
@@ -2563,8 +2565,10 @@ void nsMenuPopupFrame::WindowResized(nsIWidget* aWidget,
   nsAutoString width, height;
   width.AppendInt(newCSS.width);
   height.AppendInt(newCSS.height);
-  popup->SetAttr(kNameSpaceID_None, nsGkAtoms::width, width, true);
-  popup->SetAttr(kNameSpaceID_None, nsGkAtoms::height, height, true);
+  popup->SetAttr(kNameSpaceID_None, nsGkAtoms::width, width, true,
+                 dom::IsKnownNewAttr::No);
+  popup->SetAttr(kNameSpaceID_None, nsGkAtoms::height, height, true,
+                 dom::IsKnownNewAttr::No);
 }
 
 bool nsMenuPopupFrame::RequestWindowClose(nsIWidget* aWidget) {

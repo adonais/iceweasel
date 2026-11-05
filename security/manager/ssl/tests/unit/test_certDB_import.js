@@ -145,7 +145,7 @@ add_task(async function run_test() {
   );
 
   // Import the CA cert so that the e-mail import succeeds.
-  testImportCACert();
+  await testImportCACert();
   testImportEmptyCertPackage();
   testImportEmptyUserCert();
 

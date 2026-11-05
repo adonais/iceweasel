@@ -26,7 +26,6 @@ import org.hamcrest.Matchers.lessThanOrEqualTo
 import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.sameInstance
 import org.junit.Assert.fail
-import org.junit.Assume.assumeThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.GeckoDisplay.SurfaceInfo
@@ -262,8 +261,6 @@ class ScreenshotTest : BaseSessionTest() {
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun capturePixelsWhileSessionDeactivated() {
-        // TODO: Bug 1837551
-        assumeThat(sessionRule.env.isFission, equalTo(false))
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         mainSession.loadTestPath(COLORS_HTML_PATH)

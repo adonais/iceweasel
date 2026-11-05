@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <memory>
 #include <regex>
 #include <string>
 #include <vector>
@@ -2238,7 +2239,7 @@ bool GLContext::IsValidOwningThread() const {
 
 GLBlitHelper* GLContext::BlitHelper() {
   if (!mBlitHelper) {
-    mBlitHelper.reset(new GLBlitHelper(this));
+    mBlitHelper = std::make_unique<GLBlitHelper>(this);
   }
 
   return mBlitHelper.get();
@@ -2716,7 +2717,7 @@ void GLContext::BeforeGLCall_Debug(const char* const funcName) const {
   }
 
   MOZ_ASSERT(!mDebugErrorScope);
-  mDebugErrorScope.reset(new LocalErrorScope(*this));
+  mDebugErrorScope = std::make_unique<LocalErrorScope>(*this);
 }
 
 void GLContext::AfterGLCall_Debug(const char* const funcName) const {

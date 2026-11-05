@@ -2051,6 +2051,9 @@ nscoord nsComputedDOMStyle::GetUsedAbsoluteOffset(mozilla::Side aSide) {
         viewportFrame->AdjustViewportSizeForFixedPosition(containerRect));
   } else if (container->IsGridContainerFrame() &&
              mOuterFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    if (MOZ_UNLIKELY(mOuterFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW))) {
+      return 0;
+    }
     containerRect = nsGridContainerFrame::GridItemCB(mOuterFrame);
     rect.MoveBy(-containerRect.x, -containerRect.y);
   }

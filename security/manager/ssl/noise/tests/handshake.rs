@@ -13,20 +13,16 @@ fn qr_initiated() {
     nss_rs::init().expect("nss_rs::init");
 
     let initiator_identity = ecdh_keygen(&EcCurve::P256).expect("initiator_identity");
-    let initiator_pub = initiator_identity.public.key_data().expect("initiator_pub").to_vec();
-    assert_eq!(65, initiator_pub.len());
-    assert_eq!(4, initiator_pub[0]);
+    let initiator_pub = initiator_identity.public.clone();
+
     let psk = nss_rs::random();
 
     let initiator_hs = InitiatorHandshake::new_qr_initiated(&psk, initiator_identity)
         .expect("initial_handshake_message");
 
-    let mut responder = Responder::new_qr_initiated(
-        &psk,
-        initiator_pub.as_slice().try_into().unwrap(),
-        initiator_hs.initial_message(),
-    )
-    .expect("build_responder");
+    let mut responder =
+        Responder::new_qr_initiated(&psk, &initiator_pub, initiator_hs.initial_message())
+            .expect("build_responder");
 
     let mut initiator = initiator_hs
         .process_handshake_response(&responder.response_message)
@@ -63,12 +59,20 @@ fn state_assisted() {
     nss_rs::init().expect("nss_rs::init");
 
     let initiator_identity = ecdh_keygen(&EcCurve::P256).expect("initiator_identity");
-    let initiator_pub = initiator_identity.public.key_data().expect("initiator_pub").to_vec();
+    let initiator_pub = initiator_identity
+        .public
+        .key_data()
+        .expect("initiator_pub")
+        .to_vec();
     assert_eq!(65, initiator_pub.len());
     assert_eq!(4, initiator_pub[0]);
 
     let responder_identity = ecdh_keygen(&EcCurve::P256).expect("responder_identity");
-    let responder_pub = responder_identity.public.key_data().expect("responder_pub").to_vec();
+    let responder_pub = responder_identity
+        .public
+        .key_data()
+        .expect("responder_pub")
+        .to_vec();
     assert_eq!(65, responder_pub.len());
     assert_eq!(4, responder_pub[0]);
 
@@ -111,15 +115,10 @@ fn errors() {
     nss_rs::init().expect("nss_rs::init");
 
     let initiator_identity = ecdh_keygen(&EcCurve::P256).expect("initiator_identity");
-    let initiator_pub: [u8; 65] = initiator_identity
-        .public
-        .key_data()
-        .expect("initiator_pub")
-        .try_into()
-        .unwrap();
-    assert_eq!(4, initiator_pub[0]);
+    let initiator_pub = initiator_identity.public.clone();
 
     let responder_identity = ecdh_keygen(&EcCurve::P256).expect("responder_identity");
+
     let responder_pub: [u8; 65] = responder_identity
         .public
         .key_data()

@@ -38,6 +38,12 @@ export class TestWindowChild extends JSWindowActorChild {
         return Promise.reject(
           Components.Exception(aMessage.data.message, aMessage.data.result)
         );
+      case "quotaExceededError": {
+        let { message, options } = aMessage.data;
+        return Promise.reject(
+          new this.contentWindow.QuotaExceededError(message, options)
+        );
+      }
       case "done":
         this.done(aMessage.data);
         break;

@@ -1072,19 +1072,19 @@ class PromisingFunctionModuleFactory {
     }
 
     // Global 0: $promisingPromise (mut externref)
-    if (!codeMeta->globals.append(
-            GlobalDesc(InitExpr(LitVal(ValType(RefType::extern_()))),
-                       /* isMutable = */ true))) {
+    if (!codeMeta->globals.emplaceBack(
+            InitExpr(LitVal(ValType(RefType::extern_()))),
+            /* isMutable = */ true)) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
 
     // Global 1: $params (mut (ref null $params))
-    if (!codeMeta->globals.append(GlobalDesc(
+    if (!codeMeta->globals.emplaceBack(
             InitExpr(LitVal(ValType(RefType::fromTypeDef(
                 &codeMeta->types->type(baseTypeIndex_ + ParamsTypeIndex),
                 true)))),
-            /* isMutable = */ true))) {
+            /* isMutable = */ true)) {
       ReportOutOfMemory(cx);
       return nullptr;
     }

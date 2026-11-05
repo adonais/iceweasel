@@ -231,6 +231,40 @@ add_task(async function test_js_sources_external_scripts() {
 });
 
 /**
+ * Test that non-ASCII characters in UTF-8 external scripts are decoded
+ * correctly rather than interpreted as Latin-1.
+ */
+add_task(async function test_js_sources_utf8_external_script() {
+  await ProfilerTestUtils.assertProfilerInactive();
+
+  await ProfilerTestUtils.startProfiler({ features: ["js", "jssources"] });
+  const url = BASE_URL + "page_with_utf8_external_js.html";
+  await BrowserTestUtils.withNewTab(url, async () => {
+    Services.profiler.Pause();
+    const profileData =
+      await Services.profiler.getProfileDataAsGzippedArrayBuffer();
+    await Services.profiler.StopProfiler();
+
+    const sources = profileData.additionalInformation.jsSources;
+    const sourceText = Object.values(sources).find(source =>
+      source?.url?.endsWith("/utf8_external_script.js")
+    )?.sourceText;
+
+    Assert.ok(!!sourceText, "Should find the UTF-8 external script source");
+    Assert.ok(
+      sourceText.includes(
+        "// Non-ASCII characters: \u00e9\u00e9\u00e9\u00e9\n"
+      ),
+      "Comment should contain correctly decoded non-ASCII characters"
+    );
+    Assert.ok(
+      sourceText.includes('"\u00fcn\u00efc\u00f6d\u00e9\u6f22"'),
+      "String literal should contain correctly decoded characters beyond Latin-1"
+    );
+  });
+});
+
+/**
  * Test that unavailable JS sources are omitted from jsSources rather than
  * included with a placeholder value. When the "jssources" feature is not
  * enabled, all sources have unavailable data and should not appear in jsSources.

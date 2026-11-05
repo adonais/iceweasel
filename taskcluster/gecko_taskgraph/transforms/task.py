@@ -1472,189 +1472,6 @@ def build_push_addons_payload(config, task, task_def):
     }
 
 
-class L10nBumpPlatformConfigSchema(Schema, forbid_unknown_fields=False, kw_only=True):
-    platforms: list[str]
-    path: str
-    format: Optional[str] = None
-
-
-class AndroidL10nTomlInfoSchema(Schema, forbid_unknown_fields=False, kw_only=True):
-    toml_path: str
-    dest_path: str
-
-
-class AndroidL10nSyncTomlInfoSchema(Schema, forbid_unknown_fields=False, kw_only=True):
-    toml_path: str
-
-
-class TreescriptL10nBumpInfoSchema(Schema, forbid_unknown_fields=False, kw_only=True):
-    name: str
-    path: str
-    version_path: str
-    l10n_repo_url: Optional[str] = None
-    l10n_repo_target_branch: Optional[str] = None
-    ignore_config: Optional[object] = None
-    platform_configs: list[L10nBumpPlatformConfigSchema]
-
-
-class TreescriptAndroidL10nImportInfoSchema(
-    Schema, forbid_unknown_fields=False, kw_only=True
-):
-    from_repo_url: str
-    toml_info: list[AndroidL10nTomlInfoSchema]
-
-
-class TreescriptAndroidL10nSyncInfoSchema(
-    Schema, forbid_unknown_fields=False, kw_only=True
-):
-    from_repo_url: str
-    toml_info: list[AndroidL10nSyncTomlInfoSchema]
-
-
-class TreescriptSchema(Schema, forbid_unknown_fields=False, kw_only=True):
-    tags: list[Optional[Literal["buildN", "release"]]]
-    bump: bool
-    bump_files: Optional[list[str]] = None
-    repo_param_prefix: Optional[str] = None
-    dontbuild: Optional[bool] = None
-    ignore_closed_tree: Optional[bool] = None
-    force_dry_run: Optional[bool] = None
-    push: Optional[bool] = None
-    source_repo: Optional[str] = None
-    ssh_user: Optional[str] = None
-    l10n_bump_info: Optional[list[TreescriptL10nBumpInfoSchema]] = None
-    actions: Optional[object] = None
-    merge_info: Optional[object] = None
-    android_l10n_import_info: Optional[TreescriptAndroidL10nImportInfoSchema] = None
-    android_l10n_sync_info: Optional[TreescriptAndroidL10nSyncInfoSchema] = None
-
-
-@payload_builder("treescript", schema=TreescriptSchema)
-def build_treescript_payload(config, task, task_def):
-    worker = task["worker"]
-    release_config = get_release_config(config)
-
-    task_def["payload"] = {"actions": []}
-    actions = task_def["payload"]["actions"]
-    if worker["tags"]:
-        tag_names = []
-        product = task["shipping-product"].upper()
-        version = release_config["version"].replace(".", "_")
-        buildnum = release_config["build_number"]
-        if "buildN" in worker["tags"]:
-            tag_names.extend([
-                f"{product}_{version}_BUILD{buildnum}",
-            ])
-        if "release" in worker["tags"]:
-            tag_names.extend([f"{product}_{version}_RELEASE"])
-        tag_info = {
-            "tags": tag_names,
-            "revision": config.params[
-                "{}head_rev".format(worker.get("repo-param-prefix", ""))
-            ],
-        }
-        task_def["payload"]["tag_info"] = tag_info
-        actions.append("tag")
-
-    if worker["bump"]:
-        if not worker["bump-files"]:
-            raise Exception("Version Bump requested without bump-files")
-
-        bump_info = {}
-        bump_info["next_version"] = release_config["next_version"]
-        bump_info["files"] = worker["bump-files"]
-        task_def["payload"]["version_bump_info"] = bump_info
-        actions.append("version_bump")
-
-    if worker.get("l10n-bump-info"):
-        l10n_bump_info = []
-        l10n_repo_urls = set()
-        for lbi in worker["l10n-bump-info"]:
-            new_lbi = {}
-            if "l10n-repo-url" in lbi:
-                l10n_repo_urls.add(lbi["l10n-repo-url"])
-            for k, v in lbi.items():
-                new_lbi[k.replace("-", "_")] = v
-            l10n_bump_info.append(new_lbi)
-
-        task_def["payload"]["l10n_bump_info"] = l10n_bump_info
-        if len(l10n_repo_urls) > 1:
-            raise Exception(
-                "Must use the same l10n-repo-url for all files in the same task!"
-            )
-        elif len(l10n_repo_urls) == 1:
-            if "github.com" in l10n_repo_urls.pop():
-                actions.append("l10n_bump_github")
-            else:
-                actions.append("l10n_bump")
-
-    if worker.get("merge-info"):
-        merge_info = {
-            merge_param_name.replace("-", "_"): merge_param_value
-            for merge_param_name, merge_param_value in worker["merge-info"].items()
-            if merge_param_name != "version-files"
-        }
-        merge_info["version_files"] = [
-            {
-                file_param_name.replace("-", "_"): file_param_value
-                for file_param_name, file_param_value in file_entry.items()
-            }
-            for file_entry in worker["merge-info"]["version-files"]
-        ]
-        task_def["payload"]["merge_info"] = merge_info
-        actions.append("merge_day")
-
-    if worker.get("android-l10n-import-info"):
-        android_l10n_import_info = {}
-        for k, v in worker["android-l10n-import-info"].items():
-            android_l10n_import_info[k.replace("-", "_")] = worker[
-                "android-l10n-import-info"
-            ][k]
-        android_l10n_import_info["toml_info"] = [
-            {
-                param_name.replace("-", "_"): param_value
-                for param_name, param_value in entry.items()
-            }
-            for entry in worker["android-l10n-import-info"]["toml-info"]
-        ]
-        task_def["payload"]["android_l10n_import_info"] = android_l10n_import_info
-        actions.append("android_l10n_import")
-
-    if worker.get("android-l10n-sync-info"):
-        android_l10n_sync_info = {}
-        for k, v in worker["android-l10n-sync-info"].items():
-            android_l10n_sync_info[k.replace("-", "_")] = worker[
-                "android-l10n-sync-info"
-            ][k]
-        android_l10n_sync_info["toml_info"] = [
-            {
-                param_name.replace("-", "_"): param_value
-                for param_name, param_value in entry.items()
-            }
-            for entry in worker["android-l10n-sync-info"]["toml-info"]
-        ]
-        task_def["payload"]["android_l10n_sync_info"] = android_l10n_sync_info
-        actions.append("android_l10n_sync")
-
-    if worker["push"]:
-        actions.append("push")
-
-    if worker.get("force-dry-run"):
-        task_def["payload"]["dry_run"] = True
-
-    if worker.get("dontbuild"):
-        task_def["payload"]["dontbuild"] = True
-
-    if worker.get("ignore-closed-tree") is not None:
-        task_def["payload"]["ignore_closed_tree"] = worker["ignore-closed-tree"]
-
-    if worker.get("source-repo"):
-        task_def["payload"]["source_repo"] = worker["source-repo"]
-
-    if worker.get("ssh-user"):
-        task_def["payload"]["ssh_user"] = worker["ssh-user"]
-
-
 # -- scriptworker-lando schemas --
 
 
@@ -2479,7 +2296,7 @@ def _variant_symbols():
         [
             (
                 v,
-                TEST_VARIANTS[v]["suffix"],
+                TEST_VARIANTS[v].get("treeherder-suffix") or TEST_VARIANTS[v]["suffix"],
                 TEST_VARIANTS[v].get("description", "{description}"),
             )
             for v in TEST_VARIANTS
@@ -2597,6 +2414,13 @@ def build_task(config, tasks):
 
         tags = task.get("tags", {})
         attributes = task.get("attributes", {})
+
+        # Expose the yml file the task was defined in (relative to the
+        # topsrcdir), so consumers of the resolved task graph (e.g. lints
+        # auditing taskcluster/kinds/*) can point back to a specific file
+        # without needing to re-parse the kind's yml files themselves.
+        if task.get("task-from"):
+            attributes["task-from"] = os.path.join(config.path, task["task-from"])
 
         tags.update({
             "createdForUser": config.params["owner"],
@@ -2784,19 +2608,6 @@ def check_task_dependencies(config, tasks):
                     MAX_DEPENDENCIES,
                 )
             )
-        yield task
-
-
-@transforms.add
-def check_perf_task_fission_filtering(config, tasks):
-    for task in tasks:
-        if (
-            ("chrome-m" in task["label"] or "cstm-car-m" in task["label"])
-            and "nofis" not in task["label"]
-            and "android" in task["label"]
-            and "startup" not in task["label"]
-        ):
-            continue
         yield task
 
 

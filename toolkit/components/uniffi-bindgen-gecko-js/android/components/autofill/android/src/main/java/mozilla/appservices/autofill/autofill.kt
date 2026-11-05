@@ -31,6 +31,9 @@ import java.nio.charset.CodingErrorAction
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import mozilla.appservices.db_crypto.EncryptorDecryptor
+import mozilla.appservices.db_crypto.FfiConverterTypeEncryptorDecryptor
+import mozilla.appservices.db_crypto.RustBuffer as RustBufferEncryptorDecryptor
 
 // This is a helper for safely working with byte buffers returned from the Rust code.
 // A rust-owned buffer is represented by its capacity, its current length, and a
@@ -676,9 +679,7 @@ internal object IntegrityCheckingUniffiLib {
     internal fun ensureInitialized() = Unit
     external fun uniffi_autofill_checksum_func_create_autofill_key(
     ): Int
-    external fun uniffi_autofill_checksum_func_decrypt_string(
-    ): Int
-    external fun uniffi_autofill_checksum_func_encrypt_string(
+    external fun uniffi_autofill_checksum_func_create_autofill_store_with_static_key_manager(
     ): Int
     external fun uniffi_autofill_checksum_method_addressesbridgedengine_apply(
     ): Int
@@ -701,6 +702,28 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_autofill_checksum_method_addressesbridgedengine_sync_started(
     ): Int
     external fun uniffi_autofill_checksum_method_addressesbridgedengine_wipe(
+    ): Int
+    external fun uniffi_autofill_checksum_method_creditcardsbridgedengine_apply(
+    ): Int
+    external fun uniffi_autofill_checksum_method_creditcardsbridgedengine_ensure_current_sync_id(
+    ): Int
+    external fun uniffi_autofill_checksum_method_creditcardsbridgedengine_last_sync(
+    ): Int
+    external fun uniffi_autofill_checksum_method_creditcardsbridgedengine_reset(
+    ): Int
+    external fun uniffi_autofill_checksum_method_creditcardsbridgedengine_reset_sync_id(
+    ): Int
+    external fun uniffi_autofill_checksum_method_creditcardsbridgedengine_set_uploaded(
+    ): Int
+    external fun uniffi_autofill_checksum_method_creditcardsbridgedengine_store_incoming(
+    ): Int
+    external fun uniffi_autofill_checksum_method_creditcardsbridgedengine_sync_finished(
+    ): Int
+    external fun uniffi_autofill_checksum_method_creditcardsbridgedengine_sync_id(
+    ): Int
+    external fun uniffi_autofill_checksum_method_creditcardsbridgedengine_sync_started(
+    ): Int
+    external fun uniffi_autofill_checksum_method_creditcardsbridgedengine_wipe(
     ): Int
     external fun uniffi_autofill_checksum_method_store_add_address(
     ): Int
@@ -728,6 +751,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_autofill_checksum_method_store_count_all_passports(
     ): Int
+    external fun uniffi_autofill_checksum_method_store_credit_cards_bridged_engine(
+    ): Int
     external fun uniffi_autofill_checksum_method_store_delete_address(
     ): Int
     external fun uniffi_autofill_checksum_method_store_delete_all_addresses(
@@ -749,6 +774,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_autofill_checksum_method_store_get_credit_card(
     ): Int
     external fun uniffi_autofill_checksum_method_store_get_passport(
+    ): Int
+    external fun uniffi_autofill_checksum_method_store_list_credit_card_candidates(
     ): Int
     external fun uniffi_autofill_checksum_method_store_register_with_sync_manager(
     ): Int
@@ -794,6 +821,7 @@ internal object UniffiLib {
 
     init {
         Native.register(UniffiLib::class.java, findLibraryName(componentName = "autofill"))
+        mozilla.appservices.db_crypto.uniffiEnsureInitialized()
         
     }
 
@@ -824,11 +852,37 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_autofill_fn_method_addressesbridgedengine_wipe(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_autofill_fn_clone_creditcardsbridgedengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_autofill_fn_free_creditcardsbridgedengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_autofill_fn_method_creditcardsbridgedengine_apply(`ptr`: Long,`serverModifiedMillis`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_autofill_fn_method_creditcardsbridgedengine_ensure_current_sync_id(`ptr`: Long,`newSyncId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_autofill_fn_method_creditcardsbridgedengine_last_sync(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_autofill_fn_method_creditcardsbridgedengine_reset(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_autofill_fn_method_creditcardsbridgedengine_reset_sync_id(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_autofill_fn_method_creditcardsbridgedengine_set_uploaded(`ptr`: Long,`newTimestamp`: Long,`uploadedIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_autofill_fn_method_creditcardsbridgedengine_store_incoming(`ptr`: Long,`incomingEnvelopesAsJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_autofill_fn_method_creditcardsbridgedengine_sync_finished(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_autofill_fn_method_creditcardsbridgedengine_sync_id(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_autofill_fn_method_creditcardsbridgedengine_sync_started(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_autofill_fn_method_creditcardsbridgedengine_wipe(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_autofill_fn_clone_store(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_autofill_fn_free_store(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    external fun uniffi_autofill_fn_constructor_store_new(`dbpath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_autofill_fn_constructor_store_new(`dbpath`: RustBuffer.ByValue,`encdec`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_autofill_fn_method_store_add_address(`ptr`: Long,`a`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -856,6 +910,8 @@ internal object UniffiLib {
     ): Long
     external fun uniffi_autofill_fn_method_store_count_all_passports(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
+    external fun uniffi_autofill_fn_method_store_credit_cards_bridged_engine(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
     external fun uniffi_autofill_fn_method_store_delete_address(`ptr`: Long,`guid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
     external fun uniffi_autofill_fn_method_store_delete_all_addresses(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -878,13 +934,15 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_autofill_fn_method_store_get_passport(`ptr`: Long,`guid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_autofill_fn_method_store_list_credit_card_candidates(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_autofill_fn_method_store_register_with_sync_manager(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_autofill_fn_method_store_run_maintenance(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_autofill_fn_method_store_scrub_encrypted_data(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    external fun uniffi_autofill_fn_method_store_scrub_undecryptable_credit_card_data_for_remote_replacement(`ptr`: Long,`localEncryptionKey`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_autofill_fn_method_store_scrub_undecryptable_credit_card_data_for_remote_replacement(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_autofill_fn_method_store_shutdown(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -906,10 +964,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_autofill_fn_func_create_autofill_key(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_autofill_fn_func_decrypt_string(`key`: RustBuffer.ByValue,`ciphertext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    external fun uniffi_autofill_fn_func_encrypt_string(`key`: RustBuffer.ByValue,`cleartext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
+    external fun uniffi_autofill_fn_func_create_autofill_store_with_static_key_manager(`path`: RustBuffer.ByValue,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
     external fun ffi_autofill_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun ffi_autofill_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1406,8 +1462,9 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
 
 
 /**
- * The bridged sync engine for addresses. The canonical docs are in
- * services/interfaces/mozIBridgedSyncEngine.idl.
+ * The bridged sync engine for addresses, which wraps the
+ * `sync15::engine::SyncEngine` implemented by this component (see
+ * `sync15::engine::BridgedEngineWrapper`).
  * NOTE: all timestamps here are milliseconds.
  */
 public interface AddressesBridgedEngineInterface {
@@ -1438,8 +1495,9 @@ public interface AddressesBridgedEngineInterface {
 }
 
 /**
- * The bridged sync engine for addresses. The canonical docs are in
- * services/interfaces/mozIBridgedSyncEngine.idl.
+ * The bridged sync engine for addresses, which wraps the
+ * `sync15::engine::SyncEngine` implemented by this component (see
+ * `sync15::engine::BridgedEngineWrapper`).
  * NOTE: all timestamps here are milliseconds.
  */
 open class AddressesBridgedEngine: Disposable, AutoCloseable, AddressesBridgedEngineInterface
@@ -1830,6 +1888,433 @@ public object FfiConverterTypeAddressesBridgedEngine: FfiConverter<AddressesBrid
 //
 
 
+/**
+ * The bridged sync engine for credit cards, which wraps the
+ * `sync15::engine::SyncEngine` implemented by this component (see
+ * `sync15::engine::BridgedEngineWrapper`).
+ * NOTE: all timestamps here are milliseconds.
+ */
+public interface CreditCardsBridgedEngineInterface {
+    
+    fun `apply`(`serverModifiedMillis`: kotlin.Long): List<kotlin.String>
+    
+    fun `ensureCurrentSyncId`(`newSyncId`: kotlin.String): kotlin.String
+    
+    fun `lastSync`(): kotlin.Long
+    
+    fun `reset`()
+    
+    fun `resetSyncId`(): kotlin.String
+    
+    fun `setUploaded`(`newTimestamp`: kotlin.Long, `uploadedIds`: List<kotlin.String>)
+    
+    fun `storeIncoming`(`incomingEnvelopesAsJson`: List<kotlin.String>)
+    
+    fun `syncFinished`()
+    
+    fun `syncId`(): kotlin.String?
+    
+    fun `syncStarted`()
+    
+    fun `wipe`()
+    
+    companion object
+}
+
+/**
+ * The bridged sync engine for credit cards, which wraps the
+ * `sync15::engine::SyncEngine` implemented by this component (see
+ * `sync15::engine::BridgedEngineWrapper`).
+ * NOTE: all timestamps here are milliseconds.
+ */
+open class CreditCardsBridgedEngine: Disposable, AutoCloseable, CreditCardsBridgedEngineInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_autofill_fn_free_creditcardsbridgedengine(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_autofill_fn_clone_creditcardsbridgedengine(handle, status)
+        }
+    }
+
+    
+    @Throws(AutofillApiException::class)override fun `apply`(`serverModifiedMillis`: kotlin.Long): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_creditcardsbridgedengine_apply(
+        it,
+        
+        FfiConverterLong.lower(`serverModifiedMillis`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `ensureCurrentSyncId`(`newSyncId`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_creditcardsbridgedengine_ensure_current_sync_id(
+        it,
+        
+        FfiConverterString.lower(`newSyncId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `lastSync`(): kotlin.Long {
+            return FfiConverterLong.lift(
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_creditcardsbridgedengine_last_sync(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `reset`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_creditcardsbridgedengine_reset(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `resetSyncId`(): kotlin.String {
+            return FfiConverterString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_creditcardsbridgedengine_reset_sync_id(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `setUploaded`(`newTimestamp`: kotlin.Long, `uploadedIds`: List<kotlin.String>)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_creditcardsbridgedengine_set_uploaded(
+        it,
+        
+        FfiConverterLong.lower(`newTimestamp`),
+        FfiConverterSequenceString.lower(`uploadedIds`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `storeIncoming`(`incomingEnvelopesAsJson`: List<kotlin.String>)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_creditcardsbridgedengine_store_incoming(
+        it,
+        
+        FfiConverterSequenceString.lower(`incomingEnvelopesAsJson`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `syncFinished`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_creditcardsbridgedengine_sync_finished(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `syncId`(): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_creditcardsbridgedengine_sync_id(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `syncStarted`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_creditcardsbridgedengine_sync_started(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `wipe`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_creditcardsbridgedengine_wipe(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeCreditCardsBridgedEngine: FfiConverter<CreditCardsBridgedEngine, Long> {
+    override fun lower(value: CreditCardsBridgedEngine): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): CreditCardsBridgedEngine {
+        return CreditCardsBridgedEngine(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): CreditCardsBridgedEngine {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: CreditCardsBridgedEngine) = 8UL
+
+    override fun write(value: CreditCardsBridgedEngine, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
 public interface StoreInterface {
     
     fun `addAddress`(`a`: UpdatableAddressFields): Address
@@ -1862,6 +2347,13 @@ public interface StoreInterface {
     fun `countAllCreditCards`(): kotlin.Long
     
     fun `countAllPassports`(): kotlin.Long
+    
+    /**
+     * Returns a bridged sync engine for credit cards, for use by Desktop's
+     * Sync framework. Constructing it only assembles structs and never touches
+     * the DB, so it cannot fail.
+     */
+    fun `creditCardsBridgedEngine`(): CreditCardsBridgedEngine
     
     fun `deleteAddress`(`guid`: kotlin.String): kotlin.Boolean
     
@@ -1901,6 +2393,14 @@ public interface StoreInterface {
     
     fun `getPassport`(`guid`: kotlin.String): Passport
     
+    /**
+     * Every stored credit card without its encrypted fields. Unlike
+     * `get_all_credit_cards` this never touches the key, so listing cannot
+     * prompt for a primary password; read the one card that needs its
+     * secrets with `get_credit_card`.
+     */
+    fun `listCreditCardCandidates`(): List<CreditCardCandidate>
+    
     fun `registerWithSyncManager`()
     
     /**
@@ -1921,7 +2421,7 @@ public interface StoreInterface {
      * NB: This function was created to unblock iOS credit card users who are unable to sync records and should not be used
      * outside of this use case.
      */
-    fun `scrubUndecryptableCreditCardDataForRemoteReplacement`(`localEncryptionKey`: kotlin.String): CreditCardsDeletionMetrics
+    fun `scrubUndecryptableCreditCardDataForRemoteReplacement`(): CreditCardsDeletionMetrics
     
     fun `shutdown`()
     
@@ -1968,13 +2468,14 @@ open class Store: Disposable, AutoCloseable, StoreInterface
         this.handle = 0
         this.cleanable = null
     }
-    constructor(`dbpath`: kotlin.String) :
+    constructor(`dbpath`: kotlin.String, `encdec`: EncryptorDecryptor) :
         this(UniffiWithHandle, 
     uniffiRustCallWithError(AutofillApiException) { _status ->
     UniffiLib.uniffi_autofill_fn_constructor_store_new(
     
         
-        FfiConverterString.lower(`dbpath`),_status)
+        FfiConverterString.lower(`dbpath`),
+        FfiConverterTypeEncryptorDecryptor.lower(`encdec`),_status)
 }
     )
 
@@ -2250,6 +2751,24 @@ open class Store: Disposable, AutoCloseable, StoreInterface
     
 
     
+    /**
+     * Returns a bridged sync engine for credit cards, for use by Desktop's
+     * Sync framework. Constructing it only assembles structs and never touches
+     * the DB, so it cannot fail.
+     */override fun `creditCardsBridgedEngine`(): CreditCardsBridgedEngine {
+            return FfiConverterTypeCreditCardsBridgedEngine.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_autofill_fn_method_store_credit_cards_bridged_engine(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
     @Throws(AutofillApiException::class)override fun `deleteAddress`(`guid`: kotlin.String): kotlin.Boolean {
             return FfiConverterBoolean.lift(
     callWithHandle {
@@ -2423,6 +2942,26 @@ open class Store: Disposable, AutoCloseable, StoreInterface
     }
     
 
+    
+    /**
+     * Every stored credit card without its encrypted fields. Unlike
+     * `get_all_credit_cards` this never touches the key, so listing cannot
+     * prompt for a primary password; read the one card that needs its
+     * secrets with `get_credit_card`.
+     */
+    @Throws(AutofillApiException::class)override fun `listCreditCardCandidates`(): List<CreditCardCandidate> {
+            return FfiConverterSequenceTypeCreditCardCandidate.lift(
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_store_list_credit_card_candidates(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
     override fun `registerWithSyncManager`()
         = 
     callWithHandle {
@@ -2476,14 +3015,13 @@ open class Store: Disposable, AutoCloseable, StoreInterface
      * NB: This function was created to unblock iOS credit card users who are unable to sync records and should not be used
      * outside of this use case.
      */
-    @Throws(AutofillApiException::class)override fun `scrubUndecryptableCreditCardDataForRemoteReplacement`(`localEncryptionKey`: kotlin.String): CreditCardsDeletionMetrics {
+    @Throws(AutofillApiException::class)override fun `scrubUndecryptableCreditCardDataForRemoteReplacement`(): CreditCardsDeletionMetrics {
             return FfiConverterTypeCreditCardsDeletionMetrics.lift(
     callWithHandle {
     uniffiRustCallWithError(AutofillApiException) { _status ->
     UniffiLib.uniffi_autofill_fn_method_store_scrub_undecryptable_credit_card_data_for_remote_replacement(
         it,
-        
-        FfiConverterString.lower(`localEncryptionKey`),_status)
+        _status)
 }
     }
     )
@@ -2871,14 +3409,18 @@ public object FfiConverterTypeAddressTombstone: FfiConverterRustBuffer<AddressTo
 
 
 /**
- * What you get back as a credit-card.
+ * What you get back as a credit-card. The number comes back decrypted;
+ * it is empty for a scrubbed card or one saved without a number. A number
+ * the key cannot read fails the read.
  */
 data class CreditCard (
     var `guid`: kotlin.String
     , 
     var `ccName`: kotlin.String
     , 
-    var `ccNumberEnc`: kotlin.String
+    var `ccNumber`: kotlin.String
+    , 
+    var `ccCvv`: kotlin.String? = null 
     , 
     var `ccNumberLast4`: kotlin.String
     , 
@@ -2914,6 +3456,7 @@ public object FfiConverterTypeCreditCard: FfiConverterRustBuffer<CreditCard> {
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterLong.read(buf),
             FfiConverterLong.read(buf),
@@ -2928,7 +3471,8 @@ public object FfiConverterTypeCreditCard: FfiConverterRustBuffer<CreditCard> {
     override fun allocationSize(value: CreditCard) = (
             FfiConverterString.allocationSize(value.`guid`) +
             FfiConverterString.allocationSize(value.`ccName`) +
-            FfiConverterString.allocationSize(value.`ccNumberEnc`) +
+            FfiConverterString.allocationSize(value.`ccNumber`) +
+            FfiConverterOptionalString.allocationSize(value.`ccCvv`) +
             FfiConverterString.allocationSize(value.`ccNumberLast4`) +
             FfiConverterLong.allocationSize(value.`ccExpMonth`) +
             FfiConverterLong.allocationSize(value.`ccExpYear`) +
@@ -2942,8 +3486,99 @@ public object FfiConverterTypeCreditCard: FfiConverterRustBuffer<CreditCard> {
     override fun write(value: CreditCard, buf: ByteBuffer) {
             FfiConverterString.write(value.`guid`, buf)
             FfiConverterString.write(value.`ccName`, buf)
-            FfiConverterString.write(value.`ccNumberEnc`, buf)
+            FfiConverterString.write(value.`ccNumber`, buf)
+            FfiConverterOptionalString.write(value.`ccCvv`, buf)
             FfiConverterString.write(value.`ccNumberLast4`, buf)
+            FfiConverterLong.write(value.`ccExpMonth`, buf)
+            FfiConverterLong.write(value.`ccExpYear`, buf)
+            FfiConverterString.write(value.`ccType`, buf)
+            FfiConverterLong.write(value.`timeCreated`, buf)
+            FfiConverterOptionalLong.write(value.`timeLastUsed`, buf)
+            FfiConverterLong.write(value.`timeLastModified`, buf)
+            FfiConverterLong.write(value.`timesUsed`, buf)
+    }
+}
+
+
+
+/**
+ * A credit card stored in the database, minus the encrypted fields.
+ *
+ * Reading these never needs the encryption key, so consumers listing cards by name,
+ * last four digits and expiry can do so without forcing the user to authenticate.
+ * See `list_credit_card_candidates()`.
+ */
+data class CreditCardCandidate (
+    var `guid`: kotlin.String
+    , 
+    var `ccName`: kotlin.String
+    , 
+    var `ccNumberLast4`: kotlin.String
+    , 
+    var `hasCvv`: kotlin.Boolean
+    , 
+    var `ccExpMonth`: kotlin.Long
+    , 
+    var `ccExpYear`: kotlin.Long
+    , 
+    var `ccType`: kotlin.String
+    , 
+    var `timeCreated`: kotlin.Long
+    , 
+    var `timeLastUsed`: kotlin.Long?
+    , 
+    var `timeLastModified`: kotlin.Long
+    , 
+    var `timesUsed`: kotlin.Long
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeCreditCardCandidate: FfiConverterRustBuffer<CreditCardCandidate> {
+    override fun read(buf: ByteBuffer): CreditCardCandidate {
+        return CreditCardCandidate(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: CreditCardCandidate) = (
+            FfiConverterString.allocationSize(value.`guid`) +
+            FfiConverterString.allocationSize(value.`ccName`) +
+            FfiConverterString.allocationSize(value.`ccNumberLast4`) +
+            FfiConverterBoolean.allocationSize(value.`hasCvv`) +
+            FfiConverterLong.allocationSize(value.`ccExpMonth`) +
+            FfiConverterLong.allocationSize(value.`ccExpYear`) +
+            FfiConverterString.allocationSize(value.`ccType`) +
+            FfiConverterLong.allocationSize(value.`timeCreated`) +
+            FfiConverterOptionalLong.allocationSize(value.`timeLastUsed`) +
+            FfiConverterLong.allocationSize(value.`timeLastModified`) +
+            FfiConverterLong.allocationSize(value.`timesUsed`)
+    )
+
+    override fun write(value: CreditCardCandidate, buf: ByteBuffer) {
+            FfiConverterString.write(value.`guid`, buf)
+            FfiConverterString.write(value.`ccName`, buf)
+            FfiConverterString.write(value.`ccNumberLast4`, buf)
+            FfiConverterBoolean.write(value.`hasCvv`, buf)
             FfiConverterLong.write(value.`ccExpMonth`, buf)
             FfiConverterLong.write(value.`ccExpYear`, buf)
             FfiConverterString.write(value.`ccType`, buf)
@@ -3324,14 +3959,15 @@ public object FfiConverterTypeUpdatableAddressFieldsWithMeta: FfiConverterRustBu
 
 
 /**
- * What you pass to create or update a credit-card.
+ * What you pass to create or update a credit-card. The number is given in
+ * cleartext; the store encrypts it and derives the last-4 digits itself.
  */
 data class UpdatableCreditCardFields (
     var `ccName`: kotlin.String
     , 
-    var `ccNumberEnc`: kotlin.String
+    var `ccNumber`: kotlin.String
     , 
-    var `ccNumberLast4`: kotlin.String
+    var `ccCvv`: kotlin.String? = null 
     , 
     var `ccExpMonth`: kotlin.Long
     , 
@@ -3356,7 +3992,7 @@ public object FfiConverterTypeUpdatableCreditCardFields: FfiConverterRustBuffer<
         return UpdatableCreditCardFields(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
-            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
             FfiConverterLong.read(buf),
             FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
@@ -3365,8 +4001,8 @@ public object FfiConverterTypeUpdatableCreditCardFields: FfiConverterRustBuffer<
 
     override fun allocationSize(value: UpdatableCreditCardFields) = (
             FfiConverterString.allocationSize(value.`ccName`) +
-            FfiConverterString.allocationSize(value.`ccNumberEnc`) +
-            FfiConverterString.allocationSize(value.`ccNumberLast4`) +
+            FfiConverterString.allocationSize(value.`ccNumber`) +
+            FfiConverterOptionalString.allocationSize(value.`ccCvv`) +
             FfiConverterLong.allocationSize(value.`ccExpMonth`) +
             FfiConverterLong.allocationSize(value.`ccExpYear`) +
             FfiConverterString.allocationSize(value.`ccType`)
@@ -3374,8 +4010,8 @@ public object FfiConverterTypeUpdatableCreditCardFields: FfiConverterRustBuffer<
 
     override fun write(value: UpdatableCreditCardFields, buf: ByteBuffer) {
             FfiConverterString.write(value.`ccName`, buf)
-            FfiConverterString.write(value.`ccNumberEnc`, buf)
-            FfiConverterString.write(value.`ccNumberLast4`, buf)
+            FfiConverterString.write(value.`ccNumber`, buf)
+            FfiConverterOptionalString.write(value.`ccCvv`, buf)
             FfiConverterLong.write(value.`ccExpMonth`, buf)
             FfiConverterLong.write(value.`ccExpYear`, buf)
             FfiConverterString.write(value.`ccType`, buf)
@@ -4166,6 +4802,34 @@ public object FfiConverterSequenceTypeCreditCard: FfiConverterRustBuffer<List<Cr
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeCreditCardCandidate: FfiConverterRustBuffer<List<CreditCardCandidate>> {
+    override fun read(buf: ByteBuffer): List<CreditCardCandidate> {
+        val len = buf.getInt()
+        return List<CreditCardCandidate>(len) {
+            FfiConverterTypeCreditCardCandidate.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<CreditCardCandidate>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeCreditCardCandidate.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<CreditCardCandidate>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeCreditCardCandidate.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeCreditCardTombstone: FfiConverterRustBuffer<List<CreditCardTombstone>> {
     override fun read(buf: ByteBuffer): List<CreditCardTombstone> {
         val len = buf.getInt()
@@ -4383,6 +5047,8 @@ public object FfiConverterSequenceTypeCreditCardBulkTombstoneResultEntry: FfiCon
         }
     }
 }
+
+
         /**
          * Create a new, random, encryption key.
          */
@@ -4398,33 +5064,17 @@ public object FfiConverterSequenceTypeCreditCardBulkTombstoneResultEntry: FfiCon
     
 
         /**
-         * Decrypt an arbitrary string - `key` must have come from `create_key()`
-         * and `ciphertext` must have come from `encrypt_string()`
+         * Create a Store with StaticKeyManager by passing in a db path and a
+         * static key
          */
-    @Throws(AutofillApiException::class) fun `decryptString`(`key`: kotlin.String, `ciphertext`: kotlin.String): kotlin.String {
-            return FfiConverterString.lift(
+    @Throws(AutofillApiException::class) fun `createAutofillStoreWithStaticKeyManager`(`path`: kotlin.String, `key`: kotlin.String): Store {
+            return FfiConverterTypeStore.lift(
     uniffiRustCallWithError(AutofillApiException) { _status ->
-    UniffiLib.uniffi_autofill_fn_func_decrypt_string(
+    UniffiLib.uniffi_autofill_fn_func_create_autofill_store_with_static_key_manager(
     
         
-        FfiConverterString.lower(`key`),
-        FfiConverterString.lower(`ciphertext`),_status)
-}
-    )
-    }
-    
-
-        /**
-         * Encrypt an arbitrary string - `key` must have come from `create_key()`
-         */
-    @Throws(AutofillApiException::class) fun `encryptString`(`key`: kotlin.String, `cleartext`: kotlin.String): kotlin.String {
-            return FfiConverterString.lift(
-    uniffiRustCallWithError(AutofillApiException) { _status ->
-    UniffiLib.uniffi_autofill_fn_func_encrypt_string(
-    
-        
-        FfiConverterString.lower(`key`),
-        FfiConverterString.lower(`cleartext`),_status)
+        FfiConverterString.lower(`path`),
+        FfiConverterString.lower(`key`),_status)
 }
     )
     }

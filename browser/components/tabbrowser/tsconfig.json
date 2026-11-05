@@ -1,13 +1,9 @@
 {
-  "include": ["*.sys.mjs", "content/*.mjs", "types/*.ts"],
-  "exclude": [
-    "content/tab-hover-preview.mjs",
-    "content/tab.mjs",
-    "content/tabgroup.mjs",
-    "content/tabs.mjs",
-    "content/tabsplitview.mjs",
-    "SmartTabGrouping.sys.mjs",
-    "TabsList.sys.mjs"
+  "include": [
+    "*.sys.mjs",
+    "content/*.mjs",
+    "types/*.ts",
+    "../../../tools/@types/browser-window.d.ts"
   ],
   "extends": "../../../tools/@types/tsconfig.json",
   "compilerOptions": {

@@ -111,6 +111,12 @@ export class AmpSuggestions extends SuggestProvider {
   }
 
   makeResult(queryContext, suggestion, searchString) {
+    // Per product requirements, at least two characters must be typed to
+    // trigger an AMP suggestion.
+    if (searchString.trimEnd().length < 2) {
+      return null;
+    }
+
     if (
       this.showLessFrequentlyCount &&
       searchString.length < this.#minKeywordLength

@@ -27,7 +27,6 @@ rtc_library("audio_frame_operations") {
     "../../common_audio",
     "../../rtc_base:checks",
     "../../rtc_base:safe_conversions",
-    "//third_party/abseil-cpp/absl/base:core_headers",
   ]
 }
 

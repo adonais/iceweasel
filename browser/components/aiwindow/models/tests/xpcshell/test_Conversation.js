@@ -106,10 +106,10 @@ add_task(async function test_run_delegates_to_engine_with_parameters_merged() {
   });
   c.setSystemMessage("sys");
   c.addUserMessage("hi");
-  const resp = await c.run({ fxAccountToken: "tk" });
+  const resp = await c.run({ token: "tk" });
   Assert.equal(resp.finalOutput, "ok");
   Assert.equal(receivedArgs.inferenceParams.temperature, 0.5);
-  Assert.equal(receivedArgs.fxAccountToken, "tk");
+  Assert.equal(receivedArgs.token, "tk");
   Assert.equal(receivedArgs.args.length, 2);
   Assert.equal(receivedArgs.args[0].role, "system");
 });

@@ -47,7 +47,13 @@ export class WikipediaSuggestions extends SuggestProvider {
     return suggestion.source == "merino" ? "wikipedia" : "adm_nonsponsored";
   }
 
-  makeResult(queryContext, suggestion) {
+  makeResult(queryContext, suggestion, searchString) {
+    // Per product requirements, at least two characters must be typed to
+    // trigger a Wikipedia suggestion.
+    if (searchString.trimEnd().length < 2) {
+      return null;
+    }
+
     // Note that Rust uses camelCase, Merino uses snake_case.
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.URL,

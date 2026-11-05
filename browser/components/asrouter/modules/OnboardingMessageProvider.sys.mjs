@@ -1836,11 +1836,8 @@ const BASE_MESSAGES = () => [
           force_hide_steps_indicator: true,
           content: {
             position: "center",
-            background: "var(--color-violet-desaturated-60)",
             zap_border: true,
             zap_shadow: true,
-            zap_border_gradient:
-              "linear-gradient(95.54deg, #B89CFF 20.68%, #764EDD 79.34%)",
             screen_style: {
               width: "639px",
             },
@@ -1860,7 +1857,7 @@ const BASE_MESSAGES = () => [
               marginInline: "30px",
               textAlign: "left",
               fontWeight: "200",
-              color: "var(--text-color-deemphasized)",
+              color: "var(--text-color)",
             },
             tiles: {
               type: "single-select",
@@ -1887,7 +1884,7 @@ const BASE_MESSAGES = () => [
                           marginBlockStart: "38px",
                           fontSize: "15px",
                           fontWeight: "600",
-                          color: "var(--text-color-deemphasized)",
+                          color: "var(--text-color)",
                         },
                       },
                       {
@@ -1901,7 +1898,7 @@ const BASE_MESSAGES = () => [
                             "about-private-browsing-spotlight-basics-activity-seen",
                           fontSize: "14px",
                           fontWeight: "200",
-                          color: "var(--text-color-deemphasized)",
+                          color: "var(--text-color)",
                           marginBlockStart: "-10px",
                         },
                       },
@@ -1916,7 +1913,7 @@ const BASE_MESSAGES = () => [
                             "about-private-browsing-spotlight-basics-bookmarks-downloads",
                           fontSize: "14px",
                           fontWeight: "200",
-                          color: "var(--text-color-deemphasized)",
+                          color: "var(--text-color)",
                           marginBlockStart: "-10px",
                           marginBlockEnd: "18px",
                         },
@@ -1927,7 +1924,7 @@ const BASE_MESSAGES = () => [
                             "about-private-browsing-spotlight-basics-more-privacy",
                           fontSize: "15px",
                           fontWeight: "600",
-                          color: "var(--text-color-deemphasized)",
+                          color: "var(--text-color)",
                         },
                       },
                       {
@@ -1941,7 +1938,7 @@ const BASE_MESSAGES = () => [
                             "about-private-browsing-spotlight-basics-malware-alerts",
                           fontSize: "14px",
                           fontWeight: "200",
-                          color: "var(--text-color-deemphasized)",
+                          color: "var(--text-color)",
                           marginBlockStart: "-10px",
                         },
                       },
@@ -1956,7 +1953,7 @@ const BASE_MESSAGES = () => [
                             "about-private-browsing-spotlight-basics-no-sell-data",
                           fontSize: "14px",
                           fontWeight: "200",
-                          color: "var(--text-color-deemphasized)",
+                          color: "var(--text-color)",
                           marginBlockStart: "-10px",
                         },
                       },
@@ -1971,7 +1968,7 @@ const BASE_MESSAGES = () => [
                             "about-private-browsing-spotlight-basics-vpn",
                           fontSize: "14px",
                           fontWeight: "200",
-                          color: "var(--text-color-deemphasized)",
+                          color: "var(--text-color)",
                           marginBlockStart: "-10px",
                         },
                       },
@@ -1986,7 +1983,7 @@ const BASE_MESSAGES = () => [
                             "about-private-browsing-spotlight-basics-strict-tracking",
                           fontSize: "14px",
                           fontWeight: "200",
-                          color: "var(--text-color-deemphasized)",
+                          color: "var(--text-color)",
                           marginBlockStart: "-10px",
                         },
                       },
@@ -2003,7 +2000,6 @@ const BASE_MESSAGES = () => [
                 minHeight: "24px",
                 minWidth: "revert",
                 lineHeight: "100%",
-                color: "var(--link-color, #EADDFF)",
               },
               action: {
                 type: "OPEN_URL",
@@ -2448,42 +2444,16 @@ const BASE_MESSAGES = () => [
     template: "toast_notification",
     content: {
       title: {
-        string_id: "default-browser-guidance-notification-title",
+        string_id: "default-browser-guidance-notification-auto-trigger-title",
       },
       body: {
-        string_id:
-          "default-browser-guidance-notification-body-instruction-win11",
+        string_id: "default-browser-guidance-notification-auto-trigger-body",
       },
-      launch_action: {
-        type: "OPEN_URL",
-        data: {
-          args: "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/win-set-firefox-default-browser",
-          where: "tabshifted",
-        },
-      },
+      image_url:
+        "chrome://browser/content/asrouter/assets/windows-guidance.gif",
+      reduced_motion_image_url:
+        "chrome://browser/content/asrouter/assets/windows-guidance-static.svg",
       requireInteraction: true,
-      actions: [
-        {
-          action: "info-page",
-          title: {
-            string_id: "default-browser-guidance-notification-info-page",
-          },
-          launch_action: {
-            type: "OPEN_URL",
-            data: {
-              args: "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/win-set-firefox-default-browser",
-              where: "tabshifted",
-            },
-          },
-        },
-        {
-          action: "dismiss",
-          title: {
-            string_id: "default-browser-guidance-notification-dismiss",
-          },
-          windowsSystemActivationType: true,
-        },
-      ],
       tag: "set-default-guidance-notification",
     },
     // Both Windows 10 and 11 return `os.windowsVersion == 10.0`. We limit to
@@ -2866,6 +2836,45 @@ const BASE_MESSAGES = () => [
     skip_in_tests: "fires on startup, may interfere with other tests",
     targeting:
       "source == 'startup' && isFirefoxReinstalled && canResetProfile && !'browser.disableResetPrompt'|preferenceValue && !activeNotifications",
+  },
+  {
+    id: "RESTORE_SESSION_STARTUP_INFOBAR",
+    template: "infobar",
+    content: {
+      type: "tab",
+      priority: 2,
+      text: { string_id: "restore-session-startup-suggestion-message" },
+      inline_icons: {
+        icon: { imageURL: "chrome://browser/skin/menu.svg" },
+      },
+      buttons: [
+        {
+          label: { string_id: "restore-session-startup-suggestion-button" },
+          primary: true,
+          action: {
+            type: "SELECT_AND_MARK_MENU_ITEM",
+            data: {
+              itemIds: ["appMenu-history-button", "appMenu-restoreSession"],
+            },
+          },
+        },
+      ],
+      impression_action: {
+        type: "SET_PREF",
+        data: {
+          pref: {
+            name: "browser.startup.couldRestoreSession.count",
+            value: 2,
+          },
+        },
+      },
+    },
+    trigger: {
+      id: "defaultBrowserCheck",
+    },
+    skip_in_tests: "fires on startup, may interfere with other tests",
+    targeting:
+      "source == 'startup' && canRestoreLastSession && !activeNotifications && 'browser.startup.couldRestoreSession.count'|preferenceValue == 1",
   },
   {
     id: "updated-privacy-notice-notification-infobar",
@@ -3638,7 +3647,7 @@ export const OnboardingMessageProvider = {
       "browser.shell.checkDefaultBrowser",
       false
     );
-    let isDefault = await lazy.ShellService.isDefaultBrowser();
+    let isDefault = await lazy.ShellService.isDefaultBrowserAsync();
     return checkDefault && !isDefault;
   },
 

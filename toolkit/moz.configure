@@ -990,18 +990,14 @@ set_define("MOZ_JXL", jxl)
 
 # Fontations font support
 # ==============================================================
-option("--enable-fontations", help="Enable Fontations for font handling")
+option(
+    "--enable-fontations",
+    default=milestone.is_nightly,
+    help="{Enable|Disable} Fontations for font handling",
+)
 
-
-@depends("--enable-fontations")
-def fontations(value):
-    enabled = bool(value)
-    if enabled:
-        return True
-
-
-set_config("MOZ_FONTATIONS", fontations)
-set_define("MOZ_FONTATIONS", fontations)
+set_config("MOZ_FONTATIONS", True, when="--enable-fontations")
+set_define("MOZ_FONTATIONS", True, when="--enable-fontations")
 
 set_config("MOZ_SAMPLE_TYPE_FLOAT32", True)
 set_define("MOZ_SAMPLE_TYPE_FLOAT32", True)
@@ -1013,7 +1009,6 @@ option(
     help="Disable tracing of real-time audio callbacks",
 )
 
-set_config("MOZ_REAL_TIME_TRACING", True, when="--enable-real-time-tracing")
 set_define("MOZ_REAL_TIME_TRACING", True, when="--enable-real-time-tracing")
 
 # OpenMAX IL Decoding Support
@@ -1558,11 +1553,9 @@ set_define("MOZ_WEBRTC", webrtc)
 set_config("MOZ_SCTP", webrtc)
 set_config("MOZ_SRTP", webrtc)
 set_config("MOZ_WEBRTC_SIGNALING", webrtc)
-set_config("MOZ_PEERCONNECTION", webrtc)
 set_define("MOZ_PEERCONNECTION", webrtc)
 # MOZ_WEBRTC_ASSERT_ALWAYS turns on a number of safety asserts in
 # opt/production builds (via MOZ_CRASH())
-set_config("MOZ_WEBRTC_ASSERT_ALWAYS", webrtc)
 set_define("MOZ_WEBRTC_ASSERT_ALWAYS", webrtc)
 
 # RAW media
@@ -1962,7 +1955,6 @@ def proxy_bypass_protection(_):
     return True
 
 
-set_config("MOZ_PROXY_BYPASS_PROTECTION", proxy_bypass_protection)
 set_define("MOZ_PROXY_BYPASS_PROTECTION", proxy_bypass_protection)
 
 # Proxy direct failover
@@ -1980,7 +1972,6 @@ def proxy_direct_failover(value):
         return True
 
 
-set_config("MOZ_PROXY_DIRECT_FAILOVER", proxy_direct_failover)
 set_define("MOZ_PROXY_DIRECT_FAILOVER", proxy_direct_failover)
 
 # MIDL
@@ -2740,9 +2731,6 @@ set_config("NASM_ASFLAGS", nasm_asflags)
 # ANGLE renderer
 # ==============================================================
 
-with only_when(compile_environment & (target_is_windows | target_is_osx)):
-    set_config("MOZ_ANGLE_RENDERER", True)
-
 with only_when(target_is_windows):
     # We only produce dxc builds for x86_64 and aarch64.
     @depends(target)
@@ -2922,8 +2910,6 @@ with only_when(requires_wasm_sandboxing & compile_environment):
             log.info("Using wasi sysroot in %s", wasi_sysroot)
             return ["--sysroot=%s" % wasi_sysroot]
         return []
-
-    set_config("WASI_SYSROOT", wasi_sysroot)
 
     def wasm_compiler_with_flags(compiler, sysroot_flags):
         if compiler:
@@ -3420,7 +3406,6 @@ set_config(
 )
 
 with only_when(target_is_osx):
-    set_config("MOZ_CHILD_PROCESS_BUNDLE", "plugin-container.app/Contents/MacOS/")
     set_config(
         "MOZ_CHILD_PROCESS_BUNDLEID",
         depends("--with-distribution-id")(lambda v: f"{v[0]}.plugincontainer"),
@@ -4432,7 +4417,6 @@ option(
     help="Disable reading preferences from /etc/firefox",
 )
 
-set_config("MOZ_SYSTEM_PREFERENCES", True, when="--enable-system-preferences")
 set_define("MOZ_SYSTEM_PREFERENCES", True, when="--enable-system-preferences")
 
 # Allow disabling the creation a legacy profile

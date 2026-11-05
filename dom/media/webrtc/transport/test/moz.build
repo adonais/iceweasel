@@ -30,6 +30,9 @@ if CONFIG["OS_TARGET"] != "WINNT":
         "turn_unittest.cpp",
         "webrtcproxychannel_unittest.cpp",
     ]
+    SOURCE_HEADERS += [
+        "stunserver.h",
+    ]
 
     if CONFIG["MOZ_SCTP"]:
         SOURCES += [
@@ -104,4 +107,10 @@ FINAL_LIBRARY = "xul-gtest"
 LICENSED_UNDER += ["libjingle"]
 LICENSED_UNDER["libjingle"].paths = [
     "gtest_utils.h",
+]
+
+SOURCE_HEADERS += [
+    "dummysocket.h",
+    "gtest_ringbuffer_dumper.h",
+    "mtransport_test_utils.h",
 ]

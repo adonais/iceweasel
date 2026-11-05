@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Test basic login, contextual inscure password warning without saved logins</title>
+  <script src="/tests/SimpleTest/GleanTest.js"></script>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <script src="/tests/SimpleTest/EventUtils.js"></script>
   <script type="text/javascript" src="../../../satchel/test/satchel_common.js"></script>
@@ -68,14 +69,8 @@ add_task(async function test_form1_initial_empty() {
 });
 
 add_task(async function test_form1_warning_entry() {
+  await GleanTest.testResetFOG();
   await SimpleTest.promiseFocus(window);
-
-  // Drain any autocomplete "show" telemetry events left over from a previous
-  // run of this test. Activating the insecure warning below re-shows the popup
-  // and records an extra event after the assertion's clear; under test-verify
-  // chaos mode that event can flush into the next iteration and inflate the
-  // count, so start from a clean slate.
-  await getTelemetryEvents({ process: "parent", filterProps: TelemetryFilterPropsAC, clear: true });
 
   // Trigger autocomplete popup
   restoreForm();
@@ -85,13 +80,11 @@ add_task(async function test_form1_warning_entry() {
   is(popupState.open, true, "Check popup is opened");
   is(popupState.selectedIndex, -1, "Check no entries are selected upon opening");
 
-  let acEvents = await getTelemetryEvents({ process: "parent", filterProps: TelemetryFilterPropsAC, clear: true });
-  is(acEvents.length, 1, "One autocomplete event");
-  checkACTelemetryEvent(acEvents[0], uname, {
-    "hadPrevious": "0",
-    "insecureWarning": "1",
-    "loginsFooter": "1"
-  });
+  const events = await GleanTest.formAutocomplete.showLogins.testGetValue();
+  is(events.length, 1, "One autocomplete event");
+  is("0", events[0].extra.hadPrevious);
+  is("1", events[0].extra.insecureWarning);
+  is("1", events[0].extra.loginsFooter);
 
   synthesizeKey("KEY_ArrowDown"); // select insecure warning
   checkLoginForm(uname, "", pword, ""); // value shouldn't update just by selecting

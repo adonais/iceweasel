@@ -4,6 +4,8 @@
 
 #include "ExternalEngineStateMachine.h"
 
+#include <memory>
+
 #include "PerformanceRecorder.h"
 #ifdef MOZ_WMF_MEDIA_ENGINE
 #  include "MFMediaEngineDecoderModule.h"
@@ -334,9 +336,15 @@ void ExternalEngineStateMachine::OnMetadataRead(MetadataHolder&& aMetadata) {
       Info().mMediaSeekableOnlyInBufferedRanges;
 
   if (!IsFormatSupportedByExternalEngine(*mInfo)) {
+    // Only record it when a CDM is waiting for the engine, because clear
+    // playback falls back here on every machine without hardware video
+    // decoding.
+    if (mPendingCDMProxy) {
+      ReportTelemetry(NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR);
+    }
     // The external engine doesn't support the type, try to notify the decoder
     // to use our own state machine again. Not a real "error", because it would
-    // fallback to another state machine.
+    // fallback to another state machine, unless a CDM is pending.
     DecodeError(
         MediaResult(NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR));
     return;
@@ -698,7 +706,7 @@ RefPtr<ShutdownPromise> ExternalEngineStateMachine::Shutdown() {
 
   mMetadataManager.Disconnect();
 
-  mSetCDMProxyPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_ABORT_ERR, __func__);
+  mPendingCDMProxy = nullptr;
   mSetCDMProxyRequest.DisconnectIfExists();
 
   mPendingSeek.RejectIfExists(__func__);
@@ -1113,7 +1121,7 @@ void ExternalEngineStateMachine::OnLoadedFirstFrame() {
       mSentFirstFrameLoadedEvent ? MediaDecoderEventVisibility::Suppressed
                                  : MediaDecoderEventVisibility::Observable;
   mSentFirstFrameLoadedEvent = true;
-  mFirstFrameLoadedEvent.Notify(UniquePtr<MediaInfo>(new MediaInfo(Info())),
+  mFirstFrameLoadedEvent.Notify(std::make_unique<MediaInfo>(Info()),
                                 visibility);
   mOnNextFrameStatus.Notify(MediaDecoderOwner::NEXT_FRAME_AVAILABLE);
 }
@@ -1150,8 +1158,13 @@ void ExternalEngineStateMachine::OnSeeked() {
   }
   MOZ_ASSERT(mState.IsSeekingData());
 
-  const auto currentTime = mEngine->GetCurrentPosition();
   auto* state = mState.AsSeekingData();
+  if (!state->mSeekJob.Exists()) {
+    LOG("Seeking has been rejected, ignore the event");
+    return;
+  }
+
+  const auto currentTime = mEngine->GetCurrentPosition();
   if (IsBeingProfiledOrLogEnabled()) {
     nsPrintfCString msg("target=%" PRId64 ", currentTime=%" PRId64,
                         state->GetTargetTime().ToMicroseconds(),
@@ -1485,33 +1498,31 @@ RefPtr<SetCDMPromise> ExternalEngineStateMachine::SetCDMProxy(
     // For WMFClearKey, failing to clear the CDM state would leave the reader
     // holding a stale reference to the old proxy, causing use-after-free or
     // silent decryption failures on subsequent playback.
+    mPendingCDMProxy = nullptr;
     return MediaDecoderStateMachineBase::SetCDMProxy(aProxy);
   }
 
   if (!mIsEngineReady) {
     LOG("SetCDMProxy is called before init");
     mReader->SetEncryptedCustomIdent();
-    mPendingTasks.AppendElement(NS_NewRunnableFunction(
-        "ExternalEngineStateMachine::SetCDMProxy",
-        [self = RefPtr{this}, proxy = RefPtr{aProxy}, this] {
-          SetCDMProxy(proxy)
-              ->Then(OwnerThread(), __func__,
-                     [self = RefPtr{this},
-                      this](const SetCDMPromise::ResolveOrRejectValue& aVal) {
-                       mSetCDMProxyRequest.Complete();
-                       if (aVal.IsResolve()) {
-                         mSetCDMProxyPromise.Resolve(true, __func__);
-                       } else {
-                         mSetCDMProxyPromise.Reject(NS_ERROR_DOM_MEDIA_CDM_ERR,
-                                                    __func__);
-                       }
-                     })
-              ->Track(mSetCDMProxyRequest);
-        }));
-    return mSetCDMProxyPromise.Ensure(__func__);
+    if (!mPendingCDMProxy) {
+      mPendingTasks.AppendElement(NS_NewRunnableFunction(
+          "ExternalEngineStateMachine::ApplyPendingCDMProxy",
+          [self = RefPtr{this}, this] { ApplyPendingCDMProxy(); }));
+    }
+    mPendingCDMProxy = aProxy;
+    LOG("Pending CDM proxy {} until the engine is ready", fmt::ptr(aProxy));
+    // EME 7.2 step 5.3.1: "Associate the CDM instance represented by mediaKeys
+    // with the media element for decrypting media data." That does not depend
+    // on the engine, so the promise settles here. If the engine refuses the
+    // stream or cannot take the CDM, that is reported as a media error.
+    // https://w3c.github.io/encrypted-media/#dom-htmlmediaelement-setmediakeys
+    return SetCDMPromise::CreateAndResolve(true, __func__);
   }
 
   // TODO : set CDM proxy again if we recreate the media engine after crash.
+  // A proxy set while the engine was not ready is replaced by this one.
+  mPendingCDMProxy = nullptr;
   mKeySystem = NS_ConvertUTF16toUTF8(aProxy->KeySystem());
   if (IsBeingProfiledOrLogEnabled()) {
     nsPrintfCString msg("SetCDMProxy=%p (key-system=%s)", aProxy,
@@ -1526,6 +1537,37 @@ RefPtr<SetCDMPromise> ExternalEngineStateMachine::SetCDMProxy(
     return SetCDMPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_CDM_ERR, __func__);
   }
   return MediaDecoderStateMachineBase::SetCDMProxy(aProxy);
+}
+
+void ExternalEngineStateMachine::ApplyPendingCDMProxy() {
+  AssertOnTaskQueue();
+  RefPtr<CDMProxy> proxy = std::move(mPendingCDMProxy);
+  if (!proxy) {
+    LOG("No pending CDM proxy to apply");
+    return;
+  }
+  // A proxy applied before the engine was recreated is replaced by this one.
+  mSetCDMProxyRequest.DisconnectIfExists();
+  SetCDMProxy(proxy)
+      ->Then(OwnerThread(), __func__,
+             [self = RefPtr{this},
+              this](const SetCDMPromise::ResolveOrRejectValue& aVal) {
+               mSetCDMProxyRequest.Complete();
+               if (aVal.IsResolve()) {
+                 LOG("Applied the pending CDM proxy");
+                 return;
+               }
+               // The reader rejects with an invalid state error when a newer
+               // proxy replaces this one or when it shuts down, and neither is
+               // a playback failure.
+               if (aVal.RejectValue() == NS_ERROR_DOM_INVALID_STATE_ERR) {
+                 LOG("The pending CDM proxy was replaced or the reader shut "
+                     "down");
+                 return;
+               }
+               DecodeError(aVal.RejectValue());
+             })
+      ->Track(mSetCDMProxyRequest);
 }
 
 nsresult ExternalEngineStateMachine::IsCDMProxySupported(CDMProxy* aProxy) {
@@ -1627,6 +1669,18 @@ void ExternalEngineStateMachine::ReportRecoveryTelemetry(bool aRecovered) {
 }
 
 void ExternalEngineStateMachine::DecodeError(const MediaResult& aError) {
+  // The normal state machine cannot use a Media Foundation CDM, so falling back
+  // to it with one pending would leave playback waiting for a key forever.
+  if (aError == NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR &&
+      mPendingCDMProxy) {
+    LOG("Cannot fall back to another state machine with a pending CDM proxy");
+    nsAutoCString message("The media engine cannot play this stream");
+    if (!aError.Message().IsEmpty()) {
+      message.AppendPrintf(": %s", aError.Message().get());
+    }
+    DecodeError(MediaResult(NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR, message));
+    return;
+  }
   if (aError != NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA ||
       aError != NS_ERROR_DOM_MEDIA_CANCELED) {
     mHasFatalError = true;

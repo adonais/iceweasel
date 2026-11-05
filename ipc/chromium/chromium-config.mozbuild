@@ -8,12 +8,6 @@ LOCAL_INCLUDES += [
     "/third_party/abseil-cpp",
 ]
 
-if CONFIG["OS_TARGET"] == "Linux":
-    LOCAL_INCLUDES += [
-        "/toolkit/components/telemetry",
-        "/xpcom/base",
-    ]
-
 if CONFIG["OS_ARCH"] == "WINNT":
     OS_LIBS += [
         "shell32",

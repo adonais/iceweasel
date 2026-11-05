@@ -39,3 +39,8 @@ LOCAL_INCLUDES += [
     "../style",
     "/dom/base",
 ]
+
+SOURCE_HEADERS += [
+    "inDeepTreeWalker.h",
+    "inLayoutUtils.h",
+]

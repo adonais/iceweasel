@@ -7,6 +7,7 @@
 #include "DecoderData.h"
 #include "H265.h"
 #include "MP4Demuxer.h"
+#include "MP4Metadata.h"
 #include "MediaDataDemuxer.h"
 #include "MockMediaResource.h"
 #include "VideoUtils.h"
@@ -19,6 +20,45 @@
 
 using namespace mozilla;
 using media::TimeUnit;
+
+TEST(MP4SampleIndex, OversizedOffset)
+{
+  Mp4parseIndice indices[] = {{100, 200, 0, 1000, 0, true},
+                              {200, 300, 1000, 2000, 1000, true},
+                              {uint64_t(INT64_MAX) + 1, uint64_t(INT64_MAX) + 2,
+                               2000, 3000, 2000, true}};
+  Mp4parseByteData data{3, nullptr, indices};
+  for (bool isAudio : {false, true}) {
+    SCOPED_TRACE(isAudio);
+    RefPtr<MP4SampleIndex> index =
+        new MP4SampleIndex(IndiceWrapper(data), nullptr, 1, isAudio, 1000);
+    MediaByteRangeSet ranges;
+    ranges += MediaByteRange(200, 300);
+    auto buffered = index->ConvertByteRangesToTimeRanges(ranges);
+    ASSERT_EQ(buffered.Length(), 1u);
+    EXPECT_EQ(buffered.GetStart(), TimeUnit(1000, 1000));
+    EXPECT_EQ(buffered.GetEnd(), TimeUnit(2000, 1000));
+  }
+}
+
+TEST(MP4SampleIndex, MaximumOffset)
+{
+  Mp4parseIndice indices[] = {
+      {uint64_t(INT64_MAX) - 200, uint64_t(INT64_MAX) - 100, 0, 1000, 0, true},
+      {uint64_t(INT64_MAX) - 100, uint64_t(INT64_MAX), 1000, 2000, 1000, true}};
+  Mp4parseByteData data{2, nullptr, indices};
+  for (bool isAudio : {false, true}) {
+    SCOPED_TRACE(isAudio);
+    RefPtr<MP4SampleIndex> index =
+        new MP4SampleIndex(IndiceWrapper(data), nullptr, 1, isAudio, 1000);
+    MediaByteRangeSet ranges;
+    ranges += MediaByteRange(INT64_MAX - 100, INT64_MAX);
+    auto buffered = index->ConvertByteRangesToTimeRanges(ranges);
+    ASSERT_EQ(buffered.Length(), 1u);
+    EXPECT_EQ(buffered.GetStart(), TimeUnit(1000, 1000));
+    EXPECT_EQ(buffered.GetEnd(), TimeUnit(2000, 1000));
+  }
+}
 
 #define DO_FAIL                           \
   [binding]() -> void {                   \

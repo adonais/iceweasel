@@ -1,0 +1,10 @@
+-c requirements-common.txt
+
+certifi==2026.10.19
+hpack==4.0.0
+hyperframe==6.0.0
+psutil==7.0.0
+requests==2.27.1; sys_platform != 'darwin'
+requests==2.32.3; sys_platform == 'darwin'
+aiohttp==3.7.4.post0
+async-timeout==3.0.1

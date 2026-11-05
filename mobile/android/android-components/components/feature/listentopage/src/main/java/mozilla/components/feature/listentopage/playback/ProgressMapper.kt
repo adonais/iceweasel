@@ -4,61 +4,80 @@
 
 package mozilla.components.feature.listentopage.playback
 
+import kotlin.math.abs
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import mozilla.components.feature.listentopage.ArticleProgress
 import mozilla.components.feature.listentopage.synthesis.SpeechRate
 
 /** A place in the article: which chunk holds it, and how far into that chunk it is. */
-internal data class ChunkPosition(val chunkIndex: Int, val positionMs: Long)
+internal data class ChunkPosition(val chunkIndex: Int, val offsetMs: Long)
 
 /**
- * Works out how far through the whole article playback has got, from chunks of which only a few exist at a time.
+ * Works out how far through the whole article playback has got. Chunks are made a few at a time, so most of their
+ * lengths are estimates until they are measured.
  *
  * @param chunkCount How many chunks the article came to, or `0` before it has been split.
  * @param measuredDurationOf How long a chunk's audio lasted, or `null` while it has not been measured.
  * @param charactersIn How many characters a chunk holds.
  * @param speechRate What the opening measured at, or `null` when it could not be measured.
+ * @param chunkDurationsBeforePlaylistMs The lengths of the chunks before the playlist, frozen when it started. They are
+ *   mostly estimates, and letting them change would move every position after them.
  */
 internal class ProgressMapper(
     private val chunkCount: Int,
     private val measuredDurationOf: (Int) -> Duration?,
     private val charactersIn: (Int) -> Int,
-    speechRate: SpeechRate?,
+    private val speechRate: SpeechRate?,
+    private val chunkDurationsBeforePlaylistMs: List<Long> = emptyList(),
 ) {
 
-    private val rate: SpeechRate? = speechRate ?: impliedRate()
+    // How long one character takes to read in each chunk, from the measured chunks nearest it. Parts of a page are read
+    // at different speeds, such as the body, a list or the references, and neighbouring chunks are usually the same
+    // part.
+    private val readingSpeedPerChunk: List<Double?> by lazy {
+        (0 until chunkCount).map(::calculateChunkReadingSpeedFromNearbyChunks)
+    }
 
     /**
-     * How far through the article playback has got. If estimates of total playback length become smaller between calls,
-     * the current active position is held at its current place in order to avoid jumps. Progress reports will continue
-     * to hold it there until playback has caught up.
+     * The progress for a report at [positionMs]: the position, the estimated length, and where the bar is drawn. The
+     * position is [positionMs], except that a small step back keeps the previous position, because the player corrects
+     * its position slightly when audio starts.
      *
-     * @param previous The last reported progress
-     * @param playingChunk Which chunk of the article is playing.
-     * @param chunkPositionMs How far into that chunk the player reports it has got.
-     * @param chunkEnded Whether that chunk has finished, in which case it counts as played in full rather than as far
-     *   as the player last sampled. The last chunk of the article having finished is what lands the bar on exactly 1.0.
+     * @param previous The last reported progress.
+     * @param positionMs How far into the article the player reports it has got.
+     * @param isArticleFinished Whether the last chunk of the article has finished, which is what lands the bar on
+     *   exactly 1.0.
      */
-    fun progress(
-        previous: ArticleProgress,
-        playingChunk: Int,
-        chunkPositionMs: Long,
-        chunkEnded: Boolean,
-    ): ArticleProgress {
-        if (chunkCount == 0) return ArticleProgress()
+    fun updatedProgress(previous: ArticleProgress, positionMs: Long, isArticleFinished: Boolean): ArticleProgress {
+        val articleMs = articleMs()
+        if (chunkCount == 0 || articleMs <= 0) return ArticleProgress()
 
-        val index = playingChunk.coerceIn(0, chunkCount - 1)
-        val chunkMs = lengthOf(index)
-        val intoChunk = if (chunkEnded) chunkMs else chunkPositionMs.coerceIn(0, chunkMs)
-        val positionMs = maxOf(previous.positionMs, msBefore(index) + intoChunk)
-        val readToEnd = chunkEnded && index == chunkCount - 1
+        val shownMs =
+            if (positionMs in (previous.positionMs - MAX_POSITION_CORRECTION_MS) until previous.positionMs) {
+                previous.positionMs
+            } else {
+                positionMs
+            }
 
-        return ArticleProgress(positionMs = positionMs, durationMs = heldLength(positionMs, previous, readToEnd))
+        if (isArticleFinished) {
+            val endMs = maxOf(articleMs, shownMs)
+            return ArticleProgress(positionMs = endMs, durationMs = endMs, barPosition = 1f)
+        }
+
+        // Longer than the position until the article has been read to the end, so that a bar with audio left never
+        // reads as full.
+        val durationMs = maxOf(articleMs, shownMs + 1)
+
+        return ArticleProgress(
+            positionMs = shownMs,
+            durationMs = durationMs,
+            barPosition = barNextPosition(previous, shownMs, durationMs),
+        )
     }
 
     /** How long each chunk lasts. Empty if nothing has been sized. */
-    fun chunkLengthsMs(): List<Long> = (0 until chunkCount).map(::lengthOf).takeIf { it.sum() > 0 }.orEmpty()
+    fun chunkDurationsMs(): List<Long> = (0 until chunkCount).map(::durationMsOf).takeIf { it.sum() > 0 }.orEmpty()
 
     /** Which chunk holds [characterOffset], counting the characters of the chunks rather than the page's own text. */
     fun chunkAt(characterOffset: Int): Int {
@@ -82,9 +101,9 @@ internal class ProgressMapper(
         val index = chunkAt(characterOffset)
         val chars = charactersIn(index)
         val into = (characterOffset - characterOffsetOf(index)).coerceIn(0, chars)
-        val intoChunkMs = if (chars == 0) 0 else lengthOf(index) * into / chars
+        val offsetInChunkMs = if (chars == 0) 0 else durationMsOf(index) * into / chars
 
-        return ((msBefore(index) + intoChunkMs).toFloat() / articleMs).coerceIn(0f, 1f)
+        return ((msBefore(index) + offsetInChunkMs).toFloat() / articleMs).coerceIn(0f, 1f)
     }
 
     fun positionAt(fraction: Float): ChunkPosition? {
@@ -93,7 +112,7 @@ internal class ProgressMapper(
         val target = (fraction.coerceIn(0f, 1f) * articleMs()).toLong()
         var passed = 0L
         for (index in 0 until chunkCount) {
-            val chunkMs = lengthOf(index)
+            val chunkMs = durationMsOf(index)
             if (target < passed + chunkMs || index == chunkCount - 1) {
                 return ChunkPosition(index, (target - passed).coerceIn(0, chunkMs))
             }
@@ -109,45 +128,42 @@ internal class ProgressMapper(
      * A chunk that has been made but not measured is sized exactly like one that does not exist yet: the file is added
      * before it is read, so having audio does not mean having a duration.
      */
-    private fun lengthOf(index: Int): Long =
-        measuredDurationOf(index)?.inWholeMilliseconds
-            ?: rate?.durationOf(charactersIn(index))?.inWholeMilliseconds
+    private fun durationMsOf(index: Int): Long =
+        chunkDurationsBeforePlaylistMs.getOrNull(index)
+            ?: measuredDurationOf(index)?.inWholeMilliseconds
+            ?: readingSpeedPerChunk[index]?.let { (charactersIn(index) * it * MS_PER_SECOND).toLong() }
             ?: 0
 
-    private fun msBefore(index: Int): Long = (0 until index).sumOf(::lengthOf)
+    private fun msBefore(index: Int): Long = (0 until index).sumOf(::durationMsOf)
 
-    private fun articleMs(): Long = (0 until chunkCount).sumOf(::lengthOf)
+    private fun articleMs(): Long = (0 until chunkCount).sumOf(::durationMsOf)
 
     /**
-     * How long the article lasts: held short of its estimate where the estimate would move the bar backwards, and held
-     * past [positionMs] until the article has been [readToEnd] so that a bar with audio left never reads as full.
+     * The reading speed near chunk [index], from the [NEAREST_MEASURED_CHUNKS] measured chunks on each side, weighted
+     * by size and closeness. Falls back to the opening's speed, or `null`, when nothing is measured.
      */
-    private fun heldLength(positionMs: Long, previous: ArticleProgress, readToEnd: Boolean): Long {
-        val articleMs = articleMs()
-        if (articleMs <= 0) return 0
-
-        val shortest = if (readToEnd) positionMs else positionMs + 1
-        val held =
-            if (previous.positionMs > 0 && previous.durationMs > 0) {
-                positionMs * previous.durationMs / previous.positionMs
-            } else {
-                articleMs
-            }
-
-        return minOf(articleMs, held).coerceAtLeast(shortest)
-    }
-
-    /** The rate the chunks measured so far imply, or `null` when none of them has been measured. */
-    private fun impliedRate(): SpeechRate? {
-        var chars = 0
-        var seconds = 0.0
-        for (index in 0 until chunkCount) {
-            val measured = measuredDurationOf(index) ?: continue
-            chars += charactersIn(index)
-            seconds += measured.toDouble(DurationUnit.SECONDS)
+    private fun calculateChunkReadingSpeedFromNearbyChunks(index: Int): Double? {
+        var weighted = 0.0
+        var weights = 0.0
+        // Looks both ways from the chunk, so a chunk past the measured ones still takes the speed of the nearest.
+        for (side in listOf(index - 1 downTo 0, index + 1 until chunkCount)) {
+            side
+                .asSequence()
+                .mapNotNull { other -> measuredDurationOf(other)?.let { other to it } }
+                .filter { (other, _) -> charactersIn(other) > 0 }
+                .take(NEAREST_MEASURED_CHUNKS)
+                .forEach { (other, measured) ->
+                    // A bigger chunk is a more reliable measurement, and a nearer one more likely the same part of the
+                    // page, so each counts by its size divided by how far away it is.
+                    val size = charactersIn(other)
+                    val weight = size.toDouble() / abs(index - other)
+                    weighted += weight * measured.toDouble(DurationUnit.SECONDS) / size
+                    weights += weight
+                }
         }
 
-        return if (chars > 0 && seconds > 0) SpeechRate(chars / seconds) else null
+        // The weighted average of the seconds per character, or the opening's speed while nothing is measured.
+        return if (weights > 0) weighted / weights else speechRate?.let { 1 / it.charsPerSecond }
     }
 }
 
@@ -170,3 +186,38 @@ internal fun List<Long>.chunkPositionAt(positionMs: Long): ChunkPosition? {
 
     return null
 }
+
+/** Where [position] falls in the article, given how long each of its chunks lasts. */
+internal fun List<Long>.articlePositionOf(position: ChunkPosition): Long =
+    take(position.chunkIndex).sum() + position.offsetMs
+
+/** Where [position] falls in the article, given the chunk durations last reported. */
+internal fun ArticleProgress.articlePositionOf(position: ChunkPosition): Long =
+    chunkDurationsMs.articlePositionOf(position)
+
+/** How many measured chunks on each side an unmeasured chunk's speed is estimated from. */
+private const val NEAREST_MEASURED_CHUNKS = 2
+
+private const val MS_PER_SECOND = 1_000
+
+/**
+ * [offsetMs] into a chunk estimated at [estimatedMs], now that it has been measured at [measuredMs]: kept where it was
+ * asked for, so that the article stays at the time it was moved to, unless that is past the end of a chunk that turned
+ * out shorter.
+ */
+internal fun offsetInMeasuredChunk(offsetMs: Long, measuredMs: Long?, estimatedMs: Long? = measuredMs): Long {
+    if (measuredMs == null) return offsetMs
+
+    val lastMs = (measuredMs - CHUNK_END_MARGIN_MS).coerceAtLeast(0)
+    if (offsetMs <= lastMs) return offsetMs
+
+    // Scales the offset when the chunk turned out shorter than its estimate, otherwise only the end margin applies.
+    val scaledOffsetMs = if (estimatedMs != null && estimatedMs > 0) offsetMs * measuredMs / estimatedMs else offsetMs
+    return scaledOffsetMs.coerceAtMost(lastMs)
+}
+
+/** The furthest back the player corrects its position when audio starts. A bigger step back is always a seek. */
+private const val MAX_POSITION_CORRECTION_MS = 1_000L
+
+/** How far before the end of a chunk a seek into it lands at the latest. */
+internal const val CHUNK_END_MARGIN_MS = 500L

@@ -43,3 +43,17 @@ if CONFIG['MOZ_WEBRTC_SIGNALING']:
 
     FINAL_LIBRARY = 'xul'
 
+
+SOURCE_HEADERS += [
+	"ccsdp.h",
+	"ccsdp_rtcp_fb.h",
+	"cpr_darwin_types.h",
+	"cpr_linux_types.h",
+	"cpr_string.h",
+	"cpr_strings.h",
+	"cpr_types.h",
+	"cpr_win_types.h",
+	"sdp_base64.h",
+	"sdp_os_defs.h",
+	"sdp_private.h",
+]

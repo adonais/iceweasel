@@ -175,6 +175,10 @@ struct ScreamV2Parameters {
   FieldTrialParameter<TimeDelta> min_pacing_delay_for_pushback;
   // Maximum pacing delay for full cwnd pushback reduction.
   FieldTrialParameter<TimeDelta> max_pacing_delay_for_pushback;
+
+  // On route change with restart_bwe = true, cap the starting rate to
+  // min(current_target_rate, starting_rate).
+  FieldTrialParameter<bool> safe_reset_on_route_change;
 };
 
 }  // namespace webrtc

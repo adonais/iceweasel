@@ -124,6 +124,14 @@ run-if = [
 
 ["test_ext_browsingData_cookies_cookieStoreId.js"]
 
+["test_ext_builtin_widget.js"]
+run-if = [
+  "appname != 'thunderbird'",
+]
+skip-if = [
+  "os == 'android'", # Widgets are not exposed to android.
+]
+
 ["test_ext_cache_api.js"]
 
 ["test_ext_captivePortal.js"]
@@ -197,6 +205,8 @@ skip-if = [
 ["test_ext_contentscript_slow_frame.js"]
 
 ["test_ext_contentscript_structured_clone.js"]
+
+["test_ext_contentscript_sync_xhr.js"]
 
 ["test_ext_contentscript_teardown.js"]
 
@@ -436,9 +446,6 @@ run-if = [
 ]
 
 ["test_ext_l10n.js"]
-skip-if = [
-  "isolated_process", # Bug 1709961
-]
 
 ["test_ext_localStorage.js"]
 
@@ -608,6 +615,8 @@ skip-if = [
 ["test_ext_runtime_sendMessage_multiple.js"]
 
 ["test_ext_runtime_sendMessage_no_receiver.js"]
+
+["test_ext_runtime_sendMessage_response_warning.js"]
 
 ["test_ext_same_site_cookies.js"]
 
@@ -856,6 +865,8 @@ skip-if = [
 ]
 
 ["test_ext_webRequest_redirect_mozextension.js"]
+
+["test_ext_webRequest_redirect_resource_timing.js"]
 
 ["test_ext_webRequest_requestSize.js"]
 

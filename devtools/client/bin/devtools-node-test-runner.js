@@ -25,9 +25,9 @@ const REPOSITORY_ROOT = __dirname.replace("devtools/client/bin", "");
 // All Windows platforms report "win32", even for 64bit editions.
 const isWin = os.platform() === "win32";
 
-// On Windows, the ".cmd" suffix is mandatory to invoke yarn ; or executables in
+// On Windows, the ".cmd" suffix is mandatory to invoke npm ; or executables in
 // general.
-const YARN_PROCESS = isWin ? "yarn.cmd" : "yarn";
+const NPM_PROCESS = isWin ? "npm.cmd" : "npm";
 
 // Supported node test suites for DevTools
 const TEST_TYPES = {
@@ -79,11 +79,11 @@ const SUITES = {
   },
 };
 
-function execOut(...args) {
+function execOut(file, args) {
   let out;
   let err;
   try {
-    out = execFileSync(...args);
+    out = execFileSync(file, args, { shell: isWin });
   } catch (e) {
     out = e.stdout;
     err = e.stderr;
@@ -215,14 +215,14 @@ function runTests() {
     throw new Error("Invalid suite argument to devtools-node-test: " + suite);
   }
 
-  console.log("[devtools-node-test] Check `yarn` is available");
+  console.log("[devtools-node-test] Check `npm` is available");
   try {
-    // This will throw if yarn is unavailable
-    execFileSync(YARN_PROCESS, ["--version"]);
+    // This will throw if npm is unavailable
+    execFileSync(NPM_PROCESS, ["--version"], { shell: isWin });
   } catch (e) {
     console.log(
-      "[devtools-node-test] ERROR: `yarn` is not installed. " +
-        "See https://yarnpkg.com/docs/install/ "
+      "[devtools-node-test] ERROR: `npm` is not installed. " +
+        "See https://nodejs.org/en/download "
     );
     return false;
   }
@@ -237,26 +237,26 @@ function runTests() {
     console.log("[devtools-node-test] Running suite: " + suiteName);
 
     if (suiteData.dependencies) {
-      console.log("[devtools-node-test] Running `yarn` for dependencies");
+      console.log("[devtools-node-test] Running `npm ci` for dependencies");
       for (const dep of suiteData.dependencies) {
         const depPath = path.join(__dirname, dep);
         chdir(depPath);
 
-        console.log("[devtools-node-test] Run `yarn` in " + depPath);
-        execOut(YARN_PROCESS);
+        console.log("[devtools-node-test] Run `npm ci` in " + depPath);
+        execOut(NPM_PROCESS, ["ci"]);
       }
     }
 
     const testPath = path.join(__dirname, suiteData.path);
     chdir(testPath);
 
-    console.log("[devtools-node-test] Run `yarn` in test folder");
-    execOut(YARN_PROCESS);
+    console.log("[devtools-node-test] Run `npm ci` in test folder");
+    execOut(NPM_PROCESS, ["ci"]);
 
     console.log(`TEST START | ${suiteData.type} | ${suiteName}`);
 
-    console.log("[devtools-node-test] Run `yarn test` in test folder");
-    const { out, err } = execOut(YARN_PROCESS, ["test-ci"]);
+    console.log("[devtools-node-test] Run `npm run test-ci` in test folder");
+    const { out, err } = execOut(NPM_PROCESS, ["run", "--silent", "test-ci"]);
 
     if (err) {
       console.log("[devtools-node-test] Error log");

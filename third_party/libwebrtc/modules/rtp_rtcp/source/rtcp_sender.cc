@@ -28,8 +28,6 @@
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "api/video/video_bitrate_allocation.h"
-#include "api/video/video_codec_constants.h"
 #include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/ntp_time_util.h"
@@ -48,7 +46,6 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/rrtr.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/sdes.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
-#include "modules/rtp_rtcp/source/rtcp_packet/target_bitrate.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmbn.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
@@ -149,7 +146,6 @@ RTCPSender::RTCPSender(const Environment& env, Configuration config)
       xr_send_receiver_reference_time_enabled_(
           config.non_sender_rtt_measurement),
       packet_type_counter_observer_(config.rtcp_packet_type_counter_observer),
-      send_video_bitrate_allocation_(false),
       last_payload_type_(-1) {
   RTC_CHECK(schedule_next_rtcp_send_evaluation_);
   RTC_CHECK_GT(report_interval_, TimeDelta::Zero());
@@ -563,21 +559,6 @@ void RTCPSender::BuildExtendedReports(const RtcpContext& ctx,
     xr.AddDlrrItem(rti);
   }
 
-  if (send_video_bitrate_allocation_) {
-    rtcp::TargetBitrate target_bitrate;
-
-    for (size_t sl = 0; sl < kMaxSpatialLayers; ++sl) {
-      for (size_t tl = 0; tl < kMaxTemporalStreams; ++tl) {
-        if (video_bitrate_allocation_.HasBitrate(sl, tl)) {
-          target_bitrate.AddTargetBitrate(
-              sl, tl, video_bitrate_allocation_.GetBitrate(sl, tl) / 1000);
-        }
-      }
-    }
-
-    xr.SetTargetBitrate(target_bitrate);
-    send_video_bitrate_allocation_ = false;
-  }
   sender.AppendPacket(xr);
 }
 
@@ -749,8 +730,7 @@ void RTCPSender::PrepareReport(const FeedbackState& feedback_state) {
 
   if (generate_report) {
     if ((!sending_ && xr_send_receiver_reference_time_enabled_) ||
-        !feedback_state.last_xr_rtis.empty() ||
-        send_video_bitrate_allocation_) {
+        !feedback_state.last_xr_rtis.empty()) {
       SetFlag(kRtcpAnyExtendedReports, true);
     }
 
@@ -824,55 +804,6 @@ bool RTCPSender::AllVolatileFlagsConsumed() const {
       return false;
   }
   return true;
-}
-
-void RTCPSender::SetVideoBitrateAllocation(
-    const VideoBitrateAllocation& bitrate) {
-  MutexLock lock(&mutex_rtcp_sender_);
-  if (method_ == RtcpMode::kOff) {
-    RTC_LOG(LS_WARNING) << "Can't send RTCP if it is disabled.";
-    return;
-  }
-  // Check if this allocation is first ever, or has a different set of
-  // spatial/temporal layers signaled and enabled, if so trigger an rtcp report
-  // as soon as possible.
-  std::optional<VideoBitrateAllocation> new_bitrate =
-      CheckAndUpdateLayerStructure(bitrate);
-  if (new_bitrate) {
-    video_bitrate_allocation_ = *new_bitrate;
-    RTC_LOG(LS_INFO) << "Emitting TargetBitrate XR for SSRC " << ComputeSsrc()
-                     << " with new layers enabled/disabled: "
-                     << video_bitrate_allocation_.ToString();
-    SetNextRtcpSendEvaluationDuration(TimeDelta::Zero());
-  } else {
-    video_bitrate_allocation_ = bitrate;
-  }
-
-  send_video_bitrate_allocation_ = true;
-  SetFlag(kRtcpAnyExtendedReports, true);
-}
-
-std::optional<VideoBitrateAllocation> RTCPSender::CheckAndUpdateLayerStructure(
-    const VideoBitrateAllocation& bitrate) const {
-  std::optional<VideoBitrateAllocation> updated_bitrate;
-  for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
-    for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
-      if (!updated_bitrate &&
-          (bitrate.HasBitrate(si, ti) !=
-               video_bitrate_allocation_.HasBitrate(si, ti) ||
-           (bitrate.GetBitrate(si, ti) == 0) !=
-               (video_bitrate_allocation_.GetBitrate(si, ti) == 0))) {
-        updated_bitrate = bitrate;
-      }
-      if (video_bitrate_allocation_.GetBitrate(si, ti) > 0 &&
-          bitrate.GetBitrate(si, ti) == 0) {
-        // Make sure this stream disabling is explicitly signaled.
-        updated_bitrate->SetBitrate(si, ti, 0);
-      }
-    }
-  }
-
-  return updated_bitrate;
 }
 
 void RTCPSender::SendCombinedRtcpPacket(

@@ -1,5 +1,6 @@
 [DEFAULT]
 head = "head.js"
+prefs = ["browser.mini-window.enabled=true"]
 support-files = [
   "subtst_contextmenu_webext.html",
   "test_contextmenu_links.html",
@@ -24,7 +25,6 @@ tags = "fullscreen"
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64'", # Bug 2057831
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1853186
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1853186
 ]
 

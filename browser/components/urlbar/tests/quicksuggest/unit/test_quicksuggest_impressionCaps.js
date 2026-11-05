@@ -3200,7 +3200,7 @@ async function checkSearch({ name, searchString, expectedResults }) {
       getSearchSource() {
         return "dummy-search-source";
       },
-      window: {
+      browserWindow: {
         location: {
           href: AppConstants.BROWSER_CHROME_URL,
         },

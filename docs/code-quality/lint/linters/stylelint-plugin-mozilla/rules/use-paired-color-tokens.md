@@ -23,9 +23,11 @@ block, and reports the following.
 
 **A background token used without a text color.** A block that paints a
 background claims a surface, and it owes that surface a text color. The rule
-reports a block whose winning `background` or `background-color` declaration
-reads a background token that has a paired text color token, and which sets no
-`color`; the message names the counterpart. A background token without a
+reports a block whose winning `background`, `background-color` or
+`background-image` declaration reads a background token that has a paired text
+color token, and which sets no `color`; the message names the counterpart. A
+`background-color` wins over a `background-image` in the same block. A
+background token without a
 counterpart is meant to combine with whatever the surface inherits, so it makes
 no claim to report.
 

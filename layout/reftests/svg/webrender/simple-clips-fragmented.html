@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Trivial clipPath elements on fragmented boxes</title>
+<style>
+  body { margin: 0; width: 300px; }
+  .box { display: inline-block; width: 120px; height: 40px; background: lime; }
+  .clip { background: teal; clip-path: url(#obb); }
+  .clone { box-decoration-break: clone; }
+</style>
+</head>
+<body>
+  <!-- An inline split over two lines by a <br>. -->
+  <span class="clip"><span class="box"></span><br><span class="box"></span></span>
+
+  <!-- The same, with each fragment decorating itself. -->
+  <span class="clip clone"><span class="box"></span><br><span class="box"></span></span>
+
+  <!-- An inline holding a block, which makes an ib-split. -->
+  <span class="clip"><span class="box"></span><div style="height: 40px"></div><span class="box"></span></span>
+
+  <svg width="0" height="0">
+    <clipPath id="obb" clipPathUnits="objectBoundingBox">
+      <rect x="0" y="0" width="0.5" height="0.5"/>
+    </clipPath>
+  </svg>
+</body>
+</html>

@@ -38,7 +38,6 @@ task-defaults:
         kind: test
         tier: 1
     run:
-        clone-with: hg
         using: mach
         use-caches: [checkout, pip, uv]
     when:
@@ -52,6 +51,9 @@ firefox-ci:
     treeherder:
         symbol: ci
     run:
+        # Keep cloning from hg until bug 2080077: the ci subsuite hits the
+        # worker memory limit when run from a git checkout.
+        clone-with: hg
         using: python-test
         subsuite: ci
     when:

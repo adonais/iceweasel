@@ -327,3 +327,103 @@ add_task(async function test_click_link_with_reordered_parameters() {
   BrowserTestUtils.removeTab(tab);
   resetTelemetry();
 });
+
+async function clickSitelinkWithChangedParamValue() {
+  let url = getSERPUrl("searchTelemetryAd_components_query_parameters.html");
+
+  info("Load SERP.");
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  await waitForPageWithAdImpressions();
+
+  info("After ad impressions, change a query param value in a DOM element.");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    let el = content.document.getElementById("ad_sitelink");
+    let domUrl = new URL(el.href);
+    domUrl.searchParams.set("foo", "changed");
+    el.setAttribute("href", domUrl.toString());
+  });
+
+  info("Click on site link.");
+  let pageLoadPromise = BrowserTestUtils.waitForLocationChange(gBrowser);
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "a#ad_sitelink",
+    {},
+    tab.linkedBrowser
+  );
+  await pageLoadPromise;
+
+  return tab;
+}
+
+add_task(async function test_click_link_with_changed_parameter_value() {
+  let tab = await clickSitelinkWithChangedParamValue();
+
+  assertSERPTelemetry([
+    {
+      engagements: [
+        {
+          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
+          target: SearchSERPTelemetryUtils.COMPONENTS.AD_UNCATEGORIZED,
+        },
+      ],
+      adImpressions: [
+        {
+          component: SearchSERPTelemetryUtils.COMPONENTS.AD_SITELINK,
+          ads_loaded: "1",
+          ads_visible: "1",
+          ads_hidden: "0",
+        },
+        {
+          component: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
+          ads_loaded: "1",
+          ads_visible: "1",
+          ads_hidden: "0",
+        },
+      ],
+    },
+  ]);
+
+  // Clean up.
+  BrowserTestUtils.removeTab(tab);
+  resetTelemetry();
+});
+
+add_task(async function test_click_link_with_changed_ignored_parameter_value() {
+  SearchSERPTelemetry.overrideSearchTelemetryForTests([
+    { ...TEST_PROVIDER_INFO[0], ignoredQueryParamNames: ["foo"] },
+  ]);
+  await waitForIdle();
+
+  let tab = await clickSitelinkWithChangedParamValue();
+
+  assertSERPTelemetry([
+    {
+      engagements: [
+        {
+          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
+          target: SearchSERPTelemetryUtils.COMPONENTS.AD_SITELINK,
+        },
+      ],
+      adImpressions: [
+        {
+          component: SearchSERPTelemetryUtils.COMPONENTS.AD_SITELINK,
+          ads_loaded: "1",
+          ads_visible: "1",
+          ads_hidden: "0",
+        },
+        {
+          component: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
+          ads_loaded: "1",
+          ads_visible: "1",
+          ads_hidden: "0",
+        },
+      ],
+    },
+  ]);
+
+  // Clean up.
+  BrowserTestUtils.removeTab(tab);
+  resetTelemetry();
+  SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
+  await waitForIdle();
+});

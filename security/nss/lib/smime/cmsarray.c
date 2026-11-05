@@ -91,6 +91,8 @@ NSS_CMSArray_Count(void **array)
  *
  * If "secondary" or "tertiary are not NULL, it must be arrays with the same
  *  number of elements as "primary". The same reordering will get applied to it.
+ *  Their elements may be NULL, so their length cannot be recovered by scanning
+ *  for a terminator and is not validated here.
  *
  * "compare" is a function that returns
  *  < 0 when the first element is less than the second
@@ -105,15 +107,6 @@ NSS_CMSArray_Sort(void **primary, int (*compare)(void *, void *), void **seconda
     void *tmp;
 
     n = NSS_CMSArray_Count(primary);
-
-    PORT_Assert(secondary == NULL || NSS_CMSArray_Count(secondary) == n);
-    PORT_Assert(tertiary == NULL || NSS_CMSArray_Count(tertiary) == n);
-    /* Companion arrays must have the same length as primary; if they don't,
-     * ignore them rather than swapping past their NULL terminator (OOB). */
-    if (secondary && NSS_CMSArray_Count(secondary) != n)
-        secondary = NULL;
-    if (tertiary && NSS_CMSArray_Count(tertiary) != n)
-        tertiary = NULL;
 
     if (n <= 1) /* ordering is fine */
         return;

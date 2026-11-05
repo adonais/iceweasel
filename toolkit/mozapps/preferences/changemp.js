@@ -2,6 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  ProfileKekPassword: "resource://gre/modules/ProfileKekPassword.sys.mjs",
+});
+
 function init() {
   process();
   document.addEventListener("dialogaccept", setPassword);
@@ -70,7 +75,17 @@ async function setPassword(event) {
     }
   }
 
+  let kekMoved = false;
   try {
+    // token.changePassword can't be reverted. Update lockstore KEK first, if
+    // it fails, it rolls changes back, so failure leaves a working state.
+    // Without a KEK the update would create one from an old password nothing
+    // here can verify, so that is left to the next startup, which checks it
+    // against the token first.
+    if (!token.hasPassword || (await lazy.ProfileKekPassword.exists())) {
+      await lazy.ProfileKekPassword.update(oldpwbox.value, pw1.value);
+      kekMoved = true;
+    }
     await token.changePassword(oldpwbox.value, pw1.value);
     createAlert(
       "pw-change-success-title",
@@ -78,6 +93,12 @@ async function setPassword(event) {
     );
     window.close();
   } catch (e) {
+    if (kekMoved) {
+      await lazy.ProfileKekPassword.update(pw1.value, oldpwbox.value).catch(
+        rollbackError =>
+          console.error("Failed to roll back the lockstore KEK", rollbackError)
+      );
+    }
     let nssErrorsService = Cc["@mozilla.org/nss_errors_service;1"].getService(
       Ci.nsINSSErrorsService
     );
@@ -85,7 +106,14 @@ async function setPassword(event) {
     let badPasswordResult = nssErrorsService.getXPCOMFromNSSError(
       Ci.nsINSSErrorsService.NSS_SEC_ERROR_BASE + 15
     );
-    if (e.result == badPasswordResult) {
+    // The lockstore unlock reports a wrong password as NS_ERROR_ABORT rather
+    // than the token's bad-password code. Only reachable with kekMoved unset:
+    // past that point the KEK is done with and the token, which reports
+    // failures as NSS codes, is what failed.
+    if (
+      e.result == badPasswordResult ||
+      (!kekMoved && e.result == Cr.NS_ERROR_ABORT)
+    ) {
       oldpwbox.focus();
       oldpwbox.setAttribute("value", "");
       createAlert("pw-change-failed-title", "incorrect-pp");

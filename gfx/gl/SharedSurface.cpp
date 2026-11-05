@@ -124,15 +124,6 @@ UniquePtr<SurfaceFactory> SurfaceFactory::Create(
 #endif
       break;
 
-    case layers::TextureType::AndroidNativeWindow:
-#ifdef MOZ_WIDGET_ANDROID
-      MOZ_ASSERT(!gfx::gfxVars::UseWebRenderANGLE());
-      if (!gfx::gfxVars::UseWebRenderANGLE()) {
-        return MakeUnique<SurfaceFactory_SurfaceTexture>(gl);
-      }
-#endif
-      break;
-
     case layers::TextureType::AndroidHardwareBuffer:
 #ifdef MOZ_WIDGET_ANDROID
       if (XRE_IsGPUProcess()) {

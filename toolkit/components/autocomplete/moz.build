@@ -35,3 +35,8 @@ FINAL_LIBRARY = "xul"
 
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Autocomplete")
+
+SOURCE_HEADERS += [
+    "nsAutoCompleteController.h",
+    "nsAutoCompleteSimpleResult.h",
+]

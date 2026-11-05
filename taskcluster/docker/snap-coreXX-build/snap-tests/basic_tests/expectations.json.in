@@ -8,8 +8,8 @@
         "source_repo": [
             "https://hg.mozilla.org/",
             "https://github.com/mozilla-firefox/firefox",
-            "https://github.com/mozilla-releng/staging-firefox",
-            "https://github.com/mozilla/firefox-dev"
+            "https://github.com/mozilla-firefox/firefox-dev",
+            "https://github.com/mozilla-releng/staging-firefox"
         ],
         "official": "MOZILLA_OFFICIAL=1"
     },

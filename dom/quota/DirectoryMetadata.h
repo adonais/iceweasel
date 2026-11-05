@@ -15,14 +15,16 @@ class nsIFile;
 
 namespace mozilla {
 
+struct Ok;
+
 template <typename V, typename E>
 class Result;
 
-}
+}  // namespace mozilla
 
 namespace mozilla::dom::quota {
 
-struct OriginStateMetadata;
+struct FullOriginMetadata;
 
 namespace DirectoryMetadataFlags {
 
@@ -33,6 +35,7 @@ enum : uint32_t {
   Accessed    = 1 << 1,
   Dirty       = 1 << 2,
   Persisted   = 1 << 3,
+  Encrypted   = 1 << 4,
 };
 // clang-format on
 
@@ -64,6 +67,10 @@ enum : uint32_t {
  *         survive eviction. When Initialized is set, this flag is
  *         authoritative; the bool mPersisted byte is kept for backward
  *         compatibility with older builds.
+ *       - Encrypted: Indicates the origin's data is encrypted at rest with
+ *         keys from the QuotaManager key store. Files written before this
+ *         flag existed have it unset, which correctly describes them as
+ *         plaintext.
  *
  *     If the Initialized flag is not set, the flags field is considered
  *     invalid and mAccessed is conservatively set to true to ensure a full
@@ -102,12 +109,12 @@ enum : uint32_t {
  *   file.
  */
 
-Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
-    nsIBinaryInputStream& aStream);
+Result<Ok, nsresult> ReadDirectoryMetadataHeader(
+    nsIBinaryInputStream& aStream, FullOriginMetadata& aFullOriginMetadata);
 
 nsresult WriteDirectoryMetadataHeader(
     nsIBinaryOutputStream& aStream,
-    const OriginStateMetadata& aOriginStateMetadata);
+    const FullOriginMetadata& aFullOriginMetadata);
 
 }  // namespace mozilla::dom::quota
 

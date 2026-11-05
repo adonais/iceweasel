@@ -17,7 +17,7 @@
 #include "mozilla/StaticPrefs_print.h"
 #include "mozilla/WidgetUtilsGtk.h"
 #include "mozilla/gfx/PrintPromise.h"
-#include "mozilla/gfx/PrintTargetPDF.h"
+#include "mozilla/gfx/PrintTargetSkPDF.h"
 #include "nsCUPSShim.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIFile.h"
@@ -40,7 +40,7 @@ using namespace mozilla;
 using mozilla::gfx::IntSize;
 using mozilla::gfx::PrintEndDocumentPromise;
 using mozilla::gfx::PrintTarget;
-using mozilla::gfx::PrintTargetPDF;
+using mozilla::gfx::PrintTargetSkPDF;
 
 nsDeviceContextSpecGTK::nsDeviceContextSpecGTK()
     : mGtkPrintSettings(nullptr), mGtkPageSetup(nullptr) {}
@@ -105,7 +105,7 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget() {
     return stream;
   }();
 
-  return PrintTargetPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
+  return PrintTargetSkPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
 }
 
 #define DECLARE_KNOWN_MONOCHROME_SETTING(key_, value_) {"cups-" key_, value_},

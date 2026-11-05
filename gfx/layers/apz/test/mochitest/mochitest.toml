@@ -92,7 +92,6 @@ skip-if = [
   "http3",
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1857059
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # stack is not large enough for the test
-  "os == 'win' && os_version == '11.26100' && arch == 'x86'", # win11 24H2
   "os == 'win' && os_version == '11.26200' && arch == 'x86'", # win11 24H2
 ]
 
@@ -165,9 +164,7 @@ skip-if = [
 ["test_group_pointerevents.html"]
 skip-if = [
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 1977133
-  "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1404836
   "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1404836
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1404836
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1404836
 ]
 

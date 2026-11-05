@@ -24,9 +24,10 @@ class PrintTargetRecording final : public PrintTarget {
 
   already_AddRefed<DrawTarget> MakeDrawTarget(
       const IntSize& aSize, DrawEventRecorder* aRecorder = nullptr) override;
+  already_AddRefed<DrawTarget> GetReferenceDrawTarget() override;
 
  private:
-  PrintTargetRecording(cairo_surface_t* aCairoSurface, const IntSize& aSize);
+  explicit PrintTargetRecording(const IntSize& aSize);
 
   already_AddRefed<DrawTarget> CreateWrapAndRecordDrawTarget(
       DrawEventRecorder* aRecorder, DrawTarget* aDrawTarget);

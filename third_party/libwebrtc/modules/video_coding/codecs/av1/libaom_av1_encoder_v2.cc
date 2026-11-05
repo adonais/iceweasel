@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -39,6 +40,7 @@
 #include "api/video_codecs/video_encoder_interface.h"
 #include "api/video_codecs/video_encoding_general.h"
 #include "modules/video_coding/utility/reference_buffer_tracker.h"
+#include "modules/video_coding/utility/temporal_layer_rate_tracker.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/rational.h"
@@ -77,13 +79,56 @@ constexpr int kNumBuffers = 8;
 constexpr int kMaxReferences = 3;
 constexpr int kMinEffortLevel = -2;  // Speed 11.
 constexpr int kMaxEffortLevel = 4;   // Speed 5.
-constexpr int kMaxSpatialLayersLimit = 4;
-constexpr int kMaxTemporalLayers = 4;
 constexpr int kRtpTicksPerSecond = 90000;
 constexpr int kRtpTicksPerMs = kRtpTicksPerSecond / 1000;
+// Only used in CQP mode, where libaom requires a value but does not act on it.
+constexpr int kDefaultMaxIntraBitratePct = 300;
 
-static_assert(kMaxSpatialLayersLimit <= AOM_MAX_SS_LAYERS);
-static_assert(kMaxTemporalLayers <= AOM_MAX_TS_LAYERS);
+// The maximum number of spatial and temporal layers this encoder advertises.
+//
+// These two are a package deal. The capabilities are a contract: if
+// `max_temporal_layers` says 8, then 8 temporal layers have to work for *every*
+// spatial layer count up to `max_spatial_layers`. The pair therefore has to be
+// picked together, and neither can simply be pushed to its individual maximum.
+//
+// Three things bound them:
+//
+//  1. libaom indexes the per layer arrays in `aom_svc_params_t` by
+//     `spatial_id * number_temporal_layers + temporal_id` and sizes them for
+//     `AOM_MAX_LAYERS` entries, so the product has to fit. libaom's own
+//     maximums multiply out to exactly that
+//     (`AOM_MAX_SS_LAYERS * AOM_MAX_TS_LAYERS == 4 * 8 == 32 ==
+//     AOM_MAX_LAYERS`) and that combination is not usable: 4 spatial by 8
+//     declared temporal layers yields 32 operating points, which the decoder
+//     then fails to decode even though the AV1 spec allows that many. Keeping
+//     headroom in the product stays clear of the corner entirely.
+//  2. Rate control. Every declared temporal layer gets its own leaky bucket,
+//     sized in proportion to the share of the stream that layer carries, so
+//     the base layer's bucket has to hold at least one base layer frame. The
+//     base layer's frame interval doubles with every added temporal layer, so
+//     that stops holding above roughly five layers at the frame rates and
+//     buffer sizes used for real time video.
+//  3. libaom keeps quantizers anchored to the keyframe for
+//     `5 * number_temporal_layers` frames. Declaring layers that are not used
+//     only stretches that transient.
+//
+// 4 by 4 sits comfortably inside all three, and is already more than any known
+// caller asks for.
+//
+// Every advertised temporal layer is declared to libaom up front, whether the
+// caller uses it or not: libaom forces a keyframe whenever the declared count
+// changes, and this API lets the caller change the temporal structure at any
+// time without one. Layers the caller does not use are configured like the
+// highest used layer and are simply never encoded into. The declared count is
+// therefore the advertised maximum, which is also why bounds 2 and 3 are paid
+// for that maximum rather than for what the caller happens to send.
+//
+// Raising either value means re-validating the whole matrix of combinations,
+// not just the one combination that motivated the change.
+constexpr int kMaxAdvertisedSpatialLayers = AOM_MAX_SS_LAYERS;
+constexpr int kMaxAdvertisedTemporalLayers = 4;
+static_assert(kMaxAdvertisedSpatialLayers * kMaxAdvertisedTemporalLayers <
+              AOM_MAX_LAYERS);
 
 constexpr std::array<Rational, 6> kSupportedScalingFactors = {
     {{.numerator = 16, .denominator = 1},
@@ -162,6 +207,28 @@ ThreadTilesAndSuperblockSizeInfo GetThreadingTilesAndSuperblockSize(
   return res;
 }
 
+bool ValidateCbrSettings(
+    const VideoEncoderFactoryInterface::StaticEncoderSettings::Cbr& cbr) {
+  if (!cbr.max_buffer_size.IsFinite() ||
+      cbr.max_buffer_size <= TimeDelta::Zero()) {
+    RTC_LOG(LS_ERROR) << "CBR max buffer size must be finite and positive.";
+    return false;
+  }
+  if (cbr.target_buffer_size <= TimeDelta::Zero() ||
+      cbr.target_buffer_size > cbr.max_buffer_size) {
+    RTC_LOG(LS_ERROR) << "CBR target buffer size must be positive and at most "
+                         "the max buffer size.";
+    return false;
+  }
+  if (!std::isfinite(cbr.max_intra_bitrate_factor) ||
+      cbr.max_intra_bitrate_factor < 1.0) {
+    RTC_LOG(LS_ERROR) << "CBR max intra bitrate factor must be finite and at "
+                         "least one frame worth of bits.";
+    return false;
+  }
+  return true;
+}
+
 bool ValidateEncodeParams(
     const VideoFrameBuffer& frame_buffer,
     const VideoEncoderInterface::TemporalUnitSettings& /* tu_settings */,
@@ -209,12 +276,12 @@ bool ValidateEncodeParams(
       return false;
     }
 
-    if (!in_range(0, kMaxSpatialLayersLimit, settings.spatial_id())) {
+    if (!in_range(0, kMaxAdvertisedSpatialLayers, settings.spatial_id())) {
       RTC_LOG(LS_ERROR) << "invalid spatial id " << settings.spatial_id();
       return false;
     }
 
-    if (!in_range(0, kMaxTemporalLayers, settings.temporal_id())) {
+    if (!in_range(0, kMaxAdvertisedTemporalLayers, settings.temporal_id())) {
       RTC_LOG(LS_ERROR) << "invalid temporal id " << settings.temporal_id();
       return false;
     }
@@ -453,12 +520,28 @@ aom_svc_ref_frame_config_t GetSvcRefFrameConfig(
   return ref_frame_config;
 }
 
-aom_svc_params_t GetSvcParams(
+// libaom expects quantizers in the [0, 63] range, whereas the API is designed
+// to use the bitstream QP range - [0, 255] in this case. Quantizer 0 implies
+// lossless mode in libaom, so only QP 0 is mapped to quantizer 0, while QP 1-3
+// are rounded up to 4 (quantizer 1).
+int ToLibaomQuantizer(int target_qp) {
+  if (target_qp > 0 && target_qp < 4) {
+    target_qp = 4;
+  }
+  return std::clamp(target_qp / 4, 0, kMaxQuantizer);
+}
+
+}  // namespace
+
+aom_svc_params_t LibaomAv1EncoderV2::GetSvcParams(
     const VideoFrameBuffer& frame_buffer,
-    const std::vector<FrameEncodeSettings>& frame_settings) {
+    const std::vector<FrameEncodeSettings>& frame_settings) const {
   aom_svc_params_t svc_params = {};
   svc_params.number_spatial_layers = frame_settings.back().spatial_id() + 1;
-  svc_params.number_temporal_layers = kMaxTemporalLayers;
+  // Unlike the spatial layers, the temporal layers are always declared in
+  // full: changing the count would force a keyframe, see
+  // `kMaxAdvertisedTemporalLayers`.
+  svc_params.number_temporal_layers = kMaxAdvertisedTemporalLayers;
 
   std::span framerate_factor_view(svc_params.framerate_factor);
   std::span scaling_factor_num_view(svc_params.scaling_factor_num);
@@ -467,10 +550,14 @@ aom_svc_params_t GetSvcParams(
   std::span max_quantizers_view(svc_params.max_quantizers);
   std::span min_quantizers_view(svc_params.min_quantizers);
 
-  // TODO(bugs.webrtc.org/496266459): Dynamically determine temporal layer
-  // settings based on the provided FrameEncodeSettings.
+  // The quantities libaom wants per temporal layer are cumulative, i.e. layer
+  // `t` describes the stream made up of all layers up to and including `t`.
+  // `framerate_factor` is how many times lower the frame rate of that stream is
+  // compared to the full stream, and `layer_target_bitrate` is its bitrate.
+  // libaom recovers the per frame budget of an individual layer by
+  // differentiating adjacent layers, see `av1_update_temporal_layer_framerate`.
   for (int tid = 0; tid < svc_params.number_temporal_layers; ++tid) {
-    framerate_factor_view[tid] = 1;
+    framerate_factor_view[tid] = rate_tracker_->FramerateFactor(tid);
   }
 
   // If the scaling factor is left at zero for unused layers a division by zero
@@ -487,11 +574,12 @@ aom_svc_params_t GetSvcParams(
     scaling_factor_num_view[settings.spatial_id()] = w_num / gcd;
     scaling_factor_den_view[settings.spatial_id()] = w_den / gcd;
 
-    const int flat_layer_id =
-        settings.spatial_id() * svc_params.number_temporal_layers +
-        settings.temporal_id();
+    const int first_layer_id =
+        settings.spatial_id() * svc_params.number_temporal_layers;
+    const int last_layer_id =
+        first_layer_id + svc_params.number_temporal_layers;
 
-    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << " flat_layer_id=" << flat_layer_id
+    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << " layer_id=" << first_layer_id
                         << " num="
                         << scaling_factor_num_view[settings.spatial_id()]
                         << " den="
@@ -501,48 +589,38 @@ aom_svc_params_t GetSvcParams(
         [&](auto&& arg) {
           using T = std::decay_t<decltype(arg)>;
           if constexpr (std::is_same_v<T, Cbr>) {
-            // Libaom calculates the total bitrate across all spatial layers by
-            // summing the bitrate of the last temporal layer in each spatial
-            // layer. This means the bitrate for the top temporal layer always
-            // has to be set even if that temporal layer is not being encoded.
-            const int last_temporal_layer_in_spatial_layer_id =
-                settings.spatial_id() * svc_params.number_temporal_layers +
-                (kMaxTemporalLayers - 1);
-            layer_target_bitrate_view[last_temporal_layer_in_spatial_layer_id] =
-                arg.target_bitrate.kbps();
-
-            layer_target_bitrate_view[flat_layer_id] =
-                arg.target_bitrate.kbps();
-            // When libaom is configured with `AOM_CBR` it will still limit QP
-            // to stay between `min_quantizers` and `max_quantizers'. Set
-            // `max_quantizers` to max QP to avoid the encoder overshooting.
-            max_quantizers_view[flat_layer_id] = kMaxQuantizer;
-            min_quantizers_view[flat_layer_id] = 0;
+            // Rate control in this API is expressed per frame: a frame states
+            // the bitrate of the temporal layer it belongs to, and that layer
+            // alone. libaom instead wants the bitrate of the stream formed by
+            // all the layers up to and including a given one, which
+            // `rate_tracker_` accumulates from the per frame reports seen so
+            // far.
+            for (int id = first_layer_id; id < last_layer_id; ++id) {
+              const DataRate layer_bitrate = rate_tracker_->CumulativeBitrate(
+                  settings.spatial_id(), /*temporal_id=*/id - first_layer_id);
+              // A layer with zero bitrate is considered disabled by libaom, so
+              // always leave at least 1 kbps.
+              layer_target_bitrate_view[id] =
+                  std::max<int>(1, layer_bitrate.kbps());
+              // When libaom is configured with `AOM_CBR` it will still limit QP
+              // to stay between `min_quantizers` and `max_quantizers'. Set
+              // `max_quantizers` to max QP to avoid the encoder overshooting.
+              max_quantizers_view[id] = kMaxQuantizer;
+              min_quantizers_view[id] = 0;
+            }
           } else if constexpr (std::is_same_v<T, Cqp>) {
-            // When libaom is configured with `AOM_Q` it will still look at the
-            // `layer_target_bitrate` to determine whether the layer is disabled
-            // or not. Set `layer_target_bitrate` to 1 so that libaom knows the
-            // layer is active.
-            const int last_temporal_layer_in_spatial_layer_id =
-                settings.spatial_id() * svc_params.number_temporal_layers +
-                (kMaxTemporalLayers - 1);
-            layer_target_bitrate_view[last_temporal_layer_in_spatial_layer_id] =
-                1;
-            layer_target_bitrate_view[flat_layer_id] = 1;
-            // libaom expects quantizers in [0, 63] range, whereas the API
-            // is designed to use the bitstream QP range - [0, 255] in this
-            // case. Quantizer 0 implies lossless mode in libaom, so only QP 0
-            // is mapped to quantizer 0, while QP 1-3 are rounded up to 4
-            // (quantizer 1).
-            int target_qp =
-                (arg.target_qp > 0 && arg.target_qp < 4) ? 4 : arg.target_qp;
-            int quantizer = std::clamp(target_qp / 4, 0, kMaxQuantizer);
-            max_quantizers_view[flat_layer_id] = quantizer;
-            min_quantizers_view[flat_layer_id] = quantizer;
-            // TD: Does libaom look at both max and min? Shouldn't it just be
-            // one of them?
+            int quantizer = ToLibaomQuantizer(arg.target_qp);
+            for (int id = first_layer_id; id < last_layer_id; ++id) {
+              // When libaom is configured with `AOM_Q` it will still look at
+              // the `layer_target_bitrate` to determine whether the layer is
+              // disabled or not. Set `layer_target_bitrate` to 1 so that libaom
+              // knows the layer is active.
+              layer_target_bitrate_view[id] = 1;
+              max_quantizers_view[id] = quantizer;
+              min_quantizers_view[id] = quantizer;
+            }
             RTC_LOG(LS_WARNING)
-                << __FUNCTION__ << " svc_params.qp[" << flat_layer_id
+                << __FUNCTION__ << " svc_params.qp[" << first_layer_id
                 << "]=" << arg.target_qp << " (quantizer=" << quantizer << ")";
           }
         },
@@ -556,7 +634,8 @@ aom_svc_params_t GetSvcParams(
       sb << " S" << s << "=[ ";
       for (int t = 0; t < svc_params.number_temporal_layers; ++t) {
         int id = s * svc_params.number_temporal_layers + t;
-        sb << "T" << t << "=" << layer_target_bitrate_view[id] << " ";
+        sb << "T" << t << "=" << layer_target_bitrate_view[id] << "/"
+           << framerate_factor_view[t] << " ";
       }
       sb << "]";
     }
@@ -566,8 +645,6 @@ aom_svc_params_t GetSvcParams(
   return svc_params;
 }
 
-}  // namespace
-
 VideoEncoderFactoryInterface::Capabilities
 LibaomAv1EncoderV2::GetCapabilities() {
   return CapabilitiesBuilder()
@@ -576,11 +653,11 @@ LibaomAv1EncoderV2::GetCapabilities() {
                  p) {
             p.set_num_buffers(kNumBuffers);
             p.set_max_references(kMaxReferences);
-            p.set_max_temporal_layers(kMaxTemporalLayers);
+            p.set_max_temporal_layers(kMaxAdvertisedTemporalLayers);
             p.set_buffer_space_type(
                 VideoEncoderFactoryInterface::Capabilities::
                     PredictionConstraints::BufferSpaceType::kSingleKeyframe);
-            p.set_max_spatial_layers(kMaxSpatialLayersLimit);
+            p.set_max_spatial_layers(kMaxAdvertisedSpatialLayers);
             p.set_scaling_factors(
                 std::vector<Rational>(kSupportedScalingFactors.begin(),
                                       kSupportedScalingFactors.end()));
@@ -603,6 +680,9 @@ LibaomAv1EncoderV2::GetCapabilities() {
             b.set_qp_range(0, kMaxQp);
             using enum VideoEncoderFactoryInterface::RateControlMode;
             b.set_rc_modes({kCbr, kCqp});
+            using enum VideoEncoderFactoryInterface::CbrSetting;
+            b.set_supported_cbr_settings(
+                {kBufferSizes, kMaxIntraBitrateFactor});
           })
       .WithPerformance(
           [](VideoEncoderFactoryInterface::Capabilities::Performance& p) {
@@ -627,6 +707,7 @@ bool LibaomAv1EncoderV2::InitEncode(
 
   last_resolution_in_buffer_ = {};
   reference_buffer_tracker_.Reset();
+  rate_tracker_ = std::make_unique<TemporalLayerRateTracker>();
   content_type_.reset();
   effort_level_by_spatial_id_.fill(std::nullopt);
 
@@ -659,6 +740,11 @@ bool LibaomAv1EncoderV2::InitEncode(
   auto* cbr =
       std::get_if<VideoEncoderFactoryInterface::StaticEncoderSettings::Cbr>(
           &settings.rc_mode());
+  if (cbr && !ValidateCbrSettings(*cbr)) {
+    return false;
+  }
+  // libaom has no separate initial buffer level, the buffer starts out at the
+  // target level.
   cfg_.rc_buf_initial_sz = cbr ? cbr->target_buffer_size.ms() : 600;
   cfg_.rc_buf_optimal_sz = cbr ? cbr->target_buffer_size.ms() : 600;
   cfg_.rc_buf_sz = cbr ? cbr->max_buffer_size.ms() : 1000;
@@ -683,7 +769,13 @@ bool LibaomAv1EncoderV2::InitEncode(
   SET_OR_RETURN_FALSE(AV1E_SET_DELTAQ_MODE, 0);
   SET_OR_RETURN_FALSE(AV1E_SET_ENABLE_ORDER_HINT, 0);
   SET_OR_RETURN_FALSE(AV1E_SET_AQ_MODE, 3);
-  SET_OR_RETURN_FALSE(AOME_SET_MAX_INTRA_BITRATE_PCT, 300);
+  // libaom expresses the intra frame allowance as a percentage of the per
+  // frame bit budget. In CQP mode the setting has no effect, but a value is
+  // still required.
+  SET_OR_RETURN_FALSE(
+      AOME_SET_MAX_INTRA_BITRATE_PCT,
+      cbr ? static_cast<int>(cbr->max_intra_bitrate_factor * 100)
+          : kDefaultMaxIntraBitratePct);
   SET_OR_RETURN_FALSE(AV1E_SET_COEFF_COST_UPD_FREQ, 3);
   SET_OR_RETURN_FALSE(AV1E_SET_MODE_COST_UPD_FREQ, 3);
   SET_OR_RETURN_FALSE(AV1E_SET_MV_COST_UPD_FREQ, 3);
@@ -738,6 +830,14 @@ void LibaomAv1EncoderV2::Encode(
     return;
   }
 
+  for (const FrameEncodeSettings& settings : frame_settings) {
+    if (const Cbr* cbr = std::get_if<Cbr>(&settings.rate_options())) {
+      rate_tracker_->Update(
+          settings.spatial_id(), settings.temporal_id(), cbr->target_bitrate,
+          settings.frame_type() == VideoEncoderInterface::FrameType::kKeyframe);
+    }
+  }
+
   if (content_type_ != tu_settings.content_hint()) {
     if (tu_settings.content_hint() == ContentHint::kText ||
         tu_settings.content_hint() == ContentHint::kDetailed) {
@@ -751,15 +851,32 @@ void LibaomAv1EncoderV2::Encode(
   }
 
   if (cfg_.rc_end_usage == AOM_CBR) {
+    // The target bitrate of the current frame only describes the temporal
+    // layer it belongs to, so the bitrate of the stream as a whole is taken
+    // from `rate_tracker_`.
     DataRate accum_rate = DataRate::Zero();
     for (const FrameEncodeSettings& settings : frame_settings) {
-      accum_rate += std::get<Cbr>(settings.rate_options()).target_bitrate;
+      accum_rate += rate_tracker_->StreamBitrate(settings.spatial_id());
     }
     cfg_.rc_target_bitrate = accum_rate.kbps();
+    // Let the rate controller use the full quantizer range, matching the per
+    // layer `max_quantizers` and `min_quantizers` set in `GetSvcParams`.
+    cfg_.rc_min_quantizer = 0;
+    cfg_.rc_max_quantizer = kMaxQuantizer;
     RTC_LOG(LS_VERBOSE) << __FUNCTION__
                         << " cfg_.rc_target_bitrate=" << cfg_.rc_target_bitrate;
   } else if (cfg_.rc_end_usage == AOM_Q) {
     cfg_.rc_target_bitrate = 1;
+    // libaom disables SVC, and with it everything configured through
+    // `AV1E_SET_SVC_PARAMS`, when there is only a single layer. Pin the
+    // quantizer through the encoder config as well so that constant QP is
+    // honored in that case too. Only the lowest spatial layer is represented
+    // here; streams with several spatial layers keep SVC enabled and are
+    // configured per layer in `GetSvcParams`.
+    int quantizer = ToLibaomQuantizer(
+        std::get<Cqp>(frame_settings[0].rate_options()).target_qp);
+    cfg_.rc_min_quantizer = quantizer;
+    cfg_.rc_max_quantizer = quantizer;
   }
 
   if (static_cast<int>(cfg_.g_w) != frame_buffer->width() ||
@@ -787,13 +904,28 @@ void LibaomAv1EncoderV2::Encode(
 
   // The libaom AV1 encoder requires that `aom_codec_encode` is called for
   // every spatial layer, even if no frame should be encoded for that layer.
-  std::array<FrameEncodeSettings*, kMaxSpatialLayersLimit>
+  std::array<FrameEncodeSettings*, kMaxAdvertisedSpatialLayers>
       settings_for_spatial_id;
   settings_for_spatial_id.fill(nullptr);
   FrameEncodeSettings settings_for_unused_layer;
   for (FrameEncodeSettings& settings : frame_settings) {
     settings_for_spatial_id[settings.spatial_id()] = &settings;
   }
+
+  // libaom turns the duration passed to `aom_codec_encode` into the frame rate
+  // of the full stream, which it then scales by `framerate_factor` to get the
+  // frame rate of each temporal layer. `Cbr::duration` is the interval to the
+  // next frame of the full stream, which is exactly that, and all frames of a
+  // temporal unit share it, so one value covers them all. Duration must not be
+  // zero in libaom, use 1ms as fallback for the constant QP case.
+  TimeDelta frame_interval = TimeDelta::Millis(1);
+  if (const Cbr* cbr = std::get_if<Cbr>(&frame_settings[0].rate_options())) {
+    frame_interval = cbr->duration;
+  }
+  // `aom_codec_encode` takes the duration in units of the timebase configured
+  // in `InitEncode`, which is the 90 kHz clock used throughout WebRTC.
+  const int64_t duration_in_rtp_ticks =
+      frame_interval.us() * kRtpTicksPerSecond / 1'000'000;
 
   for (int sid = frame_settings[0].spatial_id();
        sid < svc_params.number_spatial_layers; ++sid) {
@@ -804,41 +936,42 @@ void LibaomAv1EncoderV2::Encode(
 
     aom_svc_layer_id_t layer_id = {
         .spatial_layer_id = sid,
-        .temporal_layer_id = settings.temporal_id(),
+        // libaom keeps a separate rate control state per temporal layer, so
+        // the frame must be encoded in the context of the layer it belongs to.
+        // Spatial layers that are not encoded in this temporal unit still need
+        // an `aom_codec_encode` call, use the temporal layer of the temporal
+        // unit for those as well.
+        .temporal_layer_id = layer_enabled ? settings.temporal_id()
+                                           : frame_settings[0].temporal_id(),
     };
     SET_OR_RETURN(AV1E_SET_SVC_LAYER_ID, &layer_id);
     aom_svc_ref_frame_config_t ref_config =
         GetSvcRefFrameConfig(settings, reference_buffer_tracker_);
     SET_OR_RETURN(AV1E_SET_SVC_REF_FRAME_CONFIG, &ref_config);
 
-    // Duration must not be zero in libaom, use 1ms as fallback.
-    TimeDelta duration = TimeDelta::Millis(1);
-    if (layer_enabled) {
-      if (const Cbr* cbr = std::get_if<Cbr>(&settings.rate_options())) {
-        duration = cbr->duration;
-      }
-
-      if (settings.effort_level() !=
-          effort_level_by_spatial_id_[settings.spatial_id()]) {
-        // For RTC we use speed level 5 to 11, with 9 being the default. Note
-        // that low effort means higher speed.
-        SET_OR_RETURN(AOME_SET_CPUUSED, 9 - settings.effort_level());
-        effort_level_by_spatial_id_[settings.spatial_id()] =
-            settings.effort_level();
-      }
+    if (layer_enabled &&
+        settings.effort_level() !=
+            effort_level_by_spatial_id_[settings.spatial_id()]) {
+      // For RTC we use speed level 5 to 11, with 9 being the default. Note
+      // that low effort means higher speed.
+      SET_OR_RETURN(AOME_SET_CPUUSED, 9 - settings.effort_level());
+      effort_level_by_spatial_id_[settings.spatial_id()] =
+          settings.effort_level();
     }
 
-    RTC_LOG(LS_VERBOSE)
-        << __FUNCTION__ << " timestamp="
-        << (tu_settings.presentation_timestamp().ms() * kRtpTicksPerMs)
-        << "  duration=" << (duration.ms() * kRtpTicksPerMs) << "  type="
-        << (settings.frame_type() == VideoEncoderInterface::FrameType::kKeyframe
-                ? "key"
-                : "delta");
+    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << " timestamp="
+                        << (tu_settings.presentation_timestamp().ms() *
+                            kRtpTicksPerMs)
+                        << "  duration=" << duration_in_rtp_ticks
+                        << "  tid=" << layer_id.temporal_layer_id << "  type="
+                        << (settings.frame_type() ==
+                                    VideoEncoderInterface::FrameType::kKeyframe
+                                ? "key"
+                                : "delta");
     aom_codec_err_t ret = aom_codec_encode(
         &ctx_, &*image_to_encode_,
         tu_settings.presentation_timestamp().ms() * kRtpTicksPerMs,
-        duration.ms() * kRtpTicksPerMs,
+        duration_in_rtp_ticks,
         settings.frame_type() == VideoEncoderInterface::FrameType::kKeyframe
             ? AOM_EFLAG_FORCE_KF
             : 0);

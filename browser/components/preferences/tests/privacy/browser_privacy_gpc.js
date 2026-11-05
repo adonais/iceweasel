@@ -8,7 +8,7 @@
 const MODE_PREF = "privacy.globalprivacycontrol.enabled";
 const DNT_PREF = "privacy.donottrackheader.enabled";
 
-const SECTION_ID = "nonTechnicalPrivacyGroup";
+const SECTION_ID = "nonTechnicalPrivacy2";
 const GPC_CHECKBOX_ID = "gpcEnabled";
 const NEW_DNT_ID = "dntRemoval";
 
@@ -37,8 +37,10 @@ add_task(async function test_section_shown() {
       is_element_visible(gpc, "#gpcEnabled is shown");
       let new_dnt = browser.contentDocument.getElementById(NEW_DNT_ID);
       is_element_visible(new_dnt, "#doNotTrackBox is shown");
-      let section = browser.contentDocument.getElementById(SECTION_ID);
-      is_element_visible(section, "#nonTechnicalPrivacyGroup is shown");
+      let section = browser.contentDocument.querySelector(
+        `[groupid=${SECTION_ID}]`
+      );
+      is_element_visible(section, "nonTechnicalPrivacy2 section is shown");
     }
   );
 
@@ -95,7 +97,9 @@ add_task(async function test_checkbox_modifies_prefs() {
     async function (browser) {
       let gpc_checkbox =
         browser.contentDocument.getElementById(GPC_CHECKBOX_ID);
-      let section = browser.contentDocument.getElementById(SECTION_ID);
+      let section = browser.contentDocument.querySelector(
+        `[groupid=${SECTION_ID}]`
+      );
 
       section.scrollIntoView();
 

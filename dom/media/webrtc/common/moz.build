@@ -24,3 +24,13 @@ UNIFIED_SOURCES += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "CommonTypes.h",
+    "csf_common.h",
+    "EncodingConstraints.h",
+    "NullDeleter.h",
+    "RtpHeaderExtensions.h",
+    "Wrapper.h",
+    "YuvStamper.h",
+]

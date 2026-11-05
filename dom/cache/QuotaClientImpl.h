@@ -120,7 +120,7 @@ class CacheQuotaClient final : public quota::Client {
   nsresult WipePaddingFileInternal(
       const CacheDirectoryMetadata& aDirectoryMetadata, nsIFile* aBaseDir);
 
-  RefPtr<CipherKeyManager> GetOrCreateCipherKeyManager(
+  Result<RefPtr<CipherKeyManager>, nsresult> GetOrCreateCipherKeyManager(
       const quota::PrincipalMetadata& aMetadata);
 
  private:

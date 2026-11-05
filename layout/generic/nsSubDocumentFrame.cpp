@@ -307,7 +307,7 @@ static void WrapBackgroundColorInOwnLayer(nsDisplayListBuilder* aBuilder,
                                           nsDisplayList* aList) {
   for (nsDisplayItem* item : aList->TakeItems()) {
     if (item->GetType() == DisplayItemType::TYPE_BACKGROUND_COLOR) {
-      nsDisplayList tmpList(aBuilder);
+      nsDisplayList tmpList;
       tmpList.AppendToTop(item);
       item = MakeDisplayItemWithIndex<nsDisplayOwnLayer>(
           aBuilder, aFrame, /* aIndex = */ nsDisplayOwnLayer::OwnLayerForSubdoc,
@@ -438,7 +438,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                        presContext->IsRootContentDocumentCrossProcess() ||
                        (sf && sf->IsScrollingActive());
 
-  nsDisplayList childItems(aBuilder);
+  nsDisplayList childItems;
 
   if (subdocRootFrame) {
     DisplayListClipState::AutoSaveRestore nestedClipState(aBuilder);

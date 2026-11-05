@@ -262,6 +262,9 @@ class MediaSendChannelInterface {
   // Resets the encoder factory override for the given SSRC that was set via
   // video/audio specific methods.
   virtual void ResetEncoderFactoryOverride(uint32_t ssrc) = 0;
+
+  // Marks the channel as requiring Sframe encryption. Cannot be undone.
+  virtual void EnableSframe() = 0;
 };
 
 class MediaReceiveChannelInterface {
@@ -336,6 +339,9 @@ class MediaReceiveChannelInterface {
   // Returns current value of base minimum delay in milliseconds.
   virtual std::optional<int> GetBaseMinimumPlayoutDelayMs(
       uint32_t ssrc) const = 0;
+
+  // Marks the channel as requiring Sframe decryption. Cannot be undone.
+  virtual void EnableSframe() = 0;
 };
 
 // The stats information is structured as follows:

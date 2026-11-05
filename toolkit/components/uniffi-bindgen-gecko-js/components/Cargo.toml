@@ -19,7 +19,7 @@ harness = false
 uniffi = { workspace = true }
 
 ads-client = "0.1"
-autofill = "0.1"
+autofill = { version = "0.1", features = ["keydb"] }
 fxcontainers = "0.1"
 context_id = "0.1"
 filter_adult = "0.1"

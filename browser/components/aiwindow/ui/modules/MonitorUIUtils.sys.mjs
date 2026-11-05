@@ -4,6 +4,7 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   MonitorAgent:
     "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
@@ -28,6 +29,26 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.smartwindow.agent.supportedRegions",
   ""
 );
+
+/**
+ * Titles of the pages open in non-private windows.
+ *
+ * @returns {Map<string, string>} Map of url -> page title
+ */
+function getOpenTabTitles() {
+  const titles = new Map();
+  for (const win of lazy.BrowserWindowTracker.getOrderedWindows({
+    private: false,
+  })) {
+    for (const { linkedBrowser } of win.gBrowser.tabs) {
+      const url = linkedBrowser.currentURI?.spec;
+      if (url && linkedBrowser.contentTitle && !titles.has(url)) {
+        titles.set(url, linkedBrowser.contentTitle);
+      }
+    }
+  }
+  return titles;
+}
 
 export const SCHEDULE_TYPES = Object.freeze({
   DAILY: "daily",
@@ -252,16 +273,21 @@ export const MonitorUIUtils = {
   },
 
   /**
-   * Resolve page titles for watched URLs from Places so the monitor card can
-   * label its chips with the page title.
+   * Resolve page titles for watched URLs from open tabs, then Places, so the
+   * monitor card can label its chips with the page title.
    *
    * @param {string[]} urls - Watched page URLs
-   * @returns {Promise<Record<string, string>>} Map of url → page title for URLs that have a stored title.
+   * @returns {Promise<Record<string, string>>} Map of url → page title for URLs that are open or have a stored title.
    */
   async resolveWatchUrlTitles(urls) {
     const titles = {};
+    const openTabTitles = urls?.length ? getOpenTabTitles() : new Map();
     await Promise.all(
       (urls ?? []).map(async url => {
+        if (openTabTitles.has(url)) {
+          titles[url] = openTabTitles.get(url);
+          return;
+        }
         try {
           const info = await lazy.PlacesUtils.history.fetch(url);
           if (info?.title) {
@@ -273,6 +299,28 @@ export const MonitorUIUtils = {
       })
     );
     return titles;
+  },
+
+  /**
+   * Answers an agent-monitor-item:resolve-titles request from a card hosted in
+   * chrome, which can reach Places without going through an actor. Content
+   * hosts are answered by AgentMonitorItemChild instead.
+   *
+   * @param {CustomEvent} event - The request, still being dispatched
+   */
+  async answerResolveTitles(event) {
+    const card = event.composedPath()[0];
+    try {
+      const titles = await this.resolveWatchUrlTitles(event.detail?.urls);
+      card?.dispatchEvent(
+        new card.documentGlobal.CustomEvent(
+          "agent-monitor-item:titles-resolved",
+          { detail: { titles } }
+        )
+      );
+    } catch (error) {
+      console.warn("Could not answer watch URL title request", error);
+    }
   },
 
   /**

@@ -64,12 +64,14 @@ IPDL_SOURCES += [
 ]
 
 EXPORTS.mozilla.webgpu += [
+    "ipc/MappedRangeGuard.h",
     "ipc/WebGPUChild.h",
     "ipc/WebGPUParent.h",
     "ipc/WebGPUTypes.h",
 ]
 
 UNIFIED_SOURCES += [
+    "ipc/MappedRangeGuard.cpp",
     "ipc/WebGPUChild.cpp",
     "ipc/WebGPUParent.cpp",
 ]

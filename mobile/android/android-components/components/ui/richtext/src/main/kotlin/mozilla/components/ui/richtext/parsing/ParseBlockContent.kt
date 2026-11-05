@@ -8,6 +8,7 @@ import mozilla.components.ui.richtext.ir.BlockContent
 import mozilla.components.ui.richtext.ir.HeadingLevel
 import mozilla.components.ui.richtext.ir.InlineContent
 import org.intellij.markdown.MarkdownElementTypes
+import org.intellij.markdown.MarkdownTokenTypes
 import org.intellij.markdown.ast.ASTNode
 
 /** Converts an [ASTNode] into an intermediate representation list of [BlockContent]. */
@@ -20,7 +21,9 @@ internal fun ASTNode.toBlocks(source: CharSequence): List<BlockContent> =
         MarkdownElementTypes.ATX_3,
         MarkdownElementTypes.ATX_4,
         MarkdownElementTypes.ATX_5,
-        MarkdownElementTypes.ATX_6 -> createHeadingBlock(source)
+        MarkdownElementTypes.ATX_6,
+        MarkdownElementTypes.SETEXT_1,
+        MarkdownElementTypes.SETEXT_2 -> createHeadingBlock(source)
 
         MarkdownElementTypes.UNORDERED_LIST,
         MarkdownElementTypes.ORDERED_LIST -> {
@@ -66,8 +69,10 @@ private fun ASTNode.createParagraphBlock(source: CharSequence): List<BlockConten
 private fun ASTNode.createHeadingBlock(source: CharSequence): List<BlockContent.Heading> {
     val level =
         when (type) {
-            MarkdownElementTypes.ATX_1 -> HeadingLevel.H1
-            MarkdownElementTypes.ATX_2 -> HeadingLevel.H2
+            MarkdownElementTypes.ATX_1,
+            MarkdownElementTypes.SETEXT_1 -> HeadingLevel.H1
+            MarkdownElementTypes.ATX_2,
+            MarkdownElementTypes.SETEXT_2 -> HeadingLevel.H2
             MarkdownElementTypes.ATX_3 -> HeadingLevel.H3
             MarkdownElementTypes.ATX_4 -> HeadingLevel.H4
             MarkdownElementTypes.ATX_5 -> HeadingLevel.H5
@@ -75,6 +80,7 @@ private fun ASTNode.createHeadingBlock(source: CharSequence): List<BlockContent.
         }
     val content =
         children
+            .filter { it.type == MarkdownTokenTypes.ATX_CONTENT || it.type == MarkdownTokenTypes.SETEXT_CONTENT }
             .flatMap { it.toInlineContent(source) }
             .mapIndexedNotNull { index, content ->
                 if (content is InlineContent.Plain && index == 0 && content.value.trim().isEmpty()) {

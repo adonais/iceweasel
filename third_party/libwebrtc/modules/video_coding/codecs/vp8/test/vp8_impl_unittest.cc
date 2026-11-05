@@ -371,6 +371,36 @@ TEST_F(TestVp8Impl, DecodedQpEqualsEncodedQp) {
   EXPECT_EQ(encoded_frame.qp_, *decoded_qp);
 }
 
+TEST_F(TestVp8Impl, RejectsCorruptedDeltaFrame) {
+  VideoFrame input_frame = NextInputFrame();
+  EncodedImage key_frame;
+  CodecSpecificInfo codec_specific_info;
+  EncodeAndWaitForFrame(input_frame, &key_frame, &codec_specific_info,
+                        /*keyframe=*/true);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(key_frame, -1));
+  std::unique_ptr<VideoFrame> decoded_frame;
+  std::optional<uint8_t> decoded_qp;
+  ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
+
+  EncodedImage delta_frame;
+  EncodeAndWaitForFrame(NextInputFrame(), &delta_frame, &codec_specific_info,
+                        /*keyframe=*/false);
+
+  // Truncate the delta frame to corrupt the token partition while leaving
+  // the frame header and first partition intact. Libvpx will decode the frame
+  // with error and flag it as corrupted.
+  delta_frame.set_size(delta_frame.size() / 2);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERROR, decoder_->Decode(delta_frame, -1));
+
+  // Verify that a subsequent key frame can still be decoded successfully.
+  EncodedImage new_key_frame;
+  EncodeAndWaitForFrame(NextInputFrame(), &new_key_frame, &codec_specific_info,
+                        /*keyframe=*/true);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(new_key_frame, -1));
+  ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
+  ASSERT_TRUE(decoded_frame);
+}
+
 TEST_F(TestVp8Impl, ChecksSimulcastSettings) {
   codec_settings_.numberOfSimulcastStreams = 2;
   // Resolutions are not in ascending order, temporal layers do not match.

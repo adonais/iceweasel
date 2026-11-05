@@ -44,6 +44,10 @@ function URLFetcher(url, timeout) {
   xhr.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
   // Prevent privacy leaks
   xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_ANONYMOUS;
+  // If the TCP flow is pinned to the captive portal then we need to use a
+  // fresh connection for each check in order to detect logged in events.
+  xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_FRESH_CONNECTION;
+  xhr.channel.loadFlags |= Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
   // Use the system's resolver for this check
   xhr.channel.setTRRMode(Ci.nsIRequest.TRR_DISABLED_MODE);
   // We except this from being classified

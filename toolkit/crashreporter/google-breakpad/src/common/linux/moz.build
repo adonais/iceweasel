@@ -38,3 +38,28 @@ include('/toolkit/crashreporter/crashreporter.mozbuild')
 
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     CXXFLAGS += ['-Wno-error=stack-protector']
+
+SOURCE_HEADERS += [
+	"breakpad_getcontext.h",
+	"crc32.h",
+	"dump_symbols.h",
+	"eintr_wrapper.h",
+	"elf_core_dump.h",
+	"elf_gnu_compat.h",
+	"elf_symbols_to_module.h",
+	"elfutils-inl.h",
+	"elfutils.h",
+	"file_id.h",
+	"google_crashdump_uploader.h",
+	"guid_creator.h",
+	"http_upload.h",
+	"ignore_ret.h",
+	"libcurl_wrapper.h",
+	"linux_libc_support.h",
+	"memory_mapped_file.h",
+	"safe_readlink.h",
+	"symbol_collector_client.h",
+	"symbol_upload.h",
+	"synth_elf.h",
+	"ucontext_constants.h",
+]

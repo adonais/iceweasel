@@ -408,6 +408,10 @@ const PAGEINFO_VALIDATORS = Object.freeze({
       if (inVisit.referrer) {
         visit.referrer = PlacesUtils.normalizeToURLOrGUID(inVisit.referrer);
       }
+
+      if (inVisit.userContextId) {
+        visit.userContextId = inVisit.userContextId;
+      }
       visits.push(visit);
     }
     return visits;

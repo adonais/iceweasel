@@ -37,7 +37,7 @@ export var RecentlyClosedTabsAndWindowsMenuUtils = {
   /**
    * Builds up a document fragment of UI items for the recently closed tabs.
    *
-   * @param   {Window} aWindow
+   * @param   {BrowserWindow} aWindow
    *          The window that the tabs were closed in.
    * @param   {"menuitem"|"toolbarbutton"} aTagName
    *          The tag name that will be used when creating the UI items.

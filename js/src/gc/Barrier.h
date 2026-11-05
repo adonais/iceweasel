@@ -1047,6 +1047,7 @@ class HeapSlot : public BarrieredBase<Value>,
 
   // Use this if the automatic coercion to T isn't working.
   const Value& get() const { return this->unbarrieredGet(); }
+  using Base::unbarrieredGet;
 
 #if JS_BITS_PER_WORD == 64
   using Base::unbarrieredAtomicGet;

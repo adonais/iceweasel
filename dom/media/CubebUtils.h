@@ -118,11 +118,6 @@ bool EstimatedLatencyDefaultDevices(
     double* aMean, double* aStdDev,
     Side aSide = static_cast<Side>(Side::Input | Side::Output));
 
-#  ifdef MOZ_WIDGET_ANDROID
-int32_t AndroidGetAudioOutputSampleRate();
-int32_t AndroidGetAudioOutputFramesPerBuffer();
-#  endif
-
 #  if defined(ENABLE_TESTS) || defined(FUZZING)
 void ForceSetCubebContext(cubeb* aCubebContext);
 void ForceUnsetCubebContext();

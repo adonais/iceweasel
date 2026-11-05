@@ -23,7 +23,14 @@ struct D3D11Checks {
   };
   using VideoFormatOptionSet = EnumSet<VideoFormatOption>;
 
-  static bool DoesRenderTargetViewNeedRecreating(ID3D11Device* aDevice);
+  enum class RenderTargetViewCheckResult {
+    NotNeeded,
+    NeedsRecreating,
+    Failed,
+  };
+
+  static RenderTargetViewCheckResult DoesRenderTargetViewNeedRecreating(
+      ID3D11Device* aDevice);
   static bool DoesDeviceWork();
   static bool DoesTextureSharingWork(ID3D11Device* device);
   static bool DoesAlphaTextureSharingWork(ID3D11Device* device);

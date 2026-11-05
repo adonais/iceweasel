@@ -16,7 +16,7 @@ from mozgeckoprofiler import symbolicate_profile_file
 
 here = os.path.dirname(os.path.realpath(__file__))
 LOG = RaptorLogger(component="raptor-gecko-profile")
-from raptor_profiling import RaptorProfiling
+from raptor_profiling import RaptorProfiling, _profile_archive_paths
 
 
 class GeckoProfile(RaptorProfiling):
@@ -26,8 +26,10 @@ class GeckoProfile(RaptorProfiling):
     This allows us to collect Gecko profiling data and to zip results into one file.
     """
 
-    def __init__(self, upload_dir, raptor_config, test_config):
-        super().__init__(upload_dir, raptor_config, test_config)
+    def __init__(
+        self, upload_dir, raptor_config, test_config, source_path_mappings=None
+    ):
+        super().__init__(upload_dir, raptor_config, test_config, source_path_mappings)
 
         # define the key in the results json for gecko profiles
         self.profile_entry_string = "geckoProfiles"
@@ -78,7 +80,11 @@ class GeckoProfile(RaptorProfiling):
 
     def _symbolicate_profile(self, profile_path, out_path):
         try:
-            return symbolicate_profile_file(profile_path, out_path)
+            return symbolicate_profile_file(
+                profile_path,
+                out_path,
+                source_path_mappings=self.source_path_mappings,
+            )
         except Exception:
             LOG.critical(
                 "Encountered an exception during profile symbolication.", exc_info=True
@@ -100,8 +106,6 @@ class GeckoProfile(RaptorProfiling):
                 LOG.error("No profiles collected")
             return
 
-        test_type = self.test_config.get("type", "pageload")
-
         try:
             mode = zipfile.ZIP_DEFLATED
         except NameError:
@@ -110,6 +114,7 @@ class GeckoProfile(RaptorProfiling):
         with tempfile.TemporaryDirectory() as sym_dir, zipfile.ZipFile(
             self.profile_arcname, "a", mode
         ) as arc:
+            symbolicated = []
             for index, profile_info in enumerate(profiles):
                 profile_path = profile_info["path"]
 
@@ -131,44 +136,38 @@ class GeckoProfile(RaptorProfiling):
                     if self._symbolicate_profile(profile_path, sym_path)
                     else profile_path
                 )
+                symbolicated.append((profile_info, archived_path))
 
+            # Write the profiles into a set of folders formatted as:
+            # <TEST-NAME>-<TEST-RUN-TYPE>.
+            # <TEST-RUN-TYPE> can be pageload-{warm,cold} or {test-type}
+            # only for the tests that are not a pageload test.
+            # For example, "cnn-pageload-warm".
+            # If any file name collides, all profiles include the page alias.
+            # The file names are formatted as <ITERATION-TYPE>-<ITERATION>
+            # to clearly indicate without redundant information.
+            # For example, "browser-cycle-1.json".
+            archive_paths = _profile_archive_paths(
+                self.test_config,
+                [profile_info for profile_info, _ in symbolicated],
+                [
+                    ".json.gz" if archived_path.endswith(".gz") else ".json"
+                    for _, archived_path in symbolicated
+                ],
+            )
+
+            for (profile_info, archived_path), path_in_zip in zip(
+                symbolicated, archive_paths
+            ):
                 try:
-                    # Write the profiles into a set of folders formatted as:
-                    # <TEST-NAME>-<TEST-RUN-TYPE>.
-                    # <TEST-RUN-TYPE> can be pageload-{warm,cold} or {test-type}
-                    # only for the tests that are not a pageload test.
-                    # For example, "cnn-pageload-warm".
-                    # The file names are formatted as <ITERATION-TYPE>-<ITERATION>
-                    # to clearly indicate without redundant information.
-                    # For example, "browser-cycle-1.json".
-                    test_run_type = (
-                        "{}-{}".format(test_type, profile_info["type"])
-                        if test_type == "pageload"
-                        else test_type
-                    )
-                    folder_name = f"{self.test_config['name']}-{test_run_type}"
-                    basename = os.path.basename(profile_path)
-                    iteration = basename.split("-")[-1].split(".", 1)[0]
-                    if test_type == "pageload" and profile_info["type"] == "cold":
-                        iteration_type = "browser-cycle"
-                    elif profile_info["type"] == "warm":
-                        iteration_type = "page-cycle"
-                    else:
-                        iteration_type = "iteration"
-                    # State the archived profile's own compression: plain JSON
-                    # once symbolicated, and the collected profile's otherwise.
-                    suffix = ".json.gz" if archived_path.endswith(".gz") else ".json"
-                    profile_name = f"{iteration_type}-{iteration}{suffix}"
-                    path_in_zip = os.path.join(folder_name, profile_name)
-
                     LOG.info(
-                        f"Adding profile {profile_path} to archive "
+                        f"Adding profile {profile_info['path']} to archive "
                         f"{self.profile_arcname} as {path_in_zip}"
                     )
                     arc.write(archived_path, path_in_zip)
                 except Exception:
                     LOG.exception(
-                        f"Failed to add symbolicated profile {profile_path} to "
+                        f"Failed to add symbolicated profile {profile_info['path']} to "
                         f"archive {self.profile_arcname}"
                     )
                     raise

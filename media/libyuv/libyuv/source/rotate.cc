@@ -36,7 +36,8 @@ void TransposePlane(const uint8_t* src,
   void (*TransposeWxH)(const uint8_t* src, int src_stride, uint8_t* dst,
                        int dst_stride, int width, int height) = NULL;
 #endif
-#if defined(HAS_TRANSPOSEWX16_AVX2) || defined(HAS_TRANSPOSEWX16_AVX512BW)
+#if defined(HAS_TRANSPOSEWX16_AVX2) || defined(HAS_TRANSPOSEWX16_AVX512BW) || \
+    defined(HAS_TRANSPOSEWX16_WASMSIMD)
   void (*TransposeWx16)(const uint8_t* src, int src_stride, uint8_t* dst,
                         int dst_stride, int width) = NULL;
 #elif defined(HAS_TRANSPOSEWX16_LSX) || defined(HAS_TRANSPOSEWX16_NEON)
@@ -98,6 +99,22 @@ void TransposePlane(const uint8_t* src,
     }
   }
 #endif
+#if defined(HAS_TRANSPOSEWX8_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    TransposeWx8 = TransposeWx8_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 16)) {
+      TransposeWx8 = TransposeWx8_WASMSIMD;
+    }
+  }
+#endif
+#if defined(HAS_TRANSPOSEWX16_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    TransposeWx16 = TransposeWx16_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 16)) {
+      TransposeWx16 = TransposeWx16_WASMSIMD;
+    }
+  }
+#endif
 
 #if defined(HAS_TRANSPOSEWXH_SME)
   if (TransposeWxH) {
@@ -106,7 +123,8 @@ void TransposePlane(const uint8_t* src,
   }
 #endif
 #if defined(HAS_TRANSPOSEWX16_AVX2) || defined(HAS_TRANSPOSEWX16_AVX512BW) || \
-    defined(HAS_TRANSPOSEWX16_LSX) || defined(HAS_TRANSPOSEWX16_NEON)
+    defined(HAS_TRANSPOSEWX16_LSX) || defined(HAS_TRANSPOSEWX16_NEON) ||      \
+    defined(HAS_TRANSPOSEWX16_WASMSIMD)
   // Work across the source in 16x16 tiles
   if (TransposeWx16) {
     while (i >= 16) {
@@ -220,6 +238,14 @@ void RotatePlane180(const uint8_t* src,
     }
   }
 #endif
+#if defined(HAS_MIRRORROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    MirrorRow = MirrorRow_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 16)) {
+      MirrorRow = MirrorRow_WASMSIMD;
+    }
+  }
+#endif
 #if defined(HAS_COPYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     CopyRow = IS_ALIGNED(width, 32) ? CopyRow_SSE2 : CopyRow_Any_SSE2;
@@ -289,7 +315,9 @@ void SplitTransposeUV(const uint8_t* src,
                          int dst_stride_a, uint8_t* dst_b, int dst_stride_b,
                          int width, int height) = TransposeUVWxH_C;
 #endif
-#if defined(HAS_TRANSPOSEUVWX16_AVX2) || defined(HAS_TRANSPOSEUVWX16_AVX512BW)
+#if defined(HAS_TRANSPOSEUVWX16_AVX2) ||     \
+    defined(HAS_TRANSPOSEUVWX16_AVX512BW) || \
+    defined(HAS_TRANSPOSEUVWX16_WASMSIMD)
   void (*TransposeUVWx16)(const uint8_t* src, int src_stride, uint8_t* dst_a,
                           int dst_stride_a, uint8_t* dst_b, int dst_stride_b,
                           int width) = NULL;
@@ -346,6 +374,22 @@ void SplitTransposeUV(const uint8_t* src,
     TransposeUVWx16 = TransposeUVWx16_AVX512BW;
   }
 #endif
+#if defined(HAS_TRANSPOSEUVWX8_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    TransposeUVWx8 = TransposeUVWx8_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 8)) {
+      TransposeUVWx8 = TransposeUVWx8_WASMSIMD;
+    }
+  }
+#endif
+#if defined(HAS_TRANSPOSEUVWX16_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    TransposeUVWx16 = TransposeUVWx16_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 8)) {
+      TransposeUVWx16 = TransposeUVWx16_WASMSIMD;
+    }
+  }
+#endif
 
 #if defined(HAS_TRANSPOSEUVWXH_SME)
   if (TestCpuFlag(kCpuHasSME)) {
@@ -354,8 +398,9 @@ void SplitTransposeUV(const uint8_t* src,
     return;
   }
 #endif
-#if defined(HAS_TRANSPOSEUVWX16_AVX2) || \
-    defined(HAS_TRANSPOSEUVWX16_AVX512BW) || defined(HAS_TRANSPOSEUVWX16_LSX)
+#if defined(HAS_TRANSPOSEUVWX16_AVX2) ||     \
+    defined(HAS_TRANSPOSEUVWX16_AVX512BW) || \
+    defined(HAS_TRANSPOSEUVWX16_LSX) || defined(HAS_TRANSPOSEUVWX16_WASMSIMD)
   // Work through the source in 16x16 tiles.
   if (TransposeUVWx16) {
     while (i >= 16) {
@@ -451,6 +496,11 @@ void SplitRotateUV180(const uint8_t* src,
 #if defined(HAS_MIRRORSPLITUVROW_LSX)
   if (TestCpuFlag(kCpuHasLSX) && IS_ALIGNED(width, 32)) {
     MirrorSplitUVRow = MirrorSplitUVRow_LSX;
+  }
+#endif
+#if defined(HAS_MIRRORSPLITUVROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD) && IS_ALIGNED(width, 16)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_WASMSIMD;
   }
 #endif
 

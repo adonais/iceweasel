@@ -698,7 +698,7 @@ export class MLEngineParent extends JSProcessActorParent {
    *
    * @param {string} featureId - id of the feature
    * @param {string} taskName - name of the inference task
-   * @param {string|null} modelId - name of the model id
+   * @param {string|null} [modelId] - name of the model id
    * @returns {Promise<RemoteSettingsInferenceOptions | { runtimeFilename: string }>}
    */
 
@@ -1421,11 +1421,20 @@ export class MLEngine {
         break;
       }
       case "EnginePort:RunResponse": {
-        const { response, error, requestId, resourcesBefore, resourcesAfter } =
-          data;
+        const {
+          response,
+          error,
+          errorDetails,
+          requestId,
+          resourcesBefore,
+          resourcesAfter,
+        } = data;
         const request = this.#requests.get(requestId);
         if (request) {
           if (error) {
+            if (errorDetails && typeof error === "object") {
+              Object.assign(error, errorDetails);
+            }
             this.telemetry.recordRunInferenceFailure(error);
             request.reject(error);
           } else if (response) {

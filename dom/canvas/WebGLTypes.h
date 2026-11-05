@@ -102,7 +102,6 @@ class TexUnpackSurface;
 }  // namespace webgl
 
 class ClientWebGLContext;
-struct WebGLTexPboOffset;
 class WebGLTexture;
 class WebGLBuffer;
 class WebGLFramebuffer;
@@ -614,15 +613,6 @@ enum class ContextLossReason : uint8_t {
   Manual,
   Guilty,
 };
-
-inline bool ReadContextLossReason(const uint8_t val,
-                                  ContextLossReason* const out) {
-  if (val > static_cast<uint8_t>(ContextLossReason::Guilty)) {
-    return false;
-  }
-  *out = static_cast<ContextLossReason>(val);
-  return true;
-}
 
 // -
 

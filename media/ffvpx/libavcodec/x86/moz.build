@@ -49,3 +49,13 @@ if CONFIG['TARGET_CPU'] == 'x86_64':
 FINAL_LIBRARY = 'mozavcodec'
 
 include('/media/ffvpx/ffvpxcommon.mozbuild')
+
+SOURCE_HEADERS += [
+	"constants.h",
+	"fdct.h",
+	"idctdsp.h",
+	"mathops.h",
+	"simple_idct.h",
+	"vp9dsp_init.h",
+	"vpx_arith.h",
+]

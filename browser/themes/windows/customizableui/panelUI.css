@@ -8,5 +8,5 @@
 
 menupopup::part(drop-indicator) {
   /* To account for the shadow margin + border of the panel */
-  margin-inline-start: 5px;
+  margin-inline-start: calc(var(--panel-box-shadow-margin) + var(--border-width));
 }

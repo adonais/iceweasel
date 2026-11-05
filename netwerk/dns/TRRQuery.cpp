@@ -37,6 +37,12 @@ static already_AddRefed<AddrInfo> merge_rrset(AddrInfo* rrto,
   return builder.Finish();
 }
 
+TRRQuery::TRRQuery(nsHostResolver* aHostResolver, nsHostRecord* aHostRecord)
+    : mHostResolver(aHostResolver),
+      mRecord(aHostRecord),
+      mTrrLock("TRRQuery.mTrrLock") {}
+TRRQuery::~TRRQuery() = default;
+
 void TRRQuery::Cancel(nsresult aStatus) {
   MutexAutoLock trrlock(mTrrLock);
   if (mTrrA) {

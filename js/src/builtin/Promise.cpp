@@ -3003,26 +3003,49 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
  *
  * Returns true in *needsDeferral if the synchronous steps of resolving a
  * promise with `value` _might_ execute user code: e.g.
- * - a Proxy or other exotic object on the prototype chain, an accessor
- *   for `"then"`, or a callable data-property `"then"`.
+ * - a Proxy or other exotic object on the prototype chain, an accessor with a
+ *   getter for `"then"`, or a callable data-property `"then"`.
  *
  */
-[[nodiscard]] static bool RequiresDeferredPromiseResolution(
-    JSContext* cx, HandleValue value, bool* needsDeferral) {
+static void RequiresDeferredPromiseResolution(HandleValue value, JSContext* cx,
+                                              bool* needsDeferral) {
   *needsDeferral = false;
   if (!value.isObject()) {
-    return true;
+    return;
   }
 
-  RootedValue thenVal(cx);
-  if (!GetPropertyPure(cx, &value.toObject(), NameToId(cx->names().then),
-                       thenVal.address())) {
+  // Do lookup first, and only GetProperty if needed.
+  NativeObject* holder;
+  PropertyResult prop;
+  if (!LookupPropertyPure(cx, &value.toObject(), NameToId(cx->names().then),
+                          &holder, &prop)) {
+    // PropertyAccessCouldRunUserCode: Lookup encountered exotic (proxy
+    // included).
     *needsDeferral = true;
-    return true;
+    return;
   }
+
+  if (prop.isNotFound()) {
+    return;
+  }
+
+  MOZ_ASSERT(prop.isNativeProperty());
+
+  PropertyInfo propInfo = prop.propertyInfo();
+  if (propInfo.isAccessorProperty()) {
+    // PropertyAccessCouldRunUserCode: Getter needs deferral.
+    *needsDeferral = holder->hasGetter(propInfo);
+    return;
+  }
+
+  MOZ_ASSERT(propInfo.isDataProperty());
+
+  // Read the data property's value from the holder found by the lookup above,
+  // rather than looking "then" up a second time.
+  Value thenVal = holder->getSlot(propInfo.slot());
 
   *needsDeferral = IsCallable(thenVal);
-  return true;
+  return;
 }
 
 /**
@@ -3146,9 +3169,7 @@ bool js::SafeResolvePromise(JSContext* cx, Handle<PromiseObject*> promise,
   }
 
   bool needsDeferral = false;
-  if (!RequiresDeferredPromiseResolution(cx, resolution, &needsDeferral)) {
-    return false;
-  }
+  RequiresDeferredPromiseResolution(resolution, cx, &needsDeferral);
 
   if (!needsDeferral) {
     return PromiseObject::resolve(cx, promise, resolution);

@@ -14,7 +14,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -169,8 +168,10 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
       const PeerConnectionInterface::RTCConfiguration& configuration);
   void UpdateCachedIceCredentials(std::vector<IceParameters> credentials);
   bool AddIceCandidate(const IceCandidate* candidate);
-  void AddIceCandidate(std::unique_ptr<IceCandidate> candidate,
-                       std::function<void(RTCError)> callback);
+  void AddIceCandidate(
+      std::unique_ptr<IceCandidate> candidate,
+      absl::AnyInvocable<void(RTCError, absl::AnyInvocable<void() &&>) &&>
+          callback);
   bool RemoveIceCandidate(const IceCandidate* candidate);
   // Adds a locally generated candidate to the local description.
   void AddLocalIceCandidate(const IceCandidate* candidate);

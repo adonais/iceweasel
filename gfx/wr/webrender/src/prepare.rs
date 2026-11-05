@@ -35,7 +35,7 @@
 //! - Push potentially multiple commands to command buffers.
 //!
 
-use api::{ColorF, DebugFlags, ExtendMode, ExternalImageData, ExternalImageType, GradientStop, ImageBufferKind};
+use api::{AlphaMode, ColorF, DebugFlags, ExtendMode, ExternalImageData, ExternalImageType, GradientStop, ImageBufferKind, PrimitiveFlags};
 use crate::border_image::prepare_border_image_nine_patch;
 use crate::pattern::cutout::Cutout;
 use crate::render_task_graph::RenderTaskId;
@@ -66,14 +66,13 @@ use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureCont
 use crate::gpu_types::UvRectKind;
 
 use crate::internal_types::{FastHashMap, PlaneSplitAnchor};
-use crate::picture::{ClusterFlags, PictureScratch};
-use crate::picture::{PrimitiveList, PrimitiveCluster};
+use crate::picture::PictureScratch;
 use crate::surface::{SubpixelMode, SurfaceIndex};
 use crate::tile_cache::{SliceId, TileCacheInstance};
 use crate::prim_store::*;
 use crate::quad::{self, QuadDescriptor, QuadTransformState};
 use crate::quad_clip::QuadClipStack;
-use crate::render_backend::DataStores;
+use crate::render_backend::{DataStores, DlStores};
 use crate::scene_debug::{HighlightMode, SceneDebugOverride};
 
 
@@ -93,6 +92,7 @@ pub fn prepare_picture(
     frame_context: &FrameBuildingContext,
     frame_state: &mut FrameBuildingState,
     data_stores: &DataStores,
+    dl_stores: &DlStores,
     scratch: &mut PrimitiveScratchBuffer,
     tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
     prim_instances: &mut Vec<PrimitiveInstance>,
@@ -107,7 +107,7 @@ pub fn prepare_picture(
     }
 
     let pic = &mut store.pictures[pic_index.0 as usize];
-    let Some((pic_context, mut pic_state, mut prim_list, scratch_handle)) = pic.take_context(
+    let Some((pic_context, mut pic_state, scratch_handle)) = pic.take_context(
         pic_index,
         surface_index,
         subpixel_mode,
@@ -125,21 +125,18 @@ pub fn prepare_picture(
 
     prepare_primitives(
         store,
-        &mut prim_list,
         &pic_context,
         &mut pic_state,
         frame_context,
         frame_state,
         data_stores,
+        dl_stores,
         scratch,
         tile_caches,
         prim_instances,
     );
 
-    // Restore the dependencies (borrow check dance)
     store.pictures[pic_context.pic_index.0 as usize].restore_context(
-        pic_context.pic_index,
-        prim_list,
         pic_context,
         frame_context,
         frame_state,
@@ -151,12 +148,12 @@ pub fn prepare_picture(
 
 fn prepare_primitives(
     store: &mut PrimitiveStore,
-    prim_list: &mut PrimitiveList,
     pic_context: &PictureContext,
     pic_state: &mut PictureState,
     frame_context: &FrameBuildingContext,
     frame_state: &mut FrameBuildingState,
     data_stores: &DataStores,
+    dl_stores: &DlStores,
     scratch: &mut PrimitiveScratchBuffer,
     tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
     prim_instances: &mut Vec<PrimitiveInstance>,
@@ -167,71 +164,59 @@ fn prepare_primitives(
     let mut quad_transform = QuadTransformState::new();
     let mut quad_clips = QuadClipStack::new();
 
-    for cluster in &mut prim_list.clusters {
-        if !cluster.flags.contains(ClusterFlags::IS_VISIBLE) {
-            continue;
-        }
-        tracy_rs::profile_scope!("cluster");
-        frame_state.num_visited_primitives += cluster.prim_range().len() as u32;
+    let device_pixel_scale = frame_state.surfaces[pic_context.surface_index.0].device_pixel_scale;
 
-        pic_state.map_local_to_pic.set_target_spatial_node(
-            cluster.spatial_node_index,
-            frame_context.spatial_tree,
-        );
+    let draw_range = scratch.frame.picture_draw_range(pic_context.pic_index);
+    frame_state.num_visited_primitives += draw_range.len() as u32;
 
-        let device_pixel_scale = frame_state.surfaces[pic_context.surface_index.0].device_pixel_scale;
+    for position in draw_range {
+        let draw_index = scratch.frame.picture_draw(position);
+        let draw = scratch.frame.draw(draw_index);
+        let prim_instance_index = draw.prim_instance_index.0 as usize;
+        let spatial_node_index = draw.spatial_node_index;
+
         quad_transform.set(
-            cluster.spatial_node_index,
+            spatial_node_index,
             pic_context.raster_spatial_node_index,
             frame_context.spatial_tree,
             device_pixel_scale,
         );
 
-        for prim_instance_index in cluster.prim_range() {
-            // Primitives the visibility pass culled have no draw at all.
-            let Some(draw_index) = scratch
-                .frame
-                .draw_index_for_instance(PrimitiveInstanceIndex(prim_instance_index as u32))
-            else {
-                continue;
-            };
+        if frame_state.surface_builder.get_cmd_buffer_targets_for_prim(
+            draw,
+            &mut cmd_buffer_targets,
+        ) {
+            let plane_split_anchor = PlaneSplitAnchor::new(
+                spatial_node_index,
+                draw_index,
+            );
 
-            if frame_state.surface_builder.get_cmd_buffer_targets_for_prim(
-                scratch.frame.draw(draw_index),
-                &mut cmd_buffer_targets,
-            ) {
-                let plane_split_anchor = PlaneSplitAnchor::new(
-                    cluster.spatial_node_index,
-                    draw_index,
-                );
+            prepare_prim_for_render(
+                store,
+                prim_instance_index,
+                draw_index,
+                spatial_node_index,
+                &mut quad_transform,
+                &mut quad_clips,
+                pic_context,
+                pic_state,
+                frame_context,
+                frame_state,
+                plane_split_anchor,
+                data_stores,
+                dl_stores,
+                scratch,
+                tile_caches,
+                prim_instances,
+                &cmd_buffer_targets,
+            );
 
-                prepare_prim_for_render(
-                    store,
-                    prim_instance_index,
-                    draw_index,
-                    cluster,
-                    &mut quad_transform,
-                    &mut quad_clips,
-                    pic_context,
-                    pic_state,
-                    frame_context,
-                    frame_state,
-                    plane_split_anchor,
-                    data_stores,
-                    scratch,
-                    tile_caches,
-                    prim_instances,
-                    &cmd_buffer_targets,
-                );
-
-                frame_state.num_visible_primitives += 1;
-                frame_state.num_cmd_targets += cmd_buffer_targets.len() as u32;
-                continue;
-            }
-
-            // A draw that reached no command buffer is simply never referenced
-            // by one, so there is nothing to clear here.
+            frame_state.num_visible_primitives += 1;
+            frame_state.num_cmd_targets += cmd_buffer_targets.len() as u32;
         }
+
+        // A draw that reached no command buffer is simply never referenced
+        // by one, so there is nothing to clear here.
     }
 }
 
@@ -262,7 +247,7 @@ fn prepare_prim_for_render(
     store: &mut PrimitiveStore,
     prim_instance_index: usize,
     draw_index: PrimitiveDrawIndex,
-    cluster: &mut PrimitiveCluster,
+    prim_spatial_node_index: SpatialNodeIndex,
     mut quad_transform: &mut QuadTransformState,
     quad_clips: &mut QuadClipStack,
     pic_context: &PictureContext,
@@ -271,6 +256,7 @@ fn prepare_prim_for_render(
     frame_state: &mut FrameBuildingState,
     plane_split_anchor: PlaneSplitAnchor,
     data_stores: &DataStores,
+    dl_stores: &DlStores,
     scratch: &mut PrimitiveScratchBuffer,
     tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
     prim_instances: &mut Vec<PrimitiveInstance>,
@@ -323,7 +309,7 @@ fn prepare_prim_for_render(
             let local_rect = scratch.frame.draw(draw_index).clip_chain.local_coverage_rect;
             let world_rect = frame_context
                 .spatial_tree
-                .get_world_transform(cluster.spatial_node_index)
+                .get_world_transform(prim_spatial_node_index)
                 .into_transform()
                 .outer_transformed_box2d(&local_rect);
 
@@ -354,6 +340,7 @@ fn prepare_prim_for_render(
             frame_context,
             frame_state,
             data_stores,
+            dl_stores,
             scratch,
             tile_caches,
             prim_instances,
@@ -389,7 +376,7 @@ fn prepare_prim_for_render(
             if !update_clip_task(
                 draw_index,
                 prim_rect,
-                cluster.spatial_node_index,
+                prim_spatial_node_index,
                 pic_context.raster_spatial_node_index,
                 pic_context,
                 frame_context,
@@ -402,7 +389,6 @@ fn prepare_prim_for_render(
         }
     }
 
-    let prim_spatial_node_index = cluster.spatial_node_index;
     let device_pixel_scale = frame_state.surfaces[pic_context.surface_index.0].device_pixel_scale;
     // Snapshot of the per-frame draw header for this prim. Copy is fine here
     // because the only field this function writes (clip_task_index, in the
@@ -558,6 +544,7 @@ fn prepare_prim_for_render(
                 &transform.to_transform().with_destination::<_>(),
                 surface,
                 prim_spatial_node_index,
+                pic_context.shadow_offset,
                 allow_subpixel,
                 frame_context.fb_config.low_quality_pinch_zoom,
                 frame_state.resource_cache,
@@ -584,6 +571,7 @@ fn prepare_prim_for_render(
                 },
                 quad_clips,
                 quad_transform,
+                !prim_data.common.flags.contains(PrimitiveFlags::ANTIALISED),
                 frame_context,
                 targets,
                 frame_state,
@@ -631,10 +619,10 @@ fn prepare_prim_for_render(
 
             return;
         }
-        PrimitiveKind::Rectangle { data_handle, .. } => {
+        PrimitiveKind::Rectangle { handle } => {
             tracy_rs::profile_scope!("Rectangle");
 
-            let prim_data = &data_stores.prim[*data_handle];
+            let prim_data = &dl_stores.rectangles[*handle];
             let prim_rect = prim_info.snapped_pattern_rect;
             let color = prim_data.resolve(frame_context.scene_properties);
 
@@ -840,6 +828,7 @@ fn prepare_prim_for_render(
                         let pattern = LinearGradientSegmentPattern {
                             start: seg_start,
                             end: seg_end,
+                            alpha_mode: prim_data.alpha_mode,
                             stops: seg_stops,
                         };
                         quad::prepare_quad(
@@ -847,8 +836,8 @@ fn prepare_prim_for_render(
                             &QuadDescriptor {
                                 pattern_rect: *seg_rect,
                                 bounds: *seg_rect,
-                                aligned_aa_edges: EdgeMask::empty(),
-                                transformed_aa_edges: edge_aa_mask,
+                                aligned_aa_edges: prim_data.common.aligned_aa_edges & edge_aa_mask,
+                                transformed_aa_edges: prim_data.common.transformed_aa_edges & edge_aa_mask,
                             },
                             &None,
                             quad_clips,
@@ -1073,10 +1062,8 @@ fn prepare_prim_for_render(
             return;
         }
         PrimitiveKind::BackdropCapture { .. } => {
-            // Register the owner picture of this backdrop primitive as the
-            // target for resolve of the sub-graph
-            frame_state.surface_builder.register_resolve_source();
-
+            // The primitives behind the backdrop-filter were drawn into this
+            // surface already.
             if frame_context.debug_flags.contains(DebugFlags::HIGHLIGHT_BACKDROP_FILTERS) {
                 if let Some(device_rect) = pic_state.map_pic_to_device.map(&prim_info.clip_chain.pic_coverage_rect) {
                     scratch.push_debug_rect(
@@ -1086,23 +1073,46 @@ fn prepare_prim_for_render(
                         ColorF::TRANSPARENT,
                     );
                 }
+
+                // The region the filter chain samples, in the backdrop root's
+                // picture space, which the capture picture shares.
+                let region = scratch.frame.backdrop_captures.for_picture(pic_context.pic_index)
+                    .map(|capture| capture.region);
+                if let Some(device_rect) = region.and_then(|region| pic_state.map_pic_to_device.map(&region)) {
+                    scratch.push_debug_rect(
+                        device_rect,
+                        1,
+                        crate::debug_colors::YELLOW,
+                        ColorF::TRANSPARENT,
+                    );
+                }
             }
         }
         PrimitiveKind::BackdropRender { pic_index, data_handle, .. } => {
-            match frame_state.surface_builder.sub_graph_output_map.get(pic_index).cloned() {
-                Some(sub_graph_output_id) => {
+            // The filter chain's output is its outermost picture's task, if
+            // its capture was drawn.
+            let is_drawn = scratch.frame.backdrop_captures.for_chain(*pic_index)
+                .is_some_and(|capture| {
+                    frame_state.picture_scratch_handles[capture.capture_pic_index.0 as usize].is_some()
+                });
+            let chain_output_id = frame_state.picture_scratch_handles[pic_index.0 as usize]
+                .filter(|_| is_drawn)
+                .and_then(|handle| scratch.frame.pictures[handle].primary_render_task_id);
+
+            match chain_output_id {
+                Some(chain_output_id) => {
                     frame_state.surface_builder.add_child_render_task(
-                        sub_graph_output_id,
+                        chain_output_id,
                         frame_state.rg_builder,
                     );
 
                     // Compute the four homogeneous screen-space uv corners that map
                     // the primitive rect into the captured backdrop. This mirrors the
                     // legacy brush path in batch.rs.
-                    let pic_task = frame_state.rg_builder.get_task(sub_graph_output_id);
+                    let pic_task = frame_state.rg_builder.get_task(chain_output_id);
                     let uv_rect_kind = pic_task.uv_rect_kind();
                     let RenderTaskKind::Picture(info) = &pic_task.kind else {
-                        unreachable!("bug: backdrop sub-graph output is not a picture");
+                        unreachable!("bug: backdrop-filter chain output is not a picture");
                     };
                     // The shader maps the bilinearly-interpolated screen uv into the
                     // backdrop's texture-cache rect (the segment uv rect), which is
@@ -1173,7 +1183,7 @@ fn prepare_prim_for_render(
                     let transformed_aa_edges = prim_data.common.transformed_aa_edges;
 
                     let pattern = BackdropPattern {
-                        src_task_id: sub_graph_output_id,
+                        src_task_id: chain_output_id,
                         uvs,
                     };
 
@@ -1197,8 +1207,8 @@ fn prepare_prim_for_render(
                     return;
                 }
                 None => {
-                    // Backdrop capture was found not visible, didn't produce a sub-graph
-                    // so we can just skip drawing
+                    // The backdrop capture was found not visible, so there is no
+                    // output to draw
                     scratch.frame.draw_mut(draw_index).mark_culled();
                 }
             }
@@ -1361,6 +1371,7 @@ fn adjust_mask_scale_for_max_size(device_rect: DeviceIntRect, device_pixel_scale
 struct LinearGradientSegmentPattern {
     start: LayoutVector2D,
     end: LayoutVector2D,
+    alpha_mode: AlphaMode,
     stops: [GradientStop; 2],
 }
 
@@ -1374,6 +1385,7 @@ impl PatternBuilder for LinearGradientSegmentPattern {
             pattern_rect.min + self.start,
             pattern_rect.min + self.end,
             ExtendMode::Clamp,
+            self.alpha_mode,
             &self.stops,
             state.frame_gpu_data,
         )

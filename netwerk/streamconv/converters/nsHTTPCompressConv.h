@@ -2,51 +2,51 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#if !defined(_nsHTTPCompressConv_h_)
-#  define _nsHTTPCompressConv_h_ 1
+#ifndef _nsHTTPCompressConv_h_
+#define _nsHTTPCompressConv_h_
 
-#  include "mozilla/Atomics.h"
-#  include "mozilla/Mutex.h"
-#  include "nsCOMPtr.h"
-#  include "nsICompressConvStats.h"
-#  include "nsIStreamConverter.h"
-#  include "nsIThreadRetargetableStreamListener.h"
-#  include "nsString.h"
-#  include "zlib.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/Mutex.h"
+#include "nsCOMPtr.h"
+#include "nsICompressConvStats.h"
+#include "nsIStreamConverter.h"
+#include "nsIThreadRetargetableStreamListener.h"
+#include "nsString.h"
+#include "zlib.h"
 
 class nsIStringInputStream;
 
-#  define NS_HTTPCOMPRESSCONVERTER_CID          \
-    {/* 66230b2b-17fa-4bd3-abf4-07986151022d */ \
-     0x66230b2b,                                \
-     0x17fa,                                    \
-     0x4bd3,                                    \
-     {0xab, 0xf4, 0x07, 0x98, 0x61, 0x51, 0x02, 0x2d}}
+#define NS_HTTPCOMPRESSCONVERTER_CID          \
+  {/* 66230b2b-17fa-4bd3-abf4-07986151022d */ \
+   0x66230b2b,                                \
+   0x17fa,                                    \
+   0x4bd3,                                    \
+   {0xab, 0xf4, 0x07, 0x98, 0x61, 0x51, 0x02, 0x2d}}
 
-#  define HTTP_DEFLATE_TYPE "deflate"
-#  define HTTP_GZIP_TYPE "gzip"
-#  define HTTP_X_GZIP_TYPE "x-gzip"
-#  define HTTP_COMPRESS_TYPE "compress"
-#  define HTTP_X_COMPRESS_TYPE "x-compress"
-#  define HTTP_BROTLI_TYPE "br"
-#  define HTTP_IDENTITY_TYPE "identity"
-#  define HTTP_UNCOMPRESSED_TYPE "uncompressed"
-#  define HTTP_ZSTD_TYPE "zstd"
-#  define HTTP_ZST_TYPE "zst"
-#  define HTTP_BROTLI_DICTIONARY_TYPE "dcb"
-#  define HTTP_ZSTD_DICTIONARY_TYPE "dcz"
+#define HTTP_DEFLATE_TYPE "deflate"
+#define HTTP_GZIP_TYPE "gzip"
+#define HTTP_X_GZIP_TYPE "x-gzip"
+#define HTTP_COMPRESS_TYPE "compress"
+#define HTTP_X_COMPRESS_TYPE "x-compress"
+#define HTTP_BROTLI_TYPE "br"
+#define HTTP_IDENTITY_TYPE "identity"
+#define HTTP_UNCOMPRESSED_TYPE "uncompressed"
+#define HTTP_ZSTD_TYPE "zstd"
+#define HTTP_ZST_TYPE "zst"
+#define HTTP_BROTLI_DICTIONARY_TYPE "dcb"
+#define HTTP_ZSTD_DICTIONARY_TYPE "dcz"
 
-#  define GZIP_MAGIC_0 0x1f
-#  define GZIP_MAGIC_1 0x8b
+#define GZIP_MAGIC_0 0x1f
+#define GZIP_MAGIC_1 0x8b
 
-#  define ZSTD_MAGIC_0 0x28
-#  define ZSTD_MAGIC_1 0xb5
-#  define ZSTD_MAGIC_2 0x2f
-#  define ZSTD_MAGIC_3 0xfd
+#define ZSTD_MAGIC_0 0x28
+#define ZSTD_MAGIC_1 0xb5
+#define ZSTD_MAGIC_2 0x2f
+#define ZSTD_MAGIC_3 0xfd
 
 // Not magic bytes, but common brotli first bytes
-#  define BROTLI_BYTE_0 0xce
-#  define BROTLI_BYTE_1 0xb2
+#define BROTLI_BYTE_0 0xce
+#define BROTLI_BYTE_1 0xb2
 
 namespace mozilla {
 namespace net {

@@ -417,7 +417,7 @@ void AudioProcessingSimulator::DetachAecDump() {
 }
 
 void AudioProcessingSimulator::ConfigureAudioProcessor() {
-  AudioProcessing::Config apm_config;
+  AudioProcessing::Config apm_config = ap_->GetConfig();
   if (settings_.use_ts) {
     apm_config.transient_suppression.enabled = *settings_.use_ts != 0;
   }
@@ -491,9 +491,8 @@ void AudioProcessingSimulator::ConfigureAudioProcessor() {
         *settings_.post_gain_factor;
   }
 
-  const bool use_aec = settings_.use_aec && *settings_.use_aec;
-  if (use_aec) {
-    apm_config.echo_canceller.enabled = true;
+  if (settings_.use_aec) {
+    apm_config.echo_canceller.enabled = *settings_.use_aec;
   }
   apm_config.echo_canceller.export_linear_aec_output =
       !!settings_.linear_aec_output_filename;

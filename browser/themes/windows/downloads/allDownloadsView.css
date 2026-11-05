@@ -7,14 +7,6 @@
 /*** List items ***/
 
 @media not (prefers-contrast) {
-  .downloadProgress::-moz-progress-bar {
-    background-color: #3c9af8;
-  }
-
-  .downloadProgress[paused]::-moz-progress-bar {
-    background-color: #a6a6a6;
-  }
-
   /*** Highlighted list items ***/
 
   /*
@@ -38,8 +30,12 @@
       linear-gradient(to top, rgba(255,255,255,0.4) 3px, transparent 3px),
       linear-gradient(to bottom, rgba(163,196,247,0.3), rgba(122,180,246,0.3));
     background-clip: content-box;
+    /* border-radius value used with background-image bevel */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-radius: 6px;
-    outline: 1px solid rgb(124, 163, 206);
+    /* Uses native Windows coloring */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    outline: var(--border-width) solid rgb(124, 163, 206);
     outline-offset: -2px;
   }
 }
@@ -48,8 +44,10 @@
 
 @media (prefers-contrast) {
   .downloadProgress {
+    --download-progress-border-color: ButtonText;
+
     background-color: -moz-Dialog;
-    border: 1px solid ButtonText;
+    border: var(--border-width) solid var(--download-progress-border-color);
   }
 
   .downloadProgress::-moz-progress-bar {

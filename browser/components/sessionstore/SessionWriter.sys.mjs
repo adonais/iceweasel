@@ -9,6 +9,8 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/sessionstore/SessionLogger.sys.mjs",
 });
 
+const DEK_NAME_SESSIONSTORE = "sessionstore";
+
 /**
  * We just started (we haven't written anything to disk yet) from
  * `Paths.clean`. The backup directory may not exist.
@@ -51,6 +53,34 @@ function lockIOWithMutex() {
       return new Promise(unlock);
     });
   });
+}
+
+/**
+ * @typedef {"make_backups_dir"|"move_clean"|"migrate_legacy_clean"|"write_clean"|"write_recovery"|"stat"|"copy_upgrade_backup"|"list_backups"|"remove_old_backup"} SessionWriteStep
+ *   A step of SessionWriter.write. Must match the values listed for the
+ *   `step` extra of the session_restore.write_failure event in metrics.yaml.
+ */
+
+/**
+ * Thrown by SessionWriter.write to identify which step of the write failed.
+ * The original error is available as `cause`.
+ */
+export class SessionWriteError extends Error {
+  /**
+   * @param {*} cause The first error caught during the write.
+   * @param {object} details
+   * @param {SessionWriteStep} details.step The step that failed.
+   * @param {boolean} details.sessionWritten Whether the session file itself
+   *   was written, i.e. only a backup or cleanup step failed.
+   */
+  constructor(cause, { step, sessionWritten }) {
+    super(`Session write failed at step ${step}: ${cause?.message ?? cause}`, {
+      cause,
+    });
+    this.name = "SessionWriteError";
+    this.step = step;
+    this.sessionWritten = sessionWritten;
+  }
 }
 
 /**
@@ -145,7 +175,31 @@ export const SessionWriter = new (class {
 
   async #write(state, options) {
     let exn;
+    /** @type {SessionWriteStep} */
+    let failedStep;
+    /** @type {SessionWriteStep} */
+    let step;
+    let sessionWritten = false;
     let telemetry = {};
+
+    const encrypt =
+      Services.prefs.getBoolPref(
+        "browser.sessionstore.encryption.available",
+        false
+      ) &&
+      Services.prefs.getBoolPref(
+        "browser.sessionstore.encryption.enabled",
+        false
+      )
+        ? DEK_NAME_SESSIONSTORE
+        : "";
+
+    const recordFailure = ex => {
+      if (!exn) {
+        exn = ex;
+        failedStep = step;
+      }
+    };
 
     // Cap the number of backward and forward shistory entries on shutdown.
     if (options.isFinalWrite) {
@@ -172,6 +226,7 @@ export const SessionWriter = new (class {
         // The backups directory may not exist yet. In all other cases,
         // we have either already read from or already written to this
         // directory, so we are satisfied that it exists.
+        step = "make_backups_dir";
         await IOUtils.makeDirectory(this.#paths.backups);
       }
 
@@ -179,14 +234,19 @@ export const SessionWriter = new (class {
         // Move $Path.clean out of the way, to avoid any ambiguity as
         // to which file is more recent.
         if (!this.#useOldExtension) {
+          step = "move_clean";
           await IOUtils.move(this.#paths.clean, this.#paths.cleanBackup);
         } else {
           // Since we are migrating from .js to .jsonlz4,
           // we need to compress the deprecated $Path.clean
           // and write it to $Path.cleanBackup.
+          step = "migrate_legacy_clean";
           let oldCleanPath = this.#paths.clean.replace("jsonlz4", "js");
           let d = await IOUtils.read(oldCleanPath);
-          await IOUtils.write(this.#paths.cleanBackup, d, { compress: true });
+          await IOUtils.write(this.#paths.cleanBackup, d, {
+            compress: true,
+            encrypt,
+          });
         }
       }
 
@@ -199,10 +259,14 @@ export const SessionWriter = new (class {
         // originally present and valid, it has been moved to
         // $Paths.cleanBackup a long time ago. We can therefore write
         // with the guarantees that we erase no important data.
+        step = "write_clean";
         await IOUtils.writeJSON(this.#paths.clean, state, {
           tmpPath: this.#paths.clean + ".tmp",
           compress: true,
+          encrypt,
         });
+        sessionWritten = true;
+        step = "stat";
         fileStat = await IOUtils.stat(this.#paths.clean);
       } else if (this.#state == STATE_RECOVERY) {
         // At this stage, either $Paths.recovery was written >= 15
@@ -211,20 +275,28 @@ export const SessionWriter = new (class {
         // way, $Paths.recovery is good. We can move $Path.backup to
         // $Path.recoveryBackup without erasing a good file with a bad
         // file.
+        step = "write_recovery";
         await IOUtils.writeJSON(this.#paths.recovery, state, {
           tmpPath: this.#paths.recovery + ".tmp",
           backupFile: this.#paths.recoveryBackup,
           compress: true,
+          encrypt,
         });
+        sessionWritten = true;
+        step = "stat";
         fileStat = await IOUtils.stat(this.#paths.recovery);
       } else {
         // In other cases, either $Path.recovery is not necessary, or
         // it doesn't exist or it has been corrupted. Regardless,
         // don't backup $Path.recovery.
+        step = "write_recovery";
         await IOUtils.writeJSON(this.#paths.recovery, state, {
           tmpPath: this.#paths.recovery + ".tmp",
           compress: true,
+          encrypt,
         });
+        sessionWritten = true;
+        step = "stat";
         fileStat = await IOUtils.stat(this.#paths.recovery);
       }
 
@@ -239,7 +311,7 @@ export const SessionWriter = new (class {
         "SessionWriter.write, Caught exception:",
         ex
       );
-      exn = exn || ex;
+      recordFailure(ex);
     }
 
     // If necessary, perform an upgrade backup
@@ -254,6 +326,7 @@ export const SessionWriter = new (class {
           this.#state == STATE_CLEAN
             ? this.#paths.cleanBackup
             : this.#paths.upgradeBackup;
+        step = "copy_upgrade_backup";
         await IOUtils.copy(path, this.#paths.nextUpgradeBackup);
         this.#upgradeBackupNeeded = false;
         upgradeBackupComplete = true;
@@ -263,13 +336,14 @@ export const SessionWriter = new (class {
           "SessionWriter.write, Caught exception doing upgrade backup:",
           ex
         );
-        exn = exn || ex;
+        recordFailure(ex);
       }
 
       // Find all backups
       let backups = [];
 
       try {
+        step = "list_backups";
         let children = await IOUtils.getChildren(this.#paths.backups);
         backups = children.filter(path =>
           path.startsWith(this.#paths.upgradeBackupPrefix)
@@ -280,7 +354,7 @@ export const SessionWriter = new (class {
           "SessionWriter.write, Caught exception looking for backups:",
           ex
         );
-        exn = exn || ex;
+        recordFailure(ex);
       }
 
       // If too many backups exist, delete them
@@ -293,13 +367,14 @@ export const SessionWriter = new (class {
         // remove backup file if it is among the first (n-maxUpgradeBackups) files
         for (let i = 0; i < backups.length - this.#maxUpgradeBackups; i++) {
           try {
+            step = "remove_old_backup";
             await IOUtils.remove(backups[i]);
           } catch (ex) {
             lazy.sessionStoreLogger.warn(
               "SessionWriter.write, exception on removing backup file",
               ex
             );
-            exn = exn || ex;
+            recordFailure(ex);
           }
         }
       }
@@ -320,7 +395,10 @@ export const SessionWriter = new (class {
     this.#state = STATE_RECOVERY;
 
     if (exn) {
-      throw exn;
+      throw new SessionWriteError(exn, {
+        step: failedStep,
+        sessionWritten,
+      });
     }
 
     return {

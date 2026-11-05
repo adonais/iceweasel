@@ -2,14 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   ConfigSearchEngine:
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
+  logger: () =>
+    lazy.UrlbarShared.getLogger({ prefix: "UrlbarSearchTermsPersistence" }),
 });
 
 /**
@@ -27,10 +29,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * @property {{key: string, values: string[]}[]} excludeParams
  *   The parameters that should be excluded in determining if the search page URL matches.
  */
-
-ChromeUtils.defineLazyGetter(lazy, "logger", () =>
-  lazy.UrlbarShared.getLogger({ prefix: "UrlbarSearchTermsPersistence" })
-);
 
 const URLBAR_PERSISTENCE_SETTINGS_KEY = "urlbar-persisted-search-terms";
 

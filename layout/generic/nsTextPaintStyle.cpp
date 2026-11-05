@@ -360,7 +360,7 @@ void nsTextPaintStyle::GetURLSecondaryColor(nscolor* aForeColor) {
 
   const nscolor textColor = GetTextColor();
   *aForeColor = NS_RGBA(NS_GET_R(textColor), NS_GET_G(textColor),
-                        NS_GET_B(textColor), 178);
+                        NS_GET_B(textColor), 147);
 }
 
 void nsTextPaintStyle::GetIMESelectionColors(SelectionStyleIndex aIndex,

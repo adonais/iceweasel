@@ -160,10 +160,10 @@ static void StartAccessibility() {
   }
 }
 
-static void A11yBusProxyPropertyChanged(GDBusProxy* aProxy,
+static void A11yBusProxyPropertyChanged(GDBusProxy* /*aProxy*/,
                                         GVariant* aChangedProperties,
-                                        char** aInvalidatedProperties,
-                                        gpointer aUserData) {
+                                        char** /*aInvalidatedProperties*/,
+                                        gpointer /*aUserData*/) {
   gboolean isEnabled;
   g_variant_lookup(aChangedProperties, "IsEnabled", "b", &isEnabled);
   if (isEnabled) {

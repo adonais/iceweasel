@@ -25,3 +25,7 @@ EXPORTS += [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "nsStringBundleService.h",
+]

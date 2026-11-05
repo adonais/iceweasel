@@ -18,9 +18,6 @@ nssToken_UpdateName(NSSToken *);
 NSS_EXTERN PRStatus
 nssToken_Refresh(NSSToken *);
 
-NSSTrustDomain *
-nssToken_GetTrustDomain(NSSToken *token);
-
 void PK11Slot_SetNSSToken(PK11SlotInfo *sl, NSSToken *nsst);
 
 NSSToken *PK11Slot_GetNSSToken(PK11SlotInfo *sl);

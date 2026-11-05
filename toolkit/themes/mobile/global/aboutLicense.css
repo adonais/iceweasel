@@ -1,0 +1,81 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+html {
+  background-color: Field;
+  color: FieldText;
+  font: message-box;
+}
+
+body {
+  margin: 1em;
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  font-size: 1.75em;
+}
+
+a {
+  color: LinkText;
+}
+
+ul {
+  padding-inline-start: 1.25em;
+}
+
+li {
+  margin-block: 0.25em;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid GrayText;
+  margin-block: 1.5em;
+}
+
+/* A phone has no room for three columns, so each license is one block. */
+.licenses {
+  display: block;
+  border-collapse: collapse;
+
+  thead {
+    display: none;
+  }
+
+  tbody,
+  tr,
+  td {
+    display: block;
+  }
+
+  tr {
+    padding-block: 1em;
+  }
+
+  tr + tr {
+    border-top: 1px solid GrayText;
+  }
+
+  td > h2 {
+    font-size: 1.25em;
+    margin-block: 0 0.5em;
+  }
+
+  .license-text {
+    h3,
+    h4 {
+      font-size: 1.1em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      font-size: 0.85em;
+    }
+  }
+}
+
+pre {
+  white-space: pre-wrap;
+}

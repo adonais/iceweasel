@@ -10,6 +10,8 @@ description: >
   feature gate", "run an experiment on this", "setPref vs fallbackPref".
 ---
 
+# Nimbus-controllable prefs
+
 For background on Nimbus itself — experiment design, the Experimenter console, analysis — see
 [experimenter.info](https://experimenter.info/). This skill covers the in-tree side.
 
@@ -389,7 +391,9 @@ about:studies?optin_slug=<slug>&optin_branch=<branch>
 ```
 
 Append `&optin_collection=nimbus-preview` only for a recipe in Preview. On a live recipe that
-argument points the lookup at the wrong collection and the opt-in silently does nothing.
+argument points the lookup at the wrong collection and the opt-in silently does nothing. For a
+rollout in Preview, the Testing card on the Experimenter page shows the opt-in link ready to copy,
+which avoids getting this wrong by hand.
 
 For automated coverage, write two kinds of test, because they fail for different reasons.
 `SpecialPowers.pushPrefEnv` proves your code does the right thing when the pref changes, and
@@ -404,12 +408,30 @@ cleanup handler puts the pref back on unenrollment. Each is a few lines.
 Landing the manifest change is not the last step. Experimenter fetches
 `toolkit/components/nimbus/FeatureManifest.yaml` from `mozilla-firefox/firefox` on a bot schedule, as
 an unversioned copy plus one per release version, so a new feature does not appear the moment your
-patch lands. If it is not in the branches dropdown yet, the fetch has not run.
+patch lands. If it is not selectable in the recipe's features card or branches yet, the fetch has not
+run.
 
 Two consequences when the experiment owner goes to build the recipe:
 
 - A feature is only selectable once it appears in the **unversioned** manifest. Features seen only in
   a versioned manifest are created disabled.
-- Branch feature values are validated against the schemas for the recipe's Firefox version range, so
-  a recipe whose minimum version predates the release carrying your variable fails validation. Set
-  the experiment's minimum Firefox version to the release your change ships in.
+- Feature values are validated against the schemas for the recipe's Firefox version range, so a
+  recipe whose minimum version predates the release carrying your variable fails validation. Set
+  the minimum Firefox version to the release your change ships in. In the rollout UI a validation
+  failure shows as a warning on the card and in the sidebar's issue list, and Preview and Request
+  enrollment stay disabled until setup reaches 100%.
+
+### Rollouts
+
+Rollouts are created from **New delivery → Rollout** and have a single branch, so the feature value
+you hand the owner is the one every enrolled client gets. What matters on the code side:
+
+- **Plan for phases.** The schedule moves the population in steps (a medium-risk plan is
+  1% → 10% → 50% → 100%), and each step, like disabling, goes through review. Recording exposure
+  and a Glean metric for the feature (see the telemetry section) is what lets the owner fill in the
+  rollout's "expected before advancing" and "pause conditions" fields with something measurable;
+  give them the metric names.
+- **Disabling removes the recipe, and starting the next phase publishes it again.** Clients unenroll
+  in between: `setPref` prefs are restored, and `getVariable()` falls through to `fallbackPref` or
+  `undefined`. Code that reads the value once and caches it, or has no `onUpdate` handler, keeps the
+  old behaviour until restart in both directions.

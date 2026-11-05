@@ -44,7 +44,7 @@ at Mozilla (handling regressions, running tests, comparisons), see
      - Yes
      - Yes, script-dependent
      - ``./mach perftest path/to/script.sh``
-   * - `GTest <https://firefox-source-docs.mozilla.org/gtest/index.html>`_
+   * - :doc:`GTest </gtest/index>`
      - Micro-benchmarking C++ or Rust code at the platform level
        (parsing, layout, networking internals). Very low overhead.
      - No
@@ -62,7 +62,7 @@ at Mozilla (handling regressions, running tests, comparisons), see
      - No
      - No
      - ``./mach talos-test``
-   * - `AWSY <https://firefox-source-docs.mozilla.org/testing/perfdocs/awsy.html#awsy>`__
+   * - :doc:`AWSY </testing/perfdocs/awsy>`
      - Memory-usage tracking (Are We Slim Yet) across builds.
      - No
      - No
@@ -403,7 +403,7 @@ correspond to a user-visible regression, and large changes are expected
 when the benchmarked code is intentionally modified.
 :::
 
-See the [GTest documentation](https://firefox-source-docs.mozilla.org/gtest/index.html#mozgtestbench)
+See the [GTest documentation](/gtest/index.md#mozgtestbench)
 for more details.
 
 ## Raptor
@@ -557,7 +557,7 @@ Run locally:
 ```
 
 See the
-[AWSY documentation](https://firefox-source-docs.mozilla.org/testing/perfdocs/awsy.html#awsy)
+[AWSY documentation](/testing/perfdocs/awsy.md#awsy)
 for the full set of fields and configuration options.
 
 ## Alert Emails

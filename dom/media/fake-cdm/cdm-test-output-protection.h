@@ -16,6 +16,8 @@
 #  include "opmapi.h"
 #endif
 
+#include "cdm-test-decryptor.h"
+
 namespace mozilla::cdmtest {
 
 #if defined(XP_WIN)

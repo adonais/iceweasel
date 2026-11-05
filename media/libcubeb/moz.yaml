@@ -10,8 +10,8 @@ origin:
   url: https://github.com/mozilla/cubeb
   license: ISC
   license-file: LICENSE
-  release: e13d9c8855d42bebcd52e69f296404ff437dcdf5 (2026-09-16T01:29:38Z).
-  revision: e13d9c8855d42bebcd52e69f296404ff437dcdf5
+  release: 2e87c6335573f61ca430bd3e91bb5e8bc76699d3 (2026-10-12T13:16:34Z).
+  revision: 2e87c6335573f61ca430bd3e91bb5e8bc76699d3
 
 vendoring:
   url: https://github.com/mozilla/cubeb

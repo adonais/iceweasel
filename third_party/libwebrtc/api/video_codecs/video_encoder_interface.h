@@ -79,7 +79,11 @@ class VideoEncoderInterface {
   class FrameEncodeSettings {
    public:
     struct Cbr {
+      // The interval to the next frame of the stream, i.e. the inverse of the
+      // frame rate.
       TimeDelta duration;
+      // The bitrate of the temporal layer this frame belongs to, not counting
+      // the layers below it.
       DataRate target_bitrate;
     };
 

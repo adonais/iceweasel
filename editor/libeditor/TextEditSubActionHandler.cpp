@@ -637,6 +637,8 @@ Result<EditActionResult, nsresult> TextEditor::HandleDeleteSelectionInternal(
       if (const Text* const textNode = GetTextNode()) {
         rangesToDelete.EnsureRangesInTextNode(*textNode);
       }
+      rangesToDelete.MaybeExtendAnchorFocusRangeToDeleteAdjacentWhiteSpace(
+          *this);
 
       Result<CaretPoint, nsresult> caretPointOrError =
           DeleteRangesWithTransaction(aDirectionAndAmount, aStripWrappers,

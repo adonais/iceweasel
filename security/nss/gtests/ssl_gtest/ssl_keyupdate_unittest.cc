@@ -204,6 +204,29 @@ TEST_F(TlsConnectTest, KeyUpdateAutomaticOnRead) {
   CheckEpochs(5, 4);
 }
 
+// A peer can exhaust our PRUint16 read epoch just by sending KeyUpdates.
+TEST_F(TlsConnectStreamTls13, KeyUpdateReadEpochExhausted) {
+  Connect();
+  CheckEpochs(3, 3);
+
+  PRUint64 max_epoch_type = (0x1ULL << 16) - 1;
+  EXPECT_EQ(SECSuccess,
+            SSLInt_AdvanceReadEpochNum(server_->ssl_fd(), max_epoch_type));
+  EXPECT_EQ(SECSuccess, SSL_KeyUpdate(client_->ssl_fd(), PR_FALSE));
+
+  ExpectAlert(server_, kTlsAlertInternalError);
+  server_->ExpectReadWriteError();
+  client_->ExpectReadWriteError();
+  server_->ReadBytes();
+  client_->ReadBytes();
+
+  server_->CheckErrorCode(SSL_ERROR_TOO_MANY_KEY_UPDATES);
+  client_->CheckErrorCode(SSL_ERROR_INTERNAL_ERROR_ALERT);
+
+  // The server declined the update, so neither of its epochs moved.
+  server_->CheckEpochs(max_epoch_type, 3);
+}
+
 // Filter to modify KeyUpdate message. Takes as an input which byte and what
 // value to install.
 class TLSKeyUpdateDamager : public TlsRecordFilter {

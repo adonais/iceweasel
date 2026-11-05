@@ -1,0 +1,46 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+moz-fieldset {
+  padding-block-end: var(--space-small);
+
+  moz-select {
+    --select-max-width: initial;
+    --select-font-weight: var(--font-weight);
+    --select-border-color: var(--input-border-color);
+    --select-border-radius: var(--input-border-radius);
+  }
+}
+
+#vpnSiteRuleIntro {
+  margin: 0;
+}
+
+.vpn-site-rule-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxsmall);
+}
+
+.vpn-site-rule-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xsmall);
+  font-size: var(--font-size-small);
+  color: var(--text-color-error);
+  padding-block-start: var(--space-xsmall);
+
+  &:empty {
+    display: none;
+  }
+
+  &::before {
+    content: url("chrome://global/skin/icons/error.svg");
+    display: flex;
+    inline-size: var(--icon-size);
+    block-size: var(--icon-size);
+    fill: var(--icon-color-critical);
+    -moz-context-properties: fill;
+  }
+}

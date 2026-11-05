@@ -6321,6 +6321,16 @@ FaultingCodeRange MacroAssembler::wasmTrap(
   MOZ_ASSERT_IF(!oom(),
                 currentOffset() - fcr.get() == WasmTrapInstructionLength);
 
+#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
+  // Resumable traps use an indirect jump with a resumePC operand on the stack
+  // to avoid clobbering any registers and require cleaning up the stack slot.
+  // See comment at the end of GenerateTrapExit for a description of how trap
+  // resumption works.
+  if (wasm::TrapMightResume(trap)) {
+    addToStackPtr(Imm32(sizeof(uintptr_t)));
+  }
+#endif
+
   appendAndVerify(trap, wasm::TrapMachineInsn::OfficialUD, fcr, trapSiteDesc);
   return fcr;
 }
@@ -6935,16 +6945,16 @@ CodeOffset MacroAssembler::wasmTrapOnFailedInstanceCall(
                 &noTrap);
       break;
   }
-  wasmTrap(failureTrap, trapSiteDesc);
+  FaultingCodeRange fcr = wasmTrap(failureTrap, trapSiteDesc);
   bind(&noTrap);
 
-  if (failureTrap != wasm::Trap::ThrowReported) {
+  if (failureTrap != wasm::Trap::ThrowReported || !fcr.isValid()) {
     return CodeOffset();
   }
 
   // For Trap::ThrowReported, the caller(s) may want to create a stackmap, so
   // tell them what its key must be.
-  return CodeOffset(currentOffset());
+  return CodeOffset(fcr.resumeOffset());
 }
 
 // In principle, call_indirect requires an expensive context switch to the

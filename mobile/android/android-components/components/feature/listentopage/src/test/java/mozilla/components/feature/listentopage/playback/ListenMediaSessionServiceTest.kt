@@ -4,22 +4,30 @@
 
 package mozilla.components.feature.listentopage.playback
 
+import android.app.Activity
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.os.Bundle
 import android.os.Looper
+import android.os.Process
 import android.view.KeyEvent
 import androidx.annotation.OptIn
+import androidx.media3.common.MediaLibraryInfo
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaNotification
+import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionCommand
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.feature.listentopage.PlaybackSpeed
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
 import mozilla.components.ui.icons.R as iconsR
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -27,13 +35,24 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.android.controller.ServiceController
 
 @RunWith(AndroidJUnit4::class)
 class ListenMediaSessionServiceTest {
 
+    // Every service a test started, each holding a session. A session left open keeps its id, which no session built
+    // later in the same process can then take.
+    private val services = mutableListOf<ServiceController<ListenMediaSessionService>>()
+
+    @After
+    fun tearDown() {
+        services.forEach { runCatching { it.destroy() } }
+        shadowOf(Looper.getMainLooper()).idle()
+    }
+
     @Test
     fun `test that swiping the app out of the recents list ends the service`() {
-        val service = Robolectric.buildService(ListenMediaSessionService::class.java).create().get()
+        val service = startService()
 
         service.onTaskRemoved(null)
 
@@ -42,7 +61,7 @@ class ListenMediaSessionServiceTest {
 
     @Test
     fun `test that the service ends rather than come back from being killed with nothing to play`() {
-        val service = Robolectric.buildService(ListenMediaSessionService::class.java).create().get()
+        val service = startService()
 
         val restart = service.onStartCommand(null, 0, 1)
 
@@ -52,7 +71,7 @@ class ListenMediaSessionServiceTest {
 
     @Test
     fun `test that dismissing the notification ends the service`() {
-        val service = Robolectric.buildService(ListenMediaSessionService::class.java).create().get()
+        val service = startService()
         val dismissal = mediaButton().putExtra(MediaNotification.NOTIFICATION_DISMISSED_EVENT_KEY, true)
 
         service.onStartCommand(dismissal, 0, 1)
@@ -62,11 +81,28 @@ class ListenMediaSessionServiceTest {
 
     @Test
     fun `test that a notification control leaves the service running`() {
-        val service = Robolectric.buildService(ListenMediaSessionService::class.java).create().get()
+        val service = startService()
 
         service.onStartCommand(mediaButton(), 0, 1)
 
         assertFalse(shadowOf(service).isStoppedBySelf)
+    }
+
+    @OptIn(UnstableApi::class)
+    @Test
+    fun `test that the notification takes the user to the tab being read`() {
+        val session = startSession()
+        val openTab = openTabPendingIntent()
+
+        ListenSessionCallback(session.player as SessionPlayer, ownPackage = testContext.packageName)
+            .onCustomCommand(
+                session,
+                controllerFrom(testContext.packageName),
+                SessionCommand(COMMAND_SET_SESSION_ACTIVITY, Bundle.EMPTY),
+                openTab.toSessionActivityArgs(),
+            )
+
+        assertEquals(openTab, session.sessionActivity)
     }
 
     @Test
@@ -151,14 +187,12 @@ class ListenMediaSessionServiceTest {
     @OptIn(UnstableApi::class)
     @Test
     fun `test that the speed control shows a speed set from outside the notification`() {
-        val controller = Robolectric.buildService(ListenMediaSessionService::class.java).create()
-        val session = controller.get().onGetSession(mock())!!
+        val session = startSession()
 
         session.player.setPlaybackSpeed(PlaybackSpeed.X0_5.multiplier)
         shadowOf(Looper.getMainLooper()).idle()
 
         val speed = session.mediaButtonPreferences.last()
-        controller.destroy()
         assertEquals("Playback set to half speed", speed.displayName.toString())
         assertEquals(iconsR.drawable.mozac_ic_playback_speed_0_5x_24, speed.iconResId)
     }
@@ -173,6 +207,12 @@ class ListenMediaSessionServiceTest {
         assertEquals(PlaybackSpeed.X0_25, playerAt(2f).nextSpeed())
     }
 
+    private fun startService(): ListenMediaSessionService =
+        Robolectric.buildService(ListenMediaSessionService::class.java).create().also { services.add(it) }.get()
+
+    @OptIn(UnstableApi::class)
+    private fun startSession(): MediaSession = checkNotNull(startService().onGetSession(mock()))
+
     private fun playerAt(speed: Float): Player = mock {
         whenever(this.playbackParameters).thenReturn(PlaybackParameters(speed))
     }
@@ -180,4 +220,27 @@ class ListenMediaSessionServiceTest {
     private fun mediaButton() =
         Intent(Intent.ACTION_MEDIA_BUTTON)
             .putExtra(Intent.EXTRA_KEY_EVENT, KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_STOP))
+
+    // Media3 rejects a session activity that does not start one, so this stands in for whatever the app opens a tab
+    // with.
+    private fun openTabPendingIntent(): PendingIntent =
+        PendingIntent.getActivity(
+            testContext,
+            0,
+            Intent(testContext, Activity::class.java),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+
+    @OptIn(UnstableApi::class)
+    private fun controllerFrom(packageName: String): MediaSession.ControllerInfo =
+        MediaSession.ControllerInfo.createTestOnlyControllerInfo(
+            packageName,
+            Process.myPid(),
+            Process.myUid(),
+            MediaLibraryInfo.VERSION_INT,
+            MediaLibraryInfo.VERSION_INT,
+            /* trusted = */ true,
+            Bundle.EMPTY,
+            /* isPackageNameVerified = */ true,
+        )
 }

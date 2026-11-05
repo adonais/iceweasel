@@ -1,0 +1,70 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+.horoscopes {
+  @include widget-base-style;
+
+  &.medium-widget {
+    grid-row: span 2;
+  }
+
+  &.large-widget {
+    grid-row: span 4;
+  }
+}
+
+.horoscopes-title-wrapper {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.horoscopes-badge-title-wrapper {
+  align-items: center;
+  display: flex;
+  gap: var(--space-small);
+  min-inline-size: 0;
+}
+
+// Keep this at the top level so the High Contrast Mode override below applies.
+.horoscopes-new-badge {
+  flex: none;
+  background-color: var(--badge-background-color-filled);
+  border-radius: var(--badge-border-radius);
+  text-transform: uppercase;
+
+  --badge-padding-block: 1px;
+  --badge-padding-inline: var(--space-small);
+  --badge-background-color-filled: var(--color-green-40);
+  --badge-text-color: var(--badge-text-color-filled);
+  --badge-border-color: transparent;
+}
+
+// Keep the badge readable in High Contrast Mode by using the system accent.
+@media (forced-colors: active) {
+  .horoscopes-new-badge {
+    --badge-background-color-filled: AccentColor;
+  }
+}
+
+.horoscopes-context-menu-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.horoscopes:hover,
+.horoscopes:focus-within {
+  .horoscopes-context-menu-wrapper {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.horoscopes-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-small);
+  min-height: 0;
+}

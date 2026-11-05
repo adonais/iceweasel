@@ -916,13 +916,27 @@ add_task(async function keywordLengthThreshold() {
           type: QuickSuggestTestUtils.RS_TYPE.AMP,
           attachment: [
             QuickSuggestTestUtils.ampRemoteSettings({
-              keywords: ["x", "xx"],
+              keywords: ["", "x", "xx"],
             }),
           ],
         },
       ],
     },
     tests: [
+      {
+        context: createContext("", {
+          providers: [UrlbarProviderQuickSuggest.name],
+          isPrivate: false,
+        }),
+        expected: [],
+      },
+      {
+        context: createContext(" ", {
+          providers: [UrlbarProviderQuickSuggest.name],
+          isPrivate: false,
+        }),
+        expected: [],
+      },
       {
         context: createContext("x", {
           providers: [UrlbarProviderQuickSuggest.name],

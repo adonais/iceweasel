@@ -190,7 +190,7 @@ std::vector<Codec> AddIdToCodecs(PayloadTypePicker& pt_mapper,
   std::vector<Codec> codecs = std::move(codecs_in);
   for (Codec& codec : codecs) {
     if (codec.id == Codec::kIdNotSet) {
-      auto id_or_error = pt_mapper.SuggestMapping(codec, nullptr);
+      auto id_or_error = pt_mapper.SuggestMapping(codec);
       EXPECT_TRUE(id_or_error.ok());
       if (id_or_error.ok()) {
         codec.id = id_or_error.value();

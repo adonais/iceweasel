@@ -72,6 +72,10 @@ void SpeculationRuleSet::ConsiderLoads(PrefetchCandidates* aCandidates,
   consider_speculative_loads_for_rule_set(this, aCandidates, &aLinks);
 }
 
+bool SpeculationRuleSet::HasDocumentRules() const {
+  return speculation_rule_set_has_document_rules(this);
+}
+
 void SpeculationRuleSet::SetUseCounters(Document& aDocument) const {
   SpeculationRulesUsage counters = speculation_rule_set_use_counters(this);
   if (counters.used_prefetch) {

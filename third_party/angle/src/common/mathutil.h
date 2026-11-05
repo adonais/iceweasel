@@ -14,14 +14,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <ostream>
-#include "common/unsafe_buffers.h"
 
 #include <anglebase/numerics/safe_math.h>
 
 #include "common/debug.h"
 #include "common/platform.h"
+#include "common/span.h"
+#include "common/span_util.h"
 
 namespace angle
 {
@@ -48,14 +50,18 @@ inline constexpr int log2(T x)
     static_assert(std::is_integral<T>::value, "log2 must be called on an integer type.");
     int r = 0;
     while ((x >> r) > 1)
+    {
         r++;
+    }
     return r;
 }
 
 inline unsigned int ceilPow2(unsigned int x)
 {
     if (x != 0)
+    {
         x--;
+    }
     x |= x >> 1;
     x |= x >> 2;
     x |= x >> 4;
@@ -122,6 +128,13 @@ inline T clamp(T x, MIN min, MAX max)
 }
 
 template <typename T>
+inline bool isOutsideOfBounds(T value, T min, T max)
+{
+    // Since NaNs fail all comparison tests, a NaN value will return true (out of bounds).
+    return !(value >= min && value <= max);
+}
+
+template <typename T>
 T clampForBitCount(T value, size_t bitCount)
 {
     static_assert(std::numeric_limits<T>::is_integer, "T must be an integer.");
@@ -182,7 +195,8 @@ destType bitCast(const sourceType &source)
 {
     size_t copySize = std::min(sizeof(destType), sizeof(sourceType));
     destType output;
-    ANGLE_UNSAFE_TODO(memcpy(&output, &source, copySize));
+    angle::SpanMemcpy(angle::byte_span_from_ref(output).first(copySize),
+                      angle::byte_span_from_ref(source).first(copySize));
     return output;
 }
 
@@ -997,30 +1011,22 @@ inline int8_t ToPackedSnorm8(float f)
 // unsigned integer starting from the least significant bits.
 inline uint32_t PackUnorm4x8(float f1, float f2, float f3, float f4)
 {
-    uint8_t bits[4];
-    bits[0]         = priv::ToPackedUnorm8(f1);
-    bits[1]         = priv::ToPackedUnorm8(f2);
-    bits[2]         = priv::ToPackedUnorm8(f3);
-    bits[3]         = priv::ToPackedUnorm8(f4);
-    uint32_t result = 0u;
-    for (int i = 0; i < 4; ++i)
-    {
-        int shift = i * 8;
-        result |= (static_cast<uint32_t>(ANGLE_UNSAFE_TODO(bits[i])) << shift);
-    }
-    return result;
+    return static_cast<uint32_t>(priv::ToPackedUnorm8(f1)) |
+           (static_cast<uint32_t>(priv::ToPackedUnorm8(f2)) << 8) |
+           (static_cast<uint32_t>(priv::ToPackedUnorm8(f3)) << 16) |
+           (static_cast<uint32_t>(priv::ToPackedUnorm8(f4)) << 24);
 }
 
 // Unpacks 4 normalized unsigned floating-point values from a single 32-bit unsigned integer into f.
 // Works similarly to unpackUnorm2x16. The floats are unpacked starting from the least significant
 // bits.
-inline void UnpackUnorm4x8(uint32_t u, float *f)
+inline void UnpackUnorm4x8(uint32_t u, angle::Span<float, 4> f)
 {
     for (int i = 0; i < 4; ++i)
     {
         int shift    = i * 8;
         uint8_t bits = static_cast<uint8_t>((u >> shift) & 0xFF);
-        ANGLE_UNSAFE_TODO(f[i]) = static_cast<float>(bits) / 255.0f;
+        f[i]         = static_cast<float>(bits) / 255.0f;
     }
 }
 
@@ -1029,30 +1035,22 @@ inline void UnpackUnorm4x8(uint32_t u, float *f)
 // significant bits.
 inline uint32_t PackSnorm4x8(float f1, float f2, float f3, float f4)
 {
-    int8_t bits[4];
-    bits[0]         = priv::ToPackedSnorm8(f1);
-    bits[1]         = priv::ToPackedSnorm8(f2);
-    bits[2]         = priv::ToPackedSnorm8(f3);
-    bits[3]         = priv::ToPackedSnorm8(f4);
-    uint32_t result = 0u;
-    for (int i = 0; i < 4; ++i)
-    {
-        int shift = i * 8;
-        result |= ((static_cast<uint32_t>(ANGLE_UNSAFE_TODO(bits[i])) & 0xFF) << shift);
-    }
-    return result;
+    return (static_cast<uint32_t>(priv::ToPackedSnorm8(f1)) & 0xFF) |
+           ((static_cast<uint32_t>(priv::ToPackedSnorm8(f2)) & 0xFF) << 8) |
+           ((static_cast<uint32_t>(priv::ToPackedSnorm8(f3)) & 0xFF) << 16) |
+           ((static_cast<uint32_t>(priv::ToPackedSnorm8(f4)) & 0xFF) << 24);
 }
 
 // Unpacks 4 normalized signed floating-point values from a single 32-bit unsigned integer into f.
 // Works similarly to unpackSnorm2x16. The floats are unpacked starting from the least significant
 // bits, and clamped to the range -1.0 to 1.0.
-inline void UnpackSnorm4x8(uint32_t u, float *f)
+inline void UnpackSnorm4x8(uint32_t u, angle::Span<float, 4> f)
 {
     for (int i = 0; i < 4; ++i)
     {
         int shift   = i * 8;
         int8_t bits = static_cast<int8_t>((u >> shift) & 0xFF);
-        ANGLE_UNSAFE_TODO(f[i]) = clamp(static_cast<float>(bits) / 127.0f, -1.0f, 1.0f);
+        f[i]        = clamp(static_cast<float>(bits) / 127.0f, -1.0f, 1.0f);
     }
 }
 

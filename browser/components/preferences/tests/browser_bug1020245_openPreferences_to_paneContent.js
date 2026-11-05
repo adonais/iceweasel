@@ -3,12 +3,10 @@
 
 // Test opening to the differerent panes and subcategories in Preferences
 
-// Under SRD the default fallback pane is paneSync, and the privacy subcategory
-// route resolves to panePermissionsData instead of panePrivacy.
-const kDefaultPane = SRD_PREF_VALUE ? "paneSync" : "paneGeneral";
-const kDefaultHash = SRD_PREF_VALUE ? "#sync" : "#general";
-const kPrivacyPane = SRD_PREF_VALUE ? "panePermissionsData" : "panePrivacy";
-const kPrivacyHash = SRD_PREF_VALUE ? "#permissionsData" : "#privacy";
+const kDefaultPane = "paneSync";
+const kDefaultHash = "#sync";
+const kPrivacyPane = "panePermissionsData";
+const kPrivacyHash = "#permissionsData";
 
 add_task(async function () {
   let prefs = await openPreferencesViaOpenPreferencesAPI("panePrivacy");
@@ -43,22 +41,10 @@ add_task(async function () {
     kPrivacyHash,
     "The subcategory should be removed from the URI"
   );
-  if (SRD_PREF_VALUE) {
-    await TestUtils.waitForCondition(
-      () => doc.querySelector("[data-subcategory~='reports']"),
-      "Wait for the reports section to render."
-    );
-  } else {
-    await TestUtils.waitForCondition(
-      () => doc.querySelector(".spotlight"),
-      "Wait for the reports section is spotlighted."
-    );
-    is(
-      doc.querySelector(".spotlight").getAttribute("data-subcategory"),
-      "reports",
-      "The reports section is spotlighted."
-    );
-  }
+  await TestUtils.waitForCondition(
+    () => doc.querySelector("[data-subcategory~='reports']"),
+    "Wait for the reports section to render."
+  );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
@@ -86,22 +72,10 @@ add_task(async function () {
     kPrivacyHash,
     "The subcategory should be removed from the URI"
   );
-  if (SRD_PREF_VALUE) {
-    await TestUtils.waitForCondition(
-      () => doc.querySelector("[data-subcategory~='reports']"),
-      "Wait for the reports section to render."
-    );
-  } else {
-    await TestUtils.waitForCondition(
-      () => doc.querySelector(".spotlight"),
-      "Wait for the reports section is spotlighted."
-    );
-    is(
-      doc.querySelector(".spotlight").getAttribute("data-subcategory"),
-      "reports",
-      "The reports section is spotlighted."
-    );
-  }
+  await TestUtils.waitForCondition(
+    () => doc.querySelector("[data-subcategory~='reports']"),
+    "Wait for the reports section to render."
+  );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 

@@ -6,12 +6,10 @@
 
 #include "BindContext.h"
 #include "HTMLOptGroupElement.h"
-#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/HTMLOptionElementBinding.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "nsGkAtoms.h"
 #include "nsIFormControl.h"
-#include "nsStyleConsts.h"
 
 // Notify/query select frame for selected state
 #include "mozilla/dom/Document.h"
@@ -25,13 +23,14 @@
  * Implementation of &lt;option&gt;
  */
 
-NS_IMPL_NS_NEW_HTML_ELEMENT(Option)
+NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Option)
 
 namespace mozilla::dom {
 
 HTMLOptionElement::HTMLOptionElement(
-    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
-    : nsGenericHTMLElement(std::move(aNodeInfo)) {
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
+    : nsGenericHTMLElement(std::move(aNodeInfo)),
+      mIsDoneAddingChildren(!aFromParser) {
   // We start off enabled
   AddStatesSilently(ElementState::ENABLED);
 }
@@ -257,8 +256,7 @@ void HTMLOptionElement::SetText(const nsAString& aText, ErrorResult& aRv) {
 
 nsresult HTMLOptionElement::BindToTree(BindContext& aContext,
                                        nsINode& aParent) {
-  nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(nsGenericHTMLElement::BindToTree(aContext, aParent));
 
   // Our new parent might change :disabled/:enabled state.
   UpdateDisabledState(false);
@@ -273,15 +271,31 @@ nsresult HTMLOptionElement::BindToTree(BindContext& aContext,
   // and insertedOption is selected, then update select's descendant
   // selectedcontent elements given insertedOption's cached nearest ancestor
   // select element.
-
+  //
   // NOTE: Post-connection steps only run when connecting to a composed doc,
   // unlike insertion steps above which run for any tree insertion.
-  if (aContext.InComposedDoc() && mCachedNearestAncestorSelect && Selected()) {
+  if (aContext.InComposedDoc() && mCachedNearestAncestorSelect &&
+      mIsDoneAddingChildren && Selected()) {
     mCachedNearestAncestorSelect->ScheduleSelectedContentUpdate(
         SelectedContentUpdateMode::ScriptRunner);
   }
 
   return NS_OK;
+}
+
+void HTMLOptionElement::DoneAddingChildren(bool) {
+  MOZ_ASSERT(!mIsDoneAddingChildren);
+  mIsDoneAddingChildren = true;
+
+  // https://html.spec.whatwg.org/#the-option-element:stack-of-open-elements
+  //
+  // When an option element option is popped off the stack of open elements of
+  // an HTML parser or XML parser, update descendant selectedcontent elements
+  // for an option given option.
+  if (mCachedNearestAncestorSelect && Selected() && IsInComposedDoc()) {
+    mCachedNearestAncestorSelect->ScheduleSelectedContentUpdate(
+        SelectedContentUpdateMode::ScriptRunner);
+  }
 }
 
 void HTMLOptionElement::UnbindFromTree(UnbindContext& aContext) {
@@ -361,7 +375,7 @@ already_AddRefed<HTMLOptionElement> HTMLOptionElement::Option(
     // Set the value attribute for this element. We're calling SetAttr
     // directly because we want to pass aNotify == false.
     aError = option->SetAttr(kNameSpaceID_None, nsGkAtoms::value,
-                             aValue.Value(), false);
+                             aValue.Value(), false, IsKnownNewAttr::Yes);
     if (aError.Failed()) {
       return nullptr;
     }
@@ -370,8 +384,8 @@ already_AddRefed<HTMLOptionElement> HTMLOptionElement::Option(
   if (aDefaultSelected) {
     // We're calling SetAttr directly because we want to pass
     // aNotify == false.
-    aError =
-        option->SetAttr(kNameSpaceID_None, nsGkAtoms::selected, u""_ns, false);
+    aError = option->SetAttr(kNameSpaceID_None, nsGkAtoms::selected, u""_ns,
+                             false, IsKnownNewAttr::Yes);
     if (aError.Failed()) {
       return nullptr;
     }

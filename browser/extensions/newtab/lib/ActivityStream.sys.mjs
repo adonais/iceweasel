@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {RegionLocaleEntries} from "moz-src:///toolkit/modules/RegionLocaleMap.sys.mjs" */
+
 // We use importESModule here instead of static import so that
 // the Karma test environment won't choke on this module. This
 // is because the Karma test environment already stubs out
@@ -31,6 +33,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DEFAULT_SITES: "resource://newtab/lib/DefaultSites.sys.mjs",
   DefaultPrefs: "resource://newtab/lib/ActivityStreamPrefs.sys.mjs",
   DiscoveryStreamFeed: "resource://newtab/lib/DiscoveryStreamFeed.sys.mjs",
+  ExtensionWidgetsFeed:
+    "resource://newtab/lib/Widgets/ExtensionWidgetsFeed.sys.mjs",
   ExternalComponentsFeed:
     "resource://newtab/lib/ExternalComponentsFeed.sys.mjs",
   FaviconFeed: "resource://newtab/lib/FaviconFeed.sys.mjs",
@@ -58,6 +62,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SystemTickFeed: "resource://newtab/lib/SystemTickFeed.sys.mjs",
   TelemetryFeed: "resource://newtab/lib/TelemetryFeed.sys.mjs",
   TimerFeed: "resource://newtab/lib/Widgets/TimerFeed.sys.mjs",
+  TravelFeed: "resource://newtab/lib/Widgets/TravelFeed.sys.mjs",
   TopSitesFeed: "resource://newtab/lib/TopSitesFeed.sys.mjs",
   TopStoriesFeed: "resource://newtab/lib/TopStoriesFeed.sys.mjs",
   WallpaperFeed: "resource://newtab/lib/Wallpapers/WallpaperFeed.sys.mjs",
@@ -113,10 +118,13 @@ const STORIES_REGION_LOCALE_CONFIG =
 // see RegionLocaleMap for the format. Shipped default, overridden by the
 // stories-region-locale-config pref or a newtabTrainhop storiesRegionLocale
 // payload.
+/** @type {RegionLocaleEntries} */
 const STORIES_REGION_LOCALE_DEFAULT = [
   // Nightly also gets a global English feed, standing in for the reach
   // locale-list-config used to provide until one is configured remotely.
-  ...(AppConstants.NIGHTLY_BUILD ? [["*", ["en-*"]]] : []),
+  ...(AppConstants.NIGHTLY_BUILD
+    ? /** @type {RegionLocaleEntries} */ ([["*", ["en-*"]]])
+    : []),
   ["US", ["en-*"]],
   ["CA", ["en-*"]],
   ["GB", ["en-*"]],
@@ -787,6 +795,14 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Use Mozilla Ad Routing Service (MARS) unified ads API for sponsored top sites tiles",
+      value: false,
+    },
+  ],
+  [
+    "unifiedAds.tiles.ohttpImages.enabled",
+    {
+      title:
+        "Use OHTTP when requesting sponsored top sites tile images from MARS",
       value: false,
     },
   ],
@@ -1863,6 +1879,54 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.horoscopes.enabled",
+    {
+      title: "Enables the horoscopes widget",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      getValue: () => !marketGateEnabled(),
+    },
+  ],
+  [
+    "widgets.horoscopes.interaction",
+    {
+      title:
+        "Boolean flag for determining if a user has interacted with the horoscopes widget",
+      value: false,
+    },
+  ],
+  [
+    "widgets.travel.enabled",
+    {
+      title: "Enables the travel widget",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      getValue: () => !marketGateEnabled(),
+    },
+  ],
+  [
+    "widgets.solitaire.enabled",
+    {
+      title: "Enables the solitaire widget",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      getValue: () => !marketGateEnabled(),
+    },
+  ],
+  [
+    "widgets.travel.interaction",
+    {
+      title:
+        "Boolean flag for determining if a user has interacted with the travel widget",
+      value: false,
+    },
+  ],
+  [
+    "widgets.solitaire.interaction",
+    {
+      title:
+        "Boolean flag for determining if a user has interacted with the solitaire widget",
+      value: false,
+    },
+  ],
+  [
     "widgets.pictureOfTheDay.enabled",
     {
       title: "Enables the picture of the day widget",
@@ -1889,6 +1953,30 @@ export const PREFS_CONFIG = new Map([
     "widgets.system.recentSearches.enabled",
     {
       title: "Enables the recent searches widget experiment in Nimbus",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      value: false,
+    },
+  ],
+  [
+    "widgets.system.horoscopes.enabled",
+    {
+      title: "Enables the horoscopes widget experiment in Nimbus",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      value: false,
+    },
+  ],
+  [
+    "widgets.system.travel.enabled",
+    {
+      title: "Enables the travel widget experiment in Nimbus",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      value: false,
+    },
+  ],
+  [
+    "widgets.system.solitaire.enabled",
+    {
+      title: "Enables the solitaire widget experiment in Nimbus",
       // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
       value: false,
     },
@@ -2017,6 +2105,27 @@ export const PREFS_CONFIG = new Map([
     "widgets.recentSearches.size",
     {
       title: "Size of the recent searches widget (medium or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.horoscopes.size",
+    {
+      title: "Size of the horoscopes widget (medium or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.travel.size",
+    {
+      title: "Size of the travel widget (medium or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.solitaire.size",
+    {
+      title: "Size of the solitaire widget (medium or large)",
       value: "",
     },
   ],
@@ -2413,7 +2522,7 @@ export const PREFS_CONFIG = new Map([
     "pageLayouts.spacesConfig",
     {
       title:
-        "JSON config for the spaces-thematic-v1 layout variant: an `order` array of space ids, a `default` id that the page opens on and that also takes any section or widget no other space claims, and a `spaces` object mapping each id to a `label`, an `icon` chrome:// URL, and `sections` and `widgets` arrays. Defaults to the config this build ships; clearing the user value returns to it. A config that cannot render turns the layout off rather than partly applying; nothing is merged with the default. Overridden by trainhopConfig.spaces.",
+        "JSON config for the spaces-thematic-v1 layout variant: an `order` array of space ids, a `default` id that the page opens on and that also takes any section or widget no other space claims, a `preview` boolean that turns on the tab preview, and a `spaces` object mapping each id to a `label`, an `icon` chrome:// URL, an optional `previewImage` chrome:// URL that the preview shows instead of the space's first item, and `sections` and `widgets` arrays. Defaults to the config this build ships; clearing the user value returns to it. A config that cannot render turns the layout off rather than partly applying; nothing is merged with the default. Overridden by trainhopConfig.spaces.",
       value: JSON.stringify(DEFAULT_SPACES_CONFIG),
     },
   ],
@@ -2421,7 +2530,7 @@ export const PREFS_CONFIG = new Map([
     "pageLayouts.spacesOrder",
     {
       title:
-        "Comma-separated order of the spaces in the spaces-buttons-top, spaces-buttons-bottom and spaces-floating-arrows layout variants, from stories, widgets and activity. A space left out is not shown; empty means stories,widgets,activity.",
+        "Comma-separated order of the spaces in the V1 spaces layout variants, from stories, widgets and activity. A space left out is not shown; empty means stories,widgets,activity.",
       value: "",
     },
   ],
@@ -2434,12 +2543,13 @@ export const PREFS_CONFIG = new Map([
       value: 3000,
     },
   ],
-  // @experiment(remove) { bug 2078816 }
+  // @experiment(remove-conditional) { bug 2078816 }
+  // Keep for spaces-thematic-v1.
   [
     "pageLayouts.widgetFirstContentSlot.widget",
     {
       title:
-        "Id of the widget the widget-first-content-slot layout variant puts in the first card slot of Popular Today. Overridden by trainhopConfig.pageLayouts.widgetFirstContentSlot.widget.",
+        "Id of the widget the widget-first-content-slot and spaces-thematic-v1 layout variants put in the first card slot of Popular Today. spaces-thematic-v1 uses it only when no space in its config names a `firstSlotWidget`. Overridden by trainhopConfig.pageLayouts.widgetFirstContentSlot.widget.",
       value: "",
     },
   ],
@@ -2658,9 +2768,21 @@ const FEEDS_DATA = [
     value: true,
   },
   {
+    name: "travelfeed",
+    factory: () => new lazy.TravelFeed(),
+    title: "Handles the data for the Travel widget",
+    value: true,
+  },
+  {
     name: "externalcomponentsfeed",
     factory: () => new lazy.ExternalComponentsFeed(),
     title: "Handles updating the registry of external components",
+    value: true,
+  },
+  {
+    name: "extensionwidgetsfeed",
+    factory: () => new lazy.ExtensionWidgetsFeed(),
+    title: "Handles the extensions that provide widgets",
     value: true,
   },
 ];

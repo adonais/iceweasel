@@ -36,11 +36,16 @@ void VideoBridgeChild::StartupForGPUProcess() {
 void VideoBridgeChild::Open(Endpoint<PVideoBridgeChild>&& aEndpoint) {
   StaticMutexAutoLock lock(sVideoBridgeLock);
   MOZ_ASSERT(!sVideoBridge || !sVideoBridge->CanSend());
+  RefPtr<VideoBridgeChild> oldBridge = sVideoBridge.get();
   sVideoBridge = new VideoBridgeChild();
 
   if (!aEndpoint.Bind(sVideoBridge)) {
     // We can't recover from this.
     MOZ_CRASH("Failed to bind VideoBridgeChild to endpoint");
+  }
+
+  if (oldBridge) {
+    oldBridge->mReplacedHolder.ResolveIfExists(true, __func__);
   }
 }
 
@@ -48,6 +53,7 @@ void VideoBridgeChild::Open(Endpoint<PVideoBridgeChild>&& aEndpoint) {
 void VideoBridgeChild::Shutdown() {
   StaticMutexAutoLock lock(sVideoBridgeLock);
   if (sVideoBridge) {
+    sVideoBridge->mReplacedHolder.RejectIfExists(NS_ERROR_ABORT, __func__);
     sVideoBridge->Close();
     sVideoBridge = nullptr;
   }
@@ -61,6 +67,30 @@ VideoBridgeChild::~VideoBridgeChild() = default;
 RefPtr<VideoBridgeChild> VideoBridgeChild::GetSingleton() {
   StaticMutexAutoLock lock(sVideoBridgeLock);
   return sVideoBridge;
+}
+
+/* static */
+RefPtr<GenericNonExclusivePromise> VideoBridgeChild::WaitUntilReady() {
+  RefPtr<GenericNonExclusivePromise> replaced;
+  {
+    StaticMutexAutoLock lock(sVideoBridgeLock);
+    if (!sVideoBridge || sVideoBridge->CanSend()) {
+      return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
+    }
+    replaced = sVideoBridge->mReplacedHolder.Ensure(__func__);
+  }
+
+  // Our replacement may also have been lost by the time we run, so check again.
+  return replaced->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [](const GenericNonExclusivePromise::ResolveOrRejectValue& aValue)
+          -> RefPtr<GenericNonExclusivePromise> {
+        if (aValue.IsReject()) {
+          return GenericNonExclusivePromise::CreateAndReject(
+              aValue.RejectValue(), __func__);
+        }
+        return WaitUntilReady();
+      });
 }
 
 bool VideoBridgeChild::AllocUnsafeShmem(size_t aSize, ipc::Shmem* aShmem) {

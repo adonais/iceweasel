@@ -13,9 +13,9 @@
  * @import { UrlbarSearchStringTokenData } from "./UrlbarTokenizer.sys.mjs"
  */
 
-const lazy = {};
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
@@ -28,11 +28,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  logger: () => lazy.UrlbarShared.getLogger({ prefix: "ProvidersManager" }),
 });
-
-ChromeUtils.defineLazyGetter(lazy, "logger", () =>
-  lazy.UrlbarShared.getLogger({ prefix: "ProvidersManager" })
-);
 
 // List of available local providers, each is implemented in its own module and
 // will track different queries internally by queryContext.
@@ -145,12 +142,6 @@ var localProviderModules = [
     supportedSAPs: ["newtab_searchbar", "smartbar", "urlbar"],
   },
   {
-    name: "UrlbarProviderQuickSuggestContextualOptIn",
-    module:
-      "moz-src:///browser/components/urlbar/UrlbarProviderQuickSuggestContextualOptIn.sys.mjs",
-    supportedSAPs: ["urlbar"],
-  },
-  {
     name: "UrlbarProviderRecentSearches",
     module:
       "moz-src:///browser/components/urlbar/UrlbarProviderRecentSearches.sys.mjs",
@@ -254,8 +245,8 @@ export class ProvidersManager {
   static interruptLevel = 0;
 
   /**
-   * @param {string} sapName
-   *  The SAP name this manager is for, e.g. "urlbar", "searchbar", ...
+   * @param {UrlbarSapName} sapName
+   *  The SAP name this manager is for.
    * @param {object} muxerModules
    *   Object with symbol names as keys and module paths as values.
    *   Symbols should be UrlbarMuxer instances.
@@ -320,7 +311,7 @@ export class ProvidersManager {
   /**
    * Gets a cached ProvidersManager for the given SAP name, or creates a new one.
    *
-   * @param {string} sapName The SAP name.
+   * @param {UrlbarSapName} sapName The SAP name.
    * @returns {ProvidersManager} The ProvidersManager instance.
    */
   static getInstanceForSap(sapName) {
@@ -488,7 +479,13 @@ export class ProvidersManager {
       queryContext.restrictToken = restrictToken;
       // If the restriction token has an equivalent source, then set it as
       // restrictSource.
-      if (lazy.UrlbarShared.SEARCH_MODE_RESTRICT.has(restrictToken.value)) {
+      if (
+        lazy.UrlbarShared.SEARCH_MODE_RESTRICT.has(
+          /** @type {Values<typeof lazy.UrlbarShared.RESTRICT_TOKENS>} */ (
+            restrictToken.value
+          )
+        )
+      ) {
         queryContext.restrictSource = queryContext.sources[0];
       }
     }
@@ -1078,13 +1075,15 @@ function updateSourcesIfEmpty(context) {
   if (context.sources && context.sources.length) {
     return undefined;
   }
+
+  /** @type {Values<typeof lazy.UrlbarShared.RESULT_SOURCE>[]} */
   let acceptedSources = [];
   // There can be only one restrict token per query.
   let restrictToken =
     context.sapName != "urlbar"
       ? undefined
       : context.tokens.find(t =>
-          [
+          /** @type {Values<typeof lazy.UrlbarShared.TOKEN_TYPE>[]} */ ([
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_HISTORY,
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_BOOKMARK,
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_TAG,
@@ -1093,7 +1092,7 @@ function updateSourcesIfEmpty(context) {
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_TITLE,
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_URL,
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_ACTION,
-          ].includes(t.type)
+          ]).includes(t.type)
         );
 
   // RESTRICT_TITLE and RESTRICT_URL do not affect query sources.

@@ -135,6 +135,7 @@ internal suspend fun Iterable<SearchResult>.into(
             description = result.url,
             editSuggestion = if (showEditSuggestion) result.url else null,
             isRemovalAllowed = true,
+            flags = setOf(AwesomeBar.Suggestion.Flag.HISTORY),
             score = result.score,
             onSuggestionClicked = {
                 loadUrlUseCase(result.url)

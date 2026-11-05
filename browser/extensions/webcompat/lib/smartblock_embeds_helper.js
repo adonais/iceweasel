@@ -80,7 +80,8 @@ const embedHelperLib = (() => {
    * @param {object} SHIM_INFO - Information about the shim wrapped in an object.
    */
   async function createShimPlaceholders(embedContainers, SHIM_INFO) {
-    const { shimId, embedSelector, embedLogoURL, isTestShim } = SHIM_INFO;
+    const { shimId, embedSelector, embedLogoURL, isTestShim, fillContainer } =
+      SHIM_INFO;
 
     // Check if we should show embed content in placeholders.
     // This requires the Sanitizer API (setHTML), available in Firefox 148+.
@@ -193,6 +194,20 @@ const embedHelperLib = (() => {
         descriptionString;
       shadowRoot.getElementById("smartblock-placeholder-button").textContent =
         buttonString;
+
+      if (fillContainer) {
+        // Embeds like video players reserve a large fixed area in the page, so
+        // stretch the placeholder over it rather than leaving it in a corner.
+        placeholderDiv.style.height = "100%";
+        const wrapperStyle = shadowRoot.getElementById(
+          "smartblock-placeholder-wrapper"
+        ).style;
+        wrapperStyle.boxSizing = "border-box";
+        wrapperStyle.width = "100%";
+        wrapperStyle.height = "100%";
+        wrapperStyle.maxWidth = "none";
+        wrapperStyle.maxHeight = "none";
+      }
 
       // Wait for user to opt-in.
       shadowRoot

@@ -46,3 +46,8 @@ safeb-blocked-addon-page-error-desc2-override = <strong>{ $sitename }</strong> m
 safeb-blocked-addon-page-error-desc3-override = <strong>What can you do about it?</strong>
 safeb-blocked-addon-page-error-desc4-override = To stop this from happening again, you can remove or disable <strong>{ $addonName }</strong> from about:addons.
 safeb-blocked-addon-page-learn-more3 = <a data-l10n-name='firefox_support_harmful_addons'>Learn more about { -brand-short-name }’s Harmful Add-on Protection</a>.
+
+## Alert shown when reporting a site as not deceptive fails
+
+safeb-report-false-deceptive-error-title = This isn’t a deceptive site
+safeb-report-false-deceptive-error-message = It’s not possible to report this error at this time.

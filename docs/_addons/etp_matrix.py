@@ -27,6 +27,8 @@ import textwrap
 from pathlib import Path
 from urllib.parse import quote
 
+import yaml
+
 # Other privacy-related prefs that aren't controlled by the ETP feature string
 # but are relevant to privacy. These don't change between Standard/Strict modes.
 # They are split into two tables based on whether entry[2] (pb_pref) is set:
@@ -257,6 +259,27 @@ for f in FEATURES:
         KNOWN_CODES.add(f["pb_code"])
 
 
+def scalar_from_value_line(value):
+    """
+    Return the scalar a "value:" line holds, without its inline YAML comment.
+
+    Quoting and comment rules are the scanner's job: a '#' only opens a comment
+    when it follows whitespace, and never inside a quoted scalar, so the color
+    literals ("#EE0000") and the fragment-terminated URL in StaticPrefList.yaml
+    survive intact. Text the scanner cannot reduce to a scalar on this line is
+    handed back untouched: values the preprocessor owns, such as
+    @IS_NIGHTLY_BUILD@, are not YAML at all, and a block scalar ("value: >-")
+    carries its text on the lines that follow.
+    """
+    try:
+        scalars = [t for t in yaml.scan(value) if isinstance(t, yaml.ScalarToken)]
+    except yaml.YAMLError:
+        return value
+    if not scalars or scalars[0].style in ("|", ">"):
+        return value
+    return scalars[0].value
+
+
 def parse_static_pref_list(yaml_path):
     """
     Parse StaticPrefList.yaml to extract pref defaults and comments.
@@ -328,7 +351,7 @@ def parse_static_pref_list(yaml_path):
             # Parse value line
             value_match = re.match(r"^\s*value:\s*(.+)$", pref_line)
             if value_match:
-                raw_value = value_match.group(1).strip()
+                raw_value = scalar_from_value_line(value_match.group(1).strip())
 
                 # Check for macros
                 if raw_value.startswith("@") and raw_value.endswith("@"):
@@ -398,58 +421,83 @@ def _build_pref_links(pref_name, pref_info, firefox_js_overrides, all_js_prefs):
 
 def parse_firefox_js_overrides(firefox_js_path):
     """
-    Parse a .js pref file to extract pref values, handling #if/#ifdef blocks.
+    Parse a .js pref file to extract pref values, handling (possibly nested)
+    #if/#ifdef/#ifndef blocks.
 
     Returns dict of {pref_name: {"value": ..., "ifdef_block": str|None}}.
     For prefs inside #if/#ifdef blocks with #else, the #else value is used
-    as the release default.
+    as the release default; this is a heuristic and can be wrong if the #if
+    condition itself describes the default case. If a pref's value differs
+    across #elif arms with no #else, no value is emitted for it.
     """
     content = firefox_js_path.read_text(encoding="utf-8")
     overrides = {}
 
     pref_pattern = re.compile(r'pref\("([^"]+)",\s*([^)]+)\)')
 
-    in_ifdef = False
-    in_else = False
-    ifdef_lines = []
-    ifdef_prefs = {}
-    else_prefs = {}
+    else_stack = []
+    arms_stack = []
+    else_prefs_stack = []
+    block_lines = []
 
     for line in content.split("\n"):
         stripped = line.strip()
 
-        if re.match(r"^#if\b|^#ifdef\b|^#ifndef\b", stripped) and not in_ifdef:
-            in_ifdef = True
-            in_else = False
-            ifdef_lines = [stripped]
-            ifdef_prefs = {}
-            else_prefs = {}
+        if re.match(r"^#if\b|^#ifdef\b|^#ifndef\b", stripped):
+            if not else_stack:
+                block_lines = []
+            block_lines.append(stripped)
+            else_stack.append(False)
+            arms_stack.append([{}])
+            else_prefs_stack.append({})
             continue
-        elif stripped == "#else" and in_ifdef:
-            in_else = True
-            ifdef_lines.append(stripped)
+        elif re.match(r"^#elif\b", stripped) and else_stack and not else_stack[-1]:
+            arms_stack[-1].append({})
+            block_lines.append(stripped)
             continue
-        elif stripped.startswith("#endif") and in_ifdef:
-            ifdef_lines.append(stripped)
-            ifdef_block_text = "\n".join(ifdef_lines)
+        elif stripped == "#else" and else_stack:
+            else_stack[-1] = True
+            block_lines.append(stripped)
+            continue
+        elif stripped.startswith("#endif") and else_stack:
+            block_lines.append(stripped)
+            else_stack.pop()
+            arms = arms_stack.pop()
+            else_prefs = else_prefs_stack.pop()
 
-            all_names = set(ifdef_prefs) | set(else_prefs)
+            all_names = set(else_prefs)
+            for arm in arms:
+                all_names |= set(arm)
+
+            resolved = {}
             for pref_name in all_names:
                 if pref_name in else_prefs:
-                    value = else_prefs[pref_name]
-                else:
-                    value = ifdef_prefs[pref_name]
-                overrides[pref_name] = {
-                    "value": value,
-                    "ifdef_block": ifdef_block_text,
-                }
+                    resolved[pref_name] = else_prefs[pref_name]
+                    continue
+                values = {arm[pref_name] for arm in arms if pref_name in arm}
+                if len(values) == 1:
+                    resolved[pref_name] = next(iter(values))
+                # Else: set to different values across #elif arms with no
+                # #else, so there's no well-defined default, and we don't emit a value for it.
 
-            in_ifdef = False
-            in_else = False
+            if else_stack:
+                target = else_prefs_stack[-1] if else_stack[-1] else arms_stack[-1][-1]
+                target.update(resolved)
+            else:
+                ifdef_block_text = "\n".join(block_lines)
+                for pref_name, value in resolved.items():
+                    overrides[pref_name] = {
+                        "value": value,
+                        "ifdef_block": ifdef_block_text,
+                    }
             continue
 
-        if in_ifdef:
-            ifdef_lines.append(stripped)
+        if else_stack:
+            block_lines.append(stripped)
+
+        # Skip commented-out prefs
+        if stripped.startswith("//"):
+            continue
 
         match = pref_pattern.search(line)
         if match:
@@ -457,10 +505,9 @@ def parse_firefox_js_overrides(firefox_js_path):
             raw_value = match.group(2).strip()
             stripped_value = raw_value.strip('"')
 
-            if in_ifdef and not in_else:
-                ifdef_prefs[pref_name] = stripped_value
-            elif in_ifdef and in_else:
-                else_prefs[pref_name] = stripped_value
+            if else_stack:
+                target = else_prefs_stack[-1] if else_stack[-1] else arms_stack[-1][-1]
+                target[pref_name] = stripped_value
             else:
                 overrides[pref_name] = {"value": stripped_value, "ifdef_block": None}
 

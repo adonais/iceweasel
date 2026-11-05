@@ -15,6 +15,7 @@ transforms:
     - gecko_taskgraph.transforms.build_schedules:transforms
     - gecko_taskgraph.transforms.build_lints:transforms
     - gecko_taskgraph.transforms.mozconfig:transforms
+    - taskgraph.transforms.task_context:transforms
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.artifact:transforms
     - gecko_taskgraph.transforms.task:transforms
@@ -33,6 +34,11 @@ tasks-from:
     - fenix.yml
 
 task-defaults:
+    task-context:
+        from-parameters:
+            build_date: build_date
+        substitution-fields:
+            - worker.env
     worker:
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system

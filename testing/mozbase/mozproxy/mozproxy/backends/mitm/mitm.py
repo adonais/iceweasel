@@ -12,6 +12,11 @@ import time
 import mozinfo
 from mozprocess import ProcessHandler
 
+try:
+    import resource
+except ImportError:
+    resource = None
+
 from mozproxy.backends.base import Playback
 from mozproxy.recordings import RecordingFile
 from mozproxy.utils import (
@@ -29,6 +34,10 @@ mitm_folder = os.path.dirname(os.path.realpath(__file__))
 MITMDUMP_COMMAND_TIMEOUT = 30
 # Direct playback needs multiple --mode listen specs (mitmproxy >= 9).
 DIRECT_PLAYBACK_VERSIONS = ("11.0.0", "12.2.1")
+# Direct playback keeps one server-side socket per browser connection, and
+# the macOS default soft limit of 256 open files is exhausted by a single
+# page. mitmdump inherits the limit from us, so raise it before spawning.
+MITMPROXY_NOFILE_LIMIT = 10240
 
 # maximal wait for mitmproxy to write its CA certificate
 MITMPROXY_CERT_TIMEOUT = 60
@@ -554,13 +563,17 @@ class Mitmproxy(Playback):
         LOG.info(f"mitmproxy log file: {mitmproxy_log_path}")
         # to turn off mitmproxy log output, use these params for Popen:
         # Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
-        self.mitmproxy_proc = ProcessHandler(
-            command,
-            logfile=mitmproxy_log_path,
-            env=env,
-            storeOutput=False,
-        )
-        self.mitmproxy_proc.run()
+        previous_limit = self._raise_nofile_limit()
+        try:
+            self.mitmproxy_proc = ProcessHandler(
+                command,
+                logfile=mitmproxy_log_path,
+                env=env,
+                storeOutput=False,
+            )
+            self.mitmproxy_proc.run()
+        finally:
+            self._restore_nofile_limit(previous_limit)
 
         end_time = time.time() + MITMDUMP_COMMAND_TIMEOUT
 
@@ -584,6 +597,37 @@ class Mitmproxy(Playback):
         LOG.error("Aborting: Mitmproxy process did not startup")
         self.stop_mitmproxy_playback()
         sys.exit(1)  # XXX why do we need to do that? a raise is not enough?
+
+    def _raise_nofile_limit(self):
+        """Raise the open file soft limit so that the spawned mitmdump inherits
+        it. Returns the previous limits, or None if nothing changed."""
+        if resource is None or self.playback_mode != "direct":
+            return None
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        if soft >= MITMPROXY_NOFILE_LIMIT:
+            return None
+        new_soft = MITMPROXY_NOFILE_LIMIT
+        if hard != resource.RLIM_INFINITY:
+            new_soft = min(new_soft, hard)
+        if new_soft <= soft:
+            return None
+        try:
+            resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft, hard))
+        except (ValueError, OSError) as e:
+            LOG.warning(f"Could not raise RLIMIT_NOFILE from {soft} to {new_soft}: {e}")
+            return None
+        LOG.info(
+            f"Raised RLIMIT_NOFILE soft limit from {soft} to {new_soft} for mitmproxy"
+        )
+        return (soft, hard)
+
+    def _restore_nofile_limit(self, previous_limit):
+        if previous_limit is None or resource is None:
+            return
+        try:
+            resource.setrlimit(resource.RLIMIT_NOFILE, previous_limit)
+        except (ValueError, OSError) as e:
+            LOG.warning(f"Could not restore RLIMIT_NOFILE to {previous_limit}: {e}")
 
     def stop_mitmproxy_playback(self):
         """Stop the mitproxy server playback"""

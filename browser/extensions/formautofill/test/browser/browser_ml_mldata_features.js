@@ -43,7 +43,7 @@ async function tokenize(browser, featuresJSON) {
     const out = {};
     for (const el of elements) {
       // tokenizeElements returns null if ML isn't enabled/ready.
-      out[el.id] = map ? map.get(el) : null;
+      out[el.id] = map ? map.get(el)[0] : null;
     }
     return out;
   });
@@ -55,7 +55,6 @@ add_setup(async function () {
     set: [
       ["extensions.formautofill.useml", true],
       ["extensions.formautofill.useml.nativeOnnxAvailable", true],
-      ["extensions.formautofill.useml.successful", true],
     ],
   });
 });

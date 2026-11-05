@@ -13,6 +13,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <variant>
@@ -32,6 +33,16 @@ using FrameType = VideoEncoderInterface::FrameType;
 class VideoEncoderFactoryInterface {
  public:
   enum class RateControlMode { kCqp, kCbr };
+
+  // Identifies the settings in `StaticEncoderSettings::Cbr` that an encoder
+  // may or may not honor, see
+  // `Capabilities::BitrateControl::supported_cbr_settings()`.
+  enum class CbrSetting {
+    // Covers both `max_buffer_size` and `target_buffer_size`, which are only
+    // meaningful together.
+    kBufferSizes,
+    kMaxIntraBitrateFactor
+  };
 
   class Capabilities {
    public:
@@ -71,10 +82,10 @@ class VideoEncoderFactoryInterface {
         scaling_factors_ = std::move(val);
       }
 
-      const std::vector<FrameType>& supported_frame_types() const {
+      const std::set<FrameType>& supported_frame_types() const {
         return supported_frame_types_;
       }
-      void set_supported_frame_types(std::vector<FrameType> val) {
+      void set_supported_frame_types(std::set<FrameType> val) {
         supported_frame_types_ = std::move(val);
       }
 
@@ -85,7 +96,7 @@ class VideoEncoderFactoryInterface {
       BufferSpaceType buffer_space_type_ = BufferSpaceType::kSingleKeyframe;
       int max_spatial_layers_ = 0;
       std::vector<Rational> scaling_factors_;
-      std::vector<FrameType> supported_frame_types_;
+      std::set<FrameType> supported_frame_types_;
     };
 
     class InputConstraints {
@@ -126,14 +137,26 @@ class VideoEncoderFactoryInterface {
         qp_range_ = {min_qp, max_qp};
       }
 
-      const std::vector<RateControlMode>& rc_modes() const { return rc_modes_; }
-      void set_rc_modes(std::vector<RateControlMode> val) {
+      const std::set<RateControlMode>& rc_modes() const { return rc_modes_; }
+      void set_rc_modes(std::set<RateControlMode> val) {
         rc_modes_ = std::move(val);
+      }
+
+      // The settings in `StaticEncoderSettings::Cbr` that this encoder honors.
+      // Settings not listed here are ignored, in which case the encoder uses
+      // an implementation defined behavior instead. Only meaningful if
+      // `rc_modes()` contains `RateControlMode::kCbr`.
+      const std::set<CbrSetting>& supported_cbr_settings() const {
+        return supported_cbr_settings_;
+      }
+      void set_supported_cbr_settings(std::set<CbrSetting> val) {
+        supported_cbr_settings_ = std::move(val);
       }
 
      private:
       std::pair<int, int> qp_range_ = {0, 0};
-      std::vector<RateControlMode> rc_modes_;
+      std::set<RateControlMode> rc_modes_;
+      std::set<CbrSetting> supported_cbr_settings_;
     };
 
     class Performance {
@@ -201,10 +224,35 @@ class VideoEncoderFactoryInterface {
   class StaticEncoderSettings {
    public:
     struct Cqp {};
+
+    // Settings for constant bitrate mode, in which the encoder picks the QP
+    // needed to meet the per frame bit budget implied by the target bitrate
+    // and frame duration given in `VideoEncoderInterface::FrameEncodeSettings`.
+    // Individual frames will be larger or smaller than that budget, and these
+    // settings say how much of that variation the caller can absorb, expressed
+    // as the transmission delay it adds when the stream is sent over a channel
+    // with a capacity equal to the target bitrate.
+    // An encoder is not required to honor all of these settings, see
+    // `Capabilities::BitrateControl::supported_cbr_settings()`. Settings that
+    // are out of range are rejected, i.e. `CreateEncoder` returns nullptr.
     struct Cbr {
-      // TD: Should there be an intial buffer size?
+      // The largest transmission delay the encoder may cause. Producing data
+      // faster than the target bitrate allows adds delay, and the encoder is
+      // expected to stay within this bound even at the cost of quality. Must
+      // be finite and greater than zero.
       TimeDelta max_buffer_size;
+      // The transmission delay the encoder should operate at, leaving the
+      // difference up to `max_buffer_size` as headroom for bursts, such as
+      // intra frames or sudden changes in the content. Must be greater than
+      // zero and at most `max_buffer_size`.
       TimeDelta target_buffer_size;
+      // How much data an intra frame may use, expressed as a multiple of the
+      // bit budget of a frame on the same temporal layer. Intra frames are
+      // typically much larger than inter frames, and this setting controls the
+      // trade off between the quality of such frames and the delay they add.
+      // Must be finite and at least 1.0. The default matches the lower bound
+      // used by the VP8, VP9 and AV1 encoders in WebRTC.
+      double max_intra_bitrate_factor = 3.0;
     };
 
     StaticEncoderSettings() = default;

@@ -48,7 +48,6 @@ add_task(async function openDebuggerFromDialog() {
 
   // /!\ Hack this `watchedByDevTools` attribute in order to force showing the
   //     "debug script" button on all channels.
-  // Otherwise it is only displayed in dev edition.
   // Also, this attribute can only be toggled when DevTools are declared as
   // being active.
   ChromeUtils.notifyDevToolsOpened();
@@ -89,6 +88,41 @@ add_task(async function openDebuggerFromDialog() {
   await assertPausedAtSourceAndLine(dbg, source.id, 14);
 
   await closeTabAndToolbox();
+});
+
+// The "debug script" option requires DevTools to be open on the slow tab,
+// whatever the channel is.
+add_task(async function debugScriptHiddenWithoutDevTools() {
+  const tab = await addTab(EXAMPLE_URL + "doc-slow-script.html");
+
+  const alert = BrowserTestUtils.waitForGlobalNotificationBar(
+    window,
+    "process-hang"
+  );
+
+  info("Execute an infinite loop");
+  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
+    content.wrappedJSObject.infiniteLoop();
+  }).catch(() => {});
+
+  info("Wait for the slow script warning");
+  const notification = await alert;
+
+  const buttons = notification.buttonContainer.getElementsByTagName("button");
+  const labels = Array.from(buttons, button => button.getAttribute("label"));
+  const debugLabel = gNavigatorBundle.getString(
+    "processHang.button_debug.label"
+  );
+
+  ok(
+    !labels.includes(debugLabel),
+    "The 'debug script' button is not offered when DevTools are not open on the tab"
+  );
+
+  info("Stop the hung script to unblock cleanup");
+  buttons[0].click();
+
+  await removeTab(tab);
 });
 
 // The DisableDeveloperTools policy hides the "debug script" option from the

@@ -105,9 +105,7 @@ fail-if = [
 ["browser_application_panel_open-links.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1467256, 1559591
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1467256, 1559591
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1467256, 1559591
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug T1467256, 1559591BD
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug T1467256, 1559591BD
 ]
 
@@ -128,8 +126,6 @@ fail-if = [
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1781479
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1608640
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1980084
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1781479
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 1781479
 ]
 
@@ -158,7 +154,6 @@ fail-if = [
 ]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1654468
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1559591
 ]
 
 ["browser_application_panel_telemetry-unregister-worker.js"]

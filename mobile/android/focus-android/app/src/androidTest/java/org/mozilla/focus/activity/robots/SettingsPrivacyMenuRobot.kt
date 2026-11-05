@@ -667,7 +667,7 @@ private val blockCookiesPromptHeading =
     mDevice.findObject(
         UiSelector()
             .resourceId("$packageName:id/alertTitle")
-            .textContains(getStringResource(R.string.preference_block_cookies_title))
+            .textContains(getStringResource(R.string.preference_privacy_category_cookies))
     )
 
 private val blockCookiesYesPleaseOption =

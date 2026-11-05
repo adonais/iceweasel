@@ -49,15 +49,24 @@ class TabManagerClass {
    * @param {boolean=} options.unloaded
    *     Pass true to also retrieve browsers for unloaded tabs. Defaults to
    *     false.
+   * @param {string=} options.userContext
+   *     Pass a user context id to only retrieve browsers of this user context.
    *
    * @returns {Array<XULBrowser>}
    *     All the found <xul:browser>s. Will return an empty array if
    *     no windows and tabs can be found.
    */
   getBrowsers(options = {}) {
-    const { unloaded = false } = options;
+    const { unloaded = false, userContext = null } = options;
 
-    return this.allTabs
+    const tabs =
+      userContext === null
+        ? this.allTabs
+        : lazy.UserContextManager.getTabsForUserContext(
+            lazy.UserContextManager.getInternalIdById(userContext)
+          );
+
+    return tabs
       .map(tab => this.getBrowserForTab(tab))
       .filter(browser => {
         return (

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Opaque images, at their natural size and downscaled</title>
+<img>
+<img>
+<img width="100" height="50">
+<img width="100" height="50">
+<script>
+  const canvas = document.createElement("canvas");
+  canvas.width = 200;
+  canvas.height = 100;
+  const ctx = canvas.getContext("2d");
+  const loaded = [];
+  for (const [i, img] of [...document.images].entries()) {
+    ctx.fillStyle = `hsl(${i * 90}, 80%, 50%)`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
+    ctx.fillRect(20, 20, 60 + i * 20, 40);
+    img.src = canvas.toDataURL("image/jpeg");
+    loaded.push(img.decode());
+  }
+  window.imagesLoaded = Promise.all(loaded);
+</script>

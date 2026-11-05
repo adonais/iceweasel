@@ -140,6 +140,48 @@ describe("MultiStageAboutWelcome module", () => {
       stub.restore();
     });
 
+    it("should dismiss a screen with auto_dismiss after the configured time", () => {
+      let clock = sinon.useFakeTimers();
+      const screens = [
+        {
+          id: "LAST_CARD",
+          auto_dismiss: { after: 6000 },
+          content: {
+            position: "card-stack",
+            layout: "last-card",
+            title: "test title",
+            subtitle: "test subtitle",
+          },
+        },
+      ];
+      const finishStub = sandbox.stub(global, "AWFinish");
+      const telemetryStub = sandbox.stub(
+        MultiStageUtils,
+        "sendActionTelemetry"
+      );
+      const wrapper = mount(
+        <MultiStageAboutWelcome
+          defaultScreens={screens}
+          message_id="TEST_MESSAGE"
+          startScreen={0}
+        />
+      );
+
+      clock.tick(5999);
+      assert.notCalled(finishStub);
+      clock.tick(1);
+      assert.calledOnce(finishStub);
+      assert.calledOnceWithExactly(
+        telemetryStub,
+        "TEST_MESSAGE_0_LAST_CARD",
+        "auto_dismiss",
+        "AUTO_DISMISS"
+      );
+
+      wrapper.unmount();
+      clock.restore();
+    });
+
     it("should autoAdvance on last screen and send appropriate telemetry", () => {
       let clock = sinon.useFakeTimers();
       const screens = [

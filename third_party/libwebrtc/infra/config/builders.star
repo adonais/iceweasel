@@ -399,7 +399,7 @@ ci_builder("MacARM64 M1 Release", "Mac|arm64M1|rel", cpu = "arm64-64-Apple_M1")
 try_builder("mac_rel_m1")
 try_builder("mac_dbg_m1")
 
-# TODO: b/427073823 - Re-enable once the slow compilation issue is fixed.
+# TODO(b/427073823): Re-enable once the slow compilation issue is fixed.
 chromium_try_builder("mac_chromium_compile", cq = None)
 
 ci_builder("Win32 Debug (Clang)", "Win Clang|x86|dbg")
@@ -422,8 +422,10 @@ ci_builder("Win (more configs)", "Win Clang|x86|more")
 try_builder("win_x86_more_configs")
 try_builder("win11_release", cq = None)
 try_builder("win11_debug", cq = None)
-chromium_try_builder("win_chromium_compile")
-chromium_try_builder("win_chromium_compile_dbg")
+
+# TODO(b/562984134): Re-enable once the infra issue is resolved
+chromium_try_builder("win_chromium_compile", cq = None)
+chromium_try_builder("win_chromium_compile_dbg", cq = None)
 
 try_builder("iwyu_verifier")
 
@@ -475,12 +477,13 @@ lkgr_config = {
                 "WebRTC Chromium FYI Mac Builder (dbg)",
                 "WebRTC Chromium FYI Mac Builder",
                 "WebRTC Chromium FYI Mac Tester",
-                "WebRTC Chromium FYI Win Builder (dbg)",
-                "WebRTC Chromium FYI Win Builder",
-                "WebRTC Chromium FYI Win Tester",
-                # TODO: b/441273941 - Re-enable once the ios infra issue is resolved
-                #"WebRTC Chromium FYI ios-device",
-                #"WebRTC Chromium FYI ios-simulator",
+                # TODO(b/562984134): Re-enable once the infra issue is resolved
+                # "WebRTC Chromium FYI Win Builder (dbg)",
+                # "WebRTC Chromium FYI Win Builder",
+                # "WebRTC Chromium FYI Win Tester",
+                # TODO(b/441273941): Re-enable once the ios infra issue is resolved
+                # "WebRTC Chromium FYI ios-device",
+                # "WebRTC Chromium FYI ios-simulator",
             ],
         },
     },

@@ -112,6 +112,8 @@ void IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
 // IDecodingTask implementation.
 ///////////////////////////////////////////////////////////////////////////////
 
+IDecodingTask::~IDecodingTask() = default;
+
 void IDecodingTask::Resume() { DecodePool::Singleton()->AsyncRun(this); }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -123,6 +125,8 @@ MetadataDecodingTask::MetadataDecodingTask(NotNull<Decoder*> aDecoder)
   MOZ_ASSERT(mDecoder->IsMetadataDecode(),
              "Use DecodingTask for non-metadata decodes");
 }
+
+MetadataDecodingTask::~MetadataDecodingTask() = default;
 
 void MetadataDecodingTask::Run() {
   MutexAutoLock lock(mMutex);
@@ -152,6 +156,8 @@ void MetadataDecodingTask::Run() {
 AnonymousDecodingTask::AnonymousDecodingTask(NotNull<Decoder*> aDecoder,
                                              bool aResumable)
     : mDecoder(aDecoder), mResumable(aResumable) {}
+
+AnonymousDecodingTask::~AnonymousDecodingTask() = default;
 
 void AnonymousDecodingTask::Run() {
   while (true) {

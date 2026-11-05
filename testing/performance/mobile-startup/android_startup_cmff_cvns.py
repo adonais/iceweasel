@@ -10,6 +10,7 @@ from datetime import datetime
 import mozdevice
 
 ITERATIONS = 50
+DWELL_DELAY_SECONDS = 2
 DATETIME_FORMAT = "%Y.%m.%d"
 PAGE_START_MOZ = re.compile("GeckoSession: handleMessage GeckoView:PageStart uri=")
 
@@ -27,6 +28,7 @@ TEST_COLD_MAIN_FF = "cold_main_first_frame"
 TEST_COLD_MAIN_RESTORE = "cold_main_session_restore"
 TEST_COLD_VIEW_FF = "cold_view_first_frame"
 TEST_COLD_VIEW_NAV_START = "cold_view_nav_start"
+TEST_COLD_SEARCH_WIDGET_FF = "cold_search_widget_first_frame"
 TEST_URI = "https://example.com"
 
 PROD_TO_CHANNEL_TO_PKGID = {
@@ -51,11 +53,30 @@ PROD_TO_CHANNEL_TO_PKGID = {
         "release": "com.android.chrome",
     },
 }
+
+# The two products are not directly comparable: Fenix's TotalTime covers the whole
+# home screen, Chrome's covers its search-only activity.
+PROD_TO_SEARCH_WIDGET_INTENT = {
+    PROD_FENIX: (
+        "-a android.intent.action.MAIN -c android.intent.category.LAUNCHER "
+        "--es open_to_search search_widget"
+    ),
+    PROD_CHRM: (
+        "-a org.chromium.chrome.browser.ui.searchactivityutils.ACTION_SEARCH:1:0 "
+        "-f 0x51000000"
+    ),
+}
+PROD_TO_SEARCH_WIDGET_ACTIVITY = {
+    PROD_FENIX: "org.mozilla.fenix.App",
+    PROD_CHRM: "org.chromium.chrome.browser.searchwidget.SearchActivity",
+}
+
 TEST_LIST = [
     "cold_main_first_frame",
     "cold_view_nav_start",
     "cold_view_first_frame",
     "cold_main_session_restore",
+    "cold_search_widget_first_frame",
 ]
 # "cold_view_first_frame", "cold_main_session_restore" are 2 disabled tests(broken)
 
@@ -123,6 +144,8 @@ class Startup_test:
                 self.device.shell("logcat -c")
                 process = self.device.shell_output(start_cmd_args).splitlines()
                 test_measurements.append(self.get_measurement(self.test_name, process))
+                if self.test_name == TEST_COLD_SEARCH_WIDGET_FF:
+                    time.sleep(DWELL_DELAY_SECONDS)
                 if i % 10 == 0:
                     screenshot_file = f"/sdcard/Download/{self.product}_iteration_{i}_startup_done_frame.png"
                     self.device.shell(f"screencap -p {screenshot_file}")
@@ -146,7 +169,11 @@ class Startup_test:
         return measurements
 
     def get_measurement(self, test_name, stdout):
-        if test_name in [TEST_COLD_MAIN_FF, TEST_COLD_VIEW_FF]:
+        if test_name in [
+            TEST_COLD_MAIN_FF,
+            TEST_COLD_VIEW_FF,
+            TEST_COLD_SEARCH_WIDGET_FF,
+        ]:
             return self.get_measurement_from_am_start_log(stdout)
         elif (
             test_name in [TEST_COLD_VIEW_NAV_START, TEST_COLD_MAIN_RESTORE]
@@ -234,6 +261,8 @@ class Startup_test:
 
     def get_start_cmd(self, test_name):
         intent_action_prefix = "android.intent.action.{}"
+        if test_name == TEST_COLD_SEARCH_WIDGET_FF:
+            return self.get_search_widget_start_cmd()
         if test_name in [TEST_COLD_MAIN_FF, TEST_COLD_MAIN_RESTORE]:
             intent = (
                 f"-a {intent_action_prefix.format('MAIN')} "
@@ -256,6 +285,23 @@ class Startup_test:
 
         return cmd
 
+    def get_search_widget_start_cmd(self):
+        """
+        Build the search widget intent, using a hardcoded component per product.
+        """
+        if self.product not in PROD_TO_SEARCH_WIDGET_INTENT:
+            raise AndroidStartUpUnknownTestError(
+                f"{TEST_COLD_SEARCH_WIDGET_FF} is only supported for "
+                f"{sorted(PROD_TO_SEARCH_WIDGET_INTENT)}, not {self.product}"
+            )
+        component_name = (
+            f"{self.package_id}/{PROD_TO_SEARCH_WIDGET_ACTIVITY[self.product]}"
+        )
+        return (
+            f"am start-activity -W -n {component_name} "
+            f"{PROD_TO_SEARCH_WIDGET_INTENT[self.product]}"
+        )
+
     def get_component_name_for_intent(self, intent):
         resolve_component_args = (
             f"cmd package resolve-activity --brief {intent} {self.package_id}"
@@ -272,6 +318,8 @@ class Startup_test:
         self.device.enable_notifications(self.package_id)
         if self.product in MOZILLA_PRODUCTS:
             self.skip_app_onboarding()
+        elif self.product == PROD_CHRM:
+            self.skip_chrome_onboarding()
 
         if self.product == PROD_FOCUS or test_name not in {
             TEST_COLD_MAIN_FF,
@@ -290,6 +338,19 @@ class Startup_test:
             f"am start-activity -W -a android.intent.action.MAIN --ez "
             f"performancetest true -n {self.package_id}/org.mozilla.fenix.App"
         )
+        time.sleep(4)  # ensure skip onboarding call has time to propagate.
+
+    def skip_chrome_onboarding(self):
+        """
+        Without this chrome's first run experience intercepts every launch and the
+        intent under test never reaches its activity. set-debug-app is what makes a
+        release chrome read the command line file.
+        """
+        self.device.shell_output(
+            'echo "chrome --no-default-browser-check --no-first-run '
+            '--disable-fre" > /data/local/tmp/chrome-command-line '
+        )
+        self.device.shell(f"am set-debug-app --persistent {self.package_id}")
         time.sleep(4)  # ensure skip onboarding call has time to propagate.
 
 

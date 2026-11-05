@@ -22,7 +22,6 @@ import {
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
 });
 
@@ -127,12 +126,7 @@ export const SectionsManager = {
   initialized: false,
   sections: new Map(),
   async init(prefs = {}) {
-    const featureConfig = {
-      newtab: lazy.NimbusFeatures.newtab.getAllVariables() || {},
-      pocketNewtab: lazy.NimbusFeatures.pocketNewtab.getAllVariables() || {},
-    };
-
-    for (const feedPrefName of Object.keys(BUILT_IN_SECTIONS(featureConfig))) {
+    for (const feedPrefName of Object.keys(BUILT_IN_SECTIONS())) {
       const optionsPrefName = `${feedPrefName}.options`;
       await this.addBuiltInSection(feedPrefName, prefs[optionsPrefName]);
 
@@ -167,10 +161,6 @@ export const SectionsManager = {
   },
   async addBuiltInSection(feedPrefName, optionsPrefValue = "{}") {
     let options;
-    const featureConfig = {
-      newtab: lazy.NimbusFeatures.newtab.getAllVariables() || {},
-      pocketNewtab: lazy.NimbusFeatures.pocketNewtab.getAllVariables() || {},
-    };
     try {
       options = JSON.parse(optionsPrefValue);
     } catch (e) {
@@ -178,8 +168,7 @@ export const SectionsManager = {
       console.error(`Problem parsing options pref for ${feedPrefName}`);
     }
 
-    const defaultSection =
-      BUILT_IN_SECTIONS(featureConfig)[feedPrefName](options);
+    const defaultSection = BUILT_IN_SECTIONS()[feedPrefName](options);
     const section = Object.assign({}, defaultSection, {
       pref: Object.assign({}, defaultSection.pref),
     });

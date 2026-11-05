@@ -43,6 +43,7 @@ extensions = [
     "sphinx.ext.todo",
     "mozbuild.sphinx",
     "sphinx_js",
+    "js_typedef",
     "sphinxcontrib.jquery",
     "sphinxcontrib.mermaid",
     "sphinx_copybutton",

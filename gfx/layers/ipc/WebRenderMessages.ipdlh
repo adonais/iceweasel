@@ -116,6 +116,14 @@ struct OpAddSnapshotImage {
   SnapshotImageKey key;
 };
 
+// Moves a snapshot image from fromKey to key. fromKey belongs to another
+// bridge of the same content process. key belongs to the bridge that sends
+// this op.
+struct OpAdoptSnapshotImage {
+  SnapshotImageKey fromKey;
+  SnapshotImageKey key;
+};
+
 struct OpUpdateImage {
   ImageDescriptor descriptor;
   OffsetRange bytes;
@@ -186,6 +194,7 @@ union OpUpdateResource {
   OpAddImage;
   OpAddBlobImage;
   OpAddSnapshotImage;
+  OpAdoptSnapshotImage;
   OpUpdateImage;
   OpUpdateBlobImage;
   OpSetBlobImageVisibleArea;

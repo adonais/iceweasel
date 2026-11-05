@@ -26,11 +26,16 @@ using mozilla::intl::UnicodeProperties;
 using mozilla::intl::WordBreakRule;
 
 // There is no break opportunity between any pair of characters that has line
-// break class of either AL (Alphabetic), IS (Infix Numeric Separator), NU
-// (Numeric), or QU (Quotation). See
-// https://www.unicode.org/Public/UCD/latest/ucd/LineBreak.txt for Unicode code
-// point and line break class mapping.
-static constexpr uint8_t kNonBreakableASCII[] = {
+// break class of either AI (Ambiguous), AL (Alphabetic), IS (Infix Numeric
+// Separator), NU (Numeric), or QU (Quotation). This is based on UAX #14,
+// Unicode Version 15.1.0. See
+// https://www.unicode.org/Public/15.1.0/ucd/LineBreak.txt for Unicode code
+// point and line break class mapping. If upgrading ICU4X, we have to match
+// with Unicode version.
+//
+// TODO(m_kato):
+// We should generate this table by a script (Bug 2081587).
+static constexpr uint8_t kNonBreakableLatin1[] = {
     // clang-format off
 // 0x20-0x2f
 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0,
@@ -44,15 +49,31 @@ static constexpr uint8_t kNonBreakableASCII[] = {
 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 // 0x70-0x7f
 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0,
+// 0x80-0x8f
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+// 0x90-0x9f
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+// 0xa0-0xaf
+0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1,
+// 0xb0-0xbf
+0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+// 0xc0-0xcf
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+// 0xd0-0xdf
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+// 0xe0-0xef
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+// 0xf0-0xff
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     // clang-format on
 };
 
 template <typename T>
 static constexpr bool IsNonBreakableChar(T aChar) {
-  if (aChar < 0x20 || aChar > 0x7f) {
+  if (aChar < 0x20 || aChar > 0xff) {
     return false;
   }
-  return !!kNonBreakableASCII[aChar - 0x20];
+  return !!kNonBreakableLatin1[aChar - 0x20];
 }
 
 nsLineBreaker::~nsLineBreaker() {

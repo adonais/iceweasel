@@ -12,10 +12,9 @@ import {
   UrlbarProvider,
   UrlbarUtils,
 } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   EnrollmentType: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
@@ -24,30 +23,27 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
-});
-
-ChromeUtils.defineLazyGetter(lazy, "logger", function () {
-  return lazy.UrlbarShared.getLogger({ prefix: "SemanticHistorySearch" });
-});
-
-/**
- * Lazily creates (on first call) and returns the
- * {@link PlacesSemanticHistoryManager} instance backing this provider.
- */
-ChromeUtils.defineLazyGetter(lazy, "semanticManager", function () {
-  let { getPlacesSemanticHistoryManager } = ChromeUtils.importESModule(
-    "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs"
-  );
-  const distanceThreshold = Services.prefs.getFloatPref(
-    "places.semanticHistory.distanceThreshold",
-    0.6
-  );
-  return getPlacesSemanticHistoryManager({
-    rowLimit: 10000,
-    samplingAttrib: "frecency",
-    changeThresholdCount: 3,
-    distanceThreshold,
-  });
+  logger: () =>
+    lazy.UrlbarShared.getLogger({ prefix: "SemanticHistorySearch" }),
+  /**
+   * Lazily creates (on first call) and returns the
+   * {@link PlacesSemanticHistoryManager} instance backing this provider.
+   */
+  semanticManager: () => {
+    let { getPlacesSemanticHistoryManager } = ChromeUtils.importESModule(
+      "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs"
+    );
+    const distanceThreshold = Services.prefs.getFloatPref(
+      "places.semanticHistory.distanceThreshold",
+      0.6
+    );
+    return getPlacesSemanticHistoryManager({
+      rowLimit: 10000,
+      samplingAttrib: "frecency",
+      changeThresholdCount: 3,
+      distanceThreshold,
+    });
+  },
 });
 
 /**

@@ -192,7 +192,7 @@ add_task(async function test_tab_group_mention_reaches_model_sanitized() {
       "Labels are stored raw and spotlighted only when rendered into the prompt"
     );
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await BrowserTestUtils.closeWindow(win);
   }
@@ -316,7 +316,7 @@ add_task(async function test_expanded_members_are_not_mentioned_urls() {
     await mockEngineManager.respondTo({ purpose: "chat", response: "Done." });
   } finally {
     await server.cleanup();
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await BrowserTestUtils.closeWindow(win);
   }
@@ -363,7 +363,7 @@ add_task(async function test_expanded_members_are_capped() {
       "Members do not become a mentioned URL the page content tool can read"
     );
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await BrowserTestUtils.closeWindow(win);
   }

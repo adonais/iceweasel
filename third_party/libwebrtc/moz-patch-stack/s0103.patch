@@ -17,7 +17,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/506d4efaf2dc29472
  3 files changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 6fdac0cabf..4abfd48931 100644
+index 7de39b993e..efa0da8efe 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -873,6 +873,10 @@ rtc_library("desktop_capture") {

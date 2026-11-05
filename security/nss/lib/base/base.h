@@ -47,8 +47,6 @@ PR_BEGIN_EXTERN_C
  * In debug builds, the following calls are available:
  *
  *  nssArena_verifyPointer
- *  nssArena_registerDestructor
- *  nssArena_deregisterDestructor
  *
  * The following preprocessor macro is also always available:
  *
@@ -185,68 +183,7 @@ NSS_EXTERN PRStatus nssArena_Unmark(NSSArena *arena, nssArenaMark *arenaMark);
 extern const NSSError NSS_ERROR_INVALID_ARENA;
 extern const NSSError NSS_ERROR_INVALID_ARENA_MARK;
 extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
-
-#ifdef ARENA_DESTRUCTOR_LIST
-
-/*
- * nssArena_registerDestructor
- *
- * This routine stores a pointer to a callback and an arbitrary
- * pointer-sized argument in the arena, at the current point in
- * the mark stack.  If the arena is destroyed, or an "earlier"
- * mark is released, then this destructor will be called at that
- * time.  Note that the destructor will be called with the arena
- * locked, which means the destructor may free memory in that
- * arena, but it may not allocate or cause to be allocated any
- * memory.  This callback facility was included to support our
- * debug-version pointer-tracker feature; overuse runs counter to
- * the the original intent of arenas.  This routine returns a
- * PRStatus value; if successful, it will return PR_SUCCESS.  If
- * unsuccessful, it will set an error on the error stack and
- * return PR_FAILURE.
- *
- * The error may be one of the following values:
- *  NSS_ERROR_INVALID_ARENA
- *  NSS_ERROR_NO_MEMORY
- *
- * Return value:
- *  PR_SUCCESS
- *  PR_FAILURE
- */
-
-NSS_EXTERN PRStatus nssArena_registerDestructor(
-    NSSArena *arena, void (*destructor)(void *argument), void *arg);
-
-extern const NSSError NSS_ERROR_INVALID_ARENA;
-extern const NSSError NSS_ERROR_NO_MEMORY;
-
-/*
- * nssArena_deregisterDestructor
- *
- * This routine will remove the first destructor in the specified
- * arena which has the specified destructor and argument values.
- * The destructor will not be called.  This routine returns a
- * PRStatus value; if successful, it will return PR_SUCCESS.  If
- * unsuccessful, it will set an error on the error stack and
- * return PR_FAILURE.
- *
- * The error may be one of the following values:
- *  NSS_ERROR_INVALID_ARENA
- *  NSS_ERROR_NOT_FOUND
- *
- * Return value:
- *  PR_SUCCESS
- *  PR_FAILURE
- */
-
-NSS_EXTERN PRStatus nssArena_deregisterDestructor(
-    NSSArena *arena, void (*destructor)(void *argument), void *arg);
-
 extern const NSSError NSS_ERROR_INVALID_ITEM;
-extern const NSSError NSS_ERROR_INVALID_ARENA;
-extern const NSSError NSS_ERROR_NOT_FOUND;
-
-#endif /* ARENA_DESTRUCTOR_LIST */
 
 /*
  * nss_ZAlloc
@@ -520,30 +457,11 @@ NSS_EXTERN PRBool nssItem_Equal(const NSSItem *one, const NSSItem *two,
 /*
  * NSSUTF8
  *
- *  nssUTF8_CaseIgnoreMatch
  *  nssUTF8_Duplicate
  *  nssUTF8_Size
  *  nssUTF8_Length
  *  nssUTF8_CopyIntoFixedBuffer
  */
-
-/*
- * nssUTF8_CaseIgnoreMatch
- *
- * Returns true if the two UTF8-encoded strings pointed to by the
- * two specified NSSUTF8 pointers differ only in typcase.
- *
- * The error may be one of the following values:
- *  NSS_ERROR_INVALID_POINTER
- *
- * Return value:
- *  PR_TRUE if the strings match, ignoring case
- *  PR_FALSE if they don't
- *  PR_FALSE upon error
- */
-
-NSS_EXTERN PRBool nssUTF8_CaseIgnoreMatch(const NSSUTF8 *a, const NSSUTF8 *b,
-                                          PRStatus *statusOpt);
 
 /*
  * nssUTF8_Duplicate
@@ -563,31 +481,6 @@ NSS_EXTERN PRBool nssUTF8_CaseIgnoreMatch(const NSSUTF8 *a, const NSSUTF8 *b,
  */
 
 NSS_EXTERN NSSUTF8 *nssUTF8_Duplicate(const NSSUTF8 *s, NSSArena *arenaOpt);
-
-/*
- * nssUTF8_PrintableMatch
- *
- * Returns true if the two Printable strings pointed to by the
- * two specified NSSUTF8 pointers match when compared with the
- * rules for Printable String (leading and trailing spaces are
- * disregarded, extents of whitespace match irregardless of length,
- * and case is not significant), then PR_TRUE will be returned.
- * Otherwise, PR_FALSE will be returned.  Upon failure, PR_FALSE
- * will be returned.  If the optional statusOpt argument is not
- * NULL, then PR_SUCCESS or PR_FAILURE will be stored in that
- * location.
- *
- * The error may be one of the following values:
- *  NSS_ERROR_INVALID_POINTER
- *
- * Return value:
- *  PR_TRUE if the strings match, ignoring case
- *  PR_FALSE if they don't
- *  PR_FALSE upon error
- */
-
-NSS_EXTERN PRBool nssUTF8_PrintableMatch(const NSSUTF8 *a, const NSSUTF8 *b,
-                                         PRStatus *statusOpt);
 
 /*
  * nssUTF8_Size
@@ -665,9 +558,6 @@ extern const NSSError NSS_ERROR_INVALID_POINTER;
 extern const NSSError NSS_ERROR_NO_MEMORY;
 extern const NSSError NSS_ERROR_UNSUPPORTED_TYPE;
 
-NSS_EXTERN NSSItem *nssUTF8_GetEncoding(NSSArena *arenaOpt, NSSItem *rvOpt,
-                                        nssStringType type, NSSUTF8 *string);
-
 /*
  * nssUTF8_CopyIntoFixedBuffer
  *
@@ -719,16 +609,6 @@ NSS_EXTERN void nssList_Clear(nssList *list,
                               nssListElementDestructorFunc destructor);
 
 /*
- * nssList_SetCompareFunction
- *
- * By default, two list elements will be compared by comparing their
- * data pointers.  By setting this function, the user can control
- * how elements are compared.
- */
-NSS_EXTERN void nssList_SetCompareFunction(nssList *list,
-                                           nssListCompareFunc compareFunc);
-
-/*
  * nssList_SetSortFunction
  *
  * Sort function to use for an ordered list.
@@ -755,14 +635,6 @@ NSS_EXTERN PRStatus nssList_AddUnique(nssList *list, void *data);
  * Uses the compare function to locate the element and remove it.
  */
 NSS_EXTERN PRStatus nssList_Remove(nssList *list, void *data);
-
-/*
- * nssList_Get
- *
- * Uses the compare function to locate an element.  Also serves as
- * nssList_Exists.
- */
-NSS_EXTERN void *nssList_Get(nssList *list, void *data);
 
 /*
  * nssList_Count
@@ -823,7 +695,6 @@ NSS_EXTERN PRStatus nssListIterator_Finish(nssListIterator *iter);
  *  nssHash_Add
  *  nssHash_Remove
  *  nssHash_Count
- *  nssHash_Exists
  *  nssHash_Lookup
  *  nssHash_Iterate
  */
@@ -837,9 +708,6 @@ NSS_EXTERN nssHash *nssHash_Create(NSSArena *arenaOpt, PRUint32 numBuckets,
                                    PLHashFunction keyHash,
                                    PLHashComparator keyCompare,
                                    PLHashComparator valueCompare);
-
-NSS_EXTERN nssHash *nssHash_CreatePointer(NSSArena *arenaOpt,
-                                          PRUint32 numBuckets);
 
 NSS_EXTERN nssHash *nssHash_CreateString(NSSArena *arenaOpt,
                                          PRUint32 numBuckets);
@@ -873,12 +741,6 @@ NSS_EXTERN void nssHash_Remove(nssHash *hash, const void *it);
  *
  */
 NSS_EXTERN PRUint32 nssHash_Count(nssHash *hash);
-
-/*
- * nssHash_Exists
- *
- */
-NSS_EXTERN PRBool nssHash_Exists(nssHash *hash, const void *it);
 
 /*
  * nssHash_Lookup

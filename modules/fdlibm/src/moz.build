@@ -81,3 +81,9 @@ LICENSED_UNDER += ["k_exp"]
 LICENSED_UNDER["k_exp"].paths = [
     "k_exp.cpp",
 ]
+
+SOURCE_HEADERS += [
+	"k_log.h",
+	"k_logf.h",
+	"math_private.h",
+]

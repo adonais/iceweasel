@@ -432,7 +432,7 @@ export class Conversation {
    * a tool that re-enters the chat loop, and keeps flags staged for the whole
    * of a tool-call batch, which runs no LLM call of its own.
    *
-   * @param {object} opts - { fxAccountToken, signal?, ... }
+   * @param {object} opts - { token, signal?, ... }
    * @param {InferenceParams} [opts.inferenceParams]
    * @returns {Promise<object>}
    */
@@ -449,7 +449,7 @@ export class Conversation {
    * Streaming variant — returns an AsyncGenerator. Commits security flags for
    * the same reason `run()` does, eagerly, before the generator is returned.
    *
-   * @param {object} opts - { fxAccountToken, signal?, chatId?, tools?, tool_choice?, streamOptions?, args? }
+   * @param {object} opts - { token, signal?, chatId?, tools?, tool_choice?, streamOptions?, args? }
    * @param {InferenceParams} [opts.inferenceParams]
    * @returns {AsyncGenerator}
    */

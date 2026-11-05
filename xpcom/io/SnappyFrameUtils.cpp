@@ -5,6 +5,7 @@
 #include "mozilla/SnappyFrameUtils.h"
 
 #include "crc32c.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
 #include "nsDebug.h"
 #include "snappy/snappy.h"
@@ -234,10 +235,13 @@ nsresult SnappyFrameUtils::ParseCompressedData(char* aDest, size_t aDestLength,
 
 // static
 size_t SnappyFrameUtils::MaxCompressedBufferLength(size_t aSourceLength) {
-  size_t neededLength = kHeaderLength;
+  CheckedInt<size_t> neededLength = kHeaderLength;
   neededLength += kCRCLength;
   neededLength += snappy::MaxCompressedLength(aSourceLength);
-  return neededLength;
+  if (!neededLength.isValid()) {
+    return SIZE_MAX;
+  }
+  return neededLength.value();
 }
 
 }  // namespace detail

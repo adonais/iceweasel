@@ -148,6 +148,15 @@ class Module::CompleteTier2GeneratorTaskImpl
   }
 };
 
+Module::Module(const ModuleMetadata& moduleMeta, const Code& code,
+               bool loggingDeserialized)
+    : moduleMeta_(&moduleMeta),
+      code_(&code),
+      loggingDeserialized_(loggingDeserialized),
+      testingTier2Active_(false) {
+  initGCMallocBytesExcludingCode();
+}
+
 Module::~Module() {
   // Note: Modules can be destroyed on any thread.
   MOZ_ASSERT(!completeTier2Listener_);

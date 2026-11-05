@@ -13,7 +13,6 @@
 // NOTE: alphabetically ordered
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Document.h"
-#include "nsIDOMXULRelatedElement.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"
 #include "nsXULElement.h"
 
@@ -92,27 +91,6 @@ uint64_t XULTabAccessible::NativeInteractiveState() const {
              : state | states::SELECTABLE | states::FOCUSABLE;
 }
 
-Relation XULTabAccessible::RelationByType(RelationType aType) const {
-  Relation rel = AccessibleWrap::RelationByType(aType);
-  if (aType != RelationType::LABEL_FOR) return rel;
-
-  // Expose 'LABEL_FOR' relation on tab accessible for tabpanel accessible.
-  ErrorResult rv;
-  nsIContent* parent = mContent->AsElement()->Closest("tabs"_ns, rv);
-  if (!parent) return rel;
-
-  nsCOMPtr<nsIDOMXULRelatedElement> tabsElm =
-      parent->AsElement()->AsXULRelated();
-  if (!tabsElm) return rel;
-
-  RefPtr<mozilla::dom::Element> tabpanelElement;
-  tabsElm->GetRelatedElement(GetNode(), getter_AddRefs(tabpanelElement));
-  if (!tabpanelElement) return rel;
-
-  rel.AppendTarget(mDoc, tabpanelElement);
-  return rel;
-}
-
 void XULTabAccessible::ApplyARIAState(uint64_t* aState) const {
   HyperTextAccessible::ApplyARIAState(aState);
   // XUL tab has an implicit ARIA role of tab, so support aria-selected.
@@ -136,7 +114,7 @@ bool XULTabsAccessible::HasPrimaryAction() const { return false; }
 
 void XULTabsAccessible::Value(nsString& aValue) const { aValue.Truncate(); }
 
-ENameValueFlag XULTabsAccessible::NativeName(nsString& aName) const {
+ENameValueFlag XULTabsAccessible::NativeName(nsString& /*aName*/) const {
   // no name
   return eNameOK;
 }
@@ -207,21 +185,11 @@ XULTabpanelAccessible::XULTabpanelAccessible(nsIContent* aContent,
 
 role XULTabpanelAccessible::NativeRole() const { return roles::PROPERTYPAGE; }
 
-Relation XULTabpanelAccessible::RelationByType(RelationType aType) const {
-  Relation rel = AccessibleWrap::RelationByType(aType);
-  if (aType != RelationType::LABELLED_BY) return rel;
-
-  // Expose 'LABELLED_BY' relation on tabpanel accessible for tab accessible.
-  if (!mContent->GetParent()) return rel;
-
-  nsCOMPtr<nsIDOMXULRelatedElement> tabpanelsElm =
-      mContent->GetParent()->AsElement()->AsXULRelated();
-  if (!tabpanelsElm) return rel;
-
-  RefPtr<mozilla::dom::Element> tabElement;
-  tabpanelsElm->GetRelatedElement(GetNode(), getter_AddRefs(tabElement));
-  if (!tabElement) return rel;
-
-  rel.AppendTarget(mDoc, tabElement);
-  return rel;
+ENameValueFlag XULTabpanelAccessible::DirectName(nsString& aName) const {
+  // The tabbox widget labels each panel with its tab via aria-labelledby in
+  // order to expose relations. However, naming the panel causes redundant
+  // reporting by screen readers, particularly in the browser where the panel
+  // name would duplicate the document name. Therefore, don't expose a name.
+  aName.Truncate();
+  return eNameOK;
 }

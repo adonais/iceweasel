@@ -48,6 +48,15 @@ export default class IPProtectionStatusBox extends MozLitElement {
     this.connectionButtonEl?.focus();
   }
 
+  handleSupportLinkClick(event) {
+    if (!event.target.closest('a[is="moz-support-link"]')) {
+      return;
+    }
+    this.dispatchEvent(
+      new CustomEvent("IPProtection:Close", { bubbles: true, composed: true })
+    );
+  }
+
   #keyListener(event) {
     let keyCode = event.code;
     switch (keyCode) {
@@ -97,6 +106,7 @@ export default class IPProtectionStatusBox extends MozLitElement {
                     id="description"
                     data-l10n-id=${this.descriptionL10nId}
                     data-l10n-args=${this.descriptionL10nArgs}
+                    @click=${this.handleSupportLinkClick}
                   >
                     ${this.descriptionSupportSlug
                       ? html` <a

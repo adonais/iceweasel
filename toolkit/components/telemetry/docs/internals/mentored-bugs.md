@@ -9,12 +9,12 @@ To help Mozilla out with this bug, here's the steps:
 
 1. Comment here on the bug that you want to volunteer to help.
    This will tell others that you're working on the next steps.
-2. [Download and build the Firefox source code](https://firefox-source-docs.mozilla.org/setup/index.html)
+2. {doc}`Download and build the Firefox source code </setup/index>`
    * If you have any problems, please ask on
      [Element/Matrix](https://chat.mozilla.org/#/room/#introduction:mozilla.org)
      in the `#introduction` channel. They're there to help you get started.
    * You can also read the
-     [Firefox Contributors' Quick Reference](https://firefox-source-docs.mozilla.org/contributing/contribution_quickref.html),
+     {doc}`Firefox Contributors' Quick Reference </contributing/contribution_quickref>`,
      which has answers to most development questions.
 3. Start working on this bug. <SPECIFIC STEPS RELEVANT TO THIS BUG>
    * If you have any problems with this bug,
@@ -27,7 +27,7 @@ To help Mozilla out with this bug, here's the steps:
    Also check your changes for adherence to our style guidelines by using `mach lint`
 5. Submit the patch (including an automated test, if applicable) for review.
    Mark me as a reviewer so I'll get an email to come look at your code.
-   * [Getting your code reviewed](https://firefox-source-docs.mozilla.org/setup/contributing_code.html#getting-your-code-reviewed)
+   * [Getting your code reviewed](/setup/contributing_code.md#getting-your-code-reviewed)
    * This is when the bug will be assigned to you.
 6. After a series of reviews and changes to your patch,
    I'll mark it for checkin or push it to autoland.

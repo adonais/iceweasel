@@ -139,3 +139,10 @@ FINAL_LIBRARY = "xul"
 
 # Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "MediaTransportChild.h",
+    "MediaTransportParent.h",
+    "WebrtcGlobal.h",
+    "WebrtcIPCTraits.h",
+]

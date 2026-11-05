@@ -89,7 +89,7 @@ You should see the following message in your terminal after a successful build:
 ```console
 Your build was successful!
 To take your build for a test drive, run: |mach run|
-For more information on what to do now, see https://firefox-source-docs.mozilla.org/setup/contributing_code.html
+For more information on what to do now, see {doc}`/setup/contributing_code`
 ```
 
 You can now use the `./mach run` command to run your locally built Firefox!

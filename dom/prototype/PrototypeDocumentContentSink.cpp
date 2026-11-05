@@ -1132,9 +1132,9 @@ nsresult PrototypeDocumentContentSink::AddAttributes(
     nsAutoString valueStr;
     protoattr->mValue.ToString(valueStr);
 
-    rv = aElement->SetAttr(protoattr->mName.NamespaceID(),
-                           protoattr->mName.LocalName(),
-                           protoattr->mName.GetPrefix(), valueStr, false);
+    rv = aElement->SetAttr(
+        protoattr->mName.NamespaceID(), protoattr->mName.LocalName(),
+        protoattr->mName.GetPrefix(), valueStr, false, IsKnownNewAttr::Yes);
     if (NS_FAILED(rv)) return rv;
   }
 

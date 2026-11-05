@@ -119,9 +119,6 @@ https_first_disabled = true
 ["browser_hwconcurrency_popups_blob.js"]
 
 ["browser_hwconcurrency_popups_blob_noopener.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug",
-]
 
 ["browser_hwconcurrency_popups_data.js"]
 disabled = "Top-level data: URI navigations are now always blocked (Bug 1895528)"

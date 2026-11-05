@@ -238,20 +238,19 @@ attribute.
 ### Keyboard shortcuts
 
 Setting the `shortcut` attribute shows a keyboard shortcut after the label. The
-text is hidden from assistive technology, so also set `aria-keyshortcuts` to
-expose the shortcut.
+shortcut text is part of the item's accessible name.
 
 ```html
 <panel-list>
-  <panel-item shortcut="Ctrl+N" aria-keyshortcuts="Control+N">New</panel-item>
-  <panel-item shortcut="Ctrl+S" aria-keyshortcuts="Control+S">Save</panel-item>
+  <panel-item shortcut="Ctrl+N">New</panel-item>
+  <panel-item shortcut="Ctrl+S">Save</panel-item>
 </panel-list>
 ```
 
 ```html story
 <panel-list stay-open open>
-  <panel-item shortcut="Ctrl+N" aria-keyshortcuts="Control+N">New</panel-item>
-  <panel-item shortcut="Ctrl+S" aria-keyshortcuts="Control+S">Save</panel-item>
+  <panel-item shortcut="Ctrl+N">New</panel-item>
+  <panel-item shortcut="Ctrl+S">Save</panel-item>
 </panel-list>
 ```
 

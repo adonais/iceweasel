@@ -132,3 +132,16 @@ if CONFIG['CC_TYPE'] == 'clang-cl':
 # See bug 386897.
 if CONFIG['OS_TARGET'] == 'Android' and CONFIG['MOZ_OPTIMIZE']:
     CFLAGS += ['-O2']
+
+SOURCE_HEADERS += [
+    "loongson-mmintrin.h",
+	"pixman-accessor.h",
+	"pixman-arm-common.h",
+	"pixman-combine-float.h",
+	"pixman-combine32.h",
+	"pixman-compiler.h",
+	"pixman-edge-imp.h",
+	"pixman-inlines.h",
+	"pixman-mips-dspr2.h",
+	"pixman-private.h",
+]

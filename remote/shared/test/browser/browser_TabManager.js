@@ -125,6 +125,65 @@ add_task(async function test_addTab_window() {
   }
 });
 
+add_task(async function test_getBrowsers_userContext() {
+  const { UserContextManager } = ChromeUtils.importESModule(
+    "chrome://remote/content/shared/UserContextManager.sys.mjs"
+  );
+
+  const userContext = UserContextManager.createContext();
+  const internalId = UserContextManager.getInternalIdById(userContext);
+
+  const otherUserContext = UserContextManager.createContext();
+  const otherInternalId =
+    UserContextManager.getInternalIdById(otherUserContext);
+
+  const win1 = await BrowserTestUtils.openNewBrowserWindow();
+
+  const tabDefault = BrowserTestUtils.addTab(gBrowser, TEST_URL);
+  const tabContext1 = BrowserTestUtils.addTab(gBrowser, TEST_URL, {
+    userContextId: internalId,
+  });
+  // A tab from another window but which belongs to the same user context should
+  // be returned.
+  const tabContext2 = BrowserTestUtils.addTab(win1.gBrowser, TEST_URL, {
+    userContextId: internalId,
+  });
+  // A tab from the same window but which belongs to another user context should
+  // not be returned.
+  const tabOtherContext = BrowserTestUtils.addTab(gBrowser, TEST_URL, {
+    userContextId: otherInternalId,
+  });
+
+  try {
+    await Promise.all(
+      [tabDefault, tabContext1, tabContext2].map(tab =>
+        BrowserTestUtils.browserLoaded(tab.linkedBrowser)
+      )
+    );
+
+    const browsers = TabManager.getBrowsers({ userContext });
+    is(browsers.length, 2, "Got the browsers of the user context only");
+    ok(browsers.includes(tabContext1.linkedBrowser));
+    ok(browsers.includes(tabContext2.linkedBrowser));
+
+    ok(
+      TabManager.getBrowsers().includes(tabDefault.linkedBrowser),
+      "Browsers of all user contexts are returned without the option"
+    );
+    is(
+      TabManager.getBrowsers({ userContext: "unknown" }).length,
+      0,
+      "No browser is returned for an unknown user context"
+    );
+  } finally {
+    await BrowserTestUtils.closeWindow(win1);
+    gBrowser.removeTab(tabDefault);
+    gBrowser.removeTab(tabContext1);
+    gBrowser.removeTab(tabOtherContext);
+    UserContextManager.removeUserContext(userContext);
+  }
+});
+
 add_task(async function test_getTabForBrowsingContext() {
   const tab = await TabManager.addTab();
   try {

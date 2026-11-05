@@ -398,6 +398,57 @@ describe("Smart Window telemetry", () => {
     );
   });
 
+  it("sends telemetry when open sidebar by default checkbox is updated", async () => {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.smartwindow.sidebar.openByDefault", true]],
+    });
+    Services.fog.testResetFOG();
+
+    let { doc, win } = await openSmartWindowPanel();
+
+    const checkbox = doc.getElementById("openSidebarByDefault");
+    Assert.ok(checkbox.checked, "Checkbox is checked initially");
+
+    checkbox.scrollIntoView();
+    EventUtils.synthesizeMouseAtCenter(checkbox.labelEl, {}, win);
+    await checkbox.updateComplete;
+
+    Assert.ok(!checkbox.checked, "Checkbox is now unchecked");
+    Assert.equal(
+      Glean.smartWindow.sidebarOpenByDefault.testGetValue(),
+      false,
+      "sidebarOpenByDefault metric is false after unchecking"
+    );
+
+    checkbox.labelEl.click();
+    await checkbox.updateComplete;
+
+    Assert.ok(checkbox.checked, "Checkbox is checked again");
+    Assert.equal(
+      Glean.smartWindow.sidebarOpenByDefault.testGetValue(),
+      true,
+      "sidebarOpenByDefault metric is true after checking"
+    );
+
+    const changeEvents =
+      Glean.smartWindow.sidebarOpenByDefaultChange.testGetValue();
+    Assert.equal(
+      changeEvents.length,
+      2,
+      "Two sidebarOpenByDefaultChange events were recorded"
+    );
+    Assert.equal(
+      changeEvents[0].extra.enabled,
+      "false",
+      "First event records the sidebar no longer opening by default"
+    );
+    Assert.equal(
+      changeEvents[1].extra.enabled,
+      "true",
+      "Second event records the sidebar opening by default again"
+    );
+  });
+
   it("sends telemetry when memories panel is visible", async () => {
     await SpecialPowers.pushPrefEnv({
       set: [

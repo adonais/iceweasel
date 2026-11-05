@@ -40,8 +40,23 @@ webspec-index anchors '*navigate*' --spec HTML
 webspec-index list HTML
 ```
 
-For WebIDL interface definitions (not provided by webspec-index), use the spec
-shortname (visible in search results or derivable from the URL hostname/path):
+For a long algorithm, get the step outline first, then the sub-algorithms it calls
+with their arguments. Each callee is a unit the implementation has to cover:
+
+```bash
+webspec-index query 'HTML#navigate' --depth 1 --format markdown
+webspec-index state 'HTML#navigate' --calls --format markdown
+```
+
+For WebIDL definitions, query the member or interface:
+
+```bash
+webspec-index idl 'Window.navigation' --format markdown
+webspec-index idl 'Window.open()' --format markdown
+```
+
+If the spec is not indexed by webspec-index, fall back to the webref IDL extract,
+using the spec shortname (visible in search results or derivable from the URL):
 
 ```bash
 curl -s "https://w3c.github.io/webref/ed/idl/SHORTNAME.idl"
@@ -49,7 +64,14 @@ curl -s "https://w3c.github.io/webref/ed/idl/SHORTNAME.idl"
 
 ## Step 2: Query Searchfox for References
 
-Use `searchfox-cli` to find files referencing the spec section, split by file type:
+Use `searchfox-cli` to find files referencing the spec section. Start with the exact
+lookup, passing the `url` field from the `query` response:
+
+```bash
+searchfox-cli --spec-refs 'https://html.spec.whatwg.org/#navigate'
+```
+
+Then widen by pattern, split by file type:
 
 ```bash
 # Implementation code (excludes test and generated files)
@@ -63,11 +85,13 @@ searchfox-cli -q "#FRAGMENT" --only-tests -l 200
 ```
 
 If results are sparse, try alternative fragment spellings or the IDL interface/method
-name from the webref IDL extract. If results are too broad, narrow with `--path`.
+name from `webspec-index idl`. If results are too broad, narrow with `--path`. Run
+`--spec-refs` for each callee from `state --calls` as well: a callee with no hits is
+often a missing piece of the implementation.
 
 ## Step 3: Analyze Gaps
 
-Cross-reference the webref algorithm steps from Step 1 against the searchfox
+Cross-reference the algorithm steps and callees from Step 1 against the searchfox
 results from Step 2 to identify:
 - Spec steps with no corresponding implementation code
 - Spec steps with implementation but no test coverage in WPT

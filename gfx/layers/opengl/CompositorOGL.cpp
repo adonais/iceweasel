@@ -195,9 +195,6 @@ CompositorOGL::CompositorOGL(widget::CompositorWidget* aWidget,
       mFrameInProgress(false),
       mDestroyed(false),
       mViewportSize(0, 0) {
-  // If we render into native layers, our GLContext won't have a usable default
-  // framebuffer.
-  mCanRenderToDefaultFramebuffer = !aWidget->GetNativeLayerRoot();
   MOZ_COUNT_CTOR(CompositorOGL);
 }
 
@@ -760,15 +757,8 @@ Maybe<IntRect> CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
                                  LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
   mGLContext->fEnable(LOCAL_GL_BLEND);
 
-  RefPtr<CompositingRenderTarget> rt;
-  if (mCanRenderToDefaultFramebuffer) {
-    rt = CompositingRenderTargetOGL::CreateForWindow(this, rect.Size());
-  } else if (mTarget) {
-    rt = CreateRenderTarget(rect, INIT_MODE_CLEAR);
-  } else {
-    MOZ_CRASH("Unexpected call");
-  }
-
+  RefPtr<CompositingRenderTarget> rt =
+      CompositingRenderTargetOGL::CreateForWindow(this, rect.Size());
   if (!rt) {
     return Nothing();
   }

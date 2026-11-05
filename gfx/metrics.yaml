@@ -404,7 +404,7 @@ gfx:
     type: boolean
     description: >
       Boolean indicating whether the os compositor is being used by
-      WebRender. Only collected in the first subsession.
+      WebRender.
       This metric was generated to correspond to the Legacy Telemetry
       scalar gfx.os_compositor.
     bugs:

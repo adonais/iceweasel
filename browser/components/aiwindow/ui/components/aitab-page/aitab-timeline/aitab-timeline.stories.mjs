@@ -5,17 +5,12 @@
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-timeline.mjs";
+import { withHeadingFont } from "../aitab-story-font.mjs";
 
 export default {
   title: "Domain-specific UI Widgets/AI Window/AI Tab Timeline",
   component: "aitab-timeline",
-  // The type scale and the narrow layout both query a container that
-  // aitab-page normally provides. Without it the headings stay at their
-  // narrow sizes and the gutter never collapses.
-  decorators: [
-    story =>
-      html`<div style="container: aitab-page / inline-size;">${story()}</div>`,
-  ],
+  decorators: [withHeadingFont],
   argTypes: {
     title: { control: { type: "text" } },
     description: { control: { type: "text" } },

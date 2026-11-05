@@ -3,19 +3,17 @@
 
 "use strict";
 
-add_task(
-  async function test_accessibility_sidebar_visible_when_redesign_enabled() {
-    let tab = await openPrefsTab("accessibility");
-    let doc = tab.linkedBrowser.contentDocument;
+add_task(async function test_accessibility_sidebar_visible() {
+  let tab = await openPrefsTab("accessibility");
+  let doc = tab.linkedBrowser.contentDocument;
 
-    is_element_visible(
-      doc.getElementById("category-accessibility"),
-      "Accessibility category is visible when settings redesign is enabled"
-    );
+  is_element_visible(
+    doc.getElementById("category-accessibility"),
+    "Accessibility category is visible"
+  );
 
-    await BrowserTestUtils.removeTab(tab);
-  }
-);
+  await BrowserTestUtils.removeTab(tab);
+});
 
 add_task(async function test_accessibility_pane_loads_setting_groups() {
   let tab = await openPrefsTab("accessibility");

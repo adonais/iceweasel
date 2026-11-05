@@ -27,6 +27,9 @@ vendoring:
     - "code/include"
     - "LICENSE"
 
+  patches:
+    - rlbox-updates.patch
+
   update-actions:
     - action: move-dir
       from: '{vendor_dir}/code/include'

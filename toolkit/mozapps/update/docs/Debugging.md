@@ -132,7 +132,7 @@ echo "Packaging..."
 MOZ_NOSPAM="true" ./mach package &> /dev/null
 echo "Creating MAR at \"${fake_update_directory}/local_update.mar\"..."
 touch "${obj_dir}/dist/firefox/precomplete"
-MAR="${obj_dir}/dist/host/bin/mar.exe" MOZ_PRODUCT_VERSION="2000.0a1" MAR_CHANNEL_ID="default" ./tools/update-packaging/make_full_update.sh "${fake_update_directory}/local_update.mar" "${obj_dir}/dist/firefox" &> /dev/null
+MAR="${obj_dir}/dist/host/bin/mar.exe" MOZ_PRODUCT_VERSION="2000.0a1" MAR_CHANNEL_ID="default" ./tools/update-packaging/make_full_update.sh "${fake_update_directory}/local_update.mar" "${obj_dir}/dist/firefox" firefox &> /dev/null
 
 # Make the installation
 echo "Installing Firefox to \"${install_parent_dir}/firefox\"..."

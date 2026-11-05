@@ -456,8 +456,10 @@ gfxFontconfigFontEntry::~gfxFontconfigFontEntry() {
     // InitializeVarFuncs must have been called in order for mMMVar to be
     // non-null here, so we don't need to do it again.
     if (sDoneVar) {
+      // Scaled fonts may still be using the shared face.
       auto* ftFace = GetFTFace();
       MOZ_ASSERT(ftFace, "How did mMMVar get set without a face?");
+      AutoLockSharedFTFace lock(ftFace);
       (*sDoneVar)(ftFace->GetFace()->glyph->library, mMMVar);
     } else {
       free(mMMVar);
@@ -1104,12 +1106,12 @@ gfxFont* gfxFontconfigFontEntry::CreateFontInstance(
 }
 
 #ifdef MOZ_FONTATIONS
-void gfxFontconfigFontEntry::InitSkrifaFont(FcPattern* aPattern) {
+void gfxFontconfigFontEntry::InitSkrifaFontFace() {
   using mozilla::MemoryMappedFile;
   using mozilla::gfx::SkrifaFontRef;
 
   // Try to load the file.
-  const FcChar8* const filenameBytes = GetPatternFilename(aPattern);
+  const FcChar8* const filenameBytes = GetPatternFilename(mFontPattern);
   if (!filenameBytes) {
     return;
   }
@@ -1119,7 +1121,7 @@ void gfxFontconfigFontEntry::InitSkrifaFont(FcPattern* aPattern) {
     return;
   }
 
-  const int index = GetPatternIndex(aPattern);
+  const int index = GetPatternIndex(mFontPattern);
   const uint8_t* data = static_cast<const uint8_t*>(file.Data());
   const size_t size = file.Size();
   if (SkrifaFontRef* font = skrifa_font_new_from_index(data, size, index)) {
@@ -1130,11 +1132,7 @@ void gfxFontconfigFontEntry::InitSkrifaFont(FcPattern* aPattern) {
 
 SharedFTFace* gfxFontconfigFontEntry::GetFTFace() {
   if (!mFTFaceInitialized) {
-#ifdef MOZ_FONTATIONS
-    InitSkrifaFont(mFontPattern);
-#endif
     RefPtr<SharedFTFace> face = CreateFaceForPattern(mFontPattern);
-
     if (face) {
       if (mFTFace.compareExchange(nullptr, face.get())) {
         face.forget().leak();  // The reference is now owned by mFTFace.
@@ -1216,6 +1214,7 @@ FT_MM_Var* gfxFontconfigFontEntry::GetMMVar() {
   if (!ftFace) {
     return nullptr;
   }
+  AutoLockSharedFTFace faceLock(ftFace);
   if (FT_Err_Ok != (*sGetVar)(ftFace->GetFace(), &mMMVar)) {
     mMMVar = nullptr;
   }
@@ -2461,23 +2460,22 @@ bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
 
   if (!(aFlags & FindFamiliesFlags::eQuotedFamilyName)) {
     // deprecated generic names are explicitly converted to standard generics
-    bool isDeprecatedGeneric = false;
     if (familyName.EqualsLiteral("sans") ||
         familyName.EqualsLiteral("sans serif")) {
       familyName.AssignLiteral("sans-serif");
-      isDeprecatedGeneric = true;
     } else if (familyName.EqualsLiteral("mono")) {
       familyName.AssignLiteral("monospace");
-      isDeprecatedGeneric = true;
     }
 
     // fontconfig generics? use fontconfig to determine the family for lang
-    if (isDeprecatedGeneric ||
-        mozilla::StyleSingleFontFamily::Parse(familyName).IsGeneric()) {
+    auto parsed = mozilla::StyleSingleFontFamily::Parse(familyName);
+    if (parsed.IsGeneric()) {
       PrefFontList* prefFonts =
           FindGenericFamilies(aFontVisibilityProvider, familyName, aLanguage);
       if (prefFonts && !prefFonts->IsEmpty()) {
-        aOutput->AppendElements(*prefFonts);
+        for (const auto& family : *prefFonts) {
+          aOutput->AppendElement(FamilyAndGeneric(family, parsed.AsGeneric()));
+        }
         return true;
       }
       return false;

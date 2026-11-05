@@ -821,6 +821,9 @@ describe("ActivityStream", () => {
       "widgets.crossword.enabled",
       "widgets.stocks.enabled",
       "widgets.recentSearches.enabled",
+      "widgets.horoscopes.enabled",
+      "widgets.travel.enabled",
+      "widgets.solitaire.enabled",
     ];
     beforeEach(() => {
       services.locale.appLocaleAsBCP47 = "en-US";
@@ -960,6 +963,33 @@ describe("ActivityStream", () => {
       expect(
         PREFS_CONFIG.get("widgets.system.recentSearches.enabled").value
       ).toBe(false);
+    });
+  });
+  describe("horoscopes widget defaults", () => {
+    it("should be off everywhere by default", () => {
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get("widgets.horoscopes.enabled").value).toBe(false);
+      expect(PREFS_CONFIG.get("widgets.system.horoscopes.enabled").value).toBe(
+        false
+      );
+    });
+  });
+  describe("travel widget defaults", () => {
+    it("should be off everywhere by default", () => {
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get("widgets.travel.enabled").value).toBe(false);
+      expect(PREFS_CONFIG.get("widgets.system.travel.enabled").value).toBe(
+        false
+      );
+    });
+  });
+  describe("solitaire widget defaults", () => {
+    it("should be off everywhere by default", () => {
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get("widgets.solitaire.enabled").value).toBe(false);
+      expect(PREFS_CONFIG.get("widgets.system.solitaire.enabled").value).toBe(
+        false
+      );
     });
   });
   describe("getWeatherWidgetSize", () => {

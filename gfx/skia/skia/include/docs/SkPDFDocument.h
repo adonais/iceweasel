@@ -66,15 +66,16 @@ private:
 */
 struct StructureElementNode {
     SkString fTypeString;
+    /** The namespace URI (e.g. "http://www.w3.org/1998/Math/MathML") that fTypeString should be
+        interpreted in. If empty, this node will have the default PDF structure
+        namespace.
+        */
+    SkString fNamespace;
     std::vector<std::unique_ptr<StructureElementNode>> fChildVector;
     int fNodeId = 0;
     AttributeList fAttributes;
     SkString fAlt;
     SkString fLang;
-    /** If false, fAlt will be used as the title of headings in the outline, but
-        not exposed as alt text.
-        */
-    bool fExposeAlt = true;
 };
 
 struct DateTime {

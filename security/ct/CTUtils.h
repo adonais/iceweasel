@@ -73,7 +73,7 @@ inline static pkix::Result UncheckedReadUint(size_t length, pkix::Reader& in,
 template <size_t length, typename T>
 pkix::Result ReadUint(pkix::Reader& in, T& out) {
   uint64_t value;
-  static_assert(std::is_unsigned<T>::value, "T must be unsigned");
+  static_assert(std::is_unsigned_v<T>, "T must be unsigned");
   static_assert(length <= 8, "At most 8 byte integers can be read");
   static_assert(sizeof(T) >= length, "T must be able to hold <length> bytes");
   pkix::Result rv = UncheckedReadUint(length, in, value);

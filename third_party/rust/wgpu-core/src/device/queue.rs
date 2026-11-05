@@ -770,7 +770,7 @@ impl Queue {
 
         let staging_buffer = {
             profiling::scope!("copy");
-            staging_buffer.write(data);
+            staging_buffer.write_exact(data);
             staging_buffer.flush()
         };
 
@@ -876,7 +876,7 @@ impl Queue {
         buffer_offset: u64,
         buffer_size: u64,
     ) -> Result<(), TransferError> {
-        if !matches!(&*buffer.map_state.lock(), BufferMapState::Idle) {
+        if !matches!(&*buffer.map_state.read(), BufferMapState::Idle) {
             return Err(TransferError::BufferNotAvailable);
         }
         buffer.check_usage(wgt::BufferUsages::COPY_DST)?;
@@ -1131,7 +1131,8 @@ impl Queue {
             // Fast path if the data is already being aligned optimally.
             let stage_size = wgt::BufferSize::new(required_bytes_in_copy).unwrap();
             let mut staging_buffer = StagingBuffer::new(&self.device, stage_size)?;
-            staging_buffer.write(&data[data_layout.offset as usize..]);
+            staging_buffer
+                .write_exact(&data[data_layout.offset as usize..][..stage_size.get() as usize]);
             staging_buffer
         } else {
             profiling::scope!("copy chunked");
@@ -2134,7 +2135,7 @@ fn validate_command_buffer(
             for buffer in cmd_buf_data.trackers.buffers.used_resources() {
                 buffer.check_destroyed(snatch_guard)?;
 
-                match *buffer.map_state.lock() {
+                match *buffer.map_state.read() {
                     BufferMapState::Idle => (),
                     _ => return Err(QueueSubmitError::BufferStillMapped(buffer.error_ident())),
                 }

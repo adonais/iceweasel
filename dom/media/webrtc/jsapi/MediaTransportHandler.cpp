@@ -517,8 +517,8 @@ class MediaTransportHandlerLocal final : public MediaTransportHandler {
     // MediaTransportImpl::Init; the impl must become safe to destroy on any
     // thread if the event target will stop accepting runnables.
     (void)mTarget->Dispatch(
-        NS_NewRunnableFunction(
-            __func__, [impl = std::move(mImpl)]() mutable {}),
+        NS_NewRunnableFunction(__func__,
+                               [impl = std::move(mImpl)]() mutable {}),
         NS_DISPATCH_FALLIBLE);
   }
 
@@ -578,7 +578,8 @@ class STSShutdownHandler final : public nsISTSShutdownObserver {
     return instance;
   }
 
-  explicit STSShutdownHandler(nsCOMPtr<nsISocketTransportService> aSts) : mSts(aSts) {
+  explicit STSShutdownHandler(nsCOMPtr<nsISocketTransportService> aSts)
+      : mSts(aSts) {
     CSFLogDebug(LOGTAG, "%s", __func__);
     aSts->AddShutdownObserver(this);
     mStsThread = do_QueryInterface(aSts);

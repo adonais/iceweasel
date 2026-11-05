@@ -75,6 +75,7 @@
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/InputAPZContext.h"
+#include "mozilla/layers/LayerTreeLog.h"
 #include "mozilla/layers/TouchActionHelper.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/widget/ScreenManager.h"
@@ -3226,6 +3227,8 @@ void BrowserChild::InitRenderingState(
   } else {
     mLayersConnected = Some(false);
   }
+  LAYERTREE_LOG("BrowserChild layer tree {:x} initialized, connected {}",
+                aLayersId, success);
 
   nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
@@ -3575,6 +3578,8 @@ void BrowserChild::ReinitRendering() {
     }
   }
 
+  LAYERTREE_LOG("BrowserChild layer tree {:x} reinitialized, connected {}",
+                mLayersId, success);
   if (!success) {
     NS_WARNING("failed to recreate layer manager");
     return;
@@ -3595,6 +3600,8 @@ void BrowserChild::ReinitRendering() {
 }
 
 void BrowserChild::ReinitRenderingForDeviceReset() {
+  LAYERTREE_LOG("BrowserChild layer tree {:x} reinitializing for device reset",
+                mLayersId);
   RefPtr<WebRenderLayerManager> lm =
       mPuppetWidget->GetWindowRenderer()->AsWebRender();
   if (lm) {

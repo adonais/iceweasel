@@ -327,6 +327,95 @@ smart_window:
       chat_id: *chat_id
       message_seq: *message_seq
 
+  aitab_open:
+    type: event
+    description: |
+      The user opens a generated page from its chat card, the first time
+      from the choose card or again from the completed card.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069135
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D329058
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      chat_id: *chat_id
+      open_target:
+        type: string
+        description: >
+          Where the page opens: "current" or "new".
+      card_state:
+        type: string
+        description: >
+          The card the open came from: "choose" for the first open,
+          "complete" for a later open from the finished card.
+
+  aitab_view:
+    type: event
+    description: |
+      about:smartpage finishes looking up a generated page. The outcome is
+      the status the page shows. The event is sent after the component
+      renders, without waiting for the font. The font extra records
+      whether the heading face was installed at that point.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069135
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D329058
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      outcome:
+        type: string
+        description: >
+          "ready", "unavailable", or "error".
+      font:
+        type: string
+        description: >
+          Heading font status at render: "ready" when the face was
+          added, "unavailable" when it has not been added yet,
+          "error" when installing the face already failed.
+
+  aitab_link_click:
+    type: event
+    description: |
+      The user opens a link from a generated page.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069135
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D329058
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      component_type:
+        type: string
+        description: >
+          The component name recorded for creation, for example "Header"
+          or "List_column". "unknown" when the click is outside those blocks.
+      result:
+        type: string
+        description: >
+          "switch" when an existing tab was focused, "new" when a tab
+          was opened, "error" when that attempt failed.
+
+  aitab_delete:
+    type: event
+    description: |
+      The user deletes a generated page that was still stored.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069135
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D329058
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+
   memory_removed_panel:
     type: event
     description: |
@@ -584,6 +673,31 @@ smart_window:
         description: >
           True when this response (success or failure) was produced by a
           user-initiated retry of a previous turn
+
+  time_to_first_character:
+    type: event
+    description: |
+      Recorded when the first character of an assistant response is rendered
+      after a chat request is submitted
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2073242
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2073242
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      request_id: *request_id
+      model: *model
+      latency:
+        type: quantity
+        unit: ms
+        description: >
+          Time from response request start to the first rendered assistant character
 
   client_error:
     type: event
@@ -1587,6 +1701,42 @@ smart_window:
     notification_emails: *emails
     expires: never
 
+  sidebar_open_by_default:
+    type: boolean
+    lifetime: application
+    description: |
+      Records if the user currently has the Smart Window sidebar set to open
+      by default, as set by the `browser.smartwindow.sidebar.openByDefault`
+      pref.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2059197
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2059197
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+
+  sidebar_open_by_default_change:
+    type: event
+    description: |
+      Recorded when the `browser.smartwindow.sidebar.openByDefault` pref
+      changes, for example from the settings page or from the sidebar
+      auto-open callout.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2059197
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2059197
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      enabled:
+        type: boolean
+        description: >
+          Whether the sidebar is now set to open by default
+
   llmaj_based_telemetry:
     type: event
     description: |
@@ -1720,6 +1870,42 @@ smart_window:
         type: string
         description: >
           Reason the original prompt was shown
+
+  browser_action_prompt_toggle_all:
+    type: event
+    description: |
+      User clicks "Select all" or "Deselect all" on a tab confirmation card.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072041
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072041
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      action: *browser_action
+      prompt_type:
+        type: string
+        description: >
+          Type of prompt shown: disambiguation, batch_preview, or safety_confirmation
+      entrypoint:
+        type: string
+        description: >
+          Where the card came from: browser_action (a chat request handled by
+          the manage_tabs tool) or resume (a "Pick up where you left off" pill)
+      toggle:
+        type: string
+        description: >
+          Which button the user clicked: select_all or deselect_all
+      candidates:
+        type: quantity
+        unit: count
+        description: >
+          Number of tabs shown on the card
 
   browser_action_undo:
     type: event
@@ -1896,6 +2082,87 @@ smart_window:
           The position (0-index) of the Top Sites tile.
           For example: 2 means the third tile in the row.
       visible_topsites: *visible_topsites
+
+  resume_cards_displayed:
+    type: event
+    description: >
+      Recorded once when the Smart Window resume section finishes loading.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067873
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D332941
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      chat_id: *chat_id
+      location: *location
+      message_seq: *message_seq
+      state:
+        type: string
+        description: >
+          What the section showed: cards, empty_no_suggestions, or
+          empty_all_dismissed.
+      cards:
+        type: quantity
+        unit: count
+        description: >
+          The number of resume cards visible when the section was shown.
+      total_cards:
+        type: quantity
+        unit: count
+        description: >
+          The number of resume cards available, including ones hidden
+          behind "Show more".
+
+  resume_card_action:
+    type: event
+    description: >
+      Recorded when the user interacts with a resume card.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067873
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D332941
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      chat_id: *chat_id
+      location: *location
+      message_seq: *message_seq
+      action:
+        type: string
+        description: >
+          The action taken: resume, card_click (the surface area of the card),
+          open_tabs, snooze, or dismiss.
+      position:
+        type: quantity
+        description: >
+          The position (0-index) of the card acted on.
+
+  resume_section_action:
+    type: event
+    description: >
+      Recorded when the user interacts with the resume section's own controls
+      rather than a card.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067873
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D332941
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      chat_id: *chat_id
+      location: *location
+      message_seq: *message_seq
+      action:
+        type: string
+        description: >
+          The action taken: show_more, show_less, or hide_section.
 
   bookmarkbar:
     type: labeled_counter
@@ -2273,8 +2540,13 @@ smart_window:
         type: string
         description: >
           One of the monitor run error codes: network_error, timeout,
-          rate_limit, auth_error, content_extraction_error, canceled,
-          interrupted, model_error, prompt_load_error or unknown_error.
+          budget_exceeded, rate_limit, request_too_large, max_users_reached,
+          upstream_rate_limit, fastly_rate_limit, request_blocked,
+          invalid_model, invalid_request, global_budget_exceeded,
+          guest_budget_exceeded, max_guests_reached,
+          auth_error, content_extraction_error,
+          canceled, interrupted, model_error, prompt_load_error or
+          unknown_error.
           Only present when success is false. Never a free-form message.
       outcome:
         type: boolean
@@ -3250,3 +3522,116 @@ smart_window:
         description: >
           How the last open of the source editor ended. One of done, cancel, or
           aborted. Absent when the editor was never opened.
+
+  aitab_create_initiate:
+    type: event
+    description: |
+      Recorded when generation of a new AI Tab page starts.
+    bugs: &aitab_bugs
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069132
+    data_reviews: &aitab_data_reviews
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069132
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      num_tabs: &aitab_num_tabs
+        type: quantity
+        unit: tabs
+        description: >
+          Number of tabs referenced explicitly. If 0, other page content is
+          used.
+      how_initiated:
+        type: string
+        description: >
+          How the generation was requested: tab_list, tab_group, chat, or
+          chat_followup
+      raw_content_len: &aitab_raw_content_len
+        type: quantity
+        unit: characters
+        description: >
+          Length in characters of the raw_content argument sent in the
+          request, or 0 if missing
+      num_tabs_total_attempted:
+        type: quantity
+        unit: tabs
+        description: >
+          Number of tabs originally requested, before the tab limit is applied
+
+  aitab_edit_initiate:
+    type: event
+    description: |
+      Recorded when a modification of an existing AI Tab page starts.
+    bugs: *aitab_bugs
+    data_reviews: *aitab_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      num_tabs: *aitab_num_tabs
+      how_initiated:
+        type: string
+        description: >
+          How the modification was requested: chat, refresh, or chat_followup
+      raw_content_len: *aitab_raw_content_len
+
+  aitab_create_complete:
+    type: event
+    description: |
+      Recorded when generation of a new AI Tab page finishes, successfully or
+      not.
+    bugs: *aitab_bugs
+    data_reviews: *aitab_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys: &aitab_complete_extra_keys
+      is_success:
+        type: boolean
+        description: >
+          Whether a valid page was generated
+      error:
+        type: string
+        description: >
+          Canonical error code, or absent on success: no_content, canceled,
+          page_load_failed, page_not_found, conversation_unavailable,
+          pages_unreadable, nothing_to_change, history_limit, empty_response,
+          invalid_json, content_related, invalid_format, or generation_failed
+      components_used:
+        type: string
+        description: >
+          JSON-encoded array of the component types in the generated page, in
+          the order they are used, each formatted as component_layout (or just
+          component when it has no layout). An empty array on failure.
+      num_chars_read:
+        type: quantity
+        unit: characters
+        description: >
+          Number of characters sent to the model outside of the prompt
+          template (page content, focus and modification instructions)
+      num_chars_out:
+        type: quantity
+        unit: characters
+        description: >
+          Number of characters returned by the model
+      seconds_elapsed:
+        type: quantity
+        unit: seconds
+        description: >
+          Time taken to generate the page
+
+  aitab_edit_complete:
+    type: event
+    description: |
+      Recorded when a modification of an existing AI Tab page finishes,
+      successfully or not.
+    bugs: *aitab_bugs
+    data_reviews: *aitab_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys: *aitab_complete_extra_keys

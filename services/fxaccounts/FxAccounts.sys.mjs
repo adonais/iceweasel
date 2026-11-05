@@ -33,6 +33,7 @@ import {
   log,
   logPII,
   logManager,
+  scopesForService,
 } from "resource://gre/modules/FxAccountsCommon.sys.mjs";
 
 const lazy = {};
@@ -478,15 +479,51 @@ export class FxAccounts {
   }
 
   /**
+   * Returns an array listing all the subscriptions active for the user.
+   *
+   * @typedef {object} Subscription
+   * @property {string} subscriptionId - The subscription ID as defined by FxA
+   *
+   * Note other properties may exist, we are returning what the server gives us.
+   *
+   * @returns {Array.<Subscription>} A list of subscriptions.
+   */
+  async activeSubscriptions() {
+    const client = this._internal.fxAccountsClient;
+    let token = await this.getOAuthToken({
+      scope: "https://identity.mozilla.com/account/subscriptions",
+    });
+    try {
+      return await client.activeSubscriptions(token);
+    } catch (err) {
+      if (err.code != 401) {
+        throw err;
+      }
+      // Our cached token is probably stale, so fetch a new one and retry once.
+      await this.removeCachedOAuthToken({ token });
+      token = await this.getOAuthToken({
+        scope: "https://identity.mozilla.com/account/subscriptions",
+      });
+      return client.activeSubscriptions(token);
+    }
+  }
+
+  /**
    * Get an OAuth token for the user.
    *
    * @param options
    *        {
-   *          scope: (string/array) the oauth scope(s) being requested. As a
-   *                 convenience, you may pass a string if only one scope is
-   *                 required, or an array of strings if multiple are needed.
+   *          service: (string) the FxA service the token is for, whose scopes
+   *                   are looked up in FxAccountsCommon. In general, prefer
+   *                   this over `scope` unless you need to explicity narrow or
+   *                   expand the defaults for the service.
+   *          scope: (string/array) the oauth scope(s) being requested, for
+   *                 callers which aren't a known service. As a convenience, you
+   *                 may pass a string if only one scope is required, or an
+   *                 array of strings if multiple are needed.
    *          ttl: (number) OAuth token TTL in seconds.
    *        }
+   *        Exactly one of `service` and `scope` must be supplied.
    *
    * @return Promise.<string | Error>
    *        The promise resolves the oauth token as a string or rejects with
@@ -499,6 +536,16 @@ export class FxAccounts {
    *          UNKNOWN_ERROR
    */
   async getOAuthToken(options = {}) {
+    // Supplying both, or an unknown service, is a bug in the caller rather than
+    // anything the account or server did, so throw local errors.
+    if (options.service) {
+      if (options.scope) {
+        throw new Error(
+          "Only one of the 'service' and 'scope' options may be supplied"
+        );
+      }
+      options = { ...options, scope: scopesForService(options.service) };
+    }
     try {
       return await this._internal.getOAuthToken(options);
     } catch (err) {
@@ -1247,7 +1294,9 @@ FxAccountsInternal.prototype = {
       return Promise.reject(
         this._error(
           ERROR_INVALID_PARAMETER,
-          "Missing or invalid 'scope' option"
+          // It's the caller that transforms 'service' into the scopes, so this
+          // message makes sense even though we don't directly inspect 'service' here.
+          "One of the 'service' or 'scope' options must be supplied"
         )
       );
     }
@@ -1431,6 +1480,10 @@ FxAccountsInternal.prototype = {
   },
 
   _error(aError, aDetails) {
+    // might be a `Symbol(xpcshell abort after reported failure)`, needs explict conversion.
+    if (typeof aDetails == "symbol") {
+      aDetails = aDetails.toString();
+    }
     // Expected on profiles with no signed-in user; demote to debug to avoid noise.
     const isExpected =
       aError === ERROR_NO_ACCOUNT || aError === ERROR_UNVERIFIED_ACCOUNT;

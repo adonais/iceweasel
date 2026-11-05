@@ -6,6 +6,7 @@
 #include "RemoteDecoderChild.h"
 #include "RemoteDecoderParent.h"
 #include "RemoteMediaManagerChild.h"
+#include "mozilla/layers/VideoBridgeChild.h"
 
 namespace mozilla::layers {
 class BufferRecycleBin;
@@ -37,7 +38,6 @@ class RemoteVideoDecoderChild : public RemoteDecoderChild {
   MOZ_IS_CLASS_INIT MediaResult
   InitIPDL(const VideoInfo& aVideoInfo, float aFramerate,
            const CreateDecoderParams::OptionSet& aOptions,
-           mozilla::Maybe<layers::TextureFactoryIdentifier> aIdentifier,
            const Maybe<uint64_t>& aMediaEngineId,
            const Maybe<TrackingId>& aTrackingId, PRemoteCDMActor* aCDM);
 
@@ -49,21 +49,28 @@ class RemoteVideoDecoderChild : public RemoteDecoderChild {
 
 class RemoteVideoDecoderParent final : public RemoteDecoderParent {
  public:
-  RemoteVideoDecoderParent(
-      RemoteMediaManagerParent* aParent, const VideoInfo& aVideoInfo,
-      float aFramerate, const CreateDecoderParams::OptionSet& aOptions,
-      const Maybe<layers::TextureFactoryIdentifier>& aIdentifier,
-      nsISerialEventTarget* aManagerThread, TaskQueue* aDecodeTaskQueue,
-      const Maybe<uint64_t>& aMediaEngineId, Maybe<TrackingId> aTrackingId,
-      RemoteCDMParent* aCDM);
+  RemoteVideoDecoderParent(RemoteMediaManagerParent* aParent,
+                           const VideoInfo& aVideoInfo, float aFramerate,
+                           const CreateDecoderParams::OptionSet& aOptions,
+                           nsISerialEventTarget* aManagerThread,
+                           TaskQueue* aDecodeTaskQueue,
+                           const Maybe<uint64_t>& aMediaEngineId,
+                           Maybe<TrackingId> aTrackingId,
+                           RemoteCDMParent* aCDM);
 
  protected:
+  void ActorDestroy(ActorDestroyReason aWhy) override;
+
   IPCResult RecvConstruct(ConstructResolver&& aResolver) override;
 
   MediaResult ProcessDecodedData(MediaDataDecoder::DecodedData&& aData,
                                  DecodedOutputIPDL& aDecodedData) override;
 
  private:
+  void RequestTextureFactoryIdentifier(ConstructResolver&& aResolver);
+  void CreateDecoder(const Maybe<layers::TextureFactoryIdentifier>& aIdentifier,
+                     ConstructResolver&& aResolver);
+
   // Can only be accessed from the manager thread
   // Note: we can't keep a reference to the original VideoInfo here
   // because unlike in typical MediaDataDecoder situations, we're being
@@ -72,6 +79,10 @@ class RemoteVideoDecoderParent final : public RemoteDecoderParent {
   const VideoInfo mVideoInfo;
   const float mFramerate;
   RefPtr<KnowsCompositorVideo> mKnowsCompositor;
+  MozPromiseRequestHolder<GenericNonExclusivePromise> mVideoBridgeRequest;
+  MozPromiseRequestHolder<
+      layers::VideoBridgeChild::GetTextureFactoryIdentifierPromise>
+      mIdentifierRequest;
 };
 
 }  // namespace mozilla

@@ -11,13 +11,16 @@
 #include "include/codec/SkEncodedOrigin.h"
 #include "include/core/SkStream.h"
 #include "include/private/SkEncodedInfo.h"
-#include "mozilla/AppShutdown.h"
 #include "mozilla/StaticPrefs_print.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/image/ImageUtils.h"
 #include "mozilla/image/SourceBuffer.h"
+#include "nsISafeOutputStream.h"
 #include "nsJPEGEncoder.h"
 #include "nsString.h"
+#include "skia/include/core/SkCanvas.h"
+#include "skia/include/core/SkStream.h"
+#include "skia/include/docs/SkPDFDocument.h"
 #include "skia/src/pdf/SkPDFUtils.h"
 
 #ifdef ACCESSIBILITY
@@ -142,39 +145,36 @@ static bool EncodeJpeg(SkWStream* aDst, const SkPixmap& aSrc, int aQuality) {
 
 namespace mozilla::gfx {
 
-PrintTargetSkPDF::PrintTargetSkPDF(const IntSize& aSize,
-                                   UniquePtr<SkWStream> aStream)
-    : PrintTarget(/* not using cairo_surface_t */ nullptr, aSize),
-      mOStream(std::move(aStream)),
-      mPageCanvas(nullptr),
-      mRefCanvas(nullptr) {}
+struct PrintTargetSkPDF::SkPDFDocState {
+  explicit SkPDFDocState(UniquePtr<GkSkWStream> aStream)
+      : mOStream(std::move(aStream)) {}
 
-PrintTargetSkPDF::~PrintTargetSkPDF() {
-  Finish();  // ensure stream is flushed
-
-  // Make sure mPDFDoc and mRefPDFDoc are destroyed before our member streams
-  // (which they wrap) are destroyed:
-  mPDFDoc = nullptr;
-  mRefPDFDoc = nullptr;
-}
-
-/* static */
-already_AddRefed<PrintTargetSkPDF> PrintTargetSkPDF::CreateOrNull(
-    UniquePtr<SkWStream> aStream, const IntSize& aSizeInPoints) {
-  return do_AddRef(new PrintTargetSkPDF(aSizeInPoints, std::move(aStream)));
-}
+  // Do not hand out references to this object. It holds a non-owning reference
+  // to mOStream, so must not outlive mOStream. Order here ensures that mDoc is
+  // destroyed before mOStream, which it wraps.
+  UniquePtr<GkSkWStream> mOStream;
+  sk_sp<SkDocument> mDoc;
+  SkCanvas* mCanvas = nullptr;  // Owned by mDoc.
+};
 
 class GkSkWStream final : public SkWStream {
  public:
+  // Used for the dummy mRefState stream.
+  GkSkWStream() = default;
+
   explicit GkSkWStream(nsIOutputStream* aStream) : mStream(aStream) {
     MOZ_ASSERT(mStream);
   }
   ~GkSkWStream() override {
-    // Close the stream so that its file handle is released. This matches
-    // cairo's handling.
-    (void)NS_WARN_IF(NS_FAILED(mStream->Close()));
+    // Ensure we close the stream when we're done if we haven't done it earlier.
+    (void)NS_WARN_IF(NS_FAILED(closeStream(/* aCommit = */ false)));
   }
+
   bool write(const void* aBuf, size_t aSize) override {
+    if (!mStream) {
+      mWritten += aSize;
+      return true;
+    }
     const auto* data = reinterpret_cast<const char*>(aBuf);
     do {
       uint32_t wrote = 0;
@@ -188,17 +188,49 @@ class GkSkWStream final : public SkWStream {
     NS_ASSERTION(aSize == 0, "not everything was written to the file");
     return true;
   }
-  void flush() override { (void)NS_WARN_IF(NS_FAILED(mStream->Flush())); }
+  void flush() override {
+    if (!mStream) {
+      return;
+    }
+    (void)NS_WARN_IF(NS_FAILED(mStream->Flush()));
+  }
   size_t bytesWritten() const override { return mWritten; }
+
+  // Close the stream so that its file handle is released. Safe streams discard
+  // their output if aCommit = false, or commit it with Finish() instead.
+  nsresult closeStream(bool aCommit) {
+    nsCOMPtr stream = std::move(mStream);
+    if (!stream) {
+      return NS_OK;
+    }
+    if (aCommit) {
+      if (nsCOMPtr<nsISafeOutputStream> safeStream =
+              do_QueryInterface(stream)) {
+        return safeStream->Finish();
+      }
+    }
+    return stream->Close();
+  }
 
  private:
   nsCOMPtr<nsIOutputStream> mStream;
   size_t mWritten = 0;
 };
 
+PrintTargetSkPDF::PrintTargetSkPDF(const IntSize& aSize,
+                                   UniquePtr<GkSkWStream> aStream)
+    : PrintTarget(/* not using cairo_surface_t */ nullptr, aSize),
+      mState(new SkPDFDocState(std::move(aStream))),
+      mRefState(new SkPDFDocState(std::make_unique<GkSkWStream>())) {}
+
+PrintTargetSkPDF::~PrintTargetSkPDF() {
+  Finish();  // ensure stream is flushed
+}
+
 already_AddRefed<PrintTargetSkPDF> PrintTargetSkPDF::CreateOrNull(
     nsIOutputStream* aStream, const IntSize& aSizeInPoints) {
-  return CreateOrNull(MakeUnique<GkSkWStream>(aStream), aSizeInPoints);
+  return do_AddRef(
+      new PrintTargetSkPDF(aSizeInPoints, MakeUnique<GkSkWStream>(aStream)));
 }
 
 static SkPDF::Metadata GetDefaultMetadata() {
@@ -244,42 +276,41 @@ nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
 #endif
 
   // SkDocument stores a non-owning raw pointer to aStream
-  mPDFDoc = SkPDF::MakeDocument(mOStream.get(), metadata);
-
-  return mPDFDoc ? NS_OK : NS_ERROR_FAILURE;
+  mState->mDoc = SkPDF::MakeDocument(mState->mOStream.get(), metadata);
+  return mState->mDoc ? NS_OK : NS_ERROR_FAILURE;
 }
 
 nsresult PrintTargetSkPDF::BeginPage(const IntSize& aSizeInPoints) {
-  mPageCanvas = mPDFDoc->beginPage(mSize.width, mSize.height);
-
-  return !mPageCanvas ? NS_ERROR_FAILURE
-                      : PrintTarget::BeginPage(aSizeInPoints);
+  const IntSize pageSize =
+      StaticPrefs::print_save_as_pdf_use_page_rule_size_as_paper_size_enabled()
+          ? aSizeInPoints
+          : mSize;
+  mState->mCanvas = mState->mDoc->beginPage(pageSize.width, pageSize.height);
+  if (!mState->mCanvas) {
+    return NS_ERROR_FAILURE;
+  }
+  return PrintTarget::BeginPage(aSizeInPoints);
 }
 
 nsresult PrintTargetSkPDF::EndPage() {
-  mPageCanvas = nullptr;
+  mState->mCanvas = nullptr;
   mPageDT = nullptr;
   return PrintTarget::EndPage();
 }
 
-nsresult PrintTargetSkPDF::EndPrinting() {
-  mPDFDoc->close();
-  if (mRefPDFDoc) {
-    mRefPDFDoc->close();
-  }
-  mPageCanvas = nullptr;
-  mPageDT = nullptr;
-  return NS_OK;
+nsresult PrintTargetSkPDF::AbortPrinting() {
+  mState->mDoc->abort();
+  return PrintTarget::AbortPrinting();
 }
 
-void PrintTargetSkPDF::Finish() {
-  if (mIsFinished ||
-      AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-    // See PrintTargetPDF::Finish().
-    return;
+nsresult PrintTargetSkPDF::EndPrinting() {
+  mState->mDoc->close();
+  if (mRefState->mDoc) {
+    mRefState->mDoc->close();
   }
-  mOStream->flush();
-  PrintTarget::Finish();
+  mState->mCanvas = nullptr;
+  mPageDT = nullptr;
+  return mState->mOStream->closeStream(/* aCommit = */ true);
 }
 
 already_AddRefed<DrawTarget> PrintTargetSkPDF::MakeDrawTarget(
@@ -287,13 +318,13 @@ already_AddRefed<DrawTarget> PrintTargetSkPDF::MakeDrawTarget(
   if (aRecorder) {
     return PrintTarget::MakeDrawTarget(aSize, aRecorder);
   }
-  // MOZ_ASSERT(aSize == mSize, "Should mPageCanvas size match?");
-  if (!mPageCanvas) {
+  if (!mState->mCanvas) {
     return nullptr;
   }
-  mPageDT = Factory::CreateDrawTargetWithSkCanvas(mPageCanvas);
+  mPageDT = Factory::CreateDrawTargetWithSkCanvas(
+      mState->mCanvas, /* aSupportsGlyphSourceText */ true);
   if (!mPageDT) {
-    mPageCanvas = nullptr;
+    mState->mCanvas = nullptr;
     return nullptr;
   }
   return do_AddRef(mPageDT);
@@ -302,21 +333,17 @@ already_AddRefed<DrawTarget> PrintTargetSkPDF::MakeDrawTarget(
 already_AddRefed<DrawTarget> PrintTargetSkPDF::GetReferenceDrawTarget() {
   if (!mRefDT) {
     // SkDocument stores a non-owning raw pointer to aStream
-    mRefPDFDoc = SkPDF::MakeDocument(&mRefOStream, GetDefaultMetadata());
-    if (!mRefPDFDoc) {
+    mRefState->mDoc =
+        SkPDF::MakeDocument(mRefState->mOStream.get(), GetDefaultMetadata());
+    if (!mRefState->mDoc) {
       return nullptr;
     }
-    mRefCanvas = mRefPDFDoc->beginPage(mSize.width, mSize.height);
-    if (!mRefCanvas) {
+    mRefState->mCanvas = mRefState->mDoc->beginPage(mSize.width, mSize.height);
+    if (!mRefState->mCanvas) {
       return nullptr;
     }
-    RefPtr<DrawTarget> dt = Factory::CreateDrawTargetWithSkCanvas(mRefCanvas);
-    if (!dt) {
-      return nullptr;
-    }
-    mRefDT = std::move(dt);
+    mRefDT = Factory::CreateDrawTargetWithSkCanvas(mRefState->mCanvas);
   }
-
   return do_AddRef(mRefDT);
 }
 

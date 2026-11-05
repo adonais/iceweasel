@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "absl/base/attributes.h"
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
 #include "api/sequence_checker.h"
@@ -415,7 +414,7 @@ bool RTCPReceiver::ParseCompoundPacket(std::span<const uint8_t> packet,
                                                       packet_information);
               break;
             }
-            ABSL_FALLTHROUGH_INTENDED;
+            [[fallthrough]];
           default:
             ++num_skipped_packets_;
             break;

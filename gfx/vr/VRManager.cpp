@@ -5,6 +5,7 @@
 #include "VRManager.h"
 
 #include <cstring>
+#include <memory>
 
 #include "GeckoProfiler.h"
 #include "VRManagerParent.h"
@@ -926,11 +927,10 @@ void VRManager::VibrateHaptic(GamepadHandle aGamepadHandle,
   mHapticPulseRemaining[bestSlotIndex] = aDuration;
   MOZ_ASSERT(bestSlotIndex <= mHapticPromises.Length());
   if (bestSlotIndex == mHapticPromises.Length()) {
-    mHapticPromises.AppendElement(
-        UniquePtr<VRManagerPromise>(new VRManagerPromise(aPromise)));
+    mHapticPromises.AppendElement(std::make_unique<VRManagerPromise>(aPromise));
   } else {
     mHapticPromises[bestSlotIndex] =
-        UniquePtr<VRManagerPromise>(new VRManagerPromise(aPromise));
+        std::make_unique<VRManagerPromise>(aPromise);
   }
   PushState();
 }

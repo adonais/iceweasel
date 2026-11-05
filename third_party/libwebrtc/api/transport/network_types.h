@@ -211,6 +211,7 @@ struct RTC_EXPORT TransportPacketsFeedback {
   Timestamp feedback_time = Timestamp::PlusInfinity();
   DataSize data_in_flight = DataSize::Zero();
 
+  [[deprecated("Use HasPacketWithBleachedEct1() instead")]]
   bool transport_supports_ecn = false;
   std::vector<PacketResult> packet_feedbacks;
 
@@ -224,6 +225,13 @@ struct RTC_EXPORT TransportPacketsFeedback {
 
   // True if at least one packet is CE marked.
   bool HasPacketWithEcnCe() const;
+  // True if at least one packet that was sent with an ECT(1) marking was
+  // reported received without it, i.e. the path bleached the marking to
+  // Not-ECT or replaced it with ECT(0).
+  bool HasPacketWithBleachedEct1() const;
+  // True if at least one packet that was sent with an ECT(1) marking was
+  // reported received still marked ECT(1) or CE.
+  bool HasPacketWithEcn() const;
 };
 
 // Network estimation

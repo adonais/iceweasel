@@ -4,48 +4,56 @@
 
 package mozilla.components.feature.summarize.ext
 
-import kotlin.time.Duration
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.transform
 import mozilla.components.ui.richtext.ir.RichDocument
-import mozilla.components.ui.richtext.parsing.Parser
+import mozilla.components.ui.richtext.parsing.StreamingParser
 
 internal fun Flow<String>.mapToRichDocument(
     pageTitle: String,
     dispatcher: CoroutineDispatcher,
-): Flow<RichDocument> {
-    val parser = Parser()
-    val responseBuilder = StringBuilder()
+): Flow<RichDocument> = flow {
+    val context = currentCoroutineContext()
+    val parser = StreamingParser { context.ensureActive() }
+    val pending = ConcurrentLinkedQueue<String>()
 
     if (pageTitle.isNotEmpty()) {
-        responseBuilder.append("# $pageTitle\n")
+        pending.add("# $pageTitle\n")
     }
 
-    return map { responseBuilder.append(it) }.sampledMap { parser.parse(it.toString()) }.flowOn(dispatcher)
+    emitAll(
+        this@mapToRichDocument.onEach { pending.add(it) }
+            .sampled()
+            .map { pending.drain() }
+            .filter { it.isNotEmpty() }
+            .map {
+                parser.append(it)
+                parser.toRichDocument()
+            }
+    )
 }
+    .flowOn(dispatcher)
 
 private val PARSE_THROTTLE = 120.milliseconds
 
-/**
- * Maps the input flow using the [transform] function, every [period] duration.
- *
- * Values emitted between the samples, are completed dropped.
- *
- * @param period The period to wait between samples
- * @param transform The transformation/mapping operation
- */
-private fun <T, R> Flow<T>.sampledMap(
-    period: Duration = PARSE_THROTTLE,
-    transform: (T) -> R,
-): Flow<R> {
-    return conflate().transform {
-        emit(transform(it))
-        delay(period)
+/** Emits at most one value per [PARSE_THROTTLE], dropping the values emitted in between. */
+private fun <T> Flow<T>.sampled() =
+    conflate().transform {
+        emit(it)
+        delay(PARSE_THROTTLE)
     }
-}
+
+private fun ConcurrentLinkedQueue<String>.drain() = generateSequence { poll() }.joinToString("")

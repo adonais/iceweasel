@@ -71,6 +71,13 @@ bool ContentClassifierFeatureUtils::IsThirdPartyUnlessAnnotating(
 }
 
 /* static */
+bool ContentClassifierFeatureUtils::IsNonPassiveThirdPartyUnlessAnnotating(
+    const ContentClassifierRequest& aRequest, ClassifyMode aMode) {
+  return !aRequest.IsPassiveContent() &&
+         IsThirdPartyUnlessAnnotating(aRequest, aMode);
+}
+
+/* static */
 bool ContentClassifierFeatureUtils::IsNonRecommendedAddonRequest(
     const ContentClassifierRequest& aRequest, ClassifyMode) {
   return aRequest.IsNonRecommendedAddon();

@@ -156,3 +156,20 @@ OS_preprocessor_checks = {
 # We intentionally don't include all possible OSes in our checks, because we
 # only care about OS mismatches for specific target OSes.
 # assert sorted(OS_preprocessor_checks.keys()) == sorted(OS.POSSIBLE_VALUES)
+
+# Prefix for tier-1 host toolchain/fetch task names, by (cpu, os, kernel).
+tier_1_host_toolchain_prefixes = {
+    ("x86_64", "GNU", "Linux"): "linux64",
+    ("aarch64", "GNU", "Linux"): "linux64-aarch64",
+    ("x86_64", "OSX", "Darwin"): "macosx64",
+    ("aarch64", "OSX", "Darwin"): "macosx64-aarch64",
+    ("x86_64", "WINNT", "WINNT"): "win64",
+    ("aarch64", "WINNT", "WINNT"): "win64-aarch64",
+}
+
+assert all(
+    cpu in CPU.POSSIBLE_VALUES
+    and os in OS.POSSIBLE_VALUES
+    and kernel in Kernel.POSSIBLE_VALUES
+    for cpu, os, kernel in tier_1_host_toolchain_prefixes
+)

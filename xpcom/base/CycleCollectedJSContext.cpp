@@ -1395,8 +1395,10 @@ NS_IMETHODIMP CycleCollectedJSContext::NotifyUnhandledRejections::Run() {
     // pre-existing behavior where FlushRejections reported before handling
     // could occur. Only preventDefault() suppresses the console report.
     if (!defaultPrevented && !suppressReporting) {
-      JSAutoRealm ar(cccx->Context(), promiseObj);
-      Promise::ReportRejectedPromise(cccx->Context(), promiseObj);
+      AutoJSAPI jsapi;
+      jsapi.Init();
+      JSAutoRealm ar(jsapi.cx(), promiseObj);
+      Promise::ReportRejectedPromise(jsapi.cx(), promiseObj);
     }
 
     // Remove from the pending table. May already be removed if the
@@ -1434,8 +1436,10 @@ nsresult CycleCollectedJSContext::NotifyUnhandledRejections::Cancel() {
       }
 
       if (!suppressReporting) {
-        JSAutoRealm ar(cccx->Context(), promiseObj);
-        Promise::ReportRejectedPromise(cccx->Context(), promiseObj);
+        AutoJSAPI jsapi;
+        jsapi.Init();
+        JSAutoRealm ar(jsapi.cx(), promiseObj);
+        Promise::ReportRejectedPromise(jsapi.cx(), promiseObj);
       }
     }
 

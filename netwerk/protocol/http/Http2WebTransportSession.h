@@ -85,11 +85,15 @@ class Http2WebTransportSessionImpl final : public WebTransportSessionBase,
   void GetMaxDatagramSize() override;
   void GetStats() override;
   void SendDatagram(nsTArray<uint8_t>&& aData, uint64_t aTrackingId,
-                    uint64_t aSendGroupId, int64_t aSendOrder) override;
+                    uint64_t aSendGroupId, int64_t aSendOrder,
+                    TimeStamp aTimestamp) override;
   nsresult ExportKeyingMaterial(const nsTArray<uint8_t>& aLabel,
                                 const nsTArray<uint8_t>& aContext,
+                                uint32_t aOutputLength,
                                 nsTArray<uint8_t>& aKeyingMaterial) override;
   void GetNegotiatedProtocol(nsACString& aProtocol) override;
+  void SetDatagramMaxBufferedDatagrams(uint32_t aMaxBufferedDatagrams) override;
+  void SetDatagramMaxAge(double aMaxAge) override;
   nsresult RegisterSendGroup(uint64_t aGroupId) override;
   void CreateOutgoingBidirectionalStream(
       std::function<void(Result<RefPtr<WebTransportStreamBase>, nsresult>&&)>&&

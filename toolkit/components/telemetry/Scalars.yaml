@@ -1430,24 +1430,6 @@ browser.ui.interaction:
     record_in_processes:
       - 'main'
 
-pwmgr:
-  potentially_breached_passwords:
-    bug_numbers:
-      - 1577808
-    description: >
-      The number of potentially breached passwords, as determined by
-      LoginBreaches.getPotentialBreachesByLoginGUID.
-    expires: never
-    kind: uint
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-      - passwords-dev@mozilla.org
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-
 datasanitization:
   privacy_sanitize_sanitizeOnShutdown:
     bug_numbers:

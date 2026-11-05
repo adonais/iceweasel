@@ -1,3 +1,5 @@
+-c ../config/requirements-mozbase.txt
+-r ../config/mozbase_local_requirements.txt
 jsonschema>=2.5.1
 mozlog>=6.0
 mozcrash>=2.0

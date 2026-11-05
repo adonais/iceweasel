@@ -1,0 +1,11 @@
+modules = ["Hidden.sys.mjs"]
+
+EXTRA_JS_MODULES += modules
+
+EXTRA_JS_MODULES += [
+    "Allowed.sys.mjs",
+] + modules
+
+EXTRA_JS_MODULES += [
+    modules[0],
+]

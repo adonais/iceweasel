@@ -141,7 +141,7 @@ void HTMLSelectElement::SetupShadowTree() {
   {
     RefPtr slot = doc->CreateHTMLElement(nsGkAtoms::slot);
     slot->SetAttr(kNameSpaceID_None, nsGkAtoms::name,
-                  u"internal-select-button"_ns, false);
+                  u"internal-select-button"_ns, false, IsKnownNewAttr::Yes);
     sr->AppendChildTo(slot, false, IgnoreErrors());
   }
 
@@ -166,7 +166,8 @@ void HTMLSelectElement::SetupShadowTree() {
   picker->SetAttr(nsGkAtoms::name, u"select"_ns, IgnoreErrors());
   {
     nsAutoString popoverstate;
-    picker->SetAttr(kNameSpaceID_None, nsGkAtoms::popover, popoverstate, false);
+    picker->SetAttr(kNameSpaceID_None, nsGkAtoms::popover, popoverstate, false,
+                    IsKnownNewAttr::Yes);
     // SetAttr queues AfterSetPopoverAttr asynchronously, but
     // ShowPopoverInternal needs PopoverAttributeState set immediately.
     picker->EnsurePopoverData().SetPopoverAttributeState(
@@ -725,7 +726,7 @@ void HTMLSelectElement::DoScrollToOption(int32_t aIndex) {
   if (!option) {
     return;
   }
-  if (nsIFrame* childFrame = option->GetPrimaryFrame()) {
+  if (nsIFrame* childFrame = option->GetPrimaryFrame(FlushType::Layout)) {
     RefPtr<mozilla::PresShell> presShell = childFrame->PresShell();
     presShell->ScrollFrameIntoView(childFrame, Nothing(), AxisScrollParams(),
                                    AxisScrollParams(),
@@ -1214,7 +1215,7 @@ void HTMLSelectElement::DoneAddingChildren(bool aHaveNotified) {
   }
 
   // Notify the frame
-  ResetListBoxSelection(/* aAllowScrolling = */ true);
+  ResetListBoxSelection();
 
   if (!mInhibitStateRestoration) {
     GenerateStateKey();
@@ -1346,7 +1347,7 @@ bool HTMLSelectElement::RestoreState(PresState* aState) {
   const PresContentData& state = aState->contentData();
   if (state.type() == PresContentData::TSelectContentData) {
     RestoreStateTo(state.get_SelectContentData());
-    ResetListBoxSelection(/* aAllowScrolling = */ true);
+    ResetListBoxSelection();
   }
 
   if (aState->disabledSet() && !aState->disabled()) {
@@ -1433,7 +1434,7 @@ HTMLSelectElement::Reset() {
 
   OnSelectionChanged();
   SetUserInteracted(false);
-  ResetListBoxSelection(/* aAllowScrolling = */ true);
+  ResetListBoxSelection();
 
   // https://html.spec.whatwg.org/#update-a-select's-descendant-selectedcontent-elements
   UpdateDescendantSelectedContentElements();
@@ -1478,17 +1479,15 @@ HTMLSelectElement::SubmitNamesValues(FormData* aFormData) {
   return NS_OK;
 }
 
-void HTMLSelectElement::ResetListBoxSelection(bool aAllowScrolling) {
+void HTMLSelectElement::ResetListBoxSelection() {
   if (!IsDoneAddingChildren() || IsCombobox()) {
     return;
   }
   mListBoxSelection.Clear();
-  if (nsListControlFrame* listFrame = GetListBoxFrame()) {
-    listFrame->OnSelectionReset();
+  if (nsListControlFrame* listBox = GetListBoxFrame()) {
+    listBox->InvalidateFocus();
   }
-  if (aAllowScrolling) {
-    ScrollToSelectedOption();
-  }
+  ScrollToSelectedOption();
 }
 
 bool HTMLSelectElement::IsValueMissing(IgnoredOptionList aIgnored) const {
@@ -1792,11 +1791,6 @@ void HTMLSelectElement::ContentAppendedOrInserted(nsIContent* aFirstNewContent,
     anySelected |= CollectOptions(*this, cur, options);
     if (!aIsAppend) {
       break;
-    }
-  }
-  if (!options.IsEmpty()) {
-    if (nsListControlFrame* listBox = GetListBoxFrame()) {
-      listBox->OptionsAdded();
     }
   }
   if (anySelected && !Multiple()) {
@@ -2890,7 +2884,15 @@ void HTMLSelectElement::UpdateSelectedContentElement(
       selectedIndex >= 0 ? Item(static_cast<uint32_t>(selectedIndex)) : nullptr;
 
   // 2. If option is null, then clear a selectedcontent given selectedcontent.
-  if (!option) {
+  //
+  // NOTE(emilio): The IsDoneAddingChildren() check is a bit of a hack-around.
+  // If the option isn't done adding children, we shouldn't really have
+  // scheduled an update yet (the update was intended to be sync before the
+  // option was even here, e.g. like the ones on BindToTree, and the option
+  // wasn't supposed to be observable). But cloning an option before the parser
+  // is done is a fun way to maybe run scripts twice or so, so prevent that from
+  // happening explicitly.
+  if (!option || !option->IsDoneAddingChildren()) {
     aSelectedContent->ClearContent();
     return;
   }

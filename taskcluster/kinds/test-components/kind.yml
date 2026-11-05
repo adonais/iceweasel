@@ -17,7 +17,6 @@ kind-dependencies:
 
 
 task-defaults:
-    run-on-repo-type: [hg]
     attributes:
         build_platform: android
         build-type: debug
@@ -34,7 +33,6 @@ task-defaults:
         build-fat-aar:
             - target.maven.zip
     run:
-        clone-with: hg
         # TODO Generate APKs in a build task instead
         gradlew: ['--project-dir=mobile/android/android-components',
                   'clean', 'assembleGecko', 'assembleAndroidTest', 'assembleDebug']

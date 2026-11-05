@@ -24,6 +24,18 @@ def get_alert_layer(layers):
     return None
 
 
+def load_alert(alert_json, clear_task=False, clear_prev=False):
+    with (MOCK_DATA_DIR / alert_json).open() as f:
+        alert_info = json.load(f)
+    for results in alert_info["results"]:
+        for alert in results["alerts"] + results["related_alerts"]:
+            if clear_task:
+                alert["taskcluster_metadata"] = {}
+            if clear_prev:
+                alert["prev_taskcluster_metadata"] = {}
+    return alert_info
+
+
 @pytest.mark.parametrize(
     "alert_json, expected_command",
     (
@@ -315,6 +327,69 @@ def test_alert_exact_command(
             assert expected_command in [
                 call[0][0] for call in mocked_mozprocess.run_and_wait.call_args_list
             ]
+
+
+def test_alert_exact_command_uses_prev_task():
+    args = {"flavor": "alert", "tests": ["9000"], "alert-exact": True}
+
+    mach_cmd, metadata, env = get_running_env(**args)
+    test = env.layers[TEST]
+
+    with mock.patch(
+        "mozperftest.test.alert.requests.get"
+    ) as mocked_request, mock.patch(
+        "mozperftest.test.alert.mozprocess"
+    ) as mocked_mozprocess, (
+        MOCK_DATA_DIR / "task-info-mpt-android.json"
+    ).open() as task_file:
+        mocked_alert_response = mock.MagicMock()
+        mocked_alert_response.configure_mock(status_code=200)
+        mocked_alert_response.json.return_value = load_alert(
+            "alert-summary-mpt-android.json", clear_task=True
+        )
+
+        mocked_task_response = mock.MagicMock()
+        mocked_task_response.configure_mock(status_code=200)
+        mocked_task_response.json.return_value = json.load(task_file)
+
+        mocked_request.side_effect = [mocked_alert_response, mocked_task_response]
+
+        with test as layer, silence(test):
+            layer(metadata)
+
+        assert "KiGlx6EzRXymWxcduwN0Jw" in mocked_request.call_args_list[1][0][0]
+        assert mocked_mozprocess.run_and_wait.call_count == 1
+
+
+def test_alert_exact_command_without_any_task():
+    args = {"flavor": "alert", "tests": ["9000"], "alert-exact": True}
+
+    mach_cmd, metadata, env = get_running_env(**args)
+    test = env.layers[TEST]
+
+    with mock.patch(
+        "mozperftest.test.alert.requests.get"
+    ) as mocked_request, mock.patch(
+        "mozperftest.test.alert.mozprocess"
+    ) as mocked_mozprocess:
+        mocked_alert_response = mock.MagicMock()
+        mocked_alert_response.configure_mock(status_code=200)
+        mocked_alert_response.json.return_value = load_alert(
+            "alert-summary-raptor-desktop.json", clear_task=True, clear_prev=True
+        )
+        mocked_request.side_effect = [mocked_alert_response]
+
+        with test as layer, silence(test):
+            layer(metadata)
+
+        assert mocked_request.call_count == 1
+        mocked_mozprocess.run_and_wait.assert_called_once()
+        assert mocked_mozprocess.run_and_wait.call_args[0][0] == [
+            "./mach",
+            "raptor",
+            "-t",
+            "yahoo-mail",
+        ]
 
 
 def test_alert_basic_command_failed():

@@ -37,7 +37,6 @@ SOURCES += [
     "/third_party/angle/src/compiler/translator/glslang_tab_autogen.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/RewriteStructSamplers.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/RewriteTexelFetchOffset.cpp",
-    "/third_party/angle/src/compiler/translator/tree_ops/SeparateStructFromUniformDeclarations.cpp",
     "/third_party/angle/src/compiler/translator/VariablePacker.cpp"
 ]
 
@@ -94,9 +93,10 @@ UNIFIED_SOURCES += [
     "/third_party/angle/src/compiler/translator/tree_ops/DeferGlobalInitializers.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/EmulateGLFragColorBroadcast.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/EmulateMultiDrawShaderBuiltins.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/ExpandFragmentOutputsToVec4.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/FoldConstantSwitch.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/FoldExpressions.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/GatherDefaultUniforms.cpp",
-    "/third_party/angle/src/compiler/translator/tree_ops/glsl/ExpandFragmentOutputsToVec4.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/glsl/RewriteRepeatedAssignToSwizzled.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/glsl/UseInterfaceBlockFields.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/glsl/WrapStructConstructors.cpp",
@@ -122,6 +122,7 @@ UNIFIED_SOURCES += [
     "/third_party/angle/src/compiler/translator/tree_ops/SeparateDeclarations.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/SimplifyLoopConditions.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/SplitSequenceOperator.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/UseGeneratedNamesForAnonymousStructs.cpp",
     "/third_party/angle/src/compiler/translator/tree_util/DriverUniform.cpp",
     "/third_party/angle/src/compiler/translator/tree_util/FindFunction.cpp",
     "/third_party/angle/src/compiler/translator/tree_util/FindMain.cpp",

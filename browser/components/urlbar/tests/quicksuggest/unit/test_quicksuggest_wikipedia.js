@@ -392,13 +392,27 @@ add_task(async function keywordLengthThreshold() {
           type: QuickSuggestTestUtils.RS_TYPE.WIKIPEDIA,
           attachment: [
             QuickSuggestTestUtils.wikipediaRemoteSettings({
-              keywords: ["x", "xx"],
+              keywords: ["", "x", "xx"],
             }),
           ],
         },
       ],
     },
     tests: [
+      {
+        context: createContext("", {
+          providers: [UrlbarProviderQuickSuggest.name],
+          isPrivate: false,
+        }),
+        expected: [],
+      },
+      {
+        context: createContext(" ", {
+          providers: [UrlbarProviderQuickSuggest.name],
+          isPrivate: false,
+        }),
+        expected: [],
+      },
       {
         context: createContext("x", {
           providers: [UrlbarProviderQuickSuggest.name],

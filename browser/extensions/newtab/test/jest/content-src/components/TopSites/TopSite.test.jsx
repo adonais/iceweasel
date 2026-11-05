@@ -43,6 +43,15 @@ const DEFAULT_PROPS = {
 // passed to a child component (e.g. PanelListItems) without mounting it, mirroring the
 // legacy enzyme wrapper.find(Component).props().
 function findElementByType(node, type) {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = findElementByType(child, type);
+      if (found) {
+        return found;
+      }
+    }
+    return null;
+  }
   if (!node || typeof node !== "object") {
     return null;
   }
@@ -171,6 +180,37 @@ describe("<TopSiteLink>", () => {
     expect(container.querySelectorAll(".default-icon")).toHaveLength(1);
     expect(container.querySelectorAll(".rich-icon")).toHaveLength(0);
   });
+  describe("#getFaviconURL", () => {
+    const IMAGE_URL = "https://images.example/tile.png";
+    const OHTTP_URL = `moz-cached-ohttp://newtab-image/?url=${encodeURIComponent(IMAGE_URL)}`;
+
+    function getFaviconURL(linkProps, ohttpSponsoredImagesEnabled = true) {
+      return new TopSiteLink({
+        link: { ...link, favicon: IMAGE_URL, ...linkProps },
+        ohttpSponsoredImagesEnabled,
+      }).getFaviconURL();
+    }
+
+    it("loads sponsored tile images over OHTTP when enabled", () => {
+      expect(getFaviconURL({ sponsored_position: 1 })).toBe(OHTTP_URL);
+    });
+
+    it("loads sponsored tile images directly when disabled", () => {
+      expect(getFaviconURL({ sponsored_position: 1 }, false)).toBe(IMAGE_URL);
+    });
+
+    it("loads images for shortcuts that are not sponsored directly", () => {
+      expect(getFaviconURL({})).toBe(IMAGE_URL);
+    });
+
+    it("loads images that are not https directly", () => {
+      const dataURL = "data:image/png;base64,AAAA";
+      expect(getFaviconURL({ sponsored_position: 1, favicon: dataURL })).toBe(
+        dataURL
+      );
+    });
+  });
+
   it("should apply just the default class name to the outer link if props.className is falsey", () => {
     const { container } = render(<TopSiteLink className={false} />);
     expect(container.querySelector("li")).toHaveClass("top-site-outer");
@@ -1119,6 +1159,53 @@ describe("<TopSiteList>", () => {
         </WrapWithProvider>
       );
       expect(instance.state.focusedIndex).toBe(0);
+    });
+  });
+
+  describe("OHTTP sponsored tile images", () => {
+    const OHTTP_PREF = "unifiedAds.ohttp.enabled";
+    const TILE_IMAGES_PREF = "unifiedAds.tiles.ohttpImages.enabled";
+
+    // The ohttpSponsoredImagesEnabled prop value that gets passed to the tiles.
+    function ohttpSponsoredImagesEnabled(values) {
+      const tree = new TopSiteList({
+        ...LIST_PROPS,
+        Prefs: { values },
+        sites: [DEFAULT_LINK],
+      }).render();
+      return findElementByType(tree, TopSite).props.ohttpSponsoredImagesEnabled;
+    }
+
+    it("is enabled by the local pref while MARS uses OHTTP", () => {
+      expect(
+        ohttpSponsoredImagesEnabled({
+          [TILE_IMAGES_PREF]: true,
+          [OHTTP_PREF]: true,
+        })
+      ).toBe(true);
+    });
+
+    it("is enabled by trainhopConfig while MARS uses OHTTP", () => {
+      expect(
+        ohttpSponsoredImagesEnabled({
+          trainhopConfig: { ohttpSponsoredTileImages: { enabled: true } },
+          [OHTTP_PREF]: true,
+        })
+      ).toBe(true);
+    });
+
+    it("is disabled when MARS does not use OHTTP", () => {
+      expect(
+        ohttpSponsoredImagesEnabled({
+          [TILE_IMAGES_PREF]: true,
+          trainhopConfig: { ohttpSponsoredTileImages: { enabled: true } },
+          [OHTTP_PREF]: false,
+        })
+      ).toBe(false);
+    });
+
+    it("is disabled when neither the pref nor trainhopConfig enables it", () => {
+      expect(ohttpSponsoredImagesEnabled({ [OHTTP_PREF]: true })).toBe(false);
     });
   });
 });

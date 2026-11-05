@@ -330,3 +330,9 @@ MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
 
 # Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "BackgroundChildImpl.h",
+    "BackgroundParentImpl.h",
+    "SharedMemoryPlatform.h",
+]

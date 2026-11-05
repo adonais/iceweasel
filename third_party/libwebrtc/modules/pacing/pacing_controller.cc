@@ -206,7 +206,17 @@ void PacingController::EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) {
     // First packet of a keyframe (and no keyframe packets currently in the
     // queue). Flush any pending packets currently in the queue for that stream
     // in order to get the new keyframe out as quickly as possible.
+    const int packets_before = packet_queue_.SizeInPackets();
     packet_queue_.RemovePacketsForSsrc(packet->Ssrc());
+    const int discarded = packets_before - packet_queue_.SizeInPackets();
+    if (discarded > 0) {
+      // Note that this can truncate a picture that has only been partially
+      // sent, in which case the receiver never sees the end of that picture.
+      RTC_LOG(LS_INFO) << "Pacer: discarded " << discarded
+                       << " queued packets for ssrc " << packet->Ssrc()
+                       << " on key frame with rtp timestamp "
+                       << packet->Timestamp();
+    }
     std::optional<uint32_t> rtx_ssrc =
         packet_sender_->GetRtxSsrcForMedia(packet->Ssrc());
     if (rtx_ssrc) {

@@ -4,6 +4,8 @@
 
 #include "XMLHttpRequestWorker.h"
 
+#include <memory>
+
 #include "GeckoProfiler.h"
 #include "XMLHttpRequestMainThread.h"
 #include "XMLHttpRequestUpload.h"
@@ -1089,8 +1091,8 @@ bool EventRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) {
     }
   }
 
-  UniquePtr<XMLHttpRequestWorker::StateData> state(
-      new XMLHttpRequestWorker::StateData());
+  UniquePtr<XMLHttpRequestWorker::StateData> state =
+      std::make_unique<XMLHttpRequestWorker::StateData>();
 
   state->mStatusResult = mStatusResult;
   state->mStatus = mStatus;
@@ -1370,6 +1372,8 @@ XMLHttpRequestWorker::~XMLHttpRequestWorker() {
 
   mozilla::DropJSObjects(this);
 }
+
+XMLHttpRequestWorker::ResponseData::ResponseData() : mResponseResult(NS_OK) {}
 
 NS_IMPL_ADDREF_INHERITED(XMLHttpRequestWorker, XMLHttpRequestEventTarget)
 NS_IMPL_RELEASE_INHERITED(XMLHttpRequestWorker, XMLHttpRequestEventTarget)

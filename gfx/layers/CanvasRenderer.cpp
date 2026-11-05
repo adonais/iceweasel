@@ -129,10 +129,6 @@ TextureType TexTypeForWebgl(KnowsCompositor* const knowsCompositor,
         StaticPrefs::webgl_enable_egl_image()) {
       return TextureType::EGLImage;
     }
-    if (!gfx::gfxVars::UseWebRenderANGLE() &&
-        StaticPrefs::webgl_enable_surface_texture()) {
-      return TextureType::AndroidNativeWindow;
-    }
   }
 
   return TextureType::Unknown;

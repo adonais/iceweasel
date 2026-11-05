@@ -817,8 +817,13 @@ def _build_compile_db(command_context, verbose=False):
         command_context.topobjdir, "static-analysis"
     )
     compile_db = mozpath.join(compilation_commands_path, "compile_commands.json")
+    backend_file = mozpath.join(
+        command_context.topobjdir, "backend.StaticAnalysisBackend"
+    )
 
-    if os.path.exists(compile_db):
+    if os.path.exists(compile_db) and not command_context.backend_out_of_date(
+        backend_file
+    ):
         return 0, compile_db, compilation_commands_path
 
     rc, config, ran_configure = _get_config_environment(command_context)
@@ -832,10 +837,13 @@ def _build_compile_db(command_context, verbose=False):
         return _build_compile_db(command_context, verbose=verbose)
 
     if config:
-        print(
-            "Looks like a clang compilation database has not been "
-            "created yet, creating it now..."
-        )
+        if os.path.exists(compile_db):
+            print("The clang compilation database is out of date, regenerating it...")
+        else:
+            print(
+                "Looks like a clang compilation database has not been "
+                "created yet, creating it now..."
+            )
         rc = build_commands.build_backend(
             command_context, ["StaticAnalysis"], verbose=verbose
         )
@@ -846,25 +854,18 @@ def _build_compile_db(command_context, verbose=False):
 
 
 def _build_export(command_context, jobs, verbose=False):
-    def on_line(line):
-        command_context.log(logging.INFO, "build_output", {"line": line}, "{line}")
-
-    # First install what we can through install manifests.
-    # Then build the rest of the build dependencies by running the full
-    # export target, because we can't do anything better.
-    for target in ("pre-export", "export", "pre-compile"):
-        rc = command_context._run_make(
-            directory=command_context.topobjdir,
-            target=target,
-            line_handler=None,
-            print_directory=verbose,
-            log=verbose,
-            silent=not verbose,
-            num_jobs=jobs,
-        )
-        if rc != 0:
-            return rc
-    return 0
+    # Build the dependencies of every compile by running the tiers before
+    # compilation, because we can't do anything better.
+    return command_context._mach_context.commands.dispatch(
+        "build",
+        command_context._mach_context,
+        what=["analysis-prereqs"],
+        directory=".",
+        jobs=jobs,
+        verbose=verbose,
+        priority="normal",
+        no_completion_messages=True,
+    )
 
 
 def _set_clang_tools_paths(command_context):

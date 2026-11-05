@@ -1102,6 +1102,34 @@ void AltSvcCache::ClearAltServiceMappings() {
   }
 }
 
+void AltSvcCache::ClearAltServiceMappingsMatchingOA(
+    const OriginAttributes& aOriginAttributes) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!mStorage) {
+    return;
+  }
+  nsTArray<RefPtr<nsIDataStorageItem>> items;
+  if (NS_FAILED(mStorage->GetAll(items))) {
+    return;
+  }
+
+  for (const auto& item : items) {
+    nsAutoCString key;
+    nsAutoCString val;
+    if (NS_FAILED(item->GetKey(key)) || NS_FAILED(item->GetValue(val))) {
+      continue;
+    }
+    RefPtr<AltSvcMapping> mapping =
+        new AltSvcMapping(mStorage, mStorageEpoch, val);
+
+    if (mapping->GetOriginAttributes() == aOriginAttributes) {
+      (void)mStorage->Remove(key, mapping->Private()
+                                      ? nsIDataStorage::DataType::Private
+                                      : nsIDataStorage::DataType::Persistent);
+    }
+  }
+}
+
 nsresult AltSvcCache::GetAltSvcCacheKeys(nsTArray<nsCString>& value) {
   MOZ_ASSERT(NS_IsMainThread());
   if (gHttpHandler->AllowAltSvc() && mStorage) {

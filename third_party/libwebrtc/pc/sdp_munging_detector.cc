@@ -47,70 +47,51 @@ SdpMungingType DetermineTransportModification(
     return SdpMungingType::kNumberOfContents;
   }
   for (size_t i = 0; i < last_created_transport_infos.size(); i++) {
-    if (last_created_transport_infos[i].description.ice_ufrag !=
-        transport_infos_to_set[i].description.ice_ufrag) {
+    const TransportDescription& last_created =
+        last_created_transport_infos[i].description;
+    const TransportDescription& to_set = transport_infos_to_set[i].description;
+    if (last_created.ice_ufrag != to_set.ice_ufrag) {
       RTC_LOG(LS_WARNING)
           << "SDP munging: ice-ufrag does not match last created description.";
       return SdpMungingType::kIceUfrag;
     }
-    if (last_created_transport_infos[i].description.ice_pwd !=
-        transport_infos_to_set[i].description.ice_pwd) {
+    if (last_created.ice_pwd != to_set.ice_pwd) {
       RTC_LOG(LS_WARNING)
           << "SDP munging: ice-pwd does not match last created description.";
       return SdpMungingType::kIcePwd;
     }
-    if (last_created_transport_infos[i].description.ice_mode !=
-        transport_infos_to_set[i].description.ice_mode) {
+    if (last_created.ice_mode != to_set.ice_mode) {
       RTC_LOG(LS_WARNING)
           << "SDP munging: ice mode does not match last created description.";
       return SdpMungingType::kIceMode;
     }
-    if (last_created_transport_infos[i].description.connection_role !=
-        transport_infos_to_set[i].description.connection_role) {
+    if (last_created.connection_role != to_set.connection_role) {
       RTC_LOG(LS_WARNING)
           << "SDP munging: DTLS role does not match last created description.";
       return SdpMungingType::kDtlsSetup;
     }
-    if (last_created_transport_infos[i].description.transport_options !=
-        transport_infos_to_set[i].description.transport_options) {
+    if (last_created.transport_options != to_set.transport_options) {
       RTC_LOG(LS_WARNING) << "SDP munging: ice_options does not match last "
                              "created description.";
-      bool created_empty_options =
-          last_created_transport_infos[i].description.transport_options.empty();
-      bool set_empty_options =
-          transport_infos_to_set[i].description.transport_options.empty();
       // This handles the surprisingly common case where the default `trickle`
       // is removed together with the entire ice-options attribute.
-      if (!created_empty_options && set_empty_options) {
+      if (!last_created.transport_options.empty() &&
+          to_set.transport_options.empty()) {
         return SdpMungingType::kIceOptionsRemoved;
       }
-
-      bool created_renomination =
-          absl::c_find(
-              last_created_transport_infos[i].description.transport_options,
-              ICE_OPTION_RENOMINATION) !=
-          last_created_transport_infos[i].description.transport_options.end();
-      bool set_renomination =
-          absl::c_find(transport_infos_to_set[i].description.transport_options,
-                       ICE_OPTION_RENOMINATION) !=
-          transport_infos_to_set[i].description.transport_options.end();
-      if (!created_renomination && set_renomination) {
+      // Munging new features is not allowed.
+      if (last_created.HasOption(ICE_OPTION_SPED) !=
+          to_set.HasOption(ICE_OPTION_SPED)) {
+        return SdpMungingType::kIceOptionsSped;
+      }
+      if (!last_created.HasOption(ICE_OPTION_RENOMINATION) &&
+          to_set.HasOption(ICE_OPTION_RENOMINATION)) {
         return SdpMungingType::kIceOptionsRenomination;
       }
-
-      bool created_trickle =
-          absl::c_find(
-              last_created_transport_infos[i].description.transport_options,
-              ICE_OPTION_TRICKLE) !=
-          last_created_transport_infos[i].description.transport_options.end();
-      bool set_trickle =
-          absl::c_find(transport_infos_to_set[i].description.transport_options,
-                       ICE_OPTION_TRICKLE) !=
-          transport_infos_to_set[i].description.transport_options.end();
-      if (created_trickle && !set_trickle) {
+      if (last_created.HasOption(ICE_OPTION_TRICKLE) &&
+          !to_set.HasOption(ICE_OPTION_TRICKLE)) {
         return SdpMungingType::kIceOptionsTrickle;
       }
-
       return SdpMungingType::kIceOptions;
     }
   }
@@ -799,6 +780,7 @@ bool IsSdpMungingAllowed(SdpMungingType sdp_munging_type,
     case SdpMungingType::kSframe:
       return false;
     case SdpMungingType::kDataChannelSctpInit:
+    case SdpMungingType::kIceOptionsSped:
       return false;
     case SdpMungingType::kCryptex:
       return false;

@@ -11,6 +11,8 @@ support-files = "!/accessible/tests/mochitest/*.js"
 
 ["test_shadowdom.html"]
 
+["test_tabbox.xhtml"]
+
 ["test_tabbrowser.xhtml"]
 
 ["test_tree.xhtml"]

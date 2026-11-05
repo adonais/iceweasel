@@ -7,6 +7,8 @@ allowed-tools:
   - Bash(python3 .claude/skills/bug-filing/file-bug.py:*)
 ---
 
+# Filing a bug
+
 ## Overview
 
 File a Mozilla bug by opening a prefilled Bugzilla "enter bug" form in the user's

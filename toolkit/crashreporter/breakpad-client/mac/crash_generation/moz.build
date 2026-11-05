@@ -14,3 +14,9 @@ LOCAL_INCLUDES += [
     '/toolkit/crashreporter/breakpad-client',
     '/toolkit/crashreporter/google-breakpad/src',
 ]
+
+SOURCE_HEADERS += [
+	"client_info.h",
+	"crash_generation_client.h",
+	"crash_generation_server.h",
+]

@@ -181,6 +181,50 @@ async function populateWikipediaConfig() {
   }
 }
 
+function v3GoogleCodesPerPlatform() {
+  switch (AppConstants.platform) {
+    case "win":
+      return {
+        telemetryId: "google-win-main",
+        searchUrlCode: new Map([
+          ["default", "client=windows-firefox-o-re"],
+          ["context", "client=windows-firefox-cm-re"],
+          ["newtab", "client=windows-firefox-ntp-re"],
+          ["newtab_search_widget", "client=firefox-b-exp1"],
+          // TODO: Bug 2082144 - Add check for error page.
+        ]),
+        partnerCode: "windows-firefox-o-re",
+      };
+    case "macosx":
+      return {
+        telemetryId: "google-macosx-main",
+        searchUrlCode: new Map([
+          ["default", "client=macos-firefox-o-re"],
+          ["context", "client=macos-firefox-cm-re"],
+          ["newtab", "client=macos-firefox-ntp-re"],
+          ["newtab_search_widget", "client=firefox-b-exp1"],
+          // TODO: Bug 2082144 - Add check for error page.
+        ]),
+        partnerCode: "macos-firefox-o-re",
+      };
+
+    case "linux":
+      return {
+        telemetryId: "google-linux-main",
+        searchUrlCode: new Map([
+          ["default", "client=linux-firefox-o-re"],
+          ["context", "client=linux-firefox-cm-re"],
+          ["newtab", "client=linux-firefox-ntp-re"],
+          ["newtab_search_widget", "client=firefox-b-exp1"],
+          // TODO: Bug 2082144 - Add check for error page.
+        ]),
+        partnerCode: "linux-firefox-o-re",
+      };
+    default:
+      throw new Error("unexpected platform");
+  }
+}
+
 const test = new SearchConfigTest([
   {
     identifier: "baidu",
@@ -585,37 +629,53 @@ const test = new SearchConfigTest([
     },
     details: [
       {
+        // When configV3FeatureGate is removed, we can combine this section
+        // and the next.
         included: [{ regions: ["us"] }],
         domain: "google.com",
-        telemetryId:
-          SearchUtils.MODIFIED_APP_CHANNEL == "esr"
-            ? "google-b-1-e"
-            : "google-b-1-d",
-        searchUrlCode:
-          SearchUtils.MODIFIED_APP_CHANNEL == "esr"
-            ? "client=firefox-b-1-e"
-            : "client=firefox-b-1-d",
-        partnerCode:
-          SearchUtils.MODIFIED_APP_CHANNEL == "esr"
-            ? "firefox-b-1-e"
-            : "firefox-b-1-d",
+        ...(() => {
+          if (!SearchUtils.configV3FeatureGate) {
+            return {
+              telemetryId:
+                SearchUtils.MODIFIED_APP_CHANNEL == "esr"
+                  ? "google-b-1-e"
+                  : "google-b-1-d",
+              searchUrlCode:
+                SearchUtils.MODIFIED_APP_CHANNEL == "esr"
+                  ? "client=firefox-b-1-e"
+                  : "client=firefox-b-1-d",
+              partnerCode:
+                SearchUtils.MODIFIED_APP_CHANNEL == "esr"
+                  ? "firefox-b-1-e"
+                  : "firefox-b-1-d",
+            };
+          }
+          return v3GoogleCodesPerPlatform();
+        })(),
       },
       {
         excluded: [{ regions: ["us", "by", "ru"] }],
         included: [{}],
         domain: "google.com",
-        telemetryId:
-          SearchUtils.MODIFIED_APP_CHANNEL == "esr"
-            ? "google-b-e"
-            : "google-b-d",
-        searchUrlCode:
-          SearchUtils.MODIFIED_APP_CHANNEL == "esr"
-            ? "client=firefox-b-e"
-            : "client=firefox-b-d",
-        partnerCode:
-          SearchUtils.MODIFIED_APP_CHANNEL == "esr"
-            ? "firefox-b-e"
-            : "firefox-b-d",
+        ...(() => {
+          if (!SearchUtils.configV3FeatureGate) {
+            return {
+              telemetryId:
+                SearchUtils.MODIFIED_APP_CHANNEL == "esr"
+                  ? "google-b-e"
+                  : "google-b-d",
+              searchUrlCode:
+                SearchUtils.MODIFIED_APP_CHANNEL == "esr"
+                  ? "client=firefox-b-e"
+                  : "client=firefox-b-d",
+              partnerCode:
+                SearchUtils.MODIFIED_APP_CHANNEL == "esr"
+                  ? "firefox-b-e"
+                  : "firefox-b-d",
+            };
+          }
+          return v3GoogleCodesPerPlatform();
+        })(),
       },
       {
         included: [{ regions: ["by", "ru"] }],

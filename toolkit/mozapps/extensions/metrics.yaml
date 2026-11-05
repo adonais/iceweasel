@@ -235,11 +235,13 @@ addons_manager:
       - https://bugzilla.mozilla.org/1994595
       - https://bugzilla.mozilla.org/2014567
       - https://bugzilla.mozilla.org/2041166
+      - https://bugzilla.mozilla.org/2076964
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1433335#c8
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820153#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2014567
       - https://phabricator.services.mozilla.com/D306509
+      - https://bugzilla.mozilla.org/2076964
     data_sensitivity:
       - interaction
     notification_emails:
@@ -321,7 +323,7 @@ addons_manager:
           permission being granted by this install flow, currently one of
           "serial", "midi", "midi-sysex".
         type: string
-    expires: 161
+    expires: 181
 
   update: *install_update_event
 
@@ -406,11 +408,13 @@ addons_manager:
       - https://bugzilla.mozilla.org/1958149
       - https://bugzilla.mozilla.org/1994595
       - https://bugzilla.mozilla.org/2041166
+      - https://bugzilla.mozilla.org/2076964
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1433335#c8
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820153#c3
       - https://phabricator.services.mozilla.com/D224982
       - https://phabricator.services.mozilla.com/D306509
+      - https://bugzilla.mozilla.org/2076964
     data_sensitivity:
       - interaction
     notification_emails:
@@ -448,7 +452,7 @@ addons_manager:
           The add-on blocklistState (0 not-blocked, 1 soft-blocked, 2
           hard-blocked) at the time the manage event was being collected.
         type: string
-    expires: 161
+    expires: 181
 
   report_suspicious_site:
     type: event
@@ -463,10 +467,12 @@ addons_manager:
       - https://bugzilla.mozilla.org/1958151
       - https://bugzilla.mozilla.org/1994595
       - https://bugzilla.mozilla.org/2041166
+      - https://bugzilla.mozilla.org/2076964
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1806056#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820153#c3
       - https://phabricator.services.mozilla.com/D306509
+      - https://bugzilla.mozilla.org/2076964
     data_sensitivity:
       - stored_content
     notification_emails:
@@ -478,7 +484,7 @@ addons_manager:
       permission_type:
         description: The permission that the site was requesting.
         type: string
-    expires: 161
+    expires: 181
 
   compatibility_check_enabled:
     type: boolean
@@ -503,9 +509,11 @@ addons_manager:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966154
       - https://bugzilla.mozilla.org/1994595
       - https://bugzilla.mozilla.org/2041166
+      - https://bugzilla.mozilla.org/2076964
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966154
       - https://phabricator.services.mozilla.com/D306509
+      - https://bugzilla.mozilla.org/2076964
     data_sensitivity:
       - technical
     notification_emails:
@@ -526,7 +534,7 @@ addons_manager:
           and if the application version was changing, while the write error was hit.
           The expected values are: "new", "existing" "existingWithVersionChanged"
         type: string
-    expires: 161
+    expires: 181
 
   startup_timeline:
     type: labeled_quantity

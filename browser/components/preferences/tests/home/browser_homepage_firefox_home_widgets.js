@@ -8,11 +8,8 @@ const WIDGETS_SYSTEM_PREF =
 const WIDGETS_PREF = "browser.newtabpage.activity-stream.widgets.enabled";
 const LISTS_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.widgets.system.lists.enabled";
-const LISTS_PREF = "browser.newtabpage.activity-stream.widgets.lists.enabled";
 const TIMER_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.widgets.system.focusTimer.enabled";
-const TIMER_PREF =
-  "browser.newtabpage.activity-stream.widgets.focusTimer.enabled";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -63,122 +60,30 @@ add_task(async function test_widgets_parent_toggle_visibility() {
   BrowserTestUtils.removeTab(tab);
 });
 
-add_task(async function test_widgets_lists_toggle() {
+add_task(async function test_widgets_has_no_per_widget_toggles() {
   await SpecialPowers.pushPrefEnv({
     set: [
       [WIDGETS_SYSTEM_PREF, true],
       [WIDGETS_PREF, true],
-      [LISTS_SYSTEM_PREF, false],
-    ],
-  });
-
-  let { win, tab } = await openHomePreferences();
-
-  let listsWrapper = getSettingControl("lists", win);
-  ok(
-    !listsWrapper || BrowserTestUtils.isHidden(listsWrapper),
-    "Lists control is hidden when system pref is false"
-  );
-
-  BrowserTestUtils.removeTab(tab);
-
-  await SpecialPowers.pushPrefEnv({
-    set: [
       [LISTS_SYSTEM_PREF, true],
-      [LISTS_PREF, true],
-    ],
-  });
-
-  ({ win, tab } = await openHomePreferences());
-
-  listsWrapper = await settingControlRenders("lists", win);
-  ok(listsWrapper, "Lists control exists when system pref is true");
-  ok(
-    BrowserTestUtils.isVisible(listsWrapper),
-    "Lists control is visible when system pref is true"
-  );
-
-  let listsControl = await settingControlRenders("lists", win);
-
-  let checkbox = listsControl.controlEl;
-  ok(checkbox, "Lists checkbox control exists");
-  ok(checkbox.checked, "Lists checkbox is initially checked");
-
-  let prefChanged = waitForPrefChange(LISTS_PREF, false);
-  checkbox.click();
-  await prefChanged;
-  await waitForCheckboxState(checkbox, false);
-
-  ok(!Services.prefs.getBoolPref(LISTS_PREF), "Lists pref is now false");
-  ok(!checkbox.checked, "Lists checkbox is now unchecked");
-
-  prefChanged = waitForPrefChange(LISTS_PREF, true);
-  checkbox.click();
-  await prefChanged;
-  await waitForCheckboxState(checkbox, true);
-
-  ok(Services.prefs.getBoolPref(LISTS_PREF), "Lists pref is now true");
-  ok(checkbox.checked, "Lists checkbox is now checked");
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-add_task(async function test_widgets_timer_toggle() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [WIDGETS_SYSTEM_PREF, true],
-      [WIDGETS_PREF, true],
-      [TIMER_SYSTEM_PREF, false],
+      [TIMER_SYSTEM_PREF, true],
     ],
   });
 
   let { win, tab } = await openHomePreferences();
 
-  let timerWrapper = getSettingControl("focusTimer", win);
+  let manageWidgets = await settingControlRenders("manageWidgets", win);
   ok(
-    !timerWrapper || BrowserTestUtils.isHidden(timerWrapper),
-    "Timer control is hidden when system pref is false"
+    BrowserTestUtils.isVisible(manageWidgets),
+    "Manage widgets link is visible"
   );
-
-  BrowserTestUtils.removeTab(tab);
-
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [TIMER_SYSTEM_PREF, true],
-      [TIMER_PREF, true],
-    ],
-  });
-
-  ({ win, tab } = await openHomePreferences());
-
-  timerWrapper = await settingControlRenders("focusTimer", win);
-  ok(timerWrapper, "Timer control exists when system pref is true");
   ok(
-    BrowserTestUtils.isVisible(timerWrapper),
-    "Timer control is visible when system pref is true"
+    manageWidgets.querySelector("moz-box-link"),
+    "Manage widgets renders a moz-box-link"
   );
-
-  let timerControl = await settingControlRenders("focusTimer", win);
-
-  let checkbox = timerControl.controlEl;
-  ok(checkbox, "Timer checkbox control exists");
-  ok(checkbox.checked, "Timer checkbox is initially checked");
-
-  let prefChanged = waitForPrefChange(TIMER_PREF, false);
-  checkbox.click();
-  await prefChanged;
-  await waitForCheckboxState(checkbox, false);
-
-  ok(!Services.prefs.getBoolPref(TIMER_PREF), "Timer pref is now false");
-  ok(!checkbox.checked, "Timer checkbox is now unchecked");
-
-  prefChanged = waitForPrefChange(TIMER_PREF, true);
-  checkbox.click();
-  await prefChanged;
-  await waitForCheckboxState(checkbox, true);
-
-  ok(Services.prefs.getBoolPref(TIMER_PREF), "Timer pref is now true");
-  ok(checkbox.checked, "Timer checkbox is now checked");
+  for (let id of ["lists", "focusTimer", "weather"]) {
+    ok(!getSettingControl(id, win), `${id} has no toggle on the Home pane`);
+  }
 
   BrowserTestUtils.removeTab(tab);
 });

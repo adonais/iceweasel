@@ -126,3 +126,17 @@ LICENSES["jpnic"].notice = """
 LICENSED_UNDER += [
     "jpnic",
 ]
+
+SOURCE_HEADERS += [
+    "DNSAdditionalInfo.h",
+    "DNSLogging.h",
+    "DNSUtils.h",
+    "GetAddrInfo.h",
+    "HostRecordQueue.h",
+    "nsDNSService2.h",
+    "nsHostRecord.h",
+    "nsHostResolver.h",
+    "nsIDNService.h",
+    "TRR.h",
+    "TRRQuery.h",
+]

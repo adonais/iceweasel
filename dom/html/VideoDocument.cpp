@@ -121,7 +121,7 @@ nsresult VideoDocument::CreateVideoElement() {
         kNameSpaceID_None, nsGkAtoms::style,
         nsLiteralString(
             u"position:absolute; top:0; left:0; width:100%; height:100%"),
-        true);
+        true, IsKnownNewAttr::Yes);
   } else {
     LinkStylesheet(nsLiteralString(
         u"resource://content-accessible/TopLevelVideoDocument.css"));

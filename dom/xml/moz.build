@@ -47,3 +47,8 @@ LOCAL_INCLUDES += [
 RESOURCE_FILES.dtd += [
     "htmlmathml-f.ent",
 ]
+
+SOURCE_HEADERS += [
+    "nsXMLContentSink.h",
+    "nsXMLPrettyPrinter.h",
+]

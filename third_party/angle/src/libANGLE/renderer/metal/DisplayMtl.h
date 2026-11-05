@@ -40,7 +40,21 @@ class ContextMtl;
 
 struct DefaultShaderAsyncInfoMtl;
 
-class DisplayMtl : public DisplayImpl
+class ThreadSafeDisplayMtl : public ThreadSafeDisplayImpl
+{
+  public:
+    ThreadSafeDisplayMtl()           = default;
+    ~ThreadSafeDisplayMtl() override = default;
+
+    bool testDeviceLost() override;
+    egl::Error restoreLostDevice(const egl::ThreadSafeDisplay *display) override;
+
+    EGLSyncImpl *createSync() override;
+
+  private:
+};
+
+class DisplayMtl : public DisplayImpl, public ThreadSafeDisplayMtl
 {
   public:
     DisplayMtl(const egl::DisplayState &state);
@@ -50,9 +64,6 @@ class DisplayMtl : public DisplayImpl
     void terminate() override;
 
     egl::Display *getDisplay() const { return mDisplay; }
-
-    bool testDeviceLost() override;
-    egl::Error restoreLostDevice(const egl::Display *display) override;
 
     std::string getRendererDescription() override;
     std::string getVendorString() override;
@@ -100,8 +111,6 @@ class DisplayMtl : public DisplayImpl
                                                          const egl::AttributeMap &attribs) override;
     gl::Version getMaxSupportedESVersion() const override;
     gl::Version getMaxConformantESVersion() const override;
-
-    EGLSyncImpl *createSync() override;
 
     egl::Error makeCurrent(egl::Display *display,
                            egl::Surface *drawSurface,
@@ -155,6 +164,7 @@ class DisplayMtl : public DisplayImpl
     mtl::StateCache &getStateCache() { return mStateCache; }
     mtl::LibraryCache &getLibraryCache() { return mLibraryCache; }
     uint32_t getMaxColorTargetBits() { return mMaxColorTargetBits; }
+    uint32_t getMaxVisibilityQueryOffset() const { return mMaxVisibilityQueryOffset; }
     bool hasFragmentMemoryBarriers() const { return mHasFragmentMemoryBarriers; }
 
     id<MTLLibrary> getDefaultShadersLib();
@@ -176,6 +186,8 @@ class DisplayMtl : public DisplayImpl
     }
 
     angle::ObjCPtr<MTLSharedEventListener> getOrCreateSharedEventListener();
+
+    ThreadSafeDisplayImpl *getThreadSafeDisplayImpl() override { return this; }
 
   protected:
     void generateExtensions(egl::DisplayExtensions *outExtensions) const override;
@@ -219,6 +231,7 @@ class DisplayMtl : public DisplayImpl
     mutable gl::Limitations mNativeLimitations;
     mutable ShPixelLocalStorageOptions mNativePLSOptions;
     mutable uint32_t mMaxColorTargetBits = 0;
+    mutable uint32_t mMaxVisibilityQueryOffset = 0;
     mutable bool mHasFragmentMemoryBarriers;
 
     angle::FeaturesMtl mFeatures;

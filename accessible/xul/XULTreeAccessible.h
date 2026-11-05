@@ -169,7 +169,7 @@ class XULTreeItemAccessibleBase : public AccessibleWrap {
    * accessible table then return null.
    */
   virtual XULTreeGridCellAccessible* GetCellAccessible(
-      nsTreeColumn* aColumn) const {
+      nsTreeColumn* /*aColumn*/) const {
     return nullptr;
   }
 

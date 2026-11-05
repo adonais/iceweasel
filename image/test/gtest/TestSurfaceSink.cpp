@@ -32,7 +32,7 @@ static void InitializeRowBuffer(uint32_t* aBuffer, size_t aSize,
 }
 
 template <Orient Orientation, typename Func>
-void WithSurfaceSink(Func aFunc) {
+void WithSurfaceSink(Func&& aFunc) {
   RefPtr<image::Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
 

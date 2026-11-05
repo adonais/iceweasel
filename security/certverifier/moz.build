@@ -20,6 +20,9 @@ if not CONFIG["NSS_NO_EV_CERTS"]:
     UNIFIED_SOURCES += [
         "ExtendedValidation.cpp",
     ]
+    SOURCE_HEADERS += [
+        "ExtendedValidation.h",
+    ]
 
 LOCAL_INCLUDES += [
     "/security/ct",
@@ -51,3 +54,8 @@ if CONFIG["CC_TYPE"] == "clang-cl":
 
 if CONFIG["MOZ_SYSTEM_NSS"]:
     DEFINES["MOZ_SYSTEM_NSS"] = True
+
+SOURCE_HEADERS += [
+    "CRLiteTimestamp.h",
+    "NSSCertDBTrustDomain.h",
+]

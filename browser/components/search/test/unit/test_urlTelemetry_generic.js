@@ -382,15 +382,11 @@ async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey, browser) {
     ),
     loadUsingSystemPrincipal: true,
   });
-  // ChannelWrapper.get returns a C++ backed object whose browserElement
-  // getter resolves via the channel's load context. In xpcshell there is
-  // no real browsing context, so browserElement is null. Override the
-  // getter on this specific wrapper instance to return our mock browser.
-  let wrapper = ChannelWrapper.get(channel);
-  Object.defineProperty(wrapper, "browserElement", {
-    get: () => browser,
-    configurable: true,
-  });
+  // In xpcshell there is no real browsing context for the channel to resolve
+  // a browser from, so return our mock browser instead.
+  let getChannelBrowserStub = sinon
+    .stub(SearchSERPTelemetry._contentHandler, "_getChannelBrowser")
+    .returns(browser);
   SearchSERPTelemetry._contentHandler.observeActivity(
     channel,
     Ci.nsIHttpActivityObserver.ACTIVITY_TYPE_HTTP_TRANSACTION,
@@ -399,6 +395,7 @@ async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey, browser) {
   // Since the content handler takes a moment to allow the channel information
   // to settle down, wait the same amount of time here.
   await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
+  getChannelBrowserStub.restore();
 
   const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
   if (!expectedAdKey) {

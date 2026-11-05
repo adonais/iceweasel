@@ -46,3 +46,9 @@ include("/ipc/chromium/chromium-config.mozbuild")
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "nsJAR.h",
+    "nsJARChannel.h",
+    "nsJARInputStream.h",
+]

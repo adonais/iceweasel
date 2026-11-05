@@ -897,6 +897,7 @@ void nsCSPParser::handleRequireTrustedTypesForDirective(nsCSPDirective* aDir) {
     logWarningErrorToConsole(nsIScriptError::errorFlag,
                              "invalidNumberOfTrustedTypesForDirectiveValues",
                              numberOfTokensArr);
+    delete aDir;
     return;
   }
 
@@ -924,6 +925,7 @@ void nsCSPParser::handleRequireTrustedTypesForDirective(nsCSPDirective* aDir) {
     for (auto* trustedTypesSinkGroupKeyword : trustedTypesSinkGroupKeywords) {
       delete trustedTypesSinkGroupKeyword;
     }
+    delete aDir;
     return;
   }
   aDir->addSrcs(trustedTypesSinkGroupKeywords);

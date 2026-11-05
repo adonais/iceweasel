@@ -7,6 +7,9 @@ export type GetTextOptions = Partial<{
   // When set, extraction will stop when the text meets or exceeds this length.
   // When unset, the lenghth of the extracted text is unbounded.
   sufficientLength: number;
+  // The same as sufficientLength, but for a video transcript that replaces the
+  // page content, e.g. on YouTube. Falls back to sufficientLength when unset.
+  sufficientTranscriptLength: number;
   // Just include the viewport content.
   justViewport: boolean;
   // Skip canvases smaller than this dimension

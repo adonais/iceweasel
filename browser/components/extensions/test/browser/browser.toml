@@ -66,6 +66,8 @@ tags = "bleedover"
 
 ["browser_ext_management.js"]
 
+["browser_ext_messaging_windowId.js"]
+
 ["browser_ext_mousewheel_zoom.js"]
 
 ["browser_ext_nontab_process_switch.js"]

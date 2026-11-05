@@ -150,10 +150,16 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     UNIFIED_SOURCES += [
         "CocoaFileUtils.mm",
     ]
+    SOURCE_HEADERS += [
+        "CocoaFileUtils.h",
+    ]
 
 if CONFIG["OS_ARCH"] == "Darwin":
     UNIFIED_SOURCES += [
         "DarwinFileUtils.mm",
+    ]
+    SOURCE_HEADERS += [
+        "DarwinFileUtils.h",
     ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
@@ -185,4 +191,14 @@ LOCAL_INCLUDES += [
 LICENSED_UNDER += ["xdg"]
 LICENSED_UNDER["xdg"].paths = [
     "SpecialSystemDirectory.cpp",
+]
+
+SOURCE_HEADERS += [
+    "crc32c.h",
+    "nsAppFileLocationProvider.h",
+    "nsBinaryStream.h",
+    "nsIOUtil.h",
+    "nsPipe.h",
+    "nsScriptableBase64Encoder.h",
+    "nsSegmentedBuffer.h",
 ]

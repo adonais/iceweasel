@@ -672,6 +672,7 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
 
             auto* const quotaClient = static_cast<FileSystemQuotaClient*>(
                 self->mQuotaManager->GetClient(quota::Client::FILESYSTEM));
+
             self->mCipherKeyManager =
                 quotaClient->GetOrCreateCipherKeyManager(self->mOriginMetadata);
 
@@ -691,8 +692,11 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
 
             Maybe<FileSystemCipherKey> maybeCipherKey;
             if (self->mCipherKeyManager) {
-              maybeCipherKey =
-                  Some(self->mCipherKeyManager->Ensure(kDatabaseCipherKeyId));
+              QM_TRY_UNWRAP(
+                  FileSystemCipherKey cipherKey,
+                  self->mCipherKeyManager->Ensure(kDatabaseCipherKeyId),
+                  CreateAndRejectBoolPromise);
+              maybeCipherKey = Some(std::move(cipherKey));
             }
 
             QM_TRY_UNWRAP(

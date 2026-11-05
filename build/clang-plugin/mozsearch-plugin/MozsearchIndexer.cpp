@@ -329,7 +329,7 @@ private:
           Absolute = Filename;
         }
       }
-      std::unique_ptr<FileInfo> Info =
+      auto Info =
           std::make_unique<FileInfo>(Absolute, CI.getHeaderSearchOpts());
       It = FileMap.insert(std::make_pair(Id, std::move(Info))).first;
     }

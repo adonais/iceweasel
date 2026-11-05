@@ -24,9 +24,11 @@ This is the list of fields:
 - **name**: name of the test [mandatory]
 - **description**: short description [mandatory]
 - **longDescription**: longer description
-- **options**: options used to run the test
-- **supportedBrowsers**: list of supported browsers (or "Any")
-- **supportedPlatforms**: list of supported platforms (or "Any")
+- **options**: options used to run the test, see [Options](#options)
+- **supportedBrowsers**: browsers the test is meant for (or "Any"),
+  informational only since the browser is set with `--app`
+- **supportedPlatforms**: platforms the test is meant for (or "Any"),
+  informational only since CI task definitions decide where it runs
 - **tags**: a list of tags that describe the test
 
 Most tests are registered using tests manifests and the **PERFTESTS_MANIFESTS**
@@ -34,6 +36,38 @@ variable in `moz.build` files - it's good practice to name this file
 `perftest.toml`. **This doesn't apply to mochitest tests**, they should use the manifest variable of the respective flavour/subsuite that the test is running in.
 
 Example of such a file: {searchfox}`testing/performance/perftest.toml`
+
+## Options
+
+`options` maps `default`, and optionally `linux`, `mac` or `win`, to
+`./mach perftest` arguments written with underscores (`--perfherder-metrics`
+becomes `perfherder_metrics`). The command line overrides the platform entry,
+which overrides `default`.
+
+```
+options: {
+  default: { perfherder: true, verbose: true },
+  mac: { verbose: false },
+},
+```
+
+## Alerting
+
+Alerting is off by default. Turn it on per metric in `perfherder_metrics`;
+each entry applies to the reported metrics whose name contains its `name`:
+
+```
+perfherder_metrics: [
+  { name: "speed", unit: "ms", shouldAlert: true, alertThreshold: 5 },
+],
+```
+
+Other settings are `alertSeverity` (`critical`, `subcritical` or `normal`)
+and `lowerIsBetter`. Custom script metrics alert unless they set
+`"shouldAlert": false`.
+
+Alerts come from repositories such as autoland, never try, and are triaged by
+the [performance sheriffs](perf-sheriffing.md).
 
 ## XPCShell
 

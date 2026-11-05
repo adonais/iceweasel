@@ -475,3 +475,40 @@ add_task(async function test_source_errorpage() {
 
   BrowserTestUtils.removeTab(tab);
 });
+
+add_task(async function test_source_text_selection() {
+  resetTelemetry();
+  searchCounts.clear();
+  Services.telemetry.clearScalars();
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+  let pageLoadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await SearchUIUtils.loadSearch({
+    window,
+    searchText: "test",
+    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    sapSource: "text_selection",
+  });
+  await pageLoadPromise;
+  await waitForPageWithAdImpressions();
+
+  await assertSearchSourcesTelemetry({ "other-Example.text_selection": 1 }, {});
+
+  assertSERPTelemetry([
+    {
+      impression: {
+        source: "text_selection",
+      },
+      adImpressions: [
+        {
+          component: SearchSERPTelemetryUtils.COMPONENTS.REFINED_SEARCH_BUTTONS,
+          ads_loaded: "1",
+          ads_visible: "1",
+          ads_hidden: "0",
+        },
+      ],
+    },
+  ]);
+
+  BrowserTestUtils.removeTab(tab);
+});

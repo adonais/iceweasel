@@ -5,6 +5,7 @@
 import { useEffect } from "react";
 import { render } from "@testing-library/react";
 import { stubGlobals } from "test/jest/test-utils";
+import { SpaceActiveContext } from "content-src/lib/SpaceActiveContext";
 import {
   useIntersectionObserver,
   getActiveCardSize,
@@ -71,6 +72,21 @@ describe("useIntersectionObserver", () => {
   });
 
   it("should observe elements when mounted", () => {
+    const [observerInstance] = observerStub.mock.instances;
+    expect(observerInstance.observe).toHaveBeenCalled();
+  });
+
+  it("should not observe until the enclosing space is active", () => {
+    observerStub.mockClear();
+    const tree = spaceActive => (
+      <SpaceActiveContext.Provider value={spaceActive}>
+        <TestComponent callback={callback} threshold={threshold} />
+      </SpaceActiveContext.Provider>
+    );
+    const { rerender } = render(tree(false));
+    expect(observerStub).not.toHaveBeenCalled();
+
+    rerender(tree(true));
     const [observerInstance] = observerStub.mock.instances;
     expect(observerInstance.observe).toHaveBeenCalled();
   });

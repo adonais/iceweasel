@@ -738,7 +738,13 @@ impl StreamOps for PulseStream<'_> {
     }
 
     fn latency(&mut self) -> Result<u32> {
-        match self.output_stream {
+        let in_thread = self.context.mainloop.in_thread();
+
+        if !in_thread {
+            self.context.mainloop.lock();
+        }
+
+        let r = match self.output_stream {
             None => {
                 cubeb_log!("Error: calling latency() on an input-only stream");
                 Err(Error::Error)
@@ -757,11 +763,23 @@ impl StreamOps for PulseStream<'_> {
                     Err(Error::Error)
                 }
             },
+        };
+
+        if !in_thread {
+            self.context.mainloop.unlock();
         }
+
+        r
     }
 
     fn input_latency(&mut self) -> Result<u32> {
-        match self.input_stream {
+        let in_thread = self.context.mainloop.in_thread();
+
+        if !in_thread {
+            self.context.mainloop.lock();
+        }
+
+        let r = match self.input_stream {
             None => {
                 cubeb_log!("Error: calling input_latency() on an output-only stream");
                 Err(Error::Error)
@@ -780,7 +798,13 @@ impl StreamOps for PulseStream<'_> {
                     Err(Error::Error)
                 }
             },
+        };
+
+        if !in_thread {
+            self.context.mainloop.unlock();
         }
+
+        r
     }
 
     fn set_volume(&mut self, volume: f32) -> Result<()> {
@@ -822,12 +846,21 @@ impl StreamOps for PulseStream<'_> {
 
     fn current_device(&mut self) -> Result<&DeviceRef> {
         if self.context.version_0_9_8 {
+            let in_thread = self.context.mainloop.in_thread();
+
+            if !in_thread {
+                self.context.mainloop.lock();
+            }
+
             let mut dev: Box<ffi::cubeb_device> = Box::new(unsafe { mem::zeroed() });
 
             if let Some(ref stm) = self.input_stream {
                 dev.input_name = match stm.get_device_name() {
                     Ok(name) => name.to_owned().into_raw(),
                     Err(_) => {
+                        if !in_thread {
+                            self.context.mainloop.unlock();
+                        }
                         cubeb_log!("Error: couldn't get the input stream's device name");
                         return Err(Error::Error);
                     }
@@ -838,10 +871,17 @@ impl StreamOps for PulseStream<'_> {
                 dev.output_name = match stm.get_device_name() {
                     Ok(name) => name.to_owned().into_raw(),
                     Err(_) => {
+                        if !in_thread {
+                            self.context.mainloop.unlock();
+                        }
                         cubeb_log!("Error: couldn't get the output stream's device name");
                         return Err(Error::Error);
                     }
                 }
+            }
+
+            if !in_thread {
+                self.context.mainloop.unlock();
             }
 
             Ok(unsafe { DeviceRef::from_ptr(Box::into_raw(dev) as *mut _) })

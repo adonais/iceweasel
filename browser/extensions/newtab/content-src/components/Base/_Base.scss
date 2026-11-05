@@ -281,3 +281,31 @@ main.newtab-main {
 .asrouter-multistage-message-wrapper {
   margin-block: var(--space-xlarge);
 }
+
+.nova-enabled.container {
+  .message-wrapper:has(> .asrouter-multistage-message-wrapper) {
+    justify-self: center;
+    // ensure that the min width matches the min-width of topsites
+    min-width: 324px;
+
+    @include at-outer-grid-cols(6) {
+      width: calc(6 * var(--col-width) + 5 * var(--space-medium));
+    }
+
+    @include at-outer-grid-cols(10) {
+      width: calc(10 * var(--col-width) + 9 * var(--space-medium));
+    }
+  }
+
+  &:has(.search-inner-wrapper > moz-urlbar) {
+    @include at-outer-grid-cols(6) {
+      .message-wrapper:has(> .asrouter-multistage-message-wrapper) {
+        width: $search-width-ratio * 100cqi;
+      }
+
+      &.logo-in-content .message-wrapper:has(> .asrouter-multistage-message-wrapper) {
+        width: $search-width-ratio * 100%;
+      }
+    }
+  }
+}

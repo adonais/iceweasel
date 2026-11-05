@@ -3,135 +3,182 @@
 
 "use strict";
 
-// Animations never play to completion -they are paused as soon as they exist.
-const ANIMATION_DURATION_MS = 300000;
-
-// Opening four extra windows can be slow
-requestLongerTimeout(2);
-
 const ANIMATION_ENABLED_PREF = "sidebar.animation.enabled";
-const ANIMATION_DURATION_PREF = "sidebar.animation.duration-ms";
-
-// The launcher contents counter-animate to keep the buttons in place, which
-// depends on which side the launcher is docked to but *not* on the UI
-// direction.
-const POSITION_CASES = [
-  { rtl: false, positionStart: true },
-  { rtl: false, positionStart: false },
-  { rtl: true, positionStart: true },
-  { rtl: true, positionStart: false },
-];
+const EXPAND_ON_HOVER_DURATION_PREF =
+  "sidebar.animation.expand-on-hover.duration-ms";
+const EXPAND_ON_HOVER_DELAY_PREF =
+  "sidebar.animation.expand-on-hover.delay-duration-ms";
 
 /**
- * The elements `_animateSidebarContainer` animates, plus the subset which also
- * carries the `sidebar-ongoing-animations` attribute that CSS keys off.
+ * Press a keyboard shortcut. Unlike a click, a key press isn't lost to hit
+ * testing while a transition is running.
  *
- * @returns {{animated: Element[], flagged: Element[]}}
- */
-function getAnimatedElements() {
-  const tabbox = document.getElementById("tabbrowser-tabbox");
-  const { sidebarContainer, sidebarMain, _box, _splitter } = SidebarController;
-  return {
-    animated: [sidebarContainer, _box, _splitter, tabbox],
-    flagged: [sidebarContainer, sidebarMain, _box, tabbox],
-  };
-}
-
-function toggleWithToolbarButton(win = window) {
-  // Equivalent to clicking the sidebar button, which isn't guaranteed to be
-  // present in the toolbar.
-  win.SidebarController.handleToolbarButtonClick();
-}
-
-/**
- * Wait for the controller's batch of in-flight animations to reach some state.
- *
- * A toggle awaits a Lit update before creating the animations.
- *
- * @param {ChromeWindow} win
- * @param {(animations: Animation[]) => boolean} predicate
- *   Called with `_ongoingAnimations` until it returns true.
- * @param {string} description
- *   What is being waited for, phrased to follow "Waiting for".
- * @returns {Promise<Animation[]>} The batch as of when the predicate held.
- */
-async function waitForAnimationBatch(win, predicate, description) {
-  const { SidebarController: controller } = win;
-
-  await TestUtils.waitForCondition(
-    () => predicate(controller._ongoingAnimations),
-    `Waiting for ${description}`
-  );
-  return controller._ongoingAnimations;
-}
-
-/**
- * Wait for a toggle to create its animations, then pause them at their first
- * frame. We can then assert on which elements animate, the timing and the
- * keyframes without a timing dependency.
- *
- * @param {object} [options]
- * @param {ChromeWindow} [options.win]
- * @param {Animation[]} [options.replacing]
- *   A batch that must have been superseded, for when a second toggle interrupts
- *   the first. Without it, the batch already in flight would satisfy the wait.
- * @param {string} [options.description]
- * @returns {Promise<Animation[]>}
- */
-async function waitForPausedAnimations({
-  win = window,
-  replacing = null,
-  description = "the launcher to start animating",
-} = {}) {
-  const animations = await waitForAnimationBatch(
-    win,
-    batch => batch.length && batch !== replacing,
-    description
-  );
-  animations.forEach(animation => animation.pause());
-  return animations;
-}
-
-/**
- * Finish any in-flight animations and wait for the controller to tidy up after
- * itself. `finish()` resolves a paused animation too, so this releases the
- * animations frozen by `waitForPausedAnimations`.
- *
+ * @param {string} id
+ *   The id of the <key> element.
  * @param {ChromeWindow} [win]
  */
-async function finishOngoingAnimations(win = window) {
-  const { SidebarController: controller } = win;
-  controller._ongoingAnimations.forEach(animation => animation.finish());
-  await waitForAnimationBatch(
-    win,
-    batch => !batch.length,
-    "the ongoing animations to be cleared"
+function pressShortcut(id, win = window) {
+  const keyEl = win.document.getElementById(id);
+  const modifiers = keyEl.getAttribute("modifiers").split(",");
+  EventUtils.synthesizeKey(
+    keyEl.getAttribute("key"),
+    {
+      accelKey: modifiers.includes("accel"),
+      altKey: modifiers.includes("alt"),
+      ctrlKey: modifiers.includes("control"),
+      shiftKey: modifiers.includes("shift"),
+    },
+    win
   );
-  await controller.waitUntilStable();
+}
+
+function toggleWithShortcut(win = window) {
+  // Runs the same handler as clicking the sidebar button, which isn't
+  // guaranteed to be present in the toolbar.
+  pressShortcut("toggleSidebarKb", win);
 }
 
 /**
- * The horizontal component of a computed keyframe's `translate`.
+ * Read a motion token from the root element.
  *
- * @param {object} keyframe
+ * @param {string} name
+ * @returns {string}
+ */
+function getToken(name) {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+}
+
+/**
+ * Read a duration token, in milliseconds.
+ *
+ * @param {string} name
  * @returns {number}
  */
-function keyframeTranslateX(keyframe) {
-  return parseFloat(keyframe.translate) || 0;
+function getDurationToken(name) {
+  return parseFloat(getToken(name)) * 1000;
+}
+
+/**
+ * Run an action that starts a sidebar view transition and capture what it
+ * animates. The animations are paused as soon as they exist so that assertions
+ * have no timing dependency, then the transition is skipped.
+ *
+ * @param {Function} action
+ * @param {ChromeWindow} [win]
+ * @param {Function} [inspect]
+ *   Called while the animations are paused, before the transition is skipped.
+ * @returns {Promise<{types: string[], animations: Animation[], inspected: *}>}
+ */
+async function captureTransition(action, win = window, inspect = () => {}) {
+  const { SidebarController: controller } = win;
+  const result = action();
+  await TestUtils.waitForCondition(
+    () => controller._activeViewTransition,
+    "Waiting for a view transition to start"
+  );
+  const transition = controller._activeViewTransition;
+  await transition.ready;
+  const animations = win.document
+    .getAnimations()
+    .filter(a => a.effect.pseudoElement?.startsWith("::view-transition"));
+  animations.forEach(a => a.pause());
+  const types = [...transition.types];
+  const inspected = inspect();
+
+  transition.skipTransition();
+  await transition.finished;
+  await result;
+  await controller.waitUntilStable();
+  ok(
+    !controller._activeViewTransition,
+    "The finished transition is no longer tracked"
+  );
+  return { types, animations, inspected };
+}
+
+function getGroupZIndex(name) {
+  return getComputedStyle(
+    document.documentElement,
+    `::view-transition-group(${name})`
+  ).zIndex;
+}
+
+/**
+ * Assert that a sidebar group stacks beneath the content area, which matters
+ * most when the sidebar element is only in the new state, as such groups would
+ * otherwise come last and paint on top.
+ *
+ * @param {string} name
+ * @param {string} description
+ */
+function assertBeneathContentArea(name, description) {
+  is(
+    getGroupZIndex(name),
+    "auto",
+    `${description}: ${name} isn't raised above the content area`
+  );
+  is(
+    getGroupZIndex("tabbrowser-tabbox"),
+    "1",
+    `${description}: the content area is raised above ${name}`
+  );
+}
+
+/**
+ * Assert that a transition leaves the content area and panel live, rather than
+ * swapping in their snapshots.
+ *
+ * @param {Animation[]} animations
+ * @param {string} description
+ */
+function assertContentAreaNotCaptured(animations, description) {
+  for (const name of ["tabbrowser-tabbox", "sidebar-box"]) {
+    ok(
+      !animations.some(a => a.effect.pseudoElement.endsWith(`(${name})`)),
+      `${description}: ${name} isn't captured`
+    );
+  }
+}
+
+/**
+ * Assert that every group animation in a transition uses a given timing.
+ *
+ * @param {Animation[]} animations
+ * @param {number} duration
+ * @param {string} easing
+ * @param {string} description
+ */
+function assertGroupTiming(animations, duration, easing, description) {
+  const groups = animations.filter(a =>
+    a.effect.pseudoElement.startsWith("::view-transition-group")
+  );
+  Assert.greater(groups.length, 0, `${description}: groups are animating`);
+  for (const animation of groups) {
+    const { pseudoElement } = animation.effect;
+    is(
+      animation.effect.getComputedTiming().duration,
+      duration,
+      `${description}: ${pseudoElement} has the expected duration`
+    );
+    is(
+      animation.effect.getKeyframes()[0].easing,
+      easing,
+      `${description}: ${pseudoElement} has the expected easing`
+    );
+  }
 }
 
 /**
  * Put the launcher back in its default visible state without animating, so that
  * each task starts from the same place and toggling is reliably a hide.
- *
- * @param {ChromeWindow} [win]
- * @param {string} [message]
  */
-async function ensureLauncherVisibleWithoutAnimating(win = window, message) {
+async function ensureLauncherVisibleWithoutAnimating() {
   await SpecialPowers.pushPrefEnv({
     set: [[ANIMATION_ENABLED_PREF, false]],
   });
-  await SidebarTestUtils.ensureLauncherVisible(win, message);
+  await SidebarTestUtils.ensureLauncherVisible(window);
   await SpecialPowers.popPrefEnv();
 }
 
@@ -140,236 +187,394 @@ add_setup(async () => {
   // Windows CI machines have prefers-reduced-motion set, which suppresses the
   // animations under test. Opt back in rather than depend on the host setting.
   gReduceMotionOverride = false;
-  await SpecialPowers.pushPrefEnv({
-    set: [[ANIMATION_DURATION_PREF, ANIMATION_DURATION_MS]],
-  });
+  await ensureLauncherVisibleWithoutAnimating();
 });
 
 registerCleanupFunction(() => {
   gReduceMotionOverride = undefined;
-  // Switching to the bidi pseudo-locale sets this as a side effect.
-  Services.prefs.clearUserPref("bidi.browser.ui");
 });
 
-add_task(async function test_toolbar_button_toggle_animates() {
-  const { animated, flagged } = getAnimatedElements();
-  const wasHidden = SidebarController.sidebarContainer.hidden;
+add_task(async function test_toolbar_button_toggle_uses_launcher_tokens() {
+  const emphasized = getToken("--motion-ease-emphasized");
 
-  toggleWithToolbarButton();
-  const animations = await waitForPausedAnimations();
-
-  isnot(
-    SidebarController.sidebarContainer.hidden,
-    wasHidden,
-    "Launcher visibility was toggled"
+  const hide = await captureTransition(
+    () => toggleWithShortcut(),
+    window,
+    () => assertBeneathContentArea("sidebar-launcher", "Launcher hide")
   );
-  for (const el of animated) {
-    Assert.greater(
-      el.getAnimations().length,
-      0,
-      `${el.id || el.localName} is animating`
+  ok(
+    SidebarController.sidebarContainer.hidden,
+    "Launcher was hidden by the toolbar button"
+  );
+  ok(hide.types.includes("launcher-exit"), "Hiding is a launcher exit");
+  ok(hide.types.includes("launcher-hide"), "Hiding is a launcher hide");
+  const covered = hide.animations.find(
+    a => a.effect.pseudoElement == "::view-transition-old(sidebar-launcher)"
+  );
+  is(
+    covered?.animationName,
+    "sidebar-panel-covered",
+    "The hidden launcher is removed before the transition ends"
+  );
+  is(
+    covered?.effect.getComputedTiming().fill,
+    "both",
+    "The hidden launcher doesn't reappear as the transition ends"
+  );
+  assertGroupTiming(
+    hide.animations,
+    getDurationToken("--motion-dur-sidebar-exit"),
+    emphasized,
+    "Launcher exit"
+  );
+
+  const show = await captureTransition(
+    () => toggleWithShortcut(),
+    window,
+    () => assertBeneathContentArea("sidebar-launcher", "Launcher show")
+  );
+  ok(
+    !SidebarController.sidebarContainer.hidden,
+    "Launcher was shown by the toolbar button"
+  );
+  ok(show.types.includes("launcher-enter"), "Showing is a launcher enter");
+  ok(show.types.includes("launcher-show"), "Showing is a launcher show");
+  assertGroupTiming(
+    show.animations,
+    getDurationToken("--motion-dur-sidebar-enter"),
+    emphasized,
+    "Launcher enter"
+  );
+});
+
+add_task(async function test_expand_and_collapse_show_only_new_launcher() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [VERTICAL_TABS_PREF, true],
+      [SIDEBAR_VISIBILITY_PREF, "always-show"],
+    ],
+  });
+  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
+  SidebarController._state.launcherExpanded = true;
+  await SidebarController.waitUntilStable();
+
+  const snapshotStyle = which =>
+    getComputedStyle(
+      document.documentElement,
+      `::view-transition-${which}(sidebar-launcher)`
     );
-  }
-  for (const el of flagged) {
-    ok(
-      el.hasAttribute("sidebar-ongoing-animations"),
-      `${el.id || el.localName} is marked as animating`
-    );
-  }
-  for (const animation of animations) {
+  const inspect = () => ({
+    oldDisplay: snapshotStyle("old").display,
+    newLeft: snapshotStyle("new").left,
+    zIndex: getGroupZIndex("sidebar-launcher"),
+  });
+  const assertOnlyNewLauncher = ({ inspected }, description) => {
     is(
-      animation.effect.getTiming().duration,
-      ANIMATION_DURATION_MS,
-      "Animation uses the configured duration"
+      inspected.oldDisplay,
+      "none",
+      `${description}: the old launcher isn't shown`
+    );
+    is(
+      inspected.newLeft,
+      "0px",
+      `${description}: the new launcher is pinned to the window edge`
+    );
+    is(
+      inspected.zIndex,
+      "auto",
+      `${description}: the launcher is beneath the content area`
+    );
+  };
+
+  const collapse = await captureTransition(
+    () => toggleWithShortcut(),
+    window,
+    inspect
+  );
+  ok(!SidebarController._state.launcherExpanded, "The launcher collapsed");
+  ok(collapse.types.includes("collapse"), "Collapsing is a collapse");
+  assertOnlyNewLauncher(collapse, "Collapse");
+
+  const expand = await captureTransition(
+    () => toggleWithShortcut(),
+    window,
+    inspect
+  );
+  ok(SidebarController._state.launcherExpanded, "The launcher expanded");
+  ok(expand.types.includes("expand"), "Expanding is an expand");
+  assertOnlyNewLauncher(expand, "Expand");
+
+  await SpecialPowers.popPrefEnv();
+  await ensureLauncherVisibleWithoutAnimating();
+});
+
+add_task(async function test_expand_on_hover_duration_default() {
+  is(
+    Services.prefs
+      .getDefaultBranch("")
+      .getIntPref(EXPAND_ON_HOVER_DURATION_PREF),
+    getDurationToken("--motion-dur-sidebar-enter"),
+    "Expand on hover defaults to the same duration as expanding by click"
+  );
+});
+
+add_task(async function test_panel_transitions_use_panel_tokens() {
+  const emphasized = getToken("--motion-ease-emphasized");
+
+  const open = await captureTransition(
+    () => pressShortcut("key_gotoHistory"),
+    window,
+    () => assertBeneathContentArea("sidebar-box", "Panel open")
+  );
+  ok(SidebarController.isOpen, "The panel was opened");
+  ok(open.types.includes("panel-open"), "Opening is a panel open");
+  assertGroupTiming(
+    open.animations,
+    getDurationToken("--motion-dur-sidebar-panel-enter"),
+    emphasized,
+    "Panel open"
+  );
+
+  const switched = await captureTransition(() =>
+    pressShortcut("viewBookmarksSidebarKb")
+  );
+  is(
+    SidebarController.currentID,
+    "viewBookmarksSidebar",
+    "Switched to another panel"
+  );
+  ok(switched.types.includes("panel-switch"), "Switching is a panel switch");
+  const contentFade = getDurationToken(
+    "--motion-dur-sidebar-panel-content-fade"
+  );
+  const standard = getToken("--motion-ease-standard");
+  assertGroupTiming(switched.animations, contentFade, standard, "Panel switch");
+  const fades = switched.animations.filter(a =>
+    /^::view-transition-(old|new)\(sidebar-box\)$/.test(a.effect.pseudoElement)
+  );
+  Assert.greater(fades.length, 0, "The panel content cross-fades");
+  for (const animation of fades) {
+    is(
+      animation.effect.getComputedTiming().duration,
+      contentFade,
+      `${animation.effect.pseudoElement} fades for the content fade duration`
     );
   }
 
-  await finishOngoingAnimations();
-
-  for (const el of animated) {
-    is(
-      el.getAnimations().length,
-      0,
-      `${el.id || el.localName} has no animations left`
-    );
-    is(el.style.minWidth, "", "min-width was reset");
-    is(el.style.maxWidth, "", "max-width was reset");
-    is(el.style.marginLeft, "", "margin-left was reset");
-    is(el.style.marginRight, "", "margin-right was reset");
-    is(el.style.display, "", "display was reset");
-  }
-  for (const el of flagged) {
-    ok(
-      !el.hasAttribute("sidebar-ongoing-animations"),
-      `${el.id || el.localName} is no longer marked as animating`
-    );
-  }
+  const close = await captureTransition(() =>
+    pressShortcut("viewBookmarksSidebarKb")
+  );
+  ok(!SidebarController.isOpen, "The panel was closed");
+  ok(close.types.includes("panel-close"), "Closing is a panel close");
+  assertGroupTiming(
+    close.animations,
+    getDurationToken("--motion-dur-sidebar-panel-exit"),
+    emphasized,
+    "Panel close"
+  );
 
   await ensureLauncherVisibleWithoutAnimating();
 });
 
-add_task(async function test_retoggle_cancels_ongoing_animation() {
-  toggleWithToolbarButton();
-  const firstAnimations = await waitForPausedAnimations({
-    description: "the first animation to start",
+add_task(async function test_panel_transitions_show_only_new_launcher() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [VERTICAL_TABS_PREF, true],
+      [SIDEBAR_VISIBILITY_PREF, "always-show"],
+    ],
   });
+  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
+  SidebarController._state.launcherExpanded = true;
+  await SidebarController.waitUntilStable();
 
-  toggleWithToolbarButton();
-  await waitForPausedAnimations({
-    replacing: firstAnimations,
-    description: "the interrupted animation to be replaced",
-  });
-
-  for (const animation of firstAnimations) {
+  const inspect = () =>
+    getComputedStyle(
+      document.documentElement,
+      "::view-transition-old(sidebar-launcher)"
+    ).display;
+  for (const [description, key] of [
+    ["Panel open", "key_gotoHistory"],
+    ["Panel switch", "viewBookmarksSidebarKb"],
+    ["Panel close", "viewBookmarksSidebarKb"],
+  ]) {
+    const { inspected } = await captureTransition(
+      () => pressShortcut(key),
+      window,
+      inspect
+    );
     is(
-      animation.playState,
-      "idle",
-      "Animation from the interrupted toggle was cancelled"
+      inspected,
+      "none",
+      `${description}: the old launcher isn't shown over the new one`
     );
   }
+  ok(!SidebarController.isOpen, "The panel was closed");
 
-  await finishOngoingAnimations();
+  await SpecialPowers.popPrefEnv();
+  await ensureLauncherVisibleWithoutAnimating();
+});
 
-  const { flagged } = getAnimatedElements();
-  for (const el of flagged) {
-    ok(
-      !el.hasAttribute("sidebar-ongoing-animations"),
-      `${el.id || el.localName} is no longer marked as animating`
+add_task(async function test_retoggle_skips_ongoing_transition() {
+  const spy = sinon.spy(document, "startViewTransition");
+  toggleWithShortcut();
+  toggleWithShortcut();
+  await TestUtils.waitForCondition(
+    () => spy.callCount == 2,
+    "Waiting for the second transition to start"
+  );
+  spy.restore();
+  const [first, second] = spy.returnValues;
+  is(
+    SidebarController._activeViewTransition,
+    second,
+    "The latest transition is tracked"
+  );
+
+  await Assert.rejects(
+    first.ready,
+    e => e.name == "AbortError",
+    "The interrupted transition was skipped"
+  );
+  await first.finished;
+
+  second.skipTransition();
+  await second.finished;
+  await SidebarController.waitUntilStable();
+  ok(
+    !SidebarController._activeViewTransition,
+    "No transition is tracked once both have finished"
+  );
+
+  await ensureLauncherVisibleWithoutAnimating();
+});
+
+add_task(async function test_expand_on_hover_duration_pref() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [VERTICAL_TABS_PREF, true],
+      [SIDEBAR_VISIBILITY_PREF, "expand-on-hover"],
+      [EXPAND_ON_HOVER_DURATION_PREF, 1234],
+      [EXPAND_ON_HOVER_DELAY_PREF, 0],
+    ],
+  });
+  // Expand on hover leaves state behind in the window it was enabled in, so
+  // keep it out of the main window.
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  try {
+    await SidebarTestUtils.waitForInitialized(win);
+    win.gReduceMotionOverride = false;
+    const { SidebarController: controller } = win;
+    await TestUtils.waitForCondition(
+      () =>
+        win.document.documentElement.hasAttribute("sidebar-expand-on-hover"),
+      "Waiting for expand on hover to be enabled"
     );
+    await controller.waitUntilStable();
+    const emphasized = getToken("--motion-ease-emphasized");
+
+    win.windowUtils.disableNonTestMouseEvents(true);
+    const expand = await captureTransition(
+      () =>
+        EventUtils.synthesizeMouse(
+          controller.sidebarContainer,
+          1,
+          150,
+          { type: "mousemove" },
+          win
+        ),
+      win
+    );
+    ok(controller._state.launcherExpanded, "The launcher expanded");
+    ok(
+      expand.types.includes("launcher-enter"),
+      "Expanding is a launcher enter"
+    );
+    assertGroupTiming(expand.animations, 1234, emphasized, "Hover expand");
+    assertContentAreaNotCaptured(expand.animations, "Hover expand");
+
+    await SpecialPowers.pushPrefEnv({
+      set: [[EXPAND_ON_HOVER_DURATION_PREF, 4321]],
+    });
+    const collapse = await captureTransition(
+      () =>
+        EventUtils.synthesizeMouseAtCenter(
+          controller.contentArea,
+          { type: "mousemove" },
+          win
+        ),
+      win
+    );
+    ok(!controller._state.launcherExpanded, "The launcher collapsed");
+    ok(
+      collapse.types.includes("launcher-exit"),
+      "Collapsing is a launcher exit"
+    );
+    assertGroupTiming(
+      collapse.animations,
+      4321,
+      emphasized,
+      "Hover collapse after the pref changed"
+    );
+    assertContentAreaNotCaptured(collapse.animations, "Hover collapse");
+    await SpecialPowers.popPrefEnv();
+  } finally {
+    win.windowUtils.disableNonTestMouseEvents(false);
+    await BrowserTestUtils.closeWindow(win);
+    // Resetting the prefs also updates the main window's sidebar. Don't animate
+    // that, or the pending transition's update lands in the next test.
+    gReduceMotionOverride = true;
+    // Leaving vertical tabs saves an expand-on-hover choice and restores it the
+    // next time they're enabled, which would leak into later tests.
+    Services.prefs.setStringPref(SIDEBAR_VISIBILITY_PREF, "always-show");
+    await SpecialPowers.popPrefEnv();
+    gReduceMotionOverride = false;
   }
 });
 
-add_task(async function test_no_animation_when_pref_disabled() {
-  const spy = sinon.spy(SidebarController, "_animateSidebarContainer");
+add_task(async function test_no_transition_when_pref_disabled() {
+  const spy = sinon.spy(document, "startViewTransition");
   await SpecialPowers.pushPrefEnv({
     set: [[ANIMATION_ENABLED_PREF, false]],
   });
 
   const wasHidden = SidebarController.sidebarContainer.hidden;
-  toggleWithToolbarButton();
+  toggleWithShortcut();
   await SidebarController.waitUntilStable();
   await waitForElementHidden(SidebarController.sidebarContainer, !wasHidden);
 
-  ok(!spy.called, "No animation is run when the animation pref is disabled");
-  for (const el of getAnimatedElements().animated) {
-    is(
-      el.getAnimations().length,
-      0,
-      `${el.id || el.localName} is not animating`
-    );
-  }
+  ok(!spy.called, "No transition runs when the animation pref is disabled");
 
   await SpecialPowers.popPrefEnv();
   spy.restore();
   await ensureLauncherVisibleWithoutAnimating();
 });
 
-add_task(async function test_no_animation_when_reduce_motion() {
-  const spy = sinon.spy(SidebarController, "_animateSidebarContainer");
+add_task(async function test_no_transition_when_reduce_motion() {
+  const spy = sinon.spy(document, "startViewTransition");
   gReduceMotionOverride = true;
 
   const wasHidden = SidebarController.sidebarContainer.hidden;
-  toggleWithToolbarButton();
+  toggleWithShortcut();
   await SidebarController.waitUntilStable();
   await waitForElementHidden(SidebarController.sidebarContainer, !wasHidden);
 
-  ok(!spy.called, "No animation is run when motion is reduced");
-  for (const el of getAnimatedElements().animated) {
-    is(
-      el.getAnimations().length,
-      0,
-      `${el.id || el.localName} is not animating`
-    );
-  }
+  ok(!spy.called, "No transition runs when motion is reduced");
 
   gReduceMotionOverride = false;
   spy.restore();
   await ensureLauncherVisibleWithoutAnimating();
 });
 
-/**
- * The launcher contents are counter-animated so that the buttons stay put while
- * the launcher itself slides. That compensation is only needed when the
- * launcher is docked to the start of the window, which is the right-hand side
- * under RTL - so it must key off `sidebar.position_start` rather than off which
- * physical side the launcher happens to be on.
- */
-add_task(async function test_launcher_compensation_by_position() {
-  for (const { rtl, positionStart } of POSITION_CASES) {
-    const label = `${rtl ? "RTL" : "LTR"}, position ${
-      positionStart ? "start" : "end"
-    }`;
-    info(`Testing ${label}`);
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        [POSITION_SETTING_PREF, positionStart],
-        ["intl.l10n.pseudo", rtl ? "bidi" : ""],
-      ],
-    });
+add_task(async function test_position_change_animates() {
+  const root = document.documentElement;
+  ok(
+    !root.hasAttribute("sidebar-positionend"),
+    "The sidebar starts on the start side"
+  );
 
-    const win = await BrowserTestUtils.openNewBrowserWindow();
-    try {
-      await SidebarTestUtils.waitForInitialized(win);
-      // A fresh window suppresses motion until an idle task reads the real
-      // setting, so opt back in rather than race that task.
-      win.gReduceMotionOverride = false;
-      const { sidebarContainer, sidebarMain } = win.SidebarController;
+  await captureTransition(() => SidebarController.reversePosition());
+  ok(root.hasAttribute("sidebar-positionend"), "Moving the sidebar animates");
 
-      is(win.RTL_UI, rtl, `${label}: window is in the expected direction`);
-
-      await ensureLauncherVisibleWithoutAnimating(
-        win,
-        `${label}: launcher starts visible`
-      );
-
-      // Hiding the launcher shrinks it, which is the case that produces a
-      // non-zero translate to compensate for.
-      toggleWithToolbarButton(win);
-      await waitForPausedAnimations({
-        win,
-        description: `${label}: the launcher to start animating`,
-      });
-
-      const mainAnimations = sidebarMain.getAnimations();
-      is(
-        mainAnimations.length,
-        positionStart ? 1 : 0,
-        `${label}: launcher contents ${
-          positionStart ? "counter-animate" : "do not counter-animate"
-        }`
-      );
-
-      if (mainAnimations.length) {
-        const [containerFrom, containerTo] = sidebarContainer
-          .getAnimations()[0]
-          .effect.getKeyframes()
-          .map(keyframeTranslateX);
-        const [mainFrom, mainTo] = mainAnimations[0].effect
-          .getKeyframes()
-          .map(keyframeTranslateX);
-        // One end of the counter-animation is anchored in place and the other
-        // negates the launcher's own translate.
-        const [anchored, compensating, launcherTranslate] =
-          mainFrom === 0
-            ? [mainFrom, mainTo, containerTo]
-            : [mainTo, mainFrom, containerFrom];
-        is(anchored, 0, `${label}: counter-animation is anchored at one end`);
-        isnot(
-          launcherTranslate,
-          0,
-          `${label}: launcher translates while hiding`
-        );
-        is(
-          compensating,
-          -launcherTranslate,
-          `${label}: launcher contents counter-translate`
-        );
-      }
-
-      await finishOngoingAnimations(win);
-    } finally {
-      await BrowserTestUtils.closeWindow(win);
-      await SpecialPowers.popPrefEnv();
-    }
-  }
+  Services.prefs.clearUserPref(SidebarController.POSITION_START_PREF);
+  await SidebarController.waitUntilStable();
 });

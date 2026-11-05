@@ -14,11 +14,13 @@
 #include <cstring>
 #include <memory>
 
+#include "api/make_ref_counted.h"
 #include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/i444_buffer.h"
 #include "api/video/nv12_buffer.h"
 #include "api/video/video_frame.h"
+#include "api/video/video_frame_buffer.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -103,6 +105,100 @@ scoped_refptr<I444Buffer> MakeSimpleI444FrameBuffer() {
 
   return buffer;
 }
+
+// A kNative buffer that keeps track of how the pixel data is requested.
+class CountingNativeBuffer : public VideoFrameBuffer {
+ public:
+  explicit CountingNativeBuffer(scoped_refptr<I420BufferInterface> buffer)
+      : buffer_(buffer) {}
+
+  Type type() const override { return Type::kNative; }
+  int width() const override { return buffer_->width(); }
+  int height() const override { return buffer_->height(); }
+
+  scoped_refptr<I420BufferInterface> ToI420() override {
+    ++to_i420_calls_;
+    return buffer_;
+  }
+  scoped_refptr<I420BufferInterface> ToI420ForInspection() override {
+    ++to_i420_for_inspection_calls_;
+    return buffer_;
+  }
+
+  int to_i420_calls() const { return to_i420_calls_; }
+  int to_i420_for_inspection_calls() const {
+    return to_i420_for_inspection_calls_;
+  }
+
+ private:
+  const scoped_refptr<I420BufferInterface> buffer_;
+  int to_i420_calls_ = 0;
+  int to_i420_for_inspection_calls_ = 0;
+};
+
+// An I420 buffer that keeps track of conversion requests. Note that
+// I420BufferInterface::ToI420() is final, so only ToI420ForInspection() can be
+// instrumented here.
+class CountingI420Buffer : public I420BufferInterface {
+ public:
+  explicit CountingI420Buffer(scoped_refptr<I420Buffer> buffer)
+      : buffer_(buffer) {}
+
+  int width() const override { return buffer_->width(); }
+  int height() const override { return buffer_->height(); }
+  const uint8_t* DataY() const override { return buffer_->DataY(); }
+  const uint8_t* DataU() const override { return buffer_->DataU(); }
+  const uint8_t* DataV() const override { return buffer_->DataV(); }
+  int StrideY() const override { return buffer_->StrideY(); }
+  int StrideU() const override { return buffer_->StrideU(); }
+  int StrideV() const override { return buffer_->StrideV(); }
+
+  scoped_refptr<I420BufferInterface> ToI420ForInspection() override {
+    ++to_i420_for_inspection_calls_;
+    return I420BufferInterface::ToI420ForInspection();
+  }
+
+  int to_i420_for_inspection_calls() const {
+    return to_i420_for_inspection_calls_;
+  }
+
+ private:
+  const scoped_refptr<I420Buffer> buffer_;
+  int to_i420_for_inspection_calls_ = 0;
+};
+
+// An NV12 buffer that keeps track of conversion requests.
+class CountingNV12Buffer : public NV12BufferInterface {
+ public:
+  explicit CountingNV12Buffer(scoped_refptr<NV12Buffer> buffer)
+      : buffer_(buffer) {}
+
+  int width() const override { return buffer_->width(); }
+  int height() const override { return buffer_->height(); }
+  const uint8_t* DataY() const override { return buffer_->DataY(); }
+  const uint8_t* DataUV() const override { return buffer_->DataUV(); }
+  int StrideY() const override { return buffer_->StrideY(); }
+  int StrideUV() const override { return buffer_->StrideUV(); }
+
+  scoped_refptr<I420BufferInterface> ToI420() override {
+    ++to_i420_calls_;
+    return buffer_->ToI420();
+  }
+  scoped_refptr<I420BufferInterface> ToI420ForInspection() override {
+    ++to_i420_for_inspection_calls_;
+    return NV12BufferInterface::ToI420ForInspection();
+  }
+
+  int to_i420_calls() const { return to_i420_calls_; }
+  int to_i420_for_inspection_calls() const {
+    return to_i420_for_inspection_calls_;
+  }
+
+ private:
+  const scoped_refptr<NV12Buffer> buffer_;
+  int to_i420_calls_ = 0;
+  int to_i420_for_inspection_calls_ = 0;
+};
 
 std::unique_ptr<VideoFrameSampler> GetDefaultSampler() {
   return VideoFrameSampler::Create(
@@ -279,6 +375,52 @@ TEST(VideoFrameSampler, ReportsI444Resolution) {
   EXPECT_EQ(sampler->height(VideoFrameSampler::ChannelType::U), 2);
   EXPECT_EQ(sampler->width(VideoFrameSampler::ChannelType::V), 2);
   EXPECT_EQ(sampler->height(VideoFrameSampler::ChannelType::V), 2);
+}
+
+TEST(VideoFrameSampler, UsesToI420ForInspectionForNativeBuffer) {
+  auto buffer =
+      make_ref_counted<CountingNativeBuffer>(MakeSimpleI420FrameBuffer());
+
+  std::unique_ptr<VideoFrameSampler> sampler = VideoFrameSampler::Create(
+      VideoFrame::Builder().set_video_frame_buffer(buffer).build());
+
+  ASSERT_NE(sampler, nullptr);
+  EXPECT_EQ(buffer->to_i420_for_inspection_calls(), 1);
+  EXPECT_EQ(buffer->to_i420_calls(), 0);
+  // The sampler reads the pixel data provided by the conversion.
+  EXPECT_EQ(sampler->GetSampleValue(VideoFrameSampler::ChannelType::Y, 0, 0),
+            1);
+  EXPECT_EQ(sampler->GetSampleValue(VideoFrameSampler::ChannelType::U, 0, 0),
+            17);
+  EXPECT_EQ(sampler->GetSampleValue(VideoFrameSampler::ChannelType::V, 0, 0),
+            21);
+}
+
+TEST(VideoFrameSampler, DoesNotConvertI420Buffer) {
+  auto buffer =
+      make_ref_counted<CountingI420Buffer>(MakeSimpleI420FrameBuffer());
+
+  std::unique_ptr<VideoFrameSampler> sampler = VideoFrameSampler::Create(
+      VideoFrame::Builder().set_video_frame_buffer(buffer).build());
+
+  ASSERT_NE(sampler, nullptr);
+  EXPECT_EQ(buffer->to_i420_for_inspection_calls(), 0);
+  EXPECT_EQ(sampler->GetSampleValue(VideoFrameSampler::ChannelType::Y, 0, 0),
+            1);
+}
+
+TEST(VideoFrameSampler, DoesNotConvertNV12Buffer) {
+  auto buffer = make_ref_counted<CountingNV12Buffer>(
+      NV12Buffer::Copy(*MakeSimpleI420FrameBuffer()));
+
+  std::unique_ptr<VideoFrameSampler> sampler = VideoFrameSampler::Create(
+      VideoFrame::Builder().set_video_frame_buffer(buffer).build());
+
+  ASSERT_NE(sampler, nullptr);
+  EXPECT_EQ(buffer->to_i420_for_inspection_calls(), 0);
+  EXPECT_EQ(buffer->to_i420_calls(), 0);
+  EXPECT_EQ(sampler->GetSampleValue(VideoFrameSampler::ChannelType::Y, 0, 0),
+            1);
 }
 
 #if GTEST_HAS_DEATH_TEST

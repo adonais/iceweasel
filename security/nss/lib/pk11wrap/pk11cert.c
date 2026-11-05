@@ -2158,76 +2158,6 @@ pk11_FindPubKeyByAnyCert(CERTCertificate *cert, PK11SlotInfo **slot, void *wincx
     return keyHandle;
 }
 
-/*
- * find the number of certs in the slot with the same subject name
- */
-int
-PK11_NumberCertsForCertSubject(CERTCertificate *cert)
-{
-    CK_OBJECT_CLASS certClass = CKO_CERTIFICATE;
-    CK_ATTRIBUTE theTemplate[] = {
-        { CKA_CLASS, NULL, 0 },
-        { CKA_SUBJECT, NULL, 0 },
-    };
-    CK_ATTRIBUTE *attr = theTemplate;
-    int templateSize = sizeof(theTemplate) / sizeof(theTemplate[0]);
-
-    PK11_SETATTRS(attr, CKA_CLASS, &certClass, sizeof(certClass));
-    attr++;
-    PK11_SETATTRS(attr, CKA_SUBJECT, cert->derSubject.data, cert->derSubject.len);
-
-    if (cert->slot == NULL) {
-        PK11SlotList *list = PK11_GetAllTokens(CKM_INVALID_MECHANISM,
-                                               PR_FALSE, PR_TRUE, NULL);
-        PK11SlotListElement *le;
-        int count = 0;
-
-        if (!list) {
-            /* error code is set */
-            return 0;
-        }
-
-        /* loop through all the fortezza tokens */
-        for (le = list->head; le; le = le->next) {
-            count += PK11_NumberObjectsFor(le->slot, theTemplate, templateSize);
-        }
-        PK11_FreeSlotList(list);
-        return count;
-    }
-
-    return PK11_NumberObjectsFor(cert->slot, theTemplate, templateSize);
-}
-
-/*
- *  Walk all the certs with the same subject
- */
-SECStatus
-PK11_TraverseCertsForSubject(CERTCertificate *cert,
-                             SECStatus (*callback)(CERTCertificate *, void *), void *arg)
-{
-    if (!cert) {
-        return SECFailure;
-    }
-    if (cert->slot == NULL) {
-        PK11SlotList *list = PK11_GetAllTokens(CKM_INVALID_MECHANISM,
-                                               PR_FALSE, PR_TRUE, NULL);
-        PK11SlotListElement *le;
-
-        if (!list) {
-            /* error code is set */
-            return SECFailure;
-        }
-        /* loop through all the tokens */
-        for (le = list->head; le; le = le->next) {
-            PK11_TraverseCertsForSubjectInSlot(cert, le->slot, callback, arg);
-        }
-        PK11_FreeSlotList(list);
-        return SECSuccess;
-    }
-
-    return PK11_TraverseCertsForSubjectInSlot(cert, cert->slot, callback, arg);
-}
-
 SECStatus
 PK11_TraverseCertsForSubjectInSlot(CERTCertificate *cert, PK11SlotInfo *slot,
                                    SECStatus (*callback)(CERTCertificate *, void *), void *arg)
@@ -2655,32 +2585,6 @@ PK11_FindBestKEAMatch(CERTCertificate *server, void *wincx)
     PK11_FreeSlotList(keaList);
 
     return returnedCert;
-}
-
-/*
- * find a matched pair of kea certs to key exchange parameters from one
- * fortezza card to another as necessary.
- */
-SECStatus
-PK11_GetKEAMatchedCerts(PK11SlotInfo *slot1, PK11SlotInfo *slot2,
-                        CERTCertificate **cert1, CERTCertificate **cert2)
-{
-    CERTCertificate *returnedCert = NULL;
-    int i;
-
-    for (i = 0; i < slot1->cert_count; i++) {
-        CERTCertificate *cert = slot1->cert_array[i];
-
-        if (PK11_FortezzaHasKEA(cert)) {
-            returnedCert = pk11_GetKEAMate(slot2, cert);
-            if (returnedCert != NULL) {
-                *cert2 = returnedCert;
-                *cert1 = CERT_DupCertificate(cert);
-                return SECSuccess;
-            }
-        }
-    }
-    return SECFailure;
 }
 
 CK_OBJECT_HANDLE

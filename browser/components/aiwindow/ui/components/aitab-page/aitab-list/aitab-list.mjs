@@ -49,7 +49,7 @@ export class AITabList extends MozLitElement {
 
     return html`<div class="aitab-list-intro">
       ${this.title
-        ? html`<h2 class="aitab-list-title">${this.title}</h2>`
+        ? html`<h2 class="aitab-list-title aitab-heading-3">${this.title}</h2>`
         : nothing}
       ${this.description
         ? html`<p class="aitab-list-description aitab-deemphasized">
@@ -62,7 +62,9 @@ export class AITabList extends MozLitElement {
   #renderGroup(group) {
     return html`<div class="aitab-list-group">
       ${group.heading
-        ? html`<h3 class="aitab-list-group-heading">${group.heading}</h3>`
+        ? html`<h3 class="aitab-list-group-heading aitab-heading-4">
+            ${group.heading}
+          </h3>`
         : nothing}
       <ul class="aitab-list-items">
         ${group.items.map(

@@ -374,6 +374,21 @@ add_task(async function test_user_message_tab_group_mention_renders_icon() {
         "the chip shows the group label"
       );
 
+      const openTabGroupPromise = ContentTaskUtils.waitForEvent(
+        doc,
+        "AIChatContent:OpenTabGroup",
+        false,
+        null,
+        true
+      );
+      chip.shadowRoot.querySelector("button.chip").click();
+      const openTabGroupEvent = await openTabGroupPromise;
+      Assert.equal(
+        openTabGroupEvent.detail.groupId,
+        "group-1",
+        "clicking the chip requests its tab group"
+      );
+
       el.remove();
     });
   } finally {

@@ -36,6 +36,7 @@ class nsIAuthPrompt;
 class nsIAuthPrompt2;
 class nsIChannel;
 class nsIChannelPolicy;
+class nsIConsoleReportCollector;
 class nsICookieJarSettings;
 class nsIDownloadObserver;
 class nsIEventTarget;
@@ -1023,17 +1024,28 @@ constexpr bool NS_IsHTTPWhitespace(Char aChar) {
  * result will be sent back through the callback and |aWillCallback| will be
  * true. Otherwiew, the result will be set to |aShouldUpgrade| and
  * |aWillCallback| is false.
+ * A console message describing an HSTS upgrade is added to |aReportCollector|,
+ * which is flushed to the web console once the loading document is known.
  */
 nsresult NS_ShouldSecureUpgrade(
-    nsIURI* aURI, nsILoadInfo* aLoadInfo, nsIPrincipal* aChannelResultPrincipal,
-    bool aAllowSTS, const mozilla::OriginAttributes& aOriginAttributes,
-    bool& aShouldUpgrade, std::function<void(bool, nsresult)>&& aResultCallback,
-    bool& aWillCallback);
+    nsIURI* aURI, nsILoadInfo* aLoadInfo,
+    nsIConsoleReportCollector* aReportCollector,
+    nsIPrincipal* aChannelResultPrincipal, bool aAllowSTS,
+    const mozilla::OriginAttributes& aOriginAttributes, bool& aShouldUpgrade,
+    std::function<void(bool, nsresult)>&& aResultCallback, bool& aWillCallback);
 
 /**
  * Returns an https URI for channels that need to go through secure upgrades.
  */
 nsresult NS_GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI);
+
+/**
+ * Adds a "|aMechanism|: Upgrading insecure request [URL] ..." warning to
+ * |aReportCollector| under the console category |aMechanism|.
+ */
+void NS_LogSecureUpgradeToConsole(nsIURI* aURI, nsILoadInfo* aLoadInfo,
+                                  nsIConsoleReportCollector* aReportCollector,
+                                  const nsACString& aMechanism);
 
 nsresult NS_CompareLoadInfoAndLoadContext(nsIChannel* aChannel);
 
@@ -1096,9 +1108,10 @@ nsresult GetParameterHTTP(const nsACString& aHeaderVal, const char* aParamName,
 bool ChannelIsPost(nsIChannel* aChannel);
 
 /**
- * Convenience function for verifying nsIURI scheme is either HTTP or HTTPS.
+ * Convenience functions for checking whether the scheme is HTTP or HTTPS.
  */
 bool SchemeIsHttpOrHttps(nsIURI* aURI);
+bool SchemeIsHttpOrHttps(nsIPrincipal* aPrincipal);
 
 // Helper functions for SetProtocol methods to follow
 // step 2.1 in https://url.spec.whatwg.org/#scheme-state

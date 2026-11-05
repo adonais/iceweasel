@@ -29,14 +29,21 @@ package_version: "22.1.8"
 # codes, not self-contained or generate false positive.
 # We don't want to analyze them.
 header_skiplist:
+  - dom/canvas/WebGLInternalFormatsTable.h
+  - dom/indexedDB/IndexedDatabaseInlines.h
+  - dom/media/platforms/ffmpeg/FFmpegVulkanVideoDecoder.h
   - dom/media/webrtc/libwebrtc_overrides/rtc_base/trace_event.h
   - dom/media/webrtc/transport/sigslot.h
   - dom/onnx/onnxruntime_ep_c_api.h
   - dom/quota/DirectoryLockInlines.h
   - gfx/gl/GLContextProviderImpl.h
+  - gfx/pixman/pixman/pixman/loongson-mmintrin.h
+  - gfx/pixman/pixman/pixman/pixman-edge-imp.h
   - gfx/pixman/pixman/pixman/pixman-version.h
+  - hal/HalInternal.h
   - intl/components/src/FormatBuffer.h
   - js/src/jit/MacroAssembler.h
+  - js/src/jit/MIR.h
   - layout/style/ServoStyleConstsForwards.h
   - memory/build/malloc_decls.h
   - memory/mozalloc/cxxalloc.h
@@ -45,9 +52,16 @@ header_skiplist:
   - modules/libpref/init/StaticPrefListEnd.h
   - mozglue/baseprofiler/public/BaseProfilerMarkersDetail.h
   - netwerk/socket/neqo_glue/NeqoHttp3Conn.h
+  - parser/html/nsHtml5TokenizerCppSupplement.h
+  - parser/html/nsHtml5TokenizerHSupplement.h
+  - parser/html/nsHtml5TreeBuilderCppSupplement.h
+  - parser/html/nsHtml5TreeBuilderHSupplement.h
+  - parser/html/nsHtml5UTF16BufferCppSupplement.h
   - parser/html/nsHtml5UTF16BufferHSupplement.h
   - parser/htmlaccel/htmlaccel.h
+  - security/sandbox/linux/SandboxProfilerParent.h
   - storage/Variant_inl.h
+  - storage/variantToSQLiteT_impl.h
   - tools/profiler/public/ProfilerMarkersDetail.h
   # those wayland headers are not self-contained (at all)
   - widget/gtk/mozwayland/mozwayland.h

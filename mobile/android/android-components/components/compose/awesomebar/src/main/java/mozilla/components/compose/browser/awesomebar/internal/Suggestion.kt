@@ -40,6 +40,7 @@ import mozilla.components.compose.browser.awesomebar.AwesomeBarOrientation
 import mozilla.components.compose.browser.awesomebar.AwesomeBarTestTags
 import mozilla.components.compose.browser.awesomebar.R
 import mozilla.components.concept.awesomebar.AwesomeBar
+import mozilla.components.support.ktx.util.URLStringUtils
 import mozilla.components.ui.icons.R as iconsR
 
 // We only show one row of text, covering at max screen width.
@@ -71,8 +72,8 @@ internal fun Suggestion(
             )
         }
         SuggestionTitleAndDescription(
-            title = suggestion.title?.take(SUGGESTION_TEXT_MAX_LENGTH),
-            description = suggestion.description?.take(SUGGESTION_TEXT_MAX_LENGTH),
+            title = suggestion.displayTitle()?.take(SUGGESTION_TEXT_MAX_LENGTH),
+            description = suggestion.displayDescription()?.take(SUGGESTION_TEXT_MAX_LENGTH),
             colors = colors,
             modifier =
                 Modifier.weight(1f)
@@ -96,6 +97,27 @@ internal fun Suggestion(
         }
     }
 }
+
+// Places titles a URL match with its URL minus one of these prefixes.
+private val URL_TITLE_PREFIXES = listOf("https://www.", "http://www.", "https://", "http://")
+
+private val AwesomeBar.Suggestion.hasBrowserOwnedUrl
+    get() = flags.any { it == AwesomeBar.Suggestion.Flag.BOOKMARK || it == AwesomeBar.Suggestion.Flag.HISTORY }
+
+/** The title to show, made readable when it is the URL of a bookmark or history entry without its prefix. */
+internal fun AwesomeBar.Suggestion.displayTitle(): String? {
+    if (title.isNullOrEmpty() || !hasBrowserOwnedUrl) return title
+    val prefix = URL_TITLE_PREFIXES.firstOrNull { description?.startsWith(it + title) == true } ?: return title
+    return URLStringUtils.toLosslessDisplayUrl(prefix + title).removePrefix(prefix)
+}
+
+/** The description to show, with the URL of a bookmark or history entry made readable. */
+internal fun AwesomeBar.Suggestion.displayDescription(): String? =
+    if (hasBrowserOwnedUrl) {
+        description?.let(URLStringUtils::toLosslessDisplayUrl)
+    } else {
+        description
+    }
 
 @Composable
 private fun SuggestionTitleAndDescription(

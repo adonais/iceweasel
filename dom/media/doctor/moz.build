@@ -36,3 +36,16 @@ UNIFIED_SOURCES += [
 BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "DDLifetime.h",
+    "DDLifetimes.h",
+    "DDLogMessage.h",
+    "DDLogUtils.h",
+    "DDMediaLog.h",
+    "DDMediaLogs.h",
+    "DDMessageIndex.h",
+    "DDTimeStamp.h",
+    "MultiWriterQueue.h",
+    "RollingNumber.h",
+]

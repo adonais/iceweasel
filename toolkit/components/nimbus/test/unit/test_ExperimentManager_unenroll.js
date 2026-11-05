@@ -151,6 +151,23 @@ async function doOptOutTest({
     "Expected nimbus unenroll events"
   );
 
+  const optOutEvents = {
+    rollouts: Glean.nimbusEvents.rolloutsOptOut.testGetValue("events") ?? [],
+    studies: Glean.nimbusEvents.studiesOptOut.testGetValue("events") ?? [],
+  };
+
+  if (rolloutsEnabled) {
+    Assert.equal(optOutEvents.rollouts.length, 0, "no rollouts opt-out event");
+  } else {
+    Assert.equal(optOutEvents.rollouts.length, 1, "one rollouts opt-out event");
+  }
+
+  if (studiesEnabled) {
+    Assert.equal(optOutEvents.studies.length, 0, "no studies opt-out event");
+  } else {
+    Assert.equal(optOutEvents.studies.length, 1, "one studies opt-out event");
+  }
+
   if (rolloutsEnabled) {
     manager.unenroll(recipes.rollout.slug, { reason: "test" });
   }

@@ -66,7 +66,6 @@
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/race_checker.h"
-#include "rtc_base/rate_limiter.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/no_unique_address.h"
@@ -79,11 +78,7 @@ namespace voe {
 
 namespace {
 
-constexpr TimeDelta kMaxRetransmissionWindow = TimeDelta::Seconds(1);
-constexpr TimeDelta kMinRetransmissionWindow = TimeDelta::Millis(30);
-
 class RtpPacketSenderProxy;
-class TransportSequenceNumberProxy;
 
 class RtcpCounterObserver : public RtcpPacketTypeCounterObserver {
  public:
@@ -326,7 +321,6 @@ class ChannelSend : public ChannelSendInterface,
 
   PacketRouter* packet_router_ RTC_GUARDED_BY(worker_thread_) = nullptr;
   const std::unique_ptr<RtpPacketSenderProxy> rtp_packet_pacer_proxy_;
-  const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker construction_thread_;
 
@@ -553,13 +547,11 @@ ChannelSend::ChannelSend(
       ssrc_(ssrc),
       rtcp_counter_observer_(new RtcpCounterObserver(ssrc)),
       rtp_packet_pacer_proxy_(new RtpPacketSenderProxy()),
-      retransmission_rate_limiter_(
-          new RateLimiter(&env_.clock(), kMaxRetransmissionWindow.ms())),
       frame_encryptor_(frame_encryptor),
       crypto_options_(crypto_options),
       encoder_queue_(env_.task_queue_factory().CreateTaskQueue(
           "AudioEncoderQueue",
-          env_.field_trials().IsEnabled("WebRTC-MediaTaskQueuePriorities")
+          !env_.field_trials().IsDisabled("WebRTC-MediaTaskQueuePriorities")
               ? TaskQueueFactory::Priority::kAudio
               : TaskQueueFactory::Priority::kNormal)),
       encoder_queue_checker_(encoder_queue_.get()),
@@ -577,10 +569,6 @@ ChannelSend::ChannelSend(
   configuration.rtt_stats = rtcp_rtt_stats;
   configuration.rtcp_packet_type_counter_observer =
       rtcp_counter_observer_.get();
-  if (env_.field_trials().IsDisabled("WebRTC-DisableRtxRateLimiter")) {
-    configuration.retransmission_rate_limiter =
-        retransmission_rate_limiter_.get();
-  }
   configuration.extmap_allow_mixed = extmap_allow_mixed;
   configuration.rtcp_report_interval_ms = rtcp_report_interval_ms;
   configuration.rtcp_packet_type_counter_observer = this;
@@ -716,7 +704,6 @@ void ChannelSend::OnBitrateAllocation(BitrateAllocationUpdate update) {
   CallEncoderAsync([update](AudioEncoder* encoder) {
     encoder->OnReceivedUplinkAllocation(update);
   });
-  retransmission_rate_limiter_->SetMaxRate(update.target_bitrate.bps());
 }
 
 int ChannelSend::GetTargetBitrate() const {
@@ -741,10 +728,6 @@ void ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
     // Waiting for valid RTT.
     return;
   }
-
-  retransmission_rate_limiter_->SetWindowSize(
-      std::clamp(*rtt, kMinRetransmissionWindow, kMaxRetransmissionWindow)
-          .ms());
 
   OnReceivedRtt(rtt->ms());
 }

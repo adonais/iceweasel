@@ -24,7 +24,7 @@ XPIDL_SOURCES += [
 
 XPIDL_MODULE = "dom_media"
 
-EXTRA_JS_MODULES.media += [
+MOZ_SRC_FILES += [
     "MediaDrmProvisioning.sys.mjs",
 ]
 

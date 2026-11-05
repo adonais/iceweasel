@@ -416,6 +416,7 @@ DefaultJitOptions::DefaultJitOptions() {
   // V8 uses them for fuzzing (similar to --ion-gvn=off.)
   SET_DEFAULT(regexp_quick_check, true);
   SET_DEFAULT(regexp_unroll, true);
+  SET_DEFAULT(regexp_atomic_loop, true);
   // V8 has an experimental bytecode analysis. It doesn't do anything yet.
   SET_DEFAULT(regexp_bytecode_analysis, false);
   SET_DEFAULT(trace_regexp_bytecode_analysis, false);

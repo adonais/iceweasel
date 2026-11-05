@@ -17,7 +17,7 @@ using namespace mozilla::image;
 
 template <typename Func>
 void WithDownscalingFilter(const IntSize& aInputSize,
-                           const IntSize& aOutputSize, Func aFunc) {
+                           const IntSize& aOutputSize, Func&& aFunc) {
   RefPtr<image::Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
 

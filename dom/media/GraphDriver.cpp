@@ -9,6 +9,7 @@
 #include "CubebDeviceEnumerator.h"
 #include "MediaTrackGraphImpl.h"
 #include "Tracing.h"
+#include "audio_thread_priority.h"
 #include "cubeb/cubeb.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/MathAlgorithms.h"
@@ -182,6 +183,22 @@ SystemClockDriver::SystemClockDriver(GraphInterface* aGraphInterface,
       mInitialTimeStamp(TimeStamp::Now()) {}
 
 SystemClockDriver::~SystemClockDriver() = default;
+
+void SystemClockDriver::RunThread() {
+#ifdef XP_MACOSX
+  // Timed waits of normal priority threads can be coalesced far beyond their
+  // deadline when the process is otherwise idle, real-time threads are exempt.
+  atp_handle* handle = atp_promote_current_thread_to_real_time(0, mSampleRate);
+#endif
+
+  ThreadedDriver::RunThread();
+
+#ifdef XP_MACOSX
+  if (handle) {
+    atp_demote_current_thread_from_real_time(handle);
+  }
+#endif
+}
 
 void ThreadedDriver::RunThread() {
   mThreadRunning = true;

@@ -69,12 +69,11 @@ EXPORTS.mozilla.gfx += [
     "FontPaletteCache.h",
     "PrintPromise.h",
     "PrintTarget.h",
+    "PrintTargetRecording.h",
     "PrintTargetSkPDF.h",
-    "PrintTargetThebes.h",
+    "SkMemoryReporter.h",
     "ThebesRLBox.h",
 ]
-
-EXPORTS.mozilla.gfx += ["SkMemoryReporter.h"]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
     EXPORTS += [
@@ -82,19 +81,24 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
         "gfxFT2FontBase.h",
         "gfxFT2Fonts.h",
     ]
-    EXPORTS.mozilla.gfx += [
-        "PrintTargetPDF.h",
-    ]
     SOURCES += [
         "gfxAndroidPlatform.cpp",
         "gfxFT2FontBase.cpp",
         "gfxFT2FontList.cpp",
         "gfxFT2Fonts.cpp",
         "gfxFT2Utils.cpp",
-        "PrintTargetPDF.cpp",
     ]
+
+    SOURCE_HEADERS += [
+        "gfxFT2FontList.h",
+        "gfxFT2Utils.h",
+    ]
+
     UNIFIED_SOURCES += [
         "AndroidSystemFontIterator.cpp",
+    ]
+    SOURCE_HEADERS += [
+        "AndroidSystemFontIterator.h",
     ]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] in ("cocoa", "uikit"):
     EXPORTS += [
@@ -112,27 +116,28 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] in ("cocoa", "uikit"):
         "gfxQuartzNativeDrawing.cpp",
         "gfxQuartzSurface.cpp",
     ]
-    if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
-        EXPORTS.mozilla.gfx += [
-            "PrintTargetCG.h",
-        ]
-        SOURCES += [
-            "PrintTargetCG.mm",
-        ]
+
+    SOURCE_HEADERS += [
+        "CoreTextFontList.h",
+        "gfxCoreTextShaper.h",
+        "gfxMacFont.h",
+    ]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     EXPORTS += [
         "gfxFT2FontBase.h",
         "gfxPlatformGtk.h",
-    ]
-    EXPORTS.mozilla.gfx += [
-        "PrintTargetPDF.h",
     ]
     SOURCES += [
         "gfxFcPlatformFontList.cpp",
         "gfxFT2FontBase.cpp",
         "gfxFT2Utils.cpp",
         "gfxPlatformGtk.cpp",
-        "PrintTargetPDF.cpp",
+    ]
+
+    SOURCE_HEADERS += [
+        "gfxFcPlatformFontList.h",
+        "gfxFT2FontList.h",
+        "gfxFT2Utils.h",
     ]
 
     if CONFIG["MOZ_X11"]:
@@ -157,7 +162,6 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     EXPORTS.mozilla.gfx += [
         "DeviceManagerDx.h",
         "DisplayConfigWindows.h",
-        "PrintTargetPDF.h",
         "PrintTargetWindows.h",
     ]
     SOURCES += [
@@ -166,11 +170,14 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
         "gfxDWriteFonts.cpp",
         "gfxWindowsPlatform.cpp",
         "gfxWindowsSurface.cpp",
-        "PrintTargetPDF.cpp",
         "PrintTargetWindows.cpp",
     ]
     UNIFIED_SOURCES += [
         "gfxDWriteFontList.cpp",
+    ]
+    SOURCE_HEADERS += [
+        "d3dkmtQueryStatistics.h",
+        "gfxDWriteFontList.h",
     ]
 
 SOURCES += [
@@ -185,7 +192,6 @@ SOURCES += [
     "gfxFontUtils.cpp",
     "gfxPlatform.cpp",
     "PrintTarget.cpp",
-    "PrintTargetThebes.cpp",
 ]
 
 UNIFIED_SOURCES += [
@@ -216,6 +222,7 @@ UNIFIED_SOURCES += [
     "gfxTextRun.cpp",
     "gfxUserFontSet.cpp",
     "gfxUtils.cpp",
+    "PrintTargetRecording.cpp",
     "PrintTargetSkPDF.cpp",
     "SharedFontList.cpp",
     "SkMemoryReporter.cpp",
@@ -227,9 +234,17 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     UNIFIED_SOURCES += [
         "gfxMacPlatformFontList.mm",
     ]
+
+    SOURCE_HEADERS += [
+        "gfxMacPlatformFontList.h",
+    ]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "uikit":
     UNIFIED_SOURCES += [
         "IOSPlatformFontList.mm",
+    ]
+
+    SOURCE_HEADERS += [
+        "IOSPlatformFontList.h",
     ]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     UNIFIED_SOURCES += [
@@ -294,4 +309,13 @@ LICENSED_UNDER += ["gfx-font-list"]
 LICENSED_UNDER["gfx-font-list"].paths = [
     "gfxMacPlatformFontList.mm",
     "gfxPlatformFontList.cpp",
+]
+
+SOURCE_HEADERS += [
+    "cairo-xlib-utils.h",
+    "gfxFontMissingGlyphs.h",
+    "gfxGlyphExtents.h",
+    "gfxGraphiteShaper.h",
+    "gfxHarfBuzzShaper.h",
+    "SharedFontList-impl.h",
 ]

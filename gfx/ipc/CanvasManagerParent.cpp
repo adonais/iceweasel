@@ -16,6 +16,7 @@
 #include "mozilla/layers/CanvasTranslator.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ISurfaceAllocator.h"
+#include "mozilla/layers/LayerTreeLog.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
 #include "mozilla/webgpu/WebGPUParent.h"
 #include "nsIThread.h"
@@ -125,9 +126,12 @@ void CanvasManagerParent::Bind(Endpoint<PCanvasManagerParent>&& aEndpoint) {
 #endif
 
   sManagers.Insert(this);
+  LAYERTREE_LOG("Canvas manager bound, content {}", mContentId);
 }
 
 void CanvasManagerParent::ActorDestroy(ActorDestroyReason aWhy) {
+  LAYERTREE_LOG("Canvas manager for content {} destroyed, reason {}",
+                mContentId, fmt::enums::format_as(aWhy));
   sManagers.Remove(this);
 }
 

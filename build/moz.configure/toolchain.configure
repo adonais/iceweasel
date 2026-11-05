@@ -1859,13 +1859,6 @@ option(
 )
 
 
-# No-op to enable depending on --enable-linker from default_elfhack in
-# toolkit/moz.configure.
-@depends("--enable-linker", when=is_linker_option_enabled)
-def enable_linker(linker):
-    return linker
-
-
 @template
 def select_linker_tmpl(host_or_target):
     if host_or_target is target:
@@ -2492,18 +2485,6 @@ set_config(
     when=depends(target.cpu)(lambda cpu: cpu.startswith("ppc")),
 )
 
-set_config(
-    "PPC_VSX_FLAGS",
-    ["-mvsx"],
-    when=depends(target.cpu)(lambda cpu: cpu.startswith("ppc")),
-)
-
-set_config(
-    "PPC_VSX3_FLAGS",
-    ["-mvsx", "-mcpu=power9"],
-    when=depends(target.cpu)(lambda cpu: cpu.startswith("ppc")),
-)
-
 # TARGET_XPCOM_ABI
 # ==============================================================
 
@@ -2653,7 +2634,6 @@ def msan_flags(c_compiler, compilation_flags, linker_flags):
 
 
 set_define("MOZ_MSAN", True, when=msan)
-set_config("MOZ_MSAN", True, when=msan)
 
 # TSAN
 # ==============================================================
@@ -3158,11 +3138,11 @@ set_config("MOZ_CODE_COVERAGE", code_coverage)
 set_define("MOZ_CODE_COVERAGE", code_coverage)
 
 
-@depends(target, c_compiler, build_environment, when=code_coverage)
+@depends(target, c_compiler, build_environment, moz_automation, when=code_coverage)
 @imports("os")
 @imports("re")
 @imports(_from="__builtin__", _import="open")
-def coverage_cflags(target, c_compiler, build_env):
+def coverage_cflags(target, c_compiler, build_env, moz_automation):
     cflags = ["--coverage"]
 
     # clang 11 no longer accepts this flag (its behavior became the default)
@@ -3171,6 +3151,14 @@ def coverage_cflags(target, c_compiler, build_env):
             "-Xclang",
             "-coverage-no-function-names-in-data",
         ]
+
+    # In automation we have patch adding -fprofile-abs-path starting with Clang 22
+    if (
+        c_compiler.type in ("clang", "clang-cl")
+        and c_compiler.version >= "22.0.0"
+        and moz_automation
+    ):
+        cflags += ["-fprofile-abs-path"]
 
     exclude = []
     if target.os == "WINNT" and c_compiler.type == "clang-cl":
@@ -3574,15 +3562,6 @@ def libfuzzer_flags(value, tsan, enable_js_fuzzilli):
     return namespace(
         no_link_flag_supported=no_link_flag_supported,
         use_flags=use_flags,
-    )
-
-
-@depends(libfuzzer_flags, when=enable_libfuzzer)
-def sancov(libfuzzer_flags):
-    return any(
-        flag.startswith(head)
-        for head in ("-fsanitize-coverage", "-fsanitize=fuzzer")
-        for flag in libfuzzer_flags.use_flags
     )
 
 

@@ -201,9 +201,6 @@ fail-if = [
 ["browser_animation_logic_mutations_properties.js"]
 
 ["browser_animation_logic_overflowed_delay_end-delay.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1480027
-]
 
 ["browser_animation_logic_scroll-amount.js"]
 fail-if = [

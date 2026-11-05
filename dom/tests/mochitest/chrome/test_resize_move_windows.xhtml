@@ -102,6 +102,27 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=565541
       prevHeight = aWindow.innerHeight;
     }
 
+    function checkSizeToContent(next) {
+      prevWidth = aWindow.innerWidth;
+      prevHeight = aWindow.innerHeight;
+
+      if (aWindow.browsingContext.isContent) {
+        // sizeToContent() is a no-op in content browsing contexts. A window
+        // that fills the screen has no room for the position checks to move
+        // it, so shrink it by hand.
+        if (aWindow.outerWidth < screen.availWidth &&
+            aWindow.outerHeight < screen.availHeight) {
+          next();
+          return;
+        }
+        aWindow.resizeTo(screen.availWidth / 2, screen.availHeight / 2);
+      } else {
+        aWindow.sizeToContent();
+      }
+
+      hitEventLoop(sizeChangeCondition, sizeChangeTest, hits, next);
+    }
+
     function posChangeCondition() {
       // With GTK, sometimes, only one dimension changes.
       if (navigator.platform.includes('Linux')) {
@@ -166,11 +187,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=565541
                        getNewHeight(aWindow) - aWindow.innerHeight);
 
     hitEventLoop(sizeChangeCondition, sizeChangeTest, hits, function () {
-      prevWidth = aWindow.innerWidth;
-      prevHeight = aWindow.innerHeight;
-      aWindow.sizeToContent();
-
-    hitEventLoop(sizeChangeCondition, sizeChangeTest, hits, function () {
+    checkSizeToContent(function () {
     /**
      * Position checks.
      */

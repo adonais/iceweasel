@@ -8,7 +8,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import mozilla.appservices.RustComponentsInitializer
 import mozilla.components.concept.storage.CreditCardEntry
-import mozilla.components.concept.storage.CreditCardNumber
 import mozilla.components.concept.storage.CreditCardValidationDelegate.Result
 import mozilla.components.concept.storage.NewCreditCardFields
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
@@ -48,8 +47,7 @@ class DefaultCreditCardValidationDelegateTest {
             val creditCardFields =
                 NewCreditCardFields(
                     billingName = "Pineapple Orange",
-                    plaintextCardNumber = CreditCardNumber.Plaintext("4111111111111111"),
-                    cardNumberLast4 = "1111",
+                    cardNumber = "4111111111111111",
                     expiryMonth = 12,
                     expiryYear = 2028,
                     cardType = "visa",
@@ -66,8 +64,7 @@ class DefaultCreditCardValidationDelegateTest {
         val creditCardFields =
             NewCreditCardFields(
                 billingName = "Pineapple Orange",
-                plaintextCardNumber = CreditCardNumber.Plaintext("4111111111111111"),
-                cardNumberLast4 = "1111",
+                cardNumber = "4111111111111111",
                 expiryMonth = 12,
                 expiryYear = 2028,
                 cardType = "visa",
@@ -85,8 +82,7 @@ class DefaultCreditCardValidationDelegateTest {
             val creditCardFields =
                 NewCreditCardFields(
                     billingName = "Pineapple Orange",
-                    plaintextCardNumber = CreditCardNumber.Plaintext("4111111111111111"),
-                    cardNumberLast4 = "1111",
+                    cardNumber = "4111111111111111",
                     expiryMonth = 12,
                     expiryYear = 2028,
                     cardType = "visa",
@@ -105,8 +101,7 @@ class DefaultCreditCardValidationDelegateTest {
             val creditCardFields =
                 NewCreditCardFields(
                     billingName = "Pineapple Orange",
-                    plaintextCardNumber = CreditCardNumber.Plaintext("4111111111111111"),
-                    cardNumberLast4 = "1111",
+                    cardNumber = "4111111111111111",
                     expiryMonth = 12,
                     expiryYear = 2028,
                     cardType = "visa",

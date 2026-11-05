@@ -255,11 +255,11 @@ TEST(RtpPacketizerTest, RejectsHugeSize) {
   limits.max_payload_len = 1200;
   RTPVideoHeader video_header;
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
-  const uint8_t kPayload[40'000'000] = {};
+  const std::vector<uint8_t> payload(40'000'000);
 
   std::unique_ptr<RtpPacketizer> packetizer =
       RtpPacketizer::Create(RtpPacketizer::PacketizationFormat::kGeneric,
-                            kPayload, limits, video_header);
+                            payload, limits, video_header);
 
   ASSERT_THAT(packetizer, NotNull());
   EXPECT_EQ(packetizer->NumPackets(), 0u);

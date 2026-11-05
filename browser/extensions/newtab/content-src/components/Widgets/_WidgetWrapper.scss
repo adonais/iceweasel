@@ -26,6 +26,22 @@
     grid-column: span 4;
     grid-row: span 4;
   }
+
+  > moz-widget {
+    inline-size: 100%;
+    // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- Using newtab variables from _variables.scss.
+    block-size: var(--newtab-card-height-small);
+    transition: block-size var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  &.large-widget > moz-widget {
+    // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- Using newtab variables from _variables.scss.
+    block-size: var(--newtab-card-height);
+  }
 }
 
 // When a widget throws, its ErrorBoundary renders this fallback in place of the

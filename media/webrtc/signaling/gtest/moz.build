@@ -49,5 +49,14 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] != "uikit" and not (
         "sdp_unittests.cpp",
         "videoconduit_unittests.cpp",
     ]
+    SOURCE_HEADERS += [
+        "MockCall.h",
+    ]
 
     FINAL_LIBRARY = "xul-gtest"
+
+SOURCE_HEADERS += [
+    "Canonicals.h",
+    "MockConduit.h",
+    "MockJsepCodecPreferences.h",
+]

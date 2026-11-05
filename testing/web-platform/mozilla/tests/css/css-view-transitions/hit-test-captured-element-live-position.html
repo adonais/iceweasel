@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<title>View transitions: hit test captured element at its live position</title>
+<link rel="help" href="https://drafts.csswg.org/css-view-transitions-1/#view-transition-stacking-layer">
+<link rel="help" href="https://github.com/w3c/csswg-drafts/issues/10930">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<style>
+html { view-transition-name: none }
+body { margin: 0 }
+#target {
+  width: 100px;
+  height: 100px;
+  background: green;
+  view-transition-name: target;
+}
+html::view-transition {
+  pointer-events: none;
+}
+html::view-transition-group(target) {
+  animation-duration: 300s;
+}
+</style>
+<div id=target></div>
+<script>
+promise_test(async t => {
+  assert_implements(document.startViewTransition, "Missing document.startViewTransition");
+  const transition = document.startViewTransition();
+  t.add_cleanup(() => transition.skipTransition());
+  await transition.ready;
+  assert_equals(document.elementFromPoint(50, 50), target);
+}, "Captured element is hit-tested at its live position during a view transition");
+</script>

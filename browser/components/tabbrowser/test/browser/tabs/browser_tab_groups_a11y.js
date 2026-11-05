@@ -171,11 +171,6 @@ add_task(async function test_collapsedTabGroupTooltips() {
   await flushL10n();
 
   Assert.equal(
-    group._showTabGroupHoverPreview,
-    true,
-    "Sanity check: tab group hover preview is enabled"
-  );
-  Assert.equal(
     group.labelElement.getAttribute("tooltiptext"),
     null,
     "Group label has no tooltip when tab group hover preview is enabled"
@@ -193,11 +188,6 @@ add_task(async function test_collapsedTabGroupTooltips() {
   await TabGroupTestUtils.toggleCollapsed(group, true);
   await flushL10n();
 
-  Assert.equal(
-    group._showTabGroupHoverPreview,
-    false,
-    "Sanity check: tab group hover preview is false"
-  );
   Assert.equal(
     group.labelElement.getAttribute("tooltiptext"),
     "Unnamed Group — Collapsed",

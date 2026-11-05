@@ -171,7 +171,7 @@ For more information about the review process, see the {doc}`Code_Review_FAQ`.
      - `Firefox DevTools </mots/index.html#devtools>`__
      - `Member list <https://phabricator.services.mozilla.com/project/members/153/>`__
    * - #dom-core
-     - `Core: DOM <https://firefox-source-docs.mozilla.org/mots/index.html#core-document-object-model>`__
+     - `Core: DOM </mots/index.html#core-document-object-model>`__
      - `Member list <https://phabricator.services.mozilla.com/project/members/178/>`__
    * - #dom-worker-reviewers
      - DOM Workers
@@ -213,7 +213,7 @@ For more information about the review process, see the {doc}`Code_Review_FAQ`.
      - Test manifest changes
      - `Member list <https://phabricator.services.mozilla.com/project/members/110/>`__
    * - #ipc-reviewers
-     - `Core: IPC <https://firefox-source-docs.mozilla.org/mots/index.html#core-ipc>`__
+     - `Core: IPC </mots/index.html#core-ipc>`__
      - `Member list <https://phabricator.services.mozilla.com/project/members/145/>`__
    * - #layout-reviewers
      - Layout
@@ -297,7 +297,7 @@ For more information about the review process, see the {doc}`Code_Review_FAQ`.
      - `Toolkit :: Telemetry </mots/index.html#telemetry>`__
      - `Member list <https://phabricator.services.mozilla.com/project/members/229/>`__
    * - #translations-reviewers
-     - `Firefox: Translation <https://firefox-source-docs.mozilla.org/mots/index.html#translation>`__
+     - `Firefox: Translation </mots/index.html#translation>`__
      - `Member list <https://phabricator.services.mozilla.com/project/members/192/>`__
    * - #urlbar-reviewers
      - `Urlbar (Address Bar) </mots/index.html#address-bar>`__

@@ -158,7 +158,7 @@ static AtkObject* getRowHeaderCB(AtkTable* aTable, gint aRowIdx) {
   return header ? GetWrapperFor(header) : nullptr;
 }
 
-static AtkObject* getSummaryCB(AtkTable* aTable) {
+static AtkObject* getSummaryCB(AtkTable* /*aTable*/) {
   // Neither html:table nor xul:tree nor ARIA grid/tree have an ability to
   // link an accessible object to specify a summary. There is closes method
   // in TableAccessible::summary to get a summary as a string which is not

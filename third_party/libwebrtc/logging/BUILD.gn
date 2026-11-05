@@ -37,7 +37,6 @@ rtc_source_set("rtc_event_log_parse_status") {
   sources = [ "rtc_event_log/events/rtc_event_log_parse_status.h" ]
   deps = [
     "../rtc_base:checks",
-    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
@@ -63,7 +62,6 @@ rtc_library("rtc_event_field") {
     "../rtc_base:bitstream_reader",
     "../rtc_base:checks",
     "../rtc_base:logging",
-    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
@@ -532,7 +530,6 @@ if (rtc_enable_protobuf) {
       "../rtc_base:rtc_numerics",
       "../rtc_base:safe_conversions",
       "../rtc_base/system:file_wrapper",
-      "//third_party/abseil-cpp/absl/base:core_headers",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings:string_view",
     ]

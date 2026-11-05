@@ -16,6 +16,8 @@ const CC_VALUES = {
 add_setup(async function () {
   // The feature is gated on rollout as well as on the user's own choice. Roll
   // it out for the whole file so each task can toggle the enabled pref alone.
+  // The security code is supported only while the Rust store serves.
+  await switchCreditCardStore({ rust: true });
   await SpecialPowers.pushPrefEnv({ set: [[SUPPORTED_PREF, "on"]] });
 });
 
@@ -90,11 +92,57 @@ add_task(async function test_security_code_dropped_before_rollout() {
   await SpecialPowers.popPrefEnv();
 });
 
+add_task(async function test_security_code_dropped_while_json_store_serves() {
+  await switchCreditCardStore({ rust: false });
+  await SpecialPowers.pushPrefEnv({ set: [[ENABLED_PREF, true]] });
+
+  const creditCard = await captureCard();
+  ok(!("cc-csc" in creditCard), "The JSON store does not save a security code");
+
+  await removeAllRecords();
+  await SpecialPowers.popPrefEnv();
+  await switchCreditCardStore({ rust: true });
+});
+
 add_task(async function test_form_submitted_without_a_security_code() {
   await SpecialPowers.pushPrefEnv({ set: [[ENABLED_PREF, true]] });
 
   const creditCard = await captureCard("");
   ok(!creditCard["cc-csc"], "No security code is saved for the card");
+
+  await removeAllRecords();
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_security_code_added_to_a_saved_card() {
+  await SpecialPowers.pushPrefEnv({ set: [[ENABLED_PREF, true]] });
+  await setStorage({
+    "cc-name": CC_VALUES["#cc-name"],
+    "cc-number": CC_VALUES["#cc-number"],
+    "cc-exp-month": 12,
+    "cc-exp-year": 2017,
+  });
+
+  // The submission differs from the saved card only by its code, which is not
+  // a match, so the update doorhanger offers to save it.
+  const onChanged = waitForStorageChangedEvents("update");
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: CREDITCARD_FORM_URL },
+    async function (browser) {
+      const onPopupShown = waitForPopupShown();
+      await focusUpdateSubmitForm(browser, {
+        focusSelector: "#cc-name",
+        newValues: { ...CC_VALUES, "#cc-csc": "123" },
+      });
+      await onPopupShown;
+      await clickDoorhangerButton(MAIN_BUTTON);
+    }
+  );
+  await onChanged;
+
+  const creditCards = await getCreditCards();
+  is(creditCards.length, 1, "The saved card was updated, not duplicated");
+  is(creditCards[0]["cc-csc"], "123", "with the submitted security code");
 
   await removeAllRecords();
   await SpecialPowers.popPrefEnv();

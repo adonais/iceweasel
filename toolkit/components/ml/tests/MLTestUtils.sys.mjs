@@ -407,6 +407,28 @@ export class MockLLMEngine {
   }
 
   /**
+   * Fail a pending request with the given error, as the engine would when the
+   * service rejects the call. This is only available from tests.
+   *
+   * @param {number} requestId
+   * @param {any} error
+   */
+  reject(requestId, error) {
+    if (!Cu.isInAutomation) {
+      throw new Error(
+        "The MockLLMEngine#reject method must only be used in automation."
+      );
+    }
+
+    const runRequest = this.#runRequests.get(requestId);
+    this.#runRequests.delete(requestId);
+    if (!runRequest) {
+      throw new Error("Could not find a request with that id");
+    }
+    runRequest.reject(error);
+  }
+
+  /**
    * Run the inference request with a MockedResponse. If the mocked response is a string
    * then the it is transformed into a structured response. If the mocked response is
    * an array of strings the response is concatenated. The array of strings gets turned

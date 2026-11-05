@@ -16,7 +16,6 @@ kind-dependencies:
     - push-android
 
 task-defaults:
-    run-on-repo-type: [hg]
     description: Release Promotion version bump/tag
     run-on-projects: []
     shipping-phase: ship

@@ -25,11 +25,7 @@ class AgnosticDecoderModule : public PlatformDecoderModule {
   AgnosticDecoderModule() = default;
   virtual ~AgnosticDecoderModule() = default;
   // Decode thread.
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-      const CreateDecoderParams& aParams) override;
-
-  // Decode thread.
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+  RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override;
 };
 

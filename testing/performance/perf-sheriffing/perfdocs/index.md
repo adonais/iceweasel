@@ -11,12 +11,19 @@ and dealt with. They look at data and performance metrics produced by the perfor
 and find regressions, determine the root cause, and file bugs to track all issues. The workflow we
 follow is shown below in our flowchart.
 
+Sheriffs review the alerts generated on [Perfherder](https://treeherder.mozilla.org/perfherder/alerts) on a daily
+basis. Any time a test exceeds [the threshold set for its framework](#23-framework-thresholds), one or more alerts
+are generated. The goal of the sheriff is to identify the commit or revision responsible for the change, and file a
+bug with a needinfo for the author(s) of that commit or revision.
+
 ### 1.1 Flowchart
 
 ```{image} ./flowchart.png
 :align: center
 :alt: Sheriffing Workflow Flowchart
 ```
+
+The editable source of the flowchart is available on [diagrams.net](https://drive.google.com/file/d/1Hpg9AjKTA2jx413Ly4imJWwM_gQHtLU3/view).
 
 The workflow of a sheriff is backfilling jobs to get the data, investigating that data, filing
 bugs/linking improvements based on the data, and following up with developers if needed.
@@ -39,10 +46,19 @@ on Slack or Matrix:
 
 All of the team is in EET (Eastern European Time) except for @sparky who is in EST (Eastern Standard Time).
 
-### 1.3 Regression and Improvement Definition
+### 1.3 How to become a Sheriff
 
-Whenever we get a performance change we classify it as one of two things, either a regression (worse performance) or
-an improvement (better performance).
+To become a sheriff (and have sheriffing permissions) you will need to file 2 bugs to allow sheriffing actions in Treeherder.
+
+1) Request to be added to the Treeherder sheriff group
+
+- Use this [pre-filled bug form](https://bugzilla.mozilla.org/enter_bug.cgi?assigned_to=nobody%40mozilla.org&bug_ignored=0&bug_severity=--&bug_status=NEW&bug_type=task&cf_a11y_review_project_flag=---&cf_accessibility_severity=---&cf_fx_iteration=---&cf_fx_points=---&comment=I%20will%20be%20sheriffing%20performance%20alerts%20on%20Perfherder%2C%20so%20I%20would%20like%20to%20be%20added%20to%20the%20Treeherder%20sheriff%20group.%0D%0A%0D%0AMy%20LDAP%20address%20is%3A%20&component=Treeherder%3A%20Infrastructure&contenttypemethod=list&contenttypeselection=text%2Fplain&defined_cc=cpeterson%40mozilla.com%2C%20cvalaas%40mozilla.com%2C%20dave.hunt%40gmail.com%2C%20jdescottes%40mozilla.com%2C%20sclements%40mozilla.com&defined_groups=1&filed_via=standard_form&flag_type-4=X&flag_type-41=X&flag_type-607=X&flag_type-803=X&flag_type-936=X&needinfo_role=other&needinfo_type=needinfo_from&op_sys=Unspecified&priority=--&product=Tree%20Management&rep_platform=Unspecified&short_desc=Add%20%3Cname%3E%20to%20Treeherder%20sheriff%20group&target_milestone=---&version=---). Add your name in the title and your LDAP email address in the description.
+
+2) Add yourself to the perf_sheriff group
+
+- Use this [pre-filled bug form](https://bugzilla.mozilla.org/enter_bug.cgi?assigned_to=infra%40infra-ops.bugs&bug_ignored=0&bug_severity=--&bug_status=NEW&bug_type=task&cf_fx_iteration=---&cf_fx_points=---&comment=I%20will%20be%20sheriffing%20performance%20alerts%20on%20Perfherder%2C%20so%20I%20would%20like%20to%20be%20added%20to%20the%20Treeherder%20sheriff%20group.%0D%0A%0D%0AMy%20LDAP%20address%20is%3A%20&component=Infrastructure%3A%20LDAP&contenttypemethod=list&contenttypeselection=text%2Fplain&defined_cc=cpeterson%40mozilla.com%2C%20&defined_groups=1&filed_via=standard_form&flag_type-4=X&flag_type-607=X&flag_type-674=X&flag_type-803=X&flag_type-936=X&groups=mozilla-employee-confidential&needinfo_role=other&needinfo_type=needinfo_from&op_sys=Unspecified&priority=--&product=Infrastructure%20%26%20Operations&rep_platform=Unspecified&short_desc=Add%20me%28%3CLDAP%20EMAIL%3E%29%20to%20perf_sheriff%20LDAP%20group&target_milestone=---&version=unspecified). Add your name and LDAP email in the title and your email in the description.
+
+Once both bugs are completed check that you can do sheriffing actions. You should be able to now update alerts through the ability to add notes and tags to alerts.
 
 ## 2 How to Investigate Alerts
 
@@ -54,7 +70,7 @@ On the [Perfherder page](https://treeherder.mozilla.org/perfherder/alerts) you s
 
 ```{image} ./Alerts_view.png
 :align: center
-:alt: Alerts View Toolbar
+:alt: Alerts View
 ```
 
 After accessing the Perfherder alerts page make sure the filter (located in the top middle of the screenshot)
@@ -77,31 +93,37 @@ Below is a screenshot of an alert:
 
 ```{image} ./single_alert.png
 :align: center
-:alt: Alerts View Toolbar
+:alt: Alert Summary
 ```
 
-You can tell an alert by looking at the bold text, it will say "Alert #XXXXX", in each alert you have groupings of
-summaries of tests, and those tests:
+The alerts are grouped in **alert summaries**. You can tell a summary by looking at the bold text, it will say
+"Alert #XXXXX", and each row inside of it is an alert for a test. By the book an alert is one item of a summary, but
+the summary itself is often called an alert too, depending on the context. The tests in a summary:
 
 - Can run on different platforms
-- Can share suite name (like tp5o)
-- Measure various metrics
-- Share the same framework
+- Can share suite name (like tp5o or tp6m)
+- Measure various metrics, but not all of the metrics trigger alerts
+- Share the same framework. If a commit triggers alerts in multiple frameworks, there will be a different summary for each framework
+
+A summary can contain improvements, regressions or both. Improvements are marked in green and regressions in red.
 
 Going from left to right of the columns inside the alerts starting with test, we have:
 
 - A blue hyperlink that links to the test documentation (if available)
 - The **platform's** operating system
-- **Information** about the historical data distribution of that
+- **Information** about the historical data distribution of that test
 - Tags and options related to the test
 
 ### 2.2 Regressions vs Improvements
+
+Whenever we get a performance change we classify it as one of two things, either a regression (worse performance) or
+an improvement (better performance).
 
 First thing to note about how we investigate alerts is that **we prioritize handling regressions**! Unlike the
 **improvements,** regressions ship bugs to users, which, if not addressed, make our products worse and drive users away.
 After acknowledging an alert:
 
-- Regressions go through multiple status changes (TODO: link to sections with multiple status changes) until they are finally resolved
+- Regressions go through multiple status changes (see [Updating Alert Status](#212-updating-alert-status)) until they are finally resolved
 - An improvement has a single status of improvement
 
 ### 2.3 Framework Thresholds
@@ -112,6 +134,313 @@ performance changes differ based on the harness:
 - AWSY >= 0.25%
 - Build metrics installer size >= 100kb
 - Talos, Browsertime, Build Metrics >= 2%
+
+### 2.4 Taking an Alert and Golden Rules
+
+Before doing any investigation, **assign the alert summary to yourself** by clicking the **Take** button in the summary and pressing Enter. You should see your username in its place afterwards.
+
+When you are not sure about the culprit of the graph you are investigating, follow these golden rules:
+
+- Zoom in until you can easily distinguish the data points
+- Retrigger more if the graph is too unstable for the data you have
+- When the graph is too noisy and zooming in only makes it harder: zoom out, choose a larger timeframe (30 days, 60 days, etc.), and then zoom back in slowly, following the limit line of the values in the first half of the graph until you find the data point that changes the trend
+
+### 2.5 Reading the Graph
+
+To read the graph of an alert, hover over the alert row and click the **graph** link that appears. Starring the alert makes it easy to know which alert you were reading when you come back to the summary.
+
+```{image} ./Graph_view_alert_tooltip.png
+:align: center
+:alt: Graph view alert tooltip
+```
+
+The graph shows a thin vertical line for every alert associated with the test, so make sure you are looking at the right one by hovering over or clicking on the data point. If the data point of the improvement/regression is not clear you can:
+
+- Zoom in by drawing a rectangle over the desired area
+- Zoom out by clicking on the top graph
+- Extend the timeframe of the graph using the dropdown at the top of the page
+
+More details are available in the FAQ entries [How can I view details on a graph?](#how-can-i-view-details-on-a-graph) and [How can I zoom on a perfherder graph?](#how-can-i-zoom-on-a-perfherder-graph).
+
+If the commit of the improvement/regression is not clear, take the desired action (usually retrigger/backfill) and write down in the notes of the alert (**Add/Edit notes**) your name and what you did, so that you or another sheriff knows what is happening the next time the alert is sheriffed. The pattern is `[yourname] comment`, and the most recent comments go first so they are easy to read when you come back.
+
+```{image} ./Alert_summary_add_notes.png
+:align: center
+:alt: Alert summary add notes
+```
+
+### 2.6 Retrigger/Backfill
+
+Depending on the test, the jobs run either once in several revisions or on every revision. The vast majority run once in several revisions (see [coalescing](#what-is-coalescing)), so almost every time you need to backfill between the first bad and the last good job to determine the culprit for sure.
+
+1. Click the **job** link in the tooltip of the regression data point. A new page with the list of jobs for that data point opens.
+2. Click the link next to **Job** in the lower left section of the page to narrow the list down to the job that caused the regression.
+
+   ```{image} ./Treeherder_jobs_screen.png
+   :align: center
+   :alt: Treeherder jobs screen
+   ```
+
+3. Load the previous pushes to identify how many revisions you need to backfill, using the **get next** buttons (10, 20, 50) at the bottom of the page. Usually the lowest is enough.
+4. With the top job selected, trigger the backfill action. Sheriffs usually use the quick **Backfill** button, but **Custom action...** lets you choose how many revisions to go back and how many retriggers per revision you want. Other actions are available, but they are not used by sheriffs.
+
+After triggering the action, you must see a confirmation message at the top left of the screen within 5-7 seconds. If you don't see it, the jobs may not have been triggered and you risk losing investigation time.
+
+Once the jobs finish running you have jobs on successive revisions and you can continue looking for the culprit.
+
+### 2.7 Finding the Culprit
+
+A clear improvement/regression usually appears when there is an easily noticeable difference between two adjacent data points:
+
+```{image} ./Clear_improvement_graph.png
+:align: center
+:alt: Clear improvement graph
+```
+
+In other cases the difference is much less noticeable and the data of the test is more unstable. Some retriggers are needed to determine the range of the test data and compare it between several adjacent data points:
+
+```{image} ./Unstable_improvement_graph.png
+:align: center
+:alt: Unstable improvement graph
+```
+
+Sometimes there is a gap of revisions between the data points in the graph, and a little investigation might save a manual bisection. [This video](https://mozilla.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=6f5cd956-d656-488c-bc91-b085009703c1) shows how to handle such a case.
+
+The least fortunate situation is when the test is unstable, there are gaps in the graph where the tests didn't run, and the regression/improvement is almost impossible to determine. If the investigation takes more than 5 business days, ask for help if you haven't already:
+
+- Ask the other sheriffs in the team
+- See if there were similar situations in the past and how they were handled
+- Find the framework owner on the [module ownership page](https://wiki.mozilla.org/Modules/All) and reach out to them on [Matrix](https://chat.mozilla.org), by email or any other convenient method
+- If you still can't figure it out, ask your team lead
+
+The investigation might end with a bug being opened without knowing the specific commit that caused the regression, asking the most relevant people for help:
+
+```{image} ./Graph_uncertain_culprit.png
+:align: center
+:alt: Graph uncertain culprit
+```
+
+A less common case is when the graph is clear about the culprit but the patch contains changes unrelated to the platform(s) targeted by the alert. For example, the patch only modifies configuration for mobile platforms and the alert targets only desktop platforms. This **might** be an error somewhere, so we recommend asking in the culprit bug what might be missing before opening the regression bug or linking the improvement to it.
+
+### 2.8 Identifying the Culprit Bug
+
+Once the revision that caused the change is clear, you need to identify the culprit bug:
+
+- If the revision contains changes from only one bug, open a regression bug for it
+- If the revision contains changes from several bugs but you know the test and which of the bugs caused the regression, open a bug for that one
+- If the revision contains changes from several bugs (usually a merge from one of the other repositories), do a [bisection](#how-can-i-do-a-bisection) to identify the bug
+
+See also [Multiple Bug IDs on the Same Push](#2131-multiple-bug-ids-on-the-same-push).
+
+### 2.9 Types of Alerts
+
+An alert is not necessarily caused by a bug in the code. It can also be caused by the instability/noise of the test or by causes that are unrelated to the repository, like the CI setup.
+
+A bug associated with an alert needs the `perf-alert` keyword. Regression bugs get it automatically when the **File bug** button is used, but bugs that are not regression bugs need it added manually.
+
+#### 2.9.1 Harness Alerts
+
+Harness alerts are usually caused by re-recordings or changes to code from the `testing/raptor` component that change the baseline. If the regression is expected, link the culprit directly to the alert, close it as WONTFIX and add the `harness` tag. Otherwise, open a regression bug.
+
+##### Baseline Changes
+
+Baseline changes are hard to identify. These questions help determine, with the rest of the team, whether we are dealing with a real regression or a baseline change:
+
+1. **Is the patch changing the baseline metrics because we are aiming to test in a different environment?** If yes, the new baseline may be accepted. As the conditions for testing have changed we have to expect that some things will change. For instance, adding a blank profile to the conditioned profile changes means testing in a different environment, so we expect metrics to change.
+2. **Is the patch changing something that shouldn't cause a shift in metrics?** If yes, do not accept the new baseline immediately. Do an analysis and discuss it with the other sheriffs to get second opinions.
+3. **Does the patch change the test itself?** If yes, a new baseline may be accepted depending on the changes. If the changes are not functional, we shouldn't accept a new baseline.
+4. **Are the test recordings changing?** If yes, a new baseline should be accepted after checking that the page being tested is different from the previous recording. If it isn't, the differences should be investigated further. It is possible that it is still a valid baseline change even if the page is the same, as non-visual changes may differ.
+5. **Any other case** that doesn't fall into these categories should be discussed with the team for second opinions, and with the patch authors if needed.
+
+#### 2.9.2 Backout/Regression-fix Alerts
+
+These alerts are caused by backouts or fixes of regressions, and the associated tags are `regression-backedout` and `regression-fix` respectively. The status of the regressions can be changed to WONTFIX.
+
+For alerts caused by a backout, reply to the backout comment with the summary of the alert and add the `perf-alert` keyword. The FAQ entry [What is a backout?](#what-is-a-backout) shows what a backout looks like on the graph.
+
+#### 2.9.3 Infra Alerts
+
+Regressions caused by infra changes are probably the most difficult to identify. Unless the infra change was announced and is known, an infra regression is usually detected by the sheriff after all the suspect commits/bugs were ruled out.
+
+Anything that doesn't depend on the repository code is considered part of the CI infrastructure, so it doesn't depend on the code state at a certain point in history. For example, if the farm devices were updated with a changed OS image, no matter which data point from history is (re)triggered, it will run on the current image. So if the change of the OS image has an effect, the retriggers will reveal a difference between the old data points and the new ones of the same commit.
+
+In the graph below, the values were constantly around 1800-2000 until Apr 17 and then dropped to 1200-1400. Backfilling didn't reveal the culprit, so jobs were retriggered further back. The retriggers fell in the interval of the improvement, and many yellow vertical lines mark infra changes on the graph.
+
+```{image} ./Graph_infra_change.png
+:align: center
+:alt: Graph infra change
+```
+
+Infra alerts became more frequent starting in 2022, but the causes are still unknown. They usually come up in pairs of regression and improvement:
+
+| Alert | Tags | Status |
+|---|---|---|
+| Regression | `infra` | **investigating** |
+| Improvement that follows | `infra`, `regression-fix`, `improvement` | WONTFIX |
+| Summary with regressions that follows | `infra`, `regression-fix` | WONTFIX |
+
+In both follow-up cases, the status of the original regression alert is changed to **FIXED**.
+
+#### 2.9.4 Invalid Alerts
+
+Invalid regressions usually (but not only) happen when the test results are very unstable. A useful tip for finding invalid regressions is looking at the history of the graph for a pattern in the evolution of the data points.
+
+In the graph below, the regression appeared around Dec 9, and the values vary predominantly between 0.7 and 1. If you click the first highlighted data point (around Dec 3), you will see that its alert is marked as invalid.
+
+```{image} ./Graph_invalid_regression.png
+:align: center
+:alt: Graph invalid regression
+```
+
+Be careful: even if a graph has a wide varying interval, most of its data points may be concentrated around one value. In the graph below, the data points are concentrated around 1 and, after the alert around Dec 9, they stabilized around the regression's value (0.75-0.8). This is a real regression.
+
+```{image} ./Graph_sccache_real_regression.png
+:align: center
+:alt: Graph sccache real regression
+```
+
+**sccache hit rate** tests are a particular case. Most of those alerts are invalid, but if the hit rate drops and stays low for at least 12-24 hours, a regression bug should be opened.
+
+### 2.10 Handling Regressions
+
+There are two different approaches to handling regressions:
+
+- Filing a regression bug for actual regressions
+- Letting the author of the culprit know that their patch caused a regression when we know that it will be accepted (backout, regression-fix, harness)
+
+#### 2.10.1 Filing a Regression Bug
+
+To file a bug from Perfherder you must be logged in.
+
+1. Click the **Untriaged** status in the upper right side of the alert summary.
+2. Select the **File bug** option and enter the number of the bug that caused the regression. You will be redirected to bugzilla.mozilla.org.
+3. In Bugzilla, scroll down, click **Set bug flags** and set the last `status-firefox` version that appears in the list to **affected**.
+4. Click the **Submit Bug** button at the bottom of the page.
+
+#### 2.10.2 Filing a Regression Bug Manually
+
+Make sure that there **isn't already a bug open** for the regression, see [How do I search for an already open regression?](#how-do-i-search-for-an-already-open-regression), then file one with these fields:
+
+- **Type:** Defect
+- **Keywords:** `perf`, `perf-alert`, `regression` (filled in automatically)
+- **Blocks:** the meta-bug for the next Firefox release, used to keep track of the regressions of a specific release (see [How do I identify the current firefox release meta-bug?](#how-do-i-identify-the-current-firefox-release-meta-bug))
+- **Regressed by:** the number of the bug that caused the regression (a closed bug number appears struck through)
+- **Request information from:** the assignee of the culprit bug
+- **CC:** at least the assignee, the reporter and the triage owner
+- **Tracking flag:** click **Set bug flags** and set the last `status-firefox` version in the list to **affected**
+- **Product and Component:** these are filled automatically in the **Enter bug** page. Save the bug, then edit them to be the same as in the culprit bug
+
+#### 2.10.3 Linking and Acknowledging
+
+After the regression bug is filed, link it to the summary (**Link to bug** in the summary menu) and change the status of the summary to **acknowledged**. Then follow the comments in the bug to make sure it gets closed, ideally before the next Firefox release.
+
+#### 2.10.4 Questioned Regressions
+
+The regression identified from the graph can be inaccurate for several reasons. When the author of the culprit patch/bug doesn't agree that their code caused the regression, take another look at the alert. A sheriff can, among other things:
+
+- Retrigger/backfill the jobs around the regression, especially when the graph is noisy and the regression is not very clear. Sheriffs are used to reading the graphs and can see something clear that the patch author, who doesn't have that experience, can't.
+- Check whether the alert contains 2 very close or neighboring regressions. If the alert contains tests with different names, they may be caused by different revisions and need to be confirmed or ruled out with retriggers/backfills.
+- Check whether the patch only contains "static" code (comments, documentation updates). In that case another cause, like an infra change, is possible. Be careful, the developer doesn't have to know what the patch does, so sometimes this is only caught when the developer questions the regression.
+
+Make sure to respond to any open questions or needinfos addressed to sheriffs in the regression bugs.
+
+You can follow up on all the open regression bugs you created, see [How do I follow up on already open regressions open by me?](#how-do-i-follow-up-on-already-open-regressions-open-by-me). Regression bugs that become inactive are handled as described in [How to Handle Inactive Alerts](#3-how-to-handle-inactive-alerts).
+
+### 2.11 Handling Improvements
+
+Unlike for regressions, there is no need to open a bug for an improvement. Notify the bug assignee in a comment and add the `perf-alert` keyword to the bug.
+
+#### 2.11.1 Valid Improvements
+
+Use **Copy summary** in the summary menu, paste it as a "Congrats" comment in the bug that caused the improvement, add the `perf-alert` keyword to the bug and update the status of the summary to **acknowledged**.
+
+**Attention:** the summary may contain alerts reassigned from other summaries. Tick the box next to **each untriaged alert** and change its status to **Acknowledge**. Ticking the box next to the alert summary and resetting it will **unlink** the reassigned alerts, which you don't want.
+
+#### 2.11.2 Improvements Treated as Regressions
+
+Depending on the test, an improvement of high magnitude (over 80%) should be treated more carefully. While a 100% improvement is impossible for a page load test (a site never loads instantly), over 80% is very rare and might mean that the test isn't loading what it should, for example an error page, which is likely to contain much less code than the actual website.
+
+#### 2.11.3 Invalid Improvements
+
+The same logic as for [invalid regressions](#294-invalid-alerts) applies. The difference is that the unstable graph triggered an alert while the value changed in the sense of an improvement.
+
+### 2.12 Updating Alert Status
+
+After finding the culprit and doing the necessary actions for the improvement/regression, update the tags and the status of the alert.
+
+#### 2.12.1 Tags
+
+Add a tag to the alert summary, using the tags option in the summary menu, if it fits one of the following:
+
+| Tag | Used for |
+|---|---|
+| `harness` | Patches that updated the harness and caused improvements or regressions |
+| `regression-backedout` | Patches backed out due to causing regressions |
+| `regression-fix` | Patches fixing a reported regression bug |
+| `infra` | Improvements or regressions caused by infra changes (not related to repository code) |
+| `improvement` | Patches causing improvements |
+| `improvement-backedout` | Regressions caused by backing out an earlier improvement |
+
+`regression-backedout` and `regression-fix` apply to the alerts linked to the bugs that backed out or fixed a regression, **not** to the alerts linked to the regression bugs. `improvement` only applies to improvements, and `improvement-backedout` only to regressions.
+
+#### 2.12.2 Moving Alerts out of the Untriaged Queue
+
+After the revision that caused the alert was identified, move the alert out of the untriaged queue:
+
+| Situation | New status |
+|---|---|
+| The alert is a valid improvement/regression and you linked a bug for it | **Acknowledge** |
+| The alert is an invalid improvement/regression | **Invalid** |
+| The alert is a downstream of an improvement/regression | **Downstream** |
+| The improvement/regression happened earlier or later on the same repository | **Reassign** |
+
+### 2.13 Special Cases
+
+#### 2.13.1 Multiple Bug IDs on the Same Push
+
+For **regressions**, if the push identified as the culprit has multiple revisions and bug IDs, fill in the "Regressed by" field of the filed bug with each of the bugs. If there is a regression-fix, regression-backedout or improvement-backedout bug to link to the alert but the revision contains multiple bugs, link the most relevant one. If you are unsure, needinfo the author to tell which of the bugs they think caused the alert.
+
+For **improvements**, the general approach is to leave needinfos for the authors to ask for help identifying the corresponding bug.
+
+#### 2.13.2 Release Flag Changes and Version Bumps on mozilla-beta
+
+Alerts caused by modifying release flags (`EARLY_BETA_OR_EARLIER`) or bumping the Firefox version are generated on mozilla-beta and have no bugs associated with the revisions:
+
+1. Check the milestone version in the changeset details.
+2. Check if a bug was already created for this milestone version.
+3. If not, clone [bug 1879080](https://bugzilla.mozilla.org/show_bug.cgi?id=1879080).
+4. Leave a comment with the alert summary you were investigating.
+
+Comment 0 can include the following information:
+
+```
+There were some alerts generated on mozilla-beta, that have no bugs associated with the revisions.
+Alert: https://treeherder.mozilla.org/perf.html#/alerts?id=<alert#number>
+Pushlog: https://hg.mozilla.org/releases/mozilla-beta/pushloghtml?fromchange=<rev>&tochange=<rev>
+Changeset Details: https://hg.mozilla.org/releases/mozilla-beta/rev/<rev>
+
+A few notes to consider:
+* for mozilla-beta alerts, we normally search for downstreams on autoland
+* most of the time, when a change is pushed to autoland, it is also pushed to mozilla-central during the same day
+* on mozilla-beta the change is merged after ~ 6 weeks
+```
+
+#### 2.13.3 build_metrics
+
+- **decision** alerts are usually just spikes and not relevant, so they are set to **invalid**. If the graph shows that the regression wasn't improved/fixed afterwards, check with the other sheriffs in the Performance Sheriffs Matrix channel, since it might be a cause for concern.
+- **instrumented** in the Tags & Options column should be set to **invalid**. Alerting will be deactivated for these tests in the future.
+
+#### 2.13.4 Regression Already Backed Out
+
+If a regression alert summary is identified and the changeset was already backed out, the safe approach is to file a bug following the usual workflow, but mention in comment 0 that the changeset was already backed out and there is no action item for the author. The bug is only created for tracking purposes and to be able to acknowledge the summary of the alert.
+
+#### 2.13.5 Jobs Failing to Run
+
+If the jobs are failing to run, we usually resort to [bisection](#how-can-i-do-a-bisection).
+
+#### 2.13.6 Invalid Comments
+
+If you left a comment by mistake that turns out to be invalid, add the `obsolete` tag to the comment.
 
 ## 3 How to Handle Inactive Alerts
 
@@ -211,7 +540,7 @@ Depending on the developer's response, one of five things may happen:
 ### What is Perfherder?
 
 [Perfherder](https://treeherder.mozilla.org/perf.html#/graphs) is a tool that takes data points from log files and graphs them over time.
-Primarily this is used for performance data from [Talos](https://wiki.mozilla.org/TestEngineering/Performance/Talos), but also from [AWSY](https://firefox-source-docs.mozilla.org/testing/perfdocs/awsy.html), build_metrics, [Autophone](https://wiki.mozilla.org/EngineeringProductivity/Autophone) and platform_microbenchmarks.
+Primarily this is used for performance data from [Talos](https://wiki.mozilla.org/TestEngineering/Performance/Talos), but also from {doc}`AWSY </testing/perfdocs/awsy>`, build_metrics, [Autophone](https://wiki.mozilla.org/EngineeringProductivity/Autophone) and platform_microbenchmarks.
 All these are test harnesses and you can find more about them [here](https://wiki.mozilla.org/TestEngineering/Performance/Sheriffing/Alerts).
 
 The code for Perfherder can be found inside Treeherder [on GitHub](https://github.com/mozilla/treeherder/).
@@ -334,9 +663,6 @@ Every [6 weeks](https://whattrainisitnow.com/calendar/) we release a new version
 
 This affects the Performance Sheriffs because we will get a big pile of alerts for Mozilla-Beta. These need to be addressed rapidly. Luckily almost all the regressions seen on Mozilla-Beta will already have been tracked on Mozilla-Inbound or Autoland.
 
-- Regressions go through multiple status changes (TODO: link to sections with multiple status changes) until they are finally resolved
-- An improvement has a single status of improvement
-
 ### What is a merge?
 
 Many times each day we merge code from the integration branches into the main branch and back. This is a common process in large projects. At Mozilla, this means that the majority of the code for Firefox is checked into Mozilla-Inbound and Autoland, then it is merged into Mozilla-Central (also referred to as Firefox) and then once merged, it gets merged back into the other branches. If you want to read more about this merge procedure, here are [the details](https://wiki.mozilla.org/Sheriffing/How_To/Merges).
@@ -365,7 +691,7 @@ While looking on TreeHerder for a backout, they all mention a backout in the com
 
 - note ^ the above image mentions the bug that was backed out, sometimes it is the revisoin.
 
-Backouts which affect [Perfherder alerts](https://wiki.mozilla.org/TestEngineering/Performance/Sheriffing/Alerts) always generate a set of improvements and regressions. These are usually easy to spot on the graph server and we just need to annotate the set of alerts for the given revision to be a 'backout' with the bug to track what took place.
+Backouts which affect [Perfherder alerts](https://wiki.mozilla.org/TestEngineering/Performance/Sheriffing/Alerts) always generate a set of improvements and regressions. These are usually easy to spot on the graph server and we just need to annotate the set of alerts for the given revision with the bug to track what took place, see [Backout/Regression-fix Alerts](#292-backoutregression-fix-alerts).
 
 Here is a view on graph server of what appears to be a backout (it could be a fix that landed quickly also):
 
@@ -611,13 +937,13 @@ If you're investigating a regression/improvement but for some reason it happened
 
 Bisection steps:
 
-1. checkout to the repository you're investigating:
-   : 1.hg checkout autoland (if you don't have it locally you need to do > hg pull autoland && hg update autoland)
-2. hg checkout abcde5
-   : 1. ./mach try fuzzy --full -q=^investigated-test-signature -m=baseline_abcde5_alert\_###### (you will know that the baseline contains the reference value)
-3. hg checkout abcde3
-   : 1. let's assume that build abcde4 broke the tests. you need to back it out in order to get the values of your investigated test on try:
-        : 1. hg backout -r abcde4
-     2. ./mach try fuzzy --full -q=^investigated-test-signature -m=abcde4_alert\_###### (the baseline keyword is included just in the reference push message)
-     3. Use the [perfcompare](https://perf.compare/) to compare between the 2 pushes.
-4. If the try values between abcde5 and abcde3 don't include the delta, then you'll know that abcde1 or abcde2 are suspects so you need to repeat the step you did for abcde3 to find out.
+1. Fetch the branch you're investigating, for example `git fetch origin autoland`.
+2. Push the last good revision to try as the baseline:
+   - `git checkout abcde5`
+   - `./mach try fuzzy --full -q=^investigated-test-signature -m=baseline_abcde5_alert_######` (the `baseline` keyword marks the push containing the reference value)
+3. Push the revision in the middle of the interval:
+   - `git checkout abcde3`
+   - Let's assume that abcde4 broke the tests. You need to revert it in order to get the values of your investigated test on try: `git revert abcde4`
+   - `./mach try fuzzy --full -q=^investigated-test-signature -m=abcde3_alert_######` (the `baseline` keyword is only included in the reference push message)
+   - Use [perfcompare](https://perf.compare/) to compare the 2 pushes.
+4. If the try values of abcde3 don't include the delta compared to abcde5, then abcde1 or abcde2 are the suspects, so repeat step 3 for them to find out.

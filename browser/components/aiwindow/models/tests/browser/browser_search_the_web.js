@@ -14,7 +14,9 @@ const {
   SEARCH_QUERY_APIKEY_PREF,
   SEARCH_THE_WEB_FAST_PREF,
   SEARCH_THE_WEB_ANSWERS_PREF,
+  SEARCH_THE_WEB_ANSWERS_DESCRIPTION,
   SEARCH_THE_WEB,
+  searchTheWebToolConfig,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
@@ -278,7 +280,7 @@ add_task(async function test_search_the_web_end_to_end() {
     mockEngineManager.assertAllRequestsHandled();
     mockSearchManager.assertAllRequestsHandled();
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockSearchManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     mockSearchManager.cleanupMocks();
@@ -423,7 +425,7 @@ add_task(async function test_search_the_web_reads_result_pages_up_to_limit() {
     mockEngineManager.assertAllRequestsHandled();
     mockSearchManager.assertAllRequestsHandled();
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockSearchManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     mockSearchManager.cleanupMocks();
@@ -471,7 +473,7 @@ add_task(async function test_search_the_web_invalid_answer_is_not_answered() {
     mockEngineManager.assertAllRequestsHandled();
     mockSearchManager.assertAllRequestsHandled();
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockSearchManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     mockSearchManager.cleanupMocks();
@@ -686,7 +688,7 @@ add_task(async function test_search_the_web_page_read_timeout_does_not_hang() {
     mockSearchManager.assertAllRequestsHandled();
   } finally {
     sb.restore();
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockSearchManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     mockSearchManager.cleanupMocks();
@@ -1601,15 +1603,28 @@ const ANSWERS_ENGINE_KEY = "unknown";
 const MODEL_CHOICE_PREF = "browser.smartwindow.firstrun.modelChoice";
 const CUSTOM_MODEL_CHOICE_ID = "0";
 
+/**
+ * A conversation whose engine reports the given endpoint kind, which is what
+ * gates the answers path.
+ *
+ * @param {boolean} [isDefaultEndpoint]
+ * @returns {ChatConversation}
+ */
+function makeAnswersConversation(isDefaultEndpoint = true) {
+  const conversation = new ChatConversation({
+    pageUrl: new URL("https://example.com"),
+    pageMeta: {},
+  });
+  conversation.engine = { isDefaultEndpoint };
+  return conversation;
+}
+
 add_task(async function test_answers_search_returns_answer_and_citations() {
   const query = "kid friendly things to do in Dallas";
   await pushSearchPrefs(false, true);
 
   const mockEngineManager = new MockEngineManager();
-  const conversation = new ChatConversation({
-    pageUrl: new URL("https://example.com"),
-    pageMeta: {},
-  });
+  const conversation = makeAnswersConversation();
 
   try {
     const runPromise = runSearchTheWeb({ query }, conversation);
@@ -1698,7 +1713,7 @@ add_task(async function test_answers_search_returns_answer_and_citations() {
 
     mockEngineManager.assertAllRequestsHandled();
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await SpecialPowers.popPrefEnv();
   }
@@ -1706,19 +1721,15 @@ add_task(async function test_answers_search_returns_answer_and_citations() {
 
 add_task(async function test_answers_pref_ignored_on_custom_endpoint() {
   // The answers path pins a model and service type of Mozilla's and hands the
-  // service's reply straight to the user, so a BYOM profile falls back to the
-  // fast path even with the pref on.
+  // service's reply straight to the user, so a conversation on a custom
+  // endpoint falls back to the fast path even with the pref on. The global
+  // model choice is left on a Mozilla model: what counts is the engine this
+  // conversation is using, e.g. a per-tab override to the custom model.
   await pushSearchPrefs(true, true);
-  await SpecialPowers.pushPrefEnv({
-    set: [[MODEL_CHOICE_PREF, CUSTOM_MODEL_CHOICE_ID]],
-  });
 
   const mockEngineManager = new MockEngineManager();
   const mockSearchManager = new MockSearchManager();
-  const conversation = new ChatConversation({
-    pageUrl: new URL("https://example.com"),
-    pageMeta: {},
-  });
+  const conversation = makeAnswersConversation(false);
 
   try {
     const runPromise = runSearchTheWeb({ query: "widgets" }, conversation);
@@ -1753,23 +1764,143 @@ add_task(async function test_answers_pref_ignored_on_custom_endpoint() {
 
     mockSearchManager.assertAllRequestsHandled();
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockSearchManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     mockSearchManager.cleanupMocks();
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_answers_runs_when_tab_overrides_custom_choice() {
+  // The global model choice is the custom model, but this conversation's engine
+  // was built from a per-tab override to a Mozilla model, so the answers path
+  // still runs and the model is offered the matching tool config.
+  await pushSearchPrefs(true, true);
+  await SpecialPowers.pushPrefEnv({
+    set: [[MODEL_CHOICE_PREF, CUSTOM_MODEL_CHOICE_ID]],
+  });
+
+  const mockEngineManager = new MockEngineManager();
+  const conversation = makeAnswersConversation(true);
+
+  try {
+    Assert.equal(
+      searchTheWebToolConfig(conversation)?.function.description,
+      SEARCH_THE_WEB_ANSWERS_DESCRIPTION,
+      "The model is offered the answers tool config"
+    );
+
+    const runPromise = runSearchTheWeb({ query: "widgets" }, conversation);
+
+    // Reaching this at all is the assertion: had the fast path run instead,
+    // no answer-service request would arrive and this await would hang.
+    (
+      await mockEngineManager.captureRequest({ purpose: ANSWERS_ENGINE_KEY })
+    ).respond({ finalOutput: "Widgets are great." });
+
+    const result = await runPromise;
+    Assert.ok(
+      result.directAnswerStream,
+      "The answer is delivered as the reply"
+    );
+
+    mockEngineManager.assertAllRequestsHandled();
+  } finally {
+    await mockEngineManager.rejectAllRequests();
+    mockEngineManager.cleanupMocks();
     await SpecialPowers.popPrefEnv(); // model choice
     await SpecialPowers.popPrefEnv(); // search prefs
   }
 });
 
+add_task(
+  async function test_answers_pref_ignored_on_overridden_endpoint_pref() {
+    // A Mozilla model choice resolves to browser.smartwindow.endpoint, so when
+    // that pref has been pointed away from prod MLPA in about:config the engine
+    // is not on the default endpoint and the answers path is withheld. Real
+    // engines are built here, since that resolution is what is under test.
+    await pushSearchPrefs(true, true);
+
+    const mockEngineManager = new MockEngineManager();
+    const mockSearchManager = new MockSearchManager();
+    const buildChatEngine = () =>
+      openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.AI,
+        purpose: PURPOSES.CHAT,
+        flowId: null,
+        feature: MODEL_FEATURES.CHAT,
+      });
+    let endpointPushed = false;
+
+    try {
+      const defaultEngine = await buildChatEngine();
+      Assert.ok(
+        defaultEngine.isDefaultEndpoint,
+        "An engine on the default endpoint pref is on the default endpoint"
+      );
+
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.smartwindow.endpoint", "http://localhost:0/v1"]],
+      });
+      endpointPushed = true;
+
+      const conversation = new ChatConversation({
+        pageUrl: new URL("https://example.com"),
+        pageMeta: {},
+      });
+      conversation.engine = await buildChatEngine();
+
+      Assert.ok(
+        !conversation.engine.isDefaultEndpoint,
+        "An engine on an overridden endpoint pref is not on the default endpoint"
+      );
+      Assert.notEqual(
+        searchTheWebToolConfig(conversation)?.function.description,
+        SEARCH_THE_WEB_ANSWERS_DESCRIPTION,
+        "The model is not offered the answers tool config"
+      );
+
+      const runPromise = runSearchTheWeb({ query: "widgets" }, conversation);
+
+      // The answers path never touches the search endpoint, so reaching this at
+      // all is the assertion: had it run, this await would hang.
+      (await mockSearchManager.captureRequest()).respond({
+        results: [
+          {
+            title: "Widget Store",
+            url: "https://widgets.example/store",
+            text: GOOD_SNIPPET,
+          },
+        ],
+      });
+
+      const result = await runPromise;
+      Assert.ok(
+        !("directAnswerStream" in result),
+        "No reply is delivered on the user's behalf"
+      );
+
+      mockSearchManager.assertAllRequestsHandled();
+    } finally {
+      await mockEngineManager.rejectAllRequests();
+      mockSearchManager.rejectAllRequests();
+      mockEngineManager.cleanupMocks();
+      mockSearchManager.cleanupMocks();
+      if (endpointPushed) {
+        await SpecialPowers.popPrefEnv(); // endpoint
+      }
+      await SpecialPowers.popPrefEnv(); // search prefs
+    }
+  }
+);
+
 add_task(async function test_answers_failure_returns_turn_then_escalates() {
   await pushSearchPrefs(false, true);
 
   const mockEngineManager = new MockEngineManager();
-  const conversation = new ChatConversation({
-    pageUrl: new URL("https://example.com"),
-    pageMeta: {},
-  });
+  const conversation = makeAnswersConversation();
 
   try {
     const runPromise = runSearchTheWeb({ query: "weather" }, conversation);
@@ -1813,7 +1944,7 @@ add_task(async function test_answers_failure_returns_turn_then_escalates() {
 
     mockEngineManager.assertAllRequestsHandled();
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await SpecialPowers.popPrefEnv();
   }

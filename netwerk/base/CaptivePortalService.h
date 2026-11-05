@@ -46,6 +46,8 @@ class CaptivePortalService : public nsICaptivePortalService,
 
   CaptivePortalService();
   virtual ~CaptivePortalService();
+  // True if the service was started and the enabled pref is still set.
+  bool IsActive() const;
   nsresult PerformCheck();
   nsresult RearmTimer();
   void NotifyConnectivityAvailable(bool aCaptive);

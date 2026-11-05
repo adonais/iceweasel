@@ -425,8 +425,8 @@ const char* StringFromIPCMessageType(uint32_t aMessageType)
     return "REQUEST_INTRODUCTION_MESSAGE";
   case INTRODUCE_MESSAGE_TYPE:
     return "INTRODUCE_MESSAGE";
-  case BROADCAST_MESSAGE_TYPE:
-    return "BROADCAST_MESSAGE";
+  case DEAD_PROXY_MESSAGE_TYPE:
+    return "DEAD_PROXY_MESSAGE";
   case EVENT_MESSAGE_TYPE:
     return "EVENT_MESSAGE";
   case IMPENDING_SHUTDOWN_MESSAGE_TYPE:

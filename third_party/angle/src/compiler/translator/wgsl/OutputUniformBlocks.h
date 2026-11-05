@@ -84,7 +84,6 @@ struct WGSLGenerationMetadataForUniforms
 };
 bool OutputUniformWrapperStructsAndConversions(
     TInfoSinkBase &output,
-    const ShBuiltInResources &resources,
     const WGSLGenerationMetadataForUniforms &wgslGenerationMetadataForUniforms);
 
 bool IsMatCx2(const TType *type);
@@ -105,10 +104,6 @@ bool OutputUniformBoolOrBvecConversion(TInfoSinkBase &output, const TType &type)
 bool OutputUniformBlocksAndSamplers(TCompiler *compiler,
                                     TIntermBlock *root,
                                     const TVariable *defaultUniformBlock);
-
-// GLSL sampler uniforms are extracted from structs. Given a GLSL sampler's associated name string,
-// this function retrieves its new WGSL name and strips off array indices.
-std::string WGSLGetMappedSamplerName(const std::string &originalName);
 
 }  // namespace sh
 

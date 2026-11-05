@@ -50,12 +50,12 @@ export function getMessageHandlerClass(type) {
 
 /**
  * The MessageHandlerRegistry allows to create and retrieve MessageHandler
- * instances for different session ids.
+ * instances for different MessageHandler networks.
  *
  * A MessageHandlerRegistry instance is bound to a specific MessageHandler type
  * and context. All MessageHandler instances created by the same registry will
  * use the type and context of the registry, but each will be associated to a
- * different session id.
+ * different internal session id.
  *
  * The registry is useful to retrieve the appropriate MessageHandler instance
  * after crossing a technical boundary (eg process, thread...).
@@ -75,7 +75,7 @@ export class MessageHandlerRegistry extends EventEmitter {
     this._type = type;
 
     /**
-     * Map of session id to MessageHandler instance
+     * Map of internal session id to MessageHandler instance
      */
     this._messageHandlersMap = new Map();
 
@@ -92,13 +92,13 @@ export class MessageHandlerRegistry extends EventEmitter {
    */
   createAllMessageHandlers() {
     const data = lazy.readSessionData();
-    for (const [sessionId, sessionDataItems] of data) {
-      // Create a message handler for this context for each active message
-      // handler session.
+    for (const [internalSessionId, sessionDataItems] of data) {
+      // Create a message handler for this context for each active
+      // MessageHandler network.
       // TODO: In the future, to support debugging use cases we might want to
       // only create a message handler if there is relevant data.
       // For automation scenarios, this is less critical.
-      this._createMessageHandler(sessionId, sessionDataItems);
+      this._createMessageHandler(internalSessionId, sessionDataItems);
     }
   }
 
@@ -110,7 +110,7 @@ export class MessageHandlerRegistry extends EventEmitter {
 
   /**
    * Retrieve all MessageHandler instances held in this registry, for all
-   * session IDs.
+   * internal session ids.
    *
    * @returns {Iterable.<MessageHandler>}
    *     Iterator of MessageHandler instances
@@ -120,31 +120,32 @@ export class MessageHandlerRegistry extends EventEmitter {
   }
 
   /**
-   * Retrieve an existing MessageHandler instance matching the provided session
-   * id. Returns null if no MessageHandler was found.
+   * Retrieve an existing MessageHandler instance matching the provided
+   * internal session id. Returns null if no MessageHandler was found.
    *
-   * @param {string} sessionId
-   *     ID of the session the handler is used for.
+   * @param {string} internalSessionId
+   *     ID of the MessageHandler network the handler is part of.
    * @returns {MessageHandler=}
    *     A MessageHandler instance, null if not found.
    */
-  getExistingMessageHandler(sessionId) {
-    return this._messageHandlersMap.get(sessionId);
+  getExistingMessageHandler(internalSessionId) {
+    return this._messageHandlersMap.get(internalSessionId);
   }
 
   /**
-   * Retrieve the MessageHandler instance registered for the provided session
-   * id. Will create and register a MessageHander if no instance was found.
+   * Retrieve the MessageHandler instance registered for the provided internal
+   * session id. Will create and register a MessageHander if no instance was
+   * found.
    *
-   * @param {string} sessionId
-   *     ID of the session the handler is used for.
+   * @param {string} internalSessionId
+   *     ID of the MessageHandler network the handler is part of.
    * @returns {MessageHandler}
    *     A MessageHandler instance.
    */
-  getOrCreateMessageHandler(sessionId) {
-    let messageHandler = this.getExistingMessageHandler(sessionId);
+  getOrCreateMessageHandler(internalSessionId) {
+    let messageHandler = this.getExistingMessageHandler(internalSessionId);
     if (!messageHandler) {
-      messageHandler = this._createMessageHandler(sessionId);
+      messageHandler = this._createMessageHandler(internalSessionId);
     }
 
     return messageHandler;
@@ -157,17 +158,17 @@ export class MessageHandlerRegistry extends EventEmitter {
   /**
    * Create a new MessageHandler instance.
    *
-   * @param {string} sessionId
-   *     ID of the session the handler will be used for.
+   * @param {string} internalSessionId
+   *     ID of the MessageHandler network the handler will be part of.
    * @param {Array<SessionDataItem>=} sessionDataItems
    *     Optional array of session data items to be applied automatically to the
    *     MessageHandler.
    * @returns {MessageHandler}
    *     A new MessageHandler instance.
    */
-  _createMessageHandler(sessionId, sessionDataItems) {
+  _createMessageHandler(internalSessionId, sessionDataItems) {
     const messageHandler = new this._messageHandlerClass(
-      sessionId,
+      internalSessionId,
       this._context,
       this
     );
@@ -180,10 +181,10 @@ export class MessageHandlerRegistry extends EventEmitter {
 
     messageHandler.initialize(sessionDataItems);
 
-    this._messageHandlersMap.set(sessionId, messageHandler);
+    this._messageHandlersMap.set(internalSessionId, messageHandler);
 
     lazy.logger.trace(
-      `Created MessageHandler ${this._type} for session ${sessionId}`
+      `Created MessageHandler ${this._type} ${internalSessionId}`
     );
 
     return messageHandler;
@@ -197,10 +198,10 @@ export class MessageHandlerRegistry extends EventEmitter {
       this._onMessageHandlerDestroyed
     );
     messageHandler.off("message-handler-event", this._onMessageHandlerEvent);
-    this._messageHandlersMap.delete(messageHandler.sessionId);
+    this._messageHandlersMap.delete(messageHandler.internalSessionId);
 
     lazy.logger.trace(
-      `Unregistered MessageHandler ${messageHandler.constructor.type} for session ${messageHandler.sessionId}`
+      `Unregistered MessageHandler ${messageHandler.constructor.type} ${messageHandler.internalSessionId}`
     );
   }
 

@@ -44,8 +44,14 @@ void SimulatedTaskQueue::Delete() {
     ready_tasks_.swap(ready_tasks);
     delayed_tasks_.swap(delayed_tasks);
   }
-  ready_tasks.clear();
-  delayed_tasks.clear();
+  {
+    // Posted tasks are guaranteed to be destroyed with Current() pointing to
+    // the task queue they were posted to, whether they're executed or not.
+    // See TaskQueueBase::PostTask.
+    CurrentTaskQueueSetter set_current(this);
+    ready_tasks.clear();
+    delayed_tasks.clear();
+  }
   delete this;
 }
 

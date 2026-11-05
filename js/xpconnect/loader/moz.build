@@ -60,3 +60,11 @@ LOCAL_INCLUDES += [
 ]
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "mozJSLoaderUtils.h",
+    "mozJSModuleLoader.h",
+    "mozJSSubScriptLoader.h",
+    "NonSharedGlobalSyncModuleLoaderScope.h",
+    "ScriptPreloader-inl.h",
+]

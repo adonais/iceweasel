@@ -39,7 +39,7 @@ ENameValueFlag HTMLBRAccessible::NativeName(nsString& aName) const {
 // HTMLLabelAccessible
 ////////////////////////////////////////////////////////////////////////////////
 
-ENameValueFlag HTMLLabelAccessible::NativeName(nsString& aName) const {
+ENameValueFlag HTMLLabelAccessible::NativeName(nsString& /*aName*/) const {
   return eNameOK;
 }
 

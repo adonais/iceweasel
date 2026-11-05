@@ -47,7 +47,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   NS_DECL_NSINAMED
 
   //-------------------------------------------------------------------------
-  // NOTE: functions below may only be called on the main thread.
+  // NOTE: the constructor may only be called on the main thread.
   //-------------------------------------------------------------------------
 
   nsHttpConnectionMgr();

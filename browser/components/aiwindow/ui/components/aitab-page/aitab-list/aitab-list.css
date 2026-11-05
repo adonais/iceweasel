@@ -8,7 +8,40 @@
   --aitab-list-group-gap: 36px;
   --aitab-list-column-gap: 32px;
   --aitab-list-row-gap: 48px;
-  --aitab-list-border-color: var(--color-gray-20);
+  --aitab-list-item-padding-block: 12px 14px;
+  --aitab-list-heading-border-color: var(--border-color);
+  --aitab-list-item-border-color: light-dark(var(--color-gray-20), var(--color-gray-50));
+
+  @media (not (-moz-pref("browser.nova.enabled"))) and (not (forced-colors)) {
+    --aitab-list-heading-border-color: light-dark(var(--color-gray-30), var(--color-gray-60));
+    /* The base gray-50 is lighter than gray-60, so dark mode needs a dimmer
+     * item border to keep the heading border the stronger one. */
+    --aitab-list-item-border-color: light-dark(var(--color-gray-20), var(--color-gray-70));
+  }
+
+  @media (width > 900px) {
+    --aitab-list-row-gap: 48px;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    gap: var(--aitab-list-row-gap);
+    grid-template-columns: var(--aitab-list-row-split);
+  }
+}
+
+:host([layout="row"]) {
+  & .aitab-list {
+    gap: var(--space-large);
+    grid-template-columns: 1fr;
+
+    @media (width > 900px) {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      gap: var(--aitab-list-row-gap);
+      grid-template-columns: var(--aitab-list-row-split);
+    }
+  }
+
+  & .aitab-list-groups {
+    grid-template-columns: 1fr;
+  }
 }
 
 .aitab-list {
@@ -33,16 +66,14 @@
   display: grid;
   align-items: start;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  row-gap: var(--aitab-list-group-gap);
-  column-gap: var(--space-xlarge);
-  grid-template-columns: repeat(auto-fit, minmax(var(--aitab-list-column-min), 1fr));
+  gap: var(--aitab-list-group-gap);
+  grid-template-columns: 1fr;
 
-  @container aitab-page (width <= 900px) {
-    grid-template-columns: 1fr;
+  @media (width > 900px) {
+    grid-template-columns: repeat(auto-fit, minmax(var(--aitab-list-column-min), 1fr));
   }
 
-  /* An untitled block has no intro to sit beside, so the groups take the
-     whole width rather than leaving an empty gutter. */
+  /* An untitled block has no intro, do not leave an empty gutter. */
   &:only-child {
     grid-column: 1 / -1;
   }
@@ -60,41 +91,20 @@
   list-style: none;
 }
 
-.aitab-list-group-heading,
-.aitab-list-item {
+.aitab-list-group-heading {
   padding-block: var(--space-small);
+  border-block-end: var(--border-width) solid var(--aitab-list-heading-border-color);
 }
 
-/* The rules are separators, so the item a group ends on has nothing to be
-   separated from. */
-.aitab-list-group-heading,
 .aitab-list-item:not(:last-child) {
-  border-block-end: var(--border-width) solid var(--aitab-list-border-color);
+  border-block-end: var(--border-width) solid var(--aitab-list-item-border-color);
 }
 
 .aitab-list-item {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding-block: var(--aitab-list-item-padding-block);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: var(--aitab-body);
-  line-height: 1.5;
-}
-
-:host([layout="row"]) {
-  & .aitab-list {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    gap: var(--aitab-list-row-gap);
-    grid-template-columns: var(--aitab-list-row-split);
-  }
-
-  & .aitab-list-groups {
-    grid-template-columns: 1fr;
-  }
-
-  /* The gutter needs room the narrow page does not have, and the type scale
-     steps down at the same width; see aitab-base.css. */
-  @container aitab-page (width <= 900px) {
-    & .aitab-list {
-      gap: var(--space-large);
-      grid-template-columns: 1fr;
-    }
-  }
+  /* With the padding and the separator, each row is 54px tall. */
+  line-height: 27px;
 }

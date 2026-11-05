@@ -833,6 +833,11 @@ nsDisplayListBuilder::Linkifier::Linkifier(nsDisplayListBuilder* aBuilder,
     return;
   }
 
+  nsPoint offset;
+  aBuilder->mLinkReferenceFrame =
+      aBuilder->FindReferenceFrameFor(aFrame, &offset);
+  aBuilder->mLinkBounds = nsRect(offset, aFrame->GetSize());
+
   // Record that we need to reset the builder's state on destruction.
   mBuilderToReset = aBuilder;
 }
@@ -842,12 +847,25 @@ void nsDisplayListBuilder::Linkifier::MaybeAppendLink(
   // Note that we may generate a link here even if the constructor bailed out
   // without updating aBuilder->mLinkURI/Dest, because it may have been set by
   // an ancestor that was associated with a link element.
-  if (!aBuilder->mLinkURI.IsEmpty() || !aBuilder->mLinkDest.IsEmpty()) {
-    auto* link = MakeDisplayItem<nsDisplayLink>(
-        aBuilder, aFrame, aBuilder->mLinkDest.get(), aBuilder->mLinkURI.get(),
-        aFrame->GetRect());
-    mList->AppendToTop(link);
+  if (aBuilder->mLinkURI.IsEmpty() && aBuilder->mLinkDest.IsEmpty()) {
+    return;
   }
+  if (!mBuilderToReset) {
+    // mBuilderToReset is only set for the link element's frame, so this is a
+    // descendant of that frame. If it is entirely covered by that frame, a link
+    // for it would be redundant.
+    nsPoint offset;
+    const nsIFrame* referenceFrame =
+        aBuilder->FindReferenceFrameFor(aFrame, &offset);
+    if (referenceFrame == aBuilder->mLinkReferenceFrame &&
+        aBuilder->mLinkBounds.Contains(nsRect(offset, aFrame->GetSize()))) {
+      return;
+    }
+  }
+  auto* link = MakeDisplayItem<nsDisplayLink>(
+      aBuilder, aFrame, aBuilder->mLinkDest.get(), aBuilder->mLinkURI.get(),
+      aFrame->GetRect());
+  mList->AppendToTop(link);
 }
 
 uint32_t nsDisplayListBuilder::sPaintSequenceNumber(1);
@@ -2145,15 +2163,6 @@ void nsDisplayListBuilder::ReuseDisplayItem(nsDisplayItem* aItem) {
   aItem->SetReusedItem();
 }
 
-void nsDisplayListSet::CopyTo(const nsDisplayListSet& aDestination) const {
-  for (size_t i = 0; i < mLists.size(); ++i) {
-    auto* from = mLists[i];
-    auto* to = aDestination.mLists[i];
-
-    from->CopyTo(to);
-  }
-}
-
 void nsDisplayListSet::MoveTo(const nsDisplayListSet& aDestination) const {
   aDestination.BorderBackground()->AppendToTop(BorderBackground());
   aDestination.BlockBorderBackgrounds()->AppendToTop(BlockBorderBackgrounds());
@@ -2778,7 +2787,6 @@ nsDisplayContainer::nsDisplayContainer(
     const ActiveScrolledRoot* aActiveScrolledRoot,
     ContainerASRType aContainerASRType, nsDisplayList* aList)
     : nsDisplayItem(aBuilder, aFrame, aActiveScrolledRoot),
-      mChildren(aBuilder),
       mFrameASR(aContainerASRType == ContainerASRType::AncestorOfContained
                     ? aBuilder->CurrentActiveScrolledRoot()
                     : nullptr),
@@ -3253,7 +3261,7 @@ AppendedBackgroundType nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
   // An auxiliary list is necessary in case we have background blending; if that
   // is the case, background items need to be wrapped by a blend container to
   // isolate blending to the background
-  nsDisplayList bgItemList(aBuilder);
+  nsDisplayList bgItemList;
   // Even if we don't actually have a background color to paint, we may still
   // need to create an item for hit testing and we still need to create an item
   // for background-color animations.
@@ -3351,7 +3359,7 @@ AppendedBackgroundType nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
                               willPaintBorder);
     }
 
-    nsDisplayList thisItemList(aBuilder);
+    nsDisplayList thisItemList;
     nsDisplayBackgroundImage::InitData bgData =
         nsDisplayBackgroundImage::GetInitData(aBuilder, aFrame, i, bgOriginRect,
                                               bgSC);
@@ -4835,7 +4843,6 @@ nsDisplayWrapList::nsDisplayWrapList(
     const ActiveScrolledRoot* aActiveScrolledRoot,
     ContainerASRType aContainerASRType, bool aClearClipChain)
     : nsPaintedDisplayItem(aBuilder, aFrame, aActiveScrolledRoot),
-      mList(aBuilder),
       mFrameASR(aContainerASRType == ContainerASRType::AncestorOfContained
                     ? aBuilder->CurrentActiveScrolledRoot()
                     : nullptr),
@@ -4856,7 +4863,6 @@ nsDisplayWrapList::nsDisplayWrapList(
 nsDisplayWrapList::nsDisplayWrapList(nsDisplayListBuilder* aBuilder,
                                      nsIFrame* aFrame, nsDisplayItem* aItem)
     : nsPaintedDisplayItem(aBuilder, aFrame),
-      mList(aBuilder),
       mOverrideZIndex(0),
       mHasZIndexOverride(false) {
   MOZ_COUNT_CTOR(nsDisplayWrapList);
@@ -4927,79 +4933,6 @@ nsDisplayWrapList::CreateWebRenderCommandsNewClipListOption(
       GetChildren(), this, aDisplayListBuilder, aSc, aBuilder, aResources,
       aNewClipList);
   return Ok();
-}
-
-static nsresult WrapDisplayList(nsDisplayListBuilder* aBuilder,
-                                nsIFrame* aFrame, nsDisplayList* aList,
-                                nsDisplayItemWrapper* aWrapper) {
-  if (!aList->GetTop()) {
-    return NS_OK;
-  }
-  nsDisplayItem* item = aWrapper->WrapList(aBuilder, aFrame, aList);
-  if (!item) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-  // aList was emptied
-  aList->AppendToTop(item);
-  return NS_OK;
-}
-
-static nsresult WrapEachDisplayItem(nsDisplayListBuilder* aBuilder,
-                                    nsDisplayList* aList,
-                                    nsDisplayItemWrapper* aWrapper) {
-  for (nsDisplayItem* item : aList->TakeItems()) {
-    item = aWrapper->WrapItem(aBuilder, item);
-    if (!item) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-    aList->AppendToTop(item);
-  }
-  // aList was emptied
-  return NS_OK;
-}
-
-nsresult nsDisplayItemWrapper::WrapLists(nsDisplayListBuilder* aBuilder,
-                                         nsIFrame* aFrame,
-                                         const nsDisplayListSet& aIn,
-                                         const nsDisplayListSet& aOut) {
-  nsresult rv = WrapListsInPlace(aBuilder, aFrame, aIn);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (&aOut == &aIn) {
-    return NS_OK;
-  }
-  aOut.BorderBackground()->AppendToTop(aIn.BorderBackground());
-  aOut.BlockBorderBackgrounds()->AppendToTop(aIn.BlockBorderBackgrounds());
-  aOut.Floats()->AppendToTop(aIn.Floats());
-  aOut.Content()->AppendToTop(aIn.Content());
-  aOut.PositionedDescendants()->AppendToTop(aIn.PositionedDescendants());
-  aOut.Outlines()->AppendToTop(aIn.Outlines());
-  return NS_OK;
-}
-
-nsresult nsDisplayItemWrapper::WrapListsInPlace(
-    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-    const nsDisplayListSet& aLists) {
-  nsresult rv;
-  if (WrapBorderBackground()) {
-    // Our border-backgrounds are in-flow
-    rv = WrapDisplayList(aBuilder, aFrame, aLists.BorderBackground(), this);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-  // Our block border-backgrounds are in-flow
-  rv = WrapDisplayList(aBuilder, aFrame, aLists.BlockBorderBackgrounds(), this);
-  NS_ENSURE_SUCCESS(rv, rv);
-  // The floats are not in flow
-  rv = WrapEachDisplayItem(aBuilder, aLists.Floats(), this);
-  NS_ENSURE_SUCCESS(rv, rv);
-  // Our child content is in flow
-  rv = WrapDisplayList(aBuilder, aFrame, aLists.Content(), this);
-  NS_ENSURE_SUCCESS(rv, rv);
-  // The positioned descendants may not be in-flow
-  rv = WrapEachDisplayItem(aBuilder, aLists.PositionedDescendants(), this);
-  NS_ENSURE_SUCCESS(rv, rv);
-  // The outlines may not be in-flow
-  return WrapEachDisplayItem(aBuilder, aLists.Outlines(), this);
 }
 
 nsDisplayOpacity::nsDisplayOpacity(
@@ -5828,7 +5761,7 @@ nsDisplayFixedPosition* nsDisplayFixedPosition::CreateForFixedBackground(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsIFrame* aSecondaryFrame,
     nsDisplayBackgroundImage* aImage, const uint16_t aIndex,
     const ActiveScrolledRoot* aScrollTargetASR) {
-  nsDisplayList temp(aBuilder);
+  nsDisplayList temp;
   temp.AppendToTop(aImage);
 
   if (aSecondaryFrame) {
@@ -6276,7 +6209,6 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
                                        nsIFrame* aFrame, nsDisplayList* aList,
                                        const nsRect& aChildrenBuildingRect)
     : nsPaintedDisplayItem(aBuilder, aFrame),
-      mChildren(aBuilder),
       mTransform(Some(Matrix4x4())),
       mChildrenBuildingRect(aChildrenBuildingRect),
       mPrerenderDecision(PrerenderDecision::No),
@@ -6298,7 +6230,6 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
                                        bool aWrapsBackdropFilter,
                                        bool aForceIsolation)
     : nsPaintedDisplayItem(aBuilder, aFrame),
-      mChildren(aBuilder),
       mChildrenBuildingRect(aChildrenBuildingRect),
       mPrerenderDecision(aPrerenderDecision),
       mIsTransformSeparator(false),
@@ -6318,7 +6249,6 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
                                        const nsRect& aChildrenBuildingRect,
                                        decltype(WithTransformGetter))
     : nsPaintedDisplayItem(aBuilder, aFrame),
-      mChildren(aBuilder),
       mChildrenBuildingRect(aChildrenBuildingRect),
       mPrerenderDecision(PrerenderDecision::No),
       mIsTransformSeparator(false),
@@ -7708,7 +7638,7 @@ void nsDisplayTransform::WriteDebugInfo(std::stringstream& aStream) {
 nsDisplayPerspective::nsDisplayPerspective(nsDisplayListBuilder* aBuilder,
                                            nsIFrame* aFrame,
                                            nsDisplayList* aList)
-    : nsPaintedDisplayItem(aBuilder, aFrame), mList(aBuilder) {
+    : nsPaintedDisplayItem(aBuilder, aFrame) {
   mList.AppendToTop(aList);
   MOZ_ASSERT(mList.Length() == 1);
   MOZ_ASSERT(mList.GetTop()->GetType() == DisplayItemType::TYPE_TRANSFORM);
@@ -8420,9 +8350,65 @@ static Maybe<wr::WrClipChainId> CreateSimpleClipRegion(
   }
 
   const auto& clipPath = style->mClipPath;
-  const auto& shape = *clipPath.AsShape()._0;
-
   auto appUnitsPerDevPixel = frame->PresContext()->AppUnitsPerDevPixel();
+
+  if (clipPath.IsUrl()) {
+    // A trivial <clipPath> whose single child is a simple shape. The shape is
+    // in the clipped frame's user space, which is mapped to the reference
+    // frame the same way SVGIntegrationUtils positions the mask painting.
+    SVGClipPathFrame* clipPathFrame = nullptr;
+    SVGObserverUtils::GetAndObserveClipPath(
+        nsLayoutUtils::FirstContinuationOrIBSplitSibling(frame),
+        &clipPathFrame);
+    CSSRect rect;
+    CSSSize radii;
+    if (!clipPathFrame ||
+        !clipPathFrame->GetSimpleClipShape(frame, &rect, &radii)) {
+      return Nothing();
+    }
+
+    nsPoint offsetToBoundingBox =
+        aDisplayItem.ToReferenceFrame() -
+        SVGIntegrationUtils::GetOffsetToBoundingBox(frame);
+    if (!frame->IsSVGFrame()) {
+      nsPresContext* pc = frame->PresContext();
+      offsetToBoundingBox =
+          nsPoint(pc->RoundAppUnitsToNearestDevPixels(offsetToBoundingBox.x),
+                  pc->RoundAppUnitsToNearestDevPixels(offsetToBoundingBox.y));
+    }
+    const auto cssToDev = frame->PresContext()->CSSToDevPixelScale();
+    LayoutDevicePoint offset =
+        LayoutDevicePoint::FromAppUnits(offsetToBoundingBox,
+                                        appUnitsPerDevPixel) -
+        SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(frame) * cssToDev;
+
+    LayoutDeviceRect devRect = rect * cssToDev;
+    devRect.MoveBy(offset);
+    LayoutDeviceSize devRadii = radii * cssToDev;
+    wr::LayoutRect wrRect = wr::ToLayoutRect(devRect);
+
+    wr::WrClipId clipId{};
+    if (devRadii.IsEmpty()) {
+      clipId = aBuilder.DefineRectClip(Nothing(), wrRect);
+    } else {
+      wr::ComplexClipRegion region;
+      region.rect = wrRect;
+      region.radii = wr::EmptyBorderRadius();
+      wr::LayoutSize r{devRadii.width, devRadii.height};
+      region.radii.top_left = r;
+      region.radii.top_right = r;
+      region.radii.bottom_left = r;
+      region.radii.bottom_right = r;
+      region.inset = wr::EmptyLayoutSideOffsets();
+      region.mode = wr::ClipMode::Clip;
+      clipId = aBuilder.DefineRoundedRectClip(Nothing(), region);
+    }
+    wr::WrClipChainId clipChainId = aBuilder.DefineClipChain(
+        {&clipId, 1}, aBuilder.CurrentClipChainIdIfNotRoot());
+    return Some(clipChainId);
+  }
+
+  const auto& shape = *clipPath.AsShape()._0;
   const nsRect refBox =
       nsLayoutUtils::ComputeClipPathGeometryBox(frame, clipPath.AsShape()._1);
 

@@ -266,9 +266,12 @@
 
   dialog {
     background: var(--newtab-background-color-secondary);
-    border: 1px solid var(--card-border-color);
-    border-radius: var(--border-radius-medium);
-    box-shadow: var(--card-box-shadow);
+    // @backward-compat { version 160 }
+    // The --dialog-* tokens are only defined from Firefox 160, so older
+    // versions fall back to the --popup-* tokens they alias.
+    border: var(--border-width) solid var(--dialog-border-color, var(--popup-border-color));
+    border-radius: var(--dialog-border-radius, var(--popup-border-radius));
+    box-shadow: var(--dialog-box-shadow, var(--popup-box-shadow));
     display: flex;
     width: 332px;
 

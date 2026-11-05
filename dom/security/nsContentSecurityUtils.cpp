@@ -6,6 +6,8 @@
 
 #include "nsContentSecurityUtils.h"
 
+#include <algorithm>
+
 #include "mozilla/Components.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -343,6 +345,20 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
   static constexpr auto kExtensionRegex = u"extensions/(.+)@(.+)!(.+)$"_ns;
   static constexpr auto kSingleFileRegex = u"^[a-zA-Z0-9.?]+$"_ns;
 
+  static constexpr nsLiteralCString kUserChromePrefixes[] = {
+      "userscripts/"_ns,        "userchromejs/"_ns,
+      "user_chrome_files/"_ns,  "tabmix"_ns,
+      "searchwp/"_ns,           "custombuttons"_ns,
+      "tabgroups-resource/"_ns,
+  };
+
+  static constexpr nsLiteralCString kUserResourcePrefixes[] = {
+      "usl-ucjs/"_ns,
+      "sfm-ucjs/"_ns,
+      "cpmanager-legacy/"_ns,
+      "pwa/utils/"_ns,
+  };
+
   if (fileName.IsEmpty()) {
     return FilenameTypeAndDetails(kOther, Nothing());
   }
@@ -350,28 +366,33 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
   // resource:// and chrome://
   // These don't contain any user (profile) paths.
   if (StringBeginsWith(fileName, "chrome://"_ns)) {
-    if (StringBeginsWith(fileName, "chrome://userscripts/"_ns) ||
-        StringBeginsWith(fileName, "chrome://userchromejs/"_ns) ||
-        StringBeginsWith(fileName, "chrome://user_chrome_files/"_ns) ||
-        StringBeginsWith(fileName, "chrome://tabmix"_ns) ||
-        StringBeginsWith(fileName, "chrome://searchwp/"_ns) ||
-        StringBeginsWith(fileName, "chrome://custombuttons"_ns) ||
-        StringBeginsWith(fileName, "chrome://tabgroups-resource/"_ns)) {
+    const auto path = Substring(fileName, 9);
+
+    if (std::any_of(std::begin(kUserChromePrefixes),
+                    std::end(kUserChromePrefixes), [&](const auto& prefix) {
+                      return StringBeginsWith(path, prefix);
+                    })) {
       return FilenameTypeAndDetails(kSuspectedUserChromeJS,
                                     Some(StripQueryRef(fileName)));
     }
+
     return FilenameTypeAndDetails(kChromeURI, Some(StripQueryRef(fileName)));
   }
+
   if (StringBeginsWith(fileName, "resource://"_ns)) {
-    if (StringBeginsWith(fileName, "resource://usl-ucjs/"_ns) ||
-        StringBeginsWith(fileName, "resource://sfm-ucjs/"_ns) ||
-        StringBeginsWith(fileName, "resource://cpmanager-legacy/"_ns) ||
-        StringBeginsWith(fileName, "resource://pwa/utils/"_ns)) {
+    const auto path = Substring(fileName, 11);
+
+    if (std::any_of(std::begin(kUserResourcePrefixes),
+                    std::end(kUserResourcePrefixes), [&](const auto& prefix) {
+                      return StringBeginsWith(path, prefix);
+                    })) {
       return FilenameTypeAndDetails(kSuspectedUserChromeJS,
                                     Some(StripQueryRef(fileName)));
     }
+
     return FilenameTypeAndDetails(kResourceURI, Some(StripQueryRef(fileName)));
   }
+
   if (StringBeginsWith(fileName, "moz-src://"_ns)) {
     return FilenameTypeAndDetails(kMozSrcURI, Some(StripQueryRef(fileName)));
   }
@@ -1465,6 +1486,11 @@ static nsLiteralCString sFrameSrcHttpsHostAllowList[] = {
     "about:home"_ns,
     "about:newtab"_ns,
 };
+// frame-src moz-extension:
+static nsLiteralCString sFrameSrcMozExtensionAllowList[] = {
+    "about:home"_ns,
+    "about:newtab"_ns,
+};
 
 class DisallowingVisitor : public nsCSPSrcVisitor {
  public:
@@ -1721,6 +1747,19 @@ class FrameSrcVisitor : public AllowBuiltinSrcVisitor {
   FrameSrcVisitor(CSPDirective aDirective, nsACString& aURL)
       : AllowBuiltinSrcVisitor(aDirective, aURL) {
     MOZ_ASSERT(aDirective == CSPDirective::FRAME_SRC_DIRECTIVE);
+  }
+
+  bool visitSchemeSrc(const nsCSPSchemeSrc& src) override {
+    nsAutoString scheme;
+    src.getScheme(scheme);
+
+    if (scheme == u"moz-extension"_ns) {
+      if (CheckAllowList(Span(sFrameSrcMozExtensionAllowList))) {
+        return true;
+      }
+    }
+
+    return AllowBuiltinSrcVisitor::visitSchemeSrc(src);
   }
 
   bool visitHostSrc(const nsCSPHostSrc& src) override {

@@ -504,7 +504,7 @@
         "firefox_enterprise": { "version_added": "149" }
       },
       "x-restart-required": true,
-      "description": "Block access to the Add-ons Manager ('about:addons').",
+      "description": "Block access to the Add-ons Manager (about:addons).",
       "examples": [true]
     },
 
@@ -517,7 +517,7 @@
         "firefox_enterprise": { "version_added": "149" }
       },
       "x-restart-required": false,
-      "description": "Block access to 'about:config'.",
+      "description": "Block access to Advanced Preferences (about:config).",
       "examples": [true]
     },
 
@@ -530,7 +530,7 @@
         "firefox_enterprise": { "version_added": false }
       },
       "x-restart-required": true,
-      "description": "Block access to About Profiles ('about:profiles').",
+      "description": "Block access to About Profiles (about:profiles).",
       "examples": [true]
     },
 
@@ -543,7 +543,7 @@
         "firefox_enterprise": { "version_added": "149" }
       },
       "x-restart-required": false,
-      "description": "Block access to Troubleshooting Information ('about:support').",
+      "description": "Block access to Troubleshooting Information (about:support).",
       "examples": [true]
     },
 
@@ -1309,7 +1309,8 @@
       "x-compatibility": {
         "firefox": { "version_added": "75" },
         "firefox_esr": { "version_added": "68.7.0" },
-        "firefox_enterprise": { "version_added": "149" }
+        "firefox_enterprise": { "version_added": "149" },
+        "notes": "Only applicable to Windows."
       },
       "x-restart-required": true,
       "description": "Prevent the default browser agent from taking any actions.",
@@ -1436,6 +1437,22 @@
       "examples": [true]
     },
 
+    "DisableMacOSUserPolicies": {
+      "type": "boolean",
+      "x-category": "Miscellaneous",
+      "x-compatibility": {
+        "firefox": { "version_added": "160" },
+        "firefox_esr": { "version_added": false },
+        "firefox_enterprise": { "version_added": "160" },
+        "notes": [
+          "Only affects macOS. Ignored when set in the user's preferences or in a user-scope configuration profile."
+        ]
+      },
+      "x-restart-required": true,
+      "description": "Ignore policies from the user's preferences and from user-scope configuration profiles on macOS.",
+      "examples": [true]
+    },
+
     "DisableMasterPasswordCreation": {
       "type": "boolean",
       "x-category": "Password manager",
@@ -1510,7 +1527,7 @@
         "firefox_enterprise": { "version_added": "149" }
       },
       "x-restart-required": true,
-      "description": "Disable the Refresh Firefox button on 'about:support' and 'support.mozilla.org', as well as the prompt that displays offering to refresh Firefox when you haven't used it in a while.",
+      "description": "Disable the Refresh Firefox button in Troubleshooting Information (about:support) and on support.mozilla.org, as well as the prompt offering to refresh Firefox when it hasn't been used for a while.",
       "examples": [true]
     },
 
@@ -1546,10 +1563,11 @@
       "x-compatibility": {
         "firefox": { "version_added": "60" },
         "firefox_esr": { "version_added": "60" },
-        "firefox_enterprise": { "version_added": "149" }
+        "firefox_enterprise": { "version_added": "149" },
+        "notes": "On Windows, the Shift key shortcut to enter Troubleshoot Mode at startup can only be disabled using Group Policy."
       },
       "x-restart-required": true,
-      "description": "Disable safe mode (Troubleshoot Mode) within the browser.",
+      "description": "Disable restarting in Troubleshoot Mode (Safe Mode).",
       "examples": [true]
     },
 
@@ -1625,10 +1643,11 @@
       "x-compatibility": {
         "firefox": { "version_added": "110" },
         "firefox_esr": { "version_added": "115" },
-        "firefox_enterprise": { "version_added": "149" }
+        "firefox_enterprise": { "version_added": "149" },
+        "notes": "Only applicable to Windows."
       },
       "x-restart-required": true,
-      "description": "Do not allow blocking third-party modules from the 'about:third-party' page.",
+      "description": "Prevent the user from using Third-party Module Information (about:third-party) to block third-party modules injected into the Firefox process.",
       "examples": [true]
     },
 
@@ -2366,10 +2385,11 @@
       "x-compatibility": {
         "firefox": { "version_added": "118" },
         "firefox_esr": { "version_added": "115.3.0" },
-        "firefox_enterprise": { "version_added": "149" }
+        "firefox_enterprise": { "version_added": "149" },
+        "notes": "Only available in some regions and locales."
       },
       "x-restart-required": true,
-      "description": "Customize Firefox Suggest (US only).",
+      "description": "Configure Firefox Suggest.",
       "examples": [
         {
           "WebSuggestions": true,
@@ -2926,10 +2946,11 @@
       "x-compatibility": {
         "firefox": { "version_added": "132.0.1" },
         "firefox_esr": { "version_added": "128.5.0" },
-        "firefox_enterprise": { "version_added": "149" }
+        "firefox_enterprise": { "version_added": "149" },
+        "notes": "Only applicable to macOS."
       },
       "x-restart-required": true,
-      "description": "Allow single sign-on for Microsoft Entra accounts on macOS.",
+      "description": "Allow single sign-on for Microsoft Entra accounts.",
       "examples": [true]
     },
 
@@ -3033,7 +3054,7 @@
         "firefox_enterprise": { "version_added": "149" }
       },
       "x-restart-required": true,
-      "description": "Remove access to the password manager via preferences and blocks about:logins on Firefox 70.",
+      "description": "Enable or disable saving passwords to the password manager. If disabled, Passwords (about:logins) is also blocked.",
       "examples": [false]
     },
 
@@ -3533,7 +3554,7 @@
         {
           "const": 1,
           "title": "Disabled",
-          "description": "Private windows and 'about:privatebrowsing' are unavailable."
+          "description": "Private windows and the Private Browsing page (about:privatebrowsing) are unavailable."
         },
         {
           "const": 2,
@@ -3824,7 +3845,7 @@
         "firefox_enterprise": { "version_added": "149" }
       },
       "x-restart-required": true,
-      "description": "The following policies allow for configuring search engines in Firefox.",
+      "description": "Configure search engine settings.",
       "examples": [
         {
           "Default": "Example1",
@@ -4098,7 +4119,7 @@
         "firefox_enterprise": { "version_added": "149" }
       },
       "x-restart-required": true,
-      "description": "Configure display settings for the Firefox Terms of Use and Privacy Notice on startup.",
+      "description": "Configure display settings for the Firefox Terms of Use and Privacy Notice on startup. Reminder: Under the Enterprise Agreement and Data Processing Addendum, your organization is responsible for sharing any legally required notices with your Users and for their use of the Services.",
       "examples": [true]
     },
 

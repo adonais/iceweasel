@@ -201,10 +201,7 @@ add_task(async function test_paneSearch_normalization() {
  */
 add_task(async function test_legacy_name_routing_and_subcategory_attr() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.settings-redesign.enabled", true],
-      ["browser.newtabpage.activity-stream.feeds.system.topstories", true],
-    ],
+    set: [["browser.newtabpage.activity-stream.feeds.system.topstories", true]],
   });
 
   // [arg, expectedHash, expectedPane, expectedSubcategory | null]
@@ -293,10 +290,6 @@ add_task(async function test_legacy_name_routing_and_subcategory_attr() {
  * falls back to the first-available pane without throwing.
  */
 add_task(async function test_unknown_category_fallback() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   let prefs = await openPreferencesViaOpenPreferencesAPI("nonexistent-blah", {
     leaveOpen: true,
   });
@@ -327,149 +320,10 @@ function makeHashFromMapping({ category, subcategory }) {
 }
 
 /**
- * Two-phase DOM completeness check and cycle-detection.
- *
- * Phase 1 (pref off): collect every category and category-subcategory pair
- * present in the DOM.  Phase 2 (pref on, reloaded): collect the same.  Every
- * old pair absent from the new DOM must have a mapping entry.  Also asserts
- * that no mapping destination is itself a mapping key (cycle-free).
- */
-add_task(async function test_dom_completeness_and_cycle_detection() {
-  // Phase 1: pref off — collect existing pairs from the old DOM.
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", false]],
-  });
-  let initialized = TestUtils.topicObserved(
-    "preferences-MaybeCategoriesInitializedSLOW"
-  );
-  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
-  await initialized;
-  let oldPairs = collectPanesAndSubcategories(
-    gBrowser.selectedBrowser.contentDocument,
-    false
-  );
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-
-  // Phase 2: pref on — reload to re-initialise the preferences realm.
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-  // For some reason this seems to be delayed...
-  initialized = TestUtils.topicObserved(
-    "preferences-MaybeCategoriesInitializedSLOW"
-  );
-  await openPreferencesViaOpenPreferencesAPI("sync", { leaveOpen: true });
-  await initialized;
-  let newPairs = collectPanesAndSubcategories(
-    gBrowser.selectedBrowser.contentDocument,
-    true
-  );
-
-  // Every old pair missing from the new DOM must have a mapping entry.
-  for (let pair of oldPairs) {
-    if (!newPairs.has(pair)) {
-      let mapping = LEGACY_PANE_MAPPINGS.get(pair);
-      ok(
-        !!mapping,
-        `"${pair}" removed from redesign DOM must have a mapping entry`
-      );
-      // Ensure the redirect actually exists in the DOM.
-      if (mapping) {
-        let newHash = makeHashFromMapping(mapping);
-        ok(
-          newPairs.has(newHash),
-          `"${pair}" mapping "${newHash}" is in the DOM`
-        );
-      }
-    }
-  }
-
-  // Cycle-detection: every mapping destination must resolve to itself.
-  for (let [key, dest] of LEGACY_PANE_MAPPINGS) {
-    let reresolved = resolveLegacyCategory(
-      dest.category,
-      dest.subcategory ?? undefined
-    );
-    Assert.equal(
-      reresolved.category,
-      dest.category,
-      `mapping destination for "${key}" is not itself a mapped key`
-    );
-    Assert.equal(
-      reresolved.subcategory,
-      dest.subcategory ?? null,
-      `mapping destination subcategory for "${key}" is stable`
-    );
-  }
-
-  // sync is gated on identity.fxaccounts.enabled and may not render.
-  const KNOWN_GATED_CATEGORIES = new Set();
-  if (!Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
-    KNOWN_GATED_CATEGORIES.add("sync");
-  }
-
-  // Reverse-direction check: every mapping destination's category must
-  // render in the redesign DOM. This catches typos like `someBadPane`.
-  // Subcategory-level checking is omitted because mapping subcategories route
-  // via multiple mechanisms (paneshown listeners, groupid, sub-pane nav) beyond
-  // the data-subcategory attributes that collectPanesAndSubcategories walks.
-  for (let [key, dest] of LEGACY_PANE_MAPPINGS) {
-    if (KNOWN_GATED_CATEGORIES.has(dest.category)) {
-      continue;
-    }
-    ok(
-      newPairs.has(dest.category),
-      `mapping destination category "${dest.category}" for "${key}" exists in the redesign DOM`
-    );
-  }
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-/**
- * The resolver is a no-op when the redesign pref is off.  A name
- * that has a mapping entry must navigate using the original name unchanged.
- */
-add_task(async function test_resolver_noop_when_redesign_disabled() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", false]],
-  });
-
-  // privacy-trackingprotection maps to { category: "privacy", subcategory: "etpStatus" }
-  // when the pref is on.  With the pref off it must route to the original
-  // panePrivacy + trackingprotection subcategory instead.
-  let prefs = await openPreferencesViaOpenPreferencesAPI(
-    "privacy-trackingprotection",
-    { leaveOpen: true }
-  );
-  let doc = gBrowser.contentDocument;
-
-  is(prefs.selectedPane, "panePrivacy", "routes to panePrivacy");
-  is(doc.location.hash, "#privacy", "hash is #privacy");
-
-  await TestUtils.waitForCondition(
-    () => doc.querySelector(".spotlight"),
-    "spotlight is visible"
-  );
-  is(
-    doc.querySelector(".spotlight").getAttribute("data-subcategory"),
-    "trackingprotection",
-    "spotlight target is the original trackingprotection element, not etpStatus"
-  );
-
-  doc.defaultView.spotlight(null);
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-/**
  * Opening about:preferences with a legacy hash in the URL (not via
  * openPreferences()) resolves through the same routing path.
  */
 add_task(async function test_hash_url_navigation() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   let initialized = TestUtils.topicObserved(
     "preferences-MaybeCategoriesInitializedSLOW"
   );
@@ -510,10 +364,6 @@ add_task(async function test_migration_wizard_dispatch() {
     info("skipping: identity.fxaccounts.enabled is false");
     return;
   }
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
 
   for (let arg of ["general-migrate", "general-migrate-autoclose"]) {
     let initialized = TestUtils.topicObserved(
@@ -566,10 +416,6 @@ add_task(async function test_migration_wizard_dispatch() {
  * the friendly form.  The hash must be written without the "pane" prefix.
  */
 add_task(async function test_paneXxx_prefix_normalization_end_to_end() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   let prefs = await openPreferencesViaOpenPreferencesAPI("paneSearch", {
     leaveOpen: true,
   });

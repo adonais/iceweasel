@@ -37,7 +37,8 @@ FileSystemQuotaClient::GetOrCreateCipherKeyManager(
   }
 
   return mCipherKeyManagers.LookupOrInsertWith(aOriginMetadata.mOrigin, [] {
-    return new FileSystemCipherKeyManager("FileSystemCipherKeyManager");
+    return FileSystemCipherKeyManager::CreateEphemeral(
+        "FileSystemCipherKeyManager");
   });
 }
 
@@ -71,7 +72,9 @@ Result<quota::UsageInfo, nsresult> FileSystemQuotaClient::InitOrigin(
   Maybe<FileSystemCipherKey> maybeCipherKey;
   if (const RefPtr<FileSystemCipherKeyManager> cipherKeyManager =
           GetOrCreateCipherKeyManager(aOriginMetadata)) {
-    maybeCipherKey = Some(cipherKeyManager->Ensure(kDatabaseCipherKeyId));
+    QM_TRY_UNWRAP(FileSystemCipherKey cipherKey,
+                  cipherKeyManager->Ensure(kDatabaseCipherKeyId));
+    maybeCipherKey = Some(cipherKey);
   }
 
   QM_TRY_INSPECT(

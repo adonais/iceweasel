@@ -12,8 +12,5 @@ toolkit.jar:
   res/normandy/actions/schemas/index.sys.mjs (./actions/schemas/index.sys.mjs)
   res/normandy/schemas/ (./schemas/*.schema.json)
 
-% resource normandy-content %res/normandy/content/ contentaccessible=yes
-  res/normandy/content/ (./content/*)
-
 % resource normandy-vendor %res/normandy/vendor/ contentaccessible=yes
   res/normandy/vendor/ (./vendor/*)

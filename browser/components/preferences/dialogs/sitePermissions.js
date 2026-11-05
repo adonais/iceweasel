@@ -47,6 +47,10 @@ const sitePermissionsL10n = {
     disableLabel: "permissions-site-xr-disable-label",
     disableDescription: "permissions-site-xr-disable-desc",
   },
+  "register-protocol-handler": {
+    window: "permissions-site-app-links-window",
+    description: "permissions-site-app-links-desc",
+  },
   camera: {
     window: "permissions-site-camera-window2",
     description: "permissions-site-camera-desc",
@@ -228,6 +232,9 @@ var gSitePermissionsManager = {
     document.l10n.setAttributes(permissionsText, l10n.description);
     if (l10n.disableLabel) {
       document.l10n.setAttributes(this._checkbox, l10n.disableLabel);
+    } else {
+      this._checkbox.hidden = true;
+      this._permissionsDisableDescription.hidden = true;
     }
     if (l10n.disableDescription) {
       document.l10n.setAttributes(

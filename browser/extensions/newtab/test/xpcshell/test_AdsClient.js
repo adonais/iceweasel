@@ -5,22 +5,23 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
-  AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
   _AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
-  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
+  AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
+  MozAdsEnvironment:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAdsClient.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
+const PREF_ENDPOINT = "browser.newtabpage.activity-stream.unifiedAds.endpoint";
 const PREF_UNIFIED_ADS_ADSCLIENT_ENABLED = "unifiedAds.adsClient.enabled";
 const PREF_BLOCKED_LIST = "unifiedAds.blockedAds";
 
 let gSandbox;
 add_setup(() => {
   gSandbox = lazy.sinon.createSandbox();
-  registerCleanupFunction(() => {
-    gSandbox.restore();
-  });
+  registerCleanupFunction(() => gSandbox.restore());
 });
 
 add_setup(function test_setup_fog() {
@@ -140,6 +141,50 @@ add_task(function test_getBlocks() {
   );
 });
 
+add_task(function test_requestOptions_relevance() {
+  const RELEVANCE = { t1: 0.3, t2: 0.1 };
+  const PREF_OHTTP_ENABLED =
+    "browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled";
+  const PREF_OHTTP_RELAY_URL =
+    "browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL";
+  const PREF_OHTTP_CONFIG_URL =
+    "browser.newtabpage.activity-stream.discoverystream.ohttp.configURL";
+
+  Services.prefs.setBoolPref(PREF_OHTTP_ENABLED, false);
+  let options = lazy.AdsClient.requestOptions({}, [], RELEVANCE);
+  Assert.ok(!options.ohttp, "The request does not use OHTTP");
+  Assert.equal(
+    options.relevance.size,
+    0,
+    "Relevance scores are not sent without OHTTP"
+  );
+
+  Services.prefs.setBoolPref(PREF_OHTTP_ENABLED, true);
+  Services.prefs.setStringPref(PREF_OHTTP_RELAY_URL, "https://relay.url/");
+  Services.prefs.setStringPref(
+    PREF_OHTTP_CONFIG_URL,
+    "https://gateway.url/ohttp-configs"
+  );
+  options = lazy.AdsClient.requestOptions({}, [], RELEVANCE);
+  Assert.ok(options.ohttp, "The request uses OHTTP");
+  Assert.deepEqual(
+    Object.fromEntries(options.relevance),
+    RELEVANCE,
+    "Relevance scores are sent over OHTTP"
+  );
+
+  options = lazy.AdsClient.requestOptions({}, []);
+  Assert.equal(
+    options.relevance.size,
+    0,
+    "Relevance is empty when no scores are passed"
+  );
+
+  Services.prefs.clearUserPref(PREF_OHTTP_ENABLED);
+  Services.prefs.clearUserPref(PREF_OHTTP_RELAY_URL);
+  Services.prefs.clearUserPref(PREF_OHTTP_CONFIG_URL);
+});
+
 add_task(function test_getClient_singleton() {
   const adsClient = new lazy._AdsClient();
 
@@ -162,6 +207,37 @@ add_task(async function test_getClient_opensCacheDatabase() {
     await IOUtils.exists(adsClient.cacheConfig.dbPath),
     "Building the client opened the SQLite HTTP cache in the profile"
   );
+});
+
+add_task(function test_environment_getter() {
+  registerCleanupFunction(() => Services.prefs.clearUserPref(PREF_ENDPOINT));
+
+  const adsClient = new lazy._AdsClient();
+
+  Assert.ok(
+    adsClient.environment instanceof lazy.MozAdsEnvironment.Prod,
+    "Default endpoint maps to Prod"
+  );
+
+  Services.prefs.setStringPref(PREF_ENDPOINT, "https://ads.allizom.org/");
+  Assert.ok(
+    adsClient.environment instanceof lazy.MozAdsEnvironment.Staging,
+    "Staging endpoint maps to Staging"
+  );
+
+  const customUrl = "https://example.com/";
+  Services.prefs.setStringPref(PREF_ENDPOINT, customUrl);
+  Assert.ok(
+    adsClient.environment instanceof lazy.MozAdsEnvironment.Custom,
+    "Other endpoints map to Custom"
+  );
+  Assert.equal(
+    adsClient.environment.v0,
+    customUrl,
+    "Custom carries the endpoint"
+  );
+
+  Assert.ok(adsClient.getClient(), "getClient builds with a Custom endpoint");
 });
 
 add_task(function test_buildTelemetry_recordsToGlean() {

@@ -198,6 +198,44 @@ nsresult MatroskaDemuxer::SetContainerAudioCodecInfo(
           AudioCodecSpecificVariant{std::move(aacCodecSpecificData)};
       break;
     }
+    case NESTEGG_CODEC_MP3: {
+      mInfo.mAudio.mMimeType = "audio/mpeg";
+      const uint32_t MP3_SAMPLES_PER_FRAME = 1152;
+      Mp3CodecSpecificData mp3CodecSpecificData{};
+      uint64_t codecDelayUs = aParams.codec_delay / NSECS_PER_USEC;
+      if (codecDelayUs > 0) {
+        mp3CodecSpecificData.mEncoderDelayFrames = static_cast<uint32_t>(
+            std::lround(static_cast<double>(codecDelayUs) * aParams.rate /
+                        (USECS_PER_S * MP3_SAMPLES_PER_FRAME)));
+        MKV_DEBUG("MP3 stream in MKV container, {} frames of encoder delay.",
+                  mp3CodecSpecificData.mEncoderDelayFrames);
+      }
+      MKV_DEBUG("MP3 stream in MKV container, delay frames : {}",
+                mp3CodecSpecificData.mEncoderDelayFrames);
+      mInfo.mAudio.mCodecSpecificConfig =
+          AudioCodecSpecificVariant{std::move(mp3CodecSpecificData)};
+      break;
+    }
+    case NESTEGG_CODEC_FLAC: {
+      mInfo.mAudio.mMimeType = "audio/flac";
+      FlacCodecSpecificData flacCodecSpecificData{};
+      mInfo.mAudio.mCodecSpecificConfig =
+          AudioCodecSpecificVariant{std::move(flacCodecSpecificData)};
+      break;
+    }
+    case NESTEGG_CODEC_PCM: {
+      // nestegg reports integer/float and little/big-endian PCM under one
+      // codec id, and neither the subtype nor a missing BitDepth can be
+      // told apart here, so only unambiguous little-endian integer depths
+      // are accepted. 32-bit is left out: it may be float.
+      if (aParams.depth != 8 && aParams.depth != 16 && aParams.depth != 24) {
+        MKV_DEBUG("Unsupported PCM bit depth: {}", aParams.depth);
+        return WebMDemuxer::SetContainerAudioCodecInfo(aContext, aParams);
+      }
+      mInfo.mAudio.mMimeType = "audio/wave; codecs=1";
+      mInfo.mAudio.mBitDepth = static_cast<uint32_t>(aParams.depth);
+      break;
+    }
     default:
       return WebMDemuxer::SetContainerAudioCodecInfo(aContext, aParams);
   }

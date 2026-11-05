@@ -4,7 +4,7 @@
 
 <https://www.mozilla.org/firefox/focus/>
 
-*Don't see what you're looking for? [Check out our shared docs](https://firefox-source-docs.mozilla.org/mobile/android/focus-android/index.html).*
+*Don't see what you're looking for? {doc}`Check out our shared docs </mobile/android/focus-android/index>`.*
 
 ## User support
 

@@ -29,6 +29,8 @@ class Attr final : public nsINode {
   virtual ~Attr() = default;
 
  public:
+  static constexpr bool kHasWeakReferenceTearoff = true;
+
   Attr(nsDOMAttributeMap* aAttrMap, already_AddRefed<dom::NodeInfo> aNodeInfo,
        const nsAString& aValue);
 

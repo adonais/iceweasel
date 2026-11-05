@@ -129,8 +129,8 @@ bool ValidateGetCurrentContext(const ValidationContext *val);
 
 // EGL 1.5
 bool ValidateClientWaitSync(const ValidationContext *val,
-                            const egl::Display *dpyPacked,
-                            egl::SyncID syncPacked,
+                            const egl::ThreadSafeDisplay *dpyPacked,
+                            const egl::Sync *syncPacked,
                             EGLint flags,
                             EGLTime timeout);
 bool ValidateCreateImage(const ValidationContext *val,
@@ -150,27 +150,27 @@ bool ValidateCreatePlatformWindowSurface(const ValidationContext *val,
                                          const void *native_window,
                                          const AttributeMap &attrib_listPacked);
 bool ValidateCreateSync(const ValidationContext *val,
-                        const egl::Display *dpyPacked,
+                        const egl::ThreadSafeDisplay *dpyPacked,
                         EGLenum type,
                         const AttributeMap &attrib_listPacked);
 bool ValidateDestroyImage(const ValidationContext *val,
                           const egl::Display *dpyPacked,
                           ImageID imagePacked);
 bool ValidateDestroySync(const ValidationContext *val,
-                         const egl::Display *dpyPacked,
-                         egl::SyncID syncPacked);
+                         const egl::ThreadSafeDisplay *dpyPacked,
+                         const egl::Sync *syncPacked);
 bool ValidateGetPlatformDisplay(const ValidationContext *val,
                                 EGLenum platform,
                                 const void *native_display,
                                 const AttributeMap &attrib_listPacked);
 bool ValidateGetSyncAttrib(const ValidationContext *val,
-                           const egl::Display *dpyPacked,
-                           egl::SyncID syncPacked,
+                           const egl::ThreadSafeDisplay *dpyPacked,
+                           const egl::Sync *syncPacked,
                            EGLint attribute,
                            const EGLAttrib *value);
 bool ValidateWaitSync(const ValidationContext *val,
-                      const egl::Display *dpyPacked,
-                      egl::SyncID syncPacked,
+                      const egl::ThreadSafeDisplay *dpyPacked,
+                      const egl::Sync *syncPacked,
                       EGLint flags);
 
 // EGL_ANDROID_blob_cache
@@ -216,8 +216,8 @@ bool ValidateGetNativeClientBufferANDROID(const ValidationContext *val,
 
 // EGL_ANDROID_native_fence_sync
 bool ValidateDupNativeFenceFDANDROID(const ValidationContext *val,
-                                     const egl::Display *dpyPacked,
-                                     egl::SyncID syncPacked);
+                                     const egl::ThreadSafeDisplay *dpyPacked,
+                                     const egl::Sync *syncPacked);
 
 // EGL_ANDROID_presentation_time
 bool ValidatePresentationTimeANDROID(const ValidationContext *val,
@@ -255,8 +255,8 @@ bool ValidateQueryDisplayAttribANGLE(const ValidationContext *val,
 
 // EGL_ANGLE_metal_shared_event_sync
 bool ValidateCopyMetalSharedEventANGLE(const ValidationContext *val,
-                                       const egl::Display *dpyPacked,
-                                       egl::SyncID syncPacked);
+                                       const egl::ThreadSafeDisplay *dpyPacked,
+                                       const egl::Sync *syncPacked);
 
 // EGL_ANGLE_no_error
 bool ValidateSetValidationEnabledANGLE(const ValidationContext *val, EGLBoolean validationState);
@@ -410,20 +410,20 @@ bool ValidateQueryDebugKHR(const ValidationContext *val, EGLint attribute, const
 
 // EGL_KHR_fence_sync
 bool ValidateClientWaitSyncKHR(const ValidationContext *val,
-                               const egl::Display *dpyPacked,
-                               egl::SyncID syncPacked,
+                               const egl::ThreadSafeDisplay *dpyPacked,
+                               const egl::Sync *syncPacked,
                                EGLint flags,
                                EGLTimeKHR timeout);
 bool ValidateCreateSyncKHR(const ValidationContext *val,
-                           const egl::Display *dpyPacked,
+                           const egl::ThreadSafeDisplay *dpyPacked,
                            EGLenum type,
                            const AttributeMap &attrib_listPacked);
 bool ValidateDestroySyncKHR(const ValidationContext *val,
-                            const egl::Display *dpyPacked,
-                            egl::SyncID syncPacked);
+                            const egl::ThreadSafeDisplay *dpyPacked,
+                            const egl::Sync *syncPacked);
 bool ValidateGetSyncAttribKHR(const ValidationContext *val,
-                              const egl::Display *dpyPacked,
-                              egl::SyncID syncPacked,
+                              const egl::ThreadSafeDisplay *dpyPacked,
+                              const egl::Sync *syncPacked,
                               EGLint attribute,
                               const EGLint *value);
 
@@ -461,8 +461,8 @@ bool ValidateSetDamageRegionKHR(const ValidationContext *val,
 
 // EGL_KHR_reusable_sync
 bool ValidateSignalSyncKHR(const ValidationContext *val,
-                           const egl::Display *dpyPacked,
-                           egl::SyncID syncPacked,
+                           const egl::ThreadSafeDisplay *dpyPacked,
+                           const egl::Sync *syncPacked,
                            EGLenum mode);
 
 // EGL_KHR_stream
@@ -508,8 +508,8 @@ bool ValidateSwapBuffersWithDamageKHR(const ValidationContext *val,
 
 // EGL_KHR_wait_sync
 bool ValidateWaitSyncKHR(const ValidationContext *val,
-                         const egl::Display *dpyPacked,
-                         egl::SyncID syncPacked,
+                         const egl::ThreadSafeDisplay *dpyPacked,
+                         const egl::Sync *syncPacked,
                          EGLint flags);
 
 // EGL_NV_post_sub_buffer

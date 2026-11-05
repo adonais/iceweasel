@@ -12,6 +12,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/dom/fragmentdirectives_ffi_generated.h"
+#include "nsFind.h"
 #include "nsStringFwd.h"
 namespace mozilla {
 class ErrorResult;
@@ -239,6 +240,7 @@ class TextDirectiveCreator {
   RefPtr<const TimeoutWatchdog> mWatchdog;
 
   nsContentUtils::NodeIndexCache mNodeIndexCache;
+  nsFind::WordBoundaryCache mWordBoundaryCache;
 };
 
 /**

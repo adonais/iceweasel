@@ -12,6 +12,7 @@
 // Global includes
 #include <stdint.h>
 
+#include <memory>
 #include <utility>
 
 #include "MainThreadUtils.h"
@@ -241,7 +242,7 @@ SDBConnection::Init(nsIPrincipal* aPrincipal,
     return NS_ERROR_INVALID_ARG;
   }
 
-  UniquePtr<PrincipalInfo> principalInfo(new PrincipalInfo());
+  auto principalInfo = std::make_unique<PrincipalInfo>();
   nsresult rv = PrincipalToPrincipalInfo(aPrincipal, principalInfo.get());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;

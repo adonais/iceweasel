@@ -129,12 +129,16 @@ interface nsINavBookmarksService : nsISupports
                            [optional] in unsigned short aSource);
 
   /**
-   * Removes a child item. Used to delete a bookmark or separator.
+   * Removes a child item. Used to delete a bookmark, separator or empty
+   * folder.
    *  @param aItemId
    *         The child item to remove
    *  @param [optional] aSource
    *         The change source, forwarded to all bookmark observers. Defaults
    *         to SOURCE_DEFAULT.
+   *  @throws NS_ERROR_INVALID_ARG if the item is a root, or a folder that is
+   *          not empty. Remove the folder's children first, or use
+   *          PlacesUtils.bookmarks.remove() to remove a whole folder tree.
    */
   [can_run_script]
   void removeItem(in long long aItemId, [optional] in unsigned short aSource);

@@ -17,9 +17,6 @@ only-for-attributes:
     - nightly
     - shippable
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     beetmover-checksums:
         from-deps:

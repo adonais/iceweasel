@@ -3,7 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 use std::{
-    ffi::{c_int, CStr, CString},
+    ffi::{c_int, CString, OsStr},
+    iter::once,
+    os::unix::ffi::OsStrExt,
     thread,
 };
 
@@ -243,9 +245,21 @@ impl IPCConnector {
 
     // Looks up the service we set up in `IPCConnector::deserialize()` and
     // receives the actual port rights of this connector from it.
-    pub fn deserialize(string: &CStr) -> Result<IPCConnector, IPCError> {
+    pub fn deserialize(string: &OsStr) -> Result<IPCConnector, IPCError> {
         let mut service_port = MACH_PORT_NULL;
-        let rv = unsafe { bootstrap_look_up(bootstrap_port, string.as_ptr(), &mut service_port) };
+        let bootstrap_path: Vec<i8> = string
+            .as_bytes()
+            .iter()
+            .chain(once(&0u8))
+            .map(|c| *c as i8)
+            .collect();
+
+        // SAFETY: The `bootstrap_path` variable points to a string that we
+        // just built and is thus valid and properly nul-terminated. Similarly
+        // `service_port` is allocated on the stack and thus also valid.
+        let rv = unsafe {
+            bootstrap_look_up(bootstrap_port, bootstrap_path.as_ptr(), &mut service_port)
+        };
 
         if rv as u32 != BOOTSTRAP_SUCCESS {
             return Err(IPCError::Deserialize(PlatformError::BootstrapLookUp(rv)));

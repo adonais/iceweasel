@@ -10,18 +10,7 @@
 /**
  * Test for searching for the "Add Engine" subdialog.
  */
-add_task(
-  { skip_if: () => SRD_PREF_VALUE },
-  async function searchAddEngineLegacy() {
-    await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
-      leaveOpen: true,
-    });
-    await evaluateSearchResults("Add Engine", "oneClickSearchProvidersGroup");
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  }
-);
-
-add_task({ skip_if: () => !SRD_PREF_VALUE }, async function searchAddEngine() {
+add_task(async function searchAddEngine() {
   await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });

@@ -34,7 +34,10 @@ export const SYSTEM_COLORS = [
   // -moz- prefixed colors, used rarely but still valid
   "-moz-buttonactivetext",
   "-moz-buttonhovertext",
+  "-moz-cellhighlight",
+  "-moz-cellhighlighttext",
   "-moz-combobox",
+  "-moz-default-background-color",
   "-moz-dialog",
   "-moz-dialogtext",
   "-moz-menuhover",
@@ -82,17 +85,30 @@ export const getLocalCustomProperties = root => {
 };
 
 /**
- * Return raw values of tokens for the given categories.
+ * Return raw values of tokens for the given categories, mapped to the token
+ * each one autofixes to. Only a category's own scale tokens (`--<category>`
+ * and `--<category>-*`) are included, so a component token that happens to
+ * share a value with the scale never becomes the fix.
  *
  * @param {string[]} tokenCategoriesArray
  * @returns {object}
  */
 export const createRawValuesObject = tokenCategoriesArray =>
   tokenCategoriesArray
-    .flatMap(category => tokensTable[category])
+    .flatMap(category =>
+      tokensTable[category].filter(
+        token =>
+          token.name === `--${category}` ||
+          token.name?.startsWith(`--${category}-`)
+      )
+    )
     .reduce((acc, token) => {
-      const val = String(token.value || "").trim();
-      if (token.name && !val.startsWith("var(")) {
+      // Tokens with per-theme or per-platform values have no single raw value.
+      if (typeof token.value !== "string") {
+        return acc;
+      }
+      const val = token.value.trim();
+      if (!val.startsWith("var(")) {
         // some tokens refer to tokens in the table,
         // let's move those out so our auto-fixes work
         return { ...acc, [val]: `var(${token.name})` };
@@ -203,6 +219,7 @@ const BACKGROUND_PROPERTIES = new Set(["background", "background-color"]);
  */
 export const findColorDeclarations = block => {
   let background = null;
+  let backgroundImage = null;
   let text = null;
 
   for (let node of block.nodes) {
@@ -212,12 +229,14 @@ export const findColorDeclarations = block => {
     let property = node.prop.toLowerCase();
     if (BACKGROUND_PROPERTIES.has(property)) {
       background = node;
+    } else if (property == "background-image") {
+      backgroundImage = node;
     } else if (property == "color") {
       text = node;
     }
   }
 
-  return { background, text };
+  return { background: background ?? backgroundImage, text };
 };
 
 /**

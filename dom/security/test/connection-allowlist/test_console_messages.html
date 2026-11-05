@@ -1,0 +1,37 @@
+<!DOCTYPE HTML>
+<meta charset="utf-8">
+<title>Test for Connection-Allowlist console messages</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+<script>
+const TARGET = "https://example.com/tests/image/test/mochitest/blue.png";
+
+async function testConsoleMessage(file, errorMessage) {
+  let waitForConsole = new Promise(resolve => {
+    SimpleTest.monitorConsole(resolve, [{ errorMessage }]);
+  });
+  let iframe = document.createElement("iframe");
+  let loaded = new Promise(resolve => {
+    iframe.addEventListener("load", resolve, { once: true });
+  });
+  iframe.src = file;
+  document.body.appendChild(iframe);
+  await loaded;
+  SimpleTest.endMonitorConsole();
+  await waitForConsole;
+}
+
+add_task(async function test_enforce() {
+  await testConsoleMessage(
+    "file_enforce.html",
+    `Connection-Allowlist: The page’s settings blocked ${TARGET}.`
+  );
+});
+
+add_task(async function test_report_only() {
+  await testConsoleMessage(
+    "file_report_only.html",
+    `Connection-Allowlist: (Report-Only policy) The page’s settings would block ${TARGET}.`
+  );
+});
+</script>

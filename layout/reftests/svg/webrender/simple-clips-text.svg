@@ -1,0 +1,11 @@
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200">
+  <title>Text in a group clipped by a trivial clipPath</title>
+  <defs>
+    <clipPath id="rect-clip"><rect x="30" y="30" width="100" height="60"/></clipPath>
+  </defs>
+  <g clip-path="url(#rect-clip)">
+    <text x="20" y="80" font-size="30" font-family="sans-serif">Clipped text</text>
+  </g>
+</svg>

@@ -22,7 +22,7 @@ class XRNativeOriginLocal : public XRNativeOrigin {
   gfx::PointDouble3D GetPosition() override;
 
  private:
-  ~XRNativeOriginLocal() = default;
+  ~XRNativeOriginLocal();
   RefPtr<gfx::VRDisplayClient> mDisplay;
   gfx::PointDouble3D mInitialPosition;
   bool mInitialPositionValid;

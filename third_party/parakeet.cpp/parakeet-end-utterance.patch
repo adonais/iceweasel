@@ -19,18 +19,16 @@
 diff --git a/include/parakeet_capi.h b/include/parakeet_capi.h
 --- a/include/parakeet_capi.h
 +++ b/include/parakeet_capi.h
-@@ -45,6 +45,11 @@
- //
- // v6: added parakeet_capi_stream_chunk_samples, the audio one encoder chunk
- //     spans. Additive.
-+//
-+// v7: added parakeet_capi_stream_has_eou, parakeet_capi_stream_end_utterance and
-+//     parakeet_capi_stream_blank_seconds,
-+//     so a host can close an utterance itself on a model whose vocab has no
-+//     <EOU> piece. Additive: the existing entry points are unchanged.
+@@ -42,7 +42,8 @@
+ //     "events" array in the stream_feed_json / stream_finalize_json documents.
+ // v6-v8: additive upstream APIs for CTC logits, diarization, and sound-event
+ // detection. These do not change existing signatures.
+-// Firefox-local addition: stream_chunk_samples. This is additive.
++// Firefox-local additions: stream_chunk_samples, stream_has_eou,
++// stream_end_utterance, and stream_blank_seconds. These are additive.
+ #define PARAKEET_CAPI_ABI_VERSION 8
  int parakeet_capi_abi_version(void);
  
- // Load a GGUF model. Returns an owning context, or NULL on failure.
 @@ -255,6 +260,22 @@
  // Safe on NULL.
  void parakeet_capi_free_events(parakeet_stream_event* events);
@@ -57,19 +55,6 @@ diff --git a/include/parakeet_capi.h b/include/parakeet_capi.h
 diff --git a/src/parakeet_capi.cpp b/src/parakeet_capi.cpp
 --- a/src/parakeet_capi.cpp
 +++ b/src/parakeet_capi.cpp
-@@ -33,7 +33,11 @@
- //     documents.
- // v6: parakeet_capi_stream_chunk_samples, the audio one encoder chunk spans.
- //     Additive.
--#define PARAKEET_CAPI_ABI_VERSION 6
-+// v7: parakeet_capi_stream_has_eou / parakeet_capi_stream_blank_seconds /
-+//     parakeet_capi_stream_end_utterance, for a host that has to decide
-+//     utterance boundaries itself on a model whose vocab has no <EOU> piece.
-+//     Additive.
-+#define PARAKEET_CAPI_ABI_VERSION 7
- 
- // The opaque context: a loaded model plus a buffer for the last error message.
- struct parakeet_ctx {
 @@ -553,6 +557,32 @@
      }
  }

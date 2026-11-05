@@ -8,6 +8,7 @@
 #include <limits>
 
 #include "ImageContainer.h"
+#include "YCbCrTestHelpers.h"
 #include "gtest/gtest.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
@@ -193,8 +194,9 @@ TEST(PlanarYCbCrImage, AdoptDataAcceptsLargestRepresentableEndpoint)
   EXPECT_EQ(image->GetPictureRect(), pictureRect);
   EXPECT_EQ(image->GetOrigin(), pictureRect.TopLeft());
   EXPECT_EQ(image->GetSize(), pictureRect.Size());
-  EXPECT_EQ(image->GetData()->YDataSize(),
-            IntSize(std::numeric_limits<int32_t>::max(), 1));
+  const auto sizes = image->GetData()->GetPlaneSizes();
+  ASSERT_TRUE(sizes);
+  EXPECT_EQ(sizes->mY, IntSize(std::numeric_limits<int32_t>::max(), 1));
 }
 
 TEST(PlanarYCbCrImage, InvalidAdoptionDoesNotMutateImage)
@@ -221,7 +223,91 @@ TEST(PlanarYCbCrData, ChromaSizeHandlesLargestRepresentableEndpoint)
   const int32_t max = std::numeric_limits<int32_t>::max();
   EXPECT_EQ(
       ChromaSize(IntSize(max, max), ChromaSubsampling::HALF_WIDTH_AND_HEIGHT),
-      IntSize(max / 2 + 1, max / 2 + 1));
+      IntSize(CeilingOfHalf(max), CeilingOfHalf(max)));
+}
+
+TEST(PlanarYCbCrData, PlaneSizesIncludePictureOrigin)
+{
+  PlanarYCbCrData data;
+  data.mPictureRect = IntRect(2, 4, 5, 5);
+  data.mCbCrStride = 8;
+  const IntSize ySize(data.mPictureRect.XMost(), data.mPictureRect.YMost());
+  const struct {
+    ChromaSubsampling mSubsampling;
+    IntSize mChromaSize;
+  } cases[] = {
+      {ChromaSubsampling::FULL, ySize},
+      {ChromaSubsampling::HALF_WIDTH,
+       IntSize(CeilingOfHalf(ySize.width), ySize.height)},
+      {ChromaSubsampling::HALF_WIDTH_AND_HEIGHT,
+       IntSize(CeilingOfHalf(ySize.width), CeilingOfHalf(ySize.height))}};
+
+  for (const auto& test : cases) {
+    data.mChromaSubsampling = test.mSubsampling;
+    const auto sizes = data.GetPlaneSizes();
+    ASSERT_TRUE(sizes);
+    EXPECT_EQ(sizes->mY, ySize);
+    EXPECT_EQ(sizes->mCbCr, test.mChromaSize);
+  }
+}
+
+TEST(PlanarYCbCrData, PlaneSizesRejectMalformedPictureRects)
+{
+  PlanarYCbCrData data;
+  for (const auto& pictureRect : kPlanarYCbCrMalformedPictureRects) {
+    data.mPictureRect = pictureRect;
+    for (int32_t chromaStride : {0, 4}) {
+      data.mCbCrStride = chromaStride;
+      EXPECT_TRUE(data.GetPlaneSizes().isNothing());
+    }
+  }
+}
+
+TEST(PlanarYCbCrData, PlaneSizesLargestEndpoint)
+{
+  const int32_t max = std::numeric_limits<int32_t>::max();
+  PlanarYCbCrData data;
+  data.mPictureRect = IntRect(max - 1, max - 1, 1, 1);
+  data.mCbCrStride = max;
+  data.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
+  const auto sizes = data.GetPlaneSizes();
+  ASSERT_TRUE(sizes);
+  EXPECT_EQ(sizes->mY, IntSize(max, max));
+  EXPECT_EQ(sizes->mCbCr, IntSize(CeilingOfHalf(max), CeilingOfHalf(max)));
+
+  data.mPictureRect = IntRect(max, max, 1, 1);
+  EXPECT_TRUE(data.GetPlaneSizes().isNothing());
+}
+
+TEST(PlanarYCbCrData, PlaneSizesTrackCurrentMetadata)
+{
+  const IntRect pictureRect1(0, 0, 5, 3);
+  const IntSize ySize1(pictureRect1.XMost(), pictureRect1.YMost());
+  PlanarYCbCrData data;
+  data.mPictureRect = pictureRect1;
+  data.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
+  auto sizes = data.GetPlaneSizes();
+  ASSERT_TRUE(sizes);
+  EXPECT_EQ(sizes->mY, ySize1);
+  EXPECT_EQ(sizes->mCbCr, IntSize(0, 0));
+
+  data.mCbCrStride = 3;
+  sizes = data.GetPlaneSizes();
+  ASSERT_TRUE(sizes);
+  EXPECT_EQ(sizes->mCbCr,
+            IntSize(CeilingOfHalf(ySize1.width), CeilingOfHalf(ySize1.height)));
+
+  data.mPictureRect = IntRect();
+  EXPECT_TRUE(data.GetPlaneSizes().isNothing());
+
+  const IntRect pictureRect2(2, 2, 2, 2);
+  const IntSize ySize2(pictureRect2.XMost(), pictureRect2.YMost());
+  data.mPictureRect = pictureRect2;
+  sizes = data.GetPlaneSizes();
+  ASSERT_TRUE(sizes);
+  EXPECT_EQ(sizes->mY, ySize2);
+  EXPECT_EQ(sizes->mCbCr,
+            IntSize(CeilingOfHalf(ySize2.width), CeilingOfHalf(ySize2.height)));
 }
 
 TEST(RecyclingPlanarYCbCrImage, CopyDataRejectsMalformedPictureRects)
@@ -307,4 +393,39 @@ TEST(SharedPlanarYCbCrImage, ValidPictureRectReachesBackend)
   RefPtr image = MakeRefPtr<SharedPlanarYCbCrImageForTest>();
   EXPECT_EQ(image->CopyData(buffer.I420Data()), NS_ERROR_NOT_IMPLEMENTED);
   EXPECT_TRUE(image->CreateEmptyBufferCalled());
+}
+
+TEST(SharedPlanarYCbCrImage, CreateEmptyBufferRejectsMalformedPictureRects)
+{
+  for (const auto& pictureRect : kPlanarYCbCrMalformedPictureRects) {
+    SCOPED_TRACE(testing::Message()
+                 << pictureRect.X() << "," << pictureRect.Y() << " "
+                 << pictureRect.Width() << "x" << pictureRect.Height());
+    PlanarYCbCrBuffer buffer(kYDataSize, pictureRect);
+    RefPtr image = MakeRefPtr<SharedPlanarYCbCrImage>(
+        static_cast<TextureClientRecycleAllocator*>(nullptr));
+    EXPECT_EQ(
+        image->CreateEmptyBuffer(buffer.I420Data(), kYDataSize, IntSize(1, 1)),
+        NS_ERROR_INVALID_ARG);
+    EXPECT_FALSE(image->IsValid());
+    EXPECT_EQ(image->GetData()->mPictureRect, IntRect());
+    EXPECT_EQ(image->GetSize(), IntSize());
+    EXPECT_EQ(image->GetOrigin(), IntPoint());
+    EXPECT_EQ(image->GetDataSize(), 0u);
+  }
+}
+
+TEST(SharedPlanarYCbCrImage, CreateEmptyBufferRejectsUndersizedAllocation)
+{
+  PlanarYCbCrBuffer buffer(kYDataSize, IntRect(0, 0, 2, 2));
+  RefPtr image = MakeRefPtr<SharedPlanarYCbCrImage>(
+      static_cast<TextureClientRecycleAllocator*>(nullptr));
+  EXPECT_EQ(
+      image->CreateEmptyBuffer(buffer.I420Data(), IntSize(1, 1), IntSize(1, 1)),
+      NS_ERROR_INVALID_ARG);
+  EXPECT_FALSE(image->IsValid());
+  EXPECT_EQ(image->GetData()->mPictureRect, IntRect());
+  EXPECT_EQ(image->GetSize(), IntSize());
+  EXPECT_EQ(image->GetOrigin(), IntPoint());
+  EXPECT_EQ(image->GetDataSize(), 0u);
 }

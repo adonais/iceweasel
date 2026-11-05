@@ -121,7 +121,11 @@ export class BrowserDOMWindow {
       return null;
     }
 
-    if (aIsExternal && (!aURI || aURI.spec == "about:blank")) {
+    if (
+      aIsExternal &&
+      aWhere !== Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_BACKGROUND &&
+      (!aURI || aURI.spec == "about:blank")
+    ) {
       win.BrowserCommands.openTab(); // this also focuses the location bar
       win.focus();
       return win.gBrowser.selectedBrowser;

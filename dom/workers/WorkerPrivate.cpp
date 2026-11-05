@@ -1425,27 +1425,11 @@ void WorkerPrivate::EvictFromBFCache() {
   runnable->Dispatch(this);
 }
 
-nsresult WorkerPrivate::SetCsp(nsIContentSecurityPolicy* aCSP) {
-  AssertIsOnMainThread();
-  if (!aCSP) {
-    return NS_OK;
-  }
-  aCSP->EnsureEventTarget(mMainThreadEventTarget);
-
-  mLoadInfo.mCSP = aCSP;
-  auto ctx = OffThreadCSPContext::CreateFromCSP(aCSP);
-  if (NS_WARN_IF(ctx.isErr())) {
-    return ctx.unwrapErr();
-  }
-  mLoadInfo.mCSPContext = ctx.unwrap();
-  return NS_OK;
-}
-
 nsresult WorkerPrivate::SetCSPFromHeaderValues(
     const nsACString& aCSPHeaderValue,
     const nsACString& aCSPReportOnlyHeaderValue) {
   AssertIsOnMainThread();
-  MOZ_DIAGNOSTIC_ASSERT(!mLoadInfo.mCSP);
+  MOZ_DIAGNOSTIC_ASSERT(!mLoadInfo.mPolicyContainer);
 
   NS_ConvertASCIItoUTF16 cspHeaderValue(aCSPHeaderValue);
   NS_ConvertASCIItoUTF16 cspROHeaderValue(aCSPReportOnlyHeaderValue);
@@ -1473,8 +1457,6 @@ nsresult WorkerPrivate::SetCSPFromHeaderValues(
                                            0);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  csp->EnsureEventTarget(mMainThreadEventTarget);
-
   // If there's a CSP header, apply it.
   if (!cspHeaderValue.IsEmpty()) {
     rv = CSP_AppendCSPFromHeader(csp, cspHeaderValue, false);
@@ -1499,14 +1481,9 @@ nsresult WorkerPrivate::SetCSPFromHeaderValues(
     csp->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
   }
 
-  mLoadInfo.mCSP = csp;
-
-  auto ctx = OffThreadCSPContext::CreateFromCSP(csp);
-  if (NS_WARN_IF(ctx.isErr())) {
-    return ctx.unwrapErr();
-  }
-  mLoadInfo.mCSPContext = ctx.unwrap();
-  return NS_OK;
+  RefPtr policyContainer = MakeRefPtr<PolicyContainer>();
+  policyContainer->SetCSP(csp);
+  return SetPolicyContainerOnMainThread(policyContainer);
 }
 
 bool WorkerPrivate::IsFrozenForWorkerThread() const {
@@ -1526,14 +1503,12 @@ void WorkerPrivate::StorePolicyContainerArgsOnClient() {
 
   mozilla::ipc::PolicyContainerArgs policyContainerArgs;
 
-  if (mLoadInfo.mCSPContext) {
-    policyContainerArgs.csp() = Some(mLoadInfo.mCSPContext->CSPInfo());
+  if (mLoadInfo.mPolicyContainerArgs) {
+    policyContainerArgs = *mLoadInfo.mPolicyContainerArgs;
   }
 
   policyContainerArgs.ipAddressSpace() =
       static_cast<nsILoadInfo::IPAddressSpace>(mLoadInfo.mIPAddressSpace);
-  // TODO(Bug 2017654): Check if integrity policy args need to be propagated
-  // to workers as well. Currently not set explicitly here.
 
   clientSource.SetPolicyContainerArgs(policyContainerArgs);
 }
@@ -2674,15 +2649,33 @@ void WorkerPrivate::SetBaseURI(nsIURI* aBaseURI) {
                                                    mLocationInfo.mOrigin);
 }
 
-nsresult WorkerPrivate::SetPrincipalsAndCSPOnMainThread(
+nsresult WorkerPrivate::SetPrincipalsOnMainThread(
     nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal,
-    nsILoadGroup* aLoadGroup, nsIContentSecurityPolicy* aCsp) {
-  return mLoadInfo.SetPrincipalsAndCSPOnMainThread(
-      aPrincipal, aPartitionedPrincipal, aLoadGroup, aCsp);
+    nsILoadGroup* aLoadGroup) {
+  return mLoadInfo.SetPrincipalsOnMainThread(aPrincipal, aPartitionedPrincipal,
+                                             aLoadGroup);
 }
 
-nsresult WorkerPrivate::SetPrincipalsAndCSPFromChannel(nsIChannel* aChannel) {
-  return mLoadInfo.SetPrincipalsAndCSPFromChannel(aChannel);
+nsresult WorkerPrivate::SetPolicyContainerOnMainThread(
+    PolicyContainer* aPolicyContainer) {
+  MOZ_TRY(mLoadInfo.SetPolicyContainerOnMainThread(aPolicyContainer));
+
+  if (nsIContentSecurityPolicy* csp = GetCsp()) {
+    csp->EnsureEventTarget(mMainThreadEventTarget);
+  }
+
+  return NS_OK;
+}
+
+nsresult WorkerPrivate::SetPrincipalsAndPolicyContainerFromChannel(
+    nsIChannel* aChannel) {
+  MOZ_TRY(mLoadInfo.SetPrincipalsAndPolicyContainerFromChannel(aChannel));
+
+  if (nsIContentSecurityPolicy* csp = GetCsp()) {
+    csp->EnsureEventTarget(mMainThreadEventTarget);
+  }
+
+  return NS_OK;
 }
 
 bool WorkerPrivate::FinalChannelPrincipalIsValid(nsIChannel* aChannel) {
@@ -3227,6 +3220,21 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
     aLoadInfo = stackLoadInfo.ptr();
   }
 
+  // Until the worker is registered and holds mSelfRef, a failure destroys it
+  // on this thread. For a nested worker that is the parent's worker thread, so
+  // the main-thread-only load info members have to be proxy released.
+  RefPtr<WorkerPrivate> worker;
+  auto releaseLoadInfoOnFailure = MakeScopeExit([&] {
+    if (!parent) {
+      return;
+    }
+    if (worker) {
+      worker->ProxyReleaseMainThreadObjects();
+    } else if (stackLoadInfo) {
+      MOZ_ALWAYS_TRUE(stackLoadInfo->ProxyReleaseMainThreadObjects(parent));
+    }
+  });
+
   // NB: This has to be done before creating the WorkerPrivate, because it will
   // attempt to use static variables that are initialized in the RuntimeService
   // constructor.
@@ -3253,7 +3261,7 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
   AgentClusterIdAndCoop idAndCoop = ComputeAgentClusterIdAndCoop(
       parent, aWorkerKind, aLoadInfo, aIsChromeWorker);
 
-  RefPtr<WorkerPrivate> worker = new WorkerPrivate(
+  worker = new WorkerPrivate(
       parent, aScriptURL, aIsChromeWorker, aWorkerKind, aRequestCredentials,
       aWorkerType, aWorkerName, aServiceWorkerScope, *aLoadInfo, std::move(aId),
       idAndCoop.mId, idAndCoop.mCoop, std::move(aCancellationCallback),
@@ -3285,6 +3293,7 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
   // ClearSelfAndParentEventTargetRef().
   worker->mSelfRef = worker;
   worker->mParentRef = MakeRefPtr<WorkerParentRef>(worker);
+  releaseLoadInfoOnFailure.release();
 
   // The remote and local debugger mechanisms are mutually exclusive. Enable the
   // remote worker debugger once the worker is really scheduled; otherwise
@@ -3765,7 +3774,7 @@ nsresult WorkerPrivate::GetLoadInfo(
                                      : nsILoadInfo::NoStoragePermission);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = loadInfo.SetPrincipalsAndCSPFromChannel(loadInfo.mChannel);
+    rv = loadInfo.SetPrincipalsAndPolicyContainerFromChannel(loadInfo.mChannel);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

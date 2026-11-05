@@ -5,10 +5,12 @@
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-page-actions.mjs";
+import { withHeadingFont } from "../aitab-story-font.mjs";
 
 export default {
   title: "Domain-specific UI Widgets/AI Window/AI Tab Page Actions",
   component: "aitab-page-actions",
+  decorators: [withHeadingFont],
   argTypes: {
     refreshing: { control: { type: "boolean" } },
   },
@@ -21,7 +23,7 @@ aitab-page-refreshing-sources =
 aitab-page-delete =
     .aria-label = Delete page
     .title = Delete page
-aitab-page-delete-dialog-title = Delete this [AI Tab]?
+aitab-page-delete-dialog-title = Delete this [Smart Page]?
 aitab-page-delete-dialog-message = This generated page will be removed. The sources it was built from aren't affected.
 aitab-page-delete-dialog-cancel =
     .label = Cancel

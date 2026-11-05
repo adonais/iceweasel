@@ -315,6 +315,9 @@ async function _updateSelectedNodeIssues(node, targetBrowsers, dispatch) {
 async function _updateTopLevelTargetIssues(target, targetBrowsers, dispatch) {
   const { walker } = await target.getFront("inspector");
   const documentElement = await walker.documentElement();
+  if (!documentElement) {
+    return;
+  }
   await _inspectNode(documentElement, targetBrowsers, walker, dispatch);
 }
 

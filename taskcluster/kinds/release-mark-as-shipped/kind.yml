@@ -16,7 +16,6 @@ kind-dependencies:
     - release-version-bump
 
 task-defaults:
-    run-on-repo-type: [hg]
     description: mark release as shipped in Ship-It
     task-context:
         from-custom:

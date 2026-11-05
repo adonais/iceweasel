@@ -14,3 +14,12 @@ SOURCES += [
 FINAL_LIBRARY = 'mozavutil'
 
 include('/media/ffvpx/ffvpxcommon.mozbuild')
+
+SOURCE_HEADERS += [
+	"bswap.h",
+	"cpu.h",
+	"float_dsp_arm.h",
+	"intmath.h",
+	"intreadwrite.h",
+	"timer.h",
+]

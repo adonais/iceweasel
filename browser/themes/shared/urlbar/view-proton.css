@@ -1747,7 +1747,6 @@
     .urlbarView-realtime-item[sport-category="hockey"] > &,
     .urlbarView-realtime-item[sport-category="racing"] > &,
     .urlbarView-realtime-item[sport-category="soccer"] > & {
-      /* stylelint-disable-next-line max-nesting-depth */
       > .urlbarView-sports-date-chiclet-day,
       > .urlbarView-sports-date-chiclet-month {
         display: none;

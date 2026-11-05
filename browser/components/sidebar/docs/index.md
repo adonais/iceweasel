@@ -55,8 +55,8 @@ maintaining internal state values, and determining the appropriate DOM updates.
 When state values are changed, `SidebarState` immediately applies corresponding
 adjustments to the UI. For example:
 
-- When `launcherVisible` is set to `false`, the launcher is hidden, and the sidebar's
-  inline padding is adjusted accordingly.
+- The `userLauncherVisible` is intended to reflect a users choice, so when it is set to `false` - as when toggling the sidebar button to hide the launcher that behavior is respected in future interactions. The `launcherVisible` is read-only, derived from a
+  `sidebar.visibility`'s defined behavior which is described as properties on the VISIBILITY_MODES object.
 - When `launcherWidth` or `panelWidth` are updated, inline CSS is modified to ensure
   that the sidebar does not occupy more than 75% of the browser's width.
 
@@ -86,8 +86,9 @@ should be addressed in [Bug 1945530](https://bugzil.la/1945530).
 Suppose a user clicks the toolbar button to show the sidebar. This is how the interaction
 is handled:
 
-1. `SidebarController.handleToolbarButtonClick()` is called, which sets `state.launcherVisible`.
-2. `SidebarState` calls the setter for `launcherVisible`, removing the `hidden`
+1. `SidebarController.handleToolbarButtonClick()` is called, which sets
+   `state.userLauncherVisible`.
+2. `SidebarState` applies the new derived `launcherVisible`, removing the `hidden`
    attribute from the launcher element.
 
 #### Global State Change

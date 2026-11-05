@@ -9,10 +9,9 @@
  */
 
 import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",

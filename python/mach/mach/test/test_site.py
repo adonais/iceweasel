@@ -5,20 +5,32 @@
 import os
 import subprocess
 import sys
+import time
+from pathlib import Path
 from unittest import mock
 
 import pytest
 from buildconfig import topsrcdir
 from mozunit import main
+from packaging.requirements import Requirement
 
-from mach.requirements import MachEnvRequirements, RequirementsTxtSpecifier
+import mach.site
+from mach.requirements import (
+    MachEnvRequirements,
+    PypiSpecifier,
+    RequirementsTxtSpecifier,
+)
 from mach.site import (
+    METADATA_FILENAME,
     PIP_NETWORK_INSTALL_RESTRICTED_VIRTUALENVS,
     ExternalPythonSite,
     MozSiteMetadata,
     PythonVirtualenv,
+    RequirementsValidationResult,
     SitePackagesSource,
     _create_venv_with_pthfile,
+    _is_venv_up_to_date,
+    _resolve_installed_packages,
     resolve_requirements,
 )
 
@@ -160,6 +172,117 @@ def test_requirements_txt_installs_with_hashes(run_create_venv_with_pthfile):
 
     certifi_path = os.path.join(site_packages, "certifi")
     assert os.path.exists(certifi_path), f"certifi package not found in {site_packages}"
+
+
+def write_distribution(path, name, version):
+    metadata_path = path / f"{name}-{version}.dist-info"
+    metadata_path.mkdir(parents=True)
+    (metadata_path / "METADATA").write_text(
+        f"Metadata-Version: 2.1\nName: {name}\nVersion: {version}\n"
+    )
+
+
+def test_resolve_installed_packages(tmp_path):
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    write_distribution(first, "platformdirs", "4.3.8")
+    write_distribution(first, "Glean_Parser", "20.1.0")
+    write_distribution(second, "platformdirs", "4.12.2")
+
+    venv_root = tmp_path / "venv"
+    subprocess.check_call([sys.executable, "-m", "venv", "--without-pip", venv_root])
+    venv = PythonVirtualenv(str(venv_root))
+    pthfile = Path(venv.resolve_sysconfig_packages_path("platlib")) / "test.pth"
+    pthfile.write_text(f"{first}\n{second}\n")
+
+    assert _resolve_installed_packages(venv.python_path) == {
+        "platformdirs": "4.3.8",
+        "glean-parser": "20.1.0",
+    }
+
+
+def test_requirements_validation_canonical_names():
+    requirements = MachEnvRequirements()
+    requirements.pypi_requirements.append(PypiSpecifier(Requirement("Flask>=2")))
+
+    result = RequirementsValidationResult.from_packages(
+        {"flask": "3.0.0"}, requirements
+    )
+
+    assert result.has_all_packages
+
+
+def test_pip_install_with_constraints_excludes(tmp_path):
+    venv = PythonVirtualenv(str(tmp_path / "venv"))
+    constraints = []
+
+    def record_constraints(pip_install_args):
+        constraints_path = pip_install_args[pip_install_args.index("--constraint") + 1]
+        constraints.extend(Path(constraints_path).read_text().splitlines())
+
+    with mock.patch.multiple(
+        venv,
+        _resolve_installed_packages=mock.Mock(
+            return_value={"platformdirs": "4.3.8", "psutil": "7.2.2"}
+        ),
+        pip_install=mock.Mock(side_effect=record_constraints),
+    ):
+        venv.pip_install_with_constraints(["psutil==5.9.4"], excludes={"psutil"})
+
+    assert constraints == ["platformdirs==4.3.8"]
+
+
+def create_venv_for_up_to_date_check(tmp_path):
+    venv = PythonVirtualenv(str(tmp_path / "venv"))
+    metadata = MozSiteMetadata(
+        sys.hexversion,
+        "test",
+        SitePackagesSource.VENV,
+        ExternalPythonSite(sys.executable),
+        venv.prefix,
+    )
+    requirements = MachEnvRequirements()
+    _create_venv_with_pthfile(venv, [], False, requirements, metadata)
+    return venv, requirements, metadata
+
+
+def test_venv_out_of_date_when_site_changes(tmp_path):
+    venv, requirements, metadata = create_venv_for_up_to_date_check(tmp_path)
+    os.utime(os.path.join(venv.prefix, METADATA_FILENAME), (0, 0))
+
+    result = _is_venv_up_to_date(venv, [], requirements, metadata, topsrcdir)
+
+    assert not result.is_up_to_date
+    assert (
+        result.reason
+        == f'"{mach.site.__file__}" has changed since the virtualenv was created'
+    )
+
+
+def test_venv_out_of_date_when_uv_lock_changes(tmp_path):
+    venv, requirements, metadata = create_venv_for_up_to_date_check(tmp_path)
+    uv_lock = tmp_path / "src" / "third_party" / "python" / "uv.lock"
+    uv_lock.parent.mkdir(parents=True)
+    uv_lock.touch()
+    future = time.time() + 60
+    os.utime(uv_lock, (future, future))
+
+    result = _is_venv_up_to_date(
+        venv, [], requirements, metadata, str(tmp_path / "src")
+    )
+
+    assert not result.is_up_to_date
+    assert result.reason == f'"{uv_lock}" has changed since the virtualenv was created'
+
+
+def test_venv_up_to_date_without_uv_lock(tmp_path):
+    venv, requirements, metadata = create_venv_for_up_to_date_check(tmp_path)
+
+    result = _is_venv_up_to_date(
+        venv, [], requirements, metadata, str(tmp_path / "src")
+    )
+
+    assert result.is_up_to_date
 
 
 if __name__ == "__main__":

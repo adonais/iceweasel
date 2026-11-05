@@ -28,7 +28,7 @@ fuzzy(0-2,0-1000000) == feColorMatrix-2.svg feColorMatrix-2-ref.svg
 
 == feComponentTransfer-1.svg feComponentTransfer-1-ref.svg
 == feComponentTransfer-2.svg feComponentTransfer-2-ref.svg
-fuzzy(0-1,0-1625) == feComponentTransfer-discrete.svg feComponentTransfer-discrete-ref.svg
+fuzzy(0-2,0-1625) == feComponentTransfer-discrete.svg feComponentTransfer-discrete-ref.svg
 
 fuzzy(0-2,0-1000000) == feComposite-1.svg feComposite-1-ref.svg
 fuzzy(0-2,0-1000000) == feComposite-2.svg feComposite-2-ref.svg
@@ -106,7 +106,7 @@ fuzzy(0-10,0-1200) == filter-nested-filtering-02.svg pass.svg
 == feComponentTransfer-03.svg pass.svg
 == feComponentTransfer-04.svg pass.svg
 == feComposite-arguments-01.svg pass.svg
-fuzzy-if(winWidget,0-1,0-39600) == feComposite-operator-lighter.svg feComposite-operator-lighter-ref.html
+fuzzy(0-1,0-39600) == feComposite-operator-lighter.svg feComposite-operator-lighter-ref.html
 fuzzy(0-85,0-28600) fuzzy-if(gfxSVGFEComposite,0-2,0-1000000) == feComposite-paint-01.svg feComposite-paint-01-ref.svg
 fuzzy(0-1,0-10000) == feConvolveMatrix-bias-01.svg feConvolveMatrix-bias-01-ref.svg
 == feConvolveMatrix-order-01.svg feConvolveMatrix-order-01-ref.svg

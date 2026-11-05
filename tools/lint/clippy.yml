@@ -13,6 +13,7 @@ clippy:
         - dom/media/gtest/
         - dom/midi/midir_impl/
         - dom/origin-trials/ffi/
+        - dom/webauthn/authenticator/
         - dom/webauthn/authrs_bridge/
         - dom/webauthn/libudev-sys/
         - gfx/harfbuzz_glue/

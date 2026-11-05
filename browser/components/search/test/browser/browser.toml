@@ -71,9 +71,6 @@ support-files = [
 
 ["browser_private_search_perwindowpb.js"]
 
-["browser_remote_override.js"]
-tags = "urlbar"
-
 ["browser_rich_suggestions.js"]
 tags = "urlbar"
 support-files = ["trendingSuggestionEngine.sjs"]
@@ -99,14 +96,8 @@ tags = "urlbar"
 ["browser_searchbar_enter.js"]
 
 ["browser_searchbar_keyboard_navigation.js"]
-skip-if = [
-  "debug", # Bug 1792718
-]
 
 ["browser_searchbar_openpopup.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200'", # Bug 2019745
-]
 
 ["browser_searchbar_results.js"]
 

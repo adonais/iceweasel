@@ -56,19 +56,19 @@ with Files('node/**'):
     BUG_COMPONENT = ('Firefox Build System', 'General')
 
 with Files('rust/**'):
-    BUG_COMPONENT = ('Firefox Build System', 'General')
+    BUG_COMPONENT = ('Core', 'General')
 
 with Files('webkit/**'):
-    BUG_COMPONENT = ('Firefox Build System', 'General')
+    BUG_COMPONENT = ('Testing', 'General')
 
 with Files('xsimd/**'):
-    BUG_COMPONENT = ('Firefox Build System', 'General')
+    BUG_COMPONENT = ('Core', 'Performance: General')
 
 with Files('msgpack/**'):
     BUG_COMPONENT = ('Firefox Build System', 'General')
 
 with Files('simde/**'):
-    BUG_COMPONENT = ('Firefox Build System', 'General')
+    BUG_COMPONENT = ('Core', 'Security: RLBox')
 
 with Files('sipcc/**'):
     BUG_COMPONENT = ('Core', 'WebRTC: Signaling')
@@ -98,7 +98,7 @@ with Files("libepoxy/**"):
     BUG_COMPONENT = ("Core", "WebRTC")
 
 with Files('picosha2/**'):
-    BUG_COMPONENT = ('Firefox Build System', 'General')
+    BUG_COMPONENT = ('Core', 'Security: RLBox')
 
 with Files('rlbox_wasm2c_sandbox/**'):
     BUG_COMPONENT = ('Core', 'Security: RLBox')

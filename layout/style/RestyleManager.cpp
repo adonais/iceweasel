@@ -1123,7 +1123,6 @@ static bool ContainingBlockChangeAffectsDescendants(
       continue;
     }
     for (nsIFrame* f : childList.mList) {
-      nsIFrame* frameToDiveInto = f;
       if (f->IsPlaceholderFrame()) {
         nsIFrame* outOfFlow = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
         if (!outOfFlow) {
@@ -1162,11 +1161,21 @@ static bool ContainingBlockChangeAffectsDescendants(
           }
         }
 
-        // For floats, also dive into the real frame since it may be reparented
-        // into an ancestor block outside |aFrame|, so an abspos placeholder
-        // inside that float would be unreachable. For other out-of-flows, we
-        // don't recurse since the placeholder |f| has no children.
-        frameToDiveInto = outOfFlow->IsFloating() ? outOfFlow : nullptr;
+        // For a float, since it may be reparented under an ancestor block
+        // outside |aFrame|, dive into its real frame and continuations to reach
+        // any abspos placeholder inside it. For other out-of-flows, we don't
+        // recurse since the placeholder |f| has no children.
+        if (outOfFlow->IsFloating()) {
+          for (nsIFrame* cont = outOfFlow; cont;
+               cont = cont->GetNextContinuation()) {
+            if (ContainingBlockChangeAffectsDescendants(
+                    aPossiblyChangingContainingBlock, cont,
+                    aIsAbsPosContainingBlock, aIsFixedPosContainingBlock)) {
+              return true;
+            }
+          }
+        }
+        continue;
       }
       // NOTE:  It's tempting to check f->IsAbsPosContainingBlock() or
       // f->IsFixedPosContainingBlock() here.  However, that would only
@@ -1176,10 +1185,9 @@ static bool ContainingBlockChangeAffectsDescendants(
       // could lead to an unsafe call to
       // cont->MarkAsNotAbsoluteContainingBlock() before we've reframed
       // the descendant and taken it off the absolute list.
-      if (frameToDiveInto &&
-          ContainingBlockChangeAffectsDescendants(
-              aPossiblyChangingContainingBlock, frameToDiveInto,
-              aIsAbsPosContainingBlock, aIsFixedPosContainingBlock)) {
+      if (ContainingBlockChangeAffectsDescendants(
+              aPossiblyChangingContainingBlock, f, aIsAbsPosContainingBlock,
+              aIsFixedPosContainingBlock)) {
         return true;
       }
     }

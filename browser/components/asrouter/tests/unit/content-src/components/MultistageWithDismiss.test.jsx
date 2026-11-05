@@ -139,6 +139,33 @@ describe("MultistageWithDismiss", () => {
       assert.calledOnce(originalFinish);
     });
 
+    it("should play the exit animation before an auto dismiss", () => {
+      clock = sinon.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const config = makeConfig();
+      config.screens[0].auto_dismiss = { after: 6000 };
+      const wrapper = mount(
+        <MultistageWithDismiss
+          config={config}
+          handleDismiss={() => {}}
+          handleBlock={() => {}}
+        />
+      );
+
+      clock.tick(5999);
+      wrapper.update();
+      assert.notInclude(wrapperClasses(wrapper), "card-stack-exiting");
+
+      clock.tick(1);
+      wrapper.update();
+      assert.include(wrapperClasses(wrapper), "card-stack-exiting");
+      assert.notCalled(originalFinish);
+
+      clock.tick(CARD_STACK_TRANSITION_OUT_TIME);
+      assert.calledOnce(originalFinish);
+
+      wrapper.unmount();
+    });
+
     it("should restore AWFinish and drop the pending timer on unmount", async () => {
       const wrapper = await mountWrapper(makeConfig());
       clock = sinon.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });

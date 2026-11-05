@@ -31,28 +31,11 @@ class BaselineCompileQueue {
     return offsetof(BaselineCompileQueue, numQueued_);
   }
 
-  JSScript* pop() {
-    // To keep our invariants simple, we pop from the end of the queue.
-    MOZ_ASSERT(!isEmpty());
-    assertInvariants();
-    numQueued_--;
-    JSScript* result = queue_[numQueued_];
-    queue_[numQueued_] = nullptr;
-    assertInvariants();
-    return result;
-  }
+  JSScript* pop();
 
   bool isEmpty() const { return numQueued_ == 0; }
 
-  bool enqueue(JSScript* script) {
-    if (numQueued_ >= JitOptions.baselineQueueCapacity) {
-      return false;  // Queue is full
-    }
-    queue_[numQueued_] = script;
-    numQueued_++;
-    assertInvariants();
-    return true;
-  }
+  bool enqueue(JSScript* script);
 
 #ifdef DEBUG
   void assertInvariants() const;

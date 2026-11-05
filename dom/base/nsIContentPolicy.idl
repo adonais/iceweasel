@@ -481,6 +481,15 @@ interface nsIContentPolicy : nsISupports
      */
     TYPE_INTERNAL_TEXT_PRELOAD = 66,
 
+    /**
+     * Indicates a speculation rule set fetched because of a
+     * Speculation-Rules response header.  CSP does not apply.
+     *
+     * This will be mapped to TYPE_OTHER before being passed to content policy
+     * implementations.
+     */
+    TYPE_INTERNAL_SPECULATION_RULES = 67,
+
     /* When adding new content types, please update
      * nsCSPContext, CSP_ContentTypeToDirective,
      * DoContentSecurityChecks, all nsIContentPolicy implementations, the

@@ -113,7 +113,7 @@ virtualenv_config_options = [
         {
             "action": "extend",
             "dest": "find_links",
-            "default": ["https://pypi.pub.build.mozilla.org/pub/"],
+            "default": [],
             "help": "URL to look for packages at",
         },
     ],
@@ -121,9 +121,9 @@ virtualenv_config_options = [
         ["--pip-index"],
         {
             "action": "store_true",
-            "default": False,
+            "default": True,
             "dest": "pip_index",
-            "help": "Use pip indexes",
+            "help": "Use pip indexes (default)",
         },
     ],
     [
@@ -131,7 +131,7 @@ virtualenv_config_options = [
         {
             "action": "store_false",
             "dest": "pip_index",
-            "help": "Don't use pip indexes (default)",
+            "help": "Don't use pip indexes",
         },
     ],
 ]
@@ -232,7 +232,7 @@ class VirtualenvMixin:
             pip_list_command = pip_command(
                 python_executable=self.query_python_path(),
                 subcommand="list",
-                args=["--format", "freeze", "--no-index"],
+                args=["--format", "freeze"],
             )
             pip_freeze_output = self.get_output_from_command(
                 pip_list_command,
@@ -273,6 +273,9 @@ class VirtualenvMixin:
         package_versions = self.package_versions(error_level=error_level)
         return package_name.lower() in [package.lower() for package in package_versions]
 
+    def query_python_constraints(self):
+        return []
+
     def install_module(
         self,
         module=None,
@@ -312,6 +315,10 @@ class VirtualenvMixin:
             if not module_url and not requirements:
                 self.fatal("Must specify module and/or requirements")
             pip_command_args = []
+            for constraint in self.query_python_constraints():
+                pip_command_args += ["--constraint", constraint]
+            if not c.get("pip_index", True):
+                pip_command_args.append("--no-index")
             pip_command_non_uv_args = []
             if c.get("verbose_pip"):
                 pip_command_args += ["-v"]
@@ -325,8 +332,6 @@ class VirtualenvMixin:
             pip_command_non_uv_args += ["--timeout", str(c.get("pip_timeout", 120))]
             for requirement in requirements:
                 pip_command_args += ["-r", requirement]
-            if c.get("find_links") and not c["pip_index"]:
-                pip_command_args += ["--no-index"]
             for opt in global_options:
                 pip_command_args += ["--global-option", opt]
         else:
@@ -393,7 +398,7 @@ class VirtualenvMixin:
                 self.warning("find_links: not a valid path nor URL %s" % link)
 
         # TODO: make this fatal if we always see failures after this
-        if find_links_added == 0:
+        if find_links_added == 0 and not c.get("pip_index", True):
             self.warning(
                 "find_links: no find_links added. pip installation will probably fail!"
             )

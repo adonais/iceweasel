@@ -165,7 +165,10 @@ describe("Create AI Tab menu triggers in a Smart Window", () => {
 
   beforeEach(async () => {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.smartwindow.aitab.enabled", true]],
+      set: [
+        ["browser.smartwindow.aitab.enabled", true],
+        ["browser.smartwindow.aitab.menus", true],
+      ],
     });
     gRestoreSignIn = skipSignIn();
     gMockEngineManager = new MockEngineManager();
@@ -175,11 +178,46 @@ describe("Create AI Tab menu triggers in a Smart Window", () => {
   afterEach(async () => {
     // Unanswered requests hold suspended async chains that keep the window
     // from being GC'd.
-    gMockEngineManager.rejectAllRequests();
+    await gMockEngineManager.rejectAllRequests();
     gMockEngineManager.cleanupMocks();
     gRestoreSignIn();
     await BrowserTestUtils.closeWindow(gWin);
     await SpecialPowers.popPrefEnv();
+  });
+
+  it("hides all three entries when the menu pref is off", async () => {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.smartwindow.aitab.menus", false]],
+    });
+    try {
+      const tab = await BrowserTestUtils.openNewForegroundTab(
+        gWin.gBrowser,
+        TEST_PAGE_URL
+      );
+      const tabMenu = await openTabContextMenu(gWin, tab);
+      Assert.ok(
+        gWin.document.getElementById("context_createAITab").hidden,
+        "The tab menu entry is hidden"
+      );
+      await hidePopupAndWait(tabMenu);
+
+      const pageMenu = await openPageContextMenu(gWin);
+      Assert.ok(
+        gWin.document.getElementById("context-create-aitab").hidden,
+        "The page menu entry is hidden"
+      );
+      await hidePopupAndWait(pageMenu);
+
+      const group = gWin.gBrowser.addTabGroup([tab]);
+      const groupMenu = await openTabGroupMenu(gWin, group);
+      Assert.ok(
+        gWin.document.getElementById("tabGroupEditor_createAITab").hidden,
+        "The tab group menu entry is hidden"
+      );
+      await hidePopupAndWait(groupMenu);
+    } finally {
+      await SpecialPowers.popPrefEnv();
+    }
   });
 
   describe("tab context menu", () => {
@@ -401,7 +439,7 @@ describe("Create AI Tab menu triggers in a Smart Window", () => {
         );
         await assertAITabConversation(
           aiTab,
-          [TEST_URL, TEST_URL2],
+          [TEST_URL2, TEST_URL],
           gMockEngineManager
         );
       });
@@ -414,7 +452,10 @@ describe("Create AI Tab menu triggers in a classic window", () => {
 
   beforeEach(async () => {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.smartwindow.aitab.enabled", true]],
+      set: [
+        ["browser.smartwindow.aitab.enabled", true],
+        ["browser.smartwindow.aitab.menus", true],
+      ],
     });
     gTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
   });

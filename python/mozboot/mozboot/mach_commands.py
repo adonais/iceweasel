@@ -28,12 +28,22 @@ from mozboot.bootstrap import APPLICATIONS
     help="Only execute actions that leave the system configuration alone.",
 )
 @CommandArgument(
+    "--no-agentic-tools",
+    dest="no_agentic_tools",
+    action="store_true",
+    help="Do not install tools for agentic coding.",
+)
+@CommandArgument(
     "--exclude",
     nargs="+",
     help="A list of bootstrappable elements not to bootstrap.",
 )
 def bootstrap(
-    command_context, application_choice=None, no_system_changes=False, exclude=[]
+    command_context,
+    application_choice=None,
+    no_system_changes=False,
+    no_agentic_tools=False,
+    exclude=[],
 ):
     """Bootstrap system and mach for optimal development experience."""
     from mozboot.bootstrap import Bootstrapper
@@ -42,6 +52,7 @@ def bootstrap(
         choice=application_choice,
         no_interactive=not command_context._mach_context.is_interactive,
         no_system_changes=no_system_changes,
+        no_agentic_tools=no_agentic_tools,
         exclude=exclude,
         mach_context=command_context._mach_context,
     )
@@ -64,7 +75,12 @@ def bootstrap(
     choices=("hg", "git", "jj"),
     help="Force a specific VCS backend instead of auto-detecting.",
 )
-def vcs_setup(command_context, update_only=False, vcs=None):
+@CommandArgument(
+    "--no-system-changes",
+    action="store_true",
+    help="Skip Watchman configuration.",
+)
+def vcs_setup(command_context, update_only=False, vcs=None, no_system_changes=False):
     """Ensure a Version Control System (Mercurial, Git, or
     Git + Jujutsu) is optimally configured.
 
@@ -101,4 +117,6 @@ def vcs_setup(command_context, update_only=False, vcs=None):
         repo = get_repository_object(topsrcdir)
         print(f"Automatically detected a {repo.name} repository.")
 
-    repo.configure(state_dir, update_only=update_only)
+    repo.configure(
+        state_dir, update_only=update_only, no_system_changes=no_system_changes
+    )

@@ -2566,8 +2566,9 @@ nsresult HTMLEditor::InsertURLAsLinkInternal(
       DeleteSelectionAndCreateElement(
           *nsGkAtoms::a, [&aURL](HTMLEditor& aEditor, Element& aNewElement,
                                  const EditorDOMPoint&) {
-            nsresult rv = aNewElement.SetAttr(kNameSpaceID_None,
-                                              nsGkAtoms::href, aURL, false);
+            nsresult rv =
+                aNewElement.SetAttr(kNameSpaceID_None, nsGkAtoms::href, aURL,
+                                    false, IsKnownNewAttr::Yes);
             if (NS_FAILED(rv)) {
               NS_WARNING("Element::SetAttr(href) failed");
               return rv;
@@ -3052,7 +3053,7 @@ nsresult HTMLEditor::HandlePasteAsQuotation(
               MOZ_CAN_RUN_SCRIPT_BOUNDARY {
                 DebugOnly<nsresult> rvIgnored = aBlockquoteElement.SetAttr(
                     kNameSpaceID_None, nsGkAtoms::type, u"cite"_ns,
-                    aBlockquoteElement.IsInComposedDoc());
+                    aBlockquoteElement.IsInComposedDoc(), IsKnownNewAttr::Yes);
                 NS_WARNING_ASSERTION(
                     NS_SUCCEEDED(rvIgnored),
                     nsPrintfCString(
@@ -3487,7 +3488,7 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
               // quotation.
               DebugOnly<nsresult> rvIgnored = aSpanElement.SetAttr(
                   kNameSpaceID_None, nsGkAtoms::mozquote, u"true"_ns,
-                  aSpanElement.IsInComposedDoc());
+                  aSpanElement.IsInComposedDoc(), IsKnownNewAttr::Yes);
               NS_WARNING_ASSERTION(
                   NS_SUCCEEDED(rvIgnored),
                   nsPrintfCString(
@@ -3502,15 +3503,15 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
                     kNameSpaceID_None, nsGkAtoms::style,
                     nsLiteralString(u"white-space: pre-wrap; display: block; "
                                     u"width: 98vw;"),
-                    false);
+                    false, IsKnownNewAttr::Yes);
                 NS_WARNING_ASSERTION(
                     NS_SUCCEEDED(rvIgnored),
                     "Element::SetAttr(nsGkAtoms::style, \"pre-wrap, block\", "
                     "false) failed, but ignored");
               } else {
-                DebugOnly<nsresult> rvIgnored =
-                    aSpanElement.SetAttr(kNameSpaceID_None, nsGkAtoms::style,
-                                         u"white-space: pre-wrap;"_ns, false);
+                DebugOnly<nsresult> rvIgnored = aSpanElement.SetAttr(
+                    kNameSpaceID_None, nsGkAtoms::style,
+                    u"white-space: pre-wrap;"_ns, false, IsKnownNewAttr::Yes);
                 NS_WARNING_ASSERTION(
                     NS_SUCCEEDED(rvIgnored),
                     "Element::SetAttr(nsGkAtoms::style, "
@@ -3790,7 +3791,7 @@ nsresult HTMLEditor::InsertAsCitedQuotationInternal(
             // Try to set type=cite.  Ignore it if this fails.
             DebugOnly<nsresult> rvIgnored = aBlockquoteElement.SetAttr(
                 kNameSpaceID_None, nsGkAtoms::type, u"cite"_ns,
-                aBlockquoteElement.IsInComposedDoc());
+                aBlockquoteElement.IsInComposedDoc(), IsKnownNewAttr::Yes);
             NS_WARNING_ASSERTION(
                 NS_SUCCEEDED(rvIgnored),
                 nsPrintfCString(
@@ -3801,7 +3802,7 @@ nsresult HTMLEditor::InsertAsCitedQuotationInternal(
             if (!aCitation.IsEmpty()) {
               DebugOnly<nsresult> rvIgnored = aBlockquoteElement.SetAttr(
                   kNameSpaceID_None, nsGkAtoms::cite, aCitation,
-                  aBlockquoteElement.IsInComposedDoc());
+                  aBlockquoteElement.IsInComposedDoc(), IsKnownNewAttr::Yes);
               NS_WARNING_ASSERTION(
                   NS_SUCCEEDED(rvIgnored),
                   nsPrintfCString(

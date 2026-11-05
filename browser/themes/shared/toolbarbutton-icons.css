@@ -13,6 +13,14 @@
 }
 
 @media (forced-colors) {
+  toolbar .toolbarbutton-1 {
+    :root:not([customizing]) &[disabled],
+    &:is(#nav-bar-overflow-button, #PanelUI-menu-button)[disabled] {
+      color: var(--button-text-color-disabled);
+      fill: var(--toolbarbutton-icon-fill-disabled);
+    }
+  }
+
   toolbar .toolbarbutton-1:not([disabled]) {
     &:hover {
       fill: var(--toolbarbutton-icon-fill-hover);
@@ -130,6 +138,10 @@
   list-style-image: url("chrome://global/skin/icons/developer.svg");
 }
 
+#profiler-button-button {
+  --profiler-button-image-fill-active: var(--toolbarbutton-icon-fill-attention);
+}
+
 #profiler-button-button > .toolbarbutton-icon {
   list-style-image: url("chrome://devtools/skin/images/tool-profiler.svg");
 }
@@ -139,17 +151,13 @@
 }
 
 #profiler-button-button.profiler-active > image {
-  fill: #0060df;
+  fill: var(--profiler-button-image-fill-active);
   fill-opacity: 1;
-  background-color: #0060df33;
+  background-color: color-mix(in srgb, var(--profiler-button-image-fill-active) 20%, transparent);
 }
 
 #profiler-button-button.profiler-active:hover > image {
-  background-color: #0060df22;
-}
-
-#profiler-button-button.profiler-paused > image {
-  opacity: 0.4;
+  background-color: color-mix(in srgb, var(--profiler-button-image-fill-active) 13%, transparent);
 }
 
 #preferences-button {
@@ -200,8 +208,142 @@
   list-style-image: url("chrome://mozapps/skin/extensions/extension.svg");
 }
 
-#reset-pbm-toolbar-button {
+#reset-pbm-toolbar-button,
+#fire-button {
   list-style-image: url("chrome://browser/skin/flame.svg");
+}
+
+#fire-button > .toolbarbutton-animatable-box {
+  display: none;
+}
+
+/* On hover the flame grows and flares orange, then shrinks back while settling
+   into dark red, following the design's animation. The flame is drawn by three
+   stacked layers masked by the frames of flame-hover-animation.svg, in the
+   animatable box so that the hover background is left alone. Each frame is
+   16x18 so that the raised tip fits above the icon. The frames only exist for
+   the Nova icon, so the Proton icon stays static. */
+@media not (forced-colors) {
+  @media -moz-pref("browser.nova.enabled") {
+    #fire-button[cui-areatype="toolbar"]:not([overflowedItem]) {
+      --fire-button-flame-frames: 19;
+      --fire-button-flare-start-color: light-dark(var(--color-orange-40), var(--color-orange-30));
+      --fire-button-flare-end-color: light-dark(var(--color-red-40), var(--color-red-30));
+      --fire-button-settled-start-color: light-dark(var(--color-orange-50), var(--color-orange-20));
+      --fire-button-settled-end-color: light-dark(var(--color-red-50), var(--color-red-20));
+      position: relative;
+
+      > .toolbarbutton-animatable-box {
+        display: block;
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        top: calc(50% - 10px);
+        inset-inline-start: calc(50% - var(--icon-size-small) / 2);
+        width: var(--icon-size-small);
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        height: 18px;
+        visibility: hidden;
+
+        > .fire-button-flame {
+          position: absolute;
+          inset: 0;
+          mask: url("chrome://browser/skin/flame-hover-animation.svg") 0 0 / auto 18px no-repeat;
+          opacity: 0;
+        }
+
+        > .fire-button-flame-rest {
+          background-color: var(--toolbarbutton-icon-fill);
+        }
+
+        > .fire-button-flame-flare {
+          background-image: linear-gradient(128.515deg, var(--fire-button-flare-start-color) 27.693%, var(--fire-button-flare-end-color) 76.239%);
+        }
+
+        > .fire-button-flame-settled {
+          background-image: linear-gradient(130.27deg, var(--fire-button-settled-start-color) 27.287%, var(--fire-button-settled-end-color) 74.4%);
+          opacity: 1;
+        }
+      }
+
+      &:not([disabled]):hover {
+        > .toolbarbutton-icon {
+          fill: transparent;
+        }
+
+        > .toolbarbutton-animatable-box {
+          visibility: visible;
+        }
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        &:not([disabled]):hover > .toolbarbutton-animatable-box {
+          > .fire-button-flame-rest {
+            animation:
+              fire-button-flame-shape 800ms steps(var(--fire-button-flame-frames)),
+              fire-button-flame-fade-out 800ms;
+          }
+
+          > .fire-button-flame-flare {
+            animation:
+              fire-button-flame-shape 800ms steps(var(--fire-button-flame-frames)),
+              fire-button-flame-flare 800ms;
+          }
+
+          > .fire-button-flame-settled {
+            animation:
+              fire-button-flame-shape 800ms steps(var(--fire-button-flame-frames)),
+              fire-button-flame-fade-in 800ms;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* In the fades, the first quarter is the grow and the rest is the slower
+   settle. The frames already include that timing. */
+@keyframes fire-button-flame-shape {
+  from {
+    mask-position: 0 0;
+  }
+  to {
+    mask-position: calc(var(--fire-button-flame-frames) * -16px) 0;
+  }
+}
+
+@keyframes fire-button-flame-fade-out {
+  from {
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.42, 1);
+  }
+  25%,
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fire-button-flame-flare {
+  from {
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.42, 1);
+  }
+  25% {
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.45, 1, 0.85, 1);
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fire-button-flame-fade-in {
+  from,
+  25% {
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.45, 1, 0.85, 1);
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 #remote-control-toolbar-button {
@@ -215,14 +357,16 @@
      * toolbarbuttons.css, duplicated here because this badge is keyed off an
      * attribute rather than a class. Keep both in sync. */
     > .toolbarbutton-badge-stack > .toolbarbutton-badge {
-      width: 14px;
-      height: 14px;
+      width: var(--toolbarbutton-badge-size);
+      height: var(--toolbarbutton-badge-size);
       min-width: auto;
       box-shadow: none;
       border: none;
       padding: 0;
       display: block;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       margin: -7px 0 0 !important;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       margin-inline-end: -6px !important;
       background: url("chrome://global/skin/icons/badge-blue.svg");
     }
@@ -294,7 +438,7 @@
 }
 
 #panic-button[open] {
-  fill: light-dark(rgb(213, 32, 20), #ff848b);
+  fill: var(--icon-color-critical);
 }
 
 #library-button {
@@ -400,6 +544,7 @@
 
     &.ipprotection-included {
       list-style-image: url("chrome://browser/content/ipprotection/assets/states/ipprotection-included.svg");
+      fill: var(--icon-color-success);
       stroke: var(--icon-color-success);
     }
 
@@ -473,7 +618,7 @@
 }
 
 #taskbar-tabs-favicon {
-  margin: auto 8px;
+  margin: auto var(--space-small);
   height: var(--icon-size);
   width: var(--icon-size);
 
@@ -533,7 +678,7 @@
 #smartwindow-monitor-button {
   list-style-image: url("chrome://browser/content/aiwindow/assets/agent-watch.svg");
 
-  /* A monitor matched its condition. Same badge dot as #PanelUI-button and
+  /* A monitor matched its condition. Same badge dot as #PanelUI-menu-button and
      #downloads-button, tinted to say the watched condition was met rather than
      the attention blue those two use to ask for a decision. */
   &[monitor-attention] > .toolbarbutton-badge-stack > .toolbarbutton-badge {
@@ -546,7 +691,7 @@
     min-width: var(--icon-size-xsmall);
     min-height: var(--icon-size-xsmall);
     -moz-context-properties: fill;
-    fill: var(--tab-attention-dot-color);
+    fill: var(--color-accent-attention);
     background: url("chrome://browser/skin/notification-fill-12.svg") no-repeat center;
     background-size: var(--icon-size-xsmall);
   }

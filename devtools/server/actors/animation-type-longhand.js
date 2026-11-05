@@ -381,6 +381,7 @@ exports.ANIMATION_TYPE_FOR_LONGHANDS = [
       "column-width",
       "cx",
       "cy",
+      "fit-tolerance",
       "flex-basis",
       "height",
       "left",

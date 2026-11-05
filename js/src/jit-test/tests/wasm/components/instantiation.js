@@ -95,7 +95,7 @@ assertErrorMessage(() => {
       )
     `)),
   );
-  const { test123, test234, test345, test456 } = wasmComponentCoreInstance(i, 1).exports;
+  const { test123, test234, test345, test456 } = wasmComponentCoreInstanceExports(i, 1);
   assertEq(test123(), 123);
   assertEq(test234(), 234);
   assertEq(test345(), 345);
@@ -154,7 +154,7 @@ assertErrorMessage(() => {
       )
     `)),
   );
-  const { R_new, R_rep, R_drop, cool, uncool } = wasmComponentCoreInstance(i, 2).exports;
+  const { R_new, R_rep, R_drop, cool, uncool } = wasmComponentCoreInstanceExports(i, 2);
   assertErrorMessage(() => R_new(1), WebAssembly.RuntimeError, /unreachable/);
   assertErrorMessage(() => R_rep(1), WebAssembly.RuntimeError, /unreachable/);
   assertErrorMessage(() => R_drop(1), WebAssembly.RuntimeError, /unreachable/);
@@ -193,7 +193,7 @@ assertErrorMessage(() => {
       )
     `)),
   );
-  const { test } = wasmComponentCoreInstance(i, 2).exports;
+  const { test } = wasmComponentCoreInstanceExports(i, 2);
   assertEq(test(), 246);
 }
 
@@ -216,8 +216,8 @@ assertErrorMessage(() => {
       )
     `)),
   );
-  const i0 = wasmComponentCoreInstance(i, 0).exports;
-  const i1 = wasmComponentCoreInstance(i, 1).exports;
+  const i0 = wasmComponentCoreInstanceExports(i, 0);
+  const i1 = wasmComponentCoreInstanceExports(i, 1);
   i0.add(1);
   i1.add(2);
   assertEq(i0.get(), 1);
@@ -256,8 +256,8 @@ assertErrorMessage(() => {
       )
     `)),
   );
-  const a = wasmComponentCoreInstance(i, 0).exports;
-  const b = wasmComponentCoreInstance(i, 1).exports;
+  const a = wasmComponentCoreInstanceExports(i, 0);
+  const b = wasmComponentCoreInstanceExports(i, 1);
   assertEq(a.g, b.g);        // same WebAssembly.Global object
   assertEq(a.mem, b.mem);    // same WebAssembly.Memory object
   assertEq(a.getG(), 20);    // B's start mutated the shared global; A observes it
@@ -306,7 +306,7 @@ assertErrorMessage(() => {
       )
     `)),
   );
-  const a = wasmComponentCoreInstance(i, 0).exports;
+  const a = wasmComponentCoreInstanceExports(i, 0);
   const mem = new Int32Array(a.mem.buffer);
   assertEq(mem[0], 0);           // A saw counter == 0
   assertEq(mem[1], 2);           // B saw counter == 2 (byte 4)
@@ -360,8 +360,8 @@ assertErrorMessage(() => {
       )
     `)),
   );
-  const src = wasmComponentCoreInstance(i, 0).exports;
-  const use = wasmComponentCoreInstance(i, 2).exports;
+  const src = wasmComponentCoreInstanceExports(i, 0);
+  const use = wasmComponentCoreInstanceExports(i, 2);
   assertEq(use.callF(), 111);
   assertEq(use.callIndirect(), 222);
   assertEq(use.loadMem(), 42);
@@ -389,8 +389,8 @@ assertErrorMessage(() => {
       )
     `)),
   );
-  assertEq(wasmComponentCoreInstance(i, 1).exports.getG1(), 333);
-  assertEq(wasmComponentCoreInstance(i, 1).exports.getG2(), 444);
+  assertEq(wasmComponentCoreInstanceExports(i, 1).getG1(), 333);
+  assertEq(wasmComponentCoreInstanceExports(i, 1).getG2(), 444);
 }
 
 // Chains of inline exports resolve to the same thing and instantiate correctly.
@@ -426,8 +426,8 @@ assertErrorMessage(() => {
       )
     `)),
   );
-  assertEq(wasmComponentCoreInstance(i, 4).exports.runA(), 123);
-  assertEq(wasmComponentCoreInstance(i, 4).exports.runB(), 123);
-  assertEq(wasmComponentCoreInstance(i, 4).exports.runC(), 123);
-  assertEq(wasmComponentCoreInstance(i, 4).exports.runD(), 123);
+  assertEq(wasmComponentCoreInstanceExports(i, 4).runA(), 123);
+  assertEq(wasmComponentCoreInstanceExports(i, 4).runB(), 123);
+  assertEq(wasmComponentCoreInstanceExports(i, 4).runC(), 123);
+  assertEq(wasmComponentCoreInstanceExports(i, 4).runD(), 123);
 }

@@ -31,12 +31,13 @@ using namespace mozilla::widget;
 using mozilla::layers::AutoTextureLock;
 
 /* static */
-bool D3D11Checks::DoesRenderTargetViewNeedRecreating(ID3D11Device* aDevice) {
-  bool result = false;
+D3D11Checks::RenderTargetViewCheckResult
+D3D11Checks::DoesRenderTargetViewNeedRecreating(ID3D11Device* aDevice) {
+  auto result = RenderTargetViewCheckResult::NotNeeded;
   // CreateTexture2D is known to crash on lower feature levels, see bugs
   // 1170211 and 1089413.
   if (aDevice->GetFeatureLevel() < D3D_FEATURE_LEVEL_10_0) {
-    return true;
+    return RenderTargetViewCheckResult::NeedsRecreating;
   }
 
   RefPtr<ID3D11DeviceContext> deviceContext;
@@ -65,14 +66,14 @@ bool D3D11Checks::DoesRenderTargetViewNeedRecreating(ID3D11Device* aDevice) {
                                         getter_AddRefs(offscreenTexture));
   if (FAILED(hr)) {
     gfxCriticalNote << "DoesRecreatingCreateTexture2DFail";
-    return false;
+    return RenderTargetViewCheckResult::Failed;
   }
 
   hr = offscreenTexture->QueryInterface(__uuidof(IDXGIKeyedMutex),
                                         (void**)getter_AddRefs(keyedMutex));
   if (FAILED(hr)) {
     gfxCriticalNote << "DoesRecreatingKeyedMutexFailed";
-    return false;
+    return RenderTargetViewCheckResult::Failed;
   }
   D3D11_RENDER_TARGET_VIEW_DESC offscreenRTVDesc;
   offscreenRTVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -84,7 +85,7 @@ bool D3D11Checks::DoesRenderTargetViewNeedRecreating(ID3D11Device* aDevice) {
                                        getter_AddRefs(offscreenRTView));
   if (FAILED(hr)) {
     gfxCriticalNote << "DoesRecreatingCreateRenderTargetViewFailed";
-    return false;
+    return RenderTargetViewCheckResult::Failed;
   }
 
   {
@@ -112,7 +113,7 @@ bool D3D11Checks::DoesRenderTargetViewNeedRecreating(ID3D11Device* aDevice) {
     hr = aDevice->CreateTexture2D(&desc, NULL, getter_AddRefs(cpuTexture));
     if (FAILED(hr)) {
       gfxCriticalNote << "DoesRecreatingCreateCPUTextureFailed";
-      return false;
+      return RenderTargetViewCheckResult::Failed;
     }
 
     deviceContext->CopyResource(cpuTexture, offscreenTexture);
@@ -121,7 +122,7 @@ bool D3D11Checks::DoesRenderTargetViewNeedRecreating(ID3D11Device* aDevice) {
     hr = deviceContext->Map(cpuTexture, 0, D3D11_MAP_READ, 0, &mapped);
     if (FAILED(hr)) {
       gfxCriticalNote << "DoesRecreatingMapFailed " << hexa(hr);
-      return false;
+      return RenderTargetViewCheckResult::Failed;
     }
     uint32_t resultColor = *(uint32_t*)mapped.pData;
     deviceContext->Unmap(cpuTexture, 0);
@@ -131,7 +132,7 @@ bool D3D11Checks::DoesRenderTargetViewNeedRecreating(ID3D11Device* aDevice) {
     // match the clear
     if (resultColor != 0xffffff00) {
       gfxCriticalNote << "RenderTargetViewNeedsRecreating";
-      result = true;
+      result = RenderTargetViewCheckResult::NeedsRecreating;
     }
   }
   return result;

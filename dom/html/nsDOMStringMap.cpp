@@ -90,10 +90,11 @@ void nsDOMStringMap::NamedSetter(const nsAString& aProp,
     return;
   }
 
-  RefPtr<nsAtom> attrAtom = NS_Atomize(attr);
+  RefPtr<nsAtom> attrAtom = NS_AtomizeMainThread(attr);
   MOZ_ASSERT(attrAtom, "Should be infallible");
 
-  nsresult res = mElement->SetAttr(kNameSpaceID_None, attrAtom, aValue, true);
+  nsresult res = mElement->SetAttr(kNameSpaceID_None, attrAtom, aValue, true,
+                                   IsKnownNewAttr::No);
   if (NS_FAILED(res)) {
     rv.Throw(res);
   }

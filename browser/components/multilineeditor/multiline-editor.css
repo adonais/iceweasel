@@ -128,11 +128,8 @@
 }
 
 :host([data-mention-placeholder]) .ProseMirror .ProseMirror-suggestion {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--multiline-editor-mention-placeholder-background-color);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border: var(--border-width) solid var(--multiline-editor-mention-placeholder-border-color);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-radius: var(--multiline-editor-mention-placeholder-border-radius);
   color: var(--text-color-deemphasized);
   padding: var(--space-xsmall);

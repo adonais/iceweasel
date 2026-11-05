@@ -555,6 +555,7 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
 
 void MediaKeySystemAccessManager::ProvideAccess(
     UniquePtr<PendingRequest> aRequest) {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aRequest);
   MOZ_ASSERT(
       aRequest->mSupportedConfig,
@@ -562,6 +563,7 @@ void MediaKeySystemAccessManager::ProvideAccess(
   MKSAM_LOG_DEBUG("aRequest->mKeySystem={}",
                   NS_ConvertUTF16toUTF8(aRequest->mKeySystem).get());
 
+  RefPtr<MediaKeySystemAccessManager> self(this);
   DecoderDoctorDiagnostics diagnostics;
 
   RefPtr<MediaKeySystemAccess> access(new MediaKeySystemAccess(

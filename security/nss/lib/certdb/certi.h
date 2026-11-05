@@ -207,11 +207,6 @@ SECStatus cert_UpdateSubjectKeyIDSlotCheck(SECItem* slotid, int series);
 
 int cert_SubjectKeyIDSlotCheckSeries(SECItem* slotid);
 
-/*
- * Call this function to remove an entry from the mapping table.
- */
-SECStatus cert_RemoveSubjectKeyIDMapping(SECItem* subjKeyID);
-
 SECStatus cert_DestroySubjectKeyIDHashTable(void);
 
 SECItem* cert_FindDERCertBySubjectKeyID(SECItem* subjKeyID);

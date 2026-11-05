@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <functional>
+
 #include "H265.h"
 #include "MatroskaDemuxer.h"
 #include "MediaDataDemuxer.h"
@@ -242,6 +244,7 @@ TEST(MatroskaDemuxer, AACFrameCountNotParsed)
   taskQueue->AwaitShutdownAndIdle();
   EXPECT_TRUE(ran);
 }
+
 // output_hevc.mkv is a 1s 30fps HEVC-in-Matroska file encoded with B-frames
 // (has_b_frames=2), so decode order differs from presentation order:
 //   ffmpeg -f lavfi -i testsrc=size=320x240:rate=30 -t 1 -c:v libx265
@@ -450,4 +453,82 @@ TEST(MatroskaDemuxer, AudioVideoDurations)
   taskQueue->AwaitShutdownAndIdle();
   EXPECT_TRUE(doneVideo);
   EXPECT_TRUE(doneAudio);
+}
+
+// output_mp3.mkv is a 1s 44100Hz MP3-in-Matroska file whose last block
+// carries DiscardPadding of 19841270ns (~19.84ms):
+//   ffmpeg -f lavfi -i sine=frequency=1000:duration=1 -c:a libmp3lame ...
+// GetNextPacket must trim that padding from the last sample via the MP3
+// discard-padding path. One MP3 frame at 44100Hz is
+// 1152 samples (~26.12ms), so the trimmed last sample is ~6.28ms.
+TEST(MatroskaDemuxer, MP3DiscardPadding)
+{
+  RefPtr<MockMediaResource> resource = new MockMediaResource("output_mp3.mkv");
+  ASSERT_EQ(NS_OK, resource->Open());
+
+  RefPtr<MatroskaDemuxer> demuxer = new MatroskaDemuxer(resource);
+  RefPtr<TaskQueue> taskQueue = TaskQueue::Create(
+      GetMediaThreadPool(MediaThreadType::SUPERVISOR), "TestWebMDemuxer");
+
+  const TimeUnit kFullFrame = TimeUnit(1152, 44100);
+
+  bool ran = false;
+  nsTArray<RefPtr<MediaRawData>> samples;
+  InvokeAsync(taskQueue, __func__, [demuxer]() { return demuxer->Init(); })
+      ->Then(
+          taskQueue, __func__,
+          [demuxer, taskQueue, &ran, &samples, kFullFrame]() {
+            EXPECT_EQ(demuxer->GetNumberTracks(TrackInfo::kAudioTrack), 1u);
+            UniquePtr<TrackInfo> info =
+                demuxer->GetTrackInfo(TrackInfo::kAudioTrack, 0);
+            ASSERT_TRUE(info);
+            AudioInfo* audioInfo = info->GetAsAudioInfo();
+            ASSERT_TRUE(audioInfo);
+            EXPECT_TRUE(audioInfo->mMimeType.EqualsLiteral("audio/mpeg"));
+            EXPECT_TRUE(
+                audioInfo->mCodecSpecificConfig.is<Mp3CodecSpecificData>());
+            RefPtr<MediaTrackDemuxer> audioTrack =
+                demuxer->GetTrackDemuxer(TrackInfo::kAudioTrack, 0);
+
+            auto finish = std::make_shared<std::function<void()>>(
+                [taskQueue, &samples, &ran, kFullFrame]() {
+                  ASSERT_GT(samples.Length(), 0u);
+                  for (const auto& sample : samples) {
+                    EXPECT_TRUE(sample->mDuration.IsValid());
+                  }
+                  RefPtr<MediaRawData> last = samples.LastElement();
+                  EXPECT_GT(last->mDuration, TimeUnit::Zero());
+                  EXPECT_LT(last->mDuration, kFullFrame);
+                  EXPECT_GT(last->mDuration, TimeUnit::FromMicroseconds(4000));
+                  EXPECT_LT(last->mDuration, TimeUnit::FromMicroseconds(9000));
+                  ran = true;
+                  taskQueue->BeginShutdown();
+                });
+            auto loop = std::make_shared<std::function<void()>>();
+            *loop = [audioTrack, taskQueue, &samples, loop, finish]() {
+              audioTrack->GetSamples()->Then(
+                  taskQueue, __func__,
+                  [&samples, loop,
+                   finish](RefPtr<MediaTrackDemuxer::SamplesHolder> aHolder) {
+                    if (aHolder->GetSamples().IsEmpty()) {
+                      (*finish)();
+                      return;
+                    }
+                    samples.AppendElements(aHolder->GetSamples());
+                    (*loop)();
+                  },
+                  [finish](const MediaResult& aError) {
+                    EXPECT_TRUE(aError == NS_ERROR_DOM_MEDIA_END_OF_STREAM);
+                    (*finish)();
+                  });
+            };
+            (*loop)();
+          },
+          [taskQueue](const MediaResult&) {
+            EXPECT_TRUE(false) << "MatroskaDemuxer::Init() failed";
+            taskQueue->BeginShutdown();
+          });
+
+  taskQueue->AwaitShutdownAndIdle();
+  EXPECT_TRUE(ran);
 }

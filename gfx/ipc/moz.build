@@ -19,6 +19,7 @@ EXPORTS.mozilla.gfx += [
     "GPUProcessHost.h",
     "GPUProcessImpl.h",
     "GPUProcessListener.h",
+    "GPUProcessLog.h",
     "GPUProcessManager.h",
     "VsyncBridgeChild.h",
     "VsyncBridgeParent.h",

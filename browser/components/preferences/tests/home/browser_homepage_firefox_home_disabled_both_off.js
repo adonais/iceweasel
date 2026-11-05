@@ -8,8 +8,6 @@ const NEWTAB_ENABLED_PREF = "browser.newtabpage.enabled";
 const BLANK_HOMEPAGE_URL = "chrome://browser/content/blanktab.html";
 // @nova-cleanup(remove-conditional): Delete this constant; the firefoxLogo gate in assertSectionDisabled below and the _classic task become unconditional after cleanup.
 const NOVA_ENABLED_PREF = "browser.newtabpage.activity-stream.nova.enabled";
-const WEATHER_SYSTEM_PREF =
-  "browser.newtabpage.activity-stream.widgets.system.weather.enabled";
 // @nova-cleanup(remove-conditional): Delete this constant; only used by the test_firefox_home_disabled_when_both_off_classic task below.
 const CLASSIC_WEATHER_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.system.showWeather";
@@ -22,7 +20,6 @@ add_setup(async function () {
       [HOMEPAGE_PREF, BLANK_HOMEPAGE_URL],
       [NEWTAB_ENABLED_PREF, false],
       // Enable conditionally-visible settings so we can test they get disabled
-      [WEATHER_SYSTEM_PREF, true],
       ["browser.newtabpage.activity-stream.widgets.system.enabled", true],
       ["browser.newtabpage.activity-stream.feeds.system.topstories", true],
       // manageTopics needs this pref to be on, and the default varies
@@ -50,8 +47,8 @@ async function assertSectionDisabled(win) {
   );
 
   // firefoxLogo is only registered when Nova is enabled. With Nova on and the
-  // widgets container on, Weather is nested in the Widgets group; without Nova
-  // it has its own row.
+  // widgets container on, Weather is managed with the other widgets; without
+  // Nova it has its own row.
   const novaEnabled = Services.prefs.getBoolPref(NOVA_ENABLED_PREF, false);
   for (let settingId of [
     "webSearch",
@@ -84,6 +81,11 @@ add_task(async function test_firefox_home_disabled_when_both_off() {
     !chooseWallpaperControl ||
       BrowserTestUtils.isHidden(chooseWallpaperControl),
     "chooseWallpaper box link is hidden when Firefox Home is not active"
+  );
+  let manageWidgetsControl = getSettingControl("manageWidgets", win);
+  ok(
+    !manageWidgetsControl || BrowserTestUtils.isHidden(manageWidgetsControl),
+    "manageWidgets box link is hidden when Firefox Home is not active"
   );
 
   BrowserTestUtils.removeTab(tab);

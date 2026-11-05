@@ -156,7 +156,8 @@ nsresult txMozillaXMLOutput::attributeInternal(nsAtom* aPrefix,
 
   NS_ASSERTION(!mBadChildLevel, "mBadChildLevel set when element is opened");
 
-  return mOpenedElement->SetAttr(aNsID, aLocalName, aPrefix, aValue, false);
+  return mOpenedElement->SetAttr(aNsID, aLocalName, aPrefix, aValue, false,
+                                 IsKnownNewAttr::No);
 }
 
 nsresult txMozillaXMLOutput::characters(const nsAString& aData, bool aDOE) {
@@ -256,7 +257,7 @@ nsresult txMozillaXMLOutput::endElement() MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         // must perform a microtask checkpoint, and then prepare the script
         // element.
         {
-          nsAutoMicroTask mt;
+          nsAutoMicroTaskForDocument mt(mDocument);
         }
         bool block = sele->AttemptToExecute(nullptr /* aParser */);
         // If the act of insertion evaluated the script, we're fine.
@@ -635,14 +636,14 @@ nsresult txMozillaXMLOutput::startHTMLElement(nsIContent* aElement,
     MOZ_TRY(createHTMLElement(nsGkAtoms::meta, getter_AddRefs(meta)));
 
     MOZ_TRY(meta->SetAttr(kNameSpaceID_None, nsGkAtoms::httpEquiv,
-                          u"Content-Type"_ns, false));
+                          u"Content-Type"_ns, false, IsKnownNewAttr::Yes));
 
     nsAutoString metacontent;
     CopyUTF8toUTF16(mOutputFormat.mMediaType, metacontent);
     metacontent.AppendLiteral("; charset=");
     metacontent.Append(mOutputFormat.mEncoding);
     MOZ_TRY(meta->SetAttr(kNameSpaceID_None, nsGkAtoms::content, metacontent,
-                          false));
+                          false, IsKnownNewAttr::Yes));
 
     // No need to notify since aElement hasn't been inserted yet
     NS_ASSERTION(!aElement->IsInUncomposedDoc(), "should not be in doc");

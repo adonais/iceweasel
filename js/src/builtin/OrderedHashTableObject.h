@@ -129,6 +129,7 @@ namespace js {
 
 class MapIteratorObject;
 class SetIteratorObject;
+class TableIteratorObject;
 
 namespace detail {
 
@@ -180,6 +181,58 @@ class OrderedHashTableObject : public NativeObject {
 };
 
 }  // namespace detail
+
+// A double-indirect pointer used by linked lists of TableIteratorObjects.
+//
+// This is a pointer to a fixed slot in a NativeObject containing a private
+// value which itself points to a TableIteratorObject.
+//
+// Use of this class avoids barriers when writing to slot values that never
+// contain GC things. The use of HeapSlot means that this will use atomic set
+// operations where appropriate.
+class TableIteratorPtrPtr {
+  HeapSlot* slot;
+
+ public:
+  TableIteratorPtrPtr(NativeObject* object, uint32_t index)
+      : TableIteratorPtrPtr(&object->getFixedSlotRef(index)) {}
+  explicit TableIteratorPtrPtr(HeapSlot* slot) : slot(slot) {
+    MOZ_ASSERT_IF(slot, slot->unbarrieredGet().isDouble());
+  }
+
+  // Get/set the referent.
+  TableIteratorObject* deref() const {
+    MOZ_ASSERT(slot);
+    return static_cast<TableIteratorObject*>(slot->get().toPrivate());
+  }
+  TableIteratorObject* operator*() const { return deref(); }
+  void setRef(TableIteratorObject* ptr) {
+    // No barriers required for private to private update.
+    MOZ_ASSERT(slot);
+    MOZ_ASSERT(slot->unbarrieredGet().isDouble());
+    slot->unbarrieredSet(PrivateValue(ptr));
+  }
+
+  // Store the double-indirect pointer in a slot.
+  void storeInFixedSlot(NativeObject* object, uint32_t index) {
+    // No barriers required for private to private update.
+    HeapSlot& dest = object->getFixedSlotRef(index);
+    MOZ_ASSERT(dest.isUndefined() || dest.isDouble());
+    dest.unbarrieredSet(PrivateValue(slot));
+  }
+  static TableIteratorPtrPtr readFromFixedSlot(const NativeObject* object,
+                                               uint32_t index) {
+    Value value = object->getFixedSlot(index);
+    return TableIteratorPtrPtr(static_cast<HeapSlot*>(value.toPrivate()));
+  }
+
+  bool operator==(const TableIteratorPtrPtr& other) {
+    return slot == other.slot;
+  }
+  bool operator!=(const TableIteratorPtrPtr& other) {
+    return !(*this == other);
+  }
+};
 
 // Base class for MapIteratorObject and SetIteratorObject.
 //
@@ -249,42 +302,41 @@ class TableIteratorObject : public NativeObject {
   // the last iterator in the list.
   //
   // Invariant: *getPrevPtr() == this.
-  TableIteratorObject** getPrevPtr() const {
+  TableIteratorPtrPtr getPrevPtr() const {
     MOZ_ASSERT(isActive());
-    Value v = getReservedSlot(PrevPtrSlot);
-    return static_cast<TableIteratorObject**>(v.toPrivate());
+    return TableIteratorPtrPtr::readFromFixedSlot(this, PrevPtrSlot);
   }
-  void setPrevPtr(TableIteratorObject** p) {
+  void setPrevPtr(TableIteratorPtrPtr p) {
     MOZ_ASSERT(isActive());
-    setReservedSlotPrivateUnbarriered(PrevPtrSlot, p);
+    p.storeInFixedSlot(this, PrevPtrSlot);
   }
   TableIteratorObject* getNext() const {
     MOZ_ASSERT(isActive());
     Value v = getReservedSlot(NextSlot);
     return static_cast<TableIteratorObject*>(v.toPrivate());
   }
-  TableIteratorObject** addressOfNext() {
+  TableIteratorPtrPtr addressOfNext() {
     MOZ_ASSERT(isActive());
-    return addressOfFixedSlotPrivatePtr<TableIteratorObject>(NextSlot);
+    return TableIteratorPtrPtr(this, NextSlot);
   }
   void setNext(TableIteratorObject* p) {
     MOZ_ASSERT(isActive());
     setReservedSlotPrivateUnbarriered(NextSlot, p);
   }
 
-  void link(TableIteratorObject** listp) {
+  void link(TableIteratorPtrPtr listp) {
     MOZ_ASSERT(isActive());
     TableIteratorObject* next = *listp;
     setPrevPtr(listp);
     setNext(next);
-    *listp = this;
+    listp.setRef(this);
     if (next) {
       next->setPrevPtr(this->addressOfNext());
     }
   }
 
   void init(detail::OrderedHashTableObject* target, Kind kind,
-            TableIteratorObject** listp) {
+            TableIteratorPtrPtr listp) {
     initReservedSlot(TargetSlot, ObjectValue(*target));
     setReservedSlotPrivateUint32Unbarriered(KindSlot, uint32_t(kind));
     setReservedSlotPrivateUint32Unbarriered(IndexSlot, 0);
@@ -309,9 +361,9 @@ class TableIteratorObject : public NativeObject {
   }
   void unlink() {
     MOZ_ASSERT(isActive());
-    TableIteratorObject** prevp = getPrevPtr();
+    TableIteratorPtrPtr prevp = getPrevPtr();
     TableIteratorObject* next = getNext();
-    *prevp = next;
+    prevp.setRef(next);
     if (next) {
       next->setPrevPtr(prevp);
     }
@@ -325,9 +377,9 @@ class TableIteratorObject : public NativeObject {
     MOZ_ASSERT(isActive());
     MOZ_ASSERT(old != this);
 
-    TableIteratorObject** prevp = getPrevPtr();
+    TableIteratorPtrPtr prevp = getPrevPtr();
     MOZ_ASSERT(*prevp == old);
-    *prevp = this;
+    prevp.setRef(this);
 
     if (TableIteratorObject* next = getNext()) {
       MOZ_ASSERT(next->getPrevPtr() == old->addressOfNext());
@@ -476,9 +528,9 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
   void setTenuredIterators(TableIteratorObject* iter) {
     obj->setReservedSlotPrivateUnbarriered(Slots::TenuredIteratorsSlot, iter);
   }
-  TableIteratorObject** addressOfTenuredIterators() const {
+  TableIteratorPtrPtr addressOfTenuredIterators() const {
     static constexpr size_t slot = Slots::TenuredIteratorsSlot;
-    return obj->addressOfFixedSlotPrivatePtr<TableIteratorObject>(slot);
+    return TableIteratorPtrPtr(obj, slot);
   }
 
   // List of all active iterators on this table in the GC nursery.
@@ -491,14 +543,14 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
   void setNurseryIterators(TableIteratorObject* iter) {
     obj->setReservedSlotPrivateUnbarriered(Slots::NurseryIteratorsSlot, iter);
   }
-  TableIteratorObject** addressOfNurseryIterators() const {
+  TableIteratorPtrPtr addressOfNurseryIterators() const {
     static constexpr size_t slot = Slots::NurseryIteratorsSlot;
-    return obj->addressOfFixedSlotPrivatePtr<TableIteratorObject>(slot);
+    return TableIteratorPtrPtr(obj, slot);
   }
 
   // Returns a pointer to the list of tenured or nursery iterators depending on
   // where |iter| is allocated.
-  TableIteratorObject** addressOfIterators(TableIteratorObject* iter) {
+  TableIteratorPtrPtr addressOfIterators(TableIteratorObject* iter) {
     return IsInsideNursery(iter) ? addressOfNurseryIterators()
                                  : addressOfTenuredIterators();
   }
@@ -931,7 +983,8 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
 
     static void init(OrderedHashTableObject* table, TableIteratorObject* iter,
                      TableIteratorObject::Kind kind) {
-      auto** listp = OrderedHashTableImpl(table).addressOfIterators(iter);
+      TableIteratorPtrPtr listp =
+          OrderedHashTableImpl(table).addressOfIterators(iter);
       iter->init(table, kind, listp);
       seek(table, iter);
     }
@@ -1090,12 +1143,12 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
 
   void clearNurseryIterators() {
     if (TableIteratorObject* iter = getNurseryIterators()) {
-      iter->setPrevPtr(nullptr);
+      iter->setPrevPtr(TableIteratorPtrPtr(nullptr));
     }
     setNurseryIterators(nullptr);
   }
   void relinkNurseryIterator(TableIteratorObject* iter) {
-    auto** listp = addressOfIterators(iter);
+    TableIteratorPtrPtr listp = addressOfIterators(iter);
     iter->link(listp);
   }
 

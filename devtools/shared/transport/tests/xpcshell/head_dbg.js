@@ -105,19 +105,14 @@ function initTestDevToolsServer() {
   DevToolsServer.keepAlive = true;
 }
 
-/**
- * Wrapper around do_get_file to prefix files with the name of current test to
- * avoid collisions when running in parallel.
- */
-function getTestTempFile(fileName, allowMissing) {
-  let thisTest = _TEST_FILE.toString().replace(/\\/g, "/");
-  thisTest = thisTest.substring(thisTest.lastIndexOf("/") + 1);
-  thisTest = thisTest.replace(/\..*$/, "");
-  return do_get_file(fileName + "-" + thisTest, allowMissing);
+function getTestTempFile(fileName) {
+  const file = do_get_tempdir();
+  file.append(fileName);
+  return file;
 }
 
 function writeTestTempFile(fileName, content) {
-  const file = getTestTempFile(fileName, true);
+  const file = getTestTempFile(fileName);
   const stream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(
     Ci.nsIFileOutputStream
   );

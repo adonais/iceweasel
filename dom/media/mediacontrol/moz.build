@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS.mozilla.dom += [
+    "AudioFocusInterrupt.h",
     "AudioFocusManager.h",
     "AudioSessionManager.h",
     "AudioSessionRecord.h",
@@ -41,3 +42,7 @@ include("/ipc/chromium/chromium-config.mozbuild")
 TEST_DIRS += ["tests/gtest"]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "PositionStateEvent.h",
+]

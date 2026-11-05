@@ -10,7 +10,7 @@ regenerating the bundles.
 
 This check should be run after building the bundles via:
 cd devtools/client/debugger
-yarn && node bin/bundle.js
+npm ci && node bin/bundle.js
 
 Those steps are done in the devtools-verify-bundle job, prior to calling this script.
 The script checks whether regenerating the bundles changed any file under devtools/,

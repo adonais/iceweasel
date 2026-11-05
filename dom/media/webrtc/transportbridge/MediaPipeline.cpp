@@ -28,6 +28,7 @@
 #include "VideoStreamTrack.h"
 #include "VideoUtils.h"
 #include "common_video/include/video_frame_buffer.h"
+#include "gfxUtils.h"
 #include "jsapi/MediaTransportHandler.h"
 #include "jsapi/PeerConnectionImpl.h"
 #include "libwebrtcglue/MediaConduitInterface.h"
@@ -65,6 +66,129 @@ using namespace mozilla::gfx;
 using namespace mozilla::layers;
 
 mozilla::LazyLogModule gMediaPipelineLog("MediaPipeline");
+
+// The CICP code points (Rec. ITU-T H.273) of the color space a frame
+// libwebrtc decoded itself declares, for gfxUtils to map as it does for the
+// platform decoders. Every value is listed, so that one added to the enums
+// does not go unnoticed.
+static gfx::CICP::ColourPrimaries ToCicp(
+    webrtc::ColorSpace::PrimaryID aPrimaries) {
+  switch (aPrimaries) {
+    case webrtc::ColorSpace::PrimaryID::kBT709:
+      return gfx::CICP::CP_BT709;
+    case webrtc::ColorSpace::PrimaryID::kUnspecified:
+      return gfx::CICP::CP_UNSPECIFIED;
+    case webrtc::ColorSpace::PrimaryID::kBT470M:
+      return gfx::CICP::CP_BT470M;
+    case webrtc::ColorSpace::PrimaryID::kBT470BG:
+      return gfx::CICP::CP_BT470BG;
+    case webrtc::ColorSpace::PrimaryID::kSMPTE170M:
+      return gfx::CICP::CP_BT601;
+    case webrtc::ColorSpace::PrimaryID::kSMPTE240M:
+      return gfx::CICP::CP_SMPTE240;
+    case webrtc::ColorSpace::PrimaryID::kFILM:
+      return gfx::CICP::CP_GENERIC_FILM;
+    case webrtc::ColorSpace::PrimaryID::kBT2020:
+      return gfx::CICP::CP_BT2020;
+    case webrtc::ColorSpace::PrimaryID::kSMPTEST428:
+      return gfx::CICP::CP_XYZ;
+    case webrtc::ColorSpace::PrimaryID::kSMPTEST431:
+      return gfx::CICP::CP_SMPTE431;
+    case webrtc::ColorSpace::PrimaryID::kSMPTEST432:
+      return gfx::CICP::CP_SMPTE432;
+    case webrtc::ColorSpace::PrimaryID::kJEDECP22:
+      return gfx::CICP::CP_EBU3213;
+  }
+  return gfx::CICP::CP_UNSPECIFIED;
+}
+
+static gfx::CICP::TransferCharacteristics ToCicp(
+    webrtc::ColorSpace::TransferID aTransfer) {
+  switch (aTransfer) {
+    case webrtc::ColorSpace::TransferID::kBT709:
+      return gfx::CICP::TC_BT709;
+    case webrtc::ColorSpace::TransferID::kUnspecified:
+      return gfx::CICP::TC_UNSPECIFIED;
+    case webrtc::ColorSpace::TransferID::kGAMMA22:
+      return gfx::CICP::TC_BT470M;
+    case webrtc::ColorSpace::TransferID::kGAMMA28:
+      return gfx::CICP::TC_BT470BG;
+    case webrtc::ColorSpace::TransferID::kSMPTE170M:
+      return gfx::CICP::TC_BT601;
+    case webrtc::ColorSpace::TransferID::kSMPTE240M:
+      return gfx::CICP::TC_SMPTE240;
+    case webrtc::ColorSpace::TransferID::kLINEAR:
+      return gfx::CICP::TC_LINEAR;
+    case webrtc::ColorSpace::TransferID::kLOG:
+      return gfx::CICP::TC_LOG_100;
+    case webrtc::ColorSpace::TransferID::kLOG_SQRT:
+      return gfx::CICP::TC_LOG_100_SQRT10;
+    case webrtc::ColorSpace::TransferID::kIEC61966_2_4:
+      return gfx::CICP::TC_IEC61966;
+    case webrtc::ColorSpace::TransferID::kBT1361_ECG:
+      return gfx::CICP::TC_BT_1361;
+    case webrtc::ColorSpace::TransferID::kIEC61966_2_1:
+      return gfx::CICP::TC_SRGB;
+    case webrtc::ColorSpace::TransferID::kBT2020_10:
+      return gfx::CICP::TC_BT2020_10BIT;
+    case webrtc::ColorSpace::TransferID::kBT2020_12:
+      return gfx::CICP::TC_BT2020_12BIT;
+    case webrtc::ColorSpace::TransferID::kSMPTEST2084:
+      return gfx::CICP::TC_SMPTE2084;
+    case webrtc::ColorSpace::TransferID::kSMPTEST428:
+      return gfx::CICP::TC_SMPTE428;
+    case webrtc::ColorSpace::TransferID::kARIB_STD_B67:
+      return gfx::CICP::TC_HLG;
+  }
+  return gfx::CICP::TC_UNSPECIFIED;
+}
+
+static gfx::CICP::MatrixCoefficients ToCicp(
+    webrtc::ColorSpace::MatrixID aMatrix) {
+  switch (aMatrix) {
+    case webrtc::ColorSpace::MatrixID::kRGB:
+      return gfx::CICP::MC_IDENTITY;
+    case webrtc::ColorSpace::MatrixID::kBT709:
+      return gfx::CICP::MC_BT709;
+    case webrtc::ColorSpace::MatrixID::kUnspecified:
+      return gfx::CICP::MC_UNSPECIFIED;
+    case webrtc::ColorSpace::MatrixID::kFCC:
+      return gfx::CICP::MC_FCC;
+    case webrtc::ColorSpace::MatrixID::kBT470BG:
+      return gfx::CICP::MC_BT470BG;
+    case webrtc::ColorSpace::MatrixID::kSMPTE170M:
+      return gfx::CICP::MC_BT601;
+    case webrtc::ColorSpace::MatrixID::kSMPTE240M:
+      return gfx::CICP::MC_SMPTE240;
+    case webrtc::ColorSpace::MatrixID::kYCOCG:
+      return gfx::CICP::MC_YCGCO;
+    case webrtc::ColorSpace::MatrixID::kBT2020_NCL:
+      return gfx::CICP::MC_BT2020_NCL;
+    case webrtc::ColorSpace::MatrixID::kBT2020_CL:
+      return gfx::CICP::MC_BT2020_CL;
+    case webrtc::ColorSpace::MatrixID::kSMPTE2085:
+      return gfx::CICP::MC_SMPTE2085;
+    case webrtc::ColorSpace::MatrixID::kCDNCLS:
+      return gfx::CICP::MC_CHROMAT_NCL;
+    case webrtc::ColorSpace::MatrixID::kCDCLS:
+      return gfx::CICP::MC_CHROMAT_CL;
+    case webrtc::ColorSpace::MatrixID::kBT2100_ICTCP:
+      return gfx::CICP::MC_ICTCP;
+  }
+  return gfx::CICP::MC_UNSPECIFIED;
+}
+
+static gfx::ColorRange ToColorRange(webrtc::ColorSpace::RangeID aRange) {
+  switch (aRange) {
+    case webrtc::ColorSpace::RangeID::kFull:
+      return gfx::ColorRange::FULL;
+    case webrtc::ColorSpace::RangeID::kInvalid:
+    case webrtc::ColorSpace::RangeID::kLimited:
+    case webrtc::ColorSpace::RangeID::kDerived:
+      break;
+  }
+  return gfx::ColorRange::LIMITED;
+}
 
 namespace mozilla {
 
@@ -1557,8 +1681,25 @@ class MediaPipelineReceiveVideo::PipelineListener
       yuvData.mCrChannel = const_cast<uint8_t*>(i420->DataV());
       yuvData.mPictureRect = IntRect(0, 0, i420->width(), i420->height());
       yuvData.mStereoMode = StereoMode::MONO;
-      // This isn't the best default.
+      // The color space the stream declares, which libwebrtc reads from an AV1
+      // sequence header or a VP9 frame header (or the RTP color space
+      // extension, which we don't negotiate); BT.601 limited where it declares
+      // none, as VP8 is by definition.
       yuvData.mYUVColorSpace = gfx::YUVColorSpace::BT601;
+      if (const auto& colorSpace = aVideoFrame.color_space()) {
+        const auto primaries = ToCicp(colorSpace->primaries());
+        yuvData.mYUVColorSpace =
+            gfxUtils::CicpToColorSpace(ToCicp(colorSpace->matrix()), primaries,
+                                       gMediaPipelineLog)
+                .valueOr(yuvData.mYUVColorSpace);
+        yuvData.mColorPrimaries =
+            gfxUtils::CicpToColorPrimaries(primaries, gMediaPipelineLog)
+                .valueOr(yuvData.mColorPrimaries);
+        yuvData.mTransferFunction =
+            gfxUtils::CicpToTransferFunction(ToCicp(colorSpace->transfer()))
+                .valueOr(yuvData.mTransferFunction);
+        yuvData.mColorRange = ToColorRange(colorSpace->range());
+      }
       yuvData.mChromaSubsampling =
           gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
 

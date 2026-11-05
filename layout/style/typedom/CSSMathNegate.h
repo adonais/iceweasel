@@ -37,6 +37,10 @@ class CSSMathNegate final : public CSSMathValue {
                 RefPtr<CSSNumericValue> aValue);
 
   static RefPtr<CSSMathNegate> Create(nsCOMPtr<nsISupports> aParent,
+                                      UniquePtr<StyleNumericType> aNumericType,
+                                      RefPtr<CSSNumericValue> aValue);
+
+  static RefPtr<CSSMathNegate> Create(nsCOMPtr<nsISupports> aParent,
                                       const StyleMathNegate& aMathNegate);
 
   NS_DECL_ISUPPORTS_INHERITED

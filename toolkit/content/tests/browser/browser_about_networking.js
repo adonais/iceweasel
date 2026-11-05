@@ -93,11 +93,8 @@ add_task(async function test_first() {
       await SpecialPowers.spawn(browser, [], async function () {
         let url_tbody = content.document.getElementById("dns_trr_url");
         info(url_tbody);
-        is(
-          url_tbody.children[0].children[0].textContent,
-          "https://mozilla.cloudflare-dns.com/dns-query"
-        );
-        is(url_tbody.children[0].children[1].textContent, "0");
+        is(url_tbody.children[0].children[0].textContent, "");
+        is(url_tbody.children[0].children[1].textContent, "Off");
       });
     }
   );
@@ -115,7 +112,24 @@ add_task(async function test_first() {
           url_tbody.children[0].children[0].textContent,
           "https://localhost/testytest"
         );
-        is(url_tbody.children[0].children[1].textContent, "2");
+        is(url_tbody.children[0].children[1].textContent, "TRR first");
+      });
+    }
+  );
+
+  Services.prefs.setIntPref("network.trr.mode", 3);
+  await BrowserTestUtils.withNewTab(
+    "about:networking#dns",
+    async function (browser) {
+      ok(!browser.isRemoteBrowser, "Browser should not be remote.");
+      await SpecialPowers.spawn(browser, [], async function () {
+        let url_tbody = content.document.getElementById("dns_trr_url");
+        info(url_tbody);
+        is(
+          url_tbody.children[0].children[0].textContent,
+          "https://localhost/testytest"
+        );
+        is(url_tbody.children[0].children[1].textContent, "TRR only");
       });
     }
   );

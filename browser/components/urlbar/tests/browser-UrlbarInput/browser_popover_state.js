@@ -14,16 +14,7 @@ function assertContainerUnmoved() {
 }
 
 add_setup(async function setup() {
-  // Tests get no default Top Sites, and the focus task needs the empty string
-  // to produce results so that the view opens.
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "https://example.com/",
-      ],
-    ],
-  });
+  UrlbarTestUtils.registerZeroPrefixProvider();
 
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();

@@ -384,9 +384,22 @@ class AlertTestRunner(Layer):
                     f"Regression for {test} may not be reproducible on your machine."
                 )
 
+            task_id = None
             if self.get_arg("alert_exact"):
+                # The alerting push may have no task (e.g. backfills that never
+                # ran), so fall back to the task from the previous push.
+                task_id = (alert.get("taskcluster_metadata") or {}).get("task_id") or (
+                    alert.get("prev_taskcluster_metadata") or {}
+                ).get("task_id")
+                if task_id is None:
+                    self.warning(
+                        f"No task found for {test} in the alert, running it "
+                        f"without --alert-exact options."
+                    )
+
+            if task_id is not None:
                 exact_options = self._get_exact_options(
-                    alert["taskcluster_metadata"]["task_id"],
+                    task_id,
                     series_signature,
                     test_command_klass,
                 )

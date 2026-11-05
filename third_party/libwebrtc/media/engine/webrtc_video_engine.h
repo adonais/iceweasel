@@ -54,6 +54,7 @@
 #include "call/call.h"
 #include "call/flexfec_receive_stream.h"
 #include "call/rtp_config.h"
+#include "call/sframe_options.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "media/base/codec.h"
@@ -254,6 +255,8 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
       absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) override {
     ssrc_list_changed_callback_ = std::move(callback);
   }
+
+  void EnableSframe() override;
 
   // Implemented for VideoMediaChannelTest.
   bool sending() const {
@@ -485,6 +488,7 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   // Per peer connection crypto options that last for the lifetime of the peer
   // connection.
   const CryptoOptions crypto_options_;
+  SframeSendOptions sframe_options_ RTC_GUARDED_BY(worker_thread_);
 
   // Callback invoked whenever the list of SSRCs changes.
   absl::AnyInvocable<void(const std::set<uint32_t>&)>
@@ -568,6 +572,8 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   void SetDepacketizerToDecoderFrameTransformer(
       uint32_t ssrc,
       scoped_refptr<FrameTransformerInterface> frame_transformer) override;
+
+  void EnableSframe() override;
 
  private:
   class WebRtcVideoReceiveStream;
@@ -769,6 +775,7 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   // Per peer connection crypto options that last for the lifetime of the peer
   // connection.
   const CryptoOptions crypto_options_;
+  SframeReceiveOptions sframe_options_ RTC_GUARDED_BY(thread_checker_);
 
   // Optional frame transformer set on unsignaled streams.
   scoped_refptr<FrameTransformerInterface> unsignaled_frame_transformer_

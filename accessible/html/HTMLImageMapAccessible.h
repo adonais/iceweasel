@@ -57,7 +57,7 @@ class HTMLAreaAccessible final : public HTMLLinkAccessible {
   virtual uint32_t StartOffset() override;
   virtual uint32_t EndOffset() override;
 
-  virtual bool IsAcceptableChild(nsIContent* aEl) const override {
+  virtual bool IsAcceptableChild(nsIContent* /*aEl*/) const override {
     return false;
   }
 

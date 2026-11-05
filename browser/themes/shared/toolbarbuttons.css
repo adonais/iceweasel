@@ -69,11 +69,10 @@
   --smartwindow-ask-btn-text-color-active: var(--smartwindow-ask-btn-text-color-opened);
   --smartwindow-ask-btn-icon-height: var(--size-item-small);
   --smartwindow-ask-btn-icon-width: var(--size-item-small);
-  /* could instead use --size-item-small (OS-specific 6, 7, or 8) */
-  --smartwindow-ask-btn-inner-padding-inline: 8px;
+  --smartwindow-ask-btn-inner-padding-inline: var(--space-small);
 
-  --smartwindow-ask-btn-inline-start-padding: 4px;
-  --smartwindow-ask-btn-text-icon-gap: 6px;
+  --smartwindow-ask-btn-inline-start-padding: var(--space-xsmall);
+  --smartwindow-ask-btn-text-icon-gap: var(--space-small);
 
   --smartwindow-toggle-shadow-color: light-dark(
     color-mix(in srgb, var(--color-violet-60) 20%, transparent),
@@ -143,7 +142,7 @@
 
   > .toolbarbutton-icon,
   > .toolbarbutton-badge-stack > .toolbarbutton-icon {
-    width: 16px;
+    width: var(--icon-size-small);
   }
 }
 
@@ -261,6 +260,11 @@ toolbar .toolbarbutton-1 {
     }
   }
 
+  :root:not([customizing]) &[disabled] > :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack),
+  &:is(#nav-bar-overflow-button, #PanelUI-menu-button)[disabled] > :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
+    outline-color: var(--toolbarbutton-outline-color-disabled);
+  }
+
   &:not([disabled]) {
     > :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
       background-color: var(--toolbarbutton-background-color);
@@ -302,7 +306,7 @@ toolbar .toolbarbutton-1 {
 }
 
 toolbar .toolbaritem-combined-buttons {
-  margin-inline: 2px;
+  margin-inline: var(--space-xxsmall);
 
   > .toolbarbutton-1 {
     padding-inline: 0;
@@ -310,16 +314,18 @@ toolbar .toolbaritem-combined-buttons {
 
   > .toolbarbutton-combined-buttons-dropmarker > .toolbarbutton-icon {
     /* same height as regular buttons, but narrower, and for a 12x12 image */
-    padding-inline: 2px;
-    padding-block: calc(var(--toolbarbutton-padding-inner) + (16px - 12px) / 2);
-    width: calc(2 * 2px + 12px);
+    --toolbarbutton-icon-dimension: var(--icon-size-xsmall);
+
+    padding-inline: var(--space-xxsmall);
+    padding-block: calc(var(--toolbarbutton-padding-inner) + (16px - var(--toolbarbutton-icon-dimension)) / 2);
+    width: calc(2 * var(--space-xxsmall) + var(--toolbarbutton-icon-dimension));
   }
 }
 
 .toolbaritem-combined-buttons {
   > separator {
     width: 0;
-    height: 16px;
+    height: var(--icon-size-small);
     pointer-events: none;
 
     /* place the border on a pseudo-element so that
@@ -330,6 +336,7 @@ toolbar .toolbaritem-combined-buttons {
     }
 
     toolbar & {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       color: light-dark(color-mix(in srgb, currentColor 20%, transparent), color-mix(in srgb, currentColor 30%, transparent));
     }
   }
@@ -380,18 +387,25 @@ toolbar .toolbaritem-combined-buttons {
   }
 
   > .toolbarbutton-animatable-box {
+    --animatable-image-frame-dimension: 16px; /* Size of each frame within the SVG sprite chevron-animation.svg */
+
     visibility: hidden;
-    top: calc(50% - 8px); /* Vertically center the 16px tall animatable image */
-    width: 16px; /* Width of each frame within the SVG sprite */
-    height: 16px; /* Height of each frame within the SVG sprite */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    top: calc(50% - calc(var(--animatable-image-frame-dimension) / 2));
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    width: var(--animatable-image-frame-dimension);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    height: var(--animatable-image-frame-dimension);
     -moz-context-properties: fill, stroke;
     fill: var(--toolbarbutton-icon-fill);
     stroke: var(--toolbarbutton-icon-fill-attention);
 
     > .toolbarbutton-animatable-image {
       background-image: url("chrome://browser/skin/chevron-animation.svg");
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       width: 848px;
-      height: 16px;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      height: var(--animatable-image-frame-dimension);
       transform: translateX(0);
     }
   }
@@ -438,6 +452,19 @@ toolbar .toolbaritem-combined-buttons {
 #reload-button[disabled]:not(:-moz-window-inactive) {
   opacity: 1;
 
+  @media (forced-colors) {
+    color: inherit;
+    fill: var(--toolbarbutton-icon-fill);
+
+    > .toolbarbutton-icon {
+      outline-color: var(--toolbarbutton-outline-color);
+    }
+
+    &:hover {
+      fill: var(--toolbarbutton-icon-fill-hover);
+    }
+  }
+
   &:hover > .toolbarbutton-icon {
     background-color: var(--toolbarbutton-background-color-hover);
   }
@@ -447,8 +474,8 @@ toolbar .toolbaritem-combined-buttons {
 
 #personal-toolbar-empty-description,
 toolbarbutton.bookmark-item:not(.subviewbutton) {
-  margin: 2px;
-  padding: var(--bookmark-block-padding) 4px;
+  margin: var(--space-xxsmall);
+  padding: var(--bookmark-block-padding) var(--space-xsmall);
 }
 
 #PersonalToolbar {
@@ -462,7 +489,7 @@ toolbarbutton.bookmark-item:not(.subviewbutton) {
   }
 
   .toolbarbutton-1 {
-    margin-block: 2px;
+    margin-block: var(--space-xxsmall);
 
     /* Allow icons to grow with the toolbar to match bookmark item heights
      *
@@ -510,8 +537,8 @@ toolbarbutton.bookmark-item:not(.subviewbutton) {
 }
 
 .bookmark-item > .toolbarbutton-icon {
-  width: 16px;
-  height: 16px;
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
 
   #PlacesToolbarItems > & {
     margin-inline-end: 0;
@@ -575,7 +602,7 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 #PersonalToolbar #aboutwelcome-button > .toolbarbutton-icon,
 #PersonalToolbar #fxms-bmb-button > .toolbarbutton-icon,
 #OtherBookmarks.bookmark-item[container] > .toolbarbutton-icon {
-  margin-inline-end: 4px;
+  margin-inline-end: var(--space-xsmall);
 }
 
 /* The wrapper selector hides the item in the customize palette, where each
@@ -593,7 +620,7 @@ toolbarseparator {
   #PlacesToolbarItems > & {
     /* Make separators wider so they're easier to drag. Make them also a bit
      * smaller visually on the vertical axis */
-    padding: 4px;
+    padding: var(--space-xsmall);
   }
 }
 
@@ -606,6 +633,7 @@ toolbarseparator {
     margin-top: -1px !important;
 
     :root[uidensity="touch"] & {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       margin-top: -4px !important;
     }
   }
@@ -613,19 +641,22 @@ toolbarseparator {
   /* Remove a pixel of margin on the end so that the badge doesn't
    * overflow the toolbar and push the button into the overflow menu. */
   :root[uidensity="compact"] & {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     margin-inline-end: -7px !important;
   }
 
   /* Alternative style for .toolbarbutton-badge used by CFR notifications */
   &.feature-callout {
-    width: 14px;
-    height: 14px;
+    width: var(--toolbarbutton-badge-size);
+    height: var(--toolbarbutton-badge-size);
     min-width: auto;
     box-shadow: none;
     border: none;
     padding: 0;
     display: block;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     margin: -7px 0 0 !important;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     margin-inline-end: -6px !important;
     background: url(chrome://global/skin/icons/badge-blue.svg);
   }
@@ -636,14 +667,17 @@ toolbarseparator {
 toolbarpaletteitem[place="toolbar"][id^="wrapper-customizableui-special-spring"],
 toolbarspring {
   flex: 1;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   min-width: 28px;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-width: 112px;
 
   #nav-bar &:where(:not(#vertical-spacer)) {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     flex: 80 80;
     /* Ensure flexible spacers don't shrink to nothing so they can be
      * manipulated in customize mode. */
-    min-width: 10px;
+    min-width: var(--size-item-xsmall);
   }
 }
 
@@ -678,8 +712,8 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
 
   toolbarpaletteitem[place="palette"] > & > .toolbarbutton-icon,
   toolbarpaletteitem[place="palette"] > & > .toolbarbutton-badge-stack > .toolbarbutton-icon {
-    min-height: 16px;
-    max-height: 16px;
+    min-height: var(--icon-size-small);
+    max-height: var(--icon-size-small);
     max-width: var(--size-image-small);
   }
 }

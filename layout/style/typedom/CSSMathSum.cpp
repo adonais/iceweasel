@@ -16,6 +16,7 @@
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
 #include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla::dom {
 
@@ -27,6 +28,17 @@ CSSMathSum::CSSMathSum(nsCOMPtr<nsISupports> aParent,
       mValues(std::move(aValues)) {}
 
 // static
+RefPtr<CSSMathSum> CSSMathSum::Create(
+    nsCOMPtr<nsISupports> aParent, UniquePtr<StyleNumericType> aNumericType,
+    nsTArray<RefPtr<CSSNumericValue>> aValues) {
+  auto array = MakeRefPtr<CSSNumericArray>(aParent, std::move(aValues));
+
+  return MakeRefPtr<CSSMathSum>(std::move(aParent),
+                                WrapMovingNotNull(std::move(aNumericType)),
+                                std::move(array));
+}
+
+// static
 RefPtr<CSSMathSum> CSSMathSum::Create(nsCOMPtr<nsISupports> aParent,
                                       const StyleMathSum& aMathSum) {
   nsTArray<RefPtr<CSSNumericValue>> values;
@@ -35,12 +47,9 @@ RefPtr<CSSMathSum> CSSMathSum::Create(nsCOMPtr<nsISupports> aParent,
     values.AppendElement(CSSNumericValue::Create(aParent, value));
   }
 
-  auto array = MakeRefPtr<CSSNumericArray>(aParent, std::move(values));
-
-  return MakeRefPtr<CSSMathSum>(
-      std::move(aParent),
-      WrapMovingNotNull(MakeUnique<StyleNumericType>(aMathSum.numeric_type)),
-      std::move(array));
+  return Create(std::move(aParent),
+                MakeUnique<StyleNumericType>(aMathSum.numeric_type),
+                std::move(values));
 }
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathSum, CSSMathValue)
@@ -80,16 +89,8 @@ already_AddRefed<CSSMathSum> CSSMathSum::Constructor(
 
   // Step 3.
 
-  AutoTArray<const StyleNumericType*, 8> numericTypes;
-  numericTypes.SetCapacity(values.Length());
-
-  for (const auto& value : values) {
-    numericTypes.AppendElement(&value->GetNumericType());
-  }
-
-  auto numericType = MakeUnique<StyleNumericType>();
-  if (!Servo_NumericType_AddTypes(&numericTypes, numericType.get())) {
-    aRv.ThrowTypeError("Incompatible types");
+  auto numericType = AddTypes(values, aRv);
+  if (aRv.Failed()) {
     return nullptr;
   }
 

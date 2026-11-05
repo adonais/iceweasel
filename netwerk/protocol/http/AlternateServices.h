@@ -198,6 +198,10 @@ class AltSvcCache {
       bool privateBrowsing, const OriginAttributes& originAttributes,
       bool aHttp2Allowed, bool aHttp3Allowed, bool aForceHttp3First = false);
   void ClearAltServiceMappings();
+  // Removes all Alt-Svc mappings whose origin attributes match
+  // aOriginAttributes.
+  void ClearAltServiceMappingsMatchingOA(
+      const OriginAttributes& aOriginAttributes);
   void ClearHostMapping(const nsACString& host, int32_t port,
                         const OriginAttributes& originAttributes);
   void ClearHostMapping(nsHttpConnectionInfo* ci);

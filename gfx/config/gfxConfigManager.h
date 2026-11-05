@@ -26,6 +26,7 @@ class gfxConfigManager {
         mFeatureHwCompositing(nullptr),
         mFeatureD3D11HwAngle(nullptr),
         mFeatureMetalAngle(nullptr),
+        mFeatureGlAngle(nullptr),
         mFeatureWrAngleBackend(nullptr),
         mFeatureD3D11Compositing(nullptr),
         mFeatureGPUProcess(nullptr),
@@ -72,6 +73,7 @@ class gfxConfigManager {
   FeatureState* mFeatureHwCompositing;
   FeatureState* mFeatureD3D11HwAngle;
   FeatureState* mFeatureMetalAngle;
+  FeatureState* mFeatureGlAngle;
   FeatureState* mFeatureWrAngleBackend;
   FeatureState* mFeatureD3D11Compositing;
   FeatureState* mFeatureGPUProcess;

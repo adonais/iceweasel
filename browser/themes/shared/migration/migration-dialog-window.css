@@ -7,3 +7,8 @@
 body {
   padding: 24px;
 }
+
+/* Override the wizard's fixed width when used as a subdialog */
+:root[subdialog] migration-wizard {
+  width: auto;
+}

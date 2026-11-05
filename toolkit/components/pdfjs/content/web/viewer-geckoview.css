@@ -841,13 +841,25 @@
   transform-origin: 0 0;
 
   &[data-main-rotation="90"] .norotate {
-    transform: rotate(270deg) translateX(-100%);
+    transform: rotate(270deg);
+
+    &.popupAnnotation {
+      transform: rotate(270deg) translateX(-100%);
+    }
   }
   &[data-main-rotation="180"] .norotate {
-    transform: rotate(180deg) translate(-100%, -100%);
+    transform: rotate(180deg);
+
+    &.popupAnnotation {
+      transform: rotate(180deg) translate(-100%, -100%);
+    }
   }
   &[data-main-rotation="270"] .norotate {
-    transform: rotate(90deg) translateY(-100%);
+    transform: rotate(90deg);
+
+    &.popupAnnotation {
+      transform: rotate(90deg) translateY(-100%);
+    }
   }
 
   &.disabled {
@@ -1665,6 +1677,9 @@
   border: var(--page-border);
   background-clip: content-box;
   background-color: var(--page-bg-color, rgb(255 255 255));
+  &:has(> .canvasWrapper > canvas[role="presentation"]) {
+    background-color: transparent;
+  }
 }
 
 .pdfViewer .dummyPage {

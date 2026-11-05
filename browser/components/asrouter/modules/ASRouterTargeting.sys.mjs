@@ -49,6 +49,10 @@ const { FirefoxRelay, RELAY_PROFILE_CACHE_INTERVAL } =
 
 const lazy = {};
 
+const PUSH_SERVICE_SYS_MJS = "resource://gre/modules/PushService.sys.mjs";
+const WEB_PUSH_SUBSCRIPTION_COUNT_PREF =
+  "messaging-system.activeWebPushSubscriptionCount";
+
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTabResourceMapping:
     "resource:///modules/AboutNewTabResourceMapping.sys.mjs",
@@ -60,14 +64,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   AppProvidedConfigEngine:
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
+  ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   ASRouterPreferences:
     "resource:///modules/asrouter/ASRouterPreferences.sys.mjs",
   AttributionCode:
     "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
+  AutoTabGroupingSuggestions:
+    "moz-src:///browser/components/aiwindow/ui/modules/AutoTabGroupingSuggestions.sys.mjs",
   BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
   BrowserInitState: "moz-src:///browser/components/BrowserGlue.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
-  ClientEnvironment: "resource://normandy/lib/ClientEnvironment.sys.mjs",
+  ClientEnvironmentBase:
+    "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -78,6 +86,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   HomePage: "resource:///modules/HomePage.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
+  PushService: PUSH_SERVICE_SYS_MJS,
   Region: "resource://gre/modules/Region.sys.mjs",
   ReinstallCheck: "moz-src:///browser/components/ReinstallCheck.sys.mjs",
   ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
@@ -89,8 +98,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/sessionstore/SessionStartup.sys.mjs",
   SessionStore:
     "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
-  SmartTabGroupingManager:
-    "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
   TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
   TaskbarTabs: "moz-src:///browser/components/taskbartabs/TaskbarTabs.sys.mjs",
@@ -440,7 +447,7 @@ export const QueryCache = {
       ShellService
     ),
     isDefaultBrowser: new CachedTargetingGetter(
-      "isDefaultBrowser",
+      "isDefaultBrowserAsync",
       null,
       FRECENT_SITES_UPDATE_INTERVAL,
       ShellService
@@ -958,7 +965,7 @@ const TargetingGetters = {
     return QueryCache.getters.isDefaultBrowser.get().catch(() => null);
   },
   get isDefaultBrowserUncached() {
-    return ShellService.isDefaultBrowser();
+    return ShellService.isDefaultBrowserAsync();
   },
   get hasAttemptedSetDefault() {
     return ShellService.attemptedSetDefaultThisSession;
@@ -1075,8 +1082,8 @@ const TargetingGetters = {
   get hasActiveAIWindow() {
     return !!lazy.AIWindow?.hasActiveAIWindows?.();
   },
-  get isSmartTabGroupingAllowed() {
-    return !!lazy.SmartTabGroupingManager?.isAllowed;
+  get isAutoTabGroupingAvailable() {
+    return !!lazy.AutoTabGroupingSuggestions?.isAvailable;
   },
   get hasAccessedFxAPanel() {
     return lazy.hasAccessedFxAPanel;
@@ -1144,7 +1151,7 @@ const TargetingGetters = {
     return AppConstants.platform;
   },
   get userId() {
-    return lazy.ClientEnvironment.userId;
+    return lazy.ClientEnvironmentBase.legacyRandomizationId;
   },
   get profileRestartCount() {
     let bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
@@ -1251,6 +1258,26 @@ const TargetingGetters = {
     return Services.perms
       .getAllByTypes(["desktop-notification"])
       .filter(perm => perm.capability === Services.perms.ALLOW_ACTION).length;
+  },
+
+  get activeWebPushSubscriptionCount() {
+    return (async () => {
+      if (!Services.prefs.getBoolPref("dom.push.enabled", false)) {
+        return 0;
+      }
+      // Targeting may be evaluated during startup before the push service has
+      // started, so return the count saved during the last session until the
+      // push service is ready.
+      if (
+        !Cu.isESModuleLoaded(PUSH_SERVICE_SYS_MJS) ||
+        !lazy.PushService.isReady
+      ) {
+        return Services.prefs.getIntPref(WEB_PUSH_SUBSCRIPTION_COUNT_PREF, 0);
+      }
+      const count = (await lazy.PushService.getAllUnexpiredNonSystem()).length;
+      Services.prefs.setIntPref(WEB_PUSH_SUBSCRIPTION_COUNT_PREF, count);
+      return count;
+    })();
   },
 
   get doesAppNeedPin() {
@@ -1370,6 +1397,11 @@ const TargetingGetters = {
 
   get alltabsButtonAreaType() {
     let button = lazy.CustomizableUI.getWidget("alltabs-button");
+    return button.areaType;
+  },
+
+  get forgetButtonAreaType() {
+    let button = lazy.CustomizableUI.getWidget("panic-button");
     return button.areaType;
   },
 
@@ -1661,6 +1693,37 @@ const TargetingGetters = {
 
   get canRestoreLastSession() {
     return lazy.SessionStore.canRestoreLastSession;
+  },
+
+  // "previousSessionEnd", "messageImpressions", and "screenImpressions" are
+  // stored in ASRouter state and merged into the targeting context after init.
+  // Exposing them here also makes them available to consumers that import and
+  // use ASRouterTargeting directly without that extra context, such as
+  // RemoteSettingsExperimentLoader when it evaluates Nimbus enrollment
+  // targeting. These getters intentionally read state synchronously rather than
+  // awaiting ASRouter.waitForInitialized: ASRouter.init() itself reads
+  // ASRouterTargeting.Environment, so awaiting initialization here could
+  // deadlock. Until init has loaded the persisted values they return
+  // undefined, so targeting expressions treat them as absent rather than
+  // matching against the INITIAL_STATE defaults. previousSessionEnd will
+  // return 0 instead to be consistent with the quantity type assertion in the
+  // Nimbus targeting context recorder.
+  get previousSessionEnd() {
+    return lazy.ASRouter.initialized
+      ? lazy.ASRouter.state.previousSessionEnd
+      : 0;
+  },
+
+  get messageImpressions() {
+    return lazy.ASRouter.initialized
+      ? lazy.ASRouter.state.messageImpressions
+      : undefined;
+  },
+
+  get screenImpressions() {
+    return lazy.ASRouter.initialized
+      ? lazy.ASRouter.state.screenImpressions
+      : undefined;
   },
 
   // This is implemented as a targeting attribute because it is needed for
@@ -2120,5 +2183,26 @@ export const ASRouterTargeting = {
       }
     }
     return matching;
+  },
+};
+
+/**
+ * Re-evaluates the Nimbus recipes that include the `includeForWebPush` feature
+ * once the push service starts.
+ */
+export const WebPushTargeting = {
+  async init() {
+    if (!Services.prefs.getBoolPref("dom.push.enabled", false)) {
+      return;
+    }
+    try {
+      await lazy.PushService.ready();
+      await lazy.ExperimentAPI.updateRecipesForFeatures(
+        "push-service-activated",
+        ["includeForWebPush"]
+      );
+    } catch (e) {
+      console.error("Failed to re-evaluate web push recipes:", e);
+    }
   },
 };

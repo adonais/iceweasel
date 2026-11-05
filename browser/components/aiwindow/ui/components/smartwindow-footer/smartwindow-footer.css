@@ -36,7 +36,7 @@
 @media -moz-pref("browser.nova.enabled") {
   .footer-action-button {
     --button-padding: var(--space-medium);
-    /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/no-base-design-tokens */
+    /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
     min-width: 86px;
 
     &::part(button) {

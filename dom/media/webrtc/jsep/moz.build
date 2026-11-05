@@ -18,3 +18,14 @@ UNIFIED_SOURCES += ["JsepSessionImpl.cpp", "SsrcGenerator.cpp"]
 SOURCES += ["JsepTrack.cpp"]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "JsepCodecDescription.h",
+    "JsepSession.h",
+    "JsepSessionImpl.h",
+    "JsepTrack.h",
+    "JsepTrackEncoding.h",
+    "JsepTransceiver.h",
+    "JsepTransport.h",
+    "SsrcGenerator.h",
+]

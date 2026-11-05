@@ -198,11 +198,6 @@ nssCRL_AddRef(NSSCRL *crl);
 NSS_EXTERN PRStatus
 nssCRL_Destroy(NSSCRL *crl);
 
-NSS_EXTERN PRStatus
-nssCRL_DeleteStoredObject(
-    NSSCRL *crl,
-    NSSCallback *uhh);
-
 NSS_EXTERN NSSDER *
 nssCRL_GetEncoding(NSSCRL *crl);
 
@@ -214,7 +209,6 @@ nssCRL_GetEncoding(NSSCRL *crl);
  * nssCertificateArray_Destroy
  * nssCertificateArray_Join
  * nssCertificateArray_FindBestCertificate
- * nssCertificateArray_Traverse
  */
 
 /* nssCertificateArray_Destroy
@@ -250,17 +244,6 @@ nssCertificateArray_FindBestCertificate(
     NSSTime *timeOpt,
     const NSSUsage *usage,
     NSSPolicies *policiesOpt);
-
-/* nssCertificateArray_Traverse
- *
- * Do the callback for each cert, terminate the traversal if the callback
- * fails.
- */
-NSS_EXTERN PRStatus
-nssCertificateArray_Traverse(
-    NSSCertificate **certs,
-    PRStatus (*callback)(NSSCertificate *c, void *arg),
-    void *arg);
 
 NSS_EXTERN void
 nssCRLArray_Destroy(NSSCRL **crls);

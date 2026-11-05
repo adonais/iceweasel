@@ -26,15 +26,12 @@ class CodeGeneratorARM64 : public CodeGeneratorShared {
 
   MoveOperand toMoveOperand(const LAllocation a) const;
 
-  void bailoutIf(Assembler::Condition condition, LSnapshot* snapshot);
   void bailoutIfTest(Assembler::Condition condition, ARMRegister rt,
                      LSnapshot* snapshot);
   void bailoutIfFalseBool(Register reg, LSnapshot* snapshot) {
     masm.test32(reg, Imm32(0xFF));
     return bailoutIf(Assembler::Zero, snapshot);
   }
-
-  void emitBailoutOOL(LSnapshot* snapshot);
 
   bool generateOutOfLineCode();
 

@@ -30,3 +30,7 @@ XPIDL_SOURCES += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "StartupCacheInfo.h",
+]

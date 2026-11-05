@@ -523,7 +523,7 @@ Register CacheRegisterAllocator::allocateRegister(MacroAssembler& masm) {
     masm.push(reg);
     stackPushed_ += sizeof(uintptr_t);
 
-    masm.propagateOOM(spilledRegs_.append(SpilledRegister(reg, stackPushed_)));
+    masm.propagateOOM(spilledRegs_.emplaceBack(reg, stackPushed_));
 
     availableRegs_.add(reg);
   }
@@ -559,7 +559,7 @@ void CacheRegisterAllocator::allocateFixedRegister(MacroAssembler& masm,
     masm.push(reg);
     stackPushed_ += sizeof(uintptr_t);
 
-    masm.propagateOOM(spilledRegs_.append(SpilledRegister(reg, stackPushed_)));
+    masm.propagateOOM(spilledRegs_.emplaceBack(reg, stackPushed_));
     currentOpRegs_.add(reg);
     return;
   }
@@ -2151,11 +2151,7 @@ static void TruncateDoubleModUint32(MacroAssembler& masm,
     masm.jump(&done);
 
     masm.bind(&truncateABICall);
-    LiveRegisterSet save = liveVolatileRegs;
-    save.takeUnchecked(floatReg);
-    // Bug 1451976
-    save.takeUnchecked(floatReg.asSingle());
-    masm.PushRegsInMask(save);
+    masm.PushRegsInMask(liveVolatileRegs);
 
     using Fn = int32_t (*)(double);
     masm.setupUnalignedABICall(result);
@@ -2166,7 +2162,7 @@ static void TruncateDoubleModUint32(MacroAssembler& masm,
 
     LiveRegisterSet ignore;
     ignore.add(result);
-    masm.PopRegsInMaskIgnore(save, ignore);
+    masm.PopRegsInMaskIgnore(liveVolatileRegs, ignore);
 
     masm.bind(&done);
   }
@@ -11707,7 +11703,6 @@ bool CacheIRCompiler::emitDateNow(NumberOperandId resultId) {
   AutoScratchFloatRegister scratchFloat(this);
 
   LiveRegisterSet volatileRegs = liveVolatileRegs();
-  volatileRegs.takeUnchecked(scratchFloat);
   masm.PushRegsInMask(volatileRegs);
 
   using Fn = double (*)(JSContext* cx);
@@ -11937,27 +11932,39 @@ bool CacheIRCompiler::emitGuardObjectFuseProperty(
         Imm32(0), &done);
   }
 
-  // Guard on the generation field.
-  StubFieldOffset expectedGeneration(expectedGenerationOffset,
-                                     StubField::Type::RawInt32);
-  emitLoadStubField(expectedGeneration, scratch2);
-  masm.branch32(Assembler::NotEqual,
-                Address(scratch1, ObjectFuse::offsetOfGeneration()), scratch2,
-                failure->label());
+  Address generation(scratch1, ObjectFuse::offsetOfGeneration());
+  Address stateBits(scratch1, ObjectFuse::offsetOfPropertyStateBits());
 
-  // Load the uint32_t from the properties array. After the generation check,
-  // the property must be marked either Constant or NotConstant so we don't have
-  // to bounds check the index.
-  StubFieldOffset propIndex(propIndexOffset, StubField::Type::RawInt32);
-  emitLoadStubField(propIndex, scratch2);
-  masm.loadPtr(Address(scratch1, ObjectFuse::offsetOfPropertyStateBits()),
-               scratch1);
-  masm.load32(BaseIndex(scratch1, scratch2, TimesFour), scratch1);
+  // Guard on the generation field, then load the uint32_t from the properties
+  // array and use the mask to guard the property is still marked Constant.
+  // After the generation check, the property must be marked either Constant or
+  // NotConstant so we don't have to bounds check the index.
+  if (stubFieldPolicy_ == StubFieldPolicy::Constant) {
+    uint32_t expectedGeneration = uint32StubField(expectedGenerationOffset);
+    uint32_t propIndex = uint32StubField(propIndexOffset);
+    uint32_t propMask = uint32StubField(propMaskOffset);
 
-  // Use the mask to guard the property is still marked Constant.
-  StubFieldOffset propMask(propMaskOffset, StubField::Type::RawInt32);
-  emitLoadStubField(propMask, scratch2);
-  masm.branchTest32(Assembler::NonZero, scratch1, scratch2, failure->label());
+    masm.branch32(Assembler::NotEqual, generation, Imm32(expectedGeneration),
+                  failure->label());
+    masm.loadPtr(stateBits, scratch1);
+    masm.load32(Address(scratch1, propIndex * sizeof(uint32_t)), scratch1);
+    masm.branchTest32(Assembler::NonZero, scratch1, Imm32(propMask),
+                      failure->label());
+  } else {
+    StubFieldOffset expectedGeneration(expectedGenerationOffset,
+                                       StubField::Type::RawInt32);
+    emitLoadStubField(expectedGeneration, scratch2);
+    masm.branch32(Assembler::NotEqual, generation, scratch2, failure->label());
+
+    StubFieldOffset propIndex(propIndexOffset, StubField::Type::RawInt32);
+    emitLoadStubField(propIndex, scratch2);
+    masm.loadPtr(stateBits, scratch1);
+    masm.load32(BaseIndex(scratch1, scratch2, TimesFour), scratch1);
+
+    StubFieldOffset propMask(propMaskOffset, StubField::Type::RawInt32);
+    emitLoadStubField(propMask, scratch2);
+    masm.branchTest32(Assembler::NonZero, scratch1, scratch2, failure->label());
+  }
 
   masm.bind(&done);
   return true;

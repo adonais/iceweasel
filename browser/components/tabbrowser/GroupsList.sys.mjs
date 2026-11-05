@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
+import { SessionStore } from "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs";
 import { TabMetrics } from "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs";
 
 const MAX_INITIAL_ITEMS = 5;
@@ -78,7 +79,7 @@ export class GroupsPanel {
       }
 
       case "allTabsGroupView_restoreGroup":
-        this.win.SessionStore.openSavedTabGroup(tabGroupId, this.win, {
+        SessionStore.openSavedTabGroup(tabGroupId, this.win, {
           source: TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
         });
         break;
@@ -104,7 +105,7 @@ export class GroupsPanel {
     });
     let savedGroups = [];
     if (!PrivateBrowsingUtils.isWindowPrivate(this.win)) {
-      savedGroups = this.win.SessionStore.savedGroups.toSorted(
+      savedGroups = SessionStore.savedGroups.toSorted(
         (group1, group2) => group2.closedAt - group1.closedAt
       );
     }

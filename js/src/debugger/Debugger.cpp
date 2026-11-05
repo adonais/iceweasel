@@ -5098,7 +5098,7 @@ bool Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global) {
 
   // (1)
   auto& globalDebuggers = global->getDebuggers(nogc);
-  if (!globalDebuggers.append(Realm::DebuggerVectorEntry(this, debuggeeLink))) {
+  if (!globalDebuggers.emplaceBack(this, debuggeeLink)) {
     ReportOutOfMemory(cx);
     return false;
   }

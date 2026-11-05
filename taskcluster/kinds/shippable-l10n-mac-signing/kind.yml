@@ -15,9 +15,6 @@ transforms:
 kind-dependencies:
     - shippable-l10n
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 only-for-build-platforms:
     - macosx64-shippable/opt
     - macosx64-devedition/opt

@@ -105,6 +105,9 @@
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
+#  include <android/native_window.h>
+#  include <android/native_window_jni.h>
+
 #  include "ffvpx/hwcontext_mediacodec.h"
 #  include "ffvpx/mediacodec.h"
 #  include "mozilla/java/CodecProxyWrappers.h"
@@ -465,13 +468,30 @@ int FFmpegVideoDecoder<LIBAV_VER>::ChooseVulkanPixelFormatFromContext(
       return AV_PIX_FMT_NONE;
     }
     AVHWFramesContext* frames_ctx = (AVHWFramesContext*)frames_ref->data;
+    AVVulkanFramesContext* hwfc = (AVVulkanFramesContext*)frames_ctx->hwctx;
+    // Prefer hwfc->usage: lavc sets VIDEO_DECODE_DPB only when the output
+    // image is also the DPB. Before 63.8.101 lavc used dedicated_dpb =
+    // !COINCIDE, so drivers with both COINCIDE and DISTINCT (RADV) still put
+    // DPB on every output. Until that lavc, mirror FFmpeg b02fa6b7cd with
+    // mDriverDistinctDpb (also correct for ffvpx, which may still report
+    // 63.1.101 after the Vulkan cherry-pick).
+    // Re-adding DPB usage bit on DISTINCT breaks direct export (green frames
+    // on RADV).
+    const bool outputIsDpb =
+        (mLib->avcodec_version() >= AV_VERSION_INT(63, 8, 101))
+            ? (hwfc->usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR)
+            : !mVulkanDecoder.mDriverDistinctDpb;
 
     VkImageUsageFlags imageUsages =
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     if (VulkanDirectDecodeExportEnabled()) {
       imageUsages |= VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
-      imageUsages |= VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
+      if (outputIsDpb) {
+        imageUsages |= VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
+      }
     }
+    FFMPEGV_LOG("[VULKAN] output image DPB usage: {}",
+                outputIsDpb ? "kept" : "not set");
     PrepareVulkanDrmModifiersForSwFormat(frames_ctx->sw_format, imageUsages);
     bool drmModsAreLinearOrEmpty = true;
     if (!mVulkanDecoder.mDrmModifiers.empty()) {
@@ -491,7 +511,6 @@ int FFmpegVideoDecoder<LIBAV_VER>::ChooseVulkanPixelFormatFromContext(
     }
     if (VulkanDirectDecodeExportEnabled() &&
         !mVulkanDecoder.mForcedNvidiaBlockLinear && !drmModsAreLinearOrEmpty) {
-      AVVulkanFramesContext* hwfc = (AVVulkanFramesContext*)frames_ctx->hwctx;
       void* const originalCreatePnext = hwfc->create_pnext;
       int formatCount = 0;
       while (formatCount < AV_NUM_DATA_POINTERS &&
@@ -557,7 +576,7 @@ void FFmpegVideoDecoder<LIBAV_VER>::PrepareVulkanDrmModifiersForSwFormat(
     }
   }
   mVulkanDecoder.InitDrmModifiers(vkCtx->phys_dev, vkFormat, compositorMods,
-                                  aImageUsages);
+                                  aImageUsages, mCodecID);
 }
 
 #  endif
@@ -737,9 +756,10 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitVulkanDecoder() {
     return NS_ERROR_DOM_MEDIA_FATAL_ERR;
   }
 
-  if (!mVulkanDecoder.VulkanCanDecodeFormat(
-          mCodecID, mLib->avcodec_version(), mVulkanDeviceContext,
-          mInfo.mExtraData, mInfo.mColorDepth)) {
+  mVulkanDecoder.CheckDecodeCapabilities(mCodecID, mVulkanDeviceContext,
+                                         mInfo.mExtraData, mInfo.mColorDepth);
+  if (!mVulkanDecoder.VulkanCanDecodeFormat(mCodecID,
+                                            mLib->avcodec_version())) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -948,17 +968,6 @@ bool FFmpegVideoDecoder<LIBAV_VER>::ShouldDisableHWDecoding(
 }
 #endif
 
-#if defined(MOZ_WIDGET_GTK) && defined(MOZ_USE_HWDECODE)
-bool FFmpegVideoDecoder<LIBAV_VER>::UploadSWDecodeToDMABuf() const {
-  // Use direct DMABuf upload for GL backend Wayland compositor only.
-  return mImageAllocator && (mImageAllocator->GetCompositorBackendType() ==
-                                 layers::LayersBackend::LAYERS_WR &&
-                             !mImageAllocator->UsingSoftwareWebRender() &&
-                             mImageAllocator->GetWebRenderCompositorType() ==
-                                 layers::WebRenderCompositor::WAYLAND);
-}
-#endif
-
 FFmpegVideoDecoder<LIBAV_VER>::FFmpegVideoDecoder(
     const FFmpegLibWrapper* aLib, const VideoInfo& aConfig,
     KnowsCompositor* aAllocator, ImageContainer* aImageContainer,
@@ -982,9 +991,6 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVideoDecoder(
   // initialization.
   mExtraData = new MediaByteBuffer;
   mExtraData->AppendElements(*aConfig.mExtraData);
-#if defined(MOZ_WIDGET_GTK) && defined(MOZ_USE_HWDECODE)
-  mUploadSWDecodeToDMABuf = UploadSWDecodeToDMABuf();
-#endif
 #ifdef MOZ_USE_HWDECODE
   InitHWDecoderIfAllowed();
 #endif  // MOZ_USE_HWDECODE
@@ -1276,10 +1282,8 @@ FFmpegVideoDecoder<LIBAV_VER>::AllocateTextureClientForImage(
   paddedCbCrSize.height += GetBuffer2StrideAlign(data.mCbCrStride);
 
   // Setting other attributes
-  data.mPictureRect = gfx::IntRect(
-      mInfo.ScaledImageRect(aCodecContext->width, aCodecContext->height)
-          .TopLeft(),
-      gfx::IntSize(aCodecContext->width, aCodecContext->height));
+  data.mPictureRect =
+      mInfo.ScaledImageRect(aCodecContext->width, aCodecContext->height);
   data.mStereoMode = mInfo.mStereoMode;
   if (aCodecContext->colorspace != AVCOL_SPC_UNSPECIFIED) {
     data.mYUVColorSpace = TransferAVColorSpaceToColorSpace(
@@ -1336,13 +1340,6 @@ int FFmpegVideoDecoder<LIBAV_VER>::GetVideoBuffer(
   if (IsHardwareAccelerated()) {
     return AVERROR(EINVAL);
   }
-
-#  if defined(MOZ_WIDGET_GTK) && defined(MOZ_USE_HWDECODE)
-  if (mUploadSWDecodeToDMABuf) {
-    FFMPEG_LOG("DMABuf upload doesn't use shm buffers");
-    return AVERROR(EINVAL);
-  }
-#  endif
 
   if (!IsColorFormatSupportedForUsingCustomizedBuffer(aCodecContext->pix_fmt)) {
     FFMPEG_LOG("Not support color format {}",
@@ -2118,53 +2115,6 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
         IsKeyFrame(mFrame), TimeUnit::FromMicroseconds(-1));
   }
 #endif
-#if defined(MOZ_WIDGET_GTK) && defined(MOZ_USE_HWDECODE)
-  if (mUploadSWDecodeToDMABuf) {
-    MOZ_DIAGNOSTIC_ASSERT(!v);
-    if (!mVideoFramePool) {
-      mVideoFramePool = MakeUnique<VideoFramePool<LIBAV_VER>>(10);
-    }
-    const auto yuvData = layers::PlanarYCbCrData::From(b);
-    if (yuvData) {
-      auto surface =
-          mVideoFramePool->GetVideoFrameSurface(*yuvData, mCodecContext);
-      if (surface) {
-        surface->SetYUVColorSpace(GetFrameColorSpace());
-        surface->SetColorRange(GetFrameColorRange());
-        if (mInfo.mColorPrimaries) {
-          surface->SetColorPrimaries(mInfo.mColorPrimaries.value());
-        }
-        if (mInfo.mTransferFunction) {
-          surface->SetTransferFunction(mInfo.mTransferFunction.value());
-        }
-        if (mInfo.mHDRMetadata) {
-          surface->SetHDRMetadata(mInfo.mHDRMetadata.value());
-        }
-        surface->SetWPChromaLocation(
-            AVChromaLocationToWPChromaLocation(mFrame->chroma_location));
-        FFMPEG_LOGV(
-            "Uploaded frame DMABuf surface UID {} HDR {} color space {}/{} "
-            "transfer {}",
-            surface->GetDMABufSurface()->GetUID(), IsLinuxHDR(),
-            mozilla::ToString(GetFrameColorSpace()),
-            mInfo.mColorPrimaries
-                ? mozilla::ToString(mInfo.mColorPrimaries.value())
-                : "unknown",
-            mInfo.mTransferFunction
-                ? mozilla::ToString(mInfo.mTransferFunction.value())
-                : "unknown");
-        v = VideoData::CreateFromImage(
-            mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
-            TimeUnit::FromMicroseconds(aDuration), surface->GetAsImage(),
-            IsKeyFrame(mFrame), TimeUnit::FromMicroseconds(-1));
-      } else {
-        FFMPEG_LOG("Failed to uploaded video data to DMABuf");
-      }
-    } else {
-      FFMPEG_LOG("Failed to convert PlanarYCbCrData");
-    }
-  }
-#endif
   if (!v) {
     if (m8BitOutput && b.mColorDepth != gfx::ColorDepth::COLOR_8) {
       MediaResult ret = b.To8BitPerChannel(m8BitRecycleBin);
@@ -2595,6 +2545,23 @@ Maybe<MediaDataDecoder::PropertyValue> FFmpegVideoDecoder<
     default:
       return MediaDataDecoder::GetDecodeProperty(aName);
   }
+}
+#endif
+
+#ifdef MOZ_WIDGET_ANDROID
+/* static */
+bool FFmpegVideoDecoder<LIBAV_VER>::MediaCodecSupportsColorDepth(
+    AVCodecID aCodec, const nsACString& aMimeType,
+    gfx::ColorDepth aColorDepth) {
+  // H264 and HEVC may use the platform software decoders.
+  media::DecodeSupportSet support{media::DecodeSupport::HardwareDecode};
+  if (aCodec == AV_CODEC_ID_H264 || aCodec == AV_CODEC_ID_HEVC) {
+    support += media::DecodeSupport::SoftwareDecode;
+  }
+  return !media::MCSInfo::GetMediaCodecDecodeSupportForColorDepth(
+              media::MCSInfo::GetMediaCodecFromMimeType(aMimeType), support,
+              aColorDepth)
+              .isEmpty();
 }
 #endif
 
@@ -3157,7 +3124,8 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitMediaCodecDecoder() {
                        RESULT_DETAIL("codec not allowed when minimal"));
   }
 
-  if (mInfo.mColorDepth > gfx::ColorDepth::COLOR_10) {
+  if (!MediaCodecSupportsColorDepth(mCodecID, mInfo.mMimeType,
+                                    mInfo.mColorDepth)) {
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                        RESULT_DETAIL("not supported color depth"));
   }
@@ -3203,8 +3171,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitMediaCodecDecoder() {
   AVMediaCodecDeviceContext* mediacodecctx =
       (AVMediaCodecDeviceContext*)hwctx->hwctx;
 
-  if (XRE_IsGPUProcess() &&
-      gfx::gfxVars::UseAImageReaderVideoGpuProcessAndroid()) {
+  if (XRE_IsGPUProcess() && gfx::gfxVars::ForceAImageReaderAndroid()) {
     MOZ_ASSERT(!mAndroidImageReader);
     mAndroidImageReader = layers::AndroidImageReader::Create();
   }
@@ -3357,8 +3324,8 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageMediaCodec(
   }
 
   RefPtr<VideoData> v = VideoData::CreateFromImage(
-      {mFrame->width, mFrame->height}, aOffset,
-      TimeUnit::FromMicroseconds(aPts), TimeUnit::FromMicroseconds(aDuration),
+      mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
+      TimeUnit::FromMicroseconds(aDuration),
       img.forget().downcast<layers::Image>(), mFrame->flags & AV_FRAME_FLAG_KEY,
       TimeUnit::FromMicroseconds(aTimecode));
 

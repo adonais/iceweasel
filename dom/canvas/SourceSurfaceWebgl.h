@@ -63,7 +63,7 @@ class SourceSurfaceWebgl : public DataSourceSurface {
   void OnUnlinkTexture(SharedContextWebgl* aContext, TextureHandle* aHandle,
                        bool aForce);
 
-  DrawTargetWebgl* GetTarget() const { return mDT.get(); }
+  DrawTargetWebgl* GetTarget() const;
 
   SurfaceFormat mFormat = SurfaceFormat::UNKNOWN;
   IntSize mSize;

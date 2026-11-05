@@ -4,22 +4,28 @@
 
 #include "FuzzingFunctions.h"
 
+#include "base/process_util.h"
 #include "js/GCAPI.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/Logging.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TextInputProcessor.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/KeyboardEvent.h"
+#include "mozilla/dom/RemoteType.h"
 #include "nsFocusManager.h"
 #include "nsIAccessibilityService.h"
 #include "nsITimer.h"
 #include "nsJSEnvironment.h"
 #include "nsPIDOMWindow.h"
+#include "nsXULAppAPI.h"
 #include "xpcAccessibilityService.h"
 
 namespace mozilla::dom {
+
+static LazyLogModule gFuzzingFunctionsLog("FuzzingFunctions");
 
 /* static */
 void FuzzingFunctions::GarbageCollect(const GlobalObject&) {
@@ -410,6 +416,47 @@ void FuzzingFunctions::SpinEventLoopFor(const GlobalObject&,
   // Ensure the timer is stopped in case we're shutting down the process and
   // didn't get a chance to spin the event loop long enough.
   timer->Cancel();
+}
+
+/* static */
+void FuzzingFunctions::Dump(const GlobalObject&, const nsAString& aMessage) {
+  nsAutoCString line;
+  line.AppendPrintf("FuzzingFunctions.dump [pid=%ld process=%s",
+                    static_cast<long>(base::GetCurrentProcId()),
+                    XRE_GetProcessTypeString());
+  if (XRE_IsContentProcess()) {
+    line.AppendLiteral(" remoteType=");
+    line.Append(ContentChild::GetSingleton()->GetRemoteType().Stringify());
+  }
+  line.AppendLiteral("] ");
+  AppendUTF16toUTF8(aMessage, line);
+
+  // Prefer MOZ_LOG when the module is enabled so MOZ_LOG_FILE routing applies;
+  // otherwise write straight to stderr so the line is visible without any
+  // logging configuration.
+  if (MOZ_LOG_TEST(gFuzzingFunctionsLog, LogLevel::Info)) {
+    MOZ_LOG(gFuzzingFunctionsLog, LogLevel::Info, ("%s", line.get()));
+    return;
+  }
+  line.Append('\n');
+  fputs(line.get(), stderr);
+  fflush(stderr);
+}
+
+/* static */
+int32_t FuzzingFunctions::ProcId(const GlobalObject&) {
+  return static_cast<int32_t>(base::GetCurrentProcId());
+}
+
+/* static */
+void FuzzingFunctions::GetRemoteType(const GlobalObject&,
+                                     nsAString& aRemoteType) {
+  if (!XRE_IsContentProcess()) {
+    aRemoteType.SetIsVoid(true);
+    return;
+  }
+  CopyUTF8toUTF16(ContentChild::GetSingleton()->GetRemoteType().Stringify(),
+                  aRemoteType);
 }
 
 }  // namespace mozilla::dom

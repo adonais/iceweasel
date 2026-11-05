@@ -37,8 +37,6 @@ class nsDeviceContextSpecGTK : public nsIDeviceContextSpec {
                            mozilla::dom::WindowContext*, int32_t aStartPage,
                            int32_t aEndPage) override;
   RefPtr<mozilla::gfx::PrintEndDocumentPromise> EndDocument() override;
-  NS_IMETHOD BeginPage(const IntSize& aSizeInPoints) override { return NS_OK; }
-  NS_IMETHOD EndPage() override { return NS_OK; }
 
  protected:
   virtual ~nsDeviceContextSpecGTK();

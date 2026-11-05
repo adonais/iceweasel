@@ -97,7 +97,7 @@ enum StructuredCloneTags : uint32_t {
 
   // IMPORTANT: Don't change the order of these enum values. You could break
   // IDB.
-  EMPTY_SLOT_9,
+  SCTAG_DOM_QUOTAEXCEEDEDERROR,
 
   // IMPORTANT: Don't change the order of these enum values. You could break
   // IDB.
@@ -164,6 +164,8 @@ enum StructuredCloneTags : uint32_t {
   SCTAG_DOM_RTCENCODEDVIDEOFRAME,
 
   SCTAG_DOM_RTCENCODEDAUDIOFRAME,
+
+  SCTAG_DOM_WEBTRANSPORTERROR,
 
   // IMPORTANT: If you plan to add an new IDB tag, it _must_ be add before the
   // "less stable" tags!

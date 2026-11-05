@@ -318,3 +318,56 @@ add_task(async function test_user_settings_persist() {
     "Rel Searchform removal should be remembered"
   );
 });
+
+add_task(
+  { skip_if: () => !SearchUtils.configV3FeatureGate },
+  async function test_deprecated_engines() {
+    await SearchTestUtils.updateRemoteSettingsConfig([
+      { identifier: "appDefault" },
+      { identifier: "becomesDeprecated" },
+      { identifier: "becomesNotDeprecated", base: { deprecated: true } },
+    ]);
+
+    Assert.deepEqual(
+      (await SearchService.getAppProvidedEngines()).map(e => e.id),
+      ["appDefault", "becomesDeprecated"],
+      "Should not have added the deprecated engine"
+    );
+
+    const enginesAdded = [];
+    const enginesRemoved = [];
+
+    function enginesObs(subject, topic, data) {
+      if (data == SearchUtils.MODIFIED_TYPE.ADDED) {
+        enginesAdded.push(subject.wrappedJSObject.id);
+      } else if (data == SearchUtils.MODIFIED_TYPE.REMOVED) {
+        enginesRemoved.push(subject.wrappedJSObject.id);
+      }
+    }
+    Services.obs.addObserver(enginesObs, SearchUtils.TOPIC_ENGINE_MODIFIED);
+
+    await SearchTestUtils.updateRemoteSettingsConfig([
+      { identifier: "appDefault" },
+      { identifier: "becomesDeprecated", base: { deprecated: true } },
+      { identifier: "becomesNotDeprecated", base: { deprecated: false } },
+    ]);
+
+    Services.obs.removeObserver(enginesObs, SearchUtils.TOPIC_ENGINE_MODIFIED);
+
+    Assert.deepEqual(
+      enginesAdded,
+      ["becomesNotDeprecated"],
+      "Should have added the engine that is no longer deprecated"
+    );
+    Assert.deepEqual(
+      enginesRemoved,
+      ["becomesDeprecated"],
+      "Should have removed the engine that has become deprecated"
+    );
+    Assert.deepEqual(
+      (await SearchService.getAppProvidedEngines()).map(e => e.id),
+      ["appDefault", "becomesNotDeprecated"],
+      "Should have the correct list of engines installed"
+    );
+  }
+);

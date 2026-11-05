@@ -1202,6 +1202,13 @@ const char* const nsXMLContentSerializer::kEntityStrings[] = {
     /* 7 */ "&#xD;",
 };
 
+/* static */
+bool nsXMLContentSerializer::AppendAndTranslateEntitiesInXMLAttributeValue(
+    const nsAString& aStr, nsAString& aOutputStr) {
+  return AppendAndTranslateEntities<kGTVal>(aStr, aOutputStr, kAttrEntities,
+                                            kEntityStrings);
+}
+
 bool nsXMLContentSerializer::AppendAndTranslateEntities(const nsAString& aStr,
                                                         nsAString& aOutputStr) {
   if (mInAttribute) {

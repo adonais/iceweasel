@@ -20455,24 +20455,6 @@
       "last_modified": 1666727870028
     },
     {
-      "schema": 1666727414241,
-      "derHash": "Fh7lOGMpsoon/0BXNlUqYh1ahEpDgR42I+Uu76C6hAo=",
-      "subject": "CN=QuoVadis Global SSL ICA G3,O=QuoVadis Limited,C=BM",
-      "subjectDN": "ME0xCzAJBgNVBAYTAkJNMRkwFwYDVQQKExBRdW9WYWRpcyBMaW1pdGVkMSMwIQYDVQQDExpRdW9WYWRpcyBHbG9iYWwgU1NMIElDQSBHMw==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "b8fd47c4234e14aae99e993f325e88c880408479e0c6ecf0a155bcb2481f0c25",
-        "size": 2353,
-        "filename": "KM3iZPSceB-hgYuNI-cSg4LRgTiUxCeGjrfXRQAY6Rs=.pem",
-        "location": "security-state-staging/intermediates/e04bb898-e61a-4362-98f8-e5c0e0559cd6.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "KM3iZPSceB+hgYuNI+cSg4LRgTiUxCeGjrfXRQAY6Rs=",
-      "crlite_enrolled": false,
-      "id": "3157d9c2-162a-4e53-9f7b-3bde40d1cd54",
-      "last_modified": 1666727869969
-    },
-    {
       "schema": 1666727415303,
       "derHash": "n/I8uTh7ngCDvVqhlU7t33kokKqOZ81NON0or0pDmtg=",
       "subject": "CN=AC SERVIDORES SEGUROS TIPO2,OU=Ceres,O=FNMT-RCM,C=ES",
@@ -29905,5 +29887,5 @@
       "last_modified": 1559865884636
     }
   ],
-  "timestamp": 1793588222528
+  "timestamp": 1793635022629
 }

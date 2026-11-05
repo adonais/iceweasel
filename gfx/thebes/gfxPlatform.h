@@ -992,6 +992,18 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   qcms_transform* mCMSBGRATransform = nullptr;
   mozilla::Maybe<nsTArray<uint8_t>> mCMSOutputProfileData;
 
+  // How mCMSOutputProfile was chosen, reported in about:support.
+  enum class CMSOutputProfileStatus : uint8_t {
+    Uninitialized,
+    ForcedSRGB,
+    NoProfileData,
+    ParseFailed,
+    Bogus,
+    Loaded,
+  };
+  CMSOutputProfileStatus mCMSOutputProfileStatus =
+      CMSOutputProfileStatus::Uninitialized;
+
   RefPtr<gfxASurface> mScreenReferenceSurface;
   RefPtr<mozilla::layers::MemoryPressureObserver> mMemoryPressureObserver;
 

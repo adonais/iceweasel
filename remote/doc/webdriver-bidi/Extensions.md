@@ -246,6 +246,25 @@ The individual fields are described below.
 
 * `moz:firefoxOptions`: see https://developer.mozilla.org/en-US/docs/Web/WebDriver/Reference/Capabilities/firefoxOptions
 
+### session.CapabilityResponseExtension
+
+* `moz:buildID`: The Firefox build ID.
+
+* `moz:headless`: `true` if Firefox is running in headless mode.
+
+* `moz:platformVersion`: The version of the operating system.
+
+* `moz:processID`: The process ID of the main Firefox process.
+
+* `moz:profile`: The path to the current profile directory, or
+  `"<protected>"` if the path could not be retrieved.
+
+* `moz:shutdownTimeout`: The time in milliseconds the application allows
+ shutdown blockers to run before crashing.
+
+* `moz:userContext`: The ID of the user context that the session is restricted to.
+ Not returned for unrestricted sessions.
+
 ### webExtension.InstallParametersExtension
 
 * `moz:allowPrivateBrowsing`: When set to `true`, the web extension will be allowed in private browsing mode.

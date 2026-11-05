@@ -260,6 +260,7 @@ suites:
             idbCurNext: "Measures IDBIndex cursor iteration via continue() over many rows sharing an index value"
             idbCurPKey: "Measures IDBIndex cursor iteration via continuePrimaryKey() over many rows sharing an index value"
             idbCurPrev: "Measures IDBIndex cursor iteration via continue() in the prev direction over many rows sharing an index value"
+            busydoh: "Distribution of DoH lookup times while a local page replays the request timeline recorded from detroitnews.com. The page, its hosts and the DoH resolver are all served by a local test server."
             dns-multi: "Tests multi-domain DNS lookup and pageload performance via native DNS."
             dns-native: "Tests DNS lookup time via native DNS."
             trr-cira: "Tests DNS lookup time on a CIRA TRR server."

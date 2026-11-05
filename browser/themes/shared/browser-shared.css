@@ -739,6 +739,14 @@ toolbarpaletteitem > #personal-bookmarks > #PlacesToolbar,
   flex-wrap: wrap;
 }
 
+notification-message img.inline-icon {
+  vertical-align: middle;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  max-height: 1lh;
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
 .bookmark-item[cutting] {
   > .toolbarbutton-icon,
   > .menu-icon {
@@ -769,7 +777,6 @@ menupopup::part(drop-indicator-container) {
 menupopup::part(drop-indicator-bar) {
   position: relative;
   /* these two margins must together compensate the indicator's height */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-block: -1px;
 }
 
@@ -812,7 +819,6 @@ menupopup::part(drop-indicator) {
     background-color: var(--lwt-accent-color); /* Known opaque */
     background-image: image(var(--toolbar-background-color)), var(--toolbox-background-image);
     background-repeat: no-repeat, var(--toolbox-background-repeat);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-position:
       top left,
       var(--toolbox-background-position);
@@ -996,7 +1002,15 @@ menupopup::part(drop-indicator) {
 }
 
 #speech-recognition-model-download-header-text {
+  font-size: 1em;
   font-weight: var(--font-weight-heading);
+  margin-block: 0;
+}
+
+/* This notification brings its own heading, so its description is body text,
+ * not the doorhanger headline it is styled as by default. */
+#speech-recognition-model-download-notification .popup-notification-description {
+  font-weight: var(--font-weight);
 }
 
 #speech-recognition-model-download-progress-content {
@@ -1449,28 +1463,36 @@ popupnotificationcontent {
 #ai-window-toggle {
   list-style-image: url("chrome://branding/content/about-logo.svg");
   border-radius: var(--border-radius-medium);
-  padding-inline-end: var(--toolbarbutton-padding-inner);
 
-  &:is([cui-areatype="toolbar"]):not([overflowedItem]) > .toolbarbutton-icon {
-    padding: var(--toolbarbutton-padding-inner);
+  /* Add a border to the logo, but only outside of HCM so it's still consistent with the other buttons there */
+  @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
+    &[cui-areatype="toolbar"]:not([overflowedItem]) {
+      > .toolbarbutton-badge-stack {
+        padding: var(--toolbarbutton-padding-inner-touch-narrow);
+      }
 
-    @media not -moz-pref("browser.nova.enabled") {
+      &:not(:hover, [open="true"]) > .toolbarbutton-badge-stack::before {
+        display: block;
+        position: absolute;
+        content: "";
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        inset: calc((100% - 26px) / 2); /* 26px is the expected width of this pseudo element */
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        border: var(--border-width) solid var(--toolbarbutton-background-color-hover);
+        border-radius: var(--border-radius-circle);
+      }
+    }
+  }
+
+  @media not -moz-pref("browser.nova.enabled") {
+    &[cui-areatype="toolbar"]:not([overflowedItem]) > .toolbarbutton-badge-stack {
       /* The design system does not have any inset box-shadow tokens. */
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       box-shadow: 0 0 16px 4px var(--box-shadow-color-darker-layer-1) inset;
-    }
 
-    @media -moz-pref("browser.nova.enabled") {
-      /* set default color for HCM */
-      --smart-window-toolbarbutton-color: var(--border-color-interactive-hover);
-      --toolbarbutton-background-color-hover: var(--background-color-box);
-      --toolbarbutton-background-color-active: var(--background-color-box);
-      --toolbarbutton-outline-color: var(--smart-window-toolbarbutton-color);
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-      border: var(--border-width) solid var(--smart-window-toolbarbutton-color);
-
-      @media not (forced-colors) {
-        --smart-window-toolbarbutton-color: color-mix(in srgb, var(--color-violet-desaturated-50) 15%, transparent);
+      :root[ai-window] & {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        box-shadow: 0 0 16px 4px var(--smartwindow-toggle-shadow-color) inset;
       }
     }
   }
@@ -1480,49 +1502,9 @@ popupnotificationcontent {
     list-style-image: url("chrome://browser/skin/smart-window-simplified.svg");
   }
 
-  :root[ai-window] &[cui-areatype="toolbar"]:not([overflowedItem]) {
-    @media (not (forced-colors)) and -moz-pref("browser.nova.enabled") {
-      /* toolbar button size (--toolbarbutton-icon-size) + 2 x the hover size (--toolbarbutton-padding-inner-compact) */
-      --smart-window-switcher-hover-size: calc(var(--toolbarbutton-icon-size) + 2 * var(--toolbarbutton-padding-inner-compact));
-      &::before {
-        aspect-ratio: 1;
-        background-color: transparent;
-        border-radius: var(--border-radius-circle);
-        content: "";
-        position: absolute;
-        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-        width: var(--smart-window-switcher-hover-size);
-        z-index: -1;
-      }
-
-      &:is(:hover, [open])::before {
-        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-        background-color: light-dark(color-mix(in srgb, var(--color-violet-desaturated-50) 15%, transparent), var(--color-violet-desaturated-50));
-      }
-    }
-
-    > .toolbarbutton-icon {
-      @media not -moz-pref("browser.nova.enabled") {
-        /* Smart Window icon has additional 2px padding per side, to be slightly smaller than Classic Window icon when used in Switcher */
-        padding: var(--toolbarbutton-padding-inner);
-        /* The design system does not have any inset box-shadow tokens. */
-        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-        box-shadow: 0 0 16px 4px var(--smartwindow-toggle-shadow-color) inset;
-      }
-
-      @media -moz-pref("browser.nova.enabled") {
-        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-        box-shadow: 0 0 16px 4px var(--background-color-box) inset;
-        --toolbarbutton-background-color-hover: var(--background-color-box);
-        --toolbarbutton-background-color-active: var(--background-color-box);
-        --toolbarbutton-outline-color-hover: var(--smart-window-toolbarbutton-color);
-        --toolbarbutton-outline-color-active: light-dark(
-          color-mix(in srgb, var(--color-violet-desaturated-50) 30%, transparent),
-          var(--color-violet-desaturated-50)
-        );
-        --toolbarbutton-outline-color-selected: var(--smart-window-toolbarbutton-color);
-      }
-    }
+  /* Smart Window toggle in Classic Window */
+  :root:not([ai-window]) & {
+    padding-inline-end: var(--toolbarbutton-padding-inner);
   }
 }
 

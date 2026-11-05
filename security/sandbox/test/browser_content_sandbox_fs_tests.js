@@ -260,19 +260,19 @@ async function testFileAccessMacOnly() {
     });
   }
 
-  // Test if we can read from $TMPDIR because we expect it
+  // Test if we can read from the user temp dir because we expect it
   // to be within /private/var. Reading from it should be
   // prevented in a 'web' process.
-  let macTempDir = GetDirFromEnvVariable("TMPDIR");
+  let macTempDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
 
   macTempDir.normalize();
   Assert.ok(
     macTempDir.path.startsWith("/private/var"),
-    "$TMPDIR is in /private/var"
+    "Temp dir is in /private/var"
   );
 
   tests.push({
-    desc: `$TMPDIR (${macTempDir.path})`,
+    desc: `temp dir (${macTempDir.path})`,
     ok: false,
     browser: webBrowser,
     file: macTempDir,
@@ -281,7 +281,7 @@ async function testFileAccessMacOnly() {
   });
   if (fileContentProcessEnabled) {
     tests.push({
-      desc: `$TMPDIR (${macTempDir.path})`,
+      desc: `temp dir (${macTempDir.path})`,
       ok: true,
       browser: fileBrowser,
       file: macTempDir,
@@ -292,8 +292,8 @@ async function testFileAccessMacOnly() {
 
   // The font registry directory is in the Darwin user cache dir which is
   // accessible with the getconf(1) library call using DARWIN_USER_CACHE_DIR.
-  // For this test, assume the cache dir is located at $TMPDIR/../C and use
-  // the $TMPDIR to derive the path to the registry.
+  // For this test, assume the cache dir is located at <temp dir>/../C and use
+  // the temp dir to derive the path to the registry.
   let fontRegistryDir = macTempDir.parent.clone();
   fontRegistryDir.appendRelativePath("C/com.apple.FontRegistry");
   if (fontRegistryDir.exists()) {

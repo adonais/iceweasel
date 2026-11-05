@@ -54,6 +54,10 @@ async function showCustomizePanel(win) {
 }
 
 add_task(async function test_customize_sidebar_actions() {
+  // This task asserts on the launcher's tool buttons, so make sure the launcher
+  // is showing. Opening a panel doesn't reveal it, and in practice the user
+  // reaches this panel from the launcher's settings button.
+  await SidebarTestUtils.ensureLauncherVisible(window);
   const customizeComponent = await showCustomizePanel(window);
   const sidebar = document.querySelector("sidebar-main");
   let toolEntrypointsCount = sidebar.toolButtons.length;
@@ -489,6 +493,7 @@ add_task(async function test_open_tabs_hover_preview_setting() {
       [POSITION_SETTING_PREF, true],
     ],
   });
+  await SidebarController.waitUntilStable();
 
   const panel = await showCustomizePanel(window);
   const { contentWindow } = SidebarController.browser;

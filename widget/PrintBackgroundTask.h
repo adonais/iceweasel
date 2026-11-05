@@ -19,16 +19,16 @@ namespace mozilla {
 
 template <typename T, typename Result>
 void ResolveOrReject(dom::Promise& aPromise, T&, Result& aResult) {
-  aPromise.MaybeResolve(std::forward<Result>(aResult));
+  aPromise.MaybeResolve(std::move(aResult));
 }
 
 template <typename T, typename Result, typename... Args>
 using PrintBackgroundTask = Result (T::*)(Args...) const;
 
-template <typename T, typename Result, typename... Args>
+template <typename T, typename Result, typename... TArgs, typename... Args>
 void SpawnPrintBackgroundTask(
     T& aReceiver, dom::Promise& aPromise,
-    PrintBackgroundTask<T, Result, Args...> aBackgroundTask, Args... aArgs) {
+    PrintBackgroundTask<T, Result, TArgs...> aBackgroundTask, Args&&... aArgs) {
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
       "nsPrinterBase::SpawnBackgroundTaskPromise", &aPromise);
   // We actually want to allow to access the printer data from the callback, so
@@ -61,10 +61,10 @@ void SpawnPrintBackgroundTask(
 
 // Gets a fresh promise into aResultPromise, that resolves whenever the print
 // background task finishes.
-template <typename T, typename Result, typename... Args>
+template <typename T, typename Result, typename... TArgs, typename... Args>
 nsresult PrintBackgroundTaskPromise(
     T& aReceiver, JSContext* aCx, dom::Promise** aResultPromise,
-    PrintBackgroundTask<T, Result, Args...> aTask, Args... aArgs) {
+    PrintBackgroundTask<T, Result, TArgs...> aTask, Args&&... aArgs) {
   ErrorResult rv;
   RefPtr<dom::Promise> promise =
       dom::Promise::Create(xpc::CurrentNativeGlobal(aCx), rv);
@@ -81,11 +81,11 @@ nsresult PrintBackgroundTaskPromise(
 
 // Resolves an async attribute via a background task, creating and storing a
 // promise as needed in aPromiseSlot.
-template <typename T, typename Result, typename... Args>
+template <typename T, typename Result, typename... TArgs, typename... Args>
 nsresult AsyncPromiseAttributeGetter(
     T& aReceiver, RefPtr<dom::Promise>& aPromiseSlot, JSContext* aCx,
     dom::Promise** aResultPromise,
-    PrintBackgroundTask<T, Result, Args...> aTask, Args... aArgs) {
+    PrintBackgroundTask<T, Result, TArgs...> aTask, Args&&... aArgs) {
   if (RefPtr<dom::Promise> existing = aPromiseSlot) {
     existing.forget(aResultPromise);
     return NS_OK;

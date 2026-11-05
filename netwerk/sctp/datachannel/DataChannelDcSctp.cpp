@@ -5,6 +5,7 @@
 #include "DataChannelDcSctp.h"
 
 #include <algorithm>
+#include <memory>
 
 #include "DataChannelLog.h"
 #include "mozilla/Components.h"
@@ -200,7 +201,7 @@ SendPacketStatus DataChannelConnectionDcSctp::SendPacketWithStatus(
     std::span<const uint8_t> aData) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_DEBUG(("%s: %p", __func__, this));
-  std::unique_ptr<MediaPacket> packet(new MediaPacket);
+  auto packet = std::make_unique<MediaPacket>();
   packet->SetType(MediaPacket::SCTP);
   packet->Copy(aData.data(), aData.size());
 

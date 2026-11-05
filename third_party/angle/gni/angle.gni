@@ -132,6 +132,10 @@ if (!defined(checkout_angle_restricted_traces)) {
   checkout_angle_restricted_traces = false
 }
 
+if (!defined(checkout_extra_traces)) {
+  checkout_extra_traces = true
+}
+
 # Subdirectory to place data files (e.g. layer JSON files).
 angle_data_dir = "angledata"
 
@@ -274,34 +278,36 @@ declare_args() {
   # pointers into safe crashes. Additionally, it can help align tests/benchmark
   # results closer with in-browser behavior, providing more accurate
   # performance metrics that reflect real-world usage in Chrome.
-  angle_use_partition_alloc =
-      # Only for Angle CQ and local development. Not for arbitrary embedders.
-      angle_standalone &&
-      # Only enable PartitionAlloc in assert-enabled builds to avoid performance
-      # penalties in pure release standalone builds.
-      angle_assert_always_on &&
-      # Angle CQ enables `checkout_angle_partition_alloc` by default so that it
-      # can be used in tests/benchmarks. For local development, you can enable
-      # it by adding
-      # ```
-      #    "custom_vars": {
-      #      "checkout_angle_partition_alloc": True,
-      #    },
-      # ```
-      # to your .gclient config.
-      checkout_angle_partition_alloc &&
-      # While GCC is supported, it still lacks CI coverage to catch regressions.
-      # Therefore, we disable it by default on GCC builds for now.
-      is_clang &&
-      # TODO(b/503180635): Enable PartitionAlloc on Windows standalone builds.
-      # Currently it is disabled because it leads to heap mismatch crashes in
-      # trace tests (DLLs vs EXE).
-      !is_win &&
-      # TODO(b/503180635): Enable PartitionAlloc on Android standalone builds.
-      # Currently it is disabled because it leads to systematic test failures
-      # (likely startup crashes) on 'angle-cq-android-arm64-rel' bot across
-      # almost all test suites (unittests, end2end_tests, deqp, etc.).
-      !is_android
+  if (!defined(angle_use_partition_alloc)) {
+    angle_use_partition_alloc =
+        # Only for Angle CQ and local development. Not for arbitrary embedders.
+        angle_standalone &&
+        # Only enable PartitionAlloc in assert-enabled builds to avoid
+        # performance penalties in pure release standalone builds.
+        angle_assert_always_on &&
+        # Angle CQ enables `checkout_angle_partition_alloc` by default so that
+        # it can be used in tests/benchmarks. For local development, you can
+        # enable it by adding ```
+        #    "custom_vars": {
+        #      "checkout_angle_partition_alloc": True,
+        #    },
+        # ```
+        # to your .gclient config.
+        checkout_angle_partition_alloc &&
+        # While GCC is supported, it still lacks CI coverage to catch
+        # regressions. Therefore, we disable it by default on GCC builds for
+        # now.
+        is_clang &&
+        # TODO(b/503180635): Enable PartitionAlloc on Windows standalone builds.
+        # Currently it is disabled because it leads to heap mismatch crashes in
+        # trace tests (DLLs vs EXE).
+        !is_win &&
+        # TODO(b/503180635): Enable PartitionAlloc on Android standalone builds.
+        # Currently it is disabled because it leads to systematic test failures
+        # (likely startup crashes) on 'angle-cq-android-arm64-rel' bot across
+        # almost all test suites (unittests, end2end_tests, deqp, etc.).
+        !is_android
+  }
 }
 
 declare_args() {
@@ -348,7 +354,8 @@ declare_args() {
   angle_enable_trace = false
   angle_enable_trace_android_logcat = false
   angle_enable_trace_events = false
-  angle_enable_platform_trace_events = build_with_chromium
+  angle_enable_perfetto = defined(angle_perfetto_cpp_dir) && angle_has_build &&
+                          (build_with_chromium || is_clang)
   angle_dump_pipeline_cache_graph = false
 
   angle_always_log_info = false
@@ -535,6 +542,7 @@ template("angle_shared_library") {
     target_type = "ios_framework_bundle"
     internal_target_name = target_name + "_framework"
   }
+
   target(target_type, internal_target_name) {
     forward_variables_from(invoker,
                            "*",

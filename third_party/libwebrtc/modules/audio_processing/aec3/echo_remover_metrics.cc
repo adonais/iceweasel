@@ -47,8 +47,10 @@ EchoRemoverMetrics::EchoRemoverMetrics() {
 }
 
 void EchoRemoverMetrics::ResetMetrics() {
+  // The floor and the ceiling are sentinels: each starts at the opposite end of
+  // the range from the extreme it tracks.
   erl_time_domain_ = DbMetric(0.f, 10000.f, 0.000f);
-  erle_time_domain_ = DbMetric(0.f, 0.f, 1000.f);
+  erle_time_domain_ = DbMetric(0.f, 1000.f, 0.f);
   saturated_capture_ = false;
 }
 

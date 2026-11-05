@@ -1,0 +1,21 @@
+[DEFAULT]
+support-files = [
+  "file_empty_test.pdf",
+  "head.js",
+  "moz.png",
+]
+prefs = [
+  "browser.newtabpage.enabled=false",
+  "browser.newtabpage.activity-stream.widgets.pictureOfTheDay.enabled=false",
+  "browser.ml.enable=true",
+  "pdfjs.annotationEditorMode=0",
+  "pdfjs.enableAltText=true",
+  "pdfjs.enableAltTextModelDownload=true",
+  "pdfjs.enableGuessAltText=true",
+  "pdfjs.enableUpdatedAddImage=true",
+  "pdfjs.featuresNotificationImpressionCount=99",
+  "pdfjs.altText.inferenceInAutomation=true",
+]
+
+["browser_pdfjs_alttext_perf.js"]
+disabled = "Disabled since we want to run this only as perftest, not in regular CI."

@@ -23,7 +23,8 @@ function loginList() {
 /**
  * Initialize logins and set prefs needed for the test.
  */
-add_task(async function test_initialize() {
+add_setup(async function test_initialize() {
+  Services.fog.testResetFOG();
   Services.prefs.setBoolPref("signon.showAutoCompleteFooter", true);
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("signon.showAutoCompleteFooter");
@@ -56,24 +57,27 @@ add_task(async function test_autocomplete_footer_onclick() {
         return !EventUtils.isHidden(footer);
       }, "Waiting for footer to become visible");
 
+      Services.fog.testResetFOG();
       let openingFunc = () => EventUtils.synthesizeMouseAtCenter(footer, {});
       let passwordManager = await openPasswordManager(openingFunc, false);
 
       info("Password Manager was opened");
+
+      Assert.equal(
+        Glean.autocomplete.recordInteraction.testGetValue(),
+        null,
+        "The footer does not record a secondary action interaction"
+      );
 
       Assert.ok(
         !passwordManager.filterValue,
         "Search string should not be set to filter logins"
       );
 
-      // open_management
-      await LoginTestUtils.telemetry.waitForEventCount(1);
-
-      // Check event telemetry recorded when opening management UI
-      TelemetryTestUtils.assertEvents(
-        [["pwmgr", "open_management", "autocomplete"]],
-        { category: "pwmgr", method: "open_management" },
-        { clear: true, process: "content" }
+      await Services.fog.testFlushAllChildren();
+      Assert.equal(
+        1,
+        Glean.pwmgr.openManagementAutocomplete.testGetValue().length
       );
 
       await passwordManager.close();
@@ -116,10 +120,10 @@ add_task(async function test_autocomplete_footer_keydown() {
       );
 
       // Check event telemetry recorded when opening management UI
-      TelemetryTestUtils.assertEvents(
-        [["pwmgr", "open_management", "autocomplete"]],
-        { category: "pwmgr", method: "open_management" },
-        { clear: true, process: "content" }
+      await Services.fog.testFlushAllChildren();
+      Assert.equal(
+        2,
+        Glean.pwmgr.openManagementAutocomplete.testGetValue().length
       );
 
       await passwordManager.close();

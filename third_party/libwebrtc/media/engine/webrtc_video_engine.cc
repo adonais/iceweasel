@@ -176,8 +176,7 @@ RTCErrorOr<Codec> AssignPayloadType(const SdpVideoFormat& format,
                                     PayloadTypePicker& pt_mapper,
                                     const FieldTrialsView& trials) {
   Codec codec = CreateVideoCodec(format);
-  RTCErrorOr<PayloadType> result =
-      pt_mapper.SuggestMapping(codec, /* excluder= */ nullptr);
+  RTCErrorOr<PayloadType> result = pt_mapper.SuggestMapping(codec);
   if (!result.ok()) {
     return result.MoveError();
   }
@@ -191,8 +190,7 @@ RTCErrorOr<Codec> AssignPayloadType(const SdpVideoFormat& format,
 RTCErrorOr<Codec> AddRtx(const Codec& primary_codec,
                          PayloadTypePicker& pt_mapper) {
   Codec rtx_codec = CreateVideoRtxCodec(Codec::kIdNotSet, primary_codec.id);
-  RTCErrorOr<PayloadType> result =
-      pt_mapper.SuggestMapping(rtx_codec, /* excluder= */ nullptr);
+  RTCErrorOr<PayloadType> result = pt_mapper.SuggestMapping(rtx_codec);
   if (!result.ok()) {
     return result.MoveError();
   }
@@ -1805,6 +1803,12 @@ void WebRtcVideoSendChannel::SetFrameEncryptor(
   } else {
     RTC_LOG(LS_ERROR) << "No stream found to attach frame encryptor";
   }
+}
+
+void WebRtcVideoSendChannel::EnableSframe() {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  sframe_options_.required = true;
+  // TODO(bugs.webrtc.org/479862368): Propagate Sframe options to the streams.
 }
 
 void WebRtcVideoSendChannel::SetEncoderSelector(
@@ -3518,6 +3522,12 @@ void WebRtcVideoReceiveChannel::SetFrameDecryptor(
   if (matching_stream != receive_streams_.end()) {
     matching_stream->second->SetFrameDecryptor(frame_decryptor);
   }
+}
+
+void WebRtcVideoReceiveChannel::EnableSframe() {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  sframe_options_.required = true;
+  // TODO(bugs.webrtc.org/479862368): Propagate Sframe options to the streams.
 }
 
 bool WebRtcVideoReceiveChannel::SetBaseMinimumPlayoutDelayMs(uint32_t ssrc,

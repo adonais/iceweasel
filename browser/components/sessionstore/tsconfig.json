@@ -4,7 +4,8 @@
     "content/*.js",
     "content/*.mjs",
     "types/*.ts",
-    "../tabbrowser/types/elements.ts"
+    "../tabbrowser/types/elements.ts",
+    "../../../tools/@types/browser-window-globals.d.ts"
   ],
   "extends": "../../../tools/@types/tsconfig.json",
 

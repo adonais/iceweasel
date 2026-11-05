@@ -26,7 +26,7 @@ address bar. An example of a mochitest is
 
 ### XPCShell
 
-[XPCShell Tests](https://firefox-source-docs.mozilla.org/testing/xpcshell/index.html) are another type of test relevant to the address bar. XPCShell tests
+{doc}`XPCShell Tests </testing/xpcshell/index>` are another type of test relevant to the address bar. XPCShell tests
 are often called unit tests because they tend to test specific modules or
 components in isolation, as opposed the mochitest which have access to the full
 browser chrome.
@@ -278,7 +278,7 @@ the message path, as the
 [overview](overview.md#direct-path-and-message-path) describes. The address
 and search bars in the toolbar take the direct path by default, so an ordinary
 test run says nothing about the message path. The New Tab search bar always
-takes the message path.
+takes the message path. {doc}`debugging` covers logging from content code.
 
 ### Running a Test Over the Message Path
 

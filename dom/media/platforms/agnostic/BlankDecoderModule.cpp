@@ -113,24 +113,23 @@ already_AddRefed<MediaData> BlankAudioDataCreator::Create(
   return data.forget();
 }
 
-already_AddRefed<MediaDataDecoder> BlankDecoderModule::CreateVideoDecoder(
-    const CreateDecoderParams& aParams) {
-  const VideoInfo& config = aParams.VideoConfig();
-  UniquePtr<DummyDataCreator> creator = MakeUnique<BlankVideoDataCreator>(
-      config.mDisplay.width, config.mDisplay.height, aParams.mImageContainer);
-  RefPtr<MediaDataDecoder> decoder = new DummyMediaDataDecoder(
-      std::move(creator), "blank media data decoder"_ns, aParams);
-  return decoder.forget();
-}
-
-already_AddRefed<MediaDataDecoder> BlankDecoderModule::CreateAudioDecoder(
-    const CreateDecoderParams& aParams) {
-  const AudioInfo& config = aParams.AudioConfig();
-  UniquePtr<DummyDataCreator> creator =
-      MakeUnique<BlankAudioDataCreator>(config.mChannels, config.mRate);
-  RefPtr<MediaDataDecoder> decoder = new DummyMediaDataDecoder(
-      std::move(creator), "blank media data decoder"_ns, aParams);
-  return decoder.forget();
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+BlankDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
+  UniquePtr<DummyDataCreator> creator;
+  if (aParams.IsVideo()) {
+    const VideoInfo& config = aParams.VideoConfig();
+    creator = MakeUnique<BlankVideoDataCreator>(
+        config.mDisplay.width, config.mDisplay.height, aParams.mImageContainer);
+  } else if (aParams.IsAudio()) {
+    const AudioInfo& config = aParams.AudioConfig();
+    creator = MakeUnique<BlankAudioDataCreator>(config.mChannels, config.mRate);
+  }
+  RefPtr<MediaDataDecoder> decoder;
+  if (creator) {
+    decoder = new DummyMediaDataDecoder(std::move(creator),
+                                        "blank media data decoder"_ns, aParams);
+  }
+  return CreateDecoderPromiseFrom(decoder.forget(), aParams);
 }
 
 media::DecodeSupportSet BlankDecoderModule::SupportsMimeType(

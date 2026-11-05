@@ -135,8 +135,8 @@ uint32_t HTMLHeadingElement::GetComputedHeadingOffset(uint32_t aMax) const {
     }
 
     // 3.5. Set inclusiveAncestor to the parent node of inclusiveAncestor within
-    // the flat tree.
-    inclusiveAncestor = inclusiveAncestor->GetFlattenedTreeParentElement();
+    // the composed tree.
+    inclusiveAncestor = inclusiveAncestor->GetParentElementCrossingShadowRoot();
   }
 
   // 4. Return offset.

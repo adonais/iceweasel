@@ -17,6 +17,7 @@
 #include <map>
 #include <string>
 
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/environment/environment.h"
 #include "api/jsep.h"
@@ -91,8 +92,14 @@ class SdpPayloadTypeSuggester : public PayloadTypeSuggester {
     PayloadTypeRecorder remote_payload_types_;
     RtpHeaderExtensionRecorder header_extensions_;
   };
+  void RecordRtpHeaderExtensions(const ContentInfo& content);
+  // Drops the recorders that `description` has no media section for.
+  void EraseUnusedRecorders(const SessionDescription* absl_nonnull description);
   PayloadTypeRecorder& LookupRecorder(absl::string_view mid, bool local);
   BundleTypeRecorder& LookupBundleRecorder(absl::string_view mid);
+  // Returns the name that the recorder of `mid` is stored under, which is the
+  // first mid of its bundle group, or `mid` itself if it is not bundled.
+  std::string BundleRecorderName(absl::string_view mid) const;
   PayloadTypePicker payload_type_picker_;
   RtpHeaderExtensionPicker rtp_header_extension_picker_;
   const Environment env_;

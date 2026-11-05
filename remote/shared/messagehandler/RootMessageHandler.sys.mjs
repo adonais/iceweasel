@@ -53,7 +53,7 @@ export class RootMessageHandler extends MessageHandler {
 
   /**
    * The ROOT MessageHandler is unique for a given MessageHandler network
-   * (ie for a given sessionId). Reuse the type as context id here.
+   * (ie for a given internalSessionId). Reuse the type as context id here.
    */
   static getIdFromContext() {
     return RootMessageHandler.type;
@@ -62,11 +62,11 @@ export class RootMessageHandler extends MessageHandler {
   /**
    * Create a new RootMessageHandler instance.
    *
-   * @param {string} sessionId
-   *     ID of the session the handler is used for.
+   * @param {string} internalSessionId
+   *     ID of the MessageHandler network the handler is part of.
    */
-  constructor(sessionId) {
-    super(sessionId, null);
+  constructor(internalSessionId) {
+    super(internalSessionId, null);
 
     this.#rootTransport = new lazy.RootTransport(this);
     this.#sessionData = new lazy.SessionData(this);
@@ -153,7 +153,7 @@ export class RootMessageHandler extends MessageHandler {
     this.emit("message-handler-protocol-event", {
       name,
       data,
-      sessionId: this.sessionId,
+      internalSessionId: this.internalSessionId,
     });
   }
 

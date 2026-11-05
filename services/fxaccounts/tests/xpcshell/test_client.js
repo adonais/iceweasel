@@ -880,6 +880,24 @@ add_task(async function test_getDeviceList() {
   await promiseStopServer(server);
 });
 
+add_task(async function test_activeSubscriptions() {
+  const subscriptions = [{ subscriptionId: "sub-1" }];
+  const server = httpd_setup({
+    "/oauth/subscriptions/active": function (request, response) {
+      Assert.equal(request.getHeader("Authorization"), "Bearer access-token");
+      const body = JSON.stringify(subscriptions);
+      response.setStatusLine(request.httpVersion, 200, "OK");
+      response.bodyOutputStream.write(body, body.length);
+    },
+  });
+
+  const client = new FxAccountsClient(server.baseURI);
+  const result = await client.activeSubscriptions("access-token");
+  Assert.deepEqual(result, subscriptions);
+
+  await promiseStopServer(server);
+});
+
 add_task(async function test_client_metrics() {
   function writeResp(response, msg) {
     if (typeof msg === "object") {

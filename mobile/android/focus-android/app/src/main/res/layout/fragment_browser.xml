@@ -37,6 +37,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@color/destructive"
+                android:layout_marginTop="@dimen/browser_toolbar_height"
                 android:visibility="gone"/>
 
             <mozilla.components.browser.toolbar.BrowserToolbar

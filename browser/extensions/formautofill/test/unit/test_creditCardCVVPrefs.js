@@ -3,7 +3,8 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 /**
  * Test that security codes are only captured when the feature has been rolled
- * out to the user and the user has not declined it.
+ * out to the user, the user has not declined it, and the Rust credit card
+ * store is the one serving.
  */
 
 "use strict";
@@ -14,12 +15,15 @@ const { FormAutofill } = ChromeUtils.importESModule(
 
 const SUPPORTED_PREF = "extensions.formautofill.creditCards.cvv.supported";
 const ENABLED_PREF = "extensions.formautofill.creditCards.cvv.enabled";
+const RUST_ACTIVE_PREF =
+  "extensions.formautofill.creditCards.storage.rust.active";
 
 const TESTCASES = [
   {
     description: "Rolled out, and the user has not declined",
     supported: "on",
     enabled: true,
+    rustActive: true,
     expectedSupported: true,
     expectedEnabled: true,
   },
@@ -27,6 +31,7 @@ const TESTCASES = [
     description: "Rolled out, but the user declined",
     supported: "on",
     enabled: false,
+    rustActive: true,
     expectedSupported: true,
     expectedEnabled: false,
   },
@@ -34,6 +39,7 @@ const TESTCASES = [
     description: "Not rolled out, even though the user has not declined",
     supported: "off",
     enabled: true,
+    rustActive: true,
     expectedSupported: false,
     expectedEnabled: false,
   },
@@ -41,6 +47,7 @@ const TESTCASES = [
     description: "Neither rolled out nor wanted",
     supported: "off",
     enabled: false,
+    rustActive: true,
     expectedSupported: false,
     expectedEnabled: false,
   },
@@ -50,6 +57,16 @@ const TESTCASES = [
     description: 'Any value other than "on" is not a rollout',
     supported: "detect",
     enabled: true,
+    rustActive: true,
+    expectedSupported: false,
+    expectedEnabled: false,
+  },
+  {
+    // The JSON store would keep the code in the clear.
+    description: "Rolled out and wanted, but the JSON store is serving",
+    supported: "on",
+    enabled: true,
+    rustActive: false,
     expectedSupported: false,
     expectedEnabled: false,
   },
@@ -71,22 +88,24 @@ add_task(async function test_cvv_prefs() {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(SUPPORTED_PREF);
     Services.prefs.clearUserPref(ENABLED_PREF);
+    Services.prefs.clearUserPref(RUST_ACTIVE_PREF);
   });
 
   for (const testcase of TESTCASES) {
     info(`Starting testcase: ${testcase.description}`);
     Services.prefs.setCharPref(SUPPORTED_PREF, testcase.supported);
     Services.prefs.setBoolPref(ENABLED_PREF, testcase.enabled);
+    Services.prefs.setBoolPref(RUST_ACTIVE_PREF, testcase.rustActive);
 
     Assert.equal(
       FormAutofill.isAutofillCreditCardCVVSupported,
       testcase.expectedSupported,
-      `isAutofillCreditCardCVVSupported with supported=${testcase.supported}`
+      `isAutofillCreditCardCVVSupported with supported=${testcase.supported}, rustActive=${testcase.rustActive}`
     );
     Assert.equal(
       FormAutofill.isAutofillCreditCardCVVEnabled,
       testcase.expectedEnabled,
-      `isAutofillCreditCardCVVEnabled with supported=${testcase.supported}, enabled=${testcase.enabled}`
+      `isAutofillCreditCardCVVEnabled with supported=${testcase.supported}, enabled=${testcase.enabled}, rustActive=${testcase.rustActive}`
     );
   }
 });

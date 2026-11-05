@@ -12,6 +12,7 @@
 #include "GLReadTexImageHelper.h"
 #include "ScopedGLHelpers.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/LayersSurfaces.h"
 
 using namespace mozilla;
@@ -62,6 +63,7 @@ SurfaceTextureImage::SurfaceTextureImage(
       mForceBT709ColorSpace(aForceBT709ColorSpace),
       mTransformOverride(aTransformOverride) {
   MOZ_ASSERT(mHandle);
+  MOZ_ASSERT(!gfx::gfxVars::ForceAImageReaderAndroid());
 }
 
 Maybe<SurfaceDescriptor> SurfaceTextureImage::GetDesc() {

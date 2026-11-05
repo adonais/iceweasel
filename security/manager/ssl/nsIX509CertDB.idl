@@ -89,15 +89,26 @@ interface nsIX509CertDB : nsISupports {
   const unsigned long TRUSTED_EMAIL   = 1 << 1;
 
   /**
-   *  Will find a certificate based on its dbkey
-   *  retrieved by getting the dbKey attribute of
-   *  the certificate.
+   *  Will find a certificate based on its NSS database key retrieved by
+   *  getting the dbKey attribute of the certificate. NB: If remote pkcs#11
+   *  modules are enabled (security.utility_pkcs11_module_process.enabled),
+   *  this must be called off the main thread. See asyncFindCertByDBKey for an
+   *  (asynchronous) version of this function that can be called from the main
+   *  thread.
    *
-   *  @param aDBkey Database internal key, as obtained using
-   *                attribute dbkey in nsIX509Cert.
+   *  @param aDBkey Database internal key, as obtained using nsIX509Cert.dbKey
    */
   [must_use]
   nsIX509Cert findCertByDBKey(in ACString aDBkey);
+
+  /**
+   *  Asynchronous version of findCertByDBKey. Will resolve with an
+   *  nsIX509Cert, or null if no corresponding certificate was found.
+   *
+   *  @param aDBkey Database internal key, as obtained using nsIX509Cert.dbKey
+   */
+  [must_use, implicit_jscontext]
+  Promise asyncFindCertByDBKey(in ACString aDBkey);
 
   /**
    *  Use this to import a stream sent down as a mime type into
@@ -238,6 +249,11 @@ interface nsIX509CertDB : nsISupports {
 
   /*
    *  Decode a raw data presentation and instantiate an object in memory.
+   *  NB: This creates a so-called "temporary certificate", with no permanent
+   *  trust records in the NSS certificate DB. Attempting to change the trust
+   *  of the resulting certificate is not supported (so e.g. setCertTrust will
+   *  fail). If a permanent certificate is required, use addCertFromBase64
+   *  instead.
    *
    *  @param base64 The raw representation of a certificate,
    *                encoded as Base 64.
@@ -248,6 +264,10 @@ interface nsIX509CertDB : nsISupports {
 
   /*
    *  Decode a raw data presentation and instantiate an object in memory.
+   *  NB: This creates a so-called "temporary certificate", with no permanent
+   *  trust records in the NSS certificate DB. Attempting to change the trust
+   *  of the resulting certificate is not supported (so e.g. setCertTrust will
+   *  fail). If a permanent certificate is required, use addCert instead.
    *
    *  @param certDER The raw representation of a certificate,
    *                 encoded as raw DER.

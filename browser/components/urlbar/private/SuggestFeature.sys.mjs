@@ -256,6 +256,29 @@ export class SuggestProvider extends SuggestFeature {
   }
 
   /**
+   * If the feature's results are dynamic, the subclass should override this
+   * and return the view template, per `UrlbarProvider.getViewTemplate()`.
+   *
+   * @param {UrlbarResult} _result
+   * @returns {?object}
+   */
+  getViewTemplate(_result) {
+    return undefined;
+  }
+
+  /**
+   * If the feature's results are dynamic, the subclass should override this
+   * and return the view update, per `UrlbarProvider.getViewUpdate()`.
+   *
+   * @param {UrlbarResult} _result
+   * @param {UrlbarParentController} _controller
+   * @returns {?object}
+   */
+  getViewUpdate(_result, _controller) {
+    return undefined;
+  }
+
+  /**
    * Whether the "show less frequently" result-menu command should still be
    * offered. Subclasses that support the command override this.
    *

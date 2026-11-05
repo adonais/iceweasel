@@ -14,13 +14,14 @@
 #include <mutex>
 #include <set>
 #include <string>
-#include "common/unsafe_buffers.h"
 
 #include "angle_gl.h"
 #include "common/MemoryBuffer.h"
 #include "common/PackedEnums.h"
 #include "common/SimpleMutex.h"
 #include "common/angleutils.h"
+#include "common/partition_alloc/raw_ptr.h"
+#include "common/unsafe_buffers.h"
 #include "libANGLE/Caps.h"
 #include "libANGLE/Constants.h"
 #include "libANGLE/Context_gles_1_0_autogen.h"
@@ -57,6 +58,7 @@ class EGLImplFactory;
 namespace egl
 {
 class AttributeMap;
+class Display;
 class Surface;
 struct Config;
 class Thread;
@@ -143,6 +145,7 @@ class ErrorSet : angle::NonCopyable
 
     const GLenum mResetStrategy;
     const bool mLoseContextOnOutOfMemory;
+    const bool mLoseContextOnInternalError;
 
     // Context-loss handling
     bool mContextLostForced;
@@ -639,6 +642,9 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     void deleteMemoryObject(MemoryObjectID memoryObject);
     void deleteSemaphore(SemaphoreID semaphore);
 
+    // Only used for capturing frame data in ANGLE_capture_enabled builds.
+    bool canProtectCoherentMemoryDirectly();
+
     void bindReadFramebuffer(FramebufferID framebufferHandle);
     void bindDrawFramebuffer(FramebufferID framebufferHandle);
 
@@ -734,8 +740,6 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     MemoryProgramCache *getMemoryProgramCache() const { return mMemoryProgramCache; }
     MemoryShaderCache *getMemoryShaderCache() const { return mMemoryShaderCache; }
 
-    angle::SimpleMutex &getProgramCacheMutex() const;
-
     bool hasBeenCurrent() const { return mHasBeenCurrent; }
     egl::Display *getDisplay() const { return mDisplay; }
     egl::Surface *getCurrentDrawSurface() const { return mCurrentDrawSurface; }
@@ -751,7 +755,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     }
 
     bool isShared() const { return mShared; }
-    bool isSharedContext() const { return mSharedContext; }
+    bool isSharedContext() const { return mSharedContext.load(std::memory_order_relaxed); }
     // Once a context is setShared() it cannot be undone
     void setShared()
     {
@@ -1067,7 +1071,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
 
     State mState;
     bool mShared;
-    bool mSharedContext;
+    std::atomic<bool> mSharedContext;
     bool mDisplayTextureShareGroup;
     bool mDisplaySemaphoreShareGroup;
 
@@ -1125,7 +1129,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     const bool mSurfacelessSupported;
     egl::Surface *mCurrentDrawSurface;
     egl::Surface *mCurrentReadSurface;
-    egl::Display *mDisplay;
+    raw_ptr<egl::Display> mDisplay;
     const bool mWebGLContext;
     const bool mHardenedContext;
     bool mBufferAccessValidationEnabled;
@@ -1205,7 +1209,7 @@ class [[nodiscard]] ScopedContextRef
 extern Context *GetCurrentValidContextTLS();
 extern void SetCurrentValidContextTLS(Context *context);
 #else
-extern thread_local Context *gCurrentValidContext;
+extern constinit thread_local Context *gCurrentValidContext;
 #endif
 
 extern void SetCurrentValidContext(Context *context);

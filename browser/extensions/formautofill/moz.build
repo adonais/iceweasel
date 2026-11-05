@@ -14,6 +14,7 @@ BROWSER_CHROME_MANIFESTS += [
     "test/browser/heuristics/third_party/browser.toml",
     "test/browser/performance/perftest.toml",
     "test/browser/rust/browser.toml",
+    "test/browser/rustCreditCard/browser.toml",
 ]
 
 # xpcshell_rust.toml lists tests xpcshell.toml also lists. Only the manifest

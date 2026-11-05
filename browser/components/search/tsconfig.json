@@ -3,7 +3,8 @@
     "*.sys.mjs",
     "test/**/*.mjs",
     "types/*.ts",
-    "../tabbrowser/types/elements.ts"
+    "../tabbrowser/types/elements.ts",
+    "../urlbar/types/urlbar.ts"
   ],
   "extends": "../../../tools/@types/tsconfig.json",
 

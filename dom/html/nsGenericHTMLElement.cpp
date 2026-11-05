@@ -310,7 +310,8 @@ void nsGenericHTMLElement::SetHidden(
 
   // 7. Otherwise, set the hidden attribute to the empty string.
   if (isHidden) {
-    aRv = SetAttr(kNameSpaceID_None, nsGkAtoms::hidden, u""_ns, true);
+    aRv = SetAttr(kNameSpaceID_None, nsGkAtoms::hidden, u""_ns, true,
+                  IsKnownNewAttr::No);
   } else {
     aRv = UnsetAttr(kNameSpaceID_None, nsGkAtoms::hidden, true);
   }
@@ -549,7 +550,8 @@ nsresult nsGenericHTMLElement::BindToTree(BindContext& aContext,
         [self = RefPtr<nsGenericHTMLElement>(this)]() {
           nsAutoString nonce;
           self->GetNonce(nonce);
-          self->SetAttr(kNameSpaceID_None, nsGkAtoms::nonce, u""_ns, true);
+          self->SetAttr(kNameSpaceID_None, nsGkAtoms::nonce, u""_ns, true,
+                        IsKnownNewAttr::No);
           self->SetNonce(nonce);
         }));
   }
@@ -999,7 +1001,7 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
 }
 
 EventListenerManager* nsGenericHTMLElement::GetEventListenerManagerForAttr(
-    nsAtom* aAttrName, bool* aDefer) {
+    nsAtom* aAttrName) {
   // Attributes on the body and frameset tags get set on the global object
   if ((mNodeInfo->Equals(nsGkAtoms::body) ||
        mNodeInfo->Equals(nsGkAtoms::frameset)) &&
@@ -1023,7 +1025,6 @@ EventListenerManager* nsGenericHTMLElement::GetEventListenerManagerForAttr(
     // override BindToTree for those classes and munge event listeners there?
     Document* document = OwnerDoc();
 
-    *aDefer = false;
     if ((win = document->GetInnerWindow())) {
       nsCOMPtr<EventTarget> piTarget(do_QueryInterface(win));
 
@@ -1033,8 +1034,7 @@ EventListenerManager* nsGenericHTMLElement::GetEventListenerManagerForAttr(
     return nullptr;
   }
 
-  return nsGenericHTMLElementBase::GetEventListenerManagerForAttr(aAttrName,
-                                                                  aDefer);
+  return nsGenericHTMLElementBase::GetEventListenerManagerForAttr(aAttrName);
 }
 
 #define EVENT(name_, id_, type_, struct_) /* nothing; handled by nsINode */
@@ -1116,7 +1116,7 @@ bool nsGenericHTMLElement::ParseAttribute(int32_t aNamespaceID,
                                           const nsAString& aValue,
                                           nsIPrincipal* aMaybeScriptedPrincipal,
                                           nsAttrValue& aResult) {
-  if (aNamespaceID == kNameSpaceID_None) {
+  if (aAttribute->IsStatic() && aNamespaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::dir) {
       return aResult.ParseEnumValue(aValue, kDirTable, false);
     }
@@ -1128,10 +1128,6 @@ bool nsGenericHTMLElement::ParseAttribute(int32_t aNamespaceID,
 
     if (aAttribute == nsGkAtoms::tabindex) {
       return aResult.ParseIntValue(aValue);
-    }
-
-    if (aAttribute == nsGkAtoms::referrerpolicy) {
-      return ParseReferrerAttribute(aValue, aResult);
     }
 
     if (aAttribute == nsGkAtoms::name) {
@@ -1787,7 +1783,7 @@ nsresult nsGenericHTMLElement::SetIntAttr(nsAtom* aAttr, int32_t aValue) {
   nsAutoString value;
   value.AppendInt(aValue);
 
-  return SetAttr(kNameSpaceID_None, aAttr, value, true);
+  return SetAttr(kNameSpaceID_None, aAttr, value, true, IsKnownNewAttr::No);
 }
 
 uint32_t nsGenericHTMLElement::GetUnsignedIntAttr(nsAtom* aAttr,
@@ -3304,16 +3300,21 @@ void nsGenericHTMLElement::GetInnerText(mozilla::dom::DOMString& aValue,
     }
   }
 
-  // Check for dirty reflow roots in the subtree from targetFrame; this requires
-  // a reflow flush.
-  bool dirty = frame && frame->PresShell()->FrameIsAncestorOfDirtyRoot(frame);
-
+  // Check for dirty reflow roots in the subtrees of frame and its
+  // continuations; this requires a reflow flush.
+  //
   // The way we do that is by checking whether the element has either of the two
-  // dirty bits (NS_FRAME_IS_DIRTY or NS_FRAME_HAS_DIRTY_DESCENDANTS) or if any
+  // dirty bits (NS_FRAME_IS_DIRTY or NS_FRAME_HAS_DIRTY_CHILDREN) or if any
   // ancestor has NS_FRAME_IS_DIRTY.  We need to check for NS_FRAME_IS_DIRTY on
   // ancestors since that is something that implies NS_FRAME_IS_DIRTY on all
   // descendants.
-  dirty |= frame && frame->HasAnyStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
+  bool dirty = false;
+  const PresShell* ps = frame ? frame->PresShell() : nullptr;
+  for (nsIFrame* f = frame; f && !dirty;
+       f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
+    dirty = ps->FrameIsAncestorOfDirtyRoot(f) ||
+            f->HasAnyStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
+  }
   while (!dirty && frame) {
     dirty |= frame->HasAnyStateBits(NS_FRAME_IS_DIRTY);
     frame = frame->GetInFlowParent();
@@ -3466,8 +3467,10 @@ bool nsGenericHTMLElement::CheckPopoverValidity(
   }
 
   // 3. If any of the following are true:
-  //   - element is not connected;
-  if (!IsInComposedDoc()) {
+  //   - expectedToBeShowing is false and element is not connected;
+  const bool expectedToBeShowing =
+      aExpectedState == PopoverVisibilityState::Showing;
+  if (!expectedToBeShowing && !IsInComposedDoc()) {
     // 1. If throwExceptions is true, then throw an "InvalidStateError"
     //    DOMException.
     aRv.ThrowInvalidStateError("Element is not connected");
@@ -3475,8 +3478,9 @@ bool nsGenericHTMLElement::CheckPopoverValidity(
     return false;
   }
 
-  //   - element's node document is not fully active;
-  if (!OwnerDoc()->IsFullyActive()) {
+  //   - expectedToBeShowing is false and element's node document is not fully
+  //     active;
+  if (!expectedToBeShowing && !OwnerDoc()->IsFullyActive()) {
     aRv.ThrowInvalidStateError("Element's document is not fully active");
     return false;
   }

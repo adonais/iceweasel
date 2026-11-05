@@ -8,30 +8,41 @@ DIRS += ['cairo/src']
 LICENSES += ["cairo"]
 LICENSES["cairo"].title = "Cairo Component Licenses"
 LICENSES["cairo"].text = "LICENSE-NOTICE.txt"
+LICENSES["cairo"].spdx = "HPND-sell-variant"
 LICENSES["cairo"].notice = """
-<p>This license, with different copyright holders, applies to certain files in the directory <code>gfx/cairo/</code>.
+<p>This license, with different copyright holders, applies to certain files of cairo.
             The copyright holders and the applicable ranges of dates are as follows:</p>
             <ul>
-              <li>2004 Richard D. Worth
-              <li>2004, 2005 Red Hat, Inc.
-              <li>2003 USC, Information Sciences Institute
-              <li>2004 David Reveman
-              <li>2005 Novell, Inc.
-              <li>2004 David Reveman, Peter Nilsson
-              <li>2000 Keith Packard, member of The XFree86 Project, Inc.
-              <li>2005 Lars Knoll &amp; Zack Rusin, Trolltech
-              <li>1998, 2000, 2002, 2004 Keith Packard
-              <li>2004 Nicholas Miell
-              <li>2005 Trolltech AS
+              <li>2000 Keith Packard
               <li>2000 SuSE, Inc.
-              <li>2003 Carl Worth
-              <li>1987, 1988, 1989, 1998 The Open Group
-              <li>1987, 1988, 1989 Digital Equipment Corporation, Maynard, Massachusetts.
-              <li>1998 Keith Packard
-              <li>2003 Richard Henderson
+              <li>2004 David Reveman
+              <li>2005, 2006 Red Hat, Inc.
+              <li>2006 Mozilla Corporation
+              <li>2006, 2010 Joonas Pihlaja
+              <li>2007 Netlabs
+              <li>2011 Andrea Canciani
             </ul>
 """
 
-LICENSED_UNDER += [
-    "cairo",
+LICENSED_UNDER += ["cairo"]
+LICENSED_UNDER["cairo"].paths = [
+    "cairo/src/cairo-freelist-private.h",
+    "cairo/src/cairo-freelist-type-private.h",
+    "cairo/src/cairo-freelist.c",
+    "cairo/src/cairo-pattern.c",
+    "cairo/src/cairo-time-private.h",
+    "cairo/src/cairo-time.c",
+    "cairo/src/cairo-xcb-resources.c",
+    "cairo/src/cairo-xlib-screen.c",
+    "cairo/src/cairo-xlib-xrender-private.h",
+]
+
+LICENSED_UNDER += ["mit"]
+LICENSED_UNDER["mit"].paths = [
+    "cairo/src/cairo-clip-tor-scan-converter.c",
+    "cairo/src/cairo-mono-scan-converter.c",
+    "cairo/src/cairo-spans-private.h",
+    "cairo/src/cairo-spans.c",
+    "cairo/src/cairo-tor-scan-converter.c",
+    "cairo/src/cairo-tor22-scan-converter.c",
 ]

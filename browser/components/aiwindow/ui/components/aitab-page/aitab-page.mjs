@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
+import { componentTypeName } from "chrome://browser/content/aiwindow/modules/AITabUtils.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-header.mjs";
@@ -18,20 +19,28 @@ import "chrome://browser/content/aiwindow/components/aitab-highlights.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-error.mjs";
 // eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/aitab-footer.mjs";
+// eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-text-block.mjs";
 
 // The same names the child and parent actors use, so a message can be traced
 // straight through without a translation table.
 const GET_PAGE_EVENT = "AITab:GetPage";
+const GET_HEADING_FONT_EVENT = "AITab:GetHeadingFont";
 const DELETE_PAGE_EVENT = "AITab:DeletePage";
+
+/**
+ * Page data received from the parent actor.
+ *
+ * @typedef {import("../../actors/AITabParent.sys.mjs").AITabData} AITabData
+ */
 
 /**
  * Root component for about:smartpage. Looks up the page config for the
  * generated page named in the page URL and renders it.
  *
- * @property {?object} page - Page config to render, or null when there is none.
- * @property {string} status - One of "loading", "unavailable", "error" or
- *   "ready". Drives which of the states below is rendered.
+ * @property {AITabData|null} page - Page config to render, or null when there is none.
+ * @property {"loading"|"unavailable"|"error"|"ready"} status - Determines which page state is rendered.
  */
 export class AITabPage extends MozLitElement {
   #renderers;
@@ -58,10 +67,50 @@ export class AITabPage extends MozLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.#loadPage().catch(error => {
-      console.error("Failed to load AI Tab page:", error);
-      this.status = "error";
-    });
+    this.#loadPage();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+
+    this.status = "loading";
+    this.page = null;
+
+    window.removeEventListener(
+      "AITab:RefreshPageData",
+      this.#onRefreshPageData
+    );
+  }
+
+  /**
+   * Fetches the heading font from the parent and installs it. The page does
+   * not wait for this: headings use the fallback fonts until the face is
+   * added, and keep them if it fails. The returned status is recorded with
+   * the view and does not change what the page shows.
+   *
+   * @returns {Promise<"ready"|"unavailable"|"error">}
+   */
+  async #loadHeadingFont() {
+    try {
+      const response = await this.#request(GET_HEADING_FONT_EVENT);
+      const buffer = response?.font;
+      if (!buffer) {
+        return "unavailable";
+      }
+      // The name comes from aitab-base.css, so the CSS and the face match.
+      const family = getComputedStyle(document.documentElement)
+        .getPropertyValue("--aitab-heading-font-family")
+        .trim();
+      const face = new FontFace(family, buffer, {
+        weight: "600",
+      });
+      await face.load();
+      document.fonts.add(face);
+      return "ready";
+    } catch (error) {
+      console.error("Failed to load the AI Tab heading font:", error);
+      return "error";
+    }
   }
 
   /**
@@ -74,19 +123,58 @@ export class AITabPage extends MozLitElement {
     return new URLSearchParams(window.location.search).get("page");
   }
 
-  async #loadPage() {
-    if (!this.pageName) {
-      this.status = "unavailable";
-      return;
-    }
-
-    const response = await this.#request(GET_PAGE_EVENT);
-    if (!response?.success) {
-      throw new Error(response?.error ?? "No response from the parent process");
-    }
-
-    this.page = response.page ?? null;
+  /**
+   * Handles the AITab:RefreshPageData event so the page can be refreshed
+   *
+   * @param {CustomEvent<AITabData>} event - Updated page data from the parent actor.
+   */
+  #onRefreshPageData = event => {
+    this.page = event.detail;
     this.status = this.page ? "ready" : "unavailable";
+  };
+
+  /**
+   * Loads the page data for the Smart Page and loads the
+   * custom font for Smart Page. Triggers a view telemetry
+   * event.
+   *
+   * @returns {Promise<void>} Resolves after loading the page and recording its view.
+   */
+  async #loadPage() {
+    window.addEventListener("AITab:RefreshPageData", this.#onRefreshPageData);
+
+    let font = "unavailable";
+    try {
+      if (!this.pageName) {
+        this.status = "unavailable";
+        return;
+      }
+
+      this.#loadHeadingFont().then(fontStatus => {
+        font = fontStatus;
+      });
+      const response = await this.#request(GET_PAGE_EVENT);
+      if (!response?.success) {
+        throw new Error(
+          response?.error ?? "No response from the parent process"
+        );
+      }
+
+      this.page = response.page ?? null;
+      this.status = this.page ? "ready" : "unavailable";
+    } catch (error) {
+      console.error("Failed to load AI Tab page:", error);
+      this.status = "error";
+    } finally {
+      const outcome = this.status;
+      await this.updateComplete;
+      this.dispatchEvent(
+        new CustomEvent("AITab:RecordView", {
+          bubbles: true,
+          detail: { outcome, font },
+        })
+      );
+    }
   }
 
   /**
@@ -141,6 +229,7 @@ export class AITabPage extends MozLitElement {
     // stored page, already formatted and localized by AITabParent.
     return html`
       <aitab-header
+        data-aitab-component=${componentTypeName(header)}
         .createdAt=${this.page?.createdAtLabel ?? ""}
         .title=${header.title ?? ""}
         .subhead=${header.subhead ?? ""}
@@ -161,10 +250,7 @@ export class AITabPage extends MozLitElement {
       .items=${highlights.items}
     ></aitab-highlights>`;
 
-    return this.#renderBlock({
-      type: highlights.component.toLowerCase(),
-      html: markup,
-    });
+    return this.#renderBlock(highlights, markup);
   }
 
   // TODO: Bug 2075400 - SourceLinks appear in multiple components
@@ -181,10 +267,7 @@ export class AITabPage extends MozLitElement {
       .references=${textBlock.references ?? []}
     ></aitab-text-block>`;
 
-    return this.#renderBlock({
-      type: textBlock.component.toLowerCase(),
-      html: markup,
-    });
+    return this.#renderBlock(textBlock, markup);
   }
 
   #renderRankedTable(rankedTable) {
@@ -195,10 +278,7 @@ export class AITabPage extends MozLitElement {
       .rows=${rankedTable.rows}
     ></aitab-table>`;
 
-    return this.#renderBlock({
-      type: rankedTable.component.toLowerCase(),
-      html: markup,
-    });
+    return this.#renderBlock(rankedTable, markup);
   }
 
   #renderCards(_cards) {
@@ -212,10 +292,7 @@ export class AITabPage extends MozLitElement {
       .items=${timeline.items ?? []}
     ></aitab-timeline>`;
 
-    return this.#renderBlock({
-      type: timeline.component.toLowerCase(),
-      html: markup,
-    });
+    return this.#renderBlock(timeline, markup);
   }
 
   #renderList(list) {
@@ -226,26 +303,24 @@ export class AITabPage extends MozLitElement {
       layout=${list.layout ?? "column"}
     ></aitab-list>`;
 
-    return this.#renderBlock({
-      type: list.component.toLowerCase(),
-      html: markup,
-    });
+    return this.#renderBlock(list, markup);
   }
 
-  #renderBlock(block) {
-    if (!block?.type) {
+  #renderBlock(block, markup) {
+    const type = block?.component?.toLowerCase?.();
+    if (!type) {
       return nothing;
     }
 
     return html`
-      <section class="aitab-block" data-block-type=${block.type}>
-        ${block.html}
+      <section
+        class="aitab-block"
+        data-block-type=${type}
+        data-aitab-component=${componentTypeName(block)}
+      >
+        ${markup}
       </section>
     `;
-  }
-
-  #renderFooter(_footer) {
-    return nothing;
   }
 
   #renderStatus() {
@@ -271,10 +346,10 @@ export class AITabPage extends MozLitElement {
     const hasHeader = children[0]?.component === "Header";
 
     return html`<main class="aitab-sheet">
-      ${hasHeader ? this.#renderHeader(children[0]) : nothing}
-      ${this.#renderBlocks(hasHeader ? children.slice(1) : children)}
-      ${this.#renderFooter()}
-    </main>`;
+        ${hasHeader ? this.#renderHeader(children[0]) : nothing}
+        ${this.#renderBlocks(hasHeader ? children.slice(1) : children)}
+      </main>
+      <aitab-footer></aitab-footer>`;
   }
 
   #renderBlocks(blocks) {

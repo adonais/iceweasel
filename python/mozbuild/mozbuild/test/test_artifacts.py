@@ -306,5 +306,74 @@ class TestFindPushheads(TestCase):
         )
 
 
+class TestShallowCloneRevisions(TestCase):
+    REPO = "https://github.com/mozilla-releng/git-backing"
+
+    def get_revisions(self, shallow, env):
+        artifacts = Artifacts.__new__(Artifacts)
+        artifacts._log = None
+        artifacts._git = "git"
+        artifacts._jj = None
+        artifacts._topsrcdir = "/src"
+        outputs = {"rev-parse": "head\n", "fetch": "", "rev-list": "a\nb\n"}
+        artifacts.check_git_output = mock.Mock(
+            side_effect=lambda args, **kwargs: outputs[args[0]]
+        )
+
+        vcs = mock.Mock(is_shallow=shallow)
+
+        with mock.patch.dict(os.environ, env, clear=True):
+            with mock.patch(
+                "mozbuild.artifacts.get_repository_object", return_value=vcs
+            ):
+                with mock.patch.object(
+                    Artifacts, "_is_git_cinnabar", new_callable=mock.PropertyMock
+                ) as cinnabar:
+                    with mock.patch.object(
+                        Artifacts, "_git_repo_kind", new_callable=mock.PropertyMock
+                    ) as kind:
+                        cinnabar.return_value = False
+                        kind.return_value = "firefox"
+                        revs = artifacts._get_revisions_from_git()
+        fetches = [
+            tuple(c.args[0])
+            for c in artifacts.check_git_output.call_args_list
+            if c.args[0][0] == "fetch"
+        ]
+        return revs, fetches
+
+    def test_shallow_automation_clone_is_deepened(self):
+        env = {"MOZ_AUTOMATION": "1", "MOZ_SOURCE_GIT_REPO": self.REPO}
+        revs, fetches = self.get_revisions(True, env)
+
+        self.assertEqual(revs, ["a", "b"])
+        self.assertEqual(
+            fetches,
+            [
+                (
+                    "fetch",
+                    "--no-tags",
+                    "--deepen=500",
+                    "--filter=tree:0",
+                    self.REPO,
+                    "head",
+                )
+            ],
+        )
+
+    def test_full_clone_is_not_deepened(self):
+        env = {"MOZ_AUTOMATION": "1", "MOZ_SOURCE_GIT_REPO": self.REPO}
+        revs, fetches = self.get_revisions(False, env)
+
+        self.assertEqual(revs, ["a", "b"])
+        self.assertEqual(fetches, [])
+
+    def test_shallow_local_clone_is_not_deepened(self):
+        revs, fetches = self.get_revisions(True, {})
+
+        self.assertEqual(revs, ["a", "b"])
+        self.assertEqual(fetches, [])
+
+
 if __name__ == "__main__":
     mozunit.main()

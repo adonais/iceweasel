@@ -66,6 +66,8 @@
 #  include "cutils/properties.h"
 #endif
 
+#include <memory>
+
 namespace mozilla {
 
 namespace {
@@ -845,8 +847,8 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
 
   std::call_once(mContentInited, [this] { InitContentPolicy(); });
   MOZ_ASSERT(mCommonContentPolicy);
-  UniquePtr<SandboxBroker::Policy> policy(
-      new SandboxBroker::Policy(*mCommonContentPolicy));
+  UniquePtr<SandboxBroker::Policy> policy =
+      std::make_unique<SandboxBroker::Policy>(*mCommonContentPolicy);
 
   // No read blocking at level 2 and below.
   // file:// processes also get global read permissions

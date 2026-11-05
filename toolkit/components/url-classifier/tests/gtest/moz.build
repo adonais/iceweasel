@@ -33,3 +33,7 @@ UNIFIED_SOURCES += [
 ]
 
 FINAL_LIBRARY = "xul-gtest"
+
+SOURCE_HEADERS += [
+    "Common.h",
+]

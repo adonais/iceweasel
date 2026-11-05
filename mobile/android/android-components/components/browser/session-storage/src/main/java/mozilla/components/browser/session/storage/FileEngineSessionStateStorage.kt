@@ -7,6 +7,8 @@ package mozilla.components.browser.session.storage
 import android.content.Context
 import android.util.AtomicFile
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSessionState
 import mozilla.components.concept.engine.EngineSessionStateStorage
@@ -30,27 +32,31 @@ class FileEngineSessionStateStorage(
 ) : EngineSessionStateStorage {
     private val filesDir by lazy { context.filesDir }
 
-    override suspend fun write(uuid: String, state: EngineSessionState): Boolean {
-        return getStateFile(uuid).streamJSON {
-            state.writeTo(this)
-        }
-    }
-
-    override suspend fun read(uuid: String): EngineSessionState? {
-        val jsonObject =
-            getStateFile(uuid).readAndDeserialize { json ->
-                JSONObject(json)
+    override suspend fun write(uuid: String, state: EngineSessionState): Boolean =
+        withContext(Dispatchers.IO) {
+            getStateFile(uuid).streamJSON {
+                state.writeTo(this)
             }
-        return jsonObject?.let { engine.createSessionState(it) }
-    }
+        }
 
-    override suspend fun delete(uuid: String) {
-        getStateFile(uuid).delete()
-    }
+    override suspend fun read(uuid: String): EngineSessionState? =
+        withContext(Dispatchers.IO) {
+            val jsonObject =
+                getStateFile(uuid).readAndDeserialize { json ->
+                    JSONObject(json)
+                }
+            jsonObject?.let { engine.createSessionState(it) }
+        }
 
-    override suspend fun deleteAll() {
-        getStateDirectory(filesDir).truncateDirectory()
-    }
+    override suspend fun delete(uuid: String) =
+        withContext(Dispatchers.IO) {
+            getStateFile(uuid).delete()
+        }
+
+    override suspend fun deleteAll() =
+        withContext(Dispatchers.IO) {
+            getStateDirectory(filesDir).truncateDirectory()
+        }
 
     private fun getStateFile(uuid: String): AtomicFile {
         return AtomicFile(File(getStateDirectory(filesDir), uuid))

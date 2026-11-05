@@ -39,6 +39,7 @@ describe("DiscoveryStreamFeed", () => {
   let services;
   let restoreGlobals;
   let surfaceIdSet;
+  let surfaceIdRejectedRecord;
 
   // The feed logs the failures these cases drive it into. Swap out the spy the
   // jest-setup console.error guard installed for the duration of the case, so
@@ -61,7 +62,7 @@ describe("DiscoveryStreamFeed", () => {
     feed.onAction(action);
   };
 
-  const stubOutFetchFromEndpointWithRealisticData = () => {
+  const stubOutFetchFromEndpointWithRealisticData = (overrides = {}) => {
     jest.spyOn(feed, "fetchFromEndpoint").mockResolvedValue({
       recommendedAt: 1755834072383,
       surfaceId: "NEW_TAB_EN_US",
@@ -100,6 +101,7 @@ describe("DiscoveryStreamFeed", () => {
       settings: {
         recsExpireTime: 1,
       },
+      ...overrides,
     });
   };
 
@@ -127,9 +129,15 @@ describe("DiscoveryStreamFeed", () => {
     );
 
     surfaceIdSet = jest.fn();
+    surfaceIdRejectedRecord = jest.fn();
     restoreGlobals = stubGlobals({
       fetch: fetchStub,
-      Glean: { newtabContent: { surfaceId: { set: surfaceIdSet } } },
+      Glean: {
+        newtabContent: {
+          surfaceId: { set: surfaceIdSet },
+          surfaceIdRejected: { record: surfaceIdRejectedRecord },
+        },
+      },
       Services: services,
       PersistentCache,
       PathUtils: {
@@ -750,6 +758,45 @@ describe("DiscoveryStreamFeed", () => {
     });
   });
 
+  describe("#formatComponentFeedRequest location interests", () => {
+    const engagementVector = { values: ["100"], model_id: "engagement" };
+    const locationVector = { values: ["010"], model_id: "location" };
+
+    it.each([
+      [true, true, locationVector, locationVector],
+      [true, false, locationVector, engagementVector],
+      [false, true, locationVector, engagementVector],
+      [true, true, null, engagementVector],
+    ])(
+      "selects interests with enabled=%s, fallback=%s, location=%s",
+      (enabled, shouldUseLocationVector, location, expected) => {
+        for (const [name, value] of Object.entries({
+          "discoverystream.sections.personalization.inferred.user.enabled": true,
+          "discoverystream.sections.personalization.inferred.enabled": true,
+          "discoverystream.merino-provider.ohttp.enabled": true,
+          trainhopConfig: { locationInitInferred: { enabled } },
+        })) {
+          feed.store.dispatch({ type: at.PREF_CHANGED, data: { name, value } });
+        }
+        feed.store.dispatch({
+          type: at.INFERRED_PERSONALIZATION_UPDATE,
+          data: {
+            coarsePrivateInferredInterests: engagementVector,
+            locationPrivateInferredInterests: location,
+            shouldUseLocationVector,
+          },
+        });
+
+        const body = JSON.parse(feed.formatComponentFeedRequest().body);
+        expect(body.inferredInterests).toEqual(expected);
+        expect(
+          feed.store.getState().InferredPersonalization
+            .coarsePrivateInferredInterests
+        ).toEqual(engagementVector);
+      }
+    );
+  });
+
   describe("#getComponentFeed", () => {
     it("should fetch fresh feed data if cache is empty", async () => {
       const fakeCache = {};
@@ -797,13 +844,13 @@ describe("DiscoveryStreamFeed", () => {
 
       expect(feedResp).toEqual({ data: { status: "failed" } });
     });
-    function stubOutComponentFeedDeps() {
+    function stubOutComponentFeedDeps(responseOverrides) {
       jest.spyOn(feed.cache, "get").mockResolvedValue({});
       jest.spyOn(feed, "rotate").mockImplementation(val => val);
       jest
         .spyOn(feed, "scoreItemsInferred")
         .mockImplementation(val => ({ data: val, filtered: [] }));
-      stubOutFetchFromEndpointWithRealisticData();
+      stubOutFetchFromEndpointWithRealisticData(responseOverrides);
     }
 
     function setPrefCalledFor(dispatchSpy, name) {
@@ -820,6 +867,7 @@ describe("DiscoveryStreamFeed", () => {
       await feed.getComponentFeed("foo.com");
 
       expect(surfaceIdSet).toHaveBeenCalledWith("NEW_TAB_EN_US");
+      expect(surfaceIdRejectedRecord).not.toHaveBeenCalled();
     });
     it("should record surfaceId in Glean when the private ping is disabled", async () => {
       stubOutComponentFeedDeps();
@@ -846,6 +894,47 @@ describe("DiscoveryStreamFeed", () => {
       await feed.getComponentFeed("foo.com");
 
       expect(setPrefCalledFor(dispatchSpy, "telemetry.surfaceId")).toBe(true);
+    });
+    it("should drop a surfaceId that doesn't match the request", async () => {
+      stubOutComponentFeedDeps({ surfaceId: "NEW_TAB_DE_AT" });
+      jest.spyOn(console, "warn").mockImplementation(() => {});
+      setPref("telemetry.privatePing.enabled", true);
+      const dispatchSpy = jest.spyOn(feed.store, "dispatch");
+
+      const { data } = await feed.getComponentFeed("foo.com");
+
+      expect(data.surfaceId).toBe("");
+      expect(surfaceIdSet).not.toHaveBeenCalled();
+      expect(surfaceIdRejectedRecord).toHaveBeenCalledWith();
+      expect(setPrefCalledFor(dispatchSpy, "telemetry.surfaceId")).toBe(false);
+      expect(dispatchSpy).toHaveBeenCalledWith({
+        type: at.CLEAR_PREF,
+        data: { name: "telemetry.surfaceId" },
+      });
+    });
+  });
+
+  describe("#formatComponentFeedRequest utc_offset", () => {
+    beforeEach(() => {
+      feed.store.dispatch({
+        type: at.PREF_CHANGED,
+        data: {
+          name: "inferredPersonalizationConfig",
+          value: { normalized_time_zone_offset: true },
+        },
+      });
+    });
+    it("should send utc_offset when a surfaceId is known", () => {
+      setPref("telemetry.surfaceId", "NEW_TAB_EN_US");
+
+      const body = JSON.parse(feed.formatComponentFeedRequest().body);
+
+      expect(body).toHaveProperty("utc_offset", 0);
+    });
+    it("should omit utc_offset when no surfaceId is known", () => {
+      const body = JSON.parse(feed.formatComponentFeedRequest().body);
+
+      expect(body).not.toHaveProperty("utc_offset");
     });
   });
 

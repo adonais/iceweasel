@@ -496,7 +496,7 @@ export class nsContentDispatchChooser {
 
     let key = this._getSkipProtoDialogPermissionKey(type);
     return (
-      Services.perms.testPermissionFromPrincipal(aPrincipal, key) ===
+      Services.perms.testExactPermissionFromPrincipal(aPrincipal, key) ===
       Services.perms.ALLOW_ACTION
     );
   }

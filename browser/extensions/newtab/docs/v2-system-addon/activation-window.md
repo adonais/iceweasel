@@ -4,7 +4,7 @@
 
 The Activation Window feature allows the browser to experiment with the first hours of a new profile's lifetime by temporarily setting different defaults during a configurable time period (typically 48 hours). This enables:
 
-- Hiding or showing specific content sections (top sites, top stories) during the activation window
+- Hiding or showing specific content sections (top sites, top stories, widgets) during the activation window
 - Displaying messaging when entering or exiting the activation window
 - Reverting to normal defaults after the activation window expires
 - Preserving user preference changes made during the activation window
@@ -60,6 +60,7 @@ The activation window is configured via Nimbus using the `newtabTrainhop` featur
       maxProfileAgeInHours: 48,
       disableTopSites: true,
       disableTopStories: true,
+      disableWidgets: true,
       variant: "a",
       enterActivationWindowMessageID: "ACTIVATION_WINDOW_WELCOME_V1",
       exitActivationWindowMessageID: "ACTIVATION_WINDOW_EXIT_V1"
@@ -74,6 +75,7 @@ The activation window is configured via Nimbus using the `newtabTrainhop` featur
 - **`maxProfileAgeInHours`** (number, default: 48): Duration of the activation window in hours
 - **`disableTopSites`** (boolean, default: false): Hide top sites section during activation window
 - **`disableTopStories`** (boolean, default: false): Hide top stories section during activation window
+- **`disableWidgets`** (boolean, default: false): Hide widgets during activation window
 - **`variant`** (string, default: ""): Experiment variant identifier
 - **`enterActivationWindowMessageID`** (string, default: ""): Message ID to show when entering the window
 - **`exitActivationWindowMessageID`** (string, default: ""): Message ID to show when exiting the window

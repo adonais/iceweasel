@@ -29,6 +29,8 @@
             <panel-item>Muted</panel-item>
           </panel-list>
         </panel-item>
+        <panel-item>🦊 Fox</panel-item>
+        <panel-item>(Default)</panel-item>
       </panel-list>
       <button id="anchor">Open the panel</button>
       <button id="outside">Outside the panel</button>
@@ -41,12 +43,13 @@
       );
 
       let panelList = document.querySelector("panel-list");
-      let [banking, personal, work, writing, moreHost] = panelList.children;
+      let [banking, personal, work, writing, moreHost, fox, defaultItem] =
+        panelList.children;
       let submenu, pinned;
       let clicks = [];
       // A click on a submenu item bubbles through its host item, so the host
       // records nothing.
-      for (let item of [banking, personal, work, writing]) {
+      for (let item of [banking, personal, work, writing, fox, defaultItem]) {
         item.addEventListener("click", () => clicks.push(item));
       }
 
@@ -276,6 +279,36 @@
         is(clicks[0], personal, "First-letter matching is case-insensitive");
         ok(!panelList.open, "Activating the item closed the panel");
         await hidePanel();
+      });
+
+      add_task(async function testSkipsLeadingEmojiAndPunctuation() {
+        for (let [key, item] of [
+          ["f", fox],
+          ["d", defaultItem],
+          ["(", defaultItem],
+        ]) {
+          clicks = [];
+          await showPanel();
+          await pressKey(key);
+          is(clicks.length, 1, `"${key}" activated one item`);
+          is(
+            clicks[0],
+            item,
+            `"${key}" matches the first typeable character or the literal start`
+          );
+          await hidePanel();
+        }
+      });
+
+      add_task(async function testEmptyAccesskeyMatchesLabel() {
+        personal.setAttribute("accesskey", "");
+        clicks = [];
+        await showPanel();
+        await pressKey("p");
+        is(clicks.length, 1, "One item was activated");
+        is(clicks[0], personal, "An empty accesskey counts as none");
+        await hidePanel();
+        personal.removeAttribute("accesskey");
       });
     </script>
   </body>

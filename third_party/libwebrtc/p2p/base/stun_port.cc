@@ -240,6 +240,10 @@ bool UDPPort::Init() {
       this, [this](AsyncPacketSocket* socket, const SocketAddress& address) {
         OnLocalAddressReady(socket, address);
       });
+  socket_->SubscribeCloseEvent(this,
+                               [this](AsyncPacketSocket* socket, int error) {
+                                 OnSocketClose(socket, error);
+                               });
   return true;
 }
 
@@ -250,6 +254,7 @@ UDPPort::~UDPPort() {
   socket_->UnsubscribeSentPacket(this);
   socket_->UnsubscribeReadyToSend(this);
   socket_->UnsubscribeAddressReady(this);
+  socket_->UnsubscribeCloseEvent(this);
 }
 
 void UDPPort::PrepareAddress() {
@@ -430,6 +435,21 @@ void UDPPort::OnSentPacket(AsyncPacketSocket* /* socket */,
 
 void UDPPort::OnReadyToSend(AsyncPacketSocket* /* socket */) {
   Port::OnReadyToSend();
+}
+
+void UDPPort::OnSocketClose(AsyncPacketSocket* socket, int error) {
+  RTC_DCHECK_EQ(socket, socket_);
+  RTC_LOG(LS_WARNING) << ToString()
+                      << ": UDP socket closed with error: " << error;
+  error_ = error;
+  request_manager_.Clear();
+  for (const SocketAddress& server : server_addresses_) {
+    if (!bind_request_succeeded_servers_.contains(server) &&
+        !bind_request_failed_servers_.contains(server)) {
+      OnStunBindingOrResolveRequestFailed(
+          server, STUN_ERROR_SERVER_NOT_REACHABLE, "UDP socket was closed.");
+    }
+  }
 }
 
 void UDPPort::SendStunBindingRequests() {

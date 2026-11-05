@@ -360,7 +360,7 @@ std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> encoder_queue =
       env.task_queue_factory().CreateTaskQueue(
           "VideoEncoderQueue",
-          env.field_trials().IsEnabled("WebRTC-MediaTaskQueuePriorities")
+          !env.field_trials().IsDisabled("WebRTC-MediaTaskQueuePriorities")
               ? TaskQueueFactory::Priority::kVideo
               : TaskQueueFactory::Priority::kNormal);
   TaskQueueBase* encoder_queue_ptr = encoder_queue.get();
@@ -549,13 +549,14 @@ VideoSendStreamImpl::~VideoSendStreamImpl() {
 void VideoSendStreamImpl::AddAdaptationResource(
     scoped_refptr<Resource> resource) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  video_stream_encoder_->AddAdaptationResource(resource);
+  adaptation_resources_.push_back(resource);
+  video_stream_encoder_->AddAdaptationResource(std::move(resource));
 }
 
 std::vector<scoped_refptr<Resource>>
 VideoSendStreamImpl::GetAdaptationResources() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  return video_stream_encoder_->GetAdaptationResources();
+  return adaptation_resources_;
 }
 
 void VideoSendStreamImpl::SetSource(

@@ -988,7 +988,32 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
     return nil;
   }
 
-  return nsCocoaUtils::ToNSString(shortcut);
+  // Rename the Meta and Alt keys to the labels printed on Apple keyboards.
+  nsAutoString platformShortcut;
+  auto processAndAppendKey = [&](const nsAString& aKey) {
+    if (aKey.LowerCaseEqualsLiteral("meta")) {
+      platformShortcut.AppendLiteral("Command");
+    } else if (aKey.LowerCaseEqualsLiteral("alt")) {
+      platformShortcut.AppendLiteral("Option");
+    } else {
+      platformShortcut.Append(aKey);
+    }
+  };
+  uint32_t keyStart = 0;
+  for (uint32_t i = 0; i < shortcut.Length(); i++) {
+    char16_t currChar = shortcut[i];
+    if (currChar == '+' || nsCoreUtils::IsWhitespace(currChar)) {
+      // If we've hit a delimiter, fetch the preceding key, convert it, and
+      // append it.
+      processAndAppendKey(Substring(shortcut, keyStart, i - keyStart));
+      platformShortcut.Append(currChar);
+      keyStart = i + 1;
+    }
+  }
+  // Handle the final key
+  processAndAppendKey(Substring(shortcut, keyStart));
+
+  return nsCocoaUtils::ToNSString(platformShortcut);
 }
 
 #ifndef RELEASE_OR_BETA

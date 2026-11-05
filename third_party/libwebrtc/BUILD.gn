@@ -59,12 +59,10 @@ if (!build_with_chromium && !build_with_mozilla) {
         ":rust_tests",
         ":test_suites",
         ":voip_unittests",
-        ":webrtc_perf_tests",
         "common_audio:common_audio_unittests",
         "common_video:common_video_unittests",
         "examples:examples_unittests",
         "media:rtc_media_unittests",
-        "modules:modules_unittests",
         "modules/audio_coding:audio_coding_tests",
         "modules/audio_processing:audio_processing_tests",
         "modules/remote_bitrate_estimator:rtp_to_text",
@@ -78,13 +76,10 @@ if (!build_with_chromium && !build_with_mozilla) {
         "pc:svc_tests",
         "rtc_tools:video_encoder",
         "rtc_tools:video_replay",
-        "stats:rtc_stats_unittests",
-        "system_wrappers:system_wrappers_unittests",
         "test",
         "video:screenshare_loopback",
         "video:sv_loopback",
         "video:video_loopback",
-        "video/timing:video_timing_tests",
       ]
       deps += [ "tools_webrtc:validate_test_registration" ]
       if (use_libfuzzer) {
@@ -137,14 +132,21 @@ if (rtc_include_tests) {
     testonly = true
     deps = [
       ":webrtc_nonparallel_tests",
+      ":webrtc_perf_tests",
       "//call:call_tests",
       "//call/adaptation:resource_adaptation_tests",
-      "//modules:modules_tests",
+      "//modules:modules_unittests",
+      "//modules/audio_coding:audio_coding_unittests",
       "//modules/audio_processing:audio_processing_unittests",
+      "//modules/rtp_rtcp:rtp_rtcp_unittests",
+      "//modules/video_coding:video_coding_unittests",
       "//pc:peerconnection_unittests",
+      "//stats:rtc_stats_unittests",
+      "//system_wrappers:system_wrappers_unittests",
       "//test:test_support_unittests",
       "//video:video_tests",
       "//video/adaptation:video_adaptation_tests",
+      "//video/timing:video_timing_tests",
     ]
     if (rtc_desktop_capture_supported) {
       deps += [
@@ -814,25 +816,18 @@ if (rtc_include_tests && !build_with_chromium) {
     }
   }
 
-  rtc_test("webrtc_perf_tests") {
-    testonly = true
-    deps = [
+  rtc_test_suite("webrtc_perf_tests") {
+    tests = [
       "call:call_perf_tests",
-      "modules/audio_coding:audio_coding_perf_tests",
-      "modules/audio_processing:audio_processing_perf_tests",
-      "pc:peerconnection_perf_tests",
-      "video:video_full_stack_tests",
-      "video:video_pc_full_stack_tests",
+      "call:rampup_tests",
+      "modules/audio_coding:neteq_performance_unittest",
+      "modules/audio_coding:opus_complexity_unittest",
+      "modules/audio_processing:audio_processing_performance_unittest",
+      "pc:peer_connection_callsetup_perf_tests",
+      "pc:peer_connection_rampup_tests",
+      "video:full_stack_tests",
+      "video:pc_full_stack_tests",
     ]
-
-    data_deps = [ "resources:webrtc_perf_tests_data" ]
-
-    if (is_android) {
-      deps += [ "//build/android/gtest_apk:native_test_instrumentation_test_runner_java" ]
-    }
-    if (is_ios) {
-      deps += [ "resources:webrtc_perf_tests_bundle_data" ]
-    }
   }
 
   rtc_test_suite("webrtc_nonparallel_tests") {
@@ -861,6 +856,7 @@ if (rtc_include_tests && !build_with_chromium) {
     testonly = true
     deps = [
       "api/units:units_rust_unit_tests",
+      "modules/rtp_rtcp:rust_unit_tests",
       "rtc_base:rust_unit_tests",
       "rust/webrtc_import:tests",
     ]

@@ -66,5 +66,7 @@ skip-if = [
 ]
 
 ["test_ProfilerMarkers.js"]
+head = "head.js head_ProfilerMarkers.js"
 
 ["test_ProfilerMarkersIPC.js"]
+head = "head.js head_ProfilerMarkers.js"

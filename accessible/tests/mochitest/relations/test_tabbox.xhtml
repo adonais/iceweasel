@@ -1,0 +1,140 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin" type="text/css"?>
+<?xml-stylesheet href="chrome://mochikit/content/tests/SimpleTest/test.css"
+                 type="text/css"?>
+
+<window xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        title="XUL tabbox relation tests">
+
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js" />
+
+  <script type="application/javascript"
+          src="../common.js" />
+  <script type="application/javascript"
+          src="../relations.js" />
+  <script type="application/javascript"
+          src="../name.js" />
+  <script type="application/javascript"
+          src="../role.js" />
+  <script type="application/javascript"
+          src="../events.js" />
+
+  <script type="application/javascript">
+  <![CDATA[
+    function testPair(tab, panel) {
+      testRelation(panel, RELATION_LABELLED_BY, tab);
+      testRelation(tab, RELATION_LABEL_FOR, panel);
+      // The tab labels the panel for relations, but it shouldn't name it.
+      testName(panel, null);
+    }
+
+    function createTab(id, linkedPanel) {
+      const tab = document.createXULElement("tab");
+      tab.id = id;
+      tab.setAttribute("label", id);
+      if (linkedPanel) {
+        tab.linkedPanel = linkedPanel;
+      }
+      return tab;
+    }
+
+    function createPanel(id) {
+      const panel = document.createXULElement("tabpanel");
+      panel.id = id;
+      const desc = document.createXULElement("description");
+      desc.textContent = id;
+      panel.append(desc);
+      return panel;
+    }
+
+    async function doTest() {
+      // Panels associated by index.
+      testPair("indexTab1", "indexPanel1");
+      testPair("indexTab2", "indexPanel2");
+
+      // Panels associated by linkedpanel in markup, out of order.
+      testPair("linkedTab1", "linkedPanel1");
+      testPair("linkedTab2", "linkedPanel2");
+
+      info("Inserting a tab and panel at the start of the index tabbox");
+      const indexTabs = document.getElementById("indexTabs");
+      const indexPanels = document.getElementById("indexPanels");
+      const indexTab0 = createTab("indexTab0");
+      const indexPanel0 = createPanel("indexPanel0");
+      let shown = waitForEvent(EVENT_SHOW, "indexPanel0");
+      indexTabs.insertBefore(indexTab0, indexTabs.allTabs[0]);
+      indexPanels.prepend(indexPanel0);
+      await shown;
+      testPair("indexTab0", "indexPanel0");
+      testPair("indexTab1", "indexPanel1");
+      testPair("indexTab2", "indexPanel2");
+
+      info("Removing the inserted tab and panel");
+      let hidden = waitForEvent(EVENT_HIDE, evt => evt.DOMNode == indexPanel0);
+      indexTab0.remove();
+      indexPanel0.remove();
+      await hidden;
+      testPair("indexTab1", "indexPanel1");
+      testPair("indexTab2", "indexPanel2");
+
+      info("Adding a tab with linkedPanel set before its panel is inserted");
+      const linkedTabs = document.getElementById("linkedTabs");
+      const linkedPanels = document.getElementById("linkedPanels");
+      const linkedTab3 = createTab("linkedTab3", "linkedPanel3");
+      shown = waitForEvent(EVENT_SHOW, "linkedPanel3");
+      linkedTabs.appendChild(linkedTab3);
+      linkedPanels.prepend(createPanel("linkedPanel3"));
+      await shown;
+      testPair("linkedTab3", "linkedPanel3");
+      testPair("linkedTab1", "linkedPanel1");
+      testPair("linkedTab2", "linkedPanel2");
+
+      SimpleTest.finish();
+    }
+
+    SimpleTest.waitForExplicitFinish();
+    addA11yLoadEvent(doTest);
+  ]]>
+  </script>
+
+  <vbox flex="1" style="overflow: auto;">
+    <body xmlns="http://www.w3.org/1999/xhtml">
+      <p id="display"></p>
+      <div id="content" style="display: none">
+      </div>
+      <pre id="test">
+      </pre>
+    </body>
+
+    <tabbox>
+      <tabs id="indexTabs">
+        <tab label="indexTab1" id="indexTab1"/>
+        <tab label="indexTab2" id="indexTab2"/>
+      </tabs>
+      <tabpanels id="indexPanels">
+        <tabpanel id="indexPanel1">
+          <description>indexPanel1</description>
+        </tabpanel>
+        <tabpanel id="indexPanel2">
+          <description>indexPanel2</description>
+        </tabpanel>
+      </tabpanels>
+    </tabbox>
+
+    <tabbox>
+      <tabs id="linkedTabs">
+        <tab label="linkedTab1" id="linkedTab1" linkedpanel="linkedPanel1"/>
+        <tab label="linkedTab2" id="linkedTab2" linkedpanel="linkedPanel2"/>
+      </tabs>
+      <tabpanels id="linkedPanels">
+        <tabpanel id="linkedPanel2">
+          <description>linkedPanel2</description>
+        </tabpanel>
+        <tabpanel id="linkedPanel1">
+          <description>linkedPanel1</description>
+        </tabpanel>
+      </tabpanels>
+    </tabbox>
+  </vbox>
+
+</window>

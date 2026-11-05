@@ -202,7 +202,7 @@ const nsStaticAtom* const kAttributesHTML[] = {
   nsGkAtoms::draggable,
   nsGkAtoms::enctype,
   nsGkAtoms::face,
-  nsGkAtoms::_for,
+  // nsGkAtoms::_for ("for" attribute) is checked in SanitizeAttributes.
   nsGkAtoms::frame,
   nsGkAtoms::headers,
   nsGkAtoms::height,
@@ -1009,8 +1009,8 @@ bool nsTreeSanitizer::MustFlatten(int32_t aNamespace, nsAtom* aLocal) {
       return true;
     }
     if (mDropForms &&
-        (nsGkAtoms::form == aLocal || nsGkAtoms::input == aLocal ||
-         nsGkAtoms::option == aLocal || nsGkAtoms::optgroup == aLocal)) {
+        (nsGkAtoms::form == aLocal || nsGkAtoms::option == aLocal ||
+         nsGkAtoms::optgroup == aLocal || nsGkAtoms::output == aLocal)) {
       return true;
     }
     if (mFullDocument &&
@@ -1064,6 +1064,7 @@ bool nsTreeSanitizer::MustPrune(int32_t aNamespace, nsAtom* aLocal,
     }
     if (mDropForms &&
         (nsGkAtoms::select == aLocal || nsGkAtoms::button == aLocal ||
+         nsGkAtoms::input == aLocal || nsGkAtoms::textarea == aLocal ||
          nsGkAtoms::datalist == aLocal)) {
       return true;
     }
@@ -1234,6 +1235,11 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
         // <link rel itemprop>
         continue;
       }
+      if (!mDropForms && attrLocal == nsGkAtoms::_for) {
+        // Accept "for" attribute unless SanitizerDropForms is set.
+        // This is primarily meant for <label for>.
+        continue;
+      }
       const char16_t* localStr = attrLocal->GetUTF16String();
       uint32_t localLen = attrLocal->GetLength();
       // Allow underscore to cater to the MCE editor library.
@@ -1281,7 +1287,8 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
   // If we've got HTML audio or video, add the controls attribute, because
   // otherwise the content is unplayable with scripts removed.
   if (aElement->IsAnyOfHTMLElements(nsGkAtoms::video, nsGkAtoms::audio)) {
-    aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::controls, u""_ns, false);
+    aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::controls, u""_ns, false,
+                      IsKnownNewAttr::No);
   }
 }
 

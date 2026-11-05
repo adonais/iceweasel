@@ -134,7 +134,6 @@ if CONFIG["TARGET_CPU"] == "arm":
     DEFINES["WEBRTC_HAS_NEON"] = True
 
     SOURCES += [
-        "/third_party/libwebrtc/common_audio/signal_processing/complex_bit_reverse_arm.S",
         "/third_party/libwebrtc/common_audio/signal_processing/filter_ar_fast_q12_armv7.S"
     ]
 

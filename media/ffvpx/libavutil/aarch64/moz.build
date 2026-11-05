@@ -17,3 +17,11 @@ if CONFIG['OS_ARCH'] == 'WINNT':
 FINAL_LIBRARY = 'mozavutil'
 
 include('/media/ffvpx/ffvpxcommon.mozbuild')
+
+SOURCE_HEADERS += [
+	"bswap.h",
+	"cpu.h",
+	"crc.h",
+	"intreadwrite.h",
+	"timer.h",
+]

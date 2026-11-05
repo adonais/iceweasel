@@ -16,15 +16,28 @@ trustpanel:
     type: event
     description: |
       Event to record opens of the Trust Panel.
-    bugs: &trustpanel_bugs
+    bugs:
       - https://bugzil.la/2024187
-    data_reviews: &trustpanel_data_reviews
+      - https://bugzil.la/2069507
+      - https://bugzil.la/2069508
+    data_reviews:
       - https://bugzil.la/2024187
+      - https://bugzil.la/2069507
+      - https://bugzil.la/2069508
+    data_sensitivity:
+      - interaction
     notification_emails: &trustpanel_emails
       - tcinotto@mozilla.com
       - monitor-ops@mozilla.com
     expires: never
     extra_keys:
+      opening_reason:
+        description: >
+          How the panel was opened: "shieldButtonClicked" when the user clicked
+          the shield icon in the URL bar, "embedPlaceholderButton" when it was
+          opened from a SmartBlock embed placeholder, or "unknown" when it was
+          opened without a reason.
+        type: string
       trackers_blocked:
         description: >
           Whether any trackers were blocked on the page the Trust Panel was opened on.
@@ -34,12 +47,47 @@ trustpanel:
         description: >
           Whether and what type of breach alert was shown.
         type: string
+      smartblock_embed_toggles_shown:
+        description: >
+          Whether any SmartBlock embed toggles were shown in the Trust Panel.
+        type: boolean
+  smartblock_toggled:
+    type: event
+    description: |
+      Event to record when a SmartBlock embed toggle is clicked in the Trust Panel.
+    bugs:
+      - https://bugzil.la/2024187
+      - https://bugzil.la/2069508
+    data_reviews:
+      - https://bugzil.la/2024187
+      - https://bugzil.la/2069508
+    notification_emails: *trustpanel_emails
+    expires: never
+    data_sensitivity:
+      - interaction
+    extra_keys:
+      is_block:
+        description: >
+          Whether this was a block or an unblock.
+        type: boolean
+      shim_id:
+        description: >
+          The SmartBlock shim id for the tracker being toggled.
+        type: string
+      opening_reason:
+        description: >
+          How the Trust Panel was opened, one of
+          ["shieldButtonClicked", "embedPlaceholderButton", "unknown"].
+          Same values as the opening_reason extra of trustpanel.opened.
+        type: string
   breach_alert_dismissed:
     type: event
     description: |
       Event to record when a breach alert is dismissed.
-    bugs: *trustpanel_bugs
-    data_reviews: *trustpanel_data_reviews
+    bugs: &trustpanel_bugs
+      - https://bugzil.la/2024187
+    data_reviews: &trustpanel_data_reviews
+      - https://bugzil.la/2024187
     notification_emails: *trustpanel_emails
     expires: never
     extra_keys:
@@ -89,3 +137,153 @@ trustpanel:
         description: >
           What type of breach alert triggered the animation.
         type: string
+  clear_cookies_opened:
+    type: event
+    description: |
+      Event to record when a user opens the Trust Panel's clear cookies
+      subview, i.e. the number of times the clear cookies flow was started.
+    bugs:
+      - https://bugzil.la/2066764
+    data_reviews:
+      - https://bugzil.la/2066764
+    notification_emails: *trustpanel_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+  clear_cookies_confirmed:
+    type: event
+    description: |
+      Event to record when a user confirms clearing cookies and site data from
+      the Trust Panel's clear cookies subview.
+    bugs:
+      - https://bugzil.la/2066764
+    data_reviews:
+      - https://bugzil.la/2066764
+    notification_emails: *trustpanel_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+  clear_cookies_cancelled:
+    type: event
+    description: |
+      Event to record when a user backs out of the Trust Panel's clear cookies
+      subview using its cancel button, leaving cookies and site data intact.
+      Dismissing the panel without pressing cancel is not recorded.
+    bugs:
+      - https://bugzil.la/2066764
+    data_reviews:
+      - https://bugzil.la/2066764
+    data_sensitivity:
+      - interaction
+    notification_emails: *trustpanel_emails
+    expires: never
+  security_info_opened:
+    type: event
+    description: |
+      Event to record when a user opens the Trust Panel's site security
+      information subview.
+    bugs: &trustpanel_security_info_bugs
+      - https://bugzil.la/2066765
+    data_reviews: &trustpanel_security_info_data_reviews
+      - https://bugzil.la/2066765
+    notification_emails: *trustpanel_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys:
+      connection:
+        description: >
+          The connection state of the page the subview was opened for, for
+          example "secure", "secure-ev", "not-secure", "cert-error-page" or
+          "https-only-error-page".
+        type: string
+  security_info_page_info_opened:
+    type: event
+    description: |
+      Event to record when a user opens the Page Info dialog through the "More
+      information" button of the Trust Panel's site security information
+      subview.
+    bugs: *trustpanel_security_info_bugs
+    data_reviews: *trustpanel_security_info_data_reviews
+    notification_emails: *trustpanel_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+  security_info_cert_exception_removed:
+    type: event
+    description: |
+      Event to record when a user removes the certificate error exception for
+      the site from the Trust Panel's site security information subview.
+    bugs: *trustpanel_security_info_bugs
+    data_reviews: *trustpanel_security_info_data_reviews
+    notification_emails: *trustpanel_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+  security_info_https_only_changed:
+    type: event
+    description: |
+      Event to record when a user changes the HTTPS-Only Mode setting for the
+      site from the Trust Panel's site security information subview. Only
+      recorded when the selected setting differs from the current one.
+    bugs: *trustpanel_security_info_bugs
+    data_reviews: *trustpanel_security_info_data_reviews
+    notification_emails: *trustpanel_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys:
+      setting:
+        description: >
+          The newly selected HTTPS-Only Mode setting for the site: "on", "off"
+          or "off-temporarily".
+        type: string
+  tracker_list_opened:
+    type: event
+    description: |
+      Event to record when a user opens the Trust Panel's tracker list subview
+      through the "See all" button of the main view.
+    bugs:
+      - https://bugzil.la/2069505
+    data_reviews:
+      - https://bugzil.la/2069505
+    notification_emails: *trustpanel_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+  closed:
+    type: event
+    description: |
+      Event to record when the Trust Panel is closed, with how long it was open
+      and what ended the panel session. A closing_reason of "dismissed" is an
+      abandonment: the panel was closed without the user acting on it. Pairs
+      with trustpanel.opened
+    bugs:
+      - https://bugzil.la/2069506
+    data_reviews:
+      - https://bugzil.la/2069506
+    data_sensitivity:
+      - interaction
+    notification_emails: *trustpanel_emails
+    expires: never
+    extra_keys:
+      opening_reason:
+        description: >
+          How the panel was opened, one of "shieldButtonClicked",
+          "embedPlaceholderButton", or "unknown" when it was opened without a
+          reason.
+        type: string
+      closing_reason:
+        description: >
+          What closed the panel: "dismissed" when the user closed it without
+          acting on it, "navigated" when the page navigated away, or the action
+          taken, one of "etpToggled", "siteDataCleared",
+          "clearSiteDataCancelled", "pageInfoOpened", "certExceptionRemoved",
+          "httpsOnlyChanged", "privacySettingsOpened", "smartblockToggled" and
+          "monitorOpened".
+        type: string
+      duration_ms:
+        description: >
+          How long the panel was open, in milliseconds, measured from the
+          moment it was shown.
+        type: quantity

@@ -1,0 +1,32 @@
+<!doctype html>
+<html class="reftest-wait">
+<head><meta charset="utf-8"></head>
+<script>
+const map = new WeakMap();
+const context = document.createElement("canvas").getContext("webgl2");
+const keeper = document.createRange();
+function setup() {
+  const key = Symbol();
+  const owner = document.createElement("div");
+  owner.holder = {[key]: 0};
+  keeper.selectNodeContents(owner);
+  const feedback = context.createTransformFeedback();
+  const buffer = context.createBuffer();
+  context.bindTransformFeedback(context.TRANSFORM_FEEDBACK, feedback);
+  context.bindBufferBase(context.TRANSFORM_FEEDBACK_BUFFER, 0, buffer);
+  context.bindTransformFeedback(context.TRANSFORM_FEEDBACK, null);
+  context.bindBuffer(context.TRANSFORM_FEEDBACK_BUFFER, null);
+  map.set(key, feedback);
+}
+function trigger() {
+  SpecialPowers.forceGC();
+  SpecialPowers.forceCC();
+  const key = Object.getOwnPropertySymbols(keeper.startContainer.holder)[0];
+  context.bindTransformFeedback(context.TRANSFORM_FEEDBACK, map.get(key));
+  context.bindBufferBase(context.TRANSFORM_FEEDBACK_BUFFER, 0, context.createBuffer());
+  console.log("cc-transform-done", context.getError());
+  document.documentElement.classList.remove("reftest-wait");
+}
+setup();
+setTimeout(trigger, 0);
+</script>

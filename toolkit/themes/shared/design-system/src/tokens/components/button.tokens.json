@@ -726,7 +726,10 @@
           }
         },
         "disabled": {
-          "value": "{button.text.color.ghost.disabled}"
+          "value": {
+            "default": "{button.text.color.ghost.disabled}",
+            "forcedColors": "{button.text.color.disabled}"
+          }
         },
         "hover": {
           "value": {

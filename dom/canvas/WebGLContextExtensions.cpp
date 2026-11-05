@@ -5,7 +5,6 @@
 #include "ClientWebGLExtensions.h"
 #include "GLContext.h"
 #include "WebGLContext.h"
-#include "WebGLContextUtils.h"
 #include "WebGLExtensions.h"
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/StaticPrefs_webgl.h"

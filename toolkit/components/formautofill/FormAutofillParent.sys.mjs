@@ -28,6 +28,7 @@
 // We expose a singleton from this module. Some tests may import the
 // constructor via the system global.
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
 import { AutofillDataTypes } from "resource://gre/modules/shared/AutofillDataTypes.sys.mjs";
@@ -50,6 +51,24 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FirefoxRelay: "resource://gre/modules/FirefoxRelay.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
 });
+
+// The primary password prompt is the one passwordmgr shows for the same NSS
+// token, so a cancel holds off autocomplete for as long as it does there.
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "repromptTimeout",
+  "signon.masterPasswordReprompt.timeout_ms",
+  900000
+);
+
+/**
+ * When the user last cancelled the primary password prompt from an
+ * autocomplete search. Closing the prompt hands focus back to the field, which
+ * searches again, so without this a cancel would be answered by another prompt.
+ * Mirrors gLastMPLoginCancelled in LoginManagerParent, and is forgotten once a
+ * search finds the token unlocked.
+ */
+let gLastPrimaryPasswordCancelled = Number.NEGATIVE_INFINITY;
 
 // TODO Bug 2064859 - refactor this out as external provider
 ChromeUtils.defineLazyGetter(lazy, "SmartFormFillAutocomplete", () => {
@@ -552,6 +571,12 @@ export class FormAutofillParent extends JSWindowActorParent {
       return;
     }
 
+    // Don't check ML inference if the section is not valid to avoid loading
+    // the model when it likely won't be needed.
+    if (!FormAutofillUtils.isValidSection(fieldDetails)) {
+      return;
+    }
+
     FormAutofillParent.#mlFeature ??= new lazy.FormAutofillML();
     await FormAutofillParent.#mlFeature.detectFields(fieldDetails);
   }
@@ -806,7 +831,27 @@ export class FormAutofillParent extends JSWindowActorParent {
       return [];
     }
 
-    const records = await collection.getAll();
+    let records;
+    if (Services.logins.isLoggedIn) {
+      gLastPrimaryPasswordCancelled = Number.NEGATIVE_INFINITY;
+    }
+    if (
+      !Services.logins.isLoggedIn &&
+      Date.now() - gLastPrimaryPasswordCancelled < lazy.repromptTimeout
+    ) {
+      records = [];
+    } else {
+      try {
+        records = await collection.getAll();
+      } catch (e) {
+        // Reading the records needs a key the user declined to unlock.
+        if (e.result != Cr.NS_ERROR_ABORT) {
+          throw e;
+        }
+        gLastPrimaryPasswordCancelled = Date.now();
+        records = [];
+      }
+    }
 
     // Add testing records if exists
     records.push(...this.#getTemporaryRecordForTab(collectionName));
@@ -968,23 +1013,34 @@ export class FormAutofillParent extends JSWindowActorParent {
       return false;
     }
 
-    // If the record alreay exists in the storage, don't bother showing the prompt
-    const matchRecord = (
-      await storage.getMatchRecords(creditCard.record).next()
-    ).value;
-    if (matchRecord) {
-      storage.notifyUsed(matchRecord.guid);
-      return false;
-    }
+    let duplicateRecord;
+    try {
+      // If the record alreay exists in the storage, don't bother showing the prompt
+      const matchRecord = (
+        await storage.getMatchRecords(creditCard.record).next()
+      ).value;
+      if (matchRecord) {
+        storage.notifyUsed(matchRecord.guid);
+        return false;
+      }
 
-    // Suppress the pending doorhanger from showing up if user disabled credit card in previous doorhanger.
-    if (!FormAutofill.isAutofillTypeEnabled(AutofillDataTypes.CREDIT_CARD)) {
-      return false;
-    }
+      // Suppress the pending doorhanger from showing up if user disabled credit card in previous doorhanger.
+      if (!FormAutofill.isAutofillTypeEnabled(AutofillDataTypes.CREDIT_CARD)) {
+        return false;
+      }
 
-    // Overwrite the guid if there is a duplicate
-    const duplicateRecord =
-      (await storage.getDuplicateRecords(creditCard.record).next()).value ?? {};
+      // Overwrite the guid if there is a duplicate
+      duplicateRecord =
+        (await storage.getDuplicateRecords(creditCard.record).next()).value ??
+        {};
+    } catch (e) {
+      // Comparing against the stored numbers needs the key, and the user
+      // declined to unlock it.
+      if (e.result == Cr.NS_ERROR_ABORT) {
+        return false;
+      }
+      throw e;
+    }
 
     return async () => {
       await lazy.FormAutofillPrompter.promptToSave(

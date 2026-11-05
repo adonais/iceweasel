@@ -405,28 +405,33 @@ void ContentMediaController::HandleMediaKey(
 void ContentMediaController::HandleAudioFocusInterrupt(
     AudioFocusInterruptAction aAction) {
   MOZ_ASSERT(NS_IsMainThread());
-  const bool suspend = aAction == AudioFocusInterruptAction::Suspend;
   LOG("Handle audio-focus interrupt {}, controllable num={}, uncontrollable "
       "num={}",
       EnumValueToString(aAction), mControllableReceivers.Length(),
       mUncontrollableReceivers.Length());
-  mAudioInterruptedByPlatform = suspend;
+  mAudioInterruptedByPlatform = aAction == AudioFocusInterruptAction::Suspend;
+  const auto handle = [aAction](
+                          RefPtr<ContentMediaControlKeyReceiver> aReceiver) {
+    switch (aAction) {
+      case AudioFocusInterruptAction::Suspend:
+        aReceiver->SuspendForInterrupt(AudioSessionInterruptKind::Transient);
+        return;
+      case AudioFocusInterruptAction::Resume:
+        aReceiver->ResumeFromInterrupt();
+        return;
+      case AudioFocusInterruptAction::SuspendPermanently:
+        aReceiver->SuspendForInterrupt(AudioSessionInterruptKind::Permanent);
+        return;
+    }
+  };
   // An interrupt targets every potentially audible receiver in both buckets.
   // Iterate backward because a receiver may unregister itself while handling
   // the verb.
   for (auto& receiver : Reversed(mControllableReceivers)) {
-    if (suspend) {
-      receiver->SuspendForInterrupt();
-    } else {
-      receiver->ResumeFromInterrupt();
-    }
+    handle(receiver);
   }
   for (auto& receiver : Reversed(mUncontrollableReceivers)) {
-    if (suspend) {
-      receiver->SuspendForInterrupt();
-    } else {
-      receiver->ResumeFromInterrupt();
-    }
+    handle(receiver);
   }
 }
 

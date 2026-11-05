@@ -876,7 +876,7 @@ class MarkupView extends EventEmitter {
         // There is a limit to how many grid highlighters can be active at the same time.
         // If the limit was reached, disable all non-active grid badges.
         if (data.type === this.inspector.highlighters.TYPES.GRID) {
-          // Matches badges for "grid", "inline-grid" and "subgrid"
+          // Matches badges for "grid", "inline-grid", "subgrid", "grid-lanes" and "inline-grid-lanes".
           const selector = "[data-display*='grid']:not(.active)";
           const isLimited =
             this.inspector.highlighters.isGridHighlighterLimitReached();

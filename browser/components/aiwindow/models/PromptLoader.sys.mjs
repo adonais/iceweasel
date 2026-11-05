@@ -29,6 +29,12 @@ import { Conversation } from "moz-src:///browser/components/aiwindow/models/Conv
  * @typedef {import("moz-src:///browser/components/aiwindow/models/Utils.sys.mjs").InferenceParams} InferenceParams
  */
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  getSmartPageName:
+    "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs",
+});
+
 const CUSTOM_PROMPTS_PREF = "browser.smartwindow.customPrompts";
 const MODEL_CHOICE_PREF = "browser.smartwindow.firstrun.modelChoice";
 
@@ -43,6 +49,12 @@ const REQUIRED_CHAT_MODULES = new Set(["identity", "response-rules"]);
 const GATED_CHAT_MODULES = new Map([
   ["pages", "browser.smartwindow.aitab.enabled"],
 ]);
+// Browser-context fragments predate its params manifest. Without one at this
+// build's major, read the legacy 1.x "tab" fragment, which builds that do not
+// render `{#key}...{/key}` sections also read.
+const LEGACY_BROWSER_CONTEXT_VERSION = "1.0";
+const LEGACY_TAB_MODULE = "tab";
+const TAB_MODULE = "tab-conditional-fields";
 
 export const DEFAULT_PURPOSE = "default";
 export const FEATURE_PURPOSES = Object.freeze({
@@ -125,13 +137,14 @@ function findModule(
   );
 }
 
-function findParams(records, { feature, model }) {
+function findParams(records, { feature, model, majorVersion }) {
+  const major = majorVersion ?? FEATURE_MAJOR_VERSIONS[feature];
   const candidates = records.filter(
     r =>
       r.kind === "params" &&
       r.feature === feature &&
       Array.isArray(r.modules) &&
-      checkMajorVersion(r.version, FEATURE_MAJOR_VERSIONS[feature])
+      checkMajorVersion(r.version, major)
   );
   return (
     (model && candidates.find(r => r.model === model)) ||
@@ -314,6 +327,10 @@ function renderMentionedUrls(mentionsWithUrl) {
         `${indent}- URL: ${url}`,
         `${indent}  Title: ${sanitizeUntrustedContent(label)}`
       );
+      const pageSlug = lazy.getSmartPageName(URL.parse(url));
+      if (pageSlug) {
+        lines.push(`${indent}  Page slug: ${pageSlug}`);
+      }
       return lines.join("\n");
     })
     .join("\n");
@@ -344,18 +361,27 @@ export async function buildBrowserContextPrompt(
   }
 
   const records = await loadV2Records();
+  const paramsRecord = findParams(records, {
+    feature: MODEL_FEATURES.BROWSER_CONTEXT,
+    model,
+  });
   const findFragment = fragment =>
     findModule(records, {
-      feature: "browser-context",
+      feature: MODEL_FEATURES.BROWSER_CONTEXT,
       module: fragment,
-      options: { model },
+      options: {
+        model,
+        version:
+          paramsRecord?.modules.find(m => m.name === fragment)?.version ??
+          LEGACY_BROWSER_CONTEXT_VERSION,
+      },
     });
 
   const fragments = [];
 
   if (browserContextMapping.hasTabInfo) {
     securityProperties.setPrivateData();
-    const record = findFragment("tab");
+    const record = findFragment(paramsRecord ? TAB_MODULE : LEGACY_TAB_MODULE);
     if (record?.prompts) {
       fragments.push(record.prompts);
     }
@@ -363,6 +389,7 @@ export async function buildBrowserContextPrompt(
     delete browserContextMapping.url;
     delete browserContextMapping.title;
     delete browserContextMapping.description;
+    delete browserContextMapping.pageSlug;
   }
   delete browserContextMapping.hasTabInfo;
 
@@ -478,7 +505,7 @@ export async function buildEngineForFeature(feature, opts = {}) {
   const { baseURL, apiKey } = openAIEngine.resolveEndpointConfig(modelChoiceId);
 
   // resolve the model to use for inference, this allows specific features to default to chat model
-  let model = mainConfig.model;
+  let model = mainConfig.inference_model || mainConfig.model;
   const CHAT_MODEL_FALLBACK_FEATURES = new Set([
     MODEL_FEATURES.AGENT_MONITOR,
     MODEL_FEATURES.AITAB,
@@ -492,7 +519,7 @@ export async function buildEngineForFeature(feature, opts = {}) {
     const chatConfig = await selectFeatureConfig(MODEL_FEATURES.CHAT, {
       modelChoiceIdOverride: opts.modelChoiceIdOverride,
     });
-    model = chatConfig.model;
+    model = chatConfig.inference_model || chatConfig.model;
   }
 
   const engine = await openAIEngine.build({
@@ -579,6 +606,10 @@ export async function loadPrompt(feature, opts = {}) {
  *
  * @param {string} feature - Feature identifier from MODEL_FEATURES
  * @param {object} [opts]
+ * @param {string} opts.module - Module name from the feature's params manifest
+ * @param {string} [opts.model] - Model to resolve for; defaults to the model pref
+ * @param {number} [opts.majorVersionOverride] - Major to read instead of
+ *   FEATURE_MAJOR_VERSIONS[feature] (tests, next-release dry runs)
  * @returns {Promise<{prompt: string, version: string}>} The prompt text and version
  */
 export async function loadPromptV2(feature, opts = {}) {
@@ -588,14 +619,18 @@ export async function loadPromptV2(feature, opts = {}) {
   // resolve the model
   const model = opts.model ?? Services.prefs.getStringPref(MODEL_PREF, "");
 
-  // find the params record for the feature+model
+  // find the params record for the feature+model at this build's major, or
+  // the override (honored like the v1 path); findParams applies the default
   const paramsRecord = findParams(v2Records, {
     feature,
     model,
+    majorVersion: opts.majorVersionOverride,
   });
   if (!paramsRecord) {
+    const majorVersion =
+      opts.majorVersionOverride ?? FEATURE_MAJOR_VERSIONS[feature];
     const err = new Error(
-      `No matching v2 params record found for feature: ${feature} with model ${model}`
+      `No matching v2 params record found for feature: ${feature} with model ${model} at major version ${majorVersion}`
     );
     err.clientReason = "v2ParamsUnavailable";
     throw err;

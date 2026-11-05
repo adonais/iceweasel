@@ -145,7 +145,7 @@ add_task(
       await assertSmartbarSuggestionsVisible(browser, true);
       await submitSmartbar(browser);
       await promiseSmartbarSuggestionsClose(browser);
-      await assertSmartbarSuggestionsVisible(browser, false);
+      await assertSmartbarSuggestionsVisible(browser, false, "top");
 
       await BrowserTestUtils.closeWindow(win);
     } finally {
@@ -448,6 +448,38 @@ add_task(
         !viewIsOpen,
         "Suggestions view should not open on focus when chat is active"
       );
+
+      await BrowserTestUtils.closeWindow(win);
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(
+  async function test_smartbar_shows_suggestions_above_after_new_fullpage_chat() {
+    const sb = this.sinon.createSandbox();
+
+    try {
+      sb.stub(this.Chat, "fetchWithHistory");
+      sb.stub(this.openAIEngine, "build").resolves({});
+
+      const win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+
+      await dispatchSmartbarCommit(browser, "initial prompt", "chat");
+      const aiWindowElement =
+        browser.contentWindow.document.querySelector("ai-window");
+      await TestUtils.waitForCondition(
+        () => aiWindowElement.classList.contains("chat-active"),
+        "Wait for the chat layout to be active"
+      );
+      aiWindowElement.onCreateNewChatClick();
+
+      await promiseSmartbarSuggestionsOpen(browser, () =>
+        typeInSmartbar(browser, "test")
+      );
+      await assertSmartbarSuggestionsVisible(browser, true, "top");
 
       await BrowserTestUtils.closeWindow(win);
     } finally {

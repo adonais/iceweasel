@@ -31,3 +31,7 @@ FINAL_LIBRARY = "xul"
 
 # Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "EbmlComposer.h",
+]

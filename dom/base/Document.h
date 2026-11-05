@@ -92,6 +92,7 @@
 #include "nsIURI.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsLiteralString.h"
+#include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
 #include "nsPropertyTable.h"
 #include "nsRefPtrHashtable.h"
@@ -127,6 +128,11 @@ class ElementCreationOptionsOrString;
 }  // namespace dom
 }  // namespace mozilla
 #endif  // MOZILLA_INTERNAL_API
+
+namespace mozilla {
+template <unsigned KeySize, class T>
+class CountingBloomFilter;
+}  // namespace mozilla
 
 class InfallibleAllocPolicy;
 class JSObject;
@@ -1391,6 +1397,18 @@ class Document : public nsINode,
    */
   nsViewportInfo GetViewportInfo(const ScreenIntSize& aDisplaySize);
 
+  /**
+   * Lays this top-level document out at a fixed layout viewport size.
+   */
+  MOZ_CAN_RUN_SCRIPT void SetViewportSizeOverrideForMiniWindow(float aWidth,
+                                                               float aHeight);
+  MOZ_CAN_RUN_SCRIPT void ClearViewportSizeOverrideForMiniWindow() {
+    SetViewportSizeOverrideForMiniWindow(0, 0);
+  }
+  bool HasViewportSizeOverrideForMiniWindow() const {
+    return !mViewportSizeOverrideForMiniWindow.IsEmpty();
+  }
+
   void SetMetaViewportData(UniquePtr<ViewportMetaData> aData);
 
   // Returns a ViewportMetaData for this document.
@@ -1726,9 +1744,7 @@ class Document : public nsINode,
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult TurnEditingOff();
 
-  // MOZ_CAN_RUN_SCRIPT_BOUNDARY because this is called from all sorts
-  // of places, and I'm pretty sure the exact ExecCommand call it
-  // makes cannot actually run script.
+  // TODO: Convert this to MOZ_CAN_RUN_SCRIPT
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult EditingStateChanged();
 
   void MaybeEditingStateChanged();
@@ -1758,6 +1774,43 @@ class Document : public nsINode,
   // Get the "head" element in the sense of document.head.
   HTMLSharedElement* GetHead() const;
 
+  // Render-blocking mechanism
+  // https://html.spec.whatwg.org/#render-blocking-mechanism
+  bool AllowsAddingRenderBlockingElements() const;
+  bool IsRenderBlocked() const;
+  // Returns whether aElement blocks rendering after the call.
+  bool BlockRendering(Element& aElement);
+  void UnblockRendering(Element& aElement);
+  // Blocks rendering on aElement if it is potentially render-blocking.
+  void MaybeBlockRendering(Element& aElement);
+  // Permanently stops render-blocking for this document (timeout elapsed, or it
+  // can no longer be render-blocked) and kicks layout.
+  void StopRenderBlocking();
+
+  // https://html.spec.whatwg.org/#process-internal-resource-links
+  // Processes every rel=expect link that blocks rendering.
+  void ProcessInternalResourceLinks();
+  // Calls ProcessInternalResourceLinks when it is safe to run script. Use this
+  // during a DOM mutation: the target lookup uses getElementsByName(), and a
+  // cached list updates only when the mutation notifications run.
+  void ProcessInternalResourceLinksWhenSafe();
+
+  // Called when the HTML parser pops aElement off its stack of open elements,
+  // and when aElement is inserted while not on that stack. Processes the
+  // rel=expect links only if one waits for aElement's id or name.
+  void MaybeProcessInternalResourceLinksForElement(Element& aElement);
+
+  // Tracks the ids and names that blocking rel=expect links wait for.
+  void AddExpectedInternalResourceTarget(nsAtom* aFragment);
+  void RemoveExpectedInternalResourceTarget(nsAtom* aFragment);
+
+ private:
+  void StartLayoutAfterUnblocking();
+  // Starts the render-blocking timeout timer if it is not already running and
+  // the timeout has not already elapsed.
+  void EnsureRenderBlockingTimeoutTimer();
+
+ public:
   ServoStyleSet* StyleSetForPresShell() const {
     MOZ_ASSERT(!!mStyleSet.get());
     return mStyleSet.get();
@@ -2782,8 +2835,7 @@ class Document : public nsINode,
     // If we are a document "whose URL's scheme is not a network scheme."
     // NB: Explicitly allow file: URIs to store cookies.
 
-    return !NodePrincipal()->SchemeIs("http") &&
-           !NodePrincipal()->SchemeIs("https") &&
+    return !net::SchemeIsHttpOrHttps(NodePrincipal()) &&
            !NodePrincipal()->SchemeIs("file");
   }
 
@@ -3204,6 +3256,13 @@ class Document : public nsINode,
    * we're going away and then release our reference to it.
    */
   void UnlinkOriginalDocumentIfStatic();
+
+  /**
+   * Returns a value that identifies this document, used to vary the random
+   * base values of CSS `random()` functions between document instances.
+   * https://drafts.csswg.org/css-values-5/#random-caching
+   */
+  uintptr_t GetRandomSeed() const;
 
   /**
    * These are called by the parser as it encounters <picture> tags, the end of
@@ -3767,7 +3826,7 @@ class Document : public nsINode,
                                             bool aFocusPreviousElement,
                                             bool aFireEvents);
 
-  // Hides the given popover element, see
+  // Hides the given popover element, using this document as expectedDocument.
   // https://html.spec.whatwg.org/multipage/popover.html#hide-popover-algorithm
   MOZ_CAN_RUN_SCRIPT void HidePopover(Element& popover,
                                       bool aFocusPreviousElement,
@@ -4273,9 +4332,40 @@ class Document : public nsINode,
 
   void SetInboundViewTransitionParams(UniquePtr<ViewTransitionParams> aParams);
 
+  // Stores the captured params by browser id, for the new document to take at
+  // its reveal. Used when the old top-level document enters BFCache, since the
+  // new document is then in another BrowsingContext with the same browser id.
+  static void StashCrossDocViewTransitionParams(
+      uint64_t aBrowserId, UniquePtr<ViewTransitionParams> aParams);
+  static UniquePtr<ViewTransitionParams> TakeCrossDocViewTransitionParams(
+      uint64_t aBrowserId);
+  // Drops the params of a navigation that did not reach the reveal. If
+  // aProducerBrowsingContextId is set, drops only the params that the
+  // BrowsingContext with that id captured.
+  static void ClearCrossDocViewTransitionParams(
+      uint64_t aBrowserId,
+      Maybe<uint64_t> aProducerBrowsingContextId = Nothing());
+
   // Returns some ViewTransition or Nothing if skip transition.
   // https://drafts.csswg.org/css-view-transitions-2/#resolve-inbound-cross-document-view-transition
   Maybe<RefPtr<ViewTransition>> ResolveInboundCrossDocumentViewTransition();
+
+  // https://drafts.csswg.org/css-view-transitions-2/#setup-cross-document-view-transition
+  already_AddRefed<ViewTransition> SetupOutboundCrossDocumentViewTransition();
+
+  // Tells the parent whether the document has a @view-transition rule with
+  // navigation: auto. Called at the reveal. Does nothing before the reveal.
+  void UpdateOutboundViewTransitionOptIn();
+  // Calls UpdateOutboundViewTransitionOptIn if the rules may have changed
+  // since the last update. Called after a stylist update and before a
+  // navigation away from this document.
+  void MaybeUpdateOutboundViewTransitionOptIn();
+  // Marks that the rules may have changed. This does not read the rules,
+  // because that updates the stylist, which is expensive and not safe in the
+  // middle of a style sheet or media change.
+  void OutboundViewTransitionRulesChanged();
+  // Called when the stylist of this document has been updated.
+  void StylistUpdated();
 
   // Getter for PermissionDelegateHandler. Performs lazy initialization.
   PermissionDelegateHandler* GetPermissionDelegateHandler();
@@ -4941,9 +5031,6 @@ class Document : public nsINode,
   Element* GetScrollingElementImpl(Flush);
   bool IsPotentiallyScrollableImpl(HTMLBodyElement* aBody);
 
-  void MaybeAllowStorageForOpenerAfterUserInteraction(
-      bool aHadPriorUserInteraction);
-
   void MaybeStoreUserInteractionAsPermission();
 
   // Helpers for GetElementsByName.
@@ -5426,6 +5513,13 @@ class Document : public nsINode,
   // https://html.spec.whatwg.org/#has-been-revealed
   bool mHasBeenRevealed : 1;
 
+  // Last value sent to the parent via SetMayHaveViewTransitionOptIn, so we only
+  // send on change. See UpdateOutboundViewTransitionOptIn.
+  bool mSentMayHaveViewTransitionOptIn : 1;
+  // Whether the rules may have changed since UpdateOutboundViewTransitionOptIn
+  // last ran.
+  bool mOutboundViewTransitionOptInDirty : 1;
+
   // Cached value of dom.image.sizes_auto.enabled
   const bool mAutoSizesEnabled : 1;
 
@@ -5853,6 +5947,8 @@ class Document : public nsINode,
   CSSCoord mMinHeight;
   CSSCoord mMaxHeight;
 
+  CSSSize mViewportSizeOverrideForMiniWindow;
+
   RefPtr<EventListenerManager> mListenerManager;
 
   nsCOMPtr<nsIRequest> mOnloadBlocker;
@@ -6018,6 +6114,22 @@ class Document : public nsINode,
 
   // https://html.spec.whatwg.org/#document-sr-sets
   RefPtr<class SpeculationRules> mSpeculationRules;
+
+  // https://html.spec.whatwg.org/#render-blocking-element-set
+  // The set contains only connected elements, and only a small number of them.
+  // Performance is not critical, so use strong references for safety.
+  nsTHashSet<RefPtr<Element>> mRenderBlockingElementSet;
+  nsCOMPtr<nsITimer> mRenderBlockingTimer;
+  bool mRenderBlockingStopped = false;
+
+  // The ids and names that blocking rel=expect links wait for, with the number
+  // of links that wait for each.
+  nsTHashMap<RefPtr<nsAtom>, uint32_t> mExpectedInternalResourceTargets;
+  // Bloom filter over mExpectedInternalResourceTargets. Allocated only when a
+  // rel=expect link blocks.
+  UniquePtr<mozilla::CountingBloomFilter<8, nsAtom>>
+      mExpectedInternalResourceTargetsBloom;
+  bool mProcessInternalResourceLinksPending = false;
 
  public:
   // Needs to be public because the bindings code pokes at it.

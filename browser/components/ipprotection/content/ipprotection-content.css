@@ -264,6 +264,10 @@ ipprotection-message-bar.vpn-top-content {
   }
 }
 
+#site-inclusion-prompt {
+  margin-block-end: var(--space-small);
+}
+
 #site-rules-control {
   margin-block-end: var(--space-xsmall);
 }
@@ -273,6 +277,9 @@ ipprotection-message-bar.vpn-top-content {
   flex-direction: row;
   justify-content: space-between;
   align-items: flex-start;
+  /* Neutral background color matches VPN status card in panel */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens */
+  background-color: light-dark(var(--color-gray-0), var(--color-black-alpha-50));
   border: var(--border-width) solid var(--border-color-deemphasized);
   border-radius: var(--border-radius-medium);
   padding: var(--space-medium);
@@ -284,9 +291,22 @@ ipprotection-message-bar.vpn-top-content {
     fill: var(--button-icon-fill);
     stroke: var(--button-icon-stroke);
   }
+
+  #ipprotection-on {
+    fill: var(--icon-color-success);
+  }
+
+  #ipprotection-excluded {
+    fill: transparent;
+    stroke: var(--button-icon-fill);
+  }
 }
 
 #site-rule-status-text-container {
   display: flex;
   flex-direction: column;
+}
+
+#site-rule-description {
+  font-weight: var(--font-weight-semibold);
 }

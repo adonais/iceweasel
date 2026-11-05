@@ -36,7 +36,6 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "api/video/encoded_image.h"
-#include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_frame_type.h"
 #include "api/video/video_layers_allocation.h"
 #include "api/video_codecs/spatial_layer.h"
@@ -110,10 +109,6 @@ class MockRtpVideoSender : public RtpVideoSenderInterface {
               (),
               (const, override));
   MOCK_METHOD(void, DeliverRtcp, (std::span<const uint8_t>), (override));
-  MOCK_METHOD(void,
-              OnBitrateAllocationUpdated,
-              (const VideoBitrateAllocation&),
-              (override));
   MOCK_METHOD(void,
               OnVideoLayersAllocationUpdated,
               (const VideoLayersAllocation&),

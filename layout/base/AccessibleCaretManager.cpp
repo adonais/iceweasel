@@ -50,6 +50,7 @@ namespace mozilla {
 using namespace dom;
 using Appearance = AccessibleCaret::Appearance;
 using PositionChangedResult = AccessibleCaret::PositionChangedResult;
+using TouchArea = AccessibleCaret::TouchArea;
 
 #define AC_PROCESS_ENUM_TO_STREAM(e) \
   case (e):                          \
@@ -174,14 +175,22 @@ nsresult AccessibleCaretManager::OnSelectionChanged(Document* aDoc,
 }
 
 void AccessibleCaretManager::HideCaretsAndDispatchCaretStateChangedEvent() {
-  if (mCarets.HasLogicallyVisibleCaret()) {
+  if (!mCarets.HasLogicallyVisibleCaret()) {
+    return;
+  }
+
+  {
+    // Mutating the caret elements may run scripts that destroy the PresShell
+    // and the carets. Defer them until we're done with both carets.
+    nsAutoScriptBlocker scriptBlocker;
     AC_LOG("%s", __FUNCTION__);
     mCarets.GetFirst()->SetAppearance(Appearance::None);
     mCarets.GetSecond()->SetAppearance(Appearance::None);
     mIsCaretPositionChanged = false;
     mDesiredAsyncPanZoomState.Update(*this);
-    DispatchCaretStateChangedEvent(CaretChangedReason::Visibilitychange);
   }
+
+  DispatchCaretStateChangedEvent(CaretChangedReason::Visibilitychange);
 }
 
 auto AccessibleCaretManager::MaybeFlushLayout() -> Terminated {
@@ -211,6 +220,10 @@ void AccessibleCaretManager::UpdateCarets(const UpdateCaretsHintSet& aHint) {
     case CaretMode::Selection:
       UpdateCaretsForSelectionMode(aHint);
       break;
+  }
+
+  if (IsTerminated() == Terminated::Yes) {
+    return;
   }
 
   mDesiredAsyncPanZoomState.Update(*this);
@@ -252,45 +265,55 @@ void AccessibleCaretManager::UpdateCaretsForCursorMode(
     return;
   }
 
-  PositionChangedResult result = mCarets.GetFirst()->SetPosition(frame, offset);
+  auto result = PositionChangedResult::NotChanged;
+  {
+    // Mutating the caret elements may run scripts that destroy the PresShell
+    // and the carets. Defer them until we're done with both carets.
+    nsAutoScriptBlocker scriptBlocker;
+    result = mCarets.GetFirst()->SetPosition(frame, offset);
 
-  switch (result) {
-    case PositionChangedResult::NotChanged:
-    case PositionChangedResult::Position:
-    case PositionChangedResult::Zoom:
-      if (!aHints.contains(UpdateCaretsHint::RespectOldAppearance)) {
-        if (HasNonEmptyTextContent(GetEditingHostForFrame(frame))) {
-          mCarets.GetFirst()->SetAppearance(Appearance::Normal);
-        } else if (
-            StaticPrefs::
-                layout_accessiblecaret_caret_shown_when_long_tapping_on_empty_content()) {
-          if (mCarets.GetFirst()->IsLogicallyVisible()) {
-            // Possible cases are: 1) SelectWordOrShortcut() sets the
-            // appearance to Normal. 2) When the caret is out of viewport and
-            // now scrolling into viewport, it has appearance NormalNotShown.
+    switch (result) {
+      case PositionChangedResult::NotChanged:
+      case PositionChangedResult::Position:
+      case PositionChangedResult::Zoom:
+        if (!aHints.contains(UpdateCaretsHint::RespectOldAppearance)) {
+          if (HasNonEmptyTextContent(GetEditingHostForFrame(frame))) {
             mCarets.GetFirst()->SetAppearance(Appearance::Normal);
+          } else if (
+              StaticPrefs::
+                  layout_accessiblecaret_caret_shown_when_long_tapping_on_empty_content()) {
+            if (mCarets.GetFirst()->IsLogicallyVisible()) {
+              // Possible cases are: 1) SelectWordOrShortcut() sets the
+              // appearance to Normal. 2) When the caret is out of viewport and
+              // now scrolling into viewport, it has appearance NormalNotShown.
+              mCarets.GetFirst()->SetAppearance(Appearance::Normal);
+            } else {
+              // Possible cases are: a) Single tap on current empty content;
+              // OnSelectionChanged() sets the appearance to None due to
+              // MOUSEDOWN_REASON. b) Single tap on other empty content;
+              // OnBlur() sets the appearance to None.
+              //
+              // Do nothing to make the appearance remains None so that it can
+              // be distinguished from case 2). Also do not set the appearance
+              // to NormalNotShown here like the default update behavior.
+            }
           } else {
-            // Possible cases are: a) Single tap on current empty content;
-            // OnSelectionChanged() sets the appearance to None due to
-            // MOUSEDOWN_REASON. b) Single tap on other empty content;
-            // OnBlur() sets the appearance to None.
-            //
-            // Do nothing to make the appearance remains None so that it can
-            // be distinguished from case 2). Also do not set the appearance
-            // to NormalNotShown here like the default update behavior.
+            mCarets.GetFirst()->SetAppearance(Appearance::NormalNotShown);
           }
-        } else {
-          mCarets.GetFirst()->SetAppearance(Appearance::NormalNotShown);
         }
-      }
-      break;
+        break;
 
-    case PositionChangedResult::Invisible:
-      mCarets.GetFirst()->SetAppearance(Appearance::NormalNotShown);
-      break;
+      case PositionChangedResult::Invisible:
+        mCarets.GetFirst()->SetAppearance(Appearance::NormalNotShown);
+        break;
+    }
+
+    mCarets.GetSecond()->SetAppearance(Appearance::None);
   }
 
-  mCarets.GetSecond()->SetAppearance(Appearance::None);
+  if (IsTerminated() == Terminated::Yes) {
+    return;
+  }
 
   mIsCaretPositionChanged = (result == PositionChangedResult::Position);
 
@@ -323,6 +346,9 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
                 *GetSelection()->GetLastRange(), getter_AddRefs(endContent))
           : FrameAndOffset{};
 
+  AutoWeakFrame weakStartFrame = startFrameAndOffset.mFrame;
+  AutoWeakFrame weakEndFrame = endFrameAndOffset.mFrame;
+
   if (!CompareTreePosition(
           startFrameAndOffset.mFrame,
           static_cast<int32_t>(startFrameAndOffset.mOffsetInFrameContent),
@@ -333,7 +359,7 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
     return;
   }
 
-  auto updateSingleCaret = [aHints](AccessibleCaret* aCaret, nsIFrame* aFrame,
+  auto UpdateSingleCaret = [aHints](AccessibleCaret* aCaret, nsIFrame* aFrame,
                                     int32_t aOffset) -> PositionChangedResult {
     PositionChangedResult result = aCaret->SetPosition(aFrame, aOffset);
 
@@ -353,22 +379,35 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
     return result;
   };
 
-  PositionChangedResult firstCaretResult = updateSingleCaret(
-      mCarets.GetFirst(), startFrameAndOffset.mFrame,
-      static_cast<int32_t>(startFrameAndOffset.mOffsetInFrameContent));
-  // If we get a frame for a child node for the end boundary, e.g., when the
-  // last visible content is <img> or something or unselectable container,
-  // we want to put the second caret to next to its end edge.  Then, we use
-  // the specific behavior of nsIFrame::GetPointFromOffset() (called by
-  // nsCaret::GetGeometryForFrame() in AccessibleCaret::SetPosition()) which
-  // returns the end edge if we set the length of frame content + 1.
-  const uint32_t offsetInEndFrameContent =
-      endFrameAndOffset.GetFrameContent() == endContent
-          ? endFrameAndOffset.mOffsetInFrameContent
-          : endFrameAndOffset.GetFrameContent()->Length() + 1;
-  PositionChangedResult secondCaretResult =
-      updateSingleCaret(mCarets.GetSecond(), endFrameAndOffset.mFrame,
-                        static_cast<int32_t>(offsetInEndFrameContent));
+  auto firstCaretResult = PositionChangedResult::NotChanged;
+  auto secondCaretResult = PositionChangedResult::NotChanged;
+  {
+    // Mutating the caret elements may run scripts that destroy the PresShell
+    // and the carets. Defer them until we're done with both carets.
+    nsAutoScriptBlocker scriptBlocker;
+
+    firstCaretResult = UpdateSingleCaret(
+        mCarets.GetFirst(), startFrameAndOffset.mFrame,
+        static_cast<int32_t>(startFrameAndOffset.mOffsetInFrameContent));
+
+    // If we get a frame for a child node for the end boundary, e.g., when the
+    // last visible content is <img> or something or unselectable container,
+    // we want to put the second caret to next to its end edge.  Then, we use
+    // the specific behavior of nsIFrame::GetPointFromOffset() (called by
+    // nsCaret::GetGeometryForFrame() in AccessibleCaret::SetPosition()) which
+    // returns the end edge if we set the length of frame content + 1.
+    const uint32_t offsetInEndFrameContent =
+        endFrameAndOffset.GetFrameContent() == endContent
+            ? endFrameAndOffset.mOffsetInFrameContent
+            : endFrameAndOffset.GetFrameContent()->Length() + 1;
+    secondCaretResult =
+        UpdateSingleCaret(mCarets.GetSecond(), endFrameAndOffset.mFrame,
+                          static_cast<int32_t>(offsetInEndFrameContent));
+  }
+
+  if (IsTerminated() == Terminated::Yes) {
+    return;
+  }
 
   mIsCaretPositionChanged =
       firstCaretResult == PositionChangedResult::Position ||
@@ -380,22 +419,23 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
       ProvideHapticFeedback(mozilla::HapticFeedbackType::TextHandleMove);
     }
 
-    AutoWeakFrame weakStartFrame = startFrameAndOffset.mFrame;
-    AutoWeakFrame weakEndFrame = endFrameAndOffset.mFrame;
-
     // Flush layout to make the carets intersection correct.
     if (MaybeFlushLayout() == Terminated::Yes) {
       return;
     }
+  }
 
-    if ((startFrameAndOffset.mFrame && !weakStartFrame.IsAlive()) ||
-        (endFrameAndOffset.mFrame && !weakEndFrame.IsAlive())) {
-      HideCaretsAndDispatchCaretStateChangedEvent();
-      return;
-    }
+  // Bail out and hide the carets if either the start frame or end frame is
+  // destroyed.
+  if ((startFrameAndOffset.mFrame && !weakStartFrame.IsAlive()) ||
+      (endFrameAndOffset.mFrame && !weakEndFrame.IsAlive())) {
+    HideCaretsAndDispatchCaretStateChangedEvent();
+    return;
   }
 
   if (!aHints.contains(UpdateCaretsHint::RespectOldAppearance)) {
+    nsAutoScriptBlocker scriptBlocker;
+
     // Only check for tilt carets when the caller doesn't ask us to preserve
     // old appearance. Otherwise we might override the appearance set by the
     // caller.
@@ -517,14 +557,10 @@ nsresult AccessibleCaretManager::PressCaret(const nsPoint& aPoint,
   MOZ_ASSERT(aEventClass == eMouseEventClass || aEventClass == eTouchEventClass,
              "Unexpected event class!");
 
-  using TouchArea = AccessibleCaret::TouchArea;
-  TouchArea touchArea =
-      aEventClass == eMouseEventClass ? TouchArea::CaretImage : TouchArea::Full;
-
-  if (mCarets.GetFirst()->Contains(aPoint, touchArea)) {
+  if (mCarets.GetFirst()->Contains(aPoint, TouchArea::CaretImage)) {
     mActiveCaret = mCarets.GetFirst();
     SetSelectionDirection(eDirPrevious);
-  } else if (mCarets.GetSecond()->Contains(aPoint, touchArea)) {
+  } else if (mCarets.GetSecond()->Contains(aPoint, TouchArea::CaretImage)) {
     mActiveCaret = mCarets.GetSecond();
     SetSelectionDirection(eDirNext);
   }
@@ -1263,71 +1299,43 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
     return false;
   }
 
-  // Move one character (in the direction of dir) from the inactive caret's
-  // position. This is the limit for the active caret's new position.
-  PeekOffsetStruct limit(
-      eSelectCluster, dir,
-      static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent), nsPoint(0, 0),
-      {PeekOffsetOption::JumpLines, PeekOffsetOption::StopAtScroller});
-  nsresult rv = frameAndOffset->PeekOffset(&limit);
-  if (NS_FAILED(rv)) {
-    limit.mResultContent = content;
-    limit.mContentOffset = offsetInContent;
-  }
-
-  // Compare the active caret's new position (aOffsets) to the limit.
-  NS_ASSERTION(limit.mContentOffset >= 0,
-               "limit.mContentOffset should not be negative");
-  const Maybe<int32_t> cmpToLimit =
-      nsContentUtils::ComparePoints_AllowNegativeOffsets<
-          TreeKind::ShadowIncludingDOM>(
-          aOffsets.content, aOffsets.StartOffset(), limit.mResultContent,
-          limit.mContentOffset);
-  if (NS_WARN_IF(!cmpToLimit)) {
-    // Potentially handle this properly when Selection across Shadow DOM
-    // boundary is implemented
-    // (https://bugzilla.mozilla.org/show_bug.cgi?id=1607497).
-    return false;
-  }
-
-  auto SetOffsetsToLimit = [&aOffsets, &limit]() {
-    aOffsets.content = limit.mResultContent;
-    aOffsets.offset = limit.mContentOffset;
-    aOffsets.secondaryOffset = limit.mContentOffset;
-  };
-
-  if (!StaticPrefs::
-          layout_accessiblecaret_allow_dragging_across_other_caret()) {
-    if ((mActiveCaret == mCarets.GetFirst() && *cmpToLimit == 1) ||
-        (mActiveCaret == mCarets.GetSecond() && *cmpToLimit == -1)) {
-      // The active caret's position is past the limit, which we don't allow
-      // here. So set it to the limit, resulting in one character being
-      // selected.
-      SetOffsetsToLimit();
+  switch (*cmpToInactiveCaretPos) {
+    case 0: {
+      // The active caret's position is the same as the position of the
+      // inactive caret. So move it one character (in the direction of dir)
+      // away from the inactive caret to prevent the selection from being
+      // collapsed, resulting in one character being selected.
+      PeekOffsetStruct limit(
+          eSelectCluster, dir,
+          static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent),
+          nsPoint(0, 0),
+          {PeekOffsetOption::JumpLines, PeekOffsetOption::StopAtScroller});
+      nsresult rv = frameAndOffset->PeekOffset(&limit);
+      if (NS_FAILED(rv)) {
+        limit.mResultContent = content;
+        limit.mContentOffset = offsetInContent;
+      }
+      NS_ASSERTION(limit.mContentOffset >= 0,
+                   "limit.mContentOffset should not be negative");
+      aOffsets.content = limit.mResultContent;
+      aOffsets.offset = limit.mContentOffset;
+      aOffsets.secondaryOffset = limit.mContentOffset;
+      break;
     }
-  } else {
-    switch (*cmpToInactiveCaretPos) {
-      case 0:
-        // The active caret's position is the same as the position of the
-        // inactive caret. So set it to the limit to prevent the selection from
-        // being collapsed, resulting in one character being selected.
-        SetOffsetsToLimit();
-        break;
-      case 1:
-        if (mActiveCaret == mCarets.GetFirst()) {
-          // First caret was moved across the second caret. After making change
-          // to the selection, the user will drag the second caret.
-          mActiveCaret = mCarets.GetSecond();
-        }
-        break;
-      case -1:
-        if (mActiveCaret == mCarets.GetSecond()) {
-          // Second caret was moved across the first caret. After making change
-          // to the selection, the user will drag the first caret.
-          mActiveCaret = mCarets.GetFirst();
-        }
-        break;
-    }
+    case 1:
+      if (mActiveCaret == mCarets.GetFirst()) {
+        // First caret was moved across the second caret. After making change
+        // to the selection, the user will drag the second caret.
+        mActiveCaret = mCarets.GetSecond();
+      }
+      break;
+    case -1:
+      if (mActiveCaret == mCarets.GetSecond()) {
+        // Second caret was moved across the first caret. After making change
+        // to the selection, the user will drag the first caret.
+        mActiveCaret = mCarets.GetFirst();
+      }
+      break;
   }
 
   return true;
@@ -1480,30 +1488,6 @@ nsPoint AccessibleCaretManager::AdjustDragBoundary(
       boundary.Deflate(kBoundaryAppUnits);
 
       adjustedPoint = boundary.ClampPoint(adjustedPoint);
-    }
-  }
-
-  if (GetCaretMode() == CaretMode::Selection &&
-      !StaticPrefs::
-          layout_accessiblecaret_allow_dragging_across_other_caret()) {
-    // Bug 1068474: Adjust the Y-coordinate so that the carets won't be in tilt
-    // mode when a caret is being dragged surpass the other caret.
-    //
-    // For example, when dragging the second caret, the horizontal boundary
-    // (lower bound) of its Y-coordinate is the logical position of the first
-    // caret. Likewise, when dragging the first caret, the horizontal boundary
-    // (upper bound) of its Y-coordinate is the logical position of the second
-    // caret.
-    if (mActiveCaret == mCarets.GetFirst()) {
-      nscoord dragDownBoundaryY = mCarets.GetSecond()->LogicalPosition().y;
-      if (dragDownBoundaryY > 0 && adjustedPoint.y > dragDownBoundaryY) {
-        adjustedPoint.y = dragDownBoundaryY;
-      }
-    } else {
-      nscoord dragUpBoundaryY = mCarets.GetFirst()->LogicalPosition().y;
-      if (adjustedPoint.y < dragUpBoundaryY) {
-        adjustedPoint.y = dragUpBoundaryY;
-      }
     }
   }
 

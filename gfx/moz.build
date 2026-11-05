@@ -60,11 +60,6 @@ LICENSED_UNDER["chromium"].paths = [
     "ots",
 ]
 
-LICENSED_UNDER += ["harfbuzz"]
-LICENSED_UNDER["harfbuzz"].paths = [
-    "harfbuzz",
-]
-
 LICENSED_UNDER += ["lgpl"]
 LICENSED_UNDER["lgpl"].paths = [
     "graphite2",

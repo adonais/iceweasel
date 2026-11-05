@@ -12,6 +12,12 @@ support-files = [
   "bipbop-clearkey-video-av1.mp4^headers^",
   "opus-sample-cenc.mp4",
   "opus-sample-cenc.mp4^headers^",
+  "flac-sample-cenc.mp4",
+  "flac-sample-cenc.mp4^headers^",
+  "!/dom/media/mediasource/test/flac/IS.mp4",
+  "!/dom/media/mediasource/test/flac/00001.m4s",
+  "!/dom/media/mediasource/test/flac/00002.m4s",
+  "!/dom/media/mediasource/test/flac/00003.m4s",
 ]
 
 ["test_eme_mfcdm_generate_request.html"]
@@ -20,7 +26,12 @@ support-files = [
 
 ["test_eme_mfcdm_getstatusforpolicy.html"]
 
+["test_eme_mfcdm_unavailable_without_hw_decoding.html"]
+
 ["test_eme_mfcdm_update_error.html"]
+
+["test_eme_setmediakeys_engine_startup.html"]
+scheme = "https"
 
 ["test_eme_wideinve_l1_installation.html"]
 

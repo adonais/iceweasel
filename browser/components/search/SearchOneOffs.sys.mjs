@@ -98,6 +98,12 @@ export class SearchOneOffs {
      */
     this._rebuilding = false;
 
+    /**
+     * Set when `invalidateCache()` is called during `_rebuild()`, so the cache
+     * is dropped once the rebuild, which still uses it, has finished.
+     */
+    this._invalidateCacheAfterRebuild = false;
+
     this.addEventListener("mousedown", this);
     this.addEventListener("click", this);
     this.addEventListener("command", this);
@@ -192,7 +198,9 @@ export class SearchOneOffs {
    * will be rebuilt the next time they are shown.
    */
   invalidateCache() {
-    if (!this._rebuilding) {
+    if (this._rebuilding) {
+      this._invalidateCacheAfterRebuild = true;
+    } else {
       this._engineInfo = null;
     }
   }
@@ -427,6 +435,10 @@ export class SearchOneOffs {
       console.error("Search-one-offs::_rebuild() error:", ex);
     } finally {
       this._rebuilding = false;
+      if (this._invalidateCacheAfterRebuild) {
+        this._invalidateCacheAfterRebuild = false;
+        this._engineInfo = null;
+      }
       this.dispatchEvent(new Event("rebuild"));
     }
   }

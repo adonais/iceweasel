@@ -1,0 +1,15 @@
+import pytest
+from webdriver.bidi.error import UnsupportedOperationException
+
+from bidi.support.container_isolation import container_isolation
+
+pytestmark = [pytest.mark.asyncio, container_isolation]
+
+
+async def test_set_permission(bidi_session):
+    with pytest.raises(UnsupportedOperationException):
+        await bidi_session.permissions.set_permission(
+            descriptor={"name": "geolocation"},
+            state="granted",
+            origin="https://example.com",
+        )

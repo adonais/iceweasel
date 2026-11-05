@@ -438,6 +438,25 @@ async function runTwoHeadAccuracySweep({ backend, tag }) {
   );
   Assert.greater(rows.length, 0, `${ACCURACY_DATASET} yielded labeled fields`);
 
+  const splitContext = mlData => {
+    const cur = [];
+    const prev = [];
+    const next = [];
+    for (const w of mlData.split(/\s+/)) {
+      if (!w) {
+        continue;
+      }
+      if (w.length > 2 && w.startsWith("bb")) {
+        prev.push(w.slice(2));
+      } else if (w.length > 2 && w.startsWith("aa")) {
+        next.push(w.slice(2));
+      } else {
+        cur.push(w);
+      }
+    }
+    return [cur.join(" "), prev.join(" "), next.join(" ")];
+  };
+
   // Mirrors FormAutofillML.#identifyFields: split every field into its three
   // sections, embed each DISTINCT section once, then look the three up by value.
   const sections = rows.map(r => splitContext(r.mlData));

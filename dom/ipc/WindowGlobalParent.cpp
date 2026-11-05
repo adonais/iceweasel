@@ -636,6 +636,11 @@ IPCResult WindowGlobalParent::RecvUpdateDocumentHasLoaded(
   return IPC_OK();
 }
 
+IPCResult WindowGlobalParent::RecvSetMayHaveViewTransitionOptIn(bool aMayHave) {
+  mMayHaveViewTransitionOptIn = aMayHave;
+  return IPC_OK();
+}
+
 IPCResult WindowGlobalParent::RecvUpdateDocumentHasUserInteracted(
     bool aDocumentHasUserInteracted) {
   mDocumentHasUserInteracted = aDocumentHasUserInteracted;
@@ -2059,17 +2064,19 @@ bool WindowGlobalParent::ShouldTrackSiteOriginTelemetry() {
   return DocumentPrincipal()->GetIsContentPrincipal();
 }
 
-void WindowGlobalParent::AddSecurityState(uint32_t aStateFlags) {
+mozilla::ipc::IPCResult WindowGlobalParent::RecvAddSecurityState(
+    uint32_t aStateFlags) {
+  if ((aStateFlags & kValidSecurityStateFlags) != aStateFlags) {
+    return IPC_FAIL(this, "Invalid security state flags");
+  }
+
+  AddSecurityState(aStateFlags);
+  return IPC_OK();
+}
+
+void WindowGlobalParent::ApplySecurityStateToTop(uint32_t aStateFlags) {
   MOZ_ASSERT(TopWindowContext() == this);
-  MOZ_ASSERT((aStateFlags &
-              (nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT |
-               nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT |
-               nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT |
-               nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT |
-               nsIWebProgressListener::STATE_HTTPS_ONLY_MODE_UPGRADED |
-               nsIWebProgressListener::STATE_HTTPS_ONLY_MODE_UPGRADE_FAILED |
-               nsIWebProgressListener::STATE_HTTPS_ONLY_MODE_UPGRADED_FIRST)) ==
-                 aStateFlags,
+  MOZ_ASSERT((aStateFlags & kValidSecurityStateFlags) == aStateFlags,
              "Invalid flags specified!");
 
   if ((mSecurityState & aStateFlags) == aStateFlags) {
@@ -2405,27 +2412,11 @@ WindowGlobalParent::AllocPPrefetchRecordParent(
 }
 
 RefPtr<PrefetchMatchPromise> WindowGlobalParent::WaitForMatchingPrefetchRecord(
-    nsIURI* aURI, TimeDuration aTimeout) {
-  // Implements "wait for a matching prefetch record". The full algorithm
-  // runs "in parallel" and loops until a match completes, no ongoing record
-  // could still satisfy the navigation, or aTimeout elapses. Since a
-  // navigation can only be delayed by prefetches that are still ongoing
-  // *right now*, we only need to register a waiter (below) when such a
-  // record exists; otherwise the loop's first iteration already resolves
-  // synchronously.
+    nsIURI* aURI) {
+  // Implements the waiting half of "wait for a matching prefetch record";
+  // the caller has already checked for a completed match (steps 5.1.1-5.1.2).
   // Spec:
   // https://wicg.github.io/nav-speculation/prefetch.html#wait-for-a-matching-prefetch-record
-
-  // Steps 5.1.1-5.1.2: "Let completeRecord be the result of finding a
-  // matching complete prefetch record ... If completeRecord is not null,
-  // return completeRecord."
-  if (PrefetchRecordParent* match = FindMatchingPrefetchRecord(aURI)) {
-    LOG_SPECRULES(
-        ("WindowGlobalParent::WaitForMatchingPrefetchRecord: "
-         "this=%p fast match rec=%p",
-         this, match));
-    return PrefetchMatchPromise::CreateAndResolve(RefPtr{match}, __func__);
-  }
 
   // Steps 5.1.3-5.1.5: build potentialRecords (ongoing records that could
   // still satisfy aURI) and, "if potentialRecords is empty, return null"
@@ -2433,16 +2424,19 @@ RefPtr<PrefetchMatchPromise> WindowGlobalParent::WaitForMatchingPrefetchRecord(
   if (!HasPotentialPrefetchMatch(aURI)) {
     LOG_SPECRULES(
         ("WindowGlobalParent::WaitForMatchingPrefetchRecord: "
-         "this=%p no potential records, resolving nullptr",
+         "this=%p no potential records",
          this));
-    return PrefetchMatchPromise::CreateAndResolve(nullptr, __func__);
+    return nullptr;
   }
 
   // Otherwise "wait until the state of any element of ... prefetch records
   // changes" and re-run the loop: PrefetchMatchWaiter re-checks for a match
-  // (or gives up) each time NotifyPrefetchStateChanged fires, until aTimeout.
-  RefPtr<PrefetchMatchWaiter> waiter =
-      PrefetchMatchWaiter::Create(this, aURI, aTimeout);
+  // (or gives up) each time NotifyPrefetchStateChanged fires, until the
+  // dom.speculation_rules.wait_timeout_ms timeout.
+  RefPtr<PrefetchMatchWaiter> waiter = PrefetchMatchWaiter::Create(
+      this, aURI,
+      TimeDuration::FromMilliseconds(
+          StaticPrefs::dom_speculation_rules_wait_timeout_ms()));
   mPrefetchWaiters.AppendElement(waiter);
   LOG_SPECRULES(
       ("WindowGlobalParent::WaitForMatchingPrefetchRecord: "
@@ -2463,6 +2457,19 @@ bool WindowGlobalParent::HasPotentialPrefetchMatch(nsIURI* aURI) {
     auto* rec = static_cast<PrefetchRecordParent*>(p);
     if (rec->State() == PrefetchState::Ongoing &&
         rec->IsExpectedToMatch(aURI)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool WindowGlobalParent::HasMatchingPrefetchCandidate(nsIURI* aURI) {
+  nsTArray<PPrefetchRecordParent*> managed;
+  ManagedPPrefetchRecordParent(managed);
+  for (auto* p : managed) {
+    auto* rec = static_cast<PrefetchRecordParent*>(p);
+    // Network outcomes exist only in treatment and must not change eligibility.
+    if (rec->IsEligibleForPrefetch() && rec->MatchesCandidateURL(aURI)) {
       return true;
     }
   }

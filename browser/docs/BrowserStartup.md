@@ -94,7 +94,7 @@ Nimbus/Normandy time to complete its initialization and first
 fetch](https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/browser/components/BrowserContentHandler.sys.mjs#677)
 before continuing to process the command line. See [the
 `FirstStartup`
-module](https://firefox-source-docs.mozilla.org/toolkit/modules/toolkit_modules/FirstStartup.html).
+module](/toolkit/modules/toolkit_modules/FirstStartup.md).
 (Important caveat: `--first-startup` is only used on Windows; see [Bug
 1872934](https://bugzilla.mozilla.org/show_bug.cgi?id=1872934), for
 example.)

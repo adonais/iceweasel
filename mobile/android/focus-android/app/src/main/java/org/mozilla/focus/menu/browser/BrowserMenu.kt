@@ -18,6 +18,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.MenuItemBadge
+import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconDrawable
@@ -193,7 +194,7 @@ private fun MenuStatus.desktopSiteItem(): MenuItem? {
 
 private fun MenuStatus.reportSiteIssueItem(): MenuItem? = reportSiteIssueTitle?.let { title ->
     StandardMenuItem(
-        title = Text.String(title),
+        title = MenuItemTitle(Text.String(title)),
         icon = reportSiteIssueIcon?.let { MenuItemIconDrawable(it) },
         onClickEvent = MenuItemTapped(ToolbarMenu.Item.ReportSiteIssue),
     )
@@ -233,7 +234,7 @@ private fun menuItem(
     showText: Boolean = true,
 ): MenuItem =
     StandardMenuItem(
-        title = if (showText) Text.Resource(title) else Text.String(""),
+        title = MenuItemTitle(if (showText) Text.Resource(title) else Text.String("")),
         contentDescription = if (showText) null else Text.Resource(title),
         icon = MenuItemIconRes(iconRes = icon),
         onClickEvent = MenuItemTapped(item),

@@ -20,9 +20,10 @@
 
 namespace sh
 {
+const char kExtractedSamplerNamePrefix[] = "extractedSampler";
+
 namespace
 {
-
 // Used to map one structure type to another (one where the samplers are removed).
 struct StructureData
 {
@@ -189,7 +190,7 @@ TIntermTyped *RewriteModifiedStructFieldSelectionExpression(
     const bool isSampler = node->getType().isSampler();
 
     TIntermSymbol *baseUniform = nullptr;
-    std::string samplerName;
+    std::string samplerPath;
 
     TVector<TIntermBinary *> indexNodeStack;
 
@@ -206,15 +207,15 @@ TIntermTyped *RewriteModifiedStructFieldSelectionExpression(
             {
                 // When indexed into a struct, get the field name instead and construct the sampler
                 // name.
-                samplerName.insert(0, iter->getIndexStructFieldName().data());
-                samplerName.insert(0, "_");
+                samplerPath.insert(0, iter->getIndexStructFieldName().data());
+                samplerPath.insert(0, ".");
             }
 
             if (baseUniform)
             {
                 // If left is a symbol, we have reached the end of the chain.  Use the struct name
                 // to finish building the name of the sampler.
-                samplerName.insert(0, baseUniform->variable().name().data());
+                samplerPath.insert(0, baseUniform->variable().name().data());
             }
         }
 
@@ -225,8 +226,8 @@ TIntermTyped *RewriteModifiedStructFieldSelectionExpression(
 
     if (isSampler)
     {
-        ASSERT(extractedSamplers.find(samplerName) != extractedSamplers.end());
-        rewritten = new TIntermSymbol(extractedSamplers.at(samplerName));
+        ASSERT(extractedSamplers.find(samplerPath) != extractedSamplers.end());
+        rewritten = new TIntermSymbol(extractedSamplers.at(samplerPath));
     }
     else
     {
@@ -279,12 +280,9 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
 {
   public:
     explicit RewriteStructSamplersTraverser(TCompiler *compiler, TSymbolTable *symbolTable)
-        : TIntermTraverser(true, false, false, symbolTable),
-          mCompiler(compiler),
-          mRemovedUniformsCount(0)
+        : TIntermTraverser(true, false, false, symbolTable), mCompiler(compiler)
     {}
 
-    int removedUniformsCount() const { return mRemovedUniformsCount; }
 
     // Each struct sampler declaration is stripped of its samplers. New uniforms are added for each
     // stripped struct sampler.
@@ -370,23 +368,6 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
     }
 
   private:
-    bool isActiveUniform(const ImmutableString &rootStructureName)
-    {
-        if (!mActiveUniforms)
-        {
-            mActiveUniforms = new TSet<ImmutableString>();
-            for (const ShaderVariable &uniform : mCompiler->getUniforms())
-            {
-                if (uniform.active)
-                {
-                    mActiveUniforms->insert(uniform.name);
-                }
-            }
-        }
-
-        return mActiveUniforms->count(rootStructureName) > 0;
-    }
-
     // Removes all samplers from a struct specifier.
     void stripStructSpecifierSamplers(const TStructure *structure, TIntermSequence *newSequence)
     {
@@ -419,7 +400,7 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
                     const TStructure *modifiedStruct = mStructureMap[fieldStruct].modified;
                     ASSERT(modifiedStruct);
 
-                    newType = new TType(modifiedStruct, true);
+                    newType = new TType(modifiedStruct, false);
                     if (fieldType.isArray())
                     {
                         newType->makeArrays(fieldType.getArraySizes());
@@ -489,8 +470,7 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
 
         for (const TField *field : structure->fields())
         {
-            extractFieldSamplers(isActiveUniform(variable.name()), variable.name().data(), field,
-                                 newSequence);
+            extractFieldSamplers(variable.name().data(), field, newSequence);
         }
 
         // If there's a replacement structure (because there are non-sampler fields in the struct),
@@ -515,31 +495,23 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
             ASSERT(mStructureUniformMap.find(&variable) == mStructureUniformMap.end());
             mStructureUniformMap[&variable] = newVariable;
         }
-        else
-        {
-            mRemovedUniformsCount++;
-        }
 
         exitArray(type);
     }
 
     // Extracts samplers from a field of a struct. Works with nested structs and arrays.
-    void extractFieldSamplers(bool inActiveUniform,
-                              const std::string &prefix,
+    void extractFieldSamplers(const std::string &prefix,
                               const TField *field,
                               TIntermSequence *newSequence)
     {
         const TType &fieldType = *field->type();
         if (fieldType.isSampler() || fieldType.isStructureContainingSamplers())
         {
-            std::string newPrefix = prefix + "_" + field->name().data();
+            std::string newPrefix = prefix + "." + field->name().data();
 
             if (fieldType.isSampler())
             {
-                if (inActiveUniform)
-                {
-                    extractSampler(newPrefix, fieldType, newSequence);
-                }
+                extractSampler(newPrefix, fieldType, newSequence);
             }
             else
             {
@@ -547,7 +519,7 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
                 const TStructure *structure = fieldType.getStruct();
                 for (const TField *nestedField : structure->fields())
                 {
-                    extractFieldSamplers(inActiveUniform, newPrefix, nestedField, newSequence);
+                    extractFieldSamplers(newPrefix, nestedField, newSequence);
                 }
                 exitArray(fieldType);
             }
@@ -565,7 +537,7 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
     }
 
     // Extracts a sampler from a struct. Declares the new extracted sampler.
-    void extractSampler(const std::string &newName,
+    void extractSampler(const std::string &path,
                         const TType &fieldType,
                         TIntermSequence *newSequence)
     {
@@ -580,6 +552,10 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
         GenerateArraySizesFromStack(&parentArraySizes);
         newType->makeArrays(parentArraySizes);
 
+        std::ostringstream newNameBuilder;
+        newNameBuilder << kExtractedSamplerNamePrefix << "_" << mExtractedSamplers.size();
+        const std::string newName = newNameBuilder.str();
+
         ImmutableStringBuilder nameBuilder(newName.size() + 1);
         nameBuilder << newName;
 
@@ -593,12 +569,8 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
 
         newSequence->push_back(samplerDecl);
 
-        // TODO: Use a temp name instead of generating a name as currently done.  There is no
-        // guarantee that these generated names cannot clash.  Create a mapping from the previous
-        // name to the name assigned to the temp variable so ShaderVariable::mappedName can be
-        // updated post-transformation.  http://anglebug.com/42262930
-        ASSERT(mExtractedSamplers.find(newName) == mExtractedSamplers.end());
-        mExtractedSamplers[newName] = newVariable;
+        ASSERT(mExtractedSamplers.find(path) == mExtractedSamplers.end());
+        mExtractedSamplers[path] = newVariable;
     }
 
     void enterArray(const TType &arrayType)
@@ -617,7 +589,6 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
     }
 
     TCompiler *mCompiler;
-    int mRemovedUniformsCount;
 
     // Map structures with samplers to ones that have their samplers removed.
     StructureMap mStructureMap;
@@ -632,20 +603,13 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
     // A stack of array sizes.  Used to figure out the array dimensions of the extracted sampler,
     // for example when it's nested in an array of structs in an array of structs.
     TVector<unsigned int> mArraySizeStack;
-
-    // Caches the names of all inactive uniforms.
-    TSet<ImmutableString> *mActiveUniforms = nullptr;
 };
 }  // anonymous namespace
 
-bool RewriteStructSamplers(TCompiler *compiler,
-                           TIntermBlock *root,
-                           TSymbolTable *symbolTable,
-                           int *removedUniformsCountOut)
+bool RewriteStructSamplers(TCompiler *compiler, TIntermBlock *root, TSymbolTable *symbolTable)
 {
     RewriteStructSamplersTraverser traverser(compiler, symbolTable);
     root->traverse(&traverser);
-    *removedUniformsCountOut = traverser.removedUniformsCount();
     return traverser.updateTree(compiler, root);
 }
 }  // namespace sh

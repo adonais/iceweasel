@@ -27,28 +27,34 @@
       let button1Acc = getAccessible("button1");
       let menupopup1 = button1Acc.firstChild;
 
-      testAccessibleTree(button1Acc, { PUSHBUTTON: [{ MENUPOPUP: [] }] });
+      testAccessibleTree(button1Acc, { PUSHBUTTON: [
+        { MENUPOPUP: [] },
+        { LABEL: [{ STATICTEXT: [] }] }
+      ] });
       let reordered = waitForEvent(EVENT_REORDER, menupopup1);
       synthesizeMouse(getNode("button1"), 1, 1, {});
       await reordered;
       testAccessibleTree(button1Acc, { PUSHBUTTON: [{ MENUPOPUP: [
         { role: ROLE_MENUITEM, children: [] },
         { role: ROLE_MENUITEM, children: [] }
-      ] }] });
+      ] }, { LABEL: [{ STATICTEXT: [] }] }] });
       synthesizeKey("KEY_Escape");
 
       // openMenu("button3")
       let button3Acc = getAccessible("button3");
       let menupopup3 = button3Acc.firstChild;
 
-      testAccessibleTree(button3Acc, { PUSHBUTTON: [{ MENUPOPUP: [] }] });
+      testAccessibleTree(button3Acc, { PUSHBUTTON: [
+        { MENUPOPUP: [] },
+        { LABEL: [{ STATICTEXT: [] }] }
+      ] });
       reordered = waitForEvent(EVENT_REORDER, menupopup3);
       synthesizeMouse(getNode("button3"), 1, 1, {});
       await reordered;
       testAccessibleTree(button3Acc, { PUSHBUTTON: [{ MENUPOPUP: [
         { role: ROLE_MENUITEM, children: [] },
         { role: ROLE_MENUITEM, children: [] }
-      ] }] });
+      ] }, { LABEL: [{ STATICTEXT: [] }] }] });
       synthesizeKey("KEY_Escape");
 
       const columnPickerBtn =

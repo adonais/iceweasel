@@ -580,6 +580,7 @@ add_task(async function test_import_summary_contains_added_login() {
  * Imports login data summary contains modified logins without guid.
  */
 add_task(async function test_import_summary_modified_login_without_guid() {
+  Services.fog.testResetFOG();
   let initialDataFile = await setupCsv([
     "url,username,password,httpRealm,formActionOrigin,guid,timeCreated,timeLastUsed,timePasswordChanged",
     "https://modifiedwithoutguid.example.com,gini@example.com,initial_password,My realm,,,1589617814635,1589710449871,1589617846802",
@@ -670,6 +671,7 @@ add_task(async function test_import_summary_modified_login_with_guid() {
  * Imports login data summary contains unchanged logins.
  */
 add_task(async function test_import_summary_contains_unchanged_login() {
+  Services.fog.testResetFOG();
   let initialDataFile = await setupCsv([
     "url,username,password,httpRealm,formActionOrigin,guid,timeCreated,timeLastUsed,timePasswordChanged",
     "https://nochange.example.com,jane@example.com,nochange_password,My realm,,{5ec0d12f-e194-4279-ae1b-d7d281bb0002},1589617814635,1589710449871,1589617846802",
@@ -692,6 +694,7 @@ add_task(async function test_import_summary_contains_unchanged_login() {
  * Imports login data summary contains logins with errors in case of missing fields.
  */
 add_task(async function test_import_summary_contains_missing_fields_errors() {
+  Services.fog.testResetFOG();
   const missingFieldsToCheck = ["url", "password"];
   const sourceObject = {
     url: "https://invalid.password.example.com",

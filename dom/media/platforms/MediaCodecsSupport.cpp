@@ -4,6 +4,7 @@
 #include "MediaCodecsSupport.h"
 
 #include <array>
+#include <memory>
 
 #include "AOMDecoder.h"
 #include "MP4Decoder.h"
@@ -140,6 +141,75 @@ bool MCSInfo::SupportsHardwareDecode(
       aSupportedCodecs.contains(GetCodecDefinition(aCodec).hwDecodeSupport));
 }
 
+#ifdef MOZ_WIDGET_ANDROID
+DecodeSupportSet MCSInfo::GetMediaCodecDecodeSupportForColorDepth(
+    const MediaCodec& aCodec, const DecodeSupportSet& aSupport,
+    gfx::ColorDepth aColorDepth) {
+  if (aColorDepth == gfx::ColorDepth::COLOR_8) {
+    return aSupport;
+  }
+
+  // Only H264 and HEVC use MediaCodec for software decoding. Our own software
+  // decoders support any color depth.
+  DecodeSupportSet support;
+  const bool mediaCodecSoftware =
+      aCodec == MediaCodec::H264 || aCodec == MediaCodec::HEVC;
+  if (!mediaCodecSoftware && aSupport.contains(DecodeSupport::SoftwareDecode)) {
+    support += DecodeSupport::SoftwareDecode;
+  }
+
+  // MediaCodec does not support decoding more than 10-bit.
+  if (aColorDepth != gfx::ColorDepth::COLOR_10) {
+    return support;
+  }
+
+  const auto supported10Bit = gfx::gfxVars::PlatformMediaCodecs10BitSupported();
+  if (aSupport.contains(DecodeSupport::HardwareDecode) &&
+      SupportsHardwareDecode(supported10Bit, aCodec)) {
+    support += DecodeSupport::HardwareDecode;
+  }
+  if (mediaCodecSoftware && aSupport.contains(DecodeSupport::SoftwareDecode) &&
+      SupportsSoftwareDecode(supported10Bit, aCodec)) {
+    support += DecodeSupport::SoftwareDecode;
+  }
+  return support;
+}
+
+static gfx::IntSize GetHardwareDecodeMaxSize(const MediaCodec& aCodec) {
+  switch (aCodec) {
+    case MediaCodec::H264:
+      return gfx::gfxVars::PlatformH264HwDecodeMaxSize();
+    case MediaCodec::HEVC:
+      return gfx::gfxVars::PlatformHEVCHwDecodeMaxSize();
+    case MediaCodec::VP8:
+      return gfx::gfxVars::PlatformVP8HwDecodeMaxSize();
+    case MediaCodec::VP9:
+      return gfx::gfxVars::PlatformVP9HwDecodeMaxSize();
+    case MediaCodec::AV1:
+      return gfx::gfxVars::PlatformAV1HwDecodeMaxSize();
+    default:
+      return gfx::IntSize();
+  }
+}
+
+DecodeSupportSet MCSInfo::GetMediaCodecDecodeSupportForSize(
+    const MediaCodec& aCodec, const DecodeSupportSet& aSupport,
+    const gfx::IntSize& aSize) {
+  const gfx::IntSize maxSize = GetHardwareDecodeMaxSize(aCodec);
+  if (aSize.IsEmpty() || maxSize.IsEmpty()) {
+    return aSupport;
+  }
+
+  // Allow for either orientation.
+  if ((aSize.width <= maxSize.width && aSize.height <= maxSize.height) ||
+      (aSize.width <= maxSize.height && aSize.height <= maxSize.width)) {
+    return aSupport;
+  }
+
+  return aSupport - DecodeSupport::HardwareDecode;
+}
+#endif
+
 bool MCSInfo::SupportsSoftwareEncode(
     const MediaCodecsSupported& aSupportedCodecs, const MediaCodec& aCodec) {
   return (
@@ -217,8 +287,9 @@ MCSInfo* MCSInfo::GetInstance(const StaticMutexAutoLock& /* unused */) {
 
 MCSInfo::MCSInfo() {
   // Initialize hash tables
-  mHashTableMCS.reset(new nsTHashMap<MediaCodecsSupport, CodecDefinition>());
-  mHashTableCodec.reset(new nsTHashMap<MediaCodec, CodecDefinition>());
+  mHashTableMCS =
+      std::make_unique<nsTHashMap<MediaCodecsSupport, CodecDefinition>>();
+  mHashTableCodec = std::make_unique<nsTHashMap<MediaCodec, CodecDefinition>>();
 
   for (const auto& it : GetAllCodecDefinitions()) {
     // Insert MediaCodecsSupport values as keys

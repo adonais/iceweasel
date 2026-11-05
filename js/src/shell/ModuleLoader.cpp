@@ -178,6 +178,15 @@ bool ModuleLoader::registerTestModule(JSContext* cx, HandleObject moduleRequest,
   JS::ModuleType moduleType =
       moduleRequest->as<ModuleRequestObject>().moduleType();
 
+  RootedObject existing(cx);
+  if (!lookupModuleInRegistry(cx, moduleType, path, &existing)) {
+    return false;
+  }
+  if (existing) {
+    JS_ReportErrorASCII(cx, "Module is already registered");
+    return false;
+  }
+
   return addModuleToRegistry(cx, moduleType, path, module);
 }
 

@@ -102,15 +102,21 @@ NetworkControlUpdate ScreamNetworkController::OnNetworkRouteChange(
   RTC_LOG(LS_INFO) << " OnNetworkRouteChange, resetting ScreamV2.";
   min_target_rate_ = msg.constraints.min_data_rate.value_or(min_target_rate_);
   max_target_rate_ = msg.constraints.max_data_rate.value_or(max_target_rate_);
-  if (!msg.restart_bwe && scream_.has_value()) {
-    starting_rate_ = std::min(scream_->target_rate(), max_target_rate_);
-  } else {
-    starting_rate_ = msg.constraints.starting_rate.value_or(starting_rate_);
+  starting_rate_ = msg.constraints.starting_rate.value_or(starting_rate_);
+  if (scream_.has_value()) {
+    if (!msg.restart_bwe) {
+      starting_rate_ = scream_->target_rate();
+    } else if (params_.safe_reset_on_route_change) {
+      starting_rate_ = std::min(scream_->target_rate(), starting_rate_);
+    }
   }
+  starting_rate_ =
+      std::clamp(starting_rate_, min_target_rate_, max_target_rate_);
 
   scream_.emplace(env_);
   first_update_created_ = false;
   encoder_paused_due_to_congestion_ = false;
+  reported_target_rate_ = DataRate::Zero();
   UpdateScreamTargetBitrateConstraints();
   if (network_available_ &&
       streams_config_.max_total_allocated_bitrate > DataRate::Zero()) {

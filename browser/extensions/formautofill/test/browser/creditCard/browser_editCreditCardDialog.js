@@ -62,7 +62,11 @@ add_task(async function test_saveCreditCard() {
     is(creditCards[0][fieldName], fieldValue, "check " + fieldName);
   }
   is(creditCards[0].billingAddressGUID, undefined, "check billingAddressGUID");
-  ok(creditCards[0]["cc-number-encrypted"], "cc-number-encrypted exists");
+  is(
+    await decryptCreditCardNumber(creditCards[0]),
+    TEST_CREDIT_CARD_1["cc-number"],
+    "the number itself is stored"
+  );
 });
 
 add_task(async function test_saveCreditCardWithMaxYear() {
@@ -95,7 +99,11 @@ add_task(async function test_saveCreditCardWithMaxYear() {
     }
     is(creditCards[1][fieldName], fieldValue, "check " + fieldName);
   }
-  ok(creditCards[1]["cc-number-encrypted"], "cc-number-encrypted exists");
+  is(
+    await decryptCreditCardNumber(creditCards[1]),
+    TEST_CREDIT_CARD_2["cc-number"],
+    "the number itself is stored"
+  );
   await removeCreditCards([creditCards[1].guid]);
 });
 
@@ -139,7 +147,11 @@ add_task(async function test_saveCreditCardWithBillingAddress() {
     }
     is(creditCards[1][fieldName], fieldValue, "check " + fieldName);
   }
-  ok(creditCards[1]["cc-number-encrypted"], "cc-number-encrypted exists");
+  is(
+    await decryptCreditCardNumber(creditCards[1]),
+    TEST_CREDIT_CARD["cc-number"],
+    "the number itself is stored"
+  );
   await removeCreditCards([creditCards[1].guid]);
   await removeAddresses([addresses[0].guid, addresses[1].guid]);
 });

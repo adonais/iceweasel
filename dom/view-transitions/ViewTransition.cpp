@@ -126,6 +126,8 @@ struct OldSnapshotData {
   nsRect mSnapshotRect;
   RefPtr<layers::RenderRootStateManager> mManager;
   bool mUsed = false;
+  // Whether AdoptOldSnapshots moved the snapshot to another bridge.
+  bool mAdopted = false;
 
   OldSnapshotData() = default;
 
@@ -137,7 +139,9 @@ struct OldSnapshotData {
   void EnsureKey(layers::RenderRootStateManager* aManager,
                  wr::IpcResourceUpdateQueue& aResources) {
     if (mImageKey != kNoKey) {
-      MOZ_ASSERT(mManager == aManager, "Stale manager?");
+      // A cross-document inbound transition reuses the old document's
+      // snapshot. Its key belongs to this document's bridge once
+      // AdoptOldSnapshots has run.
       return;
     }
     mManager = aManager;
@@ -150,6 +154,13 @@ struct OldSnapshotData {
       wr::SnapshotImageKey key = {mImageKey};
       if (mUsed) {
         mManager->AddSnapshotImageKeyForDiscard(key);
+      } else if (mAdopted) {
+        // The manager of an adopted snapshot can belong to a tab that stays
+        // in BFCache and does not paint. No display list uses the snapshot,
+        // so delete it now.
+        if (!mManager->IsDestroyed() && mManager->WrBridge()) {
+          mManager->AsyncResourceUpdates().DeleteSnapshotImage(key);
+        }
       } else {
         mManager->AddUnusedSnapshotImageKeyForDiscard(key);
       }
@@ -295,12 +306,126 @@ already_AddRefed<ViewTransition> ViewTransition::CreateCrossDocument(
       aInboundParams->initialSnapshotContainingBlockSize;
 
   // Step 12. Resolve updateCallbackDone with undefined.
-  vt->mUpdateCallbackDonePromise->MaybeResolveWithUndefined();
+  if (Promise* ucd = vt->GetUpdateCallbackDone(IgnoreErrors())) {
+    ucd->MaybeResolveWithUndefined();
+  }
 
   // Step 13. Set phase to update-callback-called.
   vt->mPhase = Phase::UpdateCallbackCalled;
 
+  // If the old document entered BFCache, the snapshots belong to its WebRender
+  // bridge. Move them to the bridge of this document. For a document restored
+  // from BFCache, nsDocShell::BeginDeferredOutboundCrossDocumentViewTransition
+  // moved them already.
+  if (PresShell* ps = aDocument.GetPresShell()) {
+    AdoptOldSnapshots(ps->GetWindowRenderer(), vt->mNamedElements);
+  }
+
   return vt.forget();
+}
+
+/* static */
+void ViewTransition::AdoptOldSnapshots(
+    WindowRenderer* aRenderer, ViewTransitionNamedElements& aNamedElements) {
+  layers::WebRenderLayerManager* wrManager =
+      aRenderer ? aRenderer->AsWebRender() : nullptr;
+  if (!wrManager) {
+    return;
+  }
+  // A WebRender display list can only reference image keys of its own
+  // bridge's id namespace.
+  layers::WebRenderBridgeChild* bridge = wrManager->WrBridge();
+  if (!bridge) {
+    return;
+  }
+  layers::RenderRootStateManager* manager =
+      wrManager->GetRenderRootStateManager();
+  wr::IpcResourceUpdateQueue resources(bridge);
+  for (auto& entry : aNamedElements) {
+    OldSnapshotData& snapshot = entry.GetData()->mOldState.mSnapshot;
+    if (snapshot.mImageKey == kNoKey ||
+        bridge->MatchesNamespace(snapshot.mImageKey)) {
+      continue;
+    }
+    wr::ImageKey newKey = bridge->GetNextImageKey();
+    VT_LOG("ViewTransition::AdoptOldSnapshots(%s): %s -> %s\n",
+           nsAtomCString(entry.GetKey()).get(),
+           ToString(snapshot.mImageKey).c_str(), ToString(newKey).c_str());
+    resources.AdoptSnapshotImage(wr::SnapshotImageKey{snapshot.mImageKey},
+                                 wr::SnapshotImageKey{newKey});
+    snapshot.mImageKey = newKey;
+    // The image now belongs to this bridge; discard it through this manager.
+    snapshot.mManager = manager;
+    snapshot.mAdopted = true;
+  }
+  manager->UpdateResources(resources);
+}
+
+/* static */
+already_AddRefed<ViewTransition> ViewTransition::CreateOutboundCrossDocument(
+    Document& aDocument, TypeList&& aActiveTypes) {
+  // https://drafts.csswg.org/css-view-transitions-2/#setup-cross-document-view-transition
+  // Steps 6-7.
+  RefPtr<ViewTransition> vt =
+      new ViewTransition(aDocument, nullptr, std::move(aActiveTypes));
+  vt->mIsOutboundCrossDocument = true;
+  // There is no update callback, so resolve updateCallbackDone now. A queued
+  // resolve might not run before the old document enters BFCache.
+  if (Promise* ucd = vt->GetUpdateCallbackDone(IgnoreErrors())) {
+    ucd->MaybeResolveWithUndefined();
+  }
+  return vt.forget();
+}
+
+UniquePtr<ViewTransitionParams>
+ViewTransition::CaptureOldStateForCrossDocument() {
+  // https://drafts.csswg.org/css-view-transitions-2/#cross-doc-after-capture
+  MOZ_ASSERT(mIsOutboundCrossDocument);
+  MOZ_ASSERT(mPhase == Phase::PendingCapture);
+
+  mDocument->SetRenderingSuppressedForViewTransitions(true);
+  Maybe<SkipTransitionReason> skipReason = CaptureOldState();
+  mDocument->SetRenderingSuppressedForViewTransitions(false);
+  if (skipReason) {
+    ClearNamedElements();
+    SkipTransition(*skipReason);
+    return nullptr;
+  }
+
+  // Move the captured named elements (including their old-state snapshots) into
+  // the params handed to the new document. The outbound transition itself is
+  // skipped once the old document is hidden.
+  auto params = MakeUnique<ViewTransitionParams>();
+  params->namedElements = std::move(mNamedElements);
+  params->names = std::move(mNames);
+  params->initialSnapshotContainingBlockSize =
+      mInitialSnapshotContainingBlockSize;
+  params->producerPrincipal = mDocument->NodePrincipal();
+  if (BrowsingContext* bc = mDocument->GetBrowsingContext()) {
+    params->producerBrowsingContextId = bc->Id();
+  }
+  return params;
+}
+
+void ViewTransition::BeginDeferredOutboundCapture(
+    std::function<void(UniquePtr<ViewTransitionParams>&&)>&& aProceed) {
+  MOZ_ASSERT(mIsOutboundCrossDocument);
+  MOZ_ASSERT(mPhase == Phase::PendingCapture);
+  MOZ_ASSERT(aProceed);
+  mOutboundCaptureProceed = std::move(aProceed);
+  // The navigation waits for the capture. If no rendering update comes, for
+  // example in an occluded window, Timeout() lets the navigation continue.
+  MOZ_ASSERT(!mTimeoutTimer);
+  ClearTimeoutTimer();
+  mTimeoutTimer = NS_NewTimer();
+  mTimeoutTimer->InitWithNamedFuncCallback(
+      TimeoutCallback, this, StaticPrefs::dom_viewTransitions_timeout_ms(),
+      nsITimer::TYPE_ONE_SHOT, "ViewTransition::TimeoutCallback"_ns);
+  // Schedule the rendering update that will capture the old state (after this
+  // frame's rAF/animations) in PerformPendingOperations.
+  if (mDocument) {
+    mDocument->EnsureViewTransitionOperationsHappen();
+  }
 }
 
 Element* ViewTransition::GetViewTransitionTreeRoot() const {
@@ -396,6 +521,11 @@ const wr::ImageKey* ViewTransition::GetImageKeyForCapturedFrame(
   MOZ_ASSERT(aFrame);
   MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION));
 
+  // The compositor connection can be gone (e.g. while persisting into BFCache).
+  if (!aManager->WrBridge()) {
+    return nullptr;
+  }
+
   nsAtom* name = aFrame->GetProperty(ViewTransitionCaptureName());
   if (NS_WARN_IF(!name)) {
     return nullptr;
@@ -418,9 +548,6 @@ const wr::ImageKey* ViewTransition::GetImageKeyForCapturedFrame(
     return nullptr;
   }
   if (wr::AsImageKey(el->mNewSnapshotKey) == kNoKey) {
-    MOZ_ASSERT(!el->mOldState.mSnapshot.mManager ||
-                   el->mOldState.mSnapshot.mManager == aManager,
-               "Stale manager?");
     el->mNewSnapshotKey = {aManager->WrBridge()->GetNextImageKey()};
     el->mOldState.mSnapshot.mManager = aManager;
     aResources.AddSnapshotImage(el->mNewSnapshotKey);
@@ -609,8 +736,17 @@ void ViewTransition::TimeoutCallback(nsITimer* aTimer, void* aClosure) {
   vt->Timeout();
 }
 
+void ViewTransition::ReleaseDeferredOutboundCapture() {
+  if (mOutboundCaptureProceed) {
+    ClearTimeoutTimer();
+    auto proceed = std::move(mOutboundCaptureProceed);
+    proceed(nullptr);
+  }
+}
+
 void ViewTransition::Timeout() {
   ClearTimeoutTimer();
+  ReleaseDeferredOutboundCapture();
   if (mPhase != Phase::Done && mDocument) {
     SkipTransition(SkipTransitionReason::Timeout);
   }
@@ -1136,6 +1272,34 @@ void ViewTransition::PerformPendingOperations() {
   AUTO_PROFILER_FLOW_MARKER("ViewTransition::PerformPendingOperations", LAYOUT,
                             Flow::FromPointer(this));
 
+  if (mIsOutboundCrossDocument) {
+    // https://drafts.csswg.org/css-view-transitions-2/#cross-doc-after-capture
+    // mOutboundCaptureProceed is the spec's "outbound post-capture steps": it
+    // hands the params to the new document and continues the navigation. It is
+    // only set by BeginDeferredOutboundCapture.
+    if (mOutboundCaptureProceed && mPhase == Phase::PendingCapture) {
+      auto proceed = std::move(mOutboundCaptureProceed);
+      // The capture happens now; cancel the stall guard.
+      ClearTimeoutTimer();
+      // Steps 2-6.
+      UniquePtr<ViewTransitionParams> params =
+          CaptureOldStateForCrossDocument();
+      // Step 7. params is null if the capture failed.
+      proceed(std::move(params));
+      if (mPhase != Phase::Done) {
+        // The transition is skipped when this document becomes hidden, after
+        // pagehide. If the navigation does not commit, for example because it
+        // is canceled, the document stays visible, so skip after the timeout.
+        mTimeoutTimer = NS_NewTimer();
+        mTimeoutTimer->InitWithNamedFuncCallback(
+            TimeoutCallback, this,
+            StaticPrefs::dom_viewTransitions_timeout_ms(),
+            nsITimer::TYPE_ONE_SHOT, "ViewTransition::TimeoutCallback"_ns);
+      }
+    }
+    return;
+  }
+
   // Flush the update callback queue.
   // Note: this ensures that any changes to the DOM scheduled by other skipped
   // transitions are done before the old state for this transition is captured.
@@ -1424,16 +1588,22 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   if (!captureElements.IsEmpty()) {
     AutoRestore guard{mOldCaptureElements};
     mOldCaptureElements = &captureElements;
-    // When snapshotting an iframe, we need to paint from the root subdoc.
+    // An iframe's snapshot must be painted from the display root. Use the frame
+    // tree to find it, since a navigating iframe's document can already be
+    // disconnected from its parent document.
+    nsIFrame* localRoot = mDocument->GetPresShell()
+                              ? mDocument->GetPresShell()->GetRootFrame()
+                              : nullptr;
+    nsIFrame* displayRoot =
+        localRoot ? nsLayoutUtils::GetDisplayRootFrame(localRoot) : nullptr;
     if (RefPtr<PresShell> ps =
-            nsContentUtils::GetInProcessSubtreeRootDocument(mDocument)
-                ->GetPresShell()) {
+            displayRoot ? displayRoot->PresShell() : nullptr) {
       // Build a display list and send it to WR in order to perform the
       // capturing of old content.
       if (RefPtr widget = ps->GetRootWidget()) {
         VT_LOG("ViewTransitions::CaptureOldState(), requesting composite");
         RefPtr<WindowRenderer> renderer = widget->GetWindowRenderer();
-        ps->PaintAndRequestComposite(ps->GetRootFrame(), renderer,
+        ps->PaintAndRequestComposite(displayRoot, renderer,
                                      PaintFlags::PaintCompositeOffscreen);
         VT_LOG("ViewTransitions::CaptureOldState(), requesting composite end");
       }
@@ -1772,6 +1942,11 @@ void ViewTransition::SkipTransition(
   if (mPhase == Phase::Done) {
     return;
   }
+  // An outbound transition skipped before its capture, for example because
+  // the document became hidden, lets the navigation continue now.
+  ReleaseDeferredOutboundCapture();
+  // An outbound transition can have a timeout timer after its capture.
+  ClearTimeoutTimer();
   // Step 3: If transition’s phase is before "update-callback-called", then
   // schedule the update callback for transition.
   if (UnderlyingValue(mPhase) < UnderlyingValue(Phase::UpdateCallbackCalled)) {
@@ -1833,6 +2008,10 @@ void ViewTransition::SkipTransition(
       case SkipTransitionReason::PseudoUpdateFailure:
         readyPromise->MaybeRejectWithInvalidStateError(
             "Skipped view transition due to hidden new element");
+        break;
+      case SkipTransitionReason::NavigationAborted:
+        readyPromise->MaybeRejectWithAbortError(
+            "Skipped view transition due to the navigation being aborted");
         break;
       case SkipTransitionReason::ResetRendering:
         readyPromise->MaybeRejectWithInvalidStateError(
@@ -2114,6 +2293,22 @@ ViewTransitionTypeSet* ViewTransition::Types() {
     }
   }
   return mTypes;
+}
+
+void ViewTransition::NotifyTypesChanged() {
+  // Only the document's active transition contributes to
+  // :active-view-transition-type() matching.
+  if (!mDocument || mDocument->GetActiveViewTransition() != this) {
+    return;
+  }
+  // The ACTIVE_VIEW_TRANSITION state bit doesn't change when the type list
+  // mutates, so re-run its state-dependent invalidation explicitly to
+  // re-evaluate :active-view-transition-type() against the new types.
+  if (Element* root = mDocument->GetRootElement();
+      root && root->State().HasState(ElementState::ACTIVE_VIEW_TRANSITION)) {
+    nsAutoScriptBlocker scriptBlocker;
+    mDocument->ElementStateChanged(root, ElementState::ACTIVE_VIEW_TRANSITION);
+  }
 }
 
 };  // namespace mozilla::dom

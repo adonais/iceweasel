@@ -40,6 +40,8 @@ skip-if = [
 
 ["browser_autocomplete_unrecognized_attribute.js"]
 
+["browser_autocomplete_unrecognized_attribute_dynamic.js"]
+
 ["browser_autofill_address_housenumber.js"]
 
 ["browser_autofill_address_level.js"]
@@ -76,6 +78,10 @@ skip-if = [
 
 ["browser_collectFormFields.js"]
 
+["browser_creditCard_migration.js"]
+
+["browser_creditCard_primaryPassword.js"]
+
 ["browser_dropdown_layout.js"]
 
 ["browser_dynamic_form_autocompletion.js"]
@@ -89,7 +95,6 @@ skip-if = [
 ["browser_editAddressDialog.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1788900
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
 ]
 
@@ -159,5 +164,7 @@ skip-if = [
 ]
 
 ["browser_remoteiframe.js"]
+
+["browser_storage_rust_nimbus.js"]
 
 ["browser_submission_in_private_mode.js"]

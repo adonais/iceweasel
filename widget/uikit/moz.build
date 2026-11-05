@@ -57,3 +57,16 @@ XPCOM_MANIFESTS += [
 OS_LIBS += [
     "-framework UIKit",
 ]
+
+SOURCE_HEADERS += [
+    "GfxInfo.h",
+    "nsAppShell.h",
+    "nsBidiKeyboard.h",
+    "nsLookAndFeel.h",
+    "nsNativeThemeUIKit.h",
+    "nsUserIdleServiceUIKit.h",
+    "nsWidgetFactory.h",
+    "ScreenHelperUIKit.h",
+    "TextInputHandler.h",
+    "UIKitUtils.h",
+]

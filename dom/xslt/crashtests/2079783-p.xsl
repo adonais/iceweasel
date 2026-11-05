@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:import href="2079783-c.xsl"/>
+<xsl:template match="/"><html/></xsl:template>
+</xsl:stylesheet>

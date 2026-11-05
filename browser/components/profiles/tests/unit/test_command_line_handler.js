@@ -119,6 +119,39 @@ add_task(async function test_redirect_args() {
 
   commandLineHandler.resetHistory();
 
+  let backgroundArgs = [
+    "-url-background",
+    "https://www.example.com/",
+    "-url-background",
+    "https://www.mozilla.org/",
+  ];
+  let mixedArgs = [
+    "-url-background",
+    "https://www.example.com/",
+    "-url",
+    "https://www.mozilla.org/",
+  ];
+  let reversedMixedArgs = [...mixedArgs.slice(2), ...mixedArgs.slice(0, 2)];
+  for (let args of [backgroundArgs, mixedArgs, reversedMixedArgs]) {
+    cmdLine = Cu.createCommandLine(
+      args,
+      null,
+      Ci.nsICommandLine.STATE_REMOTE_EXPLICIT
+    );
+    let handledPromise = nextCall(commandLineHandler);
+    clh.handle(cmdLine);
+    await handledPromise;
+    [generatedCmdLine] = commandLineHandler.firstCall.args;
+    Assert.deepEqual(
+      Array.from({ length: generatedCmdLine.length }, (_, i) =>
+        generatedCmdLine.getArgument(i)
+      ),
+      args,
+      "The current profile preserves the URL arguments"
+    );
+    commandLineHandler.resetHistory();
+  }
+
   let profileData = readProfilesIni();
 
   for (let profile of profileData.profiles) {
@@ -183,4 +216,61 @@ add_task(async function test_redirect_args() {
   );
 
   execProcess.resetHistory();
+
+  for (let { args, shouldActivate } of [
+    { args: backgroundArgs, shouldActivate: false },
+    { args: mixedArgs, shouldActivate: true },
+    { args: reversedMixedArgs, shouldActivate: true },
+  ]) {
+    cmdLine = Cu.createCommandLine(
+      args,
+      null,
+      Ci.nsICommandLine.STATE_REMOTE_EXPLICIT
+    );
+    let launchedPromise = nextCall(execProcess);
+    clh.handle(cmdLine);
+    await launchedPromise;
+    Assert.deepEqual(
+      sendCommandLine.firstCall.args,
+      [profilePath, args, shouldActivate],
+      "Only background-only requests suppress activation when forwarding"
+    );
+    Assert.deepEqual(
+      execProcess.firstCall.args,
+      [[...(shouldActivate ? ["-foreground"] : []), ...args]],
+      "Only background-only requests omit -foreground when relaunching"
+    );
+    sendCommandLine.resetHistory();
+    execProcess.resetHistory();
+  }
+
+  sendCommandLine.resetBehavior();
+  try {
+    for (let { args, shouldActivate } of [
+      { args: backgroundArgs, shouldActivate: false },
+      { args: mixedArgs, shouldActivate: true },
+      { args: reversedMixedArgs, shouldActivate: true },
+    ]) {
+      cmdLine = Cu.createCommandLine(
+        args,
+        null,
+        Ci.nsICommandLine.STATE_REMOTE_EXPLICIT
+      );
+      let sentPromise = nextCall(sendCommandLine);
+      clh.handle(cmdLine);
+      await sentPromise;
+      Assert.deepEqual(
+        sendCommandLine.firstCall.args,
+        [profilePath, args, shouldActivate],
+        "A running profile receives the correct activation request"
+      );
+      Assert.ok(
+        execProcess.notCalled,
+        "Successful forwarding does not relaunch"
+      );
+      sendCommandLine.resetHistory();
+    }
+  } finally {
+    sendCommandLine.throws(Cr.NS_ERROR_NOT_AVAILABLE);
+  }
 });

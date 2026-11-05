@@ -6,15 +6,18 @@ package mozilla.components.feature.listentopage.synthesis
 
 import android.os.SystemClock
 import java.io.File
+import kotlin.math.roundToLong
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import mozilla.components.feature.listentopage.ArticleProgress
+import mozilla.components.feature.listentopage.NO_CHUNK
 import mozilla.components.feature.listentopage.content.TextChunker
+import mozilla.components.feature.listentopage.facts.ListenToPageFacts
+import mozilla.components.feature.listentopage.facts.emitChunkSynthesizedFact
+import mozilla.components.feature.listentopage.facts.emitOpeningSynthesisStartedFact
 import mozilla.components.feature.listentopage.playback.ChunkAudio
-import mozilla.components.feature.listentopage.playback.ProgressMapper
 import mozilla.components.feature.listentopage.playback.audioWindow
 
 /** Thrown when the article holds nothing that can be read out loud. */
@@ -31,6 +34,7 @@ internal class NothingToReadException : Exception("The article has no words to r
  * @param measureAudio How long the audio in a file lasts, or `null` when it cannot be read.
  * @param elapsedMs Reads a monotonic clock, so that how long a request took can be measured under a test's virtual time
  *   as well as a device's real one.
+ * @param onMeasured Called with each chunk once it has been made and measured.
  */
 internal class SynthesisQueue(
     private val synthesizer: SpeechSynthesizer,
@@ -39,11 +43,13 @@ internal class SynthesisQueue(
     private val workDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val measureAudio: suspend (File) -> Duration? = { readWavDurationOrNull(it) },
     private val elapsedMs: () -> Long = SystemClock::elapsedRealtime,
+    private val onMeasured: (index: Int, duration: Duration) -> Unit = { _, _ -> },
 ) {
 
     private var chunks: List<String> = emptyList()
 
-    // How long each chunk made so far lasts.
+    // How long each chunk made so far lasts. Each one is also reported through onMeasured, so that the store's copy
+    // of it stays the same.
     private val measured = mutableMapOf<Int, Duration>()
 
     /** How many pieces the article came to, or `0` until [startReading] has run. */
@@ -58,12 +64,15 @@ internal class SynthesisQueue(
      * How long chunk [index] lasts, or `null` while it has not been measured.
      *
      * A chunk can have audio and no duration, because the file is added before it is read, so this being `null` does
-     * not mean [fileFor] is too. Size such a chunk from [lengthOf] and [speechRate] instead.
+     * not mean [fileFor] is too. Size such a chunk from [charactersIn] and [speechRate] instead.
      */
     fun durationOf(index: Int): Duration? = measured[index]
 
+    /** [durationOf] in milliseconds, as the player takes it. */
+    fun durationMs(index: Int): Long? = durationOf(index)?.inWholeMilliseconds
+
     /** The characters in chunk [index], for sizing one that has no measured duration. */
-    fun lengthOf(index: Int): Int = chunks[index].length
+    fun charactersIn(index: Int): Int = chunks[index].length
 
     /**
      * Synthesizes the opening of [text] and returns its audio, then works out how the rest of it divides up.
@@ -81,6 +90,7 @@ internal class SynthesisQueue(
             withContext(workDispatcher) { chunker.splitFirstSentence(text, languageTag, synthesizer.maxInputLength) }
         val opening = split.firstChunks.firstOrNull() ?: throw NothingToReadException()
 
+        emitOpeningSynthesisStartedFact()
         val startedAt = elapsedMs()
         val file = synthesizer.synthesizeToFile(opening)
         val synthesisMs = elapsedMs() - startedAt
@@ -89,6 +99,15 @@ internal class SynthesisQueue(
         // A file the system reclaimed, and one an interrupted request left behind, both measure as no audio at all.
         // That is not a rate, so it has to read the same as a file whose header could not be understood.
         val audioLength = measure(0, file)
+        emitChunkSynthesizedFact(
+            ListenToPageFacts.ChunkSynthesis(
+                index = 0,
+                length = opening.length,
+                synthesisMs = synthesisMs,
+                audioMs = audioLength?.inWholeMilliseconds,
+                fileKilobytes = kilobytesOf(file),
+            )
+        )
         val rate = audioLength?.let { SpeechRate.measuredFrom(opening.length, it) }
         speechRate = rate
 
@@ -113,23 +132,40 @@ internal class SynthesisQueue(
     }
 
     /**
-     * Moves the window of chunks kept on disk to sit around [playingChunk], making what it is missing and throwing away
-     * what has fallen outside it.
+     * Moves the window of chunks kept on disk to sit around [playingChunkIndex], making what it is missing and throwing
+     * away what has fallen outside it.
      *
-     * @param queuedThrough The last chunk already handed to the player. Chunks up to it are kept even past the window,
-     *   , and deleting what it leaves behind ahead of the player would stop playback when it reached the missing file.
+     * @param lastQueuedChunkIndex The index of the last chunk already handed to the player. Chunks up to it are kept
+     *   even past the window, and deleting what it leaves behind ahead of the player would stop playback when it
+     *   reached the missing file.
+     * @param seekingToChunkIndex The index of the chunk a seek is moving the player into, or [NO_CHUNK]. It is kept
+     *   even outside the window, which still sits around where the player last reported it was, so that its audio is
+     *   there when the player gets to it.
+     * @param onChunkMade Called with each chunk's index as soon as it is made, so that it can be queued without waiting
+     *   for the rest.
      * @throws SpeechSynthesisException if the engine cannot make one of them. What was made before it stays, so
      *   playback carries on as far as it can, and the chunk it stopped on is made again by [audioFor] if playback ever
      *   reaches it.
      */
-    suspend fun moveWindowTo(playingChunk: Int, queuedThrough: Int = -1) {
-        val window = audioWindow(playingChunk, chunks.size)
-        audio.keepOnly(window.first..maxOf(window.last, queuedThrough))
+    suspend fun moveWindowTo(
+        playingChunkIndex: Int,
+        lastQueuedChunkIndex: Int = NO_CHUNK,
+        seekingToChunkIndex: Int = NO_CHUNK,
+        onChunkMade: suspend (chunkIndex: Int) -> Unit = {},
+    ) {
+        val window = audioWindow(playingChunkIndex, chunks.size)
 
-        for (index in window) {
+        // The chunks handed to the player, and the chunk a seek is moving into, are kept even outside the window.
+        val keepFrom = if (seekingToChunkIndex == NO_CHUNK) window.first else minOf(window.first, seekingToChunkIndex)
+        val keepTo = maxOf(window.last, lastQueuedChunkIndex, seekingToChunkIndex)
+        audio.keepOnly(keepFrom..keepTo)
+
+        // The chunks ahead first, since the player reaches them next, and the ones it has passed after.
+        for (index in (playingChunkIndex..window.last) + (playingChunkIndex - 1 downTo window.first)) {
             if (audio.fileFor(index) != null) continue
 
             make(index)
+            onChunkMade(index)
         }
     }
 
@@ -149,22 +185,25 @@ internal class SynthesisQueue(
         audio.clear()
     }
 
-    fun progress(
-        previous: ArticleProgress,
-        playingChunk: Int,
-        chunkPositionMs: Long,
-        chunkEnded: Boolean,
-    ): ArticleProgress = mapper().progress(previous, playingChunk, chunkPositionMs, chunkEnded)
-
-    fun mapper() = ProgressMapper(chunkCount, ::durationOf, ::lengthOf, speechRate)
-
     /**
      * Makes chunk [index] and measures what came back. The one place a chunk is made, so neither caller can skip it.
      */
     private suspend fun make(index: Int): File {
-        val file = synthesizer.synthesizeToFile(chunks[index])
+        val chunk = chunks[index]
+        val startedAt = elapsedMs()
+        val file = synthesizer.synthesizeToFile(chunk)
+        val synthesisMs = elapsedMs() - startedAt
         audio.add(index, file)
-        measure(index, file)
+        val audioLength = measure(index, file)
+        emitChunkSynthesizedFact(
+            ListenToPageFacts.ChunkSynthesis(
+                index = index,
+                length = chunk.length,
+                synthesisMs = synthesisMs,
+                audioMs = audioLength?.inWholeMilliseconds,
+                fileKilobytes = kilobytesOf(file),
+            )
+        )
 
         return file
     }
@@ -176,7 +215,16 @@ internal class SynthesisQueue(
      * not a duration, so it has to read the same as a file whose header could not be understood.
      */
     private suspend fun measure(index: Int, file: File): Duration? =
-        withContext(workDispatcher) { measureAudio(file) }?.takeIf { it > Duration.ZERO }?.also { measured[index] = it }
+        withContext(workDispatcher) { measureAudio(file) }
+            ?.takeIf { it > Duration.ZERO }
+            ?.also {
+                measured[index] = it
+                onMeasured(index, it)
+            }
+
+    /** How many kilobytes on disk are taken by [file], or `null` if the file is empty or gone. */
+    private suspend fun kilobytesOf(file: File): Long? =
+        withContext(workDispatcher) { file.length() }.takeIf { it > 0 }?.let { (it / BYTES_PER_KILOBYTE).roundToLong() }
 
     /**
      * The article after its opening, in chunks of [CHUNK_TARGET], growing up to it from what this device managed while
@@ -255,6 +303,8 @@ internal class SynthesisQueue(
     }
 
     private companion object {
+        const val BYTES_PER_KILOBYTE = 1024.0
+
         // A floor under the first chunk, so that an engine which measured badly does not start on a chunk of a word or
         // two and spend more of the article growing than reading.
         val MIN_FIRST_TARGET = 5.seconds

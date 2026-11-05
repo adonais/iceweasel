@@ -6,7 +6,8 @@
 // Tests that attributes can be deleted from the markup-view with the delete key
 // when they are focused.
 
-const HTML = '<div id="id" class="class" data-id="id"></div>';
+const HTML =
+  '<body data-only="1"><div id="id" class="class" data-id="id"></div></body>';
 const TEST_URL = "data:text/html;charset=utf-8," + encodeURIComponent(HTML);
 
 // List of all the test cases. Each item is an object with the following props:
@@ -19,10 +20,17 @@ const TEST_DATA = [
   {
     selector: "#id",
     attribute: "class",
+    expectedFocus: "data-id",
   },
   {
     selector: "#id",
     attribute: "data-id",
+    expectedFocus: "class",
+  },
+  {
+    selector: "body",
+    attribute: "data-only",
+    expectedFocus: "tag",
   },
 ];
 
@@ -30,7 +38,7 @@ add_task(async function () {
   const { inspector } = await openInspectorForURL(TEST_URL);
   const { walker } = inspector;
 
-  for (const { selector, attribute } of TEST_DATA) {
+  for (const { selector, attribute, expectedFocus } of TEST_DATA) {
     info("Get the container for node " + selector);
     const { editor } = await getContainerForSelector(selector, inspector);
 
@@ -56,6 +64,16 @@ add_task(async function () {
     ok(
       !editor.attrElements.get(attribute),
       "The attribute has been removed from the container"
+    );
+
+    const expectedFocusedElement =
+      expectedFocus === "tag"
+        ? editor.tag
+        : editor.attrElements.get(expectedFocus).querySelector(".editable");
+    is(
+      inspector.markup.doc.activeElement,
+      expectedFocusedElement,
+      "Focus moves to the expected element after attribute deletion"
     );
 
     info("Undo the change");

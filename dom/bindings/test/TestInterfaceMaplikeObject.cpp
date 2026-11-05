@@ -11,7 +11,8 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TestInterfaceMaplikeObject, mParent)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TestInterfaceMaplikeObject, mMapData,
+                                      mParent)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(TestInterfaceMaplikeObject)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(TestInterfaceMaplikeObject)
@@ -51,30 +52,27 @@ nsPIDOMWindowInner* TestInterfaceMaplikeObject::GetParentObject() const {
 
 void TestInterfaceMaplikeObject::SetInternal(const nsAString& aKey) {
   RefPtr<TestInterfaceMaplike> p(new TestInterfaceMaplike(mParent));
-  ErrorResult rv;
-  TestInterfaceMaplikeObject_Binding::MaplikeHelpers::Set(this, aKey, *p, rv);
+  Maplike().Set(aKey, *p);
 }
 
-void TestInterfaceMaplikeObject::ClearInternal() {
-  ErrorResult rv;
-  TestInterfaceMaplikeObject_Binding::MaplikeHelpers::Clear(this, rv);
-}
+void TestInterfaceMaplikeObject::ClearInternal() { Maplike().Clear(); }
 
 bool TestInterfaceMaplikeObject::DeleteInternal(const nsAString& aKey) {
-  ErrorResult rv;
-  return TestInterfaceMaplikeObject_Binding::MaplikeHelpers::Delete(this, aKey,
-                                                                    rv);
+  return Maplike().Delete(aKey);
 }
 
 bool TestInterfaceMaplikeObject::HasInternal(const nsAString& aKey) {
-  ErrorResult rv;
-  return TestInterfaceMaplikeObject_Binding::MaplikeHelpers::Has(this, aKey,
-                                                                 rv);
+  return Maplike().Has(aKey);
 }
 
 already_AddRefed<TestInterfaceMaplike> TestInterfaceMaplikeObject::GetInternal(
     const nsAString& aKey, ErrorResult& aRv) {
-  return TestInterfaceMaplikeObject_Binding::MaplikeHelpers::Get(this, aKey,
-                                                                 aRv);
+  auto* value = Maplike().Get(aKey);
+  if (!value) {
+    aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+    return nullptr;
+  }
+  RefPtr<TestInterfaceMaplike> result = value;
+  return result.forget();
 }
 }  // namespace mozilla::dom

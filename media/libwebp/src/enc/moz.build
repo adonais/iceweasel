@@ -41,3 +41,11 @@ FINAL_LIBRARY = 'xul'
 
 # We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
+
+SOURCE_HEADERS += [
+	"backward_references_enc.h",
+	"cost_enc.h",
+	"histogram_enc.h",
+	"vp8i_enc.h",
+	"vp8li_enc.h",
+]

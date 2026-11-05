@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * @import {MozAdsCacheConfig, MozAdsCallbackOptions, MozAdsClient, MozAdsRequestOptions, MozAdsTelemetry} from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAdsClient.sys.mjs"
+ * @import {MozAdsCacheConfig, MozAdsCallbackOptions, MozAdsClient, MozAdsEnvironment, MozAdsRequestOptions, MozAdsTelemetry} from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAdsClient.sys.mjs"
  */
 
 const lazy = {};
@@ -27,23 +27,30 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustViaduct.sys.mjs",
 });
 
+// Short pref names pulled from a store's `Prefs.values`
 const PREF_ADSCLIENT_ENABLED = "unifiedAds.adsClient.enabled";
 const PREF_BLOCKED_LIST = "unifiedAds.blockedAds";
 
+// Full pref names pulled from `Services.prefs`
 const PREF_ADSCLIENT_LOG =
   "browser.newtabpage.activity-stream.unifiedAds.adsClient.log";
-
-// Viaduct OHTTP channel the ads-client sends over (matches OHTTP_CHANNEL_ID in
-// the vendored ads-client crate).
-const OHTTP_CHANNEL_ID = "ads-client";
 const PREF_OHTTP_ENABLED =
   "browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled";
 const PREF_OHTTP_RELAY_URL =
   "browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL";
 const PREF_OHTTP_CONFIG_URL =
   "browser.newtabpage.activity-stream.discoverystream.ohttp.configURL";
+const PREF_ENDPOINT = "browser.newtabpage.activity-stream.unifiedAds.endpoint";
+
+// Viaduct OHTTP channel the ads-client sends over (matches OHTTP_CHANNEL_ID in
+// the vendored ads-client crate).
+const OHTTP_CHANNEL_ID = "ads-client";
 
 const CACHE_DB_NAME = "ads-client.sqlite";
+
+// Standard MARS backend URLs
+const PROD_MARS_URL = "https://ads.mozilla.org/";
+const STAGE_MARS_URL = "https://ads.allizom.org/";
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
@@ -123,18 +130,56 @@ export class _AdsClient {
   }
 
   /**
+   * Configuration for the ads-client's environment.
+   *
+   * @returns {MozAdsEnvironment}
+   */
+  get environment() {
+    const endpoint = Services.prefs.getStringPref(PREF_ENDPOINT, "");
+
+    /**
+     * @backward-compat { version 158 }
+     *
+     * If `MozAdsEnvironment.PROD` is defined,
+     * then only the simple enum variants exist.
+     * Once 158 is released this branch can be removed,
+     * as the constructed variants exist.
+     * Simple enum variants only support PROD and STAGING.
+     */
+    if (lazy.MozAdsEnvironment.PROD !== undefined) {
+      let environment = lazy.MozAdsEnvironment.PROD;
+      if (endpoint === STAGE_MARS_URL) {
+        environment = lazy.MozAdsEnvironment.STAGING;
+      }
+
+      return environment;
+    }
+
+    if (endpoint === PROD_MARS_URL) {
+      return new lazy.MozAdsEnvironment.Prod();
+    } else if (endpoint === STAGE_MARS_URL) {
+      return new lazy.MozAdsEnvironment.Staging();
+    }
+    return new lazy.MozAdsEnvironment.Custom({ v0: endpoint });
+  }
+
+  /**
    * Options for requestTileAds/requestSpocAds, with the OHTTP channel
    * configured from prefs, and flags from passed in prefValues.
    *
    * @param {object} prefValues The New Tab store's Prefs.values.
    * @param {string | Array<string>} additionalBlocks Additional value(s) to add to blocks.
+   * @param {object} relevance Relevance scores keyed by
+   *  target. Only sent when the request goes over OHTTP.
    * @returns {MozAdsRequestOptions}
    */
-  requestOptions(prefValues, additionalBlocks = []) {
+  requestOptions(prefValues, additionalBlocks = [], relevance = {}) {
+    const ohttp = this.#configureOhttp();
     return new lazy.MozAdsRequestOptions({
       blocks: this.getBlocks(prefValues, additionalBlocks),
       flags: new Map(Object.entries(prefValues?.adsBackendConfig || {})),
-      ohttp: this.#configureOhttp(),
+      ohttp,
+      relevance: new Map(ohttp ? Object.entries(relevance) : []),
     });
   }
 
@@ -245,18 +290,7 @@ export class _AdsClient {
       }
 
       const builtAdsClient = lazy.MozAdsClientBuilder.init()
-        /**
-         * @backward-compat { version 158 }
-         *
-         * The environment constructor depends on the app-services commit.
-         * Once 158 reaches release, this can just be `new
-         * lazy.MozAdsEnvironment.Prod()`
-         */
-        .environment(
-          lazy.MozAdsEnvironment.PROD !== undefined
-            ? lazy.MozAdsEnvironment.PROD
-            : new lazy.MozAdsEnvironment.Prod()
-        )
+        .environment(this.environment)
         .cacheConfig(this.cacheConfig)
         .telemetry(this.buildTelemetry())
         .build();
@@ -281,7 +315,8 @@ export class _AdsClient {
   /**
    * Uninitialize the ads-client and allow it to release any necessary resources.
    *
-   * @param {string} [client] Optional client passed to shutdown, defaulting to `this.#client` (eg: if `this.#client` is not set yet).
+   * @param {?MozAdsClient} [client] Optional client passed to shutdown,
+   *   defaulting to `this.#client` (eg: if `this.#client` is not set yet).
    */
   async uninit(client) {
     lazy.logConsole.info(`Uninitializing ads-client`);

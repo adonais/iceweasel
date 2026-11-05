@@ -35,6 +35,13 @@ enum class BaselineExportContext : uint8_t {
 class Baseline {
  public:
   /**
+   * The default alignment baseline defined by the writing mode: alphabetic or
+   * central.
+   */
+  static StyleAlignmentBaseline DefaultAlignmentBaselineForWritingMode(
+      WritingMode aWM);
+
+  /**
    * Synthesize a first(last) inline-axis baseline in aWM based on aFrame's
    * margin-box.
    *
@@ -51,6 +58,14 @@ class Baseline {
   static nscoord SynthesizeBOffsetFromMarginBox(const nsIFrame* aFrame,
                                                 WritingMode aWM,
                                                 BaselineSharingGroup);
+
+  /**
+   * As above, but synthesizes the given baseline instead of the
+   * baseline chosen by the frame's `alignment-baseline`.
+   */
+  static nscoord SynthesizeBOffsetFromMarginBox(
+      const nsIFrame* aFrame, WritingMode aWM, BaselineSharingGroup,
+      StyleAlignmentBaseline aBaseline);
 
   /**
    * Synthesize a first(last) inline-axis baseline in aWM based on aFrame's

@@ -85,9 +85,6 @@ class MOZ_RAII IRGenerator {
   // stack- allocated string.
   const char* stubName_ = nullptr;
 
-  IRGenerator(const IRGenerator&) = delete;
-  IRGenerator& operator=(const IRGenerator&) = delete;
-
   JSOp jsop() const { return JSOp(*pc_); }
 
   bool maybeGuardInt32Index(const Value& index, ValOperandId indexId,
@@ -108,6 +105,7 @@ class MOZ_RAII IRGenerator {
 
   StringOperandId emitToStringGuard(ValOperandId id, const Value& v);
 
+  bool calleeGuardIsIdentity(JSFunction* callee) const;
   void emitCalleeGuard(ObjOperandId calleeId, JSFunction* callee);
 
   void emitOptimisticClassGuard(ObjOperandId objId, JSObject* obj,
@@ -173,6 +171,9 @@ class MOZ_RAII IRGenerator {
   explicit IRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,
                        CacheKind cacheKind, ICState state,
                        BaselineFrame* maybeFrame = nullptr);
+
+  IRGenerator(const IRGenerator&) = delete;
+  IRGenerator& operator=(const IRGenerator&) = delete;
 
   const CacheIRWriter& writerRef() const { return writer; }
   CacheKind cacheKind() const { return cacheKind_; }

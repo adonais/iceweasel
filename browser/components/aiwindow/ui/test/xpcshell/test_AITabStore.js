@@ -116,10 +116,17 @@ add_task(async function test_slug_version_index_is_unique() {
   );
 });
 
+function todaySlugDate() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
 add_task(async function test_a_slug_cannot_be_reused_by_another_tab() {
   const first = await AITabStore.create({
     convId: "conv-slug-owner",
-    slug: "hotels_in_lisbon",
+    slug: "hotels-in-lisbon",
     title: "Hotels in Lisbon",
   });
 
@@ -128,29 +135,37 @@ add_task(async function test_a_slug_cannot_be_reused_by_another_tab() {
   // failing, and the slug still points at exactly one tab.
   const second = await AITabStore.create({
     convId: "conv-slug-squatter",
-    slug: "hotels_in_lisbon",
+    slug: "hotels-in-lisbon",
     title: "Hotels in Lisbon",
   });
 
-  Assert.equal(first.slug, "hotels_in_lisbon", "The first claim keeps it");
-  Assert.equal(second.slug, "hotels_in_lisbon_2", "The second is moved off it");
+  const dated = `hotels-in-lisbon_${todaySlugDate()}`;
+  Assert.equal(first.slug, "hotels-in-lisbon", "The first claim keeps it");
+  Assert.equal(second.slug, dated, "The second gets today's date appended");
   Assert.equal(
-    (await AITabStore.getBySlug("hotels_in_lisbon")).uuid,
+    (await AITabStore.getBySlug("hotels-in-lisbon")).uuid,
     first.uuid,
     "The contested slug still resolves to the tab that claimed it"
   );
   Assert.equal(
-    (await AITabStore.getBySlug("hotels_in_lisbon_2")).uuid,
+    (await AITabStore.getBySlug(dated)).uuid,
     second.uuid,
     "And the second tab is reachable under the slug it was given"
   );
 });
 
 add_task(async function test_minted_slugs_keep_counting() {
-  for (const slug of ["weekend_in_porto", "weekend_in_porto_2"]) {
+  const dated = `weekend-in-porto_${todaySlugDate()}`;
+  for (const slug of [
+    "weekend-in-porto",
+    dated,
+    `${dated}_1`,
+    `${dated}_2`,
+    `${dated}_3`,
+  ]) {
     const page = await AITabStore.create({
       convId: `conv-${slug}`,
-      slug: "weekend_in_porto",
+      slug: "weekend-in-porto",
       title: "Weekend in Porto",
     });
     Assert.equal(page.slug, slug, `The next free slug is ${slug}`);

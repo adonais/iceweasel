@@ -5,20 +5,14 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_CONTENTMEDIACONTROLLER_H_
 #define DOM_MEDIA_MEDIACONTROL_CONTENTMEDIACONTROLLER_H_
 
+#include "AudioFocusInterrupt.h"
 #include "MediaControlKeySource.h"
 #include "MediaStatusManager.h"
-#include "mozilla/DefineEnum.h"
 #include "mozilla/dom/AudioSessionBinding.h"
 
 namespace mozilla::dom {
 
 class BrowsingContext;
-
-// Direction of an audio-focus interrupt dispatched to content media receivers.
-// Suspend silences the tab's potentially audible sources on a focus loss;
-// Resume resumes the ones the interrupt suspended on a focus gain.
-MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(AudioFocusInterruptAction, uint8_t,
-                                             (Suspend, Resume));
 
 /**
  * ContentMediaControlKeyReceiver is an interface which is used to receive media
@@ -41,8 +35,10 @@ class ContentMediaControlKeyReceiver {
   // media-key path: an interrupt suspends every potentially audible receiver
   // and a later resume resumes only what the interrupt suspended. Default no-op
   // so that receivers which do not participate in interrupt handling need no
-  // change.
-  virtual void SuspendForInterrupt() {}
+  // change. A permanent interrupt is never resumed, so the receiver gives up
+  // its claim on the pause, including one an earlier transient interrupt left,
+  // and the page can undo it like an ordinary pause.
+  virtual void SuspendForInterrupt(AudioSessionInterruptKind aKind) {}
   virtual void ResumeFromInterrupt() {}
 
   // Dispatch an audio-focus interrupt. ContentMediaController overrides this to
@@ -148,9 +144,9 @@ class ContentMediaController final : public ContentMediaAgent,
   nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mControllableReceivers;
   nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mUncontrollableReceivers;
 
-  // True while the platform has interrupted the tab's audio (an audio-focus
-  // loss): no audible sound may start while set, so page-initiated start and
-  // resume are gated; cleared when the platform ends the interrupt.
+  // True while the platform has transiently interrupted the tab's audio: no
+  // audible sound may start while set, even with user activation; cleared when
+  // the interrupt ends or becomes permanent.
   bool mAudioInterruptedByPlatform = false;
 };
 

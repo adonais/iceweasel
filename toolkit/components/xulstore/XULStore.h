@@ -53,4 +53,14 @@ nsresult Shutdown();
 };  // namespace XULStore
 };  // namespace mozilla
 
+namespace std {
+
+// Should always use a custom deleter
+template <>
+struct default_delete<mozilla::XULStoreIterator> {
+  default_delete() = delete;
+};
+
+}  // namespace std
+
 #endif  // mozilla_XULStore_h

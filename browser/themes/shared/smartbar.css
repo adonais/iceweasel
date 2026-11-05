@@ -18,13 +18,24 @@
   --smartbar-max-height: 50vh;
   --smartbar-max-visible-rows: 9;
   --smartbar-max-width: calc(var(--size-item-xlarge) * 12);
-  --smartbar-outline: var(--focus-outline-width) solid var(--smartbar-outline-color);
+  --smartbar-outline: var(--smartbar-outline-width) solid var(--smartbar-outline-color);
   --smartbar-outline-color: light-dark(var(--color-violet-30), var(--color-violet-50));
+  --smartbar-outline-width: var(--focus-outline-width);
   --smartbar-cta-icon-fill: var(--icon-color);
   --smartbar-scroll-mask-height: calc(var(--urlbarview-row-min-height) * 1.5);
   --text-color-deemphasized: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), color-mix(in srgb, var(--color-gray-0) 69%, transparent));
 
   --toolbar-field-border-color: transparent;
+
+  /* Match the address bar's focus border. */
+  @media -moz-pref("browser.nova.enabled") {
+    --smartbar-outline-color: var(--toolbar-field-border-color-focus);
+    --smartbar-outline-width: var(--urlbar-input-container-border-width-open);
+  }
+
+  @media (prefers-contrast) {
+    --smartbar-outline-color: var(--focus-outline-color);
+  }
 }
 
 .smartbar {
@@ -43,6 +54,8 @@
     --urlbarview-text-color-selected: var(--toolbar-field-focus-color);
     --urlbarview-text-color-secondary: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), var(--color-violet-desaturated-20));
     --link-color: light-dark(var(--color-violet-70), var(--color-violet-30));
+    --urlbar-background-border-focused: var(--smartbar-border-style-gradient) transparent;
+    --urlbar-background-outline-focused: var(--smartbar-outline);
 
     &:is(:hover, :focus-within, [focused], [open]) > .urlbar-background {
       outline: none;
@@ -51,16 +64,29 @@
     }
 
     &[open] > .urlbar-background {
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       box-shadow: var(--smartbar-box-shadow);
     }
 
-    /* Show outline on keyboard focus */
-    &:focus-within:not([usertyping]):not([suppress-focus-border]) > .urlbar-background {
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-      outline: var(--smartbar-outline);
-      outline-offset: var(--focus-outline-offset);
+    /* The focus ring replaces the gradient border. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector -- see below */
+    &[focused]:not(:has(> .urlbar-input-container > .urlbar-input-box > .urlbar-input[aria-activedescendant])) > .urlbar-background {
+      outline-offset: calc(-1 * var(--smartbar-outline-width));
+
+      &::after {
+        display: none;
+      }
     }
+  }
+
+  /* Unlike the address bar, keep the ring while the view is open, until the
+     user moves into the results with the keyboard. UrlbarView already sets
+     aria-activedescendant on the input for that, so :has() checks just that
+     one element instead of mirroring the state from JS. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+  &[focused]:not(:has(> .urlbar-input-container > .urlbar-input-box > .urlbar-input[aria-activedescendant])) > .urlbar-background {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    outline: var(--urlbar-background-outline-focused);
+    border: var(--urlbar-background-border-focused);
   }
 
   /* Neutralize the UA popover rules. */
@@ -161,7 +187,6 @@
   }
 
   .urlbarView-row:not([type="tip"], [type="dynamic"]) {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     min-height: var(--urlbarview-row-min-height);
   }
 
@@ -222,7 +247,6 @@
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       inset: calc(-1 * var(--border-width));
       border-radius: inherit;
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       background: var(--smartbar-border-color-gradient);
       mask:
         linear-gradient(#fff 0 0) content-box,

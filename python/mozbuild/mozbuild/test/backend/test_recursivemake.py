@@ -12,6 +12,7 @@ from mozpack.copier import FileRegistry
 from mozpack.manifests import InstallManifest
 from mozunit import main
 
+from mozbuild.backend import get_backend_class
 from mozbuild.backend.recursivemake import RecursiveMakeBackend, RecursiveMakeTraversal
 from mozbuild.backend.test_manifest import TestManifestBackend
 from mozbuild.frontend.emitter import TreeMetadataEmitter
@@ -531,6 +532,80 @@ class TestRecursiveMakeBackend(BackendTester):
         root_deps_path = mozpath.join(env.topobjdir, "root-deps.mk")
         lines = [l.strip() for l in open(root_deps_path).readlines()]
         self.assertIn("consumer/pre-compile: producer/pre-compile", lines)
+
+    def test_generated_files_host_tool(self):
+        env = self._consume("generated-files-host-tool", RecursiveMakeBackend)
+
+        backend_path = mozpath.join(env.topobjdir, "data", "backend.mk")
+        with open(backend_path) as fh:
+            lines = [l.strip() for l in fh.readlines()[2:]]
+
+        expected = [
+            "include $(topsrcdir)/config/AB_rCD.mk",
+            "PRE_COMPILE_TARGETS += $(MDDEPDIR)/big.dat.stub",
+            "big.dat: $(MDDEPDIR)/big.dat.stub ;",
+            "EXTRA_MDDEPEND_FILES += $(MDDEPDIR)/big.dat.pp",
+            "$(MDDEPDIR)/big.dat.stub: "
+            f"{env.topsrcdir}/data/convert.py "
+            "$(srcdir)/little.dat "
+            "$(DEPTH)/dist/host/bin/tool",
+            "$(REPORT_BUILD)",
+            "$(call py_action,file_generate big.dat,"
+            f"{env.topsrcdir}/data/convert.py main "
+            "big.dat $(MDDEPDIR)/big.dat.pp "
+            "$(MDDEPDIR)/big.dat.stub $(srcdir)/little.dat)",
+            "@$(TOUCH) $@",
+            "",
+        ]
+
+        self.maxDiff = None
+        self.assertEqual(lines[: len(expected)], expected)
+
+        root_backend_path = mozpath.join(env.topobjdir, "backend.mk")
+        with open(root_backend_path) as fh:
+            self.assertNotIn("big.dat", fh.read())
+
+        root_deps_path = mozpath.join(env.topobjdir, "root-deps.mk")
+        with open(root_deps_path) as fh:
+            lines = [l.strip() for l in fh.readlines()]
+        self.assertIn("data/pre-compile: tool/host", lines)
+        self.assertIn("data/target-objects: data/pre-compile", lines)
+
+    def test_resolve_targets(self):
+        self.assertEqual(
+            RecursiveMakeBackend.resolve_targets([
+                "gtest",
+                "recurse_gtest",
+                "binaries",
+            ]),
+            ["recurse_gtest", "recurse_gtest", "binaries"],
+        )
+        self.assertEqual(
+            RecursiveMakeBackend.resolve_targets(["syms"]), ["recurse_syms"]
+        )
+
+        hybrid = get_backend_class("FasterMake+RecursiveMake")
+        self.assertEqual(hybrid.resolve_targets(["gtest"]), ["recurse_gtest"])
+        self.assertEqual(
+            RecursiveMakeBackend.resolve_targets(["analysis-prereqs"]),
+            ["pre-export", "export", "pre-compile"],
+        )
+        self.assertEqual(
+            RecursiveMakeBackend.resolve_targets(["rust-prereqs"]),
+            ["pre-export", "export"],
+        )
+        self.assertEqual(
+            RecursiveMakeBackend.resolve_targets(["rust-prereqs", "uniffi-target"]),
+            ["pre-export", "export", "recurse_uniffi-target"],
+        )
+        self.assertEqual(
+            RecursiveMakeBackend.resolve_targets(["rust-prereqs", "rusttests"]),
+            ["pre-export", "export", "recurse_rusttests"],
+        )
+
+    def test_resolve_targets_sorted(self):
+        targets = RecursiveMakeBackend.TARGETS
+        self.assertEqual(list(targets), sorted(targets))
 
     def test_generated_files_force(self):
         """Ensure GENERATED_FILES with .force is handled properly."""
@@ -1186,27 +1261,6 @@ class TestRecursiveMakeBackend(BackendTester):
             "RUST_LIBRARY_FILE := x86_64-unknown-linux-gnu/release/libtest_library.a",
             "CARGO_FILE := $(srcdir)/Cargo.toml",
             "CARGO_TARGET_DIR := %s" % env.topobjdir,
-            "RUST_LIBRARY_LTO := 1",
-        ]
-
-        self.assertEqual(lines, expected)
-
-    def test_rust_library_with_no_lto(self):
-        """Test that a Rust library's LTO opt out keeps RUST_LIBRARY_LTO unset."""
-        env = self._consume("rust-library-no-lto", RecursiveMakeBackend)
-
-        backend_path = mozpath.join(env.topobjdir, "backend.mk")
-        lines = [
-            l.strip()
-            for l in open(backend_path).readlines()[2:]
-            # Strip out computed flags, they're a PITA to test.
-            if not l.startswith("COMPUTED_")
-        ]
-
-        expected = [
-            "RUST_LIBRARY_FILE := x86_64-unknown-linux-gnu/release/libno_lto_library.a",
-            "CARGO_FILE := $(srcdir)/Cargo.toml",
-            "CARGO_TARGET_DIR := %s" % env.topobjdir,
         ]
 
         self.assertEqual(lines, expected)
@@ -1228,7 +1282,6 @@ class TestRecursiveMakeBackend(BackendTester):
             "x86_64-unknown-linux-gnu/release-custom/libprofile_library.a",
             "CARGO_FILE := $(srcdir)/Cargo.toml",
             f"CARGO_TARGET_DIR := {env.topobjdir}",
-            "RUST_LIBRARY_CARGO_PROFILE_SUFFIX := custom",
         ]
 
         self.assertEqual(lines, expected)
@@ -1245,6 +1298,9 @@ class TestRecursiveMakeBackend(BackendTester):
 
         self.assertEqual(edge["kind"], "library")
         self.assertEqual(edge["names"], ["libtest_library.a"])
+        self.assertEqual(
+            edge["outputs"], ["x86_64-unknown-linux-gnu/release/libtest_library.a"]
+        )
         self.assertEqual(edge["cargo_profile_suffix"], "")
         self.assertEqual(edge["cargo_crate_type"], "")
         self.assertTrue(edge["manifest_path"].endswith("Cargo.toml"))
@@ -1383,7 +1439,6 @@ class TestRecursiveMakeBackend(BackendTester):
             "RUST_LIBRARY_FILE := x86_64-unknown-linux-gnu/release/libfeature_library.a",
             "CARGO_FILE := $(srcdir)/Cargo.toml",
             "CARGO_TARGET_DIR := %s" % env.topobjdir,
-            "RUST_LIBRARY_LTO := 1",
         ]
 
         self.assertEqual(lines, expected)
@@ -1909,6 +1964,36 @@ class TestRecursiveMakeBackend(BackendTester):
                 ][0]
                 self.assertEqual(program, expected_program)
 
+    def test_host_cpp_prog_link(self):
+        env = self._consume("host-cpp-link", RecursiveMakeBackend)
+
+        with open(os.path.join(env.topobjdir, "cpp", "backend.mk")) as fh:
+            self.assertIn("HOST_CPP_PROG_LINK := 1\n", fh.readlines())
+        with open(os.path.join(env.topobjdir, "conly", "backend.mk")) as fh:
+            self.assertNotIn("HOST_CPP_PROG_LINK := 1\n", fh.readlines())
+        with open(os.path.join(env.topobjdir, "conly-cpplib", "backend.mk")) as fh:
+            self.assertIn("HOST_CPP_PROG_LINK := 1\n", fh.readlines())
+        with open(os.path.join(env.topobjdir, "simple", "backend.mk")) as fh:
+            lines = fh.readlines()
+        self.assertIn("HOST_SIMPLE_PROGRAMS += host_asimple\n", lines)
+        self.assertIn("HOST_CPP_PROG_LINK := 1\n", lines)
+
+    def test_per_source_object_deps(self):
+        env = self._consume("per-source-object-deps", RecursiveMakeBackend)
+
+        with open(mozpath.join(env.topobjdir, "backend.mk")) as fh:
+            lines = fh.readlines()
+
+        self.assertIn("ASFILES += gen.s\n", lines)
+        self.assertIn(
+            "gen.$(OBJ_SUFFIX): gen.s include.S $(srcdir)/included.inc\n", lines
+        )
+        self.assertIn("ASFILES += $(srcdir)/static.s\n", lines)
+        self.assertIn(
+            "static.$(OBJ_SUFFIX): $(srcdir)/static.s $(srcdir)/included.inc\n", lines
+        )
+        self.assertEqual([l for l in lines if l.startswith("plain.$(OBJ_SUFFIX)")], [])
+
     def test_extra_link_deps(self):
         """Test that EXTRA_LINK_DEPS is handled properly."""
         env = self._consume("extra-link-deps", RecursiveMakeBackend)
@@ -1998,6 +2083,24 @@ class TestRecursiveMakeBackend(BackendTester):
                     if line.startswith(prefix)
                 ][0]
                 self.assertEqual(shared_lib, expected_shared_lib)
+
+    def test_shared_lib_import_lib_paths(self):
+        """On Windows, import libraries are installed to dist/lib, mirroring
+        DIST_SUBDIR so that same-named libraries don't collide."""
+        env = self._get_environment(
+            "shared-lib-paths-windows", srcdir_name="shared-lib-paths"
+        )
+        env = self._consume("shared-lib-paths", RecursiveMakeBackend, env=env)
+
+        def backend_mk(subdir):
+            with open(os.path.join(env.topobjdir, subdir, "backend.mk")) as fh:
+                return fh.read()
+
+        self.assertIn(
+            "IMPORT_LIB_DEST = $(DIST)/lib$(DIST_SUBDIR:%=/%)\n",
+            backend_mk("dist-subdir"),
+        )
+        self.assertNotIn("IMPORT_LIB_DEST", backend_mk("not-installed"))
 
     def test_licenses_json(self):
         """LICENSES declarations are aggregated into licenses.json."""

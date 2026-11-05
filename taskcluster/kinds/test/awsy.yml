@@ -4,8 +4,17 @@
 ---
 task-defaults:
     suite: awsy
+    dependencies:
+        by-test-platform:
+            macosx(1500|2700)-aarch64(-vms)?-shippable/.*:
+                build: build-macosx64-aarch64-shippable/opt
+            default: {}
     max-run-time: 7200
     use-python: system
+    use-caches:
+        by-test-platform:
+            windows.*: [checkout, pip]
+            default: [checkout, pip, uv]
     instance-size: xlarge-noscratch
     worker-type:
         by-test-platform:

@@ -1,0 +1,2 @@
+verifyprebarriers();
+setGrayBitsInvalid();

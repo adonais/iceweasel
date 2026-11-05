@@ -215,6 +215,12 @@ size_t ObjectFuse::sizeOfIncludingThis(
   return result;
 }
 
+ObjectFuseMap::ObjectFuseMap(JS::Zone* zone) : objectFuses_(zone) {
+#ifdef DEBUG
+  zone_ = zone;
+#endif
+}
+
 ObjectFuse* ObjectFuseMap::getOrCreate(JSContext* cx, NativeObject* obj) {
   MOZ_ASSERT(obj->hasObjectFuse());
   MOZ_ASSERT(obj->zone() == zone_);

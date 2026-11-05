@@ -16,6 +16,14 @@ $GECKO_PATH/mach python -m mozbuild.action.make_dmg x64 target.dmg
 mkdir -p $UPLOAD_DIR
 mv target.dmg $UPLOAD_DIR/
 
+for i in x64:x86_64 aarch64:aarch64; do
+    for sbom in sbom sbom-build-tooling; do
+        if [ -f $MOZ_FETCHES_DIR/${i%:*}/$sbom.json ]; then
+            mv $MOZ_FETCHES_DIR/${i%:*}/$sbom.json $UPLOAD_DIR/$sbom-${i#*:}.json
+        fi
+    done
+done
+
 python3 -c '
 import json
 import os

@@ -184,28 +184,6 @@ standalone:
             extra-options:
                 - "--restart-between-tests"
 
-geckoview-no-fission:
-    description: "{description} without fission enabled"
-    component: "GeckoView::General"
-    expiration: "2027-03-01"
-    when:
-        <<: *gv_e10s_filter
-    suffix: "nofis"
-    mozinfo: "fission"
-    merge:
-        mozharness:
-            extra-options:
-                - "--disable-fission"
-
-geckoview-fission:
-    description: "{description} with fission enabled and default isolation strategy"
-    component: "GeckoView::General"
-    expiration: "2027-03-01"
-    when:
-        <<: *gv_e10s_filter
-    suffix: "fis"
-    mozinfo: "fission"
-
 geckoview-fission-isolate-high-value:
     description: "{description} with fission enabled and isolation strategy isolateHighValue"
     component: "GeckoView::General"
@@ -226,6 +204,7 @@ geckoview-isolated-process:
     when:
         <<: *gv_e10s_filter
     suffix: "isolated"
+    treeherder-suffix: "iso"
     mozinfo: "isolated_process"
     merge:
         mozharness:
@@ -237,6 +216,7 @@ geckoview-isolated-process:
                 - "--setpref=media.android-media-codec.preferred=false"
                 - "--setpref=media.ffmpeg.encoder.enabled=true"
                 - "--setpref=media.ffvpx-hw.enabled=true"
+                - "--setpref=media.gmp.android.isolated-process=true"
                 - "--setpref=media.rdd-ffvpx.enabled=true"
                 - "--setpref=media.rdd-opus.enabled=true"
                 - "--setpref=media.rdd-process.enabled=true"
@@ -664,6 +644,18 @@ draw-snapshot:
             extra-options:
                 - "--setpref=reftest.use-draw-snapshot=true"
 
+native-printer:
+    description: "{description} through the system PDF printer"
+    component: "Core::Printing: Output"
+    suffix: "np"
+    expiration: "never"
+    when:
+        $eval: '"windows" in task["test-platform"]'
+    merge:
+        mozharness:
+            extra-options:
+                - "--setpref=remote.print.printer_name=\"Microsoft Print to PDF\""
+
 async-event-dispatching:
     description: "{description} with async widget event dispatching"
     component: "Remote Protocol::Agent"
@@ -742,16 +734,6 @@ privatebrowsing-inc-origin-init:
         mozharness:
             extra-options:
                 - "--setpref=browser.privatebrowsing.autostart=true"
-
-no-nova:
-    description: "{description} with Nova disabled"
-    component: "Firefox::Theme"
-    expiration: "2026-12-31"
-    suffix: "no-nv"
-    merge:
-        mozharness:
-            extra-options:
-                - "--setpref=browser.nova.enabled=false"
 
 urlbar-ipc:
     description: "{description} with the urlbar actor message-passing path forced on"

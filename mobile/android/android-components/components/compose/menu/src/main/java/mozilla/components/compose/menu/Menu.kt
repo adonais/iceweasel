@@ -17,6 +17,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -44,12 +45,15 @@ import mozilla.components.ui.icons.R as iconsR
  *
  * @param store The [MenuStore] backing this menu.
  * @param modifier [Modifier] to be applied to the menu container.
+ * @param onHeaderDarkBackgroundChanged Optional callback invoked when the sticky header's dark background state
+ *   changes.
  */
 @Suppress("CognitiveComplexMethod")
 @Composable
 fun Menu(
     store: MenuStore,
     modifier: Modifier = Modifier,
+    onHeaderDarkBackgroundChanged: ((Boolean) -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier,
@@ -68,6 +72,12 @@ fun Menu(
         val listState = rememberLazyListState()
 
         val isScrollable = listState.canScrollForward || listState.canScrollBackward
+        val isHeaderDark = headerGroup != null && isScrollable
+
+        LaunchedEffect(isHeaderDark) {
+            onHeaderDarkBackgroundChanged?.invoke(isHeaderDark)
+        }
+
         val stickyBackgroundColor =
             if (isScrollable) {
                 MaterialTheme.colorScheme.surfaceContainerHigh

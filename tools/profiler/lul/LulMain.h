@@ -151,6 +151,17 @@ struct UnwindRegs {
   TaggedUWord sp;
   TaggedUWord fp;
   TaggedUWord pc;
+#elif defined(GP_ARCH_loongarch64)
+  TaggedUWord ra;
+  TaggedUWord sp;
+  TaggedUWord fp;
+  TaggedUWord s0;
+  TaggedUWord pc;
+#elif defined(GP_ARCH_riscv64)
+  TaggedUWord ra;
+  TaggedUWord sp;
+  TaggedUWord fp;
+  TaggedUWord pc;
 #else
 #  error "Unknown plat"
 #endif
@@ -165,12 +176,15 @@ struct UnwindRegs {
 static const size_t N_STACK_BYTES = 160 * 1024;
 
 // The stack chunk image that will be unwound.
+// mContents points at the stack memory to unwind. In production it points
+// directly at the target thread's stack (zero-copy); tests may point it at
+// a separate buffer.
 struct StackImage {
   // [start_avma, +len) specify the address range in the buffer.
   // Obviously we require 0 <= len <= N_STACK_BYTES.
   uintptr_t mStartAvma;
   size_t mLen;
-  uint8_t mContents[N_STACK_BYTES];
+  uint8_t* mContents;
 };
 
 // Statistics collection for the unwinder.

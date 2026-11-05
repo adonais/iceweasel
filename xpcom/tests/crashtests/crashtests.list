@@ -1,2 +1,3 @@
 load bug-1714685.html
 pref(fuzzing.enabled,true) load bug-2079059.html
+load bug-2079466.html

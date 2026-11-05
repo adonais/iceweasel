@@ -16,9 +16,6 @@ application_reputation:
     description: >
       Whether or not the file examined by download protection is a binary type
       (or it's not possible to tell because the filename is missing).
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram APPLICATION_REPUTATION_BINARY_TYPE.
     labels:
       - BinaryFile
       - NonBinaryFile
@@ -33,16 +30,12 @@ application_reputation:
       - dlee@mozilla.com
       - safebrowsing-telemetry@mozilla.org
     expires: never
-    telemetry_mirror: h#APPLICATION_REPUTATION_BINARY_TYPE
 
   binary_archive:
     type: labeled_counter
     description: >
       Whether a binary file examined by download protection is one of the common
       archive formats.
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram APPLICATION_REPUTATION_BINARY_ARCHIVE.
     labels:
       - OtherBinaryFile
       - DmgFile
@@ -58,16 +51,12 @@ application_reputation:
       - dlee@mozilla.com
       - safebrowsing-telemetry@mozilla.org
     expires: never
-    telemetry_mirror: h#APPLICATION_REPUTATION_BINARY_ARCHIVE
 
   should_block:
     type: labeled_counter
     description: >
       Overall (local or remote) application reputation verdict
       (shouldBlock=false is OK).
-
-      This metric was generated to correspond to the Legacy Telemetry boolean
-      histogram APPLICATION_REPUTATION_SHOULD_BLOCK.
     labels:
       - "false"
       - "true"
@@ -79,15 +68,11 @@ application_reputation:
       - dlee@mozilla.com
       - safebrowsing-telemetry@mozilla.org
     expires: never
-    telemetry_mirror: h#APPLICATION_REPUTATION_SHOULD_BLOCK
 
   local:
     type: custom_distribution
     description: >
       Application reputation local results (0=ALLOW, 1=BLOCK, 2=NONE)
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram APPLICATION_REPUTATION_LOCAL.
     range_min: 0
     range_max: 3
     bucket_count: 4
@@ -100,16 +85,12 @@ application_reputation:
       - dlee@mozilla.com
       - safebrowsing-telemetry@mozilla.org
     expires: never
-    telemetry_mirror: APPLICATION_REPUTATION_LOCAL
 
   server:
     type: custom_distribution
     description: >
       Status of the application reputation remote lookup (0=OK, 1=failed,
       2=invalid protobuf response)
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram APPLICATION_REPUTATION_SERVER.
     range_min: 0
     range_max: 3
     bucket_count: 4
@@ -122,15 +103,11 @@ application_reputation:
       - dlee@mozilla.com
       - safebrowsing-telemetry@mozilla.org
     expires: never
-    telemetry_mirror: APPLICATION_REPUTATION_SERVER
 
   server_2:
     type: labeled_counter
     description: >
       Network status of the application reputation remote lookup
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram APPLICATION_REPUTATION_SERVER_2.
     labels:
       - ErrOthers
       - ResponseValid
@@ -173,16 +150,12 @@ application_reputation:
       - dlee@mozilla.com
       - safebrowsing-telemetry@mozilla.org
     expires: never
-    telemetry_mirror: h#APPLICATION_REPUTATION_SERVER_2
 
   server_verdict:
     type: custom_distribution
     description: >
       Application reputation remote verdict (0=SAFE, 1=DANGEROUS, 2=UNCOMMON,
       3=POTENTIALLY_UNWANTED, 4=DANGEROUS_HOST, 5=UNKNOWN)
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram APPLICATION_REPUTATION_SERVER_VERDICT.
     range_min: 0
     range_max: 8
     bucket_count: 9
@@ -197,15 +170,11 @@ application_reputation:
       - dlee@mozilla.com
       - safebrowsing-telemetry@mozilla.org
     expires: never
-    telemetry_mirror: APPLICATION_REPUTATION_SERVER_VERDICT
 
   server_verdict_2:
     type: dual_labeled_counter
     description: >
       Application reputation remote verdict, keyed by file extension
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram APPLICATION_REPUTATION_SERVER_VERDICT_2.
     dual_labels:
       key:
         description: File extension.
@@ -229,15 +198,11 @@ application_reputation:
       - dlee@mozilla.com
       - safebrowsing-telemetry@mozilla.org
     expires: never
-    telemetry_mirror: APPLICATION_REPUTATION_SERVER_VERDICT_2
 
   remote_lookup_response_time:
     type: timing_distribution
     description: >
       Server response time to remote lookup request (ms).
-
-      This metric was generated to correspond to the Legacy Telemetry linear
-      histogram APPLICATION_REPUTATION_REMOTE_LOOKUP_RESPONSE_TIME.
     time_unit: millisecond
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1479898
@@ -247,16 +212,12 @@ application_reputation:
       - dlee@mozilla.com
       - safebrowsing-telemetry@mozilla.org
     expires: never
-    telemetry_mirror: APPLICATION_REPUTATION_REMOTE_LOOKUP_RESPONSE_TIME
 
   remote_lookup_timeout:
     type: labeled_counter
     description: >
       Recorded when application reputation remote lookup is performed, `true` is
       recorded if the lookup times out.
-
-      This metric was generated to correspond to the Legacy Telemetry boolean
-      histogram APPLICATION_REPUTATION_REMOTE_LOOKUP_TIMEOUT.
     labels:
       - "false"
       - "true"
@@ -270,15 +231,11 @@ application_reputation:
       - dlee@mozilla.com
       - safebrowsing-telemetry@mozilla.org
     expires: never
-    telemetry_mirror: h#APPLICATION_REPUTATION_REMOTE_LOOKUP_TIMEOUT
 
   reason:
     type: labeled_counter
     description: >
       The reason application reputation service blocks or allows the download.
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram APPLICATION_REPUTATION_REASON.
     labels:
       - NotSet
       - LocalWhitelist
@@ -307,4 +264,3 @@ application_reputation:
       - dlee@mozilla.com
       - safebrowsing-telemetry@mozilla.org
     expires: never
-    telemetry_mirror: h#APPLICATION_REPUTATION_REASON

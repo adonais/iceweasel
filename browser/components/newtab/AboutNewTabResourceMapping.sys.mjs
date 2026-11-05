@@ -458,10 +458,9 @@ export var AboutNewTabResourceMapping = {
     // Tell Experimenter to re-evaluate experiment recipe targeting in case we
     // just installed an XPI.
     try {
-      await lazy.ExperimentAPI._rsLoader.finishedUpdating();
-      await lazy.ExperimentAPI._rsLoader.updateRecipes("newtab-trainhop", {
-        onlyFeatureIds: new Set(["newtabTrainhop"]),
-      });
+      await lazy.ExperimentAPI.updateRecipesForFeatures("newtab-trainhop", [
+        "newtabTrainhop",
+      ]);
     } catch (e) {
       // TODO: consider if we should collect this in telemetry.
       this.logger.error("Error when re-evaluating Nimbus recipes:", e);
@@ -969,6 +968,9 @@ export var AboutNewTabResourceMapping = {
       let newInstall = await lazy.AddonManager.getInstallForURL(
         xpiDownloadURL,
         {
+          id: BUILTIN_ADDON_ID,
+          type: "extension",
+          version: trainhopAddonVersion,
           // Categorizes the install as coming from the Nimbus newtab train-hop
           // mechanism. This source id is kept stable for historical continuity
           // (it predates the co-enrollment newtabTrainhopAddonDeployment feature).

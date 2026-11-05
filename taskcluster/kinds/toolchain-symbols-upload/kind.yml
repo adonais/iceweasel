@@ -1,0 +1,48 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+loader: taskgraph.loader.transform:loader
+
+transforms:
+    - taskgraph.transforms.from_deps
+    - gecko_taskgraph.transforms.upload_symbols
+    - gecko_taskgraph.transforms.copy_cached_dep
+    - gecko_taskgraph.transforms.job
+    - gecko_taskgraph.transforms.task
+
+kind-dependencies:
+    - fetch
+    - toolchain
+
+task-defaults:
+    run-on-repo-type: [hg]
+
+tasks:
+    symbols-upload:
+        description: Upload symbols for a library built by a toolchain task.
+        # Without kinds, adding a kind-dependency can silently match nothing.
+        from-deps:
+            kinds: [toolchain]
+            with-attributes:
+                enable-full-crashsymbols: [true]
+        worker-type: b-linux-docker-amd
+        worker:
+            docker-image: {in-tree: "lint"}
+            max-run-time: 1800
+            env:
+                # NOTE: This is necessary to access `zstandard` via Python.
+                MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
+                # NOTE: `{level}` gets replaced in the `upload_symbols` transform.
+                SYMBOL_SECRET: "project/releng/gecko/build/level-{level}/gecko-symbol-upload"
+                UPLOAD_SYMBOLS: /builds/worker/fetches/upload-symbols-cli/upload-symbols
+        run:
+            clone-with: hg
+            using: mach
+            mach: {task-reference: "python toolkit/crashreporter/tools/upload_symbols.py --task-id <toolchain> --ignore-missing"}
+            sparse-profile: upload-symbols
+        scopes:
+            - secrets:get:project/releng/gecko/build/level-{level}/gecko-symbol-upload
+        fetches:
+            fetch:
+                - upload-symbols-linux64

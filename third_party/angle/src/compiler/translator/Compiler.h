@@ -19,6 +19,7 @@
 #include "common/PackedEnums.h"
 #include "common/span.h"
 #include "compiler/translator/CallDAG.h"
+#include "compiler/translator/CollectVariables.h"
 #include "compiler/translator/Diagnostics.h"
 #include "compiler/translator/ExtensionBehavior.h"
 #include "compiler/translator/HashNames.h"
@@ -127,8 +128,6 @@ class TCompiler : public TShHandleBase
     }
 
     ShHashFunction64 getHashFunction() const { return mResources.HashFunction; }
-    char getUserVariableNamePrefix() const { return mResources.UserVariableNamePrefix; }
-    char getUserBlockNamePrefix() const { return mResources.UserBlockNamePrefix; }
     NameMap &getNameMap() { return mNameMap; }
     TSymbolTable &getSymbolTable() { return mSymbolTable; }
     ShShaderSpec getShaderSpec() const { return mShaderSpec; }
@@ -277,7 +276,9 @@ class TCompiler : public TShHandleBase
     void tagUsedFunctions();
     void internalTagUsedFunction(size_t index);
 
-    void collectVariables(TIntermBlock *root);
+    void collectVariables(
+        TIntermBlock *root,
+        const SamplersStaticallyUsedWithTexelFetch &samplersStaticallyUsedWithTexelFetch);
     void collectInterfaceBlocks();
 
     bool sortUniforms(TIntermBlock *root);

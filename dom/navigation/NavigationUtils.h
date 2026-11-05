@@ -7,6 +7,8 @@
 
 #include "mozilla/Maybe.h"
 
+class nsIChannel;
+
 namespace mozilla::dom {
 enum class NavigationType : uint8_t;
 enum class NavigationHistoryBehavior : uint8_t;
@@ -21,6 +23,16 @@ class NavigationUtils {
       enum NavigationHistoryBehavior aBehavior);
 
   static Maybe<NavigationType> NavigationTypeFromLoadType(uint32_t aLoadType);
+
+  // Whether aChannel's load involved a cross-origin redirect (any
+  // redirect-chain entry not same-origin with the final result principal).
+  static bool HasCrossOriginRedirect(nsIChannel* aChannel);
+
+  // https://drafts.csswg.org/css-view-transitions-2/#navigation-can-trigger-a-cross-document-view-transition
+  // Steps 3 to 8. SetupOutboundCrossDocumentViewTransition checks step 2, the
+  // opt-in.
+  static bool CanInitiateOutboundCrossDocumentViewTransition(
+      uint32_t aLoadType, bool aSameOrigin, nsIChannel* aChannel);
 };
 
 }  // namespace mozilla::dom

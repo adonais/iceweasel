@@ -30,6 +30,7 @@ support-files = [
   "printpreview_font_api_ref.html",
   "printpreview_font_mozprintcallback.html",
   "printpreview_font_mozprintcallback_ref.html",
+  "printpreview_random.html",
   "printpreview_quirks.html",
   "printpreview_quirks_ref.html",
   "printpreview_images.html",

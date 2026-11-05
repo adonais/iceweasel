@@ -244,6 +244,8 @@ class VideoSendStream {
   // is moved to Call this method could be deleted altogether in favor of
   // Call-level APIs only.
   virtual void AddAdaptationResource(scoped_refptr<Resource> resource) = 0;
+  // Returns the resources previously passed to AddAdaptationResource(). The
+  // resources the stream creates internally are not included.
   virtual std::vector<scoped_refptr<Resource>> GetAdaptationResources() = 0;
 
   virtual void SetSource(

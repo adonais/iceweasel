@@ -96,7 +96,7 @@ async function maybeSetupConfig() {
  *   we still test it.
  * @property {string} [partnerCode]
  *   The expected partner code property of the search engine.
- * @property {string} [searchUrlCode]
+ * @property {string|Map<string, string>} [searchUrlCode]
  *   The expected parameter name and value for the partner code in the search URL.
  * @property {string} [searchUrlParamNotInQuery]
  *   When specified, this parameter should not be included in the query part of
@@ -539,11 +539,25 @@ class SearchConfigTest {
    */
   _assertCorrectUrlCode(location, engine, rule) {
     if (rule.searchUrlCode) {
-      const submission = engine.getSubmission("test", URLTYPE_SEARCH_HTML);
-      this.assertOk(
-        submission.uri.query.split("&").includes(rule.searchUrlCode),
-        `Expected "${rule.searchUrlCode}" in search url "${submission.uri.spec}"`
-      );
+      if (rule.searchUrlCode instanceof Map) {
+        for (let [key, expectedCode] of rule.searchUrlCode) {
+          const submission = engine.getSubmission(
+            "test",
+            URLTYPE_SEARCH_HTML,
+            key
+          );
+          this.assertOk(
+            submission.uri.query.split("&").includes(expectedCode),
+            `Expected "${expectedCode}" in search url "${submission.uri.spec}"`
+          );
+        }
+      } else {
+        const submission = engine.getSubmission("test", URLTYPE_SEARCH_HTML);
+        this.assertOk(
+          submission.uri.query.split("&").includes(rule.searchUrlCode),
+          `Expected "${rule.searchUrlCode}" in search url "${submission.uri.spec}"`
+        );
+      }
     }
     if (rule.searchUrlParamNotInQuery) {
       const submission = engine.getSubmission("test", URLTYPE_SEARCH_HTML);

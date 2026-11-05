@@ -5664,7 +5664,7 @@ export class BackupService extends EventTarget {
           // folder. If not, delete that folder too.
           let children = await IOUtils.getChildren(lazy.backupDirPref);
           if (!children.length) {
-            await IOUtils.remove(lazy.backupDirPref, { retryReadony: true });
+            await IOUtils.remove(lazy.backupDirPref, { retryReadonly: true });
           }
         }
       }

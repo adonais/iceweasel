@@ -945,15 +945,9 @@ export class MegalistAlpha extends MozLitElement {
         class="container sidebar-panel"
         aria-labelledby="sidebar-menu-cpm-header"
       >
-        <sidebar-panel-header
-          data-l10n-id="sidebar-menu-cpm-header"
-          data-l10n-attrs="heading"
-          view="viewCPMSidebar"
-        >
-          ${when(!this.shouldShowPrimaryPasswordAuth && showToolbar, () =>
-            this.renderToolbar()
-          )}
-        </sidebar-panel-header>
+        ${when(!this.shouldShowPrimaryPasswordAuth && showToolbar, () =>
+          this.renderToolbar()
+        )}
         <div class="sidebar-panel-scrollable-content">
           ${!this.shouldShowPrimaryPasswordAuth
             ? this.renderAuthenticatedView()

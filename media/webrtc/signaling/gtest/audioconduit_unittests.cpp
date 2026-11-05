@@ -23,7 +23,7 @@ class AudioConduitTest : public ::testing::Test {
             mCallWrapper, GetCurrentSerialEventTarget())),
         mControl(GetCurrentSerialEventTarget()) {
     mControl.Update(
-        [&](auto& aControl) { mAudioConduit->InitControl(&mControl); });
+        [&](auto& /*aControl*/) { mAudioConduit->InitControl(&mControl); });
   }
 
   ~AudioConduitTest() override {

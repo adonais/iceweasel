@@ -54,7 +54,18 @@ else:
     UNIFIED_SOURCES += [
         "HeadlessKeyBindings.cpp",
     ]
+    SOURCE_HEADERS += [
+        "HeadlessKeyBindings.h",
+    ]
 
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "HeadlessClipboard.h",
+    "HeadlessClipboardData.h",
+    "HeadlessLookAndFeel.h",
+    "HeadlessScreenHelper.h",
+    "HeadlessSound.h",
+]

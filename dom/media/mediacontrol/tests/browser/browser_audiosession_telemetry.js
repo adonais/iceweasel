@@ -65,6 +65,10 @@ add_task(async function test_interrupt_and_resume() {
   info("play audible media so it becomes the selected audio session");
   await checkOrWaitUntilMediaStartedPlaying(tab, "autoplay");
   await checkOrWaitUntilControllerBecomeActive(tab);
+  // The controller activates once the media plays, but the session is selected
+  // only once the media is audible, which is also when the effective type
+  // becomes playback.
+  await waitForEffectiveAudioSessionType(controller, "playback");
   Assert.greaterOrEqual(
     Glean.mediaAudioSession.selectedChanged.testGetValue() ?? 0,
     1,
@@ -127,6 +131,11 @@ add_task(async function test_interrupt_outcome_is_per_suspended_session() {
     content.navigator.audioSession.type = "ambient";
   });
   await playMedia(tab, TOP_VIDEO_ID);
+  // The main frame's session goes active only once its media is audible.
+  await TestUtils.waitForCondition(
+    () => controller.isAudible,
+    "the main frame's media is audible"
+  );
 
   info("inject a cross-origin iframe and start its audible video");
   await SpecialPowers.spawn(tab.linkedBrowser, [IFRAME_URL], async url => {
@@ -146,7 +155,7 @@ add_task(async function test_interrupt_outcome_is_per_suspended_session() {
   });
   // Only the iframe can produce a `playback` effective type here, and selection
   // picks it only once its browsing context is audible, so this is the signal
-  // that both sessions are active and interruptible.
+  // that the iframe's session is active and interruptible too.
   await waitForEffectiveAudioSessionType(controller, "playback");
 
   info("a system interruption suspends both sessions");
@@ -183,6 +192,7 @@ add_task(async function test_resume_without_interruption_records_no_outcome() {
   const controller = tab.linkedBrowser.browsingContext.mediaController;
   await checkOrWaitUntilMediaStartedPlaying(tab, "autoplay");
   await checkOrWaitUntilControllerBecomeActive(tab);
+  await waitForEffectiveAudioSessionType(controller, "playback");
 
   info("resume without any preceding interruption");
   controller.resume();

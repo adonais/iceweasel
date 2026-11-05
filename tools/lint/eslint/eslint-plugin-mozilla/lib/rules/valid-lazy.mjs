@@ -147,17 +147,22 @@ export default {
         ) {
           setPropertiesFromArgument(node.init, node.init.arguments[0]);
         }
-        if (
-          node.id.type === "Identifier" &&
-          node.id.name == "lazy" &&
-          node.init.type == "CallExpression" &&
-          node.init.callee.type === "MemberExpression" &&
-          node.init.callee.object.type === "Identifier" &&
-          node.init.callee.object.name === "XPCOMUtils" &&
-          node.init.callee.property.name === "declareLazy" &&
-          node.init.arguments.length >= 1
-        ) {
-          setPropertiesFromArgument(node.init, node.init.arguments[0]);
+        if (node.id.type === "Identifier" && node.id.name == "lazy") {
+          // Unwrap potential ChainExpression to allow XPCOMUtils?.declareLazy
+          let callExpr =
+            node.init.type == "ChainExpression"
+              ? node.init.expression
+              : node.init;
+          if (
+            callExpr.type == "CallExpression" &&
+            callExpr.callee.type === "MemberExpression" &&
+            callExpr.callee.object.type === "Identifier" &&
+            callExpr.callee.object.name === "XPCOMUtils" &&
+            callExpr.callee.property.name === "declareLazy" &&
+            callExpr.arguments.length >= 1
+          ) {
+            setPropertiesFromArgument(callExpr, callExpr.arguments[0]);
+          }
         }
       },
 

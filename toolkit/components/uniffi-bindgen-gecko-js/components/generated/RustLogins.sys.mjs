@@ -45,7 +45,7 @@ export async function createLoginStoreWithNssKeymanager(
 FfiConverterString.checkType(path);
 FfiConverterTypePrimaryPasswordAuthenticator.checkType(primaryPasswordAuthenticator);
 const result = await UniFFIScaffolding.callAsyncWrapper(
-    22, // uniffi_logins_fn_func_create_login_store_with_nss_keymanager
+    24, // uniffi_logins_fn_func_create_login_store_with_nss_keymanager
     FfiConverterString.lower(path),
     FfiConverterTypePrimaryPasswordAuthenticator.lower(primaryPasswordAuthenticator),
 )
@@ -70,58 +70,13 @@ export async function createLoginStoreWithStaticKeyManager(
 FfiConverterString.checkType(path);
 FfiConverterString.checkType(key);
 const result = await UniFFIScaffolding.callAsyncWrapper(
-    23, // uniffi_logins_fn_func_create_login_store_with_static_key_manager
+    25, // uniffi_logins_fn_func_create_login_store_with_static_key_manager
     FfiConverterString.lower(path),
     FfiConverterString.lower(key),
 )
 return handleRustResult(
     result,
     FfiConverterTypeLoginStore.lift.bind(FfiConverterTypeLoginStore),
-    null,
-)
-}
-
-/**
- * Similar to create_static_key_manager above, create a
- * ManagedEncryptorDecryptor by passing in a KeyManager
- * @param {KeyManager} keyManager
- * @returns {Promise<EncryptorDecryptor>}}
- */
-export async function createManagedEncdec(
-    keyManager) {
-   
-FfiConverterTypeKeyManager.checkType(keyManager);
-const result = await UniFFIScaffolding.callAsyncWrapper(
-    24, // uniffi_logins_fn_func_create_managed_encdec
-    FfiConverterTypeKeyManager.lower(keyManager),
-)
-return handleRustResult(
-    result,
-    FfiConverterTypeEncryptorDecryptor.lift.bind(FfiConverterTypeEncryptorDecryptor),
-    null,
-)
-}
-
-/**
- * We expose the crypto primitives on the namespace
- * Utility function to create a StaticKeyManager to be used for the time
- * being until support lands for [trait implementation of an UniFFI
- * interface](https://mozilla.github.io/uniffi-rs/next/proc_macro/index.html#structs-implementing-traits)
- * in UniFFI.
- * @param {string} key
- * @returns {Promise<KeyManager>}}
- */
-export async function createStaticKeyManager(
-    key) {
-   
-FfiConverterString.checkType(key);
-const result = await UniFFIScaffolding.callAsyncWrapper(
-    25, // uniffi_logins_fn_func_create_static_key_manager
-    FfiConverterString.lower(key),
-)
-return handleRustResult(
-    result,
-    FfiConverterTypeKeyManager.lift.bind(FfiConverterTypeKeyManager),
     null,
 )
 }
@@ -1671,7 +1626,7 @@ export class FfiConverterTypeBulkResultEntry extends FfiConverterArrayBuffer {
 /**
  * LoginOrErrorMessage
  */
-export const LoginOrErrorMessage = Object.freeze({
+export const LoginOrErrorMessage = Object.freeze(/** @lends LoginOrErrorMessage */ {
     /**
      * LOGIN
      */
@@ -2402,7 +2357,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
        
         FfiConverterInt64.checkType(serverModifiedMillis);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            181, // uniffi_logins_fn_method_loginsbridgedengine_apply
+            195, // uniffi_logins_fn_method_loginsbridgedengine_apply
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
             FfiConverterInt64.lower(serverModifiedMillis),
         )
@@ -2423,7 +2378,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
        
         FfiConverterString.checkType(newSyncId);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            182, // uniffi_logins_fn_method_loginsbridgedengine_ensure_current_sync_id
+            196, // uniffi_logins_fn_method_loginsbridgedengine_ensure_current_sync_id
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
             FfiConverterString.lower(newSyncId),
         )
@@ -2441,7 +2396,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
     async lastSync() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            183, // uniffi_logins_fn_method_loginsbridgedengine_last_sync
+            197, // uniffi_logins_fn_method_loginsbridgedengine_last_sync
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -2457,7 +2412,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
     async reset() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            184, // uniffi_logins_fn_method_loginsbridgedengine_reset
+            198, // uniffi_logins_fn_method_loginsbridgedengine_reset
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -2473,7 +2428,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
     async resetLastSync() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            185, // uniffi_logins_fn_method_loginsbridgedengine_reset_last_sync
+            199, // uniffi_logins_fn_method_loginsbridgedengine_reset_last_sync
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -2490,7 +2445,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
     async resetSyncId() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            186, // uniffi_logins_fn_method_loginsbridgedengine_reset_sync_id
+            200, // uniffi_logins_fn_method_loginsbridgedengine_reset_sync_id
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -2512,7 +2467,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
         FfiConverterInt64.checkType(newTimestamp);
         FfiConverterSequenceString.checkType(uploadedIds);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            187, // uniffi_logins_fn_method_loginsbridgedengine_set_uploaded
+            201, // uniffi_logins_fn_method_loginsbridgedengine_set_uploaded
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
             FfiConverterInt64.lower(newTimestamp),
             FfiConverterSequenceString.lower(uploadedIds),
@@ -2533,7 +2488,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
        
         FfiConverterSequenceString.checkType(incomingEnvelopesAsJson);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            188, // uniffi_logins_fn_method_loginsbridgedengine_store_incoming
+            202, // uniffi_logins_fn_method_loginsbridgedengine_store_incoming
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
             FfiConverterSequenceString.lower(incomingEnvelopesAsJson),
         )
@@ -2550,7 +2505,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
     async syncFinished() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            189, // uniffi_logins_fn_method_loginsbridgedengine_sync_finished
+            203, // uniffi_logins_fn_method_loginsbridgedengine_sync_finished
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -2567,7 +2522,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
     async syncId() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            190, // uniffi_logins_fn_method_loginsbridgedengine_sync_id
+            204, // uniffi_logins_fn_method_loginsbridgedengine_sync_id
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -2583,7 +2538,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
     async syncStarted() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            191, // uniffi_logins_fn_method_loginsbridgedengine_sync_started
+            205, // uniffi_logins_fn_method_loginsbridgedengine_sync_started
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -2599,7 +2554,7 @@ export class LoginsBridgedEngine extends LoginsBridgedEngineInterface {
     async wipe() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            192, // uniffi_logins_fn_method_loginsbridgedengine_wipe
+            206, // uniffi_logins_fn_method_loginsbridgedengine_wipe
             FfiConverterTypeLoginsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -2633,11 +2588,11 @@ export class FfiConverterTypeLoginsBridgedEngine extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readPointer(14));
+        return this.lift(dataStream.readPointer(15));
     }
 
     static write(dataStream, value) {
-        dataStream.writePointer(14, this.lower(value));
+        dataStream.writePointer(15, this.lower(value));
     }
 
     static computeSize(value) {
@@ -3223,7 +3178,7 @@ export class LoginStore extends LoginStoreInterface {
         FfiConverterString.checkType(path);
         FfiConverterTypeEncryptorDecryptor.checkType(encdec);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            143, // uniffi_logins_fn_constructor_loginstore_new
+            157, // uniffi_logins_fn_constructor_loginstore_new
             FfiConverterString.lower(path),
             FfiConverterTypeEncryptorDecryptor.lower(encdec),
         )
@@ -3244,7 +3199,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterTypeLoginEntry.checkType(login);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            144, // uniffi_logins_fn_method_loginstore_add
+            158, // uniffi_logins_fn_method_loginstore_add
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterTypeLoginEntry.lower(login),
         )
@@ -3265,7 +3220,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterSequenceTypeLoginEntry.checkType(logins);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            145, // uniffi_logins_fn_method_loginstore_add_many
+            159, // uniffi_logins_fn_method_loginstore_add_many
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterSequenceTypeLoginEntry.lower(logins),
         )
@@ -3286,7 +3241,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterSequenceTypeLoginEntryWithMeta.checkType(entriesWithMeta);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            146, // uniffi_logins_fn_method_loginstore_add_many_with_meta
+            160, // uniffi_logins_fn_method_loginstore_add_many_with_meta
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterSequenceTypeLoginEntryWithMeta.lower(entriesWithMeta),
         )
@@ -3307,7 +3262,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterTypeLoginEntry.checkType(login);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            147, // uniffi_logins_fn_method_loginstore_add_or_update
+            161, // uniffi_logins_fn_method_loginstore_add_or_update
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterTypeLoginEntry.lower(login),
         )
@@ -3328,7 +3283,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterTypeLoginEntryWithMeta.checkType(entryWithMeta);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            148, // uniffi_logins_fn_method_loginstore_add_with_meta
+            162, // uniffi_logins_fn_method_loginstore_add_with_meta
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterTypeLoginEntryWithMeta.lower(entryWithMeta),
         )
@@ -3353,7 +3308,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterSequenceString.checkType(ids);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            149, // uniffi_logins_fn_method_loginstore_are_potentially_vulnerable_passwords
+            163, // uniffi_logins_fn_method_loginstore_are_potentially_vulnerable_passwords
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterSequenceString.lower(ids),
         )
@@ -3373,7 +3328,7 @@ export class LoginStore extends LoginStoreInterface {
     async bridgedEngine() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            150, // uniffi_logins_fn_method_loginstore_bridged_engine
+            164, // uniffi_logins_fn_method_loginstore_bridged_engine
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3390,7 +3345,7 @@ export class LoginStore extends LoginStoreInterface {
     async count() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            151, // uniffi_logins_fn_method_loginstore_count
+            165, // uniffi_logins_fn_method_loginstore_count
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3410,7 +3365,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterString.checkType(formActionOrigin);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            152, // uniffi_logins_fn_method_loginstore_count_by_form_action_origin
+            166, // uniffi_logins_fn_method_loginstore_count_by_form_action_origin
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(formActionOrigin),
         )
@@ -3431,7 +3386,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterString.checkType(origin);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            153, // uniffi_logins_fn_method_loginstore_count_by_origin
+            167, // uniffi_logins_fn_method_loginstore_count_by_origin
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(origin),
         )
@@ -3452,7 +3407,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterString.checkType(id);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            154, // uniffi_logins_fn_method_loginstore_delete
+            168, // uniffi_logins_fn_method_loginstore_delete
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
         )
@@ -3470,7 +3425,7 @@ export class LoginStore extends LoginStoreInterface {
     async deleteAll() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            155, // uniffi_logins_fn_method_loginstore_delete_all
+            169, // uniffi_logins_fn_method_loginstore_delete_all
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3488,7 +3443,7 @@ export class LoginStore extends LoginStoreInterface {
     async deleteAllExceptFxa() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            156, // uniffi_logins_fn_method_loginstore_delete_all_except_fxa
+            170, // uniffi_logins_fn_method_loginstore_delete_all_except_fxa
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3508,7 +3463,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterSequenceString.checkType(ids);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            157, // uniffi_logins_fn_method_loginstore_delete_many
+            171, // uniffi_logins_fn_method_loginstore_delete_many
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterSequenceString.lower(ids),
         )
@@ -3531,7 +3486,7 @@ export class LoginStore extends LoginStoreInterface {
     async deleteUndecryptableRecordsForRemoteReplacement() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            158, // uniffi_logins_fn_method_loginstore_delete_undecryptable_records_for_remote_replacement
+            172, // uniffi_logins_fn_method_loginstore_delete_undecryptable_records_for_remote_replacement
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3551,7 +3506,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterTypeLoginEntry.checkType(look);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            159, // uniffi_logins_fn_method_loginstore_find_login_to_update
+            173, // uniffi_logins_fn_method_loginstore_find_login_to_update
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterTypeLoginEntry.lower(look),
         )
@@ -3572,7 +3527,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterString.checkType(id);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            160, // uniffi_logins_fn_method_loginstore_get
+            174, // uniffi_logins_fn_method_loginstore_get
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
         )
@@ -3593,7 +3548,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterString.checkType(baseDomain);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            161, // uniffi_logins_fn_method_loginstore_get_by_base_domain
+            175, // uniffi_logins_fn_method_loginstore_get_by_base_domain
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(baseDomain),
         )
@@ -3615,7 +3570,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterSequenceString.checkType(ids);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            162, // uniffi_logins_fn_method_loginstore_get_many
+            176, // uniffi_logins_fn_method_loginstore_get_many
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterSequenceString.lower(ids),
         )
@@ -3636,7 +3591,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterString.checkType(baseDomain);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            163, // uniffi_logins_fn_method_loginstore_has_logins_by_base_domain
+            177, // uniffi_logins_fn_method_loginstore_has_logins_by_base_domain
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(baseDomain),
         )
@@ -3654,7 +3609,7 @@ export class LoginStore extends LoginStoreInterface {
     async isEmpty() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            164, // uniffi_logins_fn_method_loginstore_is_empty
+            178, // uniffi_logins_fn_method_loginstore_is_empty
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3678,7 +3633,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterString.checkType(id);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            165, // uniffi_logins_fn_method_loginstore_is_potentially_vulnerable_password
+            179, // uniffi_logins_fn_method_loginstore_is_potentially_vulnerable_password
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
         )
@@ -3696,7 +3651,7 @@ export class LoginStore extends LoginStoreInterface {
     async list() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            166, // uniffi_logins_fn_method_loginstore_list
+            180, // uniffi_logins_fn_method_loginstore_list
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3714,7 +3669,7 @@ export class LoginStore extends LoginStoreInterface {
     async listCandidates() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            167, // uniffi_logins_fn_method_loginstore_list_candidates
+            181, // uniffi_logins_fn_method_loginstore_list_candidates
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3741,7 +3696,7 @@ export class LoginStore extends LoginStoreInterface {
         FfiConverterSequenceString.checkType(origins);
         FfiConverterSequenceString.checkType(domains);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            168, // uniffi_logins_fn_method_loginstore_list_candidates_by_origin
+            182, // uniffi_logins_fn_method_loginstore_list_candidates_by_origin
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterSequenceString.lower(origins),
             FfiConverterSequenceString.lower(domains),
@@ -3762,7 +3717,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterString.checkType(id);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            169, // uniffi_logins_fn_method_loginstore_record_breach_alert_dismissal
+            183, // uniffi_logins_fn_method_loginstore_record_breach_alert_dismissal
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
         )
@@ -3785,7 +3740,7 @@ export class LoginStore extends LoginStoreInterface {
         FfiConverterString.checkType(id);
         FfiConverterInt64.checkType(timestamp);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            170, // uniffi_logins_fn_method_loginstore_record_breach_alert_dismissal_time
+            184, // uniffi_logins_fn_method_loginstore_record_breach_alert_dismissal_time
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
             FfiConverterInt64.lower(timestamp),
@@ -3810,7 +3765,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterSequenceString.checkType(passwords);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            171, // uniffi_logins_fn_method_loginstore_record_potentially_vulnerable_passwords
+            185, // uniffi_logins_fn_method_loginstore_record_potentially_vulnerable_passwords
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterSequenceString.lower(passwords),
         )
@@ -3827,7 +3782,7 @@ export class LoginStore extends LoginStoreInterface {
     async registerWithSyncManager() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            172, // uniffi_logins_fn_method_loginstore_register_with_sync_manager
+            186, // uniffi_logins_fn_method_loginstore_register_with_sync_manager
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3843,7 +3798,7 @@ export class LoginStore extends LoginStoreInterface {
     async reset() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            173, // uniffi_logins_fn_method_loginstore_reset
+            187, // uniffi_logins_fn_method_loginstore_reset
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3859,7 +3814,7 @@ export class LoginStore extends LoginStoreInterface {
     async resetAllBreaches() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            174, // uniffi_logins_fn_method_loginstore_reset_all_breaches
+            188, // uniffi_logins_fn_method_loginstore_reset_all_breaches
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3881,7 +3836,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterOptionalTypeRunMaintenanceOptions.checkType(options);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            175, // uniffi_logins_fn_method_loginstore_run_maintenance
+            189, // uniffi_logins_fn_method_loginstore_run_maintenance
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterOptionalTypeRunMaintenanceOptions.lower(options),
         )
@@ -3898,7 +3853,7 @@ export class LoginStore extends LoginStoreInterface {
     async shutdown() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            176, // uniffi_logins_fn_method_loginstore_shutdown
+            190, // uniffi_logins_fn_method_loginstore_shutdown
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3917,7 +3872,7 @@ export class LoginStore extends LoginStoreInterface {
        
         FfiConverterString.checkType(id);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            177, // uniffi_logins_fn_method_loginstore_touch
+            191, // uniffi_logins_fn_method_loginstore_touch
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
         )
@@ -3941,7 +3896,7 @@ export class LoginStore extends LoginStoreInterface {
         FfiConverterString.checkType(id);
         FfiConverterTypeLoginEntry.checkType(login);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            178, // uniffi_logins_fn_method_loginstore_update
+            192, // uniffi_logins_fn_method_loginstore_update
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
             FfiConverterTypeLoginEntry.lower(login),
@@ -3969,7 +3924,7 @@ export class LoginStore extends LoginStoreInterface {
     async wipeLocal() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            179, // uniffi_logins_fn_method_loginstore_wipe_local
+            193, // uniffi_logins_fn_method_loginstore_wipe_local
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3985,7 +3940,7 @@ export class LoginStore extends LoginStoreInterface {
     async wipeLocalExceptFxa() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            180, // uniffi_logins_fn_method_loginstore_wipe_local_except_fxa
+            194, // uniffi_logins_fn_method_loginstore_wipe_local_except_fxa
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -4019,11 +3974,11 @@ export class FfiConverterTypeLoginStore extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readPointer(15));
+        return this.lift(dataStream.readPointer(16));
     }
 
     static write(dataStream, value) {
-        dataStream.writePointer(15, this.lower(value));
+        dataStream.writePointer(16, this.lower(value));
     }
 
     static computeSize(value) {
@@ -4037,12 +3992,6 @@ import {
 
 // Export the FFIConverter object to make external types work.
 export { FfiConverterTypePrimaryPasswordAuthenticator };
-import {
-  FfiConverterTypeKeyManager,
-} from "./RustDbCrypto.sys.mjs";
-
-// Export the FFIConverter object to make external types work.
-export { FfiConverterTypeKeyManager };
 import {
   FfiConverterTypeEncryptorDecryptor,
 } from "./RustDbCrypto.sys.mjs";

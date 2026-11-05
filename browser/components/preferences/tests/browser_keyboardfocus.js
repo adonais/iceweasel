@@ -2,10 +2,14 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 async function launchPreferences() {
-  let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  let prefs = await openPreferencesViaOpenPreferencesAPI("accessibility", {
     leaveOpen: true,
   });
-  Assert.equal(prefs.selectedPane, "paneGeneral", "General pane was selected");
+  Assert.equal(
+    prefs.selectedPane,
+    "paneAccessibility",
+    "Accessibility pane was selected"
+  );
 }
 
 add_task(async function () {

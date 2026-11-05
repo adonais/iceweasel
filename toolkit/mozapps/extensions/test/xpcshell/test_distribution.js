@@ -113,3 +113,36 @@ add_task(async function run_test_6() {
   let a1 = await AddonManager.getAddonByID(ID);
   Assert.equal(a1, null);
 });
+
+// Tests that a distribution add-on that fails signature verification is not
+// marked as installed, so it is installed once it verifies on a later startup
+add_task(async function test_unsigned_retried() {
+  const UNSIGNED_ID = "unsigned@tests.mozilla.org";
+  let xpi = await createTempWebExtensionFile({
+    manifest: {
+      version: "1.0",
+      browser_specific_settings: { gecko: { id: UNSIGNED_ID } },
+    },
+  });
+  xpi.copyTo(distroDir, `${UNSIGNED_ID}.xpi`);
+
+  gUseRealCertChecks = true;
+  await promiseRestartManager();
+
+  Assert.equal(await AddonManager.getAddonByID(UNSIGNED_ID), null);
+  Assert.ok(
+    !Services.prefs.prefHasUserValue(
+      `extensions.installedDistroAddon.${UNSIGNED_ID}`
+    )
+  );
+
+  gUseRealCertChecks = false;
+  await promiseRestartManager();
+
+  let addon = await AddonManager.getAddonByID(UNSIGNED_ID);
+  Assert.notEqual(addon, null);
+  Assert.ok(addon.isActive);
+  Assert.ok(
+    Services.prefs.getBoolPref(`extensions.installedDistroAddon.${UNSIGNED_ID}`)
+  );
+});

@@ -189,6 +189,10 @@ class Node {
   // indefinitely. This triggers cleanup of ports bound to this node.
   int LostConnectionToNode(const NodeName& node_name);
 
+  // Called to inform this node that the given node/port pair has become a dead
+  // proxy due to an unexpected node disconnection.
+  int CleanupDeadProxy(const NodeName& node_name, const PortName& port_name);
+
  private:
   // Helper to ensure that a Node always calls into its delegate safely, i.e.
   // without holding any internal locks.
@@ -241,7 +245,7 @@ class Node {
 
   // Check if the event is sent by the previous peer of the port to decide if
   // we can check the sequence number.
-  // This is not the case for example for PortAccepted or broadcasted events.
+  // This is not the case for example for PortAccepted events.
   bool IsEventFromPreviousPeer(const Event& event);
 
   int AcceptEventInternal(const PortRef& port_ref, const NodeName& from_node,

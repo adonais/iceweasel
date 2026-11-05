@@ -57,9 +57,12 @@ CARGO_CONFIG_KEYS = {
     "CARGO_PROFILE_DEV_OPT_LEVEL": _as_str,
     "CARGO_PROFILE_RELEASE_OPT_LEVEL": _as_str,
     "CC_KNOWN_WRAPPER_CUSTOM": _as_str,
+    "DLL_PREFIX": _as_str,
+    "DLL_SUFFIX": _as_str,
     "GLEAN_PARSER_VENV": _as_str,
     "HOST_AR": _as_str,
     "IPHONEOS_SDK_DIR": _as_str,
+    "MOZ_ASAN": _bool,
     "MOZ_CARGO_BUILD_STD_ARGS": _as_list,
     "MOZ_CARGO_CC": _as_list,
     "MOZ_CARGO_CC_ENV_SUFFIX": _as_str,
@@ -70,6 +73,7 @@ CARGO_CONFIG_KEYS = {
     "MOZ_CARGO_CXXFLAGS_BASE": _as_list,
     "MOZ_CARGO_CXXFLAGS_FILTER": _as_list,
     "MOZ_CARGO_DEFAULT_PROFILE_ARGS": _as_list,
+    "MOZ_CARGO_DEFAULT_PROFILE_DIR": _as_str,
     "MOZ_CARGO_FROZEN_ARGS": _as_list,
     "MOZ_CARGO_HOST_CC": _as_list,
     "MOZ_CARGO_HOST_CC_ENV_SUFFIX": _as_str,
@@ -98,6 +102,8 @@ CARGO_CONFIG_KEYS = {
     "MOZ_LIBCLANG_PATH": _as_str,
     "MOZ_LTO_LDFLAGS": _as_list,
     "MOZ_LTO_OBJECT_PATH": _bool,
+    "MOZ_LTO_RUST_CROSS": _bool,
+    "MOZ_PROFILE_GENERATE": _bool,
     "MOZ_RUSTC_BOOTSTRAP_DEFAULT": _as_str,
     "MOZ_RUSTC_BOOTSTRAP_FORCE": _as_str,
     "MOZ_RUSTC_WRAPPER": _as_str,
@@ -110,6 +116,9 @@ CARGO_CONFIG_KEYS = {
     "MOZ_RUST_DEFAULT_FLAGS": _as_list,
     "MOZ_RUST_LIBRARY_RUSTCFLAGS": _as_list,
     "MOZ_RUST_SANITIZER_OPTION_VARS": _as_list,
+    "MOZ_TSAN": _bool,
+    "MOZ_UBSAN": _bool,
+    "OS_ARCH": _as_str,
     "PKG_CONFIG": _as_str,
     "PKG_CONFIG_LIBDIR": _as_str,
     "PKG_CONFIG_PATH": _as_str,
@@ -147,8 +156,8 @@ class CargoCommand:
     ``rustflags`` and ``rustc_flags`` hold the edge's own additions to
     ``RUSTFLAGS`` and to the flags after ``--``. ``lto`` is whether a library
     uses link time optimization in a build that enables it for Rust libraries.
-    ``outputs`` are the program files Cargo leaves in its target directory,
-    relative to the object directory.
+    ``outputs`` are the library or program files Cargo leaves in its target
+    directory, relative to the object directory.
     """
 
     kind: str
@@ -367,8 +376,7 @@ def _cargo_build_flags(cmd, substs, invocation, single_job=False):
     flags = substs.get("CARGOFLAGS")
 
     if cmd.cargo_profile_suffix:
-        prefix = substs.get("MOZ_CARGO_PROFILE_PREFIX")
-        flags += ["--profile", f"{prefix}-{cmd.cargo_profile_suffix}"]
+        flags += ["--profile", cargo_profile_dir(cmd, substs)]
     else:
         flags += substs.get("MOZ_CARGO_DEFAULT_PROFILE_ARGS")
 
@@ -394,6 +402,14 @@ def _cargo_build_flags(cmd, substs, invocation, single_job=False):
     flags += substs.get("MOZ_CARGO_BUILD_STD_ARGS")
 
     return flags
+
+
+def cargo_profile_dir(cmd, substs):
+    """The directory Cargo writes the edge's profile into, under the target triple."""
+    substs = _cargo_config(substs)
+    if cmd.cargo_profile_suffix:
+        return f"{substs.get('MOZ_CARGO_PROFILE_PREFIX')}-{cmd.cargo_profile_suffix}"
+    return substs.get("MOZ_CARGO_DEFAULT_PROFILE_DIR")
 
 
 def applies_library_lto(kind, lto, substs):

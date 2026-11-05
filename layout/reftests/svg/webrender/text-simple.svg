@@ -1,0 +1,18 @@
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="500" height="400">
+  <title>SVG text with plain fills</title>
+  <defs>
+    <path id="curve" d="M 20 380 Q 250 280 480 380"/>
+  </defs>
+  <text x="20" y="40" font-size="24" font-family="sans-serif">Plain text</text>
+  <text x="20" y="80" font-size="24" font-family="sans-serif" fill="blue">Blue <tspan fill="red" font-weight="bold">bold red</tspan> tspan</text>
+  <text x="250" y="120" font-size="24" font-family="sans-serif" text-anchor="middle">Anchored middle</text>
+  <text x="20" y="160" font-size="24" font-family="sans-serif" rotate="15">Rotated glyphs</text>
+  <text x="20" y="200" font-size="24" font-family="sans-serif" transform="rotate(-10 20 200)">Rotated text</text>
+  <text x="20" y="240" font-size="4" font-family="sans-serif" transform="scale(6) translate(-16 -200)">Tiny scaled up</text>
+  <text x="300" y="240" font-size="120" font-family="sans-serif" transform="scale(0.2) translate(1200 960)">Big scaled down</text>
+  <text x="20" y="300" font-size="24" font-family="sans-serif" textLength="460" lengthAdjust="spacingAndGlyphs">Stretched with textLength</text>
+  <text font-size="20" font-family="sans-serif"><textPath xlink:href="#curve">Text on a path with several words in it</textPath></text>
+  <text x="400" y="40" font-size="24" font-family="sans-serif" writing-mode="vertical-rl">Vert</text>
+</svg>

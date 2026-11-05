@@ -15,9 +15,11 @@ owner = "PerfTest Team"
 page_cycles = 1
 page_timeout = 600000
 playback = "mitmproxy"
+playback_mode = "direct"
 playback_version = "12.2.1"
 support_class = "nav_bench.py"
 custom_data = true
+expose_browser_profiler = true
 type = "pageload"
 unit = "score"
 use_live_sites = false
@@ -33,7 +35,6 @@ fission.bfcacheInParent=false
 browser.sessionhistory.max_total_viewers=0
 network.http.http3.enable=false
 network.http.altsvc.enabled=false
-network.dns.forceResolve=192.0.2.1
 """
 
 # Composite test: one browser launch loads all sites in sequence.

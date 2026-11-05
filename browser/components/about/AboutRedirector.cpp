@@ -166,7 +166,7 @@ static const RedirEntry kRedirMap[] = {
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::HIDE_FROM_ABOUTABOUT |
          nsIAboutModule::IS_SECURE_CHROME_UI},
 #ifdef MOZ_NORMANDY
-    {"studies", "resource://normandy-content/about-studies/about-studies.html",
+    {"studies", "chrome://nimbus/content/about-studies/about-studies.html",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI |
          nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS |
          nsIAboutModule::URI_MUST_LOAD_IN_CHILD |

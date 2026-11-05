@@ -17,8 +17,14 @@
   data-l10n-attrs="style"
 >
   <dialog buttons="accept,cancel">
-    <hbox>
+    <hbox id="titleRow" align="center">
       <html:h2 id="titleText" />
+      <html:moz-button
+        id="sanitizeDialogClose"
+        type="icon ghost"
+        iconsrc="chrome://global/skin/icons/close.svg"
+        data-l10n-id="sanitize-dialog-close-button"
+      />
     </hbox>
 
     <linkset>

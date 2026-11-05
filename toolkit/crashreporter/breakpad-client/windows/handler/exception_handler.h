@@ -280,11 +280,6 @@ class ExceptionHandler {
   // Returns whether out-of-process dump generation is used or not.
   bool IsOutOfProcess() const { return crash_generation_client_.get() != NULL; }
 
-  // Calling RegisterAppMemory(p, len) causes len bytes starting
-  // at address p to be copied to the minidump when a crash happens.
-  void RegisterAppMemory(void* ptr, size_t length);
-  void UnregisterAppMemory(void* ptr);
-
   // Calling set_include_context_heap(true) causes heap regions to be included
   // in the minidump when a crash happens. The heap regions are from the
   // register values of the crashing context.

@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ProfileBuffer.h"
+#include "platform.h"
 
 #include "mozilla/PowerOfTwo.h"
 #include "mozilla/ProfileBufferChunkManagerWithLocalLimit.h"
@@ -51,4 +52,45 @@ TEST(ThreadProfile, InsertEntriesNoWrap)
     times++;
   }
   ASSERT_EQ(test_size, times);
+}
+
+// A sample with JIT return addresses can be referenced by a SameSample entry,
+// but must not be copied.
+TEST(ThreadProfile, DuplicateLastSampleWithJitReturnAddrs)
+{
+  mozilla::ProfileBufferChunkManagerWithLocalLimit chunkManager(4096, 256);
+  mozilla::ProfileChunkedBuffer profileChunkedBuffer(
+      mozilla::ProfileChunkedBuffer::ThreadSafety::WithMutex, chunkManager);
+  auto pb = mozilla::MakeUnique<ProfileBuffer>(profileChunkedBuffer);
+  const ProfilerThreadId threadId = ProfilerThreadId::FromNumber(1);
+
+  mozilla::Maybe<uint64_t> lastSample =
+      mozilla::Some(pb->AddThreadIdEntry(threadId));
+  pb->AddEntry(ProfileBufferEntry::Time(1.0));
+  pb->AddEntry(
+      ProfileBufferEntry::JitReturnAddr(reinterpret_cast<void*>(0x1000)));
+
+  // The last sample is in the current chunk, so it is referenced, not copied.
+  const uint64_t sample = *lastSample;
+  ASSERT_TRUE(pb->DuplicateLastSample(threadId, 2.0, lastSample,
+                                      /* aLastSampleHasJitReturnAddrs */ true,
+                                      RunningTimes()));
+  ASSERT_EQ(mozilla::Some(sample), lastSample);
+
+  // Move on to a later chunk, so that duplication needs a copy.
+  for (int i = 0; i < 100; i++) {
+    pb->AddEntry(ProfileBufferEntry::Time(3.0));
+  }
+
+  const uint64_t rangeEnd = pb->BufferRangeEnd();
+  ASSERT_FALSE(pb->DuplicateLastSample(threadId, 4.0, lastSample,
+                                       /* aLastSampleHasJitReturnAddrs */ true,
+                                       RunningTimes()));
+  ASSERT_EQ(rangeEnd, pb->BufferRangeEnd());
+
+  ASSERT_TRUE(pb->DuplicateLastSample(threadId, 4.0, lastSample,
+                                      /* aLastSampleHasJitReturnAddrs */ false,
+                                      RunningTimes()));
+  ASSERT_NE(mozilla::Some(sample), lastSample);
+  ASSERT_TRUE(pb->GetEntry(*lastSample).IsThreadId());
 }

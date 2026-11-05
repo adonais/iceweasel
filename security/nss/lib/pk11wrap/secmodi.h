@@ -52,8 +52,6 @@ extern SECMODModuleList *SECMOD_DestroyModuleListElement(SECMODModuleList *);
 extern void SECMOD_DestroyModuleList(SECMODModuleList *);
 extern SECStatus SECMOD_AddModule(SECMODModule *newModule);
 
-extern unsigned long SECMOD_InternaltoPubCipherFlags(unsigned long internalFlags);
-
 /* Library functions */
 SECStatus secmod_LoadPKCS11Module(SECMODModule *, SECMODModule **oldModule);
 SECStatus secmod_LoadPKCS11ModuleFromFunction(SECMODModule *, SECMODModule **oldModule, CK_C_GetFunctionList f);
@@ -158,8 +156,6 @@ CK_OBJECT_HANDLE pk11_FindPubKeyByAnyCert(CERTCertificate *cert,
                                           PK11SlotInfo **slot, void *wincx);
 SECStatus pk11_AuthenticateUnfriendly(PK11SlotInfo *slot, PRBool loadCerts,
                                       void *wincx);
-int PK11_NumberObjectsFor(PK11SlotInfo *slot, CK_ATTRIBUTE *findTemplate,
-                          int templateCount);
 SECItem *pk11_GetLowLevelKeyFromHandle(PK11SlotInfo *slot,
                                        CK_OBJECT_HANDLE handle);
 SECStatus PK11_TraverseSlot(PK11SlotInfo *slot, void *arg);

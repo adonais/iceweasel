@@ -52,6 +52,7 @@ import mozilla.components.support.base.log.logger.Logger
  *   bounding box. These should be actions relevant to the browser as a whole. See
  *   [MDN docs](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/browserAction).
  * @param onInteraction Callback for handling [BrowserToolbarEvent]s on user interactions.
+ * @param showDivider Whether to show the divider on the edge of the toolbar facing the webpage.
  */
 @Composable
 @Suppress("LongMethod")
@@ -68,6 +69,7 @@ fun BrowserDisplayToolbar(
     browserActionsEnd: List<Action> = emptyList(),
     onInteraction: (BrowserToolbarEvent) -> Unit,
     useMinimalBottomToolbarWhenEnteringText: Boolean = false,
+    showDivider: Boolean = true,
 ) {
     LaunchedEffect(useMinimalBottomToolbarWhenEnteringText) {
         if (useMinimalBottomToolbarWhenEnteringText) {
@@ -87,6 +89,7 @@ fun BrowserDisplayToolbar(
         modifier = Modifier.fillMaxWidth(),
         backgroundColor = backgroundColor,
         outlineColor = outlineColor,
+        showDivider = showDivider,
         browserActionsColor = browserActionsColor,
         browserActionsStartModifier = Modifier,
         pageActionsStartModifier = Modifier,

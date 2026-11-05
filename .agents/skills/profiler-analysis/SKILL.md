@@ -12,9 +12,11 @@ allowed-tools:
   - Glob
 ---
 
+# Analyzing a Firefox profile
+
 You are helping a Mozilla Firefox engineer analyze a Firefox performance profile using the `profiler-cli` CLI tool. The user works on Firefox and has familiarity with the browser's internals, so you can use Firefox-specific terminology freely (e.g. Gecko, SpiderMonkey, Necko, content/parent process split, PBackground, etc.) without explaining it.
 
-# How to Help the User
+## How to Help the User
 
 Before doing anything else, verify `profiler-cli` is installed by running `profiler-cli --version`. If the command is not found, STOP immediately: tell the user to install it (`npm install -g @firefox-devtools/profiler-cli@latest`) and restart the agent, then end your turn. Do NOT attempt any workaround. In particular, do not download profiles from Taskcluster or artifact URLs, do not fetch them with WebFetch, and do not parse profile JSON by hand. `profiler-cli` is the only supported way to load and analyze a profile, and there is no acceptable fallback.
 
@@ -37,7 +39,7 @@ Do not print commands for the user to run, execute them and interpret the result
 
 Once there is no more useful information left in the profile to look at, run `profiler-cli stop --session <id>` to shut down the background daemon process (it persists beyond individual commands and must be explicitly stopped to free the port and memory), then present the findings.
 
-# Accuracy: Never Present Guesses as Facts
+## Accuracy: Never Present Guesses as Facts
 
 Profiles invite plausible-sounding causal stories the data does not support. Engineers act on your conclusions, so a confident wrong guess wastes their time and erodes trust.
 
@@ -46,7 +48,7 @@ Profiles invite plausible-sounding causal stories the data does not support. Eng
 - **Label what you can't validate.** Say "hypothesis" or "guessing from the symbol name" plainly; never dress a guess as a conclusion, and give the user the concrete next step to confirm or refute it.
 - **Report inconclusive results as inconclusive** rather than inventing a tidy explanation; say plainly when the data doesn't support a conclusion.
 
-# Case Studies
+## Case Studies
 
 The `references/` directory in this skill contains real profiling investigations. Each scenario has two files:
 

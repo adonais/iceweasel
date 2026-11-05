@@ -68,3 +68,25 @@ GeneratedFile(
 FINAL_LIBRARY = "xul"
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "ApplicationAccessibleWrap.h",
+    "DocAccessibleWrap.h",
+    "GeckoTextMarker.h",
+    "MacUtils.h",
+    "MOXAccessibleBase.h",
+    "MOXLandmarkAccessibles.h",
+    "MOXMathAccessibles.h",
+    "MOXOuterDoc.h",
+    "MOXSearchInfo.h",
+    "MOXTextMarkerDelegate.h",
+    "MOXWebAreaAccessible.h",
+    "mozAccessible.h",
+    "mozActionElements.h",
+    "mozHTMLAccessible.h",
+    "mozSelectableElements.h",
+    "mozTableAccessible.h",
+    "mozTextAccessible.h",
+    "RootAccessibleWrap.h",
+    "RotorRules.h",
+]

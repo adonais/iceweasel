@@ -51,6 +51,9 @@ class SyncModuleLoader : public JS::loader::ModuleLoaderBase {
  private:
   ~SyncModuleLoader();
 
+  already_AddRefed<JS::loader::ScriptFetchOptions>
+  CreateDefaultScriptFetchOptions() override;
+
   already_AddRefed<ModuleLoadRequest> CreateRequest(
       JSContext* aCx, nsIURI* aURI, JS::Handle<JSObject*> aModuleRequest,
       JS::Handle<JS::Value> aHostDefined, JS::Handle<JS::Value> aPayload,

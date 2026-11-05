@@ -120,17 +120,20 @@ RefPtr<layers::ImageContainer> OffscreenCanvasDisplayHelper::GetImageContainer()
 bool OffscreenCanvasDisplayHelper::MayUpdateContext(WorkerPrivate* aWorker,
                                                     ErrorResult& aRv) {
   MutexAutoLock lock(mMutex);
-  // Allow context update on main thread to be more fault tolerant, whereas
-  // update on a worker needs to more strict in case of transfer.
-  if ((mCreatedOnMainThread && aWorker) || mCreatedOnWorker) {
-    aRv.ThrowInvalidStateError(
-        "Cannot update created context to different thread");
-    return false;
-  }
   if (!mOffscreenCanvas) {
-    return true;
-  }
-  if (aWorker) {
+    // There is no offscreen canvas, either because it was not created yet or
+    // it was destroyed.
+    if (mCreatedOnMainThread) {
+      // Allow context update on main thread as long as it stays there.
+      if (!aWorker) {
+        return true;
+      }
+    } else if (!mCreatedOnWorker) {
+      // Updating a worker needs to be more strict in case there any resources
+      // associated with the old worker.
+      return true;
+    }
+  } else if (aWorker) {
     if (mWorkerRef && mWorkerRef->Private() == aWorker) {
       return true;
     }

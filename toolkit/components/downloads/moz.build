@@ -53,3 +53,7 @@ FINAL_LIBRARY = "xul"
 
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Downloads API")
+
+SOURCE_HEADERS += [
+    "DownloadPlatform.h",
+]

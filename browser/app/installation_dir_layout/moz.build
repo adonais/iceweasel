@@ -26,6 +26,8 @@ XPCOM_MANIFESTS += [
     "components.conf",
 ]
 
+SOURCE_HEADERS += ["InstallationDirLayout.h"]
+
 FINAL_LIBRARY = "xul"
 
 SPHINX_TREES["/installation_dir_layout"] = "docs"

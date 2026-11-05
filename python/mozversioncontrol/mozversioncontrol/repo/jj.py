@@ -122,6 +122,10 @@ class JujutsuRepository(Repository):
     def head_rev(self):
         return self._resolve_to_commit(self.HEAD_REVSET)
 
+    @property
+    def is_shallow(self):
+        return self._git.is_shallow
+
     def is_cinnabar_repo(self) -> bool:
         return self._git.is_cinnabar_repo()
 
@@ -662,13 +666,18 @@ class JujutsuRepository(Repository):
             return True
         return False
 
-    def configure(self, state_dir: Path, update_only: bool = False):
+    def configure(
+        self,
+        state_dir: Path,
+        update_only: bool = False,
+        no_system_changes: bool = False,
+    ):
         """Run the Jujutsu configuration steps."""
         print(
             "\nOur jj support currently relies on Git; checks will run for both jj and Git.\n"
         )
 
-        self._git.configure(state_dir, update_only)
+        self._git.configure(state_dir, update_only, no_system_changes=no_system_changes)
 
         topsrcdir = Path(self.path)
         if not update_only:

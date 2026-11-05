@@ -81,13 +81,6 @@
       background-image: none;
     }
   }
-
-  /* Collapsing holds the launcher at its expanded width so that clip-path has
-  something to clip, so the divider would otherwise be drawn around the width
-  it is animating away from. Wait for the real width to be restored. */
-  :host([sidebar-ongoing-animations]:not([expanded])) & {
-    background-image: none;
-  }
 }
 
 .actions-list {

@@ -253,6 +253,11 @@ class BrowserLanguagesSetting extends Preferences.AsyncSetting {
    * @param {LocaleCode[]} newLocales
    */
   #updateLocales(newLocales) {
+    if (newLocales.join(",") == Services.locale.requestedLocales.join(",")) {
+      this.#pendingLocales = null;
+      this.emitChange();
+      return;
+    }
     switch (Multilingual.getTransitionType(newLocales)) {
       case Multilingual.TransitionType.RestartRequired:
         this.#pendingLocales = newLocales;
@@ -300,9 +305,14 @@ class BrowserLanguagesSetting extends Preferences.AsyncSetting {
 
   setup() {
     Services.obs.addObserver(this.emitChange, "intl:app-locales-changed");
+    Services.obs.addObserver(this.emitChange, "intl:requested-locales-changed");
     this.multilingualEnabled.on("change", this.emitChange);
     return () => {
       Services.obs.removeObserver(this.emitChange, "intl:app-locales-changed");
+      Services.obs.removeObserver(
+        this.emitChange,
+        "intl:requested-locales-changed"
+      );
       this.multilingualEnabled.off("change", this.emitChange);
     };
   }
@@ -355,9 +365,17 @@ class BrowserLanguagesSetting extends Preferences.AsyncSetting {
   }
 
   async getFallback() {
-    let locales = await this.get();
-    if (locales[1]) {
-      return locales[1];
+    let preferred = await this.getPreferred();
+    let installedCodes = (await this.installedLocales).map(l => l.code);
+    let requested = this.#pendingLocales ?? Services.locale.requestedLocales;
+    // Negotiated app locales include every installed regional variant of the
+    // preferred language (e.g. es-AR after es-ES), so check the requested
+    // locales first to reflect the user's choice.
+    let candidates = [...requested, ...Services.locale.appLocalesAsBCP47];
+    for (let code of candidates) {
+      if (code != preferred && installedCodes.includes(code)) {
+        return code;
+      }
     }
     return null;
   }

@@ -16,6 +16,7 @@
 #include "mozilla/IntegerRange.h"             // for IntegerRange
 #include "mozilla/OwningNonNull.h"            // for OwningNonNull
 #include "mozilla/PresShell.h"                // for PresShell
+#include "mozilla/StaticPrefs_editor.h"       // for StaticPrefs::editor_*
 #include "mozilla/dom/CharacterDataBuffer.h"  // for CharacterDataBuffer
 #include "mozilla/dom/Document.h"             // for dom::Document
 #include "mozilla/dom/EditContext.h"          // for dom::EditContext
@@ -1644,6 +1645,118 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
   MOZ_ASSERT(found);
   mAnchorFocusRange.swap(extendedRange);
   return directionAndAmountResult;
+}
+
+void AutoClonedSelectionRangeArray::
+    MaybeExtendAnchorFocusRangeToDeleteAdjacentWhiteSpace(
+        const EditorBase& aEditorBase) {
+  if (!StaticPrefs::
+          editor_word_select_delete_space_after_doubleclick_selection() ||
+      !aEditorBase.IsSelectionCreatedByDoubleclick()) {
+    return;
+  }
+  if (!mAnchorFocusRange || !mAnchorFocusRange->IsPositioned() ||
+      mAnchorFocusRange->Collapsed()) {
+    return;
+  }
+  MOZ_ASSERT(mRanges.Length() == 1);
+  MOZ_ASSERT(mRanges[0].get() == mAnchorFocusRange.get());
+
+  const auto PreviousCharPoint =
+      [&](const EditorRawDOMPoint& aPoint) -> Maybe<EditorRawDOMPoint> {
+    if (aEditorBase.IsTextEditor()) {
+      if (!aPoint.IsInTextNode() || aPoint.IsStartOfContainer()) {
+        return Nothing();
+      }
+      return Some(aPoint.PreviousPoint());
+    }
+    const WSScanResult previousThing =
+        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+            {WSRunScanner::Option::OnlyEditableNodes}, aPoint);
+    if (!previousThing.InVisibleOrCollapsibleCharacters() &&
+        !previousThing.ReachedPreformattedLineBreak()) {
+      return Nothing();
+    }
+    return Some(previousThing.PointAtReachedContent<EditorRawDOMPoint>());
+  };
+  const auto InclusiveNextCharPoint =
+      [&](const EditorRawDOMPoint& aPoint) -> Maybe<EditorRawDOMPoint> {
+    if (aEditorBase.IsTextEditor()) {
+      if (!aPoint.IsInTextNode() || aPoint.IsEndOfContainer() ||
+          aPoint.IsCharNewLine()) {
+        return Nothing();
+      }
+      return Some(aPoint);
+    }
+    const WSScanResult nextThing =
+        WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+            {WSRunScanner::Option::OnlyEditableNodes}, aPoint);
+    if (!nextThing.InVisibleOrCollapsibleCharacters()) {
+      return Nothing();
+    }
+    return Some(nextThing.PointAtReachedContent<EditorRawDOMPoint>());
+  };
+  const auto WhiteSpaceRange =
+      [&](const Maybe<EditorRawDOMPoint>& aPoint) -> Maybe<EditorRawDOMRange> {
+    if (aPoint.isNothing() || !aPoint->IsInTextNode() ||
+        aPoint->IsEndOfContainer() ||
+        (!aPoint->IsCharASCIISpaceOrNBSP() &&
+         aPoint->Char() != HTMLEditUtils::kFormFeed)) {
+      return Nothing();
+    }
+    if (aEditorBase.IsTextEditor() || !aPoint->IsCharCollapsibleASCIISpace()) {
+      return Some(EditorRawDOMRange(*aPoint, aPoint->NextPoint()));
+    }
+    auto rangeOrError = WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(
+        {WSRunScanner::Option::OnlyEditableNodes},
+        aPoint->To<EditorDOMPoint>());
+    if (rangeOrError.isErr()) {
+      NS_WARNING(
+          "WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom() failed");
+      return Nothing();
+    }
+    if (!rangeOrError.inspect().IsPositioned()) {
+      return Nothing();
+    }
+    return Some(EditorRawDOMRange(rangeOrError.inspect()));
+  };
+
+  const EditorRawDOMPoint startPoint(mAnchorFocusRange->StartRef());
+  const EditorRawDOMPoint endPoint(mAnchorFocusRange->EndRef());
+  const Maybe<EditorRawDOMRange> firstWhiteSpace =
+      WhiteSpaceRange(InclusiveNextCharPoint(startPoint));
+  const Maybe<EditorRawDOMRange> lastWhiteSpace =
+      WhiteSpaceRange(PreviousCharPoint(endPoint));
+  // Collapsed characters at the start of the range do not select the visible
+  // space preceding them.
+  if ((firstWhiteSpace && firstWhiteSpace->StartRef().IsBefore(endPoint) &&
+       !firstWhiteSpace->StartRef().IsBefore(startPoint)) ||
+      (lastWhiteSpace && !lastWhiteSpace->StartRef().IsBefore(startPoint))) {
+    return;
+  }
+
+  if (const Maybe<EditorRawDOMRange> precedingWhiteSpace =
+          WhiteSpaceRange(PreviousCharPoint(startPoint))) {
+    const EditorRawDOMPoint& newStart = precedingWhiteSpace->StartRef();
+    if (!mLimitersAndCaretData.NodeIsInLimiters(newStart.GetContainer())) {
+      return;
+    }
+    IgnoredErrorResult error;
+    mAnchorFocusRange->SetStart(newStart.ToRawRangeBoundary(), error);
+    NS_WARNING_ASSERTION(!error.Failed(), "Range::SetStart() failed");
+    return;
+  }
+
+  if (const Maybe<EditorRawDOMRange> followingWhiteSpace =
+          WhiteSpaceRange(InclusiveNextCharPoint(endPoint))) {
+    const EditorRawDOMPoint& newEnd = followingWhiteSpace->EndRef();
+    if (!mLimitersAndCaretData.NodeIsInLimiters(newEnd.GetContainer())) {
+      return;
+    }
+    IgnoredErrorResult error;
+    mAnchorFocusRange->SetEnd(newEnd.ToRawRangeBoundary(), error);
+    NS_WARNING_ASSERTION(!error.Failed(), "Range::SetEnd() failed");
+  }
 }
 
 }  // namespace mozilla

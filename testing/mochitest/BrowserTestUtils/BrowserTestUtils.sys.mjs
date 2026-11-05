@@ -1778,8 +1778,8 @@ export var BrowserTestUtils = {
    *
    * @param {Element} target    The target in which to observe mutations.
    * @param {object}  options   The options to pass to MutationObserver.observe();
-   * @param {function} checkFn  Function that returns true when it wants the promise to be
-   * resolved.
+   * @param {function} checkFn  Function that recieves the target as input, and returns
+   *                            true when it wants the promise to be resolved.
    * @param {object} [waitOptions]
    * @param {string} [waitOptions.msg]
    *        Describes what's being waited for. Used in the rejection message and
@@ -1798,7 +1798,7 @@ export var BrowserTestUtils = {
     { msg, timeout = DEFAULT_MUTATION_TIMEOUT_MS } = {}
   ) {
     let retVal;
-    if ((retVal = checkFn())) {
+    if ((retVal = checkFn(target))) {
       return Promise.resolve(retVal);
     }
     let startTime = ChromeUtils.now();
@@ -1811,7 +1811,7 @@ export var BrowserTestUtils = {
       let timer = 0;
       let settled = false;
       let obs = new win.MutationObserver(() => {
-        if ((retVal = checkFn())) {
+        if ((retVal = checkFn(target))) {
           stop();
           resolve(retVal);
         }

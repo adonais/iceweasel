@@ -12,7 +12,7 @@ per-file *.gni=mbonadei@webrtc.org,jansson@webrtc.org,jleconte@webrtc.org
 per-file .../*.gni=mbonadei@webrtc.org,jansson@webrtc.org,jleconte@webrtc.org
 
 per-file .vpython=mbonadei@webrtc.org,jansson@webrtc.org,jleconte@webrtc.org
-per-file .vpython3=mbonadei@webrtc.org,jansson@webrtc.org,jleconte@webrtc.org
+per-file vpython.toml*=mbonadei@webrtc.org,jansson@webrtc.org,jleconte@webrtc.org
 per-file pylintrc=mbonadei@webrtc.org,jansson@webrtc.org,jleconte@webrtc.org
 per-file pylintrc_old_style=mbonadei@webrtc.org,jansson@webrtc.org,jleconte@webrtc.org
 per-file .style.yapf=jleconte@webrtc.org

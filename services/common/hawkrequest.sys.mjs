@@ -41,7 +41,7 @@ const BEARER_TOKEN_PREFIXES = {
  *
  * @param credentials
  *        (Object) Optional credentials for computing HAWK authentication
- *        header.
+ *        header, or `{ accessToken }` to send an OAuth access token as Bearer.
  *
  * @param payloadObj
  *        (Object) Optional object to be converted to JSON payload
@@ -87,7 +87,13 @@ HAWKAuthenticatedRESTRequest.prototype = {
       contentType = "application/json";
     }
     if (this.credentials) {
-      if (lazy.useBearerAuth && this.credentials.bearerPrefix) {
+      if (this.credentials.accessToken) {
+        // OAuth routes only accept Bearer, so this ignores useBearerAuth.
+        this.setHeader(
+          "Authorization",
+          `Bearer ${this.credentials.accessToken}`
+        );
+      } else if (lazy.useBearerAuth && this.credentials.bearerPrefix) {
         // Typed Bearer: the token id is the same value Hawk used as `id=`.
         // No MAC, nonce, or payload hash.
         this.setHeader(

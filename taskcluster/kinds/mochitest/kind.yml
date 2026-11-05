@@ -22,7 +22,6 @@ transforms:
 # https://wiki.mozilla.org/Sheriffing/Job_Visibility_Policy
 
 task-defaults:
-    run-on-repo-type: [hg]
     priority:
         by-project:
             autoland: high
@@ -374,8 +373,6 @@ tasks:
             - inc-origin-init
             - trainhop-beta
             - trainhop-release
-            - no-nova
-            - no-nova+vertical-tabs
             - urlbar-ipc
             - webrender-sw+urlbar-ipc
         run-on-projects:
@@ -434,25 +431,6 @@ tasks:
                         windows1.*-64.*(-shippable)?/.*: ['autoland', 'mozilla-central']
                         default: []
                 inc-origin-init: []
-                no-nova:
-                    by-test-platform:
-                        .*-artifact.*: []
-                        .*-asan.*: []
-                        .*-ccov.*: []
-                        linux.*64(-shippable)?/opt: ['trunk']
-                        # limited testing pool
-                        macosx1[45].*64(-shippable)?(-qr)?/opt: ['mozilla-central']
-                        windows11.*-64.*(-shippable)?/opt: ['trunk']
-                        default: []
-                no-nova+vertical-tabs:
-                    by-test-platform:
-                        .*-artifact.*: []
-                        .*-asan.*: []
-                        .*-ccov.*: []
-                        linux.*64(-shippable)?/opt: ['trunk']
-                        macosx1[45].*64(-shippable)?(-qr)?/opt: ['trunk']
-                        windows11.*-64.*(-shippable)?/opt: ['trunk']
-                        default: []
                 urlbar-ipc:
                     by-test-platform:
                         .*-artifact.*: []
@@ -658,7 +636,6 @@ tasks:
             product: test
             job-name: mochitest-browser-screenshots
         loopback-video: true
-        variants: ["no-nova"]
         run-on-projects:
             by-test-platform:
                 linux2404-64.*/opt: ['trunk']
@@ -733,7 +710,6 @@ tasks:
             - webrender-sw+1proc
             - standalone
             - inc-origin-init
-            - no-nova
         run-on-projects:
             by-variant:
                 webrender-sw+1proc:
@@ -759,15 +735,6 @@ tasks:
                         windows.*-64-[^-/]+/opt: ['autoland']
                         default: []
                 inc-origin-init: []
-                no-nova:
-                    by-test-platform:
-                        .*-artifact.*: []
-                        .*-asan.*: []
-                        .*-ccov.*: []
-                        linux.*64(-shippable)?/opt: ['trunk']
-                        macosx1[45].*64(-shippable)?(-qr)?/opt: ['trunk']
-                        windows11.*-64.*(-shippable)?/opt: ['trunk']
-                        default: []
         chunks: dynamic
         default-chunks:
             by-variant:

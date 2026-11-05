@@ -162,11 +162,6 @@ set_config(
 
 
 set_config(
-    "RUSTC_LLVM_VERSION",
-    depends(rustc_info)(lambda info: str(info.llvm_version) if info else None),
-)
-
-set_config(
     "MOZ_CLANG_NEWER_THAN_RUSTC_LLVM",
     depends(c_compiler, rustc_info)(
         lambda c_compiler, rustc_info: (

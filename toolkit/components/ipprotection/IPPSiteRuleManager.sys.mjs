@@ -7,6 +7,7 @@ import {
   IPPPermissionRuleProvider,
   IPPPrincipalRules,
   IPPProxyableRuleProvider,
+  IPPTabRuleProvider,
   MatchPatternPrefRule,
 } from "moz-src:///toolkit/components/ipprotection/IPPSiteRuleProviders.sys.mjs";
 
@@ -88,16 +89,18 @@ export class SiteRuleManager extends EventTarget {
    * The rule that applies to a principal.
    *
    * @param {?nsIPrincipal} principal
+   * @param {number} [browserId]
+   *  The tab the principal is loaded in, for rules that only hold in one tab.
    * @returns {?string}
    *  The first non-null opinion, or null if no provider has one.
    */
-  getRule(principal) {
+  getRule(principal, browserId) {
     if (!this.#inited) {
       this.init();
     }
     try {
       for (const provider of this.#providers) {
-        const rule = provider.getRule(principal);
+        const rule = provider.getRule(principal, browserId);
         if (rule != null) {
           return rule;
         }
@@ -106,6 +109,19 @@ export class SiteRuleManager extends EventTarget {
     } catch (_) {
       return IPPPrincipalRules.EXCLUDED;
     }
+  }
+
+  /**
+   * Whether any provider holds at least one site with the rule.
+   *
+   * @param {?string} rule
+   * @returns {boolean}
+   */
+  hasRule(rule) {
+    if (!this.#inited) {
+      this.init();
+    }
+    return this.#providers.some(provider => provider.count(rule) > 0);
   }
 
   /**
@@ -143,6 +159,12 @@ export class SiteRuleManager extends EventTarget {
 export const IPPPermissionRules = new IPPPermissionRuleProvider();
 
 /**
+ * Rules that cover a single tab, such as the VPN being skipped there after
+ * the VPN error page.
+ */
+export const IPPTabRules = new IPPTabRuleProvider();
+
+/**
  * The single source of truth for classifying a principal as
  * included/excluded/default for the proxy, shared by the channel filter and
  * the UI. The array order is the precedence.
@@ -150,6 +172,7 @@ export const IPPPermissionRules = new IPPPermissionRuleProvider();
 export const IPPSiteRuleManager = new SiteRuleManager([
   new IPPProxyableRuleProvider(),
   new IPPInfrastructureRuleProvider(),
+  IPPTabRules,
   new MatchPatternPrefRule(
     "browser.ipProtection.inclusion.match_patterns",
     IPPPrincipalRules.INCLUDED

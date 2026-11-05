@@ -10,6 +10,10 @@ const THIRTY_DAYS_IN_MS = 2592000000; // 30 days in milliseconds
 const VALID_HISTORY_FIELDS = ["id", "title", "histUri", "visits"];
 const VALID_VISIT_FIELDS = ["date", "type", "transition"];
 
+// Smart Page content is only stored in this profile, so a synced visit would
+// point to a missing page on other devices.
+const SMARTPAGE_URL_REGEX = /^about:smartpage(?:[?#]|$)/i;
+
 import { Async } from "resource://services-common/async.sys.mjs";
 import { CommonUtils } from "resource://services-common/utils.sys.mjs";
 
@@ -97,7 +101,7 @@ HistoryEngine.prototype = {
   },
 
   shouldSyncURL(url) {
-    return !url.startsWith("file:");
+    return !url.startsWith("file:") && !SMARTPAGE_URL_REGEX.test(url);
   },
 
   async pullNewChanges() {
@@ -632,8 +636,11 @@ HistoryTracker.prototype = {
           break;
         }
         case "page-removed": {
-          if (event.reason === PlacesVisitRemoved.REASON_EXPIRED) {
-            return;
+          if (
+            event.reason === PlacesVisitRemoved.REASON_EXPIRED ||
+            !this.engine.shouldSyncURL(event.url)
+          ) {
+            break;
           }
 
           this._log.trace(

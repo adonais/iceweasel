@@ -1,0 +1,255 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Media Engine only test : setMediaKeys() does not wait for the engine to start</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/GleanTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<pre id="test">
+<script class="testbody" type="text/javascript">
+
+// EME 7.2 step 5.3.1: setMediaKeys() only associates the CDM with the media
+// element. No step depends on the media data or the source, so the promise
+// must resolve, also when the external engine does not start.
+// https://w3c.github.io/encrypted-media/#dom-htmlmediaelement-setmediakeys
+
+const kKeySystem = "org.w3.clearkey";
+// The media engine plays AV1 and refuses FLAC.
+const kAV1Type = 'video/mp4; codecs="av1"';
+const kFLACType = 'audio/mp4; codecs="flac"';
+const kClearFLACPath = "/tests/dom/media/mediasource/test/flac/";
+
+add_task(async function setupTestingPrefs() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.wmf.media-engine.enabled", 2],
+      ["media.eme.wmf.clearkey.enabled", true],
+      ["media.wmf.media-engine.bypass-gfx-blocklist", true],
+      ["media.eme.mfcdm.origin-filter.enabled", 0],
+      // The media engine's DComp/frame-server path conflicts with the Windows
+      // App SDK in test environments.
+      ["widget.windows.windowsappsdk.enabled", false],
+    ],
+  });
+});
+
+// No media is appended, so the engine does not start. The association does
+// not need media data, so the promise must resolve.
+add_task(async function testNothingAppended() {
+  const { video } = await createElementWithOpenMediaSource(kAV1Type);
+  const mediaKeys = await createMediaKeys();
+  is(await settled(video.setMediaKeys(mediaKeys)), "resolved",
+     "setMediaKeys resolves without any media data");
+  is(video.mediaKeys, mediaKeys, "the element kept the MediaKeys");
+  cleanUp(video);
+});
+
+// The element is reset in the same task. The CDM is associated with the
+// element, not with its source, so the promise must resolve.
+add_task(async function testTornDownWhileSettingKeys() {
+  const { video } = await createElementWithOpenMediaSource(kAV1Type);
+  const mediaKeys = await createMediaKeys();
+  const promise = video.setMediaKeys(mediaKeys);
+  video.src = "";
+  video.load();
+  is(await settled(promise), "resolved",
+     "setMediaKeys resolves although the element was torn down");
+  cleanUp(video);
+});
+
+// The MediaSource is replaced in the same task. The CDM is associated with the
+// element, not with its source, so the promise must resolve.
+add_task(async function testMediaSourceReplacedWhileSettingKeys() {
+  const { video } = await createElementWithOpenMediaSource(kAV1Type);
+  const mediaKeys = await createMediaKeys();
+  const promise = video.setMediaKeys(mediaKeys);
+  video.src = URL.createObjectURL(new MediaSource());
+  is(await settled(promise), "resolved",
+     "setMediaKeys resolves although the MediaSource was replaced");
+  cleanUp(video);
+});
+
+// Keys set twice before the engine starts: both calls settle, and playback
+// decrypts with the newest MediaKeys only.
+add_task(async function testKeysReplacedBeforeEngineStarts() {
+  const { video, sourceBuffer } =
+    await createElementWithOpenMediaSource(kAV1Type);
+  const first = await createMediaKeys();
+  const second = await createMediaKeys();
+  is(await settled(video.setMediaKeys(first)), "resolved",
+     "the first setMediaKeys resolves");
+  is(await settled(video.setMediaKeys(second)), "resolved",
+     "the second setMediaKeys resolves");
+
+  video.addEventListener("encrypted", e => licenseWith(second, e),
+                         { once: true });
+  const playing = new Promise(r =>
+    video.addEventListener("playing", r, { once: true }));
+  sourceBuffer.appendBuffer(await fetchBuffer("bipbop-clearkey-video-av1.mp4"));
+  video.play().catch(() => {});
+  await playing;
+  is(video.mediaKeys, second, "the element kept the newest MediaKeys");
+  cleanUp(video);
+});
+
+// The media engine cannot decode FLAC. With keys set before the stream
+// arrives, the state machine it falls back to cannot use their CDM, so the
+// refusal must surface as a media error, and it is recorded.
+add_task(async function testEngineRefusesStreamWithKeysSet() {
+  await GleanTest.testResetFOG();
+  const { video, sourceBuffer } =
+    await createElementWithOpenMediaSource(kFLACType);
+  const mediaKeys = await createMediaKeys();
+  is(await settled(video.setMediaKeys(mediaKeys)), "resolved",
+     "setMediaKeys resolves before the stream arrives");
+
+  const error = new Promise(r =>
+    video.addEventListener("error", r, { once: true }));
+  sourceBuffer.appendBuffer(await fetchBuffer("flac-sample-cenc.mp4"));
+  await error;
+  is(video.error?.code, MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED,
+     "the refused stream raised a media error");
+  is(await refusalEventCount(), 1, "the refusal was recorded");
+  cleanUp(video);
+});
+
+// A clear stream that the engine refuses falls back to the normal state
+// machine and plays. Nothing is recorded, because clear playback reaches the
+// same refusal on every machine without hardware video decoding.
+add_task(async function testEngineRefusesClearStream() {
+  await GleanTest.testResetFOG();
+  const { video, sourceBuffer } =
+    await createElementWithOpenMediaSource(kFLACType);
+  const playing = new Promise(r =>
+    video.addEventListener("playing", r, { once: true }));
+  await appendClearFLAC(sourceBuffer);
+  video.play().catch(() => {});
+  await playing;
+  is(video.error, null, "the fallback played the clear stream");
+  is(await refusalEventCount(), 0, "nothing was recorded");
+  cleanUp(video);
+});
+
+// Keys cleared before a clear stream arrives leave no CDM to serve, so the
+// stream falls back and plays as if no keys were ever set.
+add_task(async function testEngineRefusesClearStreamWithKeysCleared() {
+  await GleanTest.testResetFOG();
+  const { video, sourceBuffer } =
+    await createElementWithOpenMediaSource(kFLACType);
+  const mediaKeys = await createMediaKeys();
+  is(await settled(video.setMediaKeys(mediaKeys)), "resolved",
+     "setMediaKeys resolves before the stream arrives");
+  is(await settled(video.setMediaKeys(null)), "resolved",
+     "clearing the keys resolves");
+
+  const playing = new Promise(r =>
+    video.addEventListener("playing", r, { once: true }));
+  await appendClearFLAC(sourceBuffer);
+  video.play().catch(() => {});
+  await playing;
+  is(video.error, null, "the fallback played the clear stream");
+  is(await refusalEventCount(), 0, "nothing was recorded");
+  cleanUp(video);
+});
+
+// Following are helper functions.
+
+async function createMediaKeys() {
+  const access = await navigator.requestMediaKeySystemAccess(kKeySystem, [{
+    initDataTypes: ["cenc"],
+    videoCapabilities: [{ contentType: kAV1Type }],
+  }]);
+  return access.createMediaKeys();
+}
+
+// An open MediaSource with a source buffer is what causes a decoder and an
+// external engine to exist.
+async function createElementWithOpenMediaSource(aType) {
+  const video = document.createElement("video");
+  document.body.appendChild(video);
+  const mediaSource = new MediaSource();
+  const opened = new Promise(r =>
+    mediaSource.addEventListener("sourceopen", r, { once: true }));
+  video.src = URL.createObjectURL(mediaSource);
+  await opened;
+  const sourceBuffer = mediaSource.addSourceBuffer(aType);
+  return { video, sourceBuffer };
+}
+
+function cleanUp(aVideo) {
+  aVideo.removeAttribute("src");
+  aVideo.load();
+  aVideo.remove();
+}
+
+async function fetchBuffer(aURL) {
+  const response = await fetch(aURL);
+  return response.arrayBuffer();
+}
+
+async function appendClearFLAC(aSourceBuffer) {
+  for (const name of ["IS.mp4", "00001.m4s", "00002.m4s", "00003.m4s"]) {
+    const updated = new Promise(r =>
+      aSourceBuffer.addEventListener("updateend", r, { once: true }));
+    aSourceBuffer.appendBuffer(await fetchBuffer(kClearFLACPath + name));
+    await updated;
+  }
+}
+
+// Counts recorded media engine errors for a stream the engine refused.
+async function refusalEventCount() {
+  const events = (await GleanTest.mfcdm.error.testGetValue()) ?? [];
+  return Array.from(events).filter(e =>
+    e.extra?.error_name ==
+      "NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR").length;
+}
+
+// Key IDs and keys of bipbop-clearkey-video-av1.mp4, as hex.
+const kAV1Keys = {
+  "7e571d047e571d047e571d047e571d21": "7e5744447e5744447e5744447e574421",
+  "8b5df745ad84145b5617c33116e35a67": "bddfd35dd9be033ee73bc18bc1885056",
+};
+
+function hexToBase64Url(aHex) {
+  let raw = "";
+  for (let i = 0; i < aHex.length; i += 2) {
+    raw += String.fromCharCode(parseInt(aHex.substr(i, 2), 16));
+  }
+  return btoa(raw).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function base64UrlToHex(aBase64Url) {
+  const raw = atob(aBase64Url.replace(/-/g, "+").replace(/_/g, "/"));
+  return Array.from(raw, c => c.charCodeAt(0).toString(16).padStart(2, "0"))
+    .join("");
+}
+
+// Answers the ClearKey license request of a new session on aMediaKeys.
+async function licenseWith(aMediaKeys, aEncryptedEvent) {
+  const session = aMediaKeys.createSession("temporary");
+  session.addEventListener("message", e => {
+    const { kids } = JSON.parse(new TextDecoder().decode(e.message));
+    const keys = kids.map(kid => ({
+      kty: "oct",
+      kid,
+      k: hexToBase64Url(kAV1Keys[base64UrlToHex(kid)]),
+    }));
+    session.update(
+      new TextEncoder().encode(JSON.stringify({ keys, type: "temporary" })));
+  });
+  await session.generateRequest(aEncryptedEvent.initDataType,
+                                aEncryptedEvent.initData);
+}
+
+// Resolves to "resolved" or "rejected: <name>". A promise that never settles
+// fails the test by the harness timeout.
+function settled(promise) {
+  return promise.then(() => "resolved", e => `rejected: ${e.name}`);
+}
+
+</script>
+</pre>
+</body>
+</html>

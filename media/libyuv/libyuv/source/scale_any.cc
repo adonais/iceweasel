@@ -406,6 +406,106 @@ SDANY(ScaleARGBRowDown2Box_Any_LSX,
       4,
       3)
 #endif
+#ifdef HAS_SCALEROWDOWN2_WASMSIMD
+SDANY(ScaleRowDown2_Any_WASMSIMD,
+      ScaleRowDown2_WASMSIMD,
+      ScaleRowDown2_C,
+      2,
+      1,
+      15)
+SDANY(ScaleRowDown2Linear_Any_WASMSIMD,
+      ScaleRowDown2Linear_WASMSIMD,
+      ScaleRowDown2Linear_C,
+      2,
+      1,
+      15)
+SDANY(ScaleRowDown2Box_Any_WASMSIMD,
+      ScaleRowDown2Box_WASMSIMD,
+      ScaleRowDown2Box_C,
+      2,
+      1,
+      15)
+SDODD(ScaleRowDown2Box_Odd_WASMSIMD,
+      ScaleRowDown2Box_WASMSIMD,
+      ScaleRowDown2Box_Odd_C,
+      2,
+      1,
+      15)
+#endif
+#ifdef HAS_SCALEROWDOWN4_WASMSIMD
+SDANY(ScaleRowDown4_Any_WASMSIMD,
+      ScaleRowDown4_WASMSIMD,
+      ScaleRowDown4_C,
+      4,
+      1,
+      15)
+SDANY(ScaleRowDown4Box_Any_WASMSIMD,
+      ScaleRowDown4Box_WASMSIMD,
+      ScaleRowDown4Box_C,
+      4,
+      1,
+      7)
+#endif
+#ifdef HAS_SCALEROWDOWN34_WASMSIMD
+SDANY(ScaleRowDown34_Any_WASMSIMD,
+      ScaleRowDown34_WASMSIMD,
+      ScaleRowDown34_C,
+      4 / 3,
+      1,
+      23)
+SDANY(ScaleRowDown34_0_Box_Any_WASMSIMD,
+      ScaleRowDown34_0_Box_WASMSIMD,
+      ScaleRowDown34_0_Box_C,
+      4 / 3,
+      1,
+      23)
+SDANY(ScaleRowDown34_1_Box_Any_WASMSIMD,
+      ScaleRowDown34_1_Box_WASMSIMD,
+      ScaleRowDown34_1_Box_C,
+      4 / 3,
+      1,
+      23)
+#endif
+#ifdef HAS_SCALEROWDOWN38_WASMSIMD
+SDANY(ScaleRowDown38_Any_WASMSIMD,
+      ScaleRowDown38_WASMSIMD,
+      ScaleRowDown38_C,
+      8 / 3,
+      1,
+      11)
+SDANY(ScaleRowDown38_3_Box_Any_WASMSIMD,
+      ScaleRowDown38_3_Box_WASMSIMD,
+      ScaleRowDown38_3_Box_C,
+      8 / 3,
+      1,
+      11)
+SDANY(ScaleRowDown38_2_Box_Any_WASMSIMD,
+      ScaleRowDown38_2_Box_WASMSIMD,
+      ScaleRowDown38_2_Box_C,
+      8 / 3,
+      1,
+      11)
+#endif
+#ifdef HAS_SCALEARGBROWDOWN2_WASMSIMD
+SDANY(ScaleARGBRowDown2_Any_WASMSIMD,
+      ScaleARGBRowDown2_WASMSIMD,
+      ScaleARGBRowDown2_C,
+      2,
+      4,
+      3)
+SDANY(ScaleARGBRowDown2Linear_Any_WASMSIMD,
+      ScaleARGBRowDown2Linear_WASMSIMD,
+      ScaleARGBRowDown2Linear_C,
+      2,
+      4,
+      3)
+SDANY(ScaleARGBRowDown2Box_Any_WASMSIMD,
+      ScaleARGBRowDown2Box_WASMSIMD,
+      ScaleARGBRowDown2Box_C,
+      2,
+      4,
+      3)
+#endif
 #undef SDANY
 
 // Scale down by even scale factor.
@@ -463,6 +563,18 @@ SDAANY(ScaleUVRowDownEven_Any_NEON,
        ScaleUVRowDownEven_NEON,
        ScaleUVRowDownEven_C,
        2,
+       3)
+#endif
+#ifdef HAS_SCALEARGBROWDOWNEVEN_WASMSIMD
+SDAANY(ScaleARGBRowDownEven_Any_WASMSIMD,
+       ScaleARGBRowDownEven_WASMSIMD,
+       ScaleARGBRowDownEven_C,
+       4,
+       3)
+SDAANY(ScaleARGBRowDownEvenBox_Any_WASMSIMD,
+       ScaleARGBRowDownEvenBox_WASMSIMD,
+       ScaleARGBRowDownEvenBox_C,
+       4,
        3)
 #endif
 
@@ -578,6 +690,23 @@ CANY(ScaleARGBFilterCols_Any_LSX,
      ScaleARGBFilterCols_C,
      4,
      7)
+#endif
+#ifdef HAS_SCALEFILTERCOLS_WASMSIMD
+CANY(ScaleFilterCols_Any_WASMSIMD,
+     ScaleFilterCols_WASMSIMD,
+     ScaleFilterCols_C,
+     1,
+     7)
+#endif
+#ifdef HAS_SCALEARGBCOLS_WASMSIMD
+CANY(ScaleARGBCols_Any_WASMSIMD, ScaleARGBCols_WASMSIMD, ScaleARGBCols_C, 4, 3)
+#endif
+#ifdef HAS_SCALEARGBFILTERCOLS_WASMSIMD
+CANY(ScaleARGBFilterCols_Any_WASMSIMD,
+     ScaleARGBFilterCols_WASMSIMD,
+     ScaleARGBFilterCols_C,
+     4,
+     3)
 #endif
 #undef CANY
 

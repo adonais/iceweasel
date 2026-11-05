@@ -223,7 +223,9 @@ def generate_tasks(
 
         register_gecko_taskgraph(load_graph_config(root))
 
-    generator = TaskGraphGenerator(root_dir=root, parameters=params)
+    generator = TaskGraphGenerator(
+        root_dir=root, parameters=params, enable_verifications=False
+    )
 
     cache_dir = os.path.join(
         get_state_dir(specific_to_topsrcdir=True), "cache", "taskgraph"

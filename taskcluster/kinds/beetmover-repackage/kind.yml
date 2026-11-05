@@ -40,9 +40,6 @@ kind-dependencies:
     - upload-symbols
     - upload-symbols-dummy
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 only-for-build-platforms:
     - linux64-shippable/opt
     - linux64-aarch64-shippable/opt

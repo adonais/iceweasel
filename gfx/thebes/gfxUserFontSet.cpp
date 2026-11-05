@@ -418,7 +418,26 @@ void gfxUserFontEntry::FontLoadComplete() {
   }
 }
 
-void gfxUserFontEntry::ContinueLoad() {
+void gfxUserFontEntry::ScheduleContinueLoad() {
+  MOZ_ASSERT(NS_IsMainThread());
+  RefPtr<nsIRunnable> runnable =
+      NewRunnableMethod("gfxUserFontEntry::DoContinueLoad", this,
+                        &gfxUserFontEntry::DoContinueLoad);
+  // We don't want to trigger the channel open at random points in time, because
+  // it can run privileged JS.
+  if (!nsContentUtils::IsSafeToRunScript()) {
+    // There's a script-blocker on the stack. We know the sooner point where we
+    // can trigger the load.
+    nsContentUtils::AddScriptRunner(runnable.forget());
+  } else {
+    // We dispatch with a rather high priority, since somebody actually cares
+    // about this font.
+    NS_DispatchToCurrentThreadQueue(runnable.forget(),
+                                    EventQueuePriority::MediumHigh);
+  }
+}
+
+void gfxUserFontEntry::DoContinueLoad() {
   if (mUserFontLoadState == STATUS_NOT_LOADED) {
     // We must have been cancelled (possibly due to a font-list refresh) while
     // the runnable was pending, so just bail out.
@@ -502,7 +521,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
         // local fonts are just available all the time.
         StoreUserFontData(fe, mCurrentSrcIndex, false, nsCString(), nullptr, 0,
                           gfxUserFontData::kUnknownCompression, nullptr);
-        mPlatformFontEntry = fe.forget();
+        SetPlatformFontEntry(std::move(fe));
         SetLoadState(STATUS_LOADED);
         glean::webfont::srctype.AccumulateSingleSample(currSrc.mSourceType + 1);
         return;
@@ -535,10 +554,10 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
 
         // see if we have an existing entry for this source
         if (canCheckCache) {
-          gfxFontEntry* fe =
+          RefPtr<gfxFontEntry> fe =
               gfxUserFontSet::UserFontCache::GetFont(currSrc, *this);
           if (fe) {
-            mPlatformFontEntry = fe;
+            SetPlatformFontEntry(std::move(fe));
             SetLoadState(STATUS_LOADED);
             LOG(
                 ("userfonts (%p) [src %d] "
@@ -562,8 +581,8 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
           // buffers or other sync sources?
           SetLoadState(STATUS_LOAD_PENDING);
           NS_DispatchToMainThread(
-              NewRunnableMethod("gfxUserFontEntry::ContinueLoad", this,
-                                &gfxUserFontEntry::ContinueLoad));
+              NewRunnableMethod("gfxUserFontEntry::DoContinueLoad", this,
+                                &gfxUserFontEntry::DoContinueLoad));
           return;
         }
 
@@ -594,22 +613,8 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
           fontSet->LogMessage(this, mCurrentSrcIndex, "font load failed",
                               nsIScriptError::errorFlag, rv);
         } else if (!aIsContinue) {
-          RefPtr<nsIRunnable> runnable =
-              NewRunnableMethod("gfxUserFontEntry::ContinueLoad", this,
-                                &gfxUserFontEntry::ContinueLoad);
           SetLoadState(STATUS_LOAD_PENDING);
-          // We don't want to trigger the channel open at random points in
-          // time, because it can run privileged JS.
-          if (!nsContentUtils::IsSafeToRunScript()) {
-            // There's a script-blocker on the stack. We know the sooner point
-            // where we can trigger the load.
-            nsContentUtils::AddScriptRunner(runnable.forget());
-          } else {
-            // We dispatch with a rather high priority, since somebody actually
-            // cares about this font.
-            NS_DispatchToCurrentThreadQueue(runnable.forget(),
-                                            EventQueuePriority::MediumHigh);
-          }
+          ScheduleContinueLoad();
           return;
         } else {
           // Actually start the async load.
@@ -726,6 +731,13 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
                                         const uint8_t*&& aSanitizedFontData,
                                         uint32_t aSanitizedLength,
                                         nsTArray<OTSMessage>&& aMessages) {
+  // Only URL and buffer sources are loaded here (local sources are resolved
+  // directly in DoLoadNextSrc).
+  MOZ_ASSERT(
+      mSrcList[aSrcIndex].mSourceType == gfxFontFaceSrc::eSourceType_URL ||
+          mSrcList[aSrcIndex].mSourceType == gfxFontFaceSrc::eSourceType_Buffer,
+      "unexpected source type reaching LoadPlatformFont");
+
   // This function consumes aOriginalFontData.
   auto atExit = MakeScopeExit([=]() { free((void*)aOriginalFontData); });
 
@@ -790,7 +802,10 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
         ("userfonts (%p) [src %d] failed uri: (%s) for (%s)"
          " error making platform font\n",
          fontSet.get(), aSrcIndex,
-         mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get(),
+         // Local fonts don't reach this function, so null mURI => buffer-type.
+         mSrcList[aSrcIndex].mURI
+             ? mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get()
+             : "(buffer)",
          FamilyName().get()));
     return false;
   }
@@ -845,8 +860,12 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
       ("userfonts (%p) [src %d] loaded uri: (%s) for (%s) "
        "(%p) gen: %8.8x compress: %d%%\n",
        fontSet.get(), aSrcIndex,
-       mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get(), FamilyName().get(),
-       this, uint32_t(fontSet->GetGeneration()), fontCompressionRatio));
+       // Local fonts don't reach this function, so null mURI => buffer-type.
+       mSrcList[aSrcIndex].mURI
+           ? mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get()
+           : "(buffer)",
+       FamilyName().get(), this, uint32_t(fontSet->GetGeneration()),
+       fontCompressionRatio));
 
   if (NS_IsMainThread()) {
     // UserFontCache::CacheFont is not currently safe to call off-main-thread,
@@ -854,7 +873,7 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
     gfxUserFontSet::UserFontCache::CacheFont(fe);
   }
 
-  mPlatformFontEntry = std::move(fe);
+  SetPlatformFontEntry(std::move(fe));
   SetLoadState(STATUS_LOADED);
 
   return true;
@@ -1126,19 +1145,18 @@ void gfxUserFontSet::ForgetLocalFace(gfxUserFontFamily* aFontFamily) {
     auto ufe = static_cast<gfxUserFontEntry*>(f.get());
     // If the user font entry has loaded an entry using src:local(),
     // discard it as no longer valid.
-    if (ufe->GetPlatformFontEntry() &&
-        ufe->GetPlatformFontEntry()->IsLocalUserFont()) {
+    RefPtr pfe = ufe->GetPlatformFontEntry();
+    if (pfe && pfe->IsLocalUserFont()) {
       // Clear shmem pointers on the local-user-font entry: it is not tracked
       // in gfxPlatformFontList::mFontEntries, so InitFontList()'s cleanup loop
       // misses it.
-      gfxFontEntry* pfe = ufe->GetPlatformFontEntry();
       {
         AutoWriteLock lock(pfe->mLock);
         pfe->mShmemCharacterMap = nullptr;
         pfe->mShmemFace = nullptr;
         pfe->mShmemFamily = nullptr;
       }
-      ufe->mPlatformFontEntry = nullptr;
+      ufe->SetPlatformFontEntry(nullptr);
     }
     // If the entry had a local source, we need to re-evaluate the source list
     // in the context of the new platform fontlist, whether or not the entry
@@ -1203,8 +1221,15 @@ gfxUserFontSet::UserFontCache::Flusher::Observe(nsISupports* aSubject,
       }
     }
   } else if (!strcmp(aTopic, "xpcom-shutdown")) {
+    // Disconnecting can release font entries, whose destructor removes them
+    // from sUserFonts, so keep them alive until we are done iterating.
+    AutoTArray<RefPtr<gfxFontEntry>, 32> entries;
+    entries.SetCapacity(sUserFonts->Count());
     for (auto i = sUserFonts->Iter(); !i.Done(); i.Next()) {
-      i.Get()->GetFontEntry()->DisconnectSVG();
+      entries.AppendElement(i.Get()->GetFontEntry());
+    }
+    for (auto& entry : entries) {
+      entry->DisconnectSVG();
     }
   } else {
     MOZ_ASSERT_UNREACHABLE("unexpected topic");

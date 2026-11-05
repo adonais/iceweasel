@@ -104,7 +104,7 @@ index 73c1a74575..1ed0d868df 100644
  }
  
 diff --git a/audio/channel_receive.h b/audio/channel_receive.h
-index 52a8114595..c054da3947 100644
+index f8572e0fe6..53c4f655ea 100644
 --- a/audio/channel_receive.h
 +++ b/audio/channel_receive.h
 @@ -39,6 +39,7 @@
@@ -115,7 +115,7 @@ index 52a8114595..c054da3947 100644
  #include "system_wrappers/include/ntp_time.h"
  
  namespace webrtc {
-@@ -180,6 +181,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -179,6 +180,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      const webrtc::CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,
      absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
@@ -198,10 +198,10 @@ index fac8d06ea9..676b448587 100644
  static constexpr size_t kNumMediaTypes = 5;
  enum class RtpPacketMediaType : size_t {
 diff --git a/modules/rtp_rtcp/source/rtcp_receiver.cc b/modules/rtp_rtcp/source/rtcp_receiver.cc
-index 7cd601bb0a..a5627108bd 100644
+index 7b6e4b453d..698a122a4c 100644
 --- a/modules/rtp_rtcp/source/rtcp_receiver.cc
 +++ b/modules/rtp_rtcp/source/rtcp_receiver.cc
-@@ -158,6 +158,7 @@ RTCPReceiver::RTCPReceiver(const Environment& env,
+@@ -157,6 +157,7 @@ RTCPReceiver::RTCPReceiver(const Environment& env,
        rtp_rtcp_(owner),
        registered_ssrcs_(config),
        network_link_rtcp_observer_(config.network_link_rtcp_observer),
@@ -209,7 +209,7 @@ index 7cd601bb0a..a5627108bd 100644
        rtcp_intra_frame_observer_(config.intra_frame_callback),
        rtcp_loss_notification_observer_(config.rtcp_loss_notification_observer),
        network_state_estimate_observer_(config.network_state_estimate_observer),
-@@ -658,6 +659,10 @@ bool RTCPReceiver::HandleBye(const CommonHeader& rtcp_block) {
+@@ -657,6 +658,10 @@ bool RTCPReceiver::HandleBye(const CommonHeader& rtcp_block) {
      return false;
    }
  
@@ -220,7 +220,7 @@ index 7cd601bb0a..a5627108bd 100644
    // Clear our lists.
    rtts_ = {};
    EraseIf(received_report_blocks_, [&](const auto& elem) {
-@@ -1065,12 +1070,21 @@ std::vector<rtcp::TmmbItem> RTCPReceiver::TmmbrReceived() {
+@@ -1064,12 +1069,21 @@ std::vector<rtcp::TmmbItem> RTCPReceiver::TmmbrReceived() {
  }
  
  bool RTCPReceiver::RtcpRrTimeoutLocked(Timestamp now) {
@@ -258,10 +258,10 @@ index c98342dcfb..bfe64780a8 100644
    RtcpLossNotificationObserver* const rtcp_loss_notification_observer_;
    NetworkStateEstimateObserver* const network_state_estimate_observer_;
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index d2a3c72603..39172386e2 100644
+index ac2f1b0b19..635da55547 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-@@ -71,6 +71,9 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
+@@ -70,6 +70,9 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
      // bandwidth estimation related message.
      NetworkLinkRtcpObserver* network_link_rtcp_observer = nullptr;
  

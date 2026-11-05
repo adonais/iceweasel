@@ -107,7 +107,6 @@ using mozilla::dom::ServiceWorkerDescriptor;
 #define PREF_LNA_SKIP_DOMAINS "network.lna.skip-domains"
 
 nsIOService* gIOService;
-static bool gCaptivePortalEnabled = false;
 static LazyLogModule gIOServiceLog("nsIOService");
 #undef LOG
 #define LOG(args) MOZ_LOG(gIOServiceLog, LogLevel::Debug, args)
@@ -827,7 +826,8 @@ NS_IMPL_ISUPPORTS(nsIOService, nsIIOService, nsINetUtil, nsISpeculativeConnect,
 
 nsresult nsIOService::RecheckCaptivePortal() {
   MOZ_ASSERT(NS_IsMainThread(), "Must be called on the main thread");
-  if (!mCaptivePortalService) {
+  if (!mCaptivePortalService ||
+      !StaticPrefs::network_captive_portal_service_enabled()) {
     return NS_OK;
   }
   nsCOMPtr<nsIRunnable> task = NewRunnableMethod(
@@ -839,7 +839,8 @@ nsresult nsIOService::RecheckCaptivePortal() {
 nsresult nsIOService::RecheckCaptivePortalIfLocalRedirect(nsIChannel* newChan) {
   nsresult rv;
 
-  if (!mCaptivePortalService) {
+  if (!mCaptivePortalService ||
+      !StaticPrefs::network_captive_portal_service_enabled()) {
     return NS_OK;
   }
 
@@ -1489,7 +1490,8 @@ nsresult nsIOService::SetConnectivityInternal(bool aConnectivity) {
   mLastConnectivityChange = PR_IntervalNow();
 
   if (mCaptivePortalService) {
-    if (aConnectivity && gCaptivePortalEnabled) {
+    if (aConnectivity &&
+        StaticPrefs::network_captive_portal_service_enabled()) {
       // This will also trigger a captive portal check for the new network
       static_cast<CaptivePortalService*>(mCaptivePortalService.get())->Start();
     } else {
@@ -1670,10 +1672,8 @@ void nsIOService::PrefsChanged(const char* pref) {
   }
 
   if (!pref || strcmp(pref, NETWORK_CAPTIVE_PORTAL_PREF) == 0) {
-    nsresult rv = Preferences::GetBool(NETWORK_CAPTIVE_PORTAL_PREF,
-                                       &gCaptivePortalEnabled);
-    if (NS_SUCCEEDED(rv) && mCaptivePortalService) {
-      if (gCaptivePortalEnabled) {
+    if (mCaptivePortalService) {
+      if (StaticPrefs::network_captive_portal_service_enabled()) {
         static_cast<CaptivePortalService*>(mCaptivePortalService.get())
             ->Start();
       } else {

@@ -3713,7 +3713,7 @@
 #endif
   arguments:
     shift: int32_t
-#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64)
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64)
     # Negative divisor case not implemented for all targets.
     negativeDivisor: bool
 #endif
@@ -4030,13 +4030,36 @@
   call_instruction: true
   mir_op: Mod
 
-- name: ModMaskI
+- name: DivConstantI
   result_type: WordSized
   operands:
-    input: WordSized
+    numerator: WordSized
   arguments:
-    shift: int32_t
-  num_temps: 2
+    denominator: int32_t
+  mir_op: Div
+
+- name: ModConstantI
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: int32_t
+  mir_op: Mod
+
+- name: UDivConstant
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint32_t
+  mir_op: Div
+
+- name: UModConstant
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint32_t
   mir_op: Mod
 
 - name: UDiv

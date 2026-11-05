@@ -7,6 +7,7 @@
 #include "ContentClassifierService.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsNetUtil.h"
@@ -85,6 +86,8 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   nsCOMPtr<nsILoadInfo> loadInfo;
   rv = aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) return;
+
+  mPassiveContent = net::ChannelClassifierUtils::IsPassiveContent(aChannel);
 
   ExtContentPolicyType contentPolicyType =
       loadInfo->GetExternalContentPolicyType();
@@ -250,7 +253,9 @@ ContentClassifierRequest::ContentClassifierRequest(
       mThirdPartyToSource(true),
       mPrivateBrowsing(aPrivateBrowsing),
       mValid(false),
-      mIsNonRecommendedAddon(aIsNonRecommendedAddon) {
+      mIsNonRecommendedAddon(aIsNonRecommendedAddon),
+      mPassiveContent(aRequestType.EqualsLiteral("image") ||
+                      aRequestType.EqualsLiteral("media")) {
   if (!IsValidRequestType(aRequestType)) return;
 
   nsCOMPtr<nsIURI> uri;

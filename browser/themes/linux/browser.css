@@ -57,10 +57,14 @@
 
       body,
       dialog::backdrop {
+        /* GTK exposes the titlebar radius via an environment variable. */
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
         border-top-left-radius: env(-moz-gtk-csd-titlebar-radius);
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
         border-top-right-radius: env(-moz-gtk-csd-titlebar-radius);
         @media -moz-pref("widget.gtk.rounded-bottom-corners.enabled") {
           /* Use an uniform clip to allow WebRender to optimize it better */
+          /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
           border-radius: env(-moz-gtk-csd-titlebar-radius);
         }
       }
@@ -89,6 +93,9 @@
 /* Address bar */
 .urlbar,
 #searchbar {
+  /* Linux address/search bar font-size multiplier. */
+  /* Value varies by OS, no design token equivalent. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 1.05em;
 }
 
@@ -126,15 +133,20 @@
   /* Opacity rounds to 0 or 1 on Linux without an X compositor, making the
      background color not visible. Anti-aliasing is not available either. Make a
      thicker outline and cancel border-radius for that case. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   outline: 4px solid rgb(0, 200, 215);
   border-radius: 0 !important;
 }
 
 #UITourTooltipDescription {
+  /* Linux-specific UITour description size; no design-token equivalent. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 1.05rem;
 }
 
 #UITourTooltipClose {
+  /* Rem space tokens can't be used here, they don't preserve 4px under message-box. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-end: -4px;
 }
 
@@ -143,7 +155,10 @@
  * to the sides and bottom of the panel.
  */
 #UITourTooltipButtons {
+  /* Compensates for Linux panel padding; no exact space token. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-start: -10px;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-bottom: -10px;
 }
 
@@ -194,7 +209,10 @@
   color: inherit;
   align-items: center;
   padding: 0;
+  /* Titlebar spacing is derived from GTK/libadwaita/breeze metrics. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-inline: var(--titlebar-button-spacing);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-inline-end: max(
     var(--titlebar-button-spacing),
     var(--titlebar-button-end-spacing) * (var(--titlebar-button-position) - var(--max-titlebar-button-position) + 1)
@@ -206,11 +224,16 @@
   > .toolbarbutton-icon {
     border-radius: var(--border-radius-circle);
     background-position: center center;
-    background-size: min(16px, var(--titlebar-button-size) - 2 * env(hairline));
+    /* Icon size is capped to design-system small icons within the GTK button size. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-size: min(var(--icon-size-small), var(--titlebar-button-size) - 2 * env(hairline));
     background-repeat: no-repeat;
     -moz-context-properties: stroke;
     stroke: currentColor;
+    /* Titlebar button size matches GTK theme metrics, not a fixed design token. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     width: var(--titlebar-button-size);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     height: var(--titlebar-button-size);
 
     @media not (-moz-gtk-theme-family: breeze) {
@@ -239,20 +262,29 @@
 
   @media (-moz-gtk-theme-family: breeze) {
     &:hover > .toolbarbutton-icon {
+      /* Breeze inverts toolbox colors on hover. Tokens are intentionally swapped. */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       color: var(--toolbox-background-color);
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       background-color: var(--toolbox-text-color);
       &:-moz-window-inactive {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
         color: var(--toolbox-background-color-inactive);
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
         background-color: var(--toolbox-text-color-inactive);
       }
     }
     &:hover:active > .toolbarbutton-icon {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       background-color: color-mix(in srgb, var(--toolbox-text-color) 50%, transparent);
     }
     &.titlebar-close:hover > .toolbarbutton-icon {
+      /* Approximate Breeze close hover; see bug 1974984. */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       background-color: #ff98a2;
     }
     &.titlebar-close:hover:active > .toolbarbutton-icon {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       background-color: #6d2229;
     }
   }

@@ -15,6 +15,8 @@
   &::before {
     content: "";
     display: block;
+    /* Accent stripe has no matching size token */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     width: 2px;
     position: absolute;
     top: 0;
@@ -27,22 +29,25 @@
   .container {
     /* Don't let lwthemes set a text-shadow. */
     text-shadow: none;
-    padding-block: 3px;
+    padding-block: var(--space-xsmall);
     align-items: center;
   }
 
   .text-container {
+    /* Centers first line of text against icon */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     padding-block: calc(1lh - var(--icon-size) / 2);
   }
 
   .content {
-    gap: 0 12px;
+    gap: 0 var(--space-small);
     height: fit-content;
   }
 
   .close {
+    /* rem-based spacing token leads to misaligned close icon on Windows */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     margin-block: 4px;
-    margin-inline-start: 8px;
     align-self: flex-start;
   }
 
@@ -74,14 +79,15 @@
   :host(.infobar) {
     --info-bar-background-color: transparent;
     --info-bar-box-shadow: none;
-    --message-bar-icon-container-padding: 0px;
     --message-bar-icon-container-align-items: center;
+    --message-bar-icon-container-border: none;
+    --message-bar-icon-container-border-radius-start-start: 0;
+    --message-bar-icon-container-border-radius-start-end: 0;
+    --message-bar-icon-container-border-radius-end-start: 0;
+    --message-bar-icon-container-border-radius-end-end: 0;
+    --message-bar-icon-container-padding: 0;
     --message-bar-icon-container-padding-block-start: 0;
     --message-bar-icon-container-height: var(--message-bar-icon-size);
-    --message-bar-icon-container-border-radius-start-start: var(--border-radius-circle);
-    --message-bar-icon-container-border-radius-start-end: var(--border-radius-circle);
-    --message-bar-icon-container-border-radius-end-start: var(--border-radius-circle);
-    --message-bar-icon-container-border-radius-end-end: var(--border-radius-circle);
     --message-bar-container-padding-inline: 12px;
     --message-bar-content-padding-inline: 0;
     --message-bar-content-padding-block: 0;
@@ -94,7 +100,8 @@
     .icon-container {
       align-self: flex-start;
       /* Lines up with the first line, not the whole block. text-container already pads itself down, so we have to match that. */
-      margin-block-start: calc(1.5 * 1lh - var(--message-bar-icon-size) - 1px);
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      margin-block-start: calc(1.5 * 1lh - var(--message-bar-icon-size));
     }
   }
 
@@ -120,7 +127,7 @@
 }
 
 ::slotted(.notification-button-container) {
-  gap: 8px;
+  gap: var(--space-small);
   display: inline-flex;
 }
 
@@ -131,6 +138,7 @@
 img.inline-icon {
   /* Align inline icon images in the message content */
   vertical-align: middle;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-height: 1lh;
   /* Ensure they get the right fill color. */
   -moz-context-properties: fill;

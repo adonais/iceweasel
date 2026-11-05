@@ -146,7 +146,7 @@ static const gchar* getActionLocalizedNameCB(AtkAction* aAction,
   return getActionDescriptionCB(aAction, aActionIndex);
 }
 
-static const gchar* getKeyBindingCB(AtkAction* aAction, gint aActionIndex) {
+static const gchar* getKeyBindingCB(AtkAction* aAction, gint /*aActionIndex*/) {
   Accessible* acc = GetInternalObj(ATK_OBJECT(aAction));
   if (!acc) {
     return nullptr;

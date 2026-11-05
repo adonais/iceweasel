@@ -227,3 +227,30 @@ LOCAL_INCLUDES += [
 ]
 
 OS_LIBS += ["android", "jnigraphics"]
+
+SOURCE_HEADERS += [
+    "AndroidAlerts.h",
+    "AndroidBridgeUtilities.h",
+    "AndroidContentController.h",
+    "Base64UtilsSupport.h",
+    "GeckoBatteryManager.h",
+    "GeckoEditableSupport.h",
+    "GeckoNetworkManager.h",
+    "GeckoProcessManager.h",
+    "GeckoSensorSupport.h",
+    "GeckoSystemStateListener.h",
+    "GeckoVRManager.h",
+    "GfxInfo.h",
+    "ImageDecoderSupport.h",
+    "MozLogSupport.h",
+    "nsAppShell.h",
+    "nsClipboard.h",
+    "nsDeviceContextAndroid.h",
+    "nsDragService.h",
+    "nsLookAndFeel.h",
+    "nsPrintSettingsServiceAndroid.h",
+    "nsUserIdleServiceAndroid.h",
+    "nsWidgetFactory.h",
+    "OhttpHelper.h",
+    "ScreenHelperAndroid.h",
+]

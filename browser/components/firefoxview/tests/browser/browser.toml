@@ -37,9 +37,7 @@ skip-if = [
 
 ["browser_opentabs_changes.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1879026
   "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1879026
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1879026
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1879026
 ]
 
@@ -53,16 +51,13 @@ skip-if = [
 ["browser_opentabs_pinned_tabs.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1896042
-  "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1896042
   "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1896042
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1896042
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1896042
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1896042
 ]
 
 ["browser_opentabs_recency.js"]
 skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && nova", # Bug 2057846
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt", # Bug 2057846
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt",
   "os == 'win' && opt",
 ]

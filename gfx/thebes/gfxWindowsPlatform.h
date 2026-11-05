@@ -181,6 +181,8 @@ class gfxWindowsPlatform final : public gfxPlatform {
   void InitAcceleration() override;
   void InitWebRenderConfig() override;
   void InitPlatformHardwareVideoConfig() override;
+  void InitReuseDecoderDeviceConfig(mozilla::gfx::DeviceManagerDx* aDm);
+  void InitD3D11FencesConfig(mozilla::gfx::DeviceManagerDx* aDm);
 #ifdef MOZ_WMF_CDM
   void InitPlatformHardwareDRMConfig() override;
 #endif

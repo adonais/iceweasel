@@ -9,6 +9,7 @@ import {
   getNovaColumnLayout,
 } from "../../lib/utils";
 import { TOP_SITES_SOURCE } from "../TopSites/TopSitesConstants";
+import { SpaceActiveContext } from "../../lib/SpaceActiveContext";
 import React from "react";
 
 const VISIBLE = "visible";
@@ -256,8 +257,14 @@ export class ImpressionStats extends React.PureComponent {
     this.impressionObserver.observe(this.impressionRef.current);
   }
 
+  // A hidden carousel slide, or a space other than the active one.
+  _isActive() {
+    return this.props.isActive && this.context;
+  }
+
   componentDidMount() {
-    if (this.props.rows.length && this.props.isActive) {
+    this._wasActive = this._isActive();
+    if (this.props.rows.length && this._wasActive) {
       this.setImpressionObserverOrAddListener();
     }
   }
@@ -279,14 +286,18 @@ export class ImpressionStats extends React.PureComponent {
   // A carousel stacks its slides, so a hidden slide still intersects and would
   // report an impression while invisible. A slide only observes while it is
   // the visible one, and never observes again once it has reported, so a card
-  // that cycles back around isn't counted twice.
-  componentDidUpdate(prevProps) {
-    if (this._hasReported || this.props.isActive === prevProps.isActive) {
+  // that cycles back around isn't counted twice. Spaces work the same way, as a
+  // peeked space is visible but not active.
+  componentDidUpdate() {
+    const isActive = this._isActive();
+    const wasActive = this._wasActive;
+    this._wasActive = isActive;
+    if (this._hasReported || isActive === wasActive) {
       return;
     }
-    if (this.props.isActive && this.props.rows.length) {
+    if (isActive && this.props.rows.length) {
       this.setImpressionObserverOrAddListener();
-    } else if (!this.props.isActive) {
+    } else if (!isActive) {
       this._teardownImpressionObserver();
     }
   }
@@ -312,3 +323,5 @@ ImpressionStats.defaultProps = {
   // Only a carousel slide passes this as false, and only while hidden.
   isActive: true,
 };
+
+ImpressionStats.contextType = SpaceActiveContext;

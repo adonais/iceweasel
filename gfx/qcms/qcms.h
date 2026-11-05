@@ -185,6 +185,9 @@ bool qcms_profile_is_bogus(qcms_profile *profile);
 qcms_intent qcms_profile_get_rendering_intent(qcms_profile *profile);
 icColorSpaceSignature qcms_profile_get_color_space(qcms_profile *profile);
 bool qcms_profile_is_sRGB(qcms_profile *profile);
+bool qcms_profile_get_primaries(const qcms_profile *profile,
+                                qcms_CIE_xyYTRIPLE *primaries,
+                                qcms_CIE_xyY *white_point);
 
 void qcms_profile_precache_output_transform(qcms_profile *profile);
 

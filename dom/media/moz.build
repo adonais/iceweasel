@@ -172,6 +172,7 @@ EXPORTS += [
     "FrameStatistics.h",
     "HDRUtils.h",
     "ImageConversion.h",
+    "ImagePixelFormat.h",
     "Intervals.h",
     "MediaCache.h",
     "MediaContainerType.h",
@@ -354,8 +355,14 @@ else:
 if CONFIG["ENABLE_TESTS"] or CONFIG["FUZZING"]:
     UNIFIED_SOURCES += ["MockCubeb.cpp"]
 
-# MediaData.cpp : ambiguous compilation error caused by Mac OS X headers.
+    SOURCE_HEADERS += [
+        "MockCubeb.h",
+    ]
+
+# ImagePixelFormat.cpp, MediaData.cpp : ambiguous compilation error caused by
+# Mac OS X headers.
 SOURCES += [
+    "ImagePixelFormat.cpp",
     "MediaData.cpp",
 ]
 
@@ -364,11 +371,11 @@ if CONFIG["MOZ_WEBRTC"]:
         "components.conf",
     ]
 
-    EXTRA_JS_MODULES.media += [
+    MOZ_SRC_FILES += [
         "PeerConnection.sys.mjs",
     ]
 
-EXTRA_JS_MODULES.media += [
+MOZ_SRC_FILES += [
     "IdpSandbox.sys.mjs",
     "PeerConnectionIdp.sys.mjs",
 ]
@@ -440,3 +447,24 @@ COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]
 FINAL_LIBRARY = "xul"
 
 SPHINX_TREES["/media"] = "docs"
+
+SOURCE_HEADERS += [
+    "AudioCaptureTrack.h",
+    "AudioGenerator.h",
+    "AudioInputSource.h",
+    "AudioVerifier.h",
+    "BaseMediaResource.h",
+    "ChannelMediaResource.h",
+    "CloneableWithRangeMediaResource.h",
+    "CubebInputStream.h",
+    "DeviceInputTrack.h",
+    "FileMediaResource.h",
+    "GraphDriver.h",
+    "GraphRunner.h",
+    "MediaBlockCacheBase.h",
+    "MediaChannelStatistics.h",
+    "MediaTrackGraphImpl.h",
+    "Pacer.h",
+    "VideoFrameConverter.h",
+    "VideoOutput.h",
+]

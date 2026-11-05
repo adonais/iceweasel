@@ -3,8 +3,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ACTIVITY="org.mozilla.fenix.HomeActivity"
-TOOLBAR_BOUNDS_ID="toolbar"
-TABS_TRAY_BUTTON_BOUNDS_ID="counter_box"
+TOOLBAR_RESOURCE_ID="ADDRESSBAR_URL_BOX"
+TABS_TRAY_BUTTON_RESOURCE_ID="ADDRESSBAR_TABS_COUNTER"
+LAUNCH_EXTRAS="--ez performancetest true"
 
 XML_FILE=$TESTING_DIR/window_dump.xml
 XMLSTARLET_CMD=${XMLSTARLET:-xmlstarlet}
@@ -14,14 +15,24 @@ URL_MOZILLA="https://www.mozilla.org/"
 
 if [[ $BROWSER_BINARY == *"chrome"* ]]; then
   ACTIVITY="com.google.android.apps.chrome.Main"
-  TOOLBAR_BOUNDS_ID="search_box_text"
-  TABS_TRAY_BUTTON_BOUNDS_ID="tab_switcher_button"
+  TOOLBAR_RESOURCE_ID="$BROWSER_BINARY:id/search_box_text"
+  TABS_TRAY_BUTTON_RESOURCE_ID="$BROWSER_BINARY:id/tab_switcher_button"
+  LAUNCH_EXTRAS=""
 fi
 
 TAP_X=0
 TAP_Y=0
 
+fail() {
+    echo "ERROR: $1"
+    pkill -f collect-proc-info
+    exit 1
+}
+
 calculate_tap_coords() {
+    if [ -z "$1" ]; then
+        fail "Could not find bounds for $2"
+    fi
     x1=$(($(echo "$1" | awk -F'[][]' '{print $2}' | awk -F',' '{print $1}')))
     x2=$(($(echo "$1" | awk -F'[][]' '{print $4}' | awk -F',' '{print $1}')))
     sum_x=$(($x1+$x2))
@@ -39,7 +50,7 @@ tap_at_coords(){
 }
 
 adb shell pm clear $BROWSER_BINARY
-adb shell am start -n "$BROWSER_BINARY/$ACTIVITY"
+adb shell am start $LAUNCH_EXTRAS -n "$BROWSER_BINARY/$ACTIVITY"
 sleep 4
 
 if [[ $BROWSER_BINARY == *"chrome"* ]]; then
@@ -51,8 +62,10 @@ if [[ $BROWSER_BINARY == *"chrome"* ]]; then
     DISMISS_BOUNDS=$($XMLSTARLET_CMD sel -t -v 'string(//node[@resource-id = "'$BROWSER_BINARY':id/signin_fre_dismiss_button"]/@bounds)' "$XML_FILE")
     sleep 1
 
-    calculate_tap_coords $DISMISS_BOUNDS
-    tap_at_coords
+    if [ -n "$DISMISS_BOUNDS" ]; then
+        calculate_tap_coords "$DISMISS_BOUNDS"
+        tap_at_coords
+    fi
     sleep 2
 
     # navigate away from privacy notice
@@ -63,8 +76,10 @@ if [[ $BROWSER_BINARY == *"chrome"* ]]; then
     DISMISS_BOUNDS=$($XMLSTARLET_CMD sel -t -v 'string(//node[@resource-id = "'$BROWSER_BINARY':id/ack_button"]/@bounds)' "$XML_FILE")
     sleep 1
 
-    calculate_tap_coords $DISMISS_BOUNDS
-    tap_at_coords
+    if [ -n "$DISMISS_BOUNDS" ]; then
+        calculate_tap_coords "$DISMISS_BOUNDS"
+        tap_at_coords
+    fi
     sleep 1
 fi
 
@@ -73,18 +88,18 @@ adb pull /sdcard/window_dump.xml $XML_FILE
 sleep 1
 
 # calculate toolbar coordinates
-TOOLBAR_BOUNDS=$($XMLSTARLET_CMD sel -t -v '//node[@resource-id = "'$BROWSER_BINARY':id/'$TOOLBAR_BOUNDS_ID'"]/@bounds' $XML_FILE)
+TOOLBAR_BOUNDS=$($XMLSTARLET_CMD sel -t -v '//node[@resource-id = "'$TOOLBAR_RESOURCE_ID'"]/@bounds' $XML_FILE)
 sleep 1
 
-calculate_tap_coords $TOOLBAR_BOUNDS
+calculate_tap_coords "$TOOLBAR_BOUNDS" "$TOOLBAR_RESOURCE_ID"
 TOOLBAR_X_COORDINATE=$TAP_X
 TOOLBAR_Y_COORDINATE=$TAP_Y
 
 # calculate tabs tray coordinates
-TABS_TRAY_BUTTON_BOUNDS=$($XMLSTARLET_CMD sel -t -v '//node[@resource-id = "'$BROWSER_BINARY':id/'$TABS_TRAY_BUTTON_BOUNDS_ID'"]/@bounds' $XML_FILE)
+TABS_TRAY_BUTTON_BOUNDS=$($XMLSTARLET_CMD sel -t -v '//node[@resource-id = "'$TABS_TRAY_BUTTON_RESOURCE_ID'"]/@bounds' $XML_FILE)
 sleep 1
 
-calculate_tap_coords $TABS_TRAY_BUTTON_BOUNDS
+calculate_tap_coords "$TABS_TRAY_BUTTON_BOUNDS" "$TABS_TRAY_BUTTON_RESOURCE_ID"
 TABS_TRAY_BUTTON_X_COORDINATE=$TAP_X
 TABS_TRAY_BUTTON_Y_COORDINATE=$TAP_Y
 
@@ -102,7 +117,7 @@ else
 fi
 sleep 1
 
-calculate_tap_coords $ADD_TAB_BUTTON_BOUNDS
+calculate_tap_coords "$ADD_TAB_BUTTON_BOUNDS" "add tab button"
 ADD_TAB_BUTTON_X_COORDINATE=$TAP_X
 ADD_TAB_BUTTON_Y_COORDINATE=$TAP_Y
 

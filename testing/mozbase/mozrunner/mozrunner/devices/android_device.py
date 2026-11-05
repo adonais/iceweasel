@@ -668,6 +668,8 @@ class AndroidEmulator:
                 ):
                     self.avd_info.extra_args.remove("-enable-kvm")
                 command += self.avd_info.extra_args
+            if os.environ.get("MOZ_HEADLESS"):
+                command += ["-no-window"]
         log_path = os.path.join(EMULATOR_HOME_DIR, "emulator.log")
         self.emulator_log = open(log_path, "w+")
         _log_debug("Starting the emulator with this command: %s" % " ".join(command))

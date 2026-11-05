@@ -5,9 +5,11 @@
 import { UrlbarInputBase } from "chrome://browser/content/urlbar/UrlbarInputBase.mjs";
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
 
-const lazy = {};
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -75,12 +77,12 @@ export class SearchbarInput extends UrlbarInputBase {
     this.addContextMenuItems({
       after: "edit-contextmenu-select-all",
       createItems: () => {
-        let fragment = this.document.createDocumentFragment();
-        let separator = this.document.createXULElement("menuseparator");
+        let fragment = document.createDocumentFragment();
+        let separator = document.createXULElement("menuseparator");
 
-        let clearHistory = this.document.createXULElement("menuitem");
+        let clearHistory = document.createXULElement("menuitem");
         clearHistory.setAttribute("anonid", "clear-search-history");
-        this.document.l10n.setAttributes(clearHistory, "clear-search-history");
+        document.l10n.setAttributes(clearHistory, "clear-search-history");
         clearHistory.addEventListener("command", () => {
           lazy.UrlbarUtils.clearFormHistory();
           this.handleRevert();

@@ -183,9 +183,6 @@ class AvlTreeImpl {
   // The expected maximum tree depth.  See comments above.
   static const size_t MAX_TREE_DEPTH = 48;
 
-  AvlTreeImpl(const AvlTreeImpl&) = delete;
-  AvlTreeImpl& operator=(const AvlTreeImpl&) = delete;
-
   // ---- Preliminaries --------------------------------------- //
 
   explicit AvlTreeImpl(LifoAlloc* alloc = nullptr)
@@ -817,6 +814,12 @@ class AvlTreeImpl {
     }
     return nullptr;
   }
+
+  // ---- Deleted methods ------------------------------------- //
+
+ public:
+  AvlTreeImpl(const AvlTreeImpl&) = delete;
+  AvlTreeImpl& operator=(const AvlTreeImpl&) = delete;
 
   // ---- Iteration ------------------------------------------- //
 

@@ -20,9 +20,9 @@ git = "https://github.com/franziskuskiefer/cose-rust"
 rev = "43c22248d136c8b38fe42ea709d08da6355cf04b"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/gfx-rs/wgpu?rev=4f4dc63098fae64a0e6d1d3dc6f4f328da8fd5c8"]
+[source."git+https://github.com/gfx-rs/wgpu?rev=e084b66aab767940ff1236604d194c9e1c2844b0"]
 git = "https://github.com/gfx-rs/wgpu"
-rev = "4f4dc63098fae64a0e6d1d3dc6f4f328da8fd5c8"
+rev = "e084b66aab767940ff1236604d194c9e1c2844b0"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/glandium/allocator-api2?rev=ad5f3d56a5a4519eff52af4ff85293431466ef5c"]
@@ -70,24 +70,19 @@ git = "https://github.com/mozilla/audioipc"
 rev = "ef46a7bd05032d1577208ff048d444cc7412c7b8"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/authenticator-rs?tag=v0.6.1"]
-git = "https://github.com/mozilla/authenticator-rs"
-tag = "v0.6.1"
-replace-with = "vendored-sources"
-
 [source."git+https://github.com/mozilla/cubeb-coreaudio-rs?rev=840f69c1b3f95accd582555e10abcef8ee67514b"]
 git = "https://github.com/mozilla/cubeb-coreaudio-rs"
 rev = "840f69c1b3f95accd582555e10abcef8ee67514b"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/cubeb-pulse-rs?rev=88194f91c8778fa608a19af7b91306094525595d"]
+[source."git+https://github.com/mozilla/cubeb-pulse-rs?rev=e764cd9e14bcc8ebe57f7e182a9ea140cef39399"]
 git = "https://github.com/mozilla/cubeb-pulse-rs"
-rev = "88194f91c8778fa608a19af7b91306094525595d"
+rev = "e764cd9e14bcc8ebe57f7e182a9ea140cef39399"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/glean?tag=v70.0.0"]
+[source."git+https://github.com/mozilla/glean?tag=v70.2.0"]
 git = "https://github.com/mozilla/glean"
-tag = "v70.0.0"
+tag = "v70.2.0"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/happy-eyeballs?tag=v1.0.0"]
@@ -115,23 +110,23 @@ git = "https://github.com/mozilla/mp4parse-rust"
 rev = "f0c80783227a1fb46f34cb04e10607045eac4297"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/neqo?tag=v0.32.0"]
+[source."git+https://github.com/mozilla/neqo?tag=v0.33.0"]
 git = "https://github.com/mozilla/neqo"
-tag = "v0.32.0"
+tag = "v0.33.0"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/nss-rs"]
 git = "https://github.com/mozilla/nss-rs"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/rust-minidump/minidump-writer.git?rev=6744feee58804a78730d176cdcc31bb4f3021107"]
+[source."git+https://github.com/rust-minidump/minidump-writer.git?rev=3ab1604f91db05ec3f3a84d779a2871df7d9afd7"]
 git = "https://github.com/rust-minidump/minidump-writer.git"
-rev = "6744feee58804a78730d176cdcc31bb4f3021107"
+rev = "3ab1604f91db05ec3f3a84d779a2871df7d9afd7"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/servo/rust-cssparser?rev=3a1d1c7a2980ab59d4e5fed7fe666dcbe265d132"]
+[source."git+https://github.com/servo/rust-cssparser?rev=9f3ceddf398f5ce4ab76fdad1b42ccb6c578a926"]
 git = "https://github.com/servo/rust-cssparser"
-rev = "3a1d1c7a2980ab59d4e5fed7fe666dcbe265d132"
+rev = "9f3ceddf398f5ce4ab76fdad1b42ccb6c578a926"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/servo/unicode-bidi?rev=ca612daf1c08c53abe07327cb3e6ef6e0a760f0c"]

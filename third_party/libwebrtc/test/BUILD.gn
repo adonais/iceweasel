@@ -1399,7 +1399,6 @@ rtc_library("fileutils") {
     "../rtc_base:checks",
     "../rtc_base:crypto_random",
     "../rtc_base:stringutils",
-    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
   if (is_ios) {

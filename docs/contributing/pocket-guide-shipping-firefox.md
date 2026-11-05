@@ -209,7 +209,7 @@ A Pref Rollout can also be used to mitigate an incident, see [Incident Response 
 
 Further Reading/Useful links:
 
-- [Mozilla preferences documentation](https://firefox-source-docs.mozilla.org/modules/libpref/index.html)
+- {doc}`Mozilla preferences documentation </modules/libpref/index>`
 - [Nimbus documentation](https://experimenter.info/)
 
 ### Release & Feature QA
@@ -276,19 +276,36 @@ The extensions that currently support train-hops are New Tab and Web Compatibili
 Further Reading/Useful links:
 
 - [Web Compatibility Release Process](https://wiki.mozilla.org/Compatibility/System_Addon/Release_Process#Shipping_interventions_with_an_out-of-band_System_Addon_Update)
-- [Train-hopping for New Tab](https://firefox-source-docs.mozilla.org/browser/extensions/newtab/docs/v2-system-addon/train_hopping.html)
+- {doc}`Train-hopping for New Tab </browser/extensions/newtab/docs/v2-system-addon/train_hopping>`
 
 ## Definitions
+
+(amo)=
+
+**amo** - code name for Addons.Mozilla.Org.
 
 (approval-flag)=
 
 **Approval Flag** - A flag that represents a security approval or uplift
 request on a patch.
 
+(backfill)=
+
+**Backfill** - Running a task on earlier pushes where it was skipped, typically
+from Treeherder, to find which push introduced a failure or a performance
+regression.
+
+(backstop)=
+
+**Backstop** - A push on an integration branch (such as autoland) where all
+builds and tests run, regardless of optimizations. One happens every 20 pushes
+or every 4 hours, so that regressions missed by the reduced scheduling of other
+pushes are caught.
+
 (bugzilla)=
 
 **Bugzilla** - Web-based general purpose bug tracking system and testing
-tool.
+tool. Also known as BMO for Bugzilla.Mozilla.Org.
 
 (channel)=
 
@@ -472,4 +489,5 @@ automatically. Unthrottle is removing the release rollout restriction.
 
 **Uplift** - the action of taking parts from a newer version of a
 software system (firefox-main or firefox-beta) and porting them to an
-older version of the same software (firefox-beta, firefox-release or ESR)
+older version of the same software (firefox-beta, firefox-release or ESR).
+Can be called cherry-pick in other projects.

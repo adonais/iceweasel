@@ -1224,6 +1224,8 @@ public interface SyncManagerInterface {
     
     /**
      * Perform a sync.  See [SyncParams] and [SyncResult] for details on how this works
+     *
+     * Fails with [SyncManagerError::Busy] if a sync is already in progress.
      */
     fun `sync`(`params`: SyncParams): SyncResult
     
@@ -1373,6 +1375,8 @@ open class SyncManager: Disposable, AutoCloseable, SyncManagerInterface
     
     /**
      * Perform a sync.  See [SyncParams] and [SyncResult] for details on how this works
+     *
+     * Fails with [SyncManagerError::Busy] if a sync is already in progress.
      */
     @Throws(SyncManagerException::class)override fun `sync`(`params`: SyncParams): SyncResult {
             return FfiConverterTypeSyncResult.lift(

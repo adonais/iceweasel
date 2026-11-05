@@ -16,9 +16,6 @@ kind-dependencies:
     - build-signing
     - toolchain
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 only-for-build-platforms:
     - win32/opt
     - win64/opt

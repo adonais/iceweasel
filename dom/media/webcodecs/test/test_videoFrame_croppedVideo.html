@@ -1,0 +1,238 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>VideoFrame from a video whose image has a cropped picture region</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<video id="video" muted></video>
+<script>
+/*
+ * From dom/media/test, vp8-pixel-crop.webm is generated with:
+ *   python3 generate_vp8_pixel_crop.py \
+ *     --pixel-width 320 --pixel-height 240 \
+ *     --pixel-crop-top 16 --pixel-crop-right 16 \
+ *     --pixel-crop-bottom 16 --pixel-crop-left 16 \
+ *     --timecode-scale 1000000 --duration 2000 \
+ *     --cluster-timecode 0 \
+ *     --block-timecode 0 --block-timecode 1000 \
+ *     ../webcodecs/test/vp8-pixel-crop.webm
+ * The expected geometry and media time below are derived from these arguments.
+ */
+const NANOSECONDS_PER_SECOND = 1_000_000_000;
+const FIXTURE_METADATA = Object.freeze({
+  pixelWidth: 320,
+  pixelHeight: 240,
+  pixelCropTop: 16,
+  pixelCropRight: 16,
+  pixelCropBottom: 16,
+  pixelCropLeft: 16,
+  timecodeScaleNanoseconds: 1_000_000,
+  clusterTimecode: 0,
+  blockTimecodes: Object.freeze([0, 1000]),
+});
+const EXPECTED_VISIBLE_RECT = Object.freeze({
+  x: FIXTURE_METADATA.pixelCropLeft,
+  y: FIXTURE_METADATA.pixelCropTop,
+  width: FIXTURE_METADATA.pixelWidth - FIXTURE_METADATA.pixelCropLeft -
+         FIXTURE_METADATA.pixelCropRight,
+  height: FIXTURE_METADATA.pixelHeight - FIXTURE_METADATA.pixelCropTop -
+          FIXTURE_METADATA.pixelCropBottom,
+});
+const EXPECTED_CODED_SIZE = Object.freeze({
+  width: EXPECTED_VISIBLE_RECT.x + EXPECTED_VISIBLE_RECT.width,
+  height: EXPECTED_VISIBLE_RECT.y + EXPECTED_VISIBLE_RECT.height,
+});
+const TARGET_MEDIA_TIME =
+  (FIXTURE_METADATA.clusterTimecode + FIXTURE_METADATA.blockTimecodes[1]) *
+  FIXTURE_METADATA.timecodeScaleNanoseconds / NANOSECONDS_PER_SECOND;
+
+function waitForPresentedFrame(video, targetMediaTime) {
+  return new Promise(resolve => {
+    function checkFrame(_, metadata) {
+      if (metadata.mediaTime >= targetMediaTime) {
+        resolve(metadata);
+        return;
+      }
+      video.requestVideoFrameCallback(checkFrame);
+    }
+    video.requestVideoFrameCallback(checkFrame);
+  });
+}
+
+async function seekToPresentedFrame(video, targetMediaTime) {
+  const seekCompleted = new Promise(resolve =>
+    video.addEventListener("seeked", resolve, { once: true }));
+  const framePresented = waitForPresentedFrame(video, targetMediaTime);
+  video.currentTime = targetMediaTime;
+  const [, metadata] = await Promise.all([seekCompleted, framePresented]);
+  return metadata;
+}
+
+function assertPlaneMatchesCodedCrop(visiblePixels, visiblePlaneLayout,
+                                     codedPixels, codedPlaneLayout,
+                                     visibleRect, planeName,
+                                     subsamplingFactor) {
+  const planeOriginX = visibleRect.x / subsamplingFactor;
+  const planeOriginY = visibleRect.y / subsamplingFactor;
+  const planeWidth = visibleRect.width / subsamplingFactor;
+  const planeHeight = visibleRect.height / subsamplingFactor;
+  let mismatchCount = 0;
+  let firstMismatch = "";
+  let differsFromZeroOrigin = false;
+
+  for (let y = 0; y < planeHeight; ++y) {
+    for (let x = 0; x < planeWidth; ++x) {
+      const actualVisibleSample =
+        visiblePixels[visiblePlaneLayout.offset +
+                      y * visiblePlaneLayout.stride + x];
+      const expectedCodedSample =
+        codedPixels[codedPlaneLayout.offset +
+                    (planeOriginY + y) * codedPlaneLayout.stride +
+                    planeOriginX + x];
+      const zeroOriginSample =
+        codedPixels[codedPlaneLayout.offset + y * codedPlaneLayout.stride + x];
+      if (actualVisibleSample !== expectedCodedSample) {
+        ++mismatchCount;
+        if (!firstMismatch) {
+          firstMismatch =
+            `; first mismatch at (${x}, ${y}): ` +
+            `${actualVisibleSample} != ${expectedCodedSample}`;
+        }
+      }
+      differsFromZeroOrigin ||= expectedCodedSample !== zeroOriginSample;
+    }
+  }
+
+  ok(differsFromZeroOrigin,
+     `${planeName} fixture samples should distinguish the crop from zero origin`);
+  is(mismatchCount, 0,
+     `every ${planeName} sample should match the coded-domain crop${firstMismatch}`);
+}
+
+function assertThrowsDOMException(callback, expectedName, message) {
+  let thrownException;
+  try {
+    callback();
+  } catch (error) {
+    thrownException = error;
+  }
+  is(thrownException?.name, expectedName, message);
+}
+
+add_task(async function croppedVideoFrameGeometry() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.rdd-process.enabled", false],
+      ["media.utility-process.enabled", false],
+      ["media.allow-audio-non-utility", true],
+    ],
+  });
+
+  const emptyVideo = document.createElement("video");
+  assertThrowsDOMException(
+    () => new VideoFrame(emptyVideo),
+    "InvalidStateError",
+    "an unavailable current image should throw InvalidStateError"
+  );
+
+  const video = document.getElementById("video");
+  await new Promise(resolve => {
+    video.addEventListener("loadeddata", resolve, { once: true });
+    video.src = "vp8-pixel-crop.webm";
+  });
+
+  const presentedFrameMetadata =
+    await seekToPresentedFrame(video, TARGET_MEDIA_TIME);
+  is(presentedFrameMetadata.mediaTime, TARGET_MEDIA_TIME,
+     "the seek should select the second frame");
+
+  const frame = new VideoFrame(video);
+  const visibleRect = frame.visibleRect;
+  info(`video ${video.videoWidth}x${video.videoHeight}, ` +
+       `frame ${frame.format} coded=${frame.codedWidth}x${frame.codedHeight} ` +
+       `visibleRect={${visibleRect.x},${visibleRect.y} ` +
+       `${visibleRect.width}x${visibleRect.height}}`);
+
+  is(frame.format, "I420", "the frame should be backed by a planar image");
+  is(frame.codedWidth, EXPECTED_CODED_SIZE.width,
+     "coded width should cover the addressable domain");
+  is(frame.codedHeight, EXPECTED_CODED_SIZE.height,
+     "coded height should cover the addressable domain");
+  is(visibleRect.x, EXPECTED_VISIBLE_RECT.x,
+     "visibleRect should preserve the picture x offset");
+  is(visibleRect.y, EXPECTED_VISIBLE_RECT.y,
+     "visibleRect should preserve the picture y offset");
+  is(visibleRect.width, EXPECTED_VISIBLE_RECT.width,
+     "visibleRect should preserve the picture width");
+  is(visibleRect.height, EXPECTED_VISIBLE_RECT.height,
+     "visibleRect should preserve the picture height");
+
+  ok(visibleRect.x + visibleRect.width <= frame.codedWidth,
+     `visibleRect must fit in codedWidth: ${visibleRect.x} + ` +
+     `${visibleRect.width} <= ${frame.codedWidth}`);
+  ok(visibleRect.y + visibleRect.height <= frame.codedHeight,
+     `visibleRect must fit in codedHeight: ${visibleRect.y} + ` +
+     `${visibleRect.height} <= ${frame.codedHeight}`);
+
+  const expectedI420ByteLength =
+    visibleRect.width * visibleRect.height * 3 / 2;
+  const visibleByteLength = frame.allocationSize();
+  is(visibleByteLength, expectedI420ByteLength,
+     "an I420 copy should be one luma plane plus two half-sized chroma planes");
+
+  // Compare every sample copied from the visible region with the sample at
+  // its visibleRect offset in a full coded-domain copy. The keyframe border
+  // makes an incorrect zero-origin copy observable in each Y, U, and V plane.
+  const visiblePixels = new Uint8Array(visibleByteLength);
+  const visiblePlaneLayouts = await frame.copyTo(visiblePixels);
+  is(visiblePlaneLayouts.length, 3,
+     "an I420 copy should report three planes");
+
+  const codedCopyOptions = { rect: frame.codedRect };
+  const codedPixels =
+    new Uint8Array(frame.allocationSize(codedCopyOptions));
+  const codedPlaneLayouts = await frame.copyTo(codedPixels, codedCopyOptions);
+  is(codedPlaneLayouts.length, 3,
+     "an I420 coded-domain copy should report three planes");
+
+  assertPlaneMatchesCodedCrop(visiblePixels, visiblePlaneLayouts[0],
+                              codedPixels, codedPlaneLayouts[0],
+                              visibleRect, "Y", 1);
+  assertPlaneMatchesCodedCrop(visiblePixels, visiblePlaneLayouts[1],
+                              codedPixels, codedPlaneLayouts[1],
+                              visibleRect, "U", 2);
+  assertPlaneMatchesCodedCrop(visiblePixels, visiblePlaneLayouts[2],
+                              codedPixels, codedPlaneLayouts[2],
+                              visibleRect, "V", 2);
+
+  for (const derivedFrame of [
+    frame.clone(),
+    new VideoFrame(frame, { alpha: "discard" }),
+  ]) {
+    is(derivedFrame.codedWidth, EXPECTED_CODED_SIZE.width,
+       "derived frame should preserve coded width");
+    is(derivedFrame.codedHeight, EXPECTED_CODED_SIZE.height,
+       "derived frame should preserve coded height");
+    is(derivedFrame.visibleRect.x, EXPECTED_VISIBLE_RECT.x,
+       "derived frame should preserve visible x");
+    is(derivedFrame.visibleRect.y, EXPECTED_VISIBLE_RECT.y,
+       "derived frame should preserve visible y");
+    derivedFrame.close();
+  }
+
+  const transferableFrame = frame.clone();
+  const transferredFrame =
+    structuredClone(transferableFrame, { transfer: [transferableFrame] });
+  is(transferredFrame.codedWidth, EXPECTED_CODED_SIZE.width,
+     "transfer should preserve coded width");
+  is(transferredFrame.visibleRect.x, EXPECTED_VISIBLE_RECT.x,
+     "transfer should preserve visible x");
+  transferredFrame.close();
+
+  frame.close();
+});
+</script>
+</body>
+</html>

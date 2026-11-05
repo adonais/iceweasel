@@ -1032,6 +1032,9 @@ add_test(function test_helpers_open_sync_preferences() {
 add_task(async function test_helpers_getFxAStatus_engines_oauth() {
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
+      keys: {
+        hasKeysForScope: () => Promise.resolve(true),
+      },
       _internal: {
         getUserAccountData() {
           return Promise.resolve({
@@ -1118,6 +1121,87 @@ add_task(async function test_helpers_getFxAStatus_pairing_capabilities() {
   Services.prefs.clearUserPref(PREF_PAIRING_VERSION);
 });
 
+add_task(async function test_helpers_getFxAStatus_has_sync_key() {
+  let requestedScopes = [];
+  let hasSyncKey = true;
+  let helpers = new FxAccountsWebChannelHelpers({
+    fxAccounts: {
+      keys: {
+        hasKeysForScope: scope => {
+          requestedScopes.push(scope);
+          return Promise.resolve(hasSyncKey);
+        },
+      },
+      _internal: {
+        getUserAccountData() {
+          return Promise.resolve({
+            email: "testuser@testuser.com",
+            sessionToken: "sessionToken",
+            uid: "uid",
+            verified: true,
+          });
+        },
+      },
+    },
+    privateBrowsingUtils: {
+      isBrowserPrivate: () => false,
+    },
+  });
+
+  let { signedInUser } = await helpers.getFxaStatus("sync", mockSendingContext);
+  Assert.strictEqual(signedInUser.hasSyncKey, true, "reports the sync key");
+  Assert.deepEqual(requestedScopes, [SCOPE_APP_SYNC], "checks the sync scope");
+  Assert.strictEqual(
+    signedInUser.primaryPasswordLocked,
+    false,
+    "no Primary Password is set"
+  );
+
+  hasSyncKey = false;
+  ({ signedInUser } = await helpers.getFxaStatus("sync", mockSendingContext));
+  Assert.strictEqual(
+    signedInUser.hasSyncKey,
+    false,
+    "reports the missing sync key"
+  );
+});
+
+add_task(async function test_helpers_getFxAStatus_primary_password_locked() {
+  let helpers = new FxAccountsWebChannelHelpers({
+    fxAccounts: {
+      keys: {
+        hasKeysForScope: () => Promise.resolve(false),
+      },
+      _internal: {
+        getUserAccountData() {
+          return Promise.resolve({
+            email: "testuser@testuser.com",
+            sessionToken: "sessionToken",
+            uid: "uid",
+            verified: true,
+          });
+        },
+      },
+    },
+    privateBrowsingUtils: {
+      isBrowserPrivate: () => false,
+    },
+  });
+  helpers._isPrimaryPasswordLocked = () => true;
+
+  let { signedInUser } = await helpers.getFxaStatus("sync", mockSendingContext);
+  Assert.strictEqual(
+    signedInUser.primaryPasswordLocked,
+    true,
+    "reports the locked Primary Password"
+  );
+  Assert.strictEqual(
+    signedInUser.hasSyncKey,
+    false,
+    "the sync key is unreadable while locked"
+  );
+});
+
 add_task(async function test_helpers_getFxaStatus_allowed_signedInUser() {
   let wasCalled = {
     getUserAccountData: false,
@@ -1126,6 +1210,9 @@ add_task(async function test_helpers_getFxaStatus_allowed_signedInUser() {
 
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
+      keys: {
+        hasKeysForScope: () => Promise.resolve(true),
+      },
       _internal: {
         getUserAccountData() {
           wasCalled.getUserAccountData = true;

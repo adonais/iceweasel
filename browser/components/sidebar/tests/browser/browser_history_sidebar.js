@@ -689,6 +689,23 @@ add_task(async function test_history_context_menu() {
   await hidden;
   await promiseTabOpened;
 
+  info("Open new container tab should be hidden if containers are disabled");
+  Services.prefs.setBoolPref("privacy.userContext.enabled", false);
+  info("Containers are now disabled");
+  rows[0].mainEl.scrollIntoView();
+  await shown;
+  containerContextMenu = window.document.getElementById(
+    "sidebar-history-context-menu-container-tab"
+  );
+  Assert.equal(
+    false,
+    BrowserTestUtils.isVisible(containerContextMenu),
+    "Open new tab in container is hidden"
+  );
+  await hidden;
+  Services.prefs.setBoolPref("privacy.userContext.enabled", true);
+  info("Containers are now enabled");
+
   info("Add new bookmark");
   const bookmarkURL = rows[0].mainEl.href;
   let bookmarkName;

@@ -17,11 +17,11 @@ CUSTOM_CAR_TASKS = [
 @transforms.add
 def add_custom_car_optimization(config, tasks):
     for task in tasks:
-        if task.get("name") not in CUSTOM_CAR_TASKS:
+        task_name = task["label"].removeprefix(f"{config.kind}-")
+        if task_name not in CUSTOM_CAR_TASKS:
             yield task
             continue
 
-        task_name = task["name"]
         trust_domain = config.graph_config["trust-domain"]
         level = config.params["level"]
 

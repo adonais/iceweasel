@@ -113,7 +113,7 @@ def test_reuse_with_same_extra_args(geckodriver):
 
 
 def test_restart_with_extra_env(geckodriver):
-    driver = geckodriver(extra_env={"MOZ_LOG": "1"})
+    driver = geckodriver(extra_env={"GECKODRIVER_DUMMY_ENV": "1"})
     driver.new_session()
 
     assert driver.proc.pid != _state["geckodriver_pid"]
@@ -126,7 +126,7 @@ def test_restart_with_extra_env(geckodriver):
 
 
 def test_reuse_with_same_extra_env(geckodriver):
-    driver = geckodriver(extra_env={"MOZ_LOG": "1"})
+    driver = geckodriver(extra_env={"GECKODRIVER_DUMMY_ENV": "1"})
     driver.new_session()
 
     assert driver.proc.pid == _state["geckodriver_pid"]

@@ -13,7 +13,9 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CanvasRenderingContext2DBinding.h"
 #include "mozilla/dom/ImageDataBinding.h"
 #include "nsCycleCollectionNoteChild.h"
 
@@ -59,11 +61,16 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_BEGIN(ImageData)
   return tmp->HasKnownLiveWrapper();
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_END
 
+static PredefinedColorSpace GetColorSpaceFromSettings(
+    const ImageDataSettings& aSettings) {
+  return aSettings.mColorSpace.WasPassed() ? aSettings.mColorSpace.Value()
+                                           : PredefinedColorSpace::Srgb;
+}
+
 // static
-already_AddRefed<ImageData> ImageData::Constructor(const GlobalObject& aGlobal,
-                                                   const uint32_t aWidth,
-                                                   const uint32_t aHeight,
-                                                   ErrorResult& aRv) {
+already_AddRefed<ImageData> ImageData::Constructor(
+    const GlobalObject& aGlobal, const uint32_t aWidth, const uint32_t aHeight,
+    const ImageDataSettings& aSettings, ErrorResult& aRv) {
   if (aWidth == 0 || aHeight == 0) {
     aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
     return nullptr;
@@ -82,8 +89,11 @@ already_AddRefed<ImageData> ImageData::Constructor(const GlobalObject& aGlobal,
   if (aRv.Failed()) {
     return nullptr;
   }
+
+  PredefinedColorSpace colorSpace = GetColorSpaceFromSettings(aSettings);
+
   RefPtr<ImageData> imageData =
-      new ImageData(aGlobal.GetAsSupports(), aWidth, aHeight, data);
+      new ImageData(aGlobal.GetAsSupports(), aWidth, aHeight, colorSpace, data);
   return imageData.forget();
 }
 
@@ -91,7 +101,7 @@ already_AddRefed<ImageData> ImageData::Constructor(const GlobalObject& aGlobal,
 already_AddRefed<ImageData> ImageData::Constructor(
     const GlobalObject& aGlobal, const Uint8ClampedArray& aData,
     const uint32_t aWidth, const Optional<uint32_t>& aHeight,
-    ErrorResult& aRv) {
+    const ImageDataSettings& aSettings, ErrorResult& aRv) {
   Maybe<uint32_t> maybeLength = aData.ProcessData(
       [&](const Span<uint8_t>& aData, JS::AutoCheckCannotGC&& nogc) {
         return Some(aData.Length());
@@ -113,9 +123,11 @@ already_AddRefed<ImageData> ImageData::Constructor(
     return nullptr;
   }
 
+  PredefinedColorSpace colorSpace = GetColorSpaceFromSettings(aSettings);
+
   JS::Rooted<JSObject*> dataObj(aGlobal.Context(), aData.Obj());
-  RefPtr<ImageData> imageData =
-      new ImageData(aGlobal.GetAsSupports(), aWidth, height, dataObj);
+  RefPtr<ImageData> imageData = new ImageData(aGlobal.GetAsSupports(), aWidth,
+                                              height, colorSpace, dataObj);
   return imageData.forget();
 }
 
@@ -140,10 +152,21 @@ already_AddRefed<ImageData> ImageData::ReadStructuredClone(
   // Read the information out of the stream.
   uint32_t width, height;
   JS::Rooted<JS::Value> dataArray(aCx);
+  uint32_t cs, reserved;
   if (!JS_ReadUint32Pair(aReader, &width, &height) ||
+      !JS_ReadUint32Pair(aReader, &cs, &reserved) ||
       !JS_ReadTypedArray(aReader, &dataArray)) {
     return nullptr;
   }
+
+  // we might as well be reading an incompatible old format version
+  // so double check if its in a valid range within the enum
+  if (cs > static_cast<uint32_t>(
+               MaxContiguousEnumValue<PredefinedColorSpace>::value)) {
+    return nullptr;
+  }
+
+  auto colorSpace = static_cast<PredefinedColorSpace>(cs);
 
   JS::Rooted<JSObject*> dataObj(aCx, &dataArray.toObject());
   RootedSpiderMonkeyInterface<Uint8ClampedArray> data(aCx);
@@ -166,7 +189,8 @@ already_AddRefed<ImageData> ImageData::ReadStructuredClone(
     return nullptr;
   }
 
-  RefPtr<ImageData> imageData = new ImageData(aGlobal, width, height, dataObj);
+  RefPtr<ImageData> imageData =
+      new ImageData(aGlobal, width, height, colorSpace, dataObj);
   return imageData.forget();
 }
 
@@ -178,6 +202,7 @@ bool ImageData::WriteStructuredClone(JSContext* aCx,
   }
 
   return JS_WriteUint32Pair(aWriter, Width(), Height()) &&
+         JS_WriteUint32Pair(aWriter, static_cast<uint32_t>(mColorSpace), 0) &&
          JS_WriteTypedArray(aWriter, arrayValue);
 }
 

@@ -110,9 +110,12 @@ class ProfileBuffer final {
   // Find (via |aLastSample|) the most recent sample for the thread denoted by
   // |aThreadId| and clone it, patching in the current time as appropriate.
   // Mutate |aLastSample| to point to the newly inserted sample.
+  // |aLastSampleHasJitReturnAddrs| says whether the last sample contains
+  // JitReturnAddr entries; such a sample is never copied, see the definition.
   // Returns whether duplication was successful.
   bool DuplicateLastSample(ProfilerThreadId aThreadId, double aSampleTimeMs,
                            mozilla::Maybe<uint64_t>& aLastSample,
+                           bool aLastSampleHasJitReturnAddrs,
                            const RunningTimes& aRunningTimes);
 
   void DiscardSamplesBeforeTime(double aTime);
@@ -275,10 +278,13 @@ class ProfileBufferCollector final : public ProfilerStackCollector {
   virtual void CollectProfilingStackFrame(
       const js::ProfilingStackFrame& aFrame) override;
 
+  bool HasCollectedJitReturnAddr() const { return mHasCollectedJitReturnAddr; }
+
  private:
   ProfileBuffer& mBuf;
   uint64_t mSamplePositionInBuffer;
   uint64_t mBufferRangeStart;
+  bool mHasCollectedJitReturnAddr = false;
 };
 
 #endif

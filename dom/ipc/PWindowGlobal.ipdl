@@ -36,6 +36,7 @@ include "mozilla/layers/LayersMessageUtils.h";
 using mozilla::dom::JSActorMessageKind from "mozilla/dom/JSActor.h";
 using mozilla::gfx::IntRect from "mozilla/gfx/Rect.h";
 using mozilla::CSSSize from "Units.h";
+using mozilla::CSSPoint from "Units.h";
 using mozilla::gfx::CrossProcessPaintFlags from "mozilla/gfx/CrossProcessPaint.h";
 [MoveOnly] using mozilla::gfx::PaintFragment from "mozilla/gfx/CrossProcessPaint.h";
 using nscolor from "nsColor.h";
@@ -136,6 +137,8 @@ parent:
 
   async InternalLoad(nsDocShellLoadState aLoadState);
 
+  async AddSecurityState(uint32_t aStateFlags);
+
   /// Update the URI of the document in this WindowGlobal.
   [LazySend] async UpdateDocumentURI(nsIURI aUri);
 
@@ -151,6 +154,10 @@ parent:
 
   // Update document's `documentHasLoaded` bit in this WindowGlobal.
   [LazySend] async UpdateDocumentHasLoaded(bool aDocumentHasLoaded);
+
+  // Whether the document has a @view-transition rule with navigation: auto,
+  // so that the parent delays the commit only for such documents.
+  [LazySend] async SetMayHaveViewTransitionOptIn(bool aMayHave);
 
   // Update document's 'documentHasUserInteracted' bit in this WindowGlobal.
   [LazySend] async UpdateDocumentHasUserInteracted(bool aDocumentHasUserInteracted);
@@ -288,11 +295,11 @@ child:
   async GetModelContextTools() returns (nsresult rv, IPCModelContextToolDefinition[] tools);
 
   /**
-   * Request full content size of the top document's root element in CSS pixels,
-   * and the document's window.devicePixelRatio.
+   * Request the full content size of the top document's root element and its
+   * current scroll offset (both in CSS pixels), and window.devicePixelRatio.
    */
   async GetContentMetrics()
-      returns (CSSSize size, float devicePixelRatio);
+      returns (CSSSize size, float devicePixelRatio, CSSPoint scrollOffset);
 
   async InvokeModelContextTool(nsCString toolName, StructuredCloneData input)
       returns (CopyableErrorResult rv, nullable StructuredCloneData output);

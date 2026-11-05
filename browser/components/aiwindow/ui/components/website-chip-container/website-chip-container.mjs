@@ -127,6 +127,7 @@ export class WebsiteChipContainer extends SmartwindowOverflowRowMixin(
       .iconSrc=${website.iconSrc ?? ""}
       .isTabGroup=${website.type == CONTEXT_MENTION_TYPE.TAB_GROUP}
       .tabGroupColor=${website.color ?? ""}
+      .tabGroupId=${website.groupId ?? ""}
       .removable=${this.removable}
       @ai-website-chip:remove=${e => this.#onRemoveWebsite(website, e)}
     ></ai-website-chip>`;

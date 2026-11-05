@@ -595,7 +595,7 @@ del:lang(zh),
 strike:lang(ja),
 strike:lang(ko),
 strike:lang(zh) {
-  /* stylelint-disable-next-line */
+  /* stylelint-disable-next-line property-no-unknown */
   text-decoration-inset: auto;
 }
 

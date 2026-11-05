@@ -42,13 +42,7 @@ async function createServer() {
 }
 
 let IP1 = "127.0.0.1";
-let IP2 = "127.0.0.2";
-if (AppConstants.platform == "macosx") {
-  // OSX doesn't use 127.0.0.2 as a local interface
-  IP2 = "::1";
-} else if (AppConstants.platform == "android") {
-  IP2 = "10.0.2.2";
-}
+let IP2 = AppConstants.platform == "android" ? "10.0.2.2" : "::1";
 
 async function openChan(uri) {
   let chan = NetUtil.newChannel({

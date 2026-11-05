@@ -8,6 +8,7 @@ import {
   ImpressionStats,
   INTERSECTION_RATIO,
 } from "content-src/components/DiscoveryStreamImpressionStats/ImpressionStats";
+import { SpaceActiveContext } from "content-src/lib/SpaceActiveContext";
 
 describe("<ImpressionStats>", () => {
   const SOURCE = "TEST_SOURCE";
@@ -427,6 +428,25 @@ describe("<ImpressionStats>", () => {
     setIsActive(false);
     setIsActive(true);
     ref.current.impressionObserver.callback(FullIntersectEntries);
+
+    expect(impressionCount(dispatch)).toBe(1);
+  });
+
+  it("should send an impression only once its space is active", () => {
+    const dispatch = jest.fn();
+    const element = spaceActive => (
+      <SpaceActiveContext.Provider value={spaceActive}>
+        <ImpressionStats {...DEFAULT_PROPS} dispatch={dispatch}>
+          <InnerEl />
+        </ImpressionStats>
+      </SpaceActiveContext.Provider>
+    );
+    const { rerender } = render(element(false));
+
+    // A peeked space is in view without being seen.
+    expect(impressionCount(dispatch)).toBe(0);
+
+    rerender(element(true));
 
     expect(impressionCount(dispatch)).toBe(1);
   });

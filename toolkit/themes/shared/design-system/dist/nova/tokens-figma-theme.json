@@ -474,11 +474,6 @@
     "dark": "{Theme$popup/background/color}",
     "forcedColors": "{Theme$popup/background/color}"
   },
-  "panel/border/color": {
-    "light": "{Theme$popup/border/color}",
-    "dark": "{Theme$popup/border/color}",
-    "forcedColors": "{Theme$popup/border/color}"
-  },
   "panel/text/color": {
     "light": "{Theme$text/color}",
     "dark": "{Theme$text/color}",
@@ -504,11 +499,6 @@
     "dark": "{Colors$color/gray/60}",
     "forcedColors": "{HCM Theme$ButtonText}"
   },
-  "toolbar/field/background/color": {
-    "light": "{Theme$toolbar/background/color}",
-    "dark": "{Theme$toolbar/background/color}",
-    "forcedColors": "{Theme$toolbar/background/color}"
-  },
   "toolbar/field/background/color/focus": {
     "light": "{Theme$background/color/box}",
     "dark": "{Theme$background/color/box}",
@@ -528,6 +518,11 @@
     "light": "{Theme$focus/outline/color}",
     "dark": "{Theme$focus/outline/color}",
     "forcedColors": "{Theme$focus/outline/color}"
+  },
+  "toolbar/field/background/color": {
+    "light": "{Colors$color/white/alpha/40}",
+    "dark": "{Colors$color/black/alpha/20}",
+    "forcedColors": "{HCM Theme$Field}"
   },
   "toolbar/background/color": {
     "light": "rgba(255, 255, 255, 0.4)",
@@ -564,6 +559,11 @@
     "dark": "{Theme$toolbarbutton/outline/color/active}",
     "forcedColors": "{Theme$toolbarbutton/outline/color/active}"
   },
+  "toolbarbutton/outline/color/disabled": {
+    "light": "transparent",
+    "dark": "transparent",
+    "forcedColors": "{Theme$button/border/color/disabled}"
+  },
   "toolbarbutton/outline/color/hover": {
     "light": "transparent",
     "dark": "transparent",
@@ -578,16 +578,6 @@
     "light": "transparent",
     "dark": "transparent",
     "forcedColors": "transparent"
-  },
-  "toolbox/background/color/gradient-leading": {
-    "light": "{Colors$color/violet/10}",
-    "dark": "{Colors$color/violet-desaturated/70}",
-    "forcedColors": "{HCM Theme$Canvas}"
-  },
-  "toolbox/background/color/gradient-trailing": {
-    "light": "{Colors$color/orange/10}",
-    "dark": "{Colors$color/orange/70}",
-    "forcedColors": "{HCM Theme$Canvas}"
   },
   "toolbox/text/color": {
     "light": "{Theme$text/color}",
@@ -605,9 +595,19 @@
     "forcedColors": "transparent"
   },
   "toolbox/background/gradient": {
-    "light": "linear-gradient(96deg, color-mix({Primitives$toolbox/background/color/gradient-leading} 50%, transparent) 39.84%, color-mix({Primitives$toolbox/background/color/gradient-trailing} 50%, transparent) 101.72%)",
-    "dark": "linear-gradient(96deg, color-mix({Primitives$toolbox/background/color/gradient-leading} 50%, transparent) 39.84%, color-mix({Primitives$toolbox/background/color/gradient-trailing} 50%, transparent) 101.72%)",
+    "light": "linear-gradient(96deg, color-mix({Theme$toolbox/background/gradient/leading} 50%, transparent) 39.84%, color-mix({Theme$toolbox/background/gradient/trailing} 50%, transparent) 101.72%)",
+    "dark": "linear-gradient(96deg, color-mix({Theme$toolbox/background/gradient/leading} 50%, transparent) 39.84%, color-mix({Theme$toolbox/background/gradient/trailing} 50%, transparent) 101.72%)",
     "forcedColors": "image(transparent)"
+  },
+  "toolbox/background/gradient/leading": {
+    "light": "{Colors$color/violet/10}",
+    "dark": "{Colors$color/violet-desaturated/70}",
+    "forcedColors": "{HCM Theme$Canvas}"
+  },
+  "toolbox/background/gradient/trailing": {
+    "light": "{Colors$color/orange/10}",
+    "dark": "{Colors$color/orange/70}",
+    "forcedColors": "{HCM Theme$Canvas}"
   },
   "badge/background/color/filled": {
     "light": "{Colors$color/green/50}",

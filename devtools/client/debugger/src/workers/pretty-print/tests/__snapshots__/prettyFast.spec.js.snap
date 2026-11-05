@@ -651,6 +651,21 @@ exports[`Dot handling with let which is identifier name 2`] = `
 ]
 `;
 
+exports[`Double quotes inside single quoted strings 1`] = `
+"var foo = 'say "hi"';
+"
+`;
+
+exports[`Double quotes inside single quoted strings 2`] = `
+[
+  "(1, 0) -> (1, 0)",
+  "(1, 4) -> (1, 4)",
+  "(1, 8) -> (1, 8)",
+  "(1, 10) -> (1, 10)",
+  "(1, 20) -> (1, 20)",
+]
+`;
+
 exports[`Empty object/array literals 1`] = `
 "let a = [];
 const b = {};
@@ -789,6 +804,17 @@ exports[`Escaping carriage return in template strings 2`] = `
 ]
 `;
 
+exports[`Escaping double quote character in double quoted strings 1`] = `
+""\\""
+"
+`;
+
+exports[`Escaping double quote character in double quoted strings 2`] = `
+[
+  "(1, 0) -> (1, 0)",
+]
+`;
+
 exports[`Escaping form feed in strings 1`] = `
 "'\\f'
 "
@@ -913,7 +939,7 @@ exports[`False assignment 2`] = `
 
 exports[`Fat arrow function 1`] = `
 "const a = () => 42
-addEventListener('click', e => {
+addEventListener("click", e => {
   return false
 });
 const sum = (c, d) => c + d
@@ -1196,6 +1222,25 @@ exports[`Instanceof 2`] = `
 ]
 `;
 
+exports[`Keeping double quotes around strings 1`] = `
+"var foo = "abc" + 'def' + "it's";
+"
+`;
+
+exports[`Keeping double quotes around strings 2`] = `
+[
+  "(1, 0) -> (1, 0)",
+  "(1, 4) -> (1, 4)",
+  "(1, 8) -> (1, 8)",
+  "(1, 10) -> (1, 10)",
+  "(1, 16) -> (1, 16)",
+  "(1, 18) -> (1, 18)",
+  "(1, 24) -> (1, 24)",
+  "(1, 26) -> (1, 26)",
+  "(1, 32) -> (1, 32)",
+]
+`;
+
 exports[`Let handling with value 1`] = `
 "let d = 'yes';
 "
@@ -1232,7 +1277,7 @@ exports[`Long parenthesis 1`] = `
 ) {
   (
     thisIsAnotherOne = thisMayReturnNull() ||
-    'hi',
+    "hi",
     thisIsAVeryLongVariable = 42,
     yetAnotherVeryLongVariable &&
     doSomething(
@@ -1250,7 +1295,7 @@ for (
 ) {
 }
 const x = ({
-  thisIsAnotherVeryLongPropertyName: 'but should not cause the paren to be a line delimiter'
+  thisIsAnotherVeryLongPropertyName: "but should not cause the paren to be a line delimiter"
 })
 "
 `;
@@ -1582,7 +1627,7 @@ exports[`Private fields parsing support 1`] = `
     this.ab = this.#getAB();
   }
   #a
-  #b = 'default value'
+  #b = "default value"
   static #someStaticPrivate
   #getA() {
     return this.#a;
@@ -1778,7 +1823,7 @@ exports[`Stack-keyword property access 2`] = `
 `;
 
 exports[`String with quote 1`] = `
-"var foo = '\\'';
+"var foo = "'";
 "
 `;
 
@@ -1788,7 +1833,7 @@ exports[`String with quote 2`] = `
   "(1, 4) -> (1, 4)",
   "(1, 8) -> (1, 8)",
   "(1, 10) -> (1, 10)",
-  "(1, 14) -> (1, 13)",
+  "(1, 13) -> (1, 13)",
 ]
 `;
 

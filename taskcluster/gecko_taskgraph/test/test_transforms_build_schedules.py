@@ -15,6 +15,12 @@ from gecko_taskgraph.transforms.build_schedules import set_build_schedules_optim
             id="build",
         ),
         pytest.param(
+            "build",
+            {"attributes": {"build_platform": "ios/opt"}},
+            {"build": ["ios"]},
+            id="build-ios",
+        ),
+        pytest.param(
             "build-components",
             {},
             {"build": ["android", "fenix", "focus-android"]},

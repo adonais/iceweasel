@@ -393,6 +393,7 @@ void pages_decommit(void* aAddr, size_t aSize) {
   return true;
 }
 
+#ifndef XP_WIN
 // Purge and release the pages in the chunk of length `length` at `addr` to
 // the OS.
 // Pages are guaranteed to be full of zeroes when the
@@ -400,6 +401,7 @@ void pages_decommit(void* aAddr, size_t aSize) {
 static void pages_purge(void* addr, size_t length) {
   pages_decommit(addr, length);
 }
+#endif
 
 // pages_trim, pages_mmap_aligned_slow and pages_mmap_aligned were
 // cherry-picked from upstream jemalloc 3.4.1 to fix Mozilla bug 956501.

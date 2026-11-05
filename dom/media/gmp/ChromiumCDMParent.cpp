@@ -1136,9 +1136,12 @@ void ChromiumCDMParent::ActorDestroy(ActorDestroyReason aWhy) {
                 fmt::ptr(this), static_cast<int>(aWhy));
   MOZ_ASSERT(!mActorDestroyed);
   mActorDestroyed = true;
-  // Shutdown() will clear mCDMCallback, so let's keep a reference for later
-  // use.
-  auto callback = mCDMCallback;
+  mAbnormalShutdown = (aWhy == AbnormalShutdown);
+  // Terminated() must be dispatched before Shutdown() asks the proxy to shut
+  // down, because the proxy drops its MediaKeys reference when it does.
+  if (mAbnormalShutdown && mCDMCallback) {
+    mCDMCallback->Terminated();
+  }
   if (!mIsShutdown) {
     // Plugin crash.
     MOZ_ASSERT(aWhy == AbnormalShutdown);
@@ -1149,10 +1152,6 @@ void ChromiumCDMParent::ActorDestroy(ActorDestroyReason aWhy) {
   if (mContentParent) {
     mContentParent->ChromiumCDMDestroyed(this);
     mContentParent = nullptr;
-  }
-  mAbnormalShutdown = (aWhy == AbnormalShutdown);
-  if (mAbnormalShutdown && callback) {
-    callback->Terminated();
   }
   MaybeDisconnect(mAbnormalShutdown);
 }

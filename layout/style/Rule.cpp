@@ -147,4 +147,8 @@ auto Rule::GetContainingRuleStateForParsing() const -> ContainingRuleState {
   return result;
 }
 
+bool Rule::SupportsDeclarations() {
+  return Servo_RuleType_Supports_Declarations(Type());
+}
+
 }  // namespace mozilla::css

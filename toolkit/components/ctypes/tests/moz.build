@@ -33,3 +33,9 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
 
 if CONFIG["CC_TYPE"] in ("clang", "clang-cl"):
     CXXFLAGS += ["-Wno-varargs"]
+
+SOURCE_HEADERS += [
+    "jsctypes-test-errno.h",
+    "jsctypes-test-finalizer.h",
+    "jsctypes-test.h",
+]

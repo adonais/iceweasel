@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test Page with non-ASCII External JS</title>
+  <script src="utf8_external_script.js"></script>
+</head>
+<body>
+  <script>
+    window.onload = function() {
+      utf8ExternalFunction();
+    };
+  </script>
+</body>
+</html>

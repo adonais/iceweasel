@@ -1689,13 +1689,11 @@ void nsFrameSelection::PopulateHighlightSelection(
   AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__);
   selectionBatcher.AddFrameSelection(this);
   const Document* doc = GetPresShell()->GetDocument();
-  for (const RefPtr<AbstractRange>& range : aHighlight.Ranges()) {
+  for (const auto& entry : aHighlight.Setlike()) {
+    const RefPtr<AbstractRange> range = entry;
     const Document* rangeDoc = range->GetComposedDocOfContainers();
     if (!rangeDoc || rangeDoc == doc) {
-      // since this is run in a context guarded by a selection batcher,
-      // no strong reference is needed to keep `range` alive.
-      aSelection.AddHighlightRangeAndSelectFramesAndNotifyListeners(
-          MOZ_KnownLive(*range));
+      aSelection.AddHighlightRangeAndSelectFramesAndNotifyListeners(*range);
     }
   }
 }

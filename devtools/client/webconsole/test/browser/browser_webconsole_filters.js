@@ -6,11 +6,10 @@
 "use strict";
 
 const TEST_URI =
-  "http://example.com/browser/devtools/client/webconsole/" +
+  "https://example.com/browser/devtools/client/webconsole/" +
   "test/browser/test-console-filters.html";
 
 add_task(async function () {
-  await pushPref("dom.security.https_first", false);
   const hud = await openNewTabAndConsole(TEST_URI);
 
   const filterState = await getFilterState(hud);

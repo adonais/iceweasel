@@ -57,10 +57,6 @@ $split-screen-min-height: 280px;
     width: 100%;
     max-width: none;
     min-width: 0;
-
-    @media only screen and (width <= 890px) and (width >= 788px) {
-      width: 80%;
-    }
   }
 
   // Both classes come from MultistageWithDismiss, which only sets them when
@@ -69,28 +65,42 @@ $split-screen-min-height: 280px;
   &.card-stack-animated:not(.card-stack-exiting)
   .onboardingContainer:not(.transition-out)
   .screen[pos='card-stack'] {
-    animation: card-stack-enter var(--card-stack-duration) ease-out;
+    // The whole stack rises into place when the message first appears.
+    &[initial-card] {
+      .card-stack-front,
+      .section-secondary,
+      .section-main {
+        animation: card-stack-enter var(--card-stack-duration) ease-out;
+      }
 
-    &::before {
-      animation: card-stack-layer-1 var(--card-stack-duration) ease-out reverse;
+      .card-stack-layer-1 {
+        animation: card-stack-layer-1 var(--card-stack-duration) ease-out reverse;
+      }
+
+      .card-stack-layer-2 {
+        animation: card-stack-layer-2 var(--card-stack-duration) ease-out reverse;
+      }
     }
 
-    &::after {
-      animation: card-stack-layer-2 var(--card-stack-duration) ease-out reverse;
+    // Later screens find the stack already in place from the previous exit,
+    // so only their content fades in.
+    &:not([initial-card]) {
+      .section-secondary,
+      .section-main {
+        animation: card-stack-content-enter var(--card-stack-content-duration) ease-out;
+      }
     }
   }
 
   // Dismissing tears the message down rather than advancing it, so there is
-  // no transition-out class to hook.
+  // no transition-out class to hook, and the whole stack leaves together.
   &.card-stack-exiting .screen[pos='card-stack'] {
-    animation: card-stack-exit var(--card-stack-duration) ease-in forwards;
+    animation: card-stack-exit var(--card-stack-duration) var(--card-stack-exit-easing) forwards;
 
-    &::before {
-      animation: card-stack-layer-1 var(--card-stack-duration) ease-in forwards;
-    }
-
-    &::after {
-      animation: card-stack-layer-2 var(--card-stack-duration) ease-in forwards;
+    // The final card fades in place, so it doesn't move against the newtab
+    // content sliding up to take its place.
+    &:not(:has(.card-stack-layer-1)) {
+      animation-name: card-stack-fade-out;
     }
   }
 

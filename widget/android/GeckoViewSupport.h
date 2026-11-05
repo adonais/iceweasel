@@ -32,13 +32,13 @@ class GeckoViewSupport final
 
   template <typename Functor>
   static void OnNativeCall(Functor&& aCall) {
-    NS_DispatchToMainThread(new WindowEvent<Functor>(std::move(aCall)));
+    NS_DispatchToMainThread(
+        new WindowEvent<Functor>(std::forward<Functor>(aCall)));
   }
 
   GeckoViewSupport(nsWindow* aWindow,
                    const java::GeckoSession::Window::LocalRef& aInstance,
-                   nsPIDOMWindowOuter* aDOMWindow)
-      : mWindow(aWindow), mGeckoViewWindow(aInstance), mDOMWindow(aDOMWindow) {}
+                   nsPIDOMWindowOuter* aDOMWindow);
 
   ~GeckoViewSupport();
 
@@ -120,6 +120,14 @@ class GeckoViewSupport final
                              jni::Object::Param aTarget, int32_t aX, int32_t aY,
                              int32_t aWidth, int32_t aHeight,
                              float aRenderingScale);
+
+  // Capture a content region (CSS pixels, scaled by aScale) directly into an
+  // Android Surface. Used by the scroll capture (long screenshot) path.
+  void RequestRegionToSurface(const java::GeckoSession::Window::LocalRef& inst,
+                              jni::Object::Param aResult,
+                              jni::Object::Param aSurface, int32_t aX,
+                              int32_t aY, int32_t aWidth, int32_t aHeight,
+                              float aScale);
 
   // Query content for the top document's scroll size (in CSS pixels)
   // and device pixel ratio (for calculating the size in device pixels)

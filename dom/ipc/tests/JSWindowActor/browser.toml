@@ -1,14 +1,12 @@
 [DEFAULT]
 support-files = ["head.js"]
+prefs = ["dom.quota_exceeded_error.enabled=true"]
 
 ["browser_contentWindow.js"]
 
 ["browser_crash_report.js"]
 
 ["browser_destroy_callbacks.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1604538
-]
 
 ["browser_event_listener.js"]
 support-files = ["file_dummyChromePage.html"]

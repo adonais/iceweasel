@@ -296,7 +296,7 @@ add_task(async function test_get_user_memories_returns_summaries_in_order() {
     "get_user_memories tracks no URLs; only the implicit about:blank mention."
   );
 
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await BrowserTestUtils.closeWindow(win);
 });
@@ -332,7 +332,7 @@ add_task(async function test_get_user_memories_empty_store() {
     "untrustedInput stays false with no memories."
   );
 
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await BrowserTestUtils.closeWindow(win);
 });
@@ -380,7 +380,7 @@ add_task(async function test_get_user_memories_blocked_when_disabled() {
     "untrustedInput stays false because the blocked tool never surfaced memories."
   );
 
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();

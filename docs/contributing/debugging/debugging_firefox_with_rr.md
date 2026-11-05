@@ -75,7 +75,7 @@ The trace will contain many processes, so to debug the correct one, you'll want 
 
 rr should work out of the box with multi-process Firefox. Once you have a recording you can use rr ps to show all the process that were recorded and rr replay -p \<pid> to attach to a particular process.
 
-If you want to debug a particular part of code, you can use the {code}`MOZ_DBG` macro and {code}`getpid()` function to write the process id to stderr. [MOZ_LOG](https://firefox-source-docs.mozilla.org/xpcom/logging.html) will include the pid in log messages by default.
+If you want to debug a particular part of code, you can use the {code}`MOZ_DBG` macro and {code}`getpid()` function to write the process id to stderr. [MOZ_LOG](/xpcom/logging.md) will include the pid in log messages by default.
 
 You can combine that with the -M and -g flags to jump to a particular point in a particular process's lifetime.
 

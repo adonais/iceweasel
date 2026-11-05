@@ -182,3 +182,7 @@ else:
     FINAL_TARGET_PP_FILES += [
         "greprefs.js",
     ]
+
+SOURCE_HEADERS += [
+    "SharedPrefMap.h",
+]

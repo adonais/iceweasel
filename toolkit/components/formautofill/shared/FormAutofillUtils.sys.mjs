@@ -34,7 +34,6 @@ const ADDRESSES_COLLECTION_NAME = "addresses";
 const CREDITCARDS_COLLECTION_NAME = "creditCards";
 const AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF =
   FormAutofill.AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF;
-const AUTOFILL_ML_SUCCESS_PREF = "extensions.formautofill.useml.successful";
 const AUTOFILL_ML_NATIVE_ONNX_PREF =
   "extensions.formautofill.useml.nativeOnnxAvailable";
 const MANAGE_ADDRESSES_L10N_IDS = [
@@ -201,7 +200,12 @@ FormAutofillUtils = {
    *
    * Called at field detection time (FormAutofillHeuristics.inferFieldInfo),
    * which leaves such a field unclassified so that it takes no part in
-   * autofill at all.
+   * autofill at all. Also called against the live element right before the
+   * dropdown would be offered on it directly
+   * (FormAutofillChild.shouldSearchForAutoComplete), to catch an attribute
+   * the site changes after detection (Bug 2078883). The field stays
+   * fillable from a sibling's dropdown either way -- only its own popup is
+   * withheld.
    *
    * @param {HTMLElement} element
    * @param {?AutocompleteInfo} autocompleteInfo
@@ -287,12 +291,22 @@ FormAutofillUtils = {
     );
   },
 
-  setMLUsedAlready() {
-    Services.prefs.setBoolPref(AUTOFILL_ML_SUCCESS_PREF, true);
-  },
-
   setNativeOnnxRuntimeAvailable(available) {
     Services.prefs.setBoolPref(AUTOFILL_ML_NATIVE_ONNX_PREF, available);
+  },
+
+  /**
+   * Return true if the ML inferencer is allowed to infer the field type for a
+   * field, or false if the field type has already been sufficiently determined
+   * (autocomplete or fathom) or false if there are no ML tokens for this field.
+   */
+  canUseML(fieldDetail) {
+    return (
+      fieldDetail.mlData &&
+      fieldDetail.reason != "autocomplete" &&
+      fieldDetail.reason != "fathom" &&
+      !FormAutofillUtils.mlIgnoreFieldTypes.includes(fieldDetail.fieldName)
+    );
   },
 
   /**
@@ -1645,6 +1659,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   2 * 60 * 1000
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofillUtils,
+  "useHeuristicsForOther",
+  "extensions.formautofill.useml.useHeuristicsForOther",
+  false
+);
+
 // Field types the ML model is not trusted with, parsed from the comma
 // separated pref. They are classified by the regexp-based heuristics instead.
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -1662,13 +1683,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofillUtils,
-  "isMLUsedAlready",
-  AUTOFILL_ML_SUCCESS_PREF,
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  FormAutofillUtils,
   "isNativeOnnxRuntimeAvailable",
   AUTOFILL_ML_NATIVE_ONNX_PREF,
   false
@@ -1680,6 +1694,28 @@ XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,
   "mlFeatures",
   "extensions.formautofill.useml.features",
+  "[]",
+  null,
+  value => {
+    try {
+      const list = JSON.parse(value);
+      return new Set(Array.isArray(list) ? list : []);
+    } catch {
+      return new Set();
+    }
+  }
+);
+
+// Field types whose regex-heuristic recommendation is trustworthy enough to feed
+// the model as a "**hint<class>" mlData token (the "regex_hint" mlFeature). A
+// regex prediction outside this set is emitted as "**hintnone" so the model is
+// not tempted to copy a low-precision heuristic guess. JSON array of field-name
+// keys; MUST match the hintable set the shipped model was trained with (part of
+// the model's input contract, version-locked to the model revision).
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofill,
+  "mlHintFields",
+  "extensions.formautofill.useml.hint.fields",
   "[]",
   null,
   value => {

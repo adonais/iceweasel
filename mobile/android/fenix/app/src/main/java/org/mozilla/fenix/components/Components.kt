@@ -342,10 +342,7 @@ class Components(
                             SettingsBackedPocketSettings(settings),
                             performance.visualCompletenessQueue,
                         ),
-                        MessagingMiddleware(
-                            controller = nimbus.messaging,
-                            settings = settings,
-                        ),
+                        MessagingMiddleware(controller = nimbus.messaging),
                         MetricsMiddleware(
                             metrics = analytics.metrics,
                             nimbusEventStore = nimbus.events,
@@ -506,7 +503,12 @@ class Components(
     }
 
     val listenToPage by lazyMonitored {
-        ListenToPage(browserStore = core.store, context = context, scope = applicationScope)
+        ListenToPage(
+            browserStore = core.store,
+            context = context,
+            scope = applicationScope,
+            profiler = core.engine.profiler,
+        )
     }
 
     val aiFeatureRegistry by lazyMonitored {

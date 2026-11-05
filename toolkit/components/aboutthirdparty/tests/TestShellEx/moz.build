@@ -33,3 +33,8 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
     TEST_HARNESS_FILES.testing.mochitest.browser.toolkit.components.aboutthirdparty.tests.browser += [
         shared_library
     ]
+
+SOURCE_HEADERS += [
+    "RegUtils.h",
+    "Resource.h",
+]

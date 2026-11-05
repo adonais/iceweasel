@@ -977,18 +977,18 @@ var gBrowserInit = {
       {
         categoryName: "browser-window-idle-tasks",
         profilerMarker: "perWindowIdleTask",
-        idleDispatch: true,
+        idleDispatch: window,
         jsGlobal: globalThis,
       },
       window
     );
 
     // This should always go last, since the idle tasks above execute in order.
-    // Dispatch it on the same idle queue as the consumers above (via
-    // ChromeUtils.idleDispatch) so it runs after them. Note that this observer
+    // Dispatch it on the same idle queue as the consumers above (the window's,
+    // via requestIdleCallback) so it runs after them. Note that this observer
     // notification is not guaranteed to fire, since the window could close
     // before we get here.
-    ChromeUtils.idleDispatch(() => {
+    requestIdleCallback(() => {
       if (window.closed) {
         return;
       }

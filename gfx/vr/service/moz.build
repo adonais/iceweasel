@@ -8,6 +8,10 @@ if CONFIG["OS_TARGET"] == "WINNT":
         "OculusSession.cpp",
         "OpenVRWMRMapper.cpp",
     ]
+    SOURCE_HEADERS += [
+        "OculusSession.h",
+        "OpenVRWMRMapper.h",
+    ]
 
 # Build OSVR on all platforms except Android
 if CONFIG["OS_TARGET"] != "Android":
@@ -21,6 +25,13 @@ if CONFIG["OS_TARGET"] != "Android":
     # often conflict with our own types.
     SOURCES += [
         "PuppetSession.cpp",
+    ]
+
+    SOURCE_HEADERS += [
+        "OSVRSession.h",
+        "PuppetSession.h",
+        "VRService.h",
+        "VRSession.h",
     ]
     include("/ipc/chromium/chromium-config.mozbuild")
 
@@ -44,6 +55,15 @@ if CONFIG["TARGET_OS"] in ("WINNT", "OSX") or CONFIG["OS_TARGET"] == "Linux":
         "OpenVRKnucklesMapper.cpp",
         "OpenVRSession.cpp",
         "OpenVRViveMapper.cpp",
+    ]
+
+    SOURCE_HEADERS += [
+        "OpenVRControllerMapper.h",
+        "OpenVRCosmosMapper.h",
+        "OpenVRDefaultMapper.h",
+        "OpenVRKnucklesMapper.h",
+        "OpenVRSession.h",
+        "OpenVRViveMapper.h",
     ]
 
 FINAL_LIBRARY = "xul"

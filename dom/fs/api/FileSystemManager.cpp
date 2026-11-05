@@ -43,12 +43,12 @@ void FileSystemManager::Shutdown() {
   mShutdown.Flip();
 
   auto shutdownAndDisconnect = [self = RefPtr(this)]() {
-    self->mBackgroundRequestHandler->Shutdown();
-
     for (RefPtr<PromiseRequestHolder<FileSystemManagerChild::ActorPromise>>
              holder : self->mPromiseRequestHolders.ForwardRange()) {
       holder->DisconnectIfExists();
     }
+
+    self->mBackgroundRequestHandler->Shutdown();
   };
 
   if (NS_IsMainThread()) {

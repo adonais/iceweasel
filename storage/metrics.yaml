@@ -74,3 +74,80 @@ sqlite_store:
       - dtownsend@mozilla.com
       - mbonardo@mozilla.com
     expires: never
+
+  slow_statements:
+    type: object
+    description: |
+      A list of sql statements that were slow to run, how often they were slow
+      to run, and how slowly they ran.
+
+      The sql statements are normalized using sqlite3_normalized_sql which will
+      at minimum replace literal values with placeholders, and are limited in
+      length. SQL statements too long for the length will be truncated and have
+      "..." appended.
+
+      Statements against databases not present in the allowlist are all
+      reported with an `sql` of `"<untracked>"`. If there are a lot of hits,
+      we may wish to add the database to the allowlist in the future.
+
+      See `mozStorageConnection` for details.
+    data_sensitivity:
+      - technical
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1977639
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1977639
+    notification_emails:
+      - mbonardo@mozilla.com
+    expires: never
+    send_in_pings:
+      - slow-sql
+    structure:
+      type: array
+      items:
+        type: object
+        properties:
+          db:
+            type: string
+            description: |
+              Database file name. One of an allowlisted few like "places.sqlite"
+          sql:
+            type: string
+            description: |
+              Normalized and length-limited SQL statement.
+              e.g. "PRAGMA integrity_check"
+          main_thread_hits:
+            type: number
+            description: |
+              Number of times this sql against this db was slow on the main thread.
+          main_thread_ms:
+            type: number
+            description: |
+              Sum total duration in milliseconds that this sql against this db took
+              to run on the main thread over all hits.
+          other_thread_hits:
+            type: number
+            description: |
+              Number of times this sql against this db was slow on non-main threads.
+          other_thread_ms:
+            type: number
+            description: |
+              Sum total duration in milliseconds that this sql against this db took
+              to run on non-main threads over all hits.
+
+  failed_normalize:
+    type: counter
+    description: |
+      How often `sqlite3_normalized_sql` returned `nullptr` for slow sql,
+      rendering us unable to report the slow statement.
+    data_sensitivity:
+      - technical
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1977639
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1977639
+    notification_emails:
+      - mbonardo@mozilla.com
+    expires: never
+    send_in_pings:
+      - slow-sql

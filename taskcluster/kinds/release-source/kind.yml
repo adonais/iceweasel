@@ -15,9 +15,7 @@ transforms:
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.task:transforms
 
-
 task-defaults:
-    run-on-repo-type: [hg]
     shipping-phase: promote
     treeherder:
         symbol: Src
@@ -30,7 +28,6 @@ task-defaults:
         variant: source
         platform: linux64
     run:
-        clone-with: hg
         using: mozharness
         actions: [package-source]
         script: "mozharness/scripts/fx_desktop_build.py"

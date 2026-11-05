@@ -6,24 +6,24 @@ This is a high level document to introduce the different test types that are use
 
 We only introduce tests under [netwerk/test](https://searchfox.org/firefox-main/source/netwerk/test) folder in this section.
 
-- [Chrome Tests](https://firefox-source-docs.mozilla.org/testing/chrome-tests/index.html)
+- {doc}`Chrome Tests </testing/chrome-tests/index>`
   - We usually write chrome tests when the code to be tested needs a browser windows to load some particular resources.
   - Path: [netwerk/test/browser](https://searchfox.org/firefox-main/source/netwerk/test/browser)
-- [Reftest](https://firefox-source-docs.mozilla.org/testing/webrender/index.html)
+- {doc}`Reftest </testing/webrender/index>`
   - Rarely used in necko.
-- [Mochitest](https://firefox-source-docs.mozilla.org/testing/mochitest-plain/index.html)
+- {doc}`Mochitest </testing/mochitest-plain/index>`
   - Used when the code to be tested can be triggered by WebIDL. e.g., WebSocket and XMLHttpRequest.
   - Path: [netwerk/test/mochitests](https://searchfox.org/firefox-main/source/netwerk/test/mochitests)
-- [XPCShell tests](https://firefox-source-docs.mozilla.org/testing/xpcshell/index.html#xpcshell-tests)
+- [XPCShell tests](/testing/xpcshell/index.md#xpcshell-tests)
   - Mostly used in necko to test objects that can be accessed by JS. e.g., `nsIHttpChannel`.
   - Path: [netwerk/test/unit](https://searchfox.org/firefox-main/source/netwerk/test/unit)
-- [GTest](https://firefox-source-docs.mozilla.org/gtest/index.html)
+- {doc}`GTest </gtest/index>`
   - Useful when the code doesn't need a http server.
   - Useful when writing code regarding to parsing strings. e.g., [Parsing Server Timing Header](https://searchfox.org/mozilla-central/rev/0249c123e74640ed91edeabba00649ef4d929372/netwerk/test/gtest/TestServerTimingHeader.cpp)
-- [Performance tests](https://firefox-source-docs.mozilla.org/testing/perfdocs/index.html)
+- {doc}`Performance tests </testing/perfdocs/index>`
   - Current tests in [netwerk/test/perf](https://searchfox.org/firefox-main/source/netwerk/test/perf) are all for testing `HTTP/3` code.
 
-There are also [web-platform-tests](https://firefox-source-docs.mozilla.org/web-platform/index.html) that is related to necko. We don't usually write new `web-platform-tests`. However, we do have lots of `web-platform-tests` for XHR, Fetch, and WebSocket.
+There are also {doc}`web-platform-tests </web-platform/index>` that is related to necko. We don't usually write new `web-platform-tests`. However, we do have lots of `web-platform-tests` for XHR, Fetch, and WebSocket.
 
 ## Running Necko xpcshell-tests
 
@@ -61,7 +61,7 @@ There are also [web-platform-tests](https://firefox-source-docs.mozilla.org/web-
 
 - Remote:
 
-  First of all, we need to know [Fuzzy Selector](https://firefox-source-docs.mozilla.org/tools/try/selectors/fuzzy.html), which is the tool we use to select which test to run on try. If you already know that your code change can be covered by necko xpcshell-tests, you can use the following command to run all tests in `netwerk/test/unit` on try.
+  First of all, we need to know {doc}`Fuzzy Selector </tools/try/selectors/fuzzy>`, which is the tool we use to select which test to run on try. If you already know that your code change can be covered by necko xpcshell-tests, you can use the following command to run all tests in `netwerk/test/unit` on try.
 
   ```console
   ./mach try fuzzy netwerk/test/unit
@@ -80,14 +80,14 @@ There are also [web-platform-tests](https://firefox-source-docs.mozilla.org/web-
   ```
 
   Note that it's not usually a good idea to enabling logging when running all tests in a folder on try, since the raw log file can be really huge. The log file might be not available if the size exceeds the limit on try.
-  In the case that your code change is too generic or you are not sure which tests to run, you can use [Auto Selector](https://firefox-source-docs.mozilla.org/tools/try/selectors/auto.html) to let it select tests for you.
+  In the case that your code change is too generic or you are not sure which tests to run, you can use {doc}`Auto Selector </tools/try/selectors/auto>` to let it select tests for you.
 
 ## Debugging Intermittent Test Failures
 
 There are a lot of intermittent failures on try (usually not able to reproduce locally). Debugging these failures can be really annoying and time consuming. Here are some general guidelines to help you debug intermittent failures more efficiently.
 
 - Identify whether the failure is caused by your code change.
-  - Try to reproduce the intermittent failure locally. This is the most straightforward way. Adding `--verify` flag is also helpful when debugging locally (see this [document](https://firefox-source-docs.mozilla.org/testing/test-verification/index.html) for more details).
+  - Try to reproduce the intermittent failure locally. This is the most straightforward way. Adding `--verify` flag is also helpful when debugging locally (see this {doc}`document </testing/test-verification/index>` for more details).
   - We can check the failure summery on try to see if there is already a bug filed for this test failure. If yes, it's likely this is not caused by your code change.
   - Re-trigger the failed test a few times and see if it passed. This can be easily done by clicking the `Push Health` button.
   - Looking for similar failures happening now on other submissions. This can be done by:

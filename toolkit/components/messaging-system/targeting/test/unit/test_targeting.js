@@ -1,5 +1,5 @@
-const { ClientEnvironment } = ChromeUtils.importESModule(
-  "resource://normandy/lib/ClientEnvironment.sys.mjs"
+const { ClientEnvironmentBase } = ChromeUtils.importESModule(
+  "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs"
 );
 const { TargetingContext } = ChromeUtils.importESModule(
   "resource://messaging-system/targeting/Targeting.sys.mjs"
@@ -211,11 +211,11 @@ add_task(async function test_telemetry_event_error() {
   Services.telemetry.clearEvents();
 });
 
-// Make sure that when using the Normandy-style ClientEnvironment context,
+// Make sure that when using the ClientEnvironmentBase context,
 // `liveTelemetry` works. `liveTelemetry` is a particularly tricky object to
 // proxy, so it's useful to check specifically.
 add_task(async function test_live_telemetry() {
-  let ctx = { env: ClientEnvironment };
+  let ctx = { env: ClientEnvironmentBase };
   let targeting = new TargetingContext();
   // This shouldn't throw.
   await targeting.eval("env.liveTelemetry.main", ctx);

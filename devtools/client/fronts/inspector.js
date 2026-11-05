@@ -216,29 +216,23 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
   async pickColorFromPage(options) {
     let screenshot = null;
 
-    // @backward-compat { version 87 } ScreenshotContentActor was only added in 87.
-    //                  When connecting to older server, the eyedropper will  use drawWindow
-    //                  to retrieve the screenshot of the page (that's a decent fallback,
-    //                  even if it doesn't handle remote frames).
-    if (this.targetFront.hasActor("screenshotContent")) {
-      try {
-        // We use the screenshot actors as it can retrieve an image of the current viewport,
-        // handling remote frame if need be.
-        const { data } = await captureScreenshot(this.targetFront, {
-          browsingContextID: this.targetFront.browsingContextID,
-          disableFlash: true,
-          ignoreDprForFileScale: true,
-        });
-        screenshot = data;
-      } catch (e) {
-        // We simply log the error and still call pickColorFromPage as it will default to
-        // use drawWindow in order to get the screenshot of the page (that's a decent
-        // fallback, even if it doesn't handle remote frames).
-        console.error(
-          "Error occured when taking a screenshot for the eyedropper",
-          e
-        );
-      }
+    try {
+      // We use the screenshot actors as it can retrieve an image of the current viewport,
+      // handling remote frame if need be.
+      const { data } = await captureScreenshot(this.targetFront, {
+        browsingContextID: this.targetFront.browsingContextID,
+        disableFlash: true,
+        ignoreDprForFileScale: true,
+      });
+      screenshot = data;
+    } catch (e) {
+      // We simply log the error and still call pickColorFromPage as it will default to
+      // use drawWindow in order to get the screenshot of the page (that's a decent
+      // fallback, even if it doesn't handle remote frames).
+      console.error(
+        "Error occured when taking a screenshot for the eyedropper",
+        e
+      );
     }
 
     await super.pickColorFromPage({

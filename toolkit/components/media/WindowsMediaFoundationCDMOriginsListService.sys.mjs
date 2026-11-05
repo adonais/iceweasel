@@ -8,7 +8,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 ChromeUtils.defineLazyGetter(lazy, "console", () => {
-  return console.createInstance({ prefix: "EME" });
+  return console.createInstance({ prefix: "EME", maxLogLevel: "Off" });
 });
 
 const COLLECTION_NAME = "mfcdm-origins-list";
@@ -18,12 +18,9 @@ const ORIGIN_BLOCKED = 0;
 const ORIGIN_ALLOWED = 1;
 
 function log(message) {
-  const LOGGING_ENABLED = Services.env.get("MOZ_LOG")?.includes("EME");
-  if (LOGGING_ENABLED) {
-    lazy.console.debug(
-      `WindowsMediaFoundationCDMOriginsListService : ${message}\n`
-    );
-  }
+  lazy.console.debug(
+    `WindowsMediaFoundationCDMOriginsListService : ${message}`
+  );
 }
 
 /**

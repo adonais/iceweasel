@@ -10,6 +10,7 @@
 
 #include "media/base/codec_list.h"
 
+#include <utility>
 #include <vector>
 
 #include "api/rtc_error.h"
@@ -43,8 +44,81 @@ TEST(CodecList, RejectIllegalConstructorArguments) {
   EXPECT_EQ(checked_codec_list.error().type(), RTCErrorType::INVALID_PARAMETER);
 }
 
+TEST(CodecList, PushIfNotPresentAddsCodec) {
+  CodecList list;
+  Codec vp8 = CreateVideoCodec({SdpVideoFormat{"VP8"}});
+  vp8.id = 96;
+  EXPECT_EQ(list.PushIfNotPresent(vp8), CodecList::PushResult::kInserted);
+  EXPECT_EQ(list.size(), 1U);
+  EXPECT_EQ(list[0], vp8);
+}
+
+TEST(CodecList, PushIfNotPresentIgnoresIdenticalCodec) {
+  CodecList list;
+  Codec vp8 = CreateVideoCodec({SdpVideoFormat{"VP8"}});
+  vp8.id = 96;
+  EXPECT_EQ(list.PushIfNotPresent(vp8), CodecList::PushResult::kInserted);
+  EXPECT_EQ(list.PushIfNotPresent(vp8), CodecList::PushResult::kDuplicate);
+  EXPECT_EQ(list.size(), 1U);
+}
+
+// A payload type collision is reported to the caller, so that it can be
+// handled, rather than being fatal or silently dropping the codec.
+TEST(CodecList, PushIfNotPresentReportsPayloadTypeCollision) {
+  CodecList list;
+  Codec vp8 = CreateVideoCodec({SdpVideoFormat{"VP8"}});
+  vp8.id = 96;
+  Codec vp9 = CreateVideoCodec({SdpVideoFormat{"VP9"}});
+  vp9.id = 96;
+  EXPECT_EQ(list.PushIfNotPresent(vp8), CodecList::PushResult::kInserted);
+  EXPECT_EQ(list.PushIfNotPresent(vp9), CodecList::PushResult::kConflict);
+  // The codec that was already in the list is kept.
+  EXPECT_EQ(list.size(), 1U);
+  EXPECT_EQ(list[0], vp8);
+}
+
+// A codec list that is being built may hold an RTX codec that refers to a
+// codec that has not been added yet.
+TEST(CodecList, PushAllowsRtxBeforeReferencedCodec) {
+  CodecList list;
+  Codec vp8 = CreateVideoCodec({SdpVideoFormat{"VP8"}});
+  vp8.id = 96;
+  Codec rtx = CreateVideoCodec(
+      {SdpVideoFormat{"rtx", CodecParameterMap{{"apt", "96"}}}});
+  rtx.id = 97;
+  EXPECT_EQ(list.PushIfNotPresent(rtx), CodecList::PushResult::kInserted);
+  EXPECT_EQ(list.PushIfNotPresent(vp8), CodecList::PushResult::kInserted);
+  // The list is complete and consistent now.
+  list.CheckConsistency();
+  EXPECT_EQ(list.size(), 2U);
+}
+
+TEST(CodecList, FinalizeReturnsCodecsOfCompleteList) {
+  CodecList list;
+  Codec vp8 = CreateVideoCodec({SdpVideoFormat{"VP8"}});
+  vp8.id = 96;
+  list.push_back(vp8);
+  RTCErrorOr<std::vector<Codec>> codecs = std::move(list).Finalize();
+  ASSERT_TRUE(codecs.ok());
+  ASSERT_EQ(codecs.value().size(), 1U);
+  EXPECT_EQ(codecs.value()[0], vp8);
+  // The codecs were moved out of the list.
+  EXPECT_TRUE(list.empty());
+}
+
+TEST(CodecList, FinalizeReportsRtxWithoutReferencedCodec) {
+  CodecList list;
+  Codec rtx = CreateVideoCodec(
+      {SdpVideoFormat{"rtx", CodecParameterMap{{"apt", "96"}}}});
+  rtx.id = 97;
+  list.push_back(rtx);
+  RTCErrorOr<std::vector<Codec>> codecs = std::move(list).Finalize();
+  EXPECT_FALSE(codecs.ok());
+  EXPECT_EQ(codecs.error().type(), RTCErrorType::INVALID_PARAMETER);
+}
+
 #if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST(CodecList, CrashOnIllegalConstructorArguments) {
+TEST(CodecListDeathTest, CrashOnIllegalConstructorArguments) {
   // This tests initializing a CodecList with a sequence that doesn't
   // satisfy its expected invariants.
   // Those invariants are only checked in debug mode.

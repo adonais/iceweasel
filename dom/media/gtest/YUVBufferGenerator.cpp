@@ -4,6 +4,8 @@
 
 #include "YUVBufferGenerator.h"
 
+#include <algorithm>
+
 #include "VideoUtils.h"
 #include "mozilla/CheckedInt.h"
 
@@ -17,7 +19,7 @@ bool YUVBufferGenerator::Init(const mozilla::gfx::IntSize& aSize,
 
 bool YUVBufferGenerator::Init(const mozilla::gfx::IntSize& aSize, uint8_t aLuma,
                               uint8_t aChroma) {
-  return Init(aSize, ChannelColor{aLuma, aChroma, aChroma});
+  return Init(aSize, ChannelColor{aLuma, aChroma, aChroma, 0xFF});
 }
 
 bool YUVBufferGenerator::Init(const mozilla::gfx::IntRect& aPictureRect,
@@ -77,12 +79,23 @@ mozilla::gfx::IntSize YUVBufferGenerator::GetSize() const {
   return mPictureRect.Size();
 }
 
-void YUVBufferGenerator::FillI420SourceBuffer() {
-  memset(mSourceBuffer.Elements(), mColor.mY, mYPlaneLength);
-  memset(mSourceBuffer.Elements() + mYPlaneLength, mColor.mCb,
-         mChromaPlaneLength);
-  memset(mSourceBuffer.Elements() + mYPlaneLength + mChromaPlaneLength,
-         mColor.mCr, mChromaPlaneLength);
+static uint16_t SampleAtDepth(uint8_t aValue, gfx::ColorDepth aDepth) {
+  return uint16_t(aValue) << (gfx::BitDepthForColorDepth(aDepth) - 8);
+}
+
+// Alpha is full range, so 0xFF stays opaque at every depth.
+static uint16_t FullRangeSampleAtDepth(uint8_t aValue, gfx::ColorDepth aDepth) {
+  const uint32_t max = (1u << gfx::BitDepthForColorDepth(aDepth)) - 1;
+  return uint16_t((aValue * max + 127) / 255);
+}
+
+void YUVBufferGenerator::FillPlane(uint8_t* aPlane, size_t aBytes,
+                                   uint16_t aValue, size_t aBytesPerSample) {
+  if (aBytesPerSample == 1) {
+    memset(aPlane, uint8_t(aValue), aBytes);
+    return;
+  }
+  std::fill_n(reinterpret_cast<uint16_t*>(aPlane), aBytes / 2, aValue);
 }
 
 void YUVBufferGenerator::FillNVSourceBuffer(uint8_t aFirstChromaValue,
@@ -95,113 +108,145 @@ void YUVBufferGenerator::FillNVSourceBuffer(uint8_t aFirstChromaValue,
   }
 }
 
-already_AddRefed<Image> YUVBufferGenerator::GenerateI420Image() {
-  if (mSourceBuffer.IsEmpty()) {
+already_AddRefed<Image> YUVBufferGenerator::GeneratePlanarImage(
+    gfx::ChromaSubsampling aSubsampling, gfx::ColorDepth aDepth, Alpha aAlpha) {
+  if (mYDataSize.IsEmpty()) {
     return nullptr;
   }
-  FillI420SourceBuffer();
+  const size_t bytes = aDepth == gfx::ColorDepth::COLOR_8 ? 1 : 2;
+  const gfx::IntSize chromaSize = gfx::ChromaSize(mYDataSize, aSubsampling);
+  const CheckedInt<size_t> yLength =
+      CheckedInt<size_t>(mYDataSize.width) * mYDataSize.height * bytes;
+  const CheckedInt<size_t> chromaLength =
+      CheckedInt<size_t>(chromaSize.width) * chromaSize.height * bytes;
+  CheckedInt<size_t> total = yLength + chromaLength * 2;
+  if (aAlpha == Alpha::Yes) {
+    total += yLength;
+  }
+  if (!total.isValid() ||
+      !mSourceBuffer.SetLength(total.value(), mozilla::fallible)) {
+    return nullptr;
+  }
+
+  uint8_t* y = mSourceBuffer.Elements();
+  uint8_t* cb = y + yLength.value();
+  uint8_t* cr = cb + chromaLength.value();
+  uint8_t* alpha = cr + chromaLength.value();
+  FillPlane(y, yLength.value(), SampleAtDepth(mColor.mY, aDepth), bytes);
+  FillPlane(cb, chromaLength.value(), SampleAtDepth(mColor.mCb, aDepth), bytes);
+  FillPlane(cr, chromaLength.value(), SampleAtDepth(mColor.mCr, aDepth), bytes);
+
+  PlanarYCbCrData data;
+  data.mPictureRect = mPictureRect;
+  data.mYChannel = y;
+  data.mYStride = int32_t(mYDataSize.width * bytes);
+  data.mCbChannel = cb;
+  data.mCrChannel = cr;
+  data.mCbCrStride = int32_t(chromaSize.width * bytes);
+  data.mChromaSubsampling = aSubsampling;
+  data.mColorDepth = aDepth;
+  data.mYUVColorSpace = DefaultColorSpace(mPictureRect.Size());
+  if (aAlpha == Alpha::Yes) {
+    FillPlane(alpha, yLength.value(), FullRangeSampleAtDepth(mColor.mA, aDepth),
+              bytes);
+    data.mAlpha.emplace();
+    data.mAlpha->mChannel = alpha;
+    data.mAlpha->mSize = mYDataSize;
+    data.mAlpha->mDepth = aDepth;
+  }
 
   RefPtr<PlanarYCbCrImage> image =
       new RecyclingPlanarYCbCrImage(new BufferRecycleBin());
-  PlanarYCbCrData data;
-  data.mPictureRect = mPictureRect;
-
-  // Y plane.
-  uint8_t* y = mSourceBuffer.Elements();
-  data.mYChannel = y;
-  data.mYStride = mYDataSize.width;
-  data.mYSkip = 0;
-
-  // Cr plane (aka V).
-  uint8_t* cr = y + mYPlaneLength + mChromaPlaneLength;
-  data.mCrChannel = cr;
-  data.mCrSkip = 0;
-
-  // Cb plane (aka U).
-  uint8_t* cb = y + mYPlaneLength;
-  data.mCbChannel = cb;
-  data.mCbSkip = 0;
-
-  // CrCb plane vectors.
-  data.mCbCrStride = mChromaSize.width;
-  data.mChromaSubsampling = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
-
-  data.mYUVColorSpace = DefaultColorSpace(mPictureRect.Size());
-
   if (NS_FAILED(image->CopyData(data))) {
     return nullptr;
   }
   return image.forget();
 }
 
-already_AddRefed<Image> YUVBufferGenerator::GenerateNV12Image() {
-  if (mSourceBuffer.IsEmpty()) {
-    return nullptr;
+already_AddRefed<Image> YUVBufferGenerator::GenerateImage(
+    ImagePixelFormat aFormat) {
+  constexpr auto k420 = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
+  constexpr auto k422 = gfx::ChromaSubsampling::HALF_WIDTH;
+  constexpr auto k444 = gfx::ChromaSubsampling::FULL;
+  constexpr auto k8 = gfx::ColorDepth::COLOR_8;
+  constexpr auto k10 = gfx::ColorDepth::COLOR_10;
+  constexpr auto k12 = gfx::ColorDepth::COLOR_12;
+  switch (aFormat) {
+    case ImagePixelFormat::I420:
+      return GeneratePlanarImage(k420, k8, Alpha::No);
+    case ImagePixelFormat::I420P10:
+      return GeneratePlanarImage(k420, k10, Alpha::No);
+    case ImagePixelFormat::I420P12:
+      return GeneratePlanarImage(k420, k12, Alpha::No);
+    case ImagePixelFormat::I420A:
+      return GeneratePlanarImage(k420, k8, Alpha::Yes);
+    case ImagePixelFormat::I420AP10:
+      return GeneratePlanarImage(k420, k10, Alpha::Yes);
+    case ImagePixelFormat::I420AP12:
+      return GeneratePlanarImage(k420, k12, Alpha::Yes);
+    case ImagePixelFormat::I422:
+      return GeneratePlanarImage(k422, k8, Alpha::No);
+    case ImagePixelFormat::I422P10:
+      return GeneratePlanarImage(k422, k10, Alpha::No);
+    case ImagePixelFormat::I422P12:
+      return GeneratePlanarImage(k422, k12, Alpha::No);
+    case ImagePixelFormat::I422A:
+      return GeneratePlanarImage(k422, k8, Alpha::Yes);
+    case ImagePixelFormat::I422AP10:
+      return GeneratePlanarImage(k422, k10, Alpha::Yes);
+    case ImagePixelFormat::I422AP12:
+      return GeneratePlanarImage(k422, k12, Alpha::Yes);
+    case ImagePixelFormat::I444:
+      return GeneratePlanarImage(k444, k8, Alpha::No);
+    case ImagePixelFormat::I444P10:
+      return GeneratePlanarImage(k444, k10, Alpha::No);
+    case ImagePixelFormat::I444P12:
+      return GeneratePlanarImage(k444, k12, Alpha::No);
+    case ImagePixelFormat::I444A:
+      return GeneratePlanarImage(k444, k8, Alpha::Yes);
+    case ImagePixelFormat::I444AP10:
+      return GeneratePlanarImage(k444, k10, Alpha::Yes);
+    case ImagePixelFormat::I444AP12:
+      return GeneratePlanarImage(k444, k12, Alpha::Yes);
+    case ImagePixelFormat::NV12:
+      return GenerateInterleavedImage(ChromaOrder::CbCr);
+    case ImagePixelFormat::NV21:
+      return GenerateInterleavedImage(ChromaOrder::CrCb);
+    case ImagePixelFormat::RGBA:
+    case ImagePixelFormat::RGBX:
+    case ImagePixelFormat::BGRA:
+    case ImagePixelFormat::BGRX:
+      return nullptr;
   }
-  FillNVSourceBuffer(mColor.mCb, mColor.mCr);
-
-  RefPtr<NVImage> image = new NVImage();
-  PlanarYCbCrData data;
-  data.mPictureRect = mPictureRect;
-
-  // Y plane.
-  uint8_t* y = mSourceBuffer.Elements();
-  data.mYChannel = y;
-  data.mYStride = mYDataSize.width;
-  data.mYSkip = 0;
-
-  // Cb plane (aka U).
-  uint8_t* cb = y + mYPlaneLength;
-  data.mCbChannel = cb;
-  data.mCbSkip = 1;
-
-  // Cr plane (aka V).
-  uint8_t* cr = y + mYPlaneLength + 1;
-  data.mCrChannel = cr;
-  data.mCrSkip = 1;
-
-  // 4:2:0.
-  data.mCbCrStride = 2 * mChromaSize.width;
-  data.mChromaSubsampling = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
-
-  if (NS_FAILED(image->SetData(data))) {
-    return nullptr;
-  }
-  return image.forget();
+  MOZ_ASSERT_UNREACHABLE("unsupported ImagePixelFormat");
+  return nullptr;
 }
 
-already_AddRefed<Image> YUVBufferGenerator::GenerateNV21Image() {
+already_AddRefed<Image> YUVBufferGenerator::GenerateInterleavedImage(
+    ChromaOrder aOrder) {
   if (mSourceBuffer.IsEmpty()) {
     return nullptr;
   }
-  FillNVSourceBuffer(mColor.mCr, mColor.mCb);
+  const bool cbFirst = aOrder == ChromaOrder::CbCr;
+  FillNVSourceBuffer(cbFirst ? mColor.mCb : mColor.mCr,
+                     cbFirst ? mColor.mCr : mColor.mCb);
 
-  RefPtr<NVImage> image = new NVImage();
+  uint8_t* y = mSourceBuffer.Elements();
+  uint8_t* chroma = y + mYPlaneLength;
+
   PlanarYCbCrData data;
   data.mPictureRect = mPictureRect;
-
-  // Y plane.
-  uint8_t* y = mSourceBuffer.Elements();
   data.mYChannel = y;
   data.mYStride = mYDataSize.width;
-  data.mYSkip = 0;
-
-  // Cb plane (aka U).
-  uint8_t* cb = y + mYPlaneLength + 1;
-  data.mCbChannel = cb;
+  data.mCbChannel = cbFirst ? chroma : chroma + 1;
+  data.mCrChannel = cbFirst ? chroma + 1 : chroma;
   data.mCbSkip = 1;
-
-  // Cr plane (aka V).
-  uint8_t* cr = y + mYPlaneLength;
-  data.mCrChannel = cr;
   data.mCrSkip = 1;
-
-  // 4:2:0.
   data.mCbCrStride = 2 * mChromaSize.width;
   data.mChromaSubsampling = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
-
   data.mYUVColorSpace = DefaultColorSpace(mPictureRect.Size());
 
+  RefPtr<NVImage> image = new NVImage();
   if (NS_FAILED(image->SetData(data))) {
     return nullptr;
   }

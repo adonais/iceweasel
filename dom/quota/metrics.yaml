@@ -67,6 +67,64 @@ dom.quota.try:
           Optionally, the stack within process_id.
         type: string
 quotamanager:
+  usage_underflow:
+    type: event
+    description: >
+      Recorded when the in-memory usage tracked by the quota manager for one
+      client of an origin is negative after an update. This is a diagnostic for
+      usage accounting bugs (bug 1585978). Events are throttled per origin and
+      client (recorded on the 1st, 2nd, 4th, 8th... occurrence).
+      No origin is recorded.
+    bugs:
+      - https://bugzil.la/2053492
+    data_reviews:
+      - https://bugzil.la/2053492
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - abienner@mozilla.com
+      - storage-telemetry@mozilla.com
+    expires: never
+    extra_keys:
+      call_site:
+        description: >
+          Which code path decreased the usage.
+        type: string
+      client:
+        description: >
+          The quota client whose usage is negative: "idb", "cache", "ls" or "fs".
+        type: string
+      magnitude:
+        description: >
+          floor(log2(abs(usage))), the order of magnitude of the negative value.
+        type: quantity
+  temporary_storage_usage_underflow:
+    type: event
+    description: >
+      Recorded when the in-memory total temporary storage usage tracked by the
+      quota manager (the sum over all loaded origins) is negative after an
+      update. This is a diagnostic for usage accounting bugs (bug 1585978).
+      Events are throttled (recorded on the 1st, 2nd, 4th, 8th... occurrence).
+      No origin is recorded.
+    bugs:
+      - https://bugzil.la/2053492
+    data_reviews:
+      - https://bugzil.la/2053492
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - abienner@mozilla.com
+      - storage-telemetry@mozilla.com
+    expires: never
+    extra_keys:
+      call_site:
+        description: >
+          Which code path decreased the usage.
+        type: string
+      magnitude:
+        description: >
+          floor(log2(abs(usage))), the order of magnitude of the negative value.
+        type: quantity
   restore_origin_directory_metadata_counter:
     type: counter
     description: >

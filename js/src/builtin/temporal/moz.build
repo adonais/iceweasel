@@ -36,3 +36,27 @@ UNIFIED_SOURCES += [
 
 if CONFIG["FUZZING_JS_FUZZILLI"]:
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "Calendar.h",
+    "CalendarFields.h",
+    "Duration.h",
+    "Era.h",
+    "Instant.h",
+    "Int96.h",
+    "MonthCode.h",
+    "PlainDate.h",
+    "PlainDateTime.h",
+    "PlainMonthDay.h",
+    "PlainTime.h",
+    "PlainYearMonth.h",
+    "Temporal.h",
+    "TemporalNow.h",
+    "TemporalParser.h",
+    "TemporalRoundingMode.h",
+    "TemporalTypes.h",
+    "TemporalUnit.h",
+    "TimeZone.h",
+    "ToString.h",
+    "ZonedDateTime.h",
+]

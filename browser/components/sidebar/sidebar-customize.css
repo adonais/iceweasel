@@ -87,6 +87,8 @@ moz-checkbox {
   padding-block: var(--space-medium);
 
   @media not -moz-pref("browser.nova.enabled") {
+    padding-block: 8px;
+
     &:not(:last-of-type) {
       border-bottom: 0.5px solid var(--panel-separator-color);
     }
@@ -110,4 +112,14 @@ moz-checkbox {
 
 .customize-group:not(.no-end-margin) {
   margin-block-end: var(--space-xlarge);
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  .medium-top-margin {
+    margin-block-start: 0;
+  }
+
+  moz-checkbox:is(#expand-on-hover, #hide-sidebar) {
+    margin-block-start: var(--space-small);
+  }
 }

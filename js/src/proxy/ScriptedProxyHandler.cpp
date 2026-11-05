@@ -1194,6 +1194,10 @@ ScriptedProxyHandler::checkGetTrapResult(JSContext* cx, HandleObject target,
     // Step 10a.
     if (desc->isDataDescriptor() && !desc->configurable() &&
         !desc->writable()) {
+      // The shape flag must be set on any NativeObject with
+      // a non-configurable + non-writable property.
+      MOZ_ASSERT_IF(target->is<NativeObject>(),
+                    target->needsProxyGetSetResultValidation());
       bool same;
       if (!SameValue(cx, trapResult, desc->value(), &same)) {
         return GetTrapValidationResult::Exception;

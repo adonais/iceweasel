@@ -39,10 +39,6 @@ NimbusTestUtils.init(this);
 
 const kDefaultWait = 2000;
 
-const SRD_PREF_VALUE = Services.prefs.getBoolPref(
-  "browser.settings-redesign.enabled"
-);
-
 function is_element_visible(aElement, aMsg) {
   isnot(aElement, null, "Element should not be null, when checking visibility");
   ok(!BrowserTestUtils.isHidden(aElement), aMsg);
@@ -382,69 +378,6 @@ async function waitForAndAssertPrefState(pref, expectedValue, message) {
  * @param {string} value - The history mode to select.
  */
 async function selectHistoryMode(win, value) {
-  if (Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)) {
-    await selectRedesignedHistoryMode(win, value);
-    return;
-  }
-
-  let historyMode = win.document.getElementById("historyMode").inputEl;
-
-  // Find the index of the option with the given value. Do this before the first
-  // click so we can bail out early if the option does not exist.
-  let optionIndexStr = Array.from(historyMode.children)
-    .findIndex(option => option.value == value)
-    ?.toString();
-  if (optionIndexStr == null) {
-    throw new Error(
-      "Could not find history mode option item for value: " + value
-    );
-  }
-
-  // Scroll into view for click to succeed.
-  historyMode.scrollIntoView();
-
-  let popupShownPromise = BrowserTestUtils.waitForSelectPopupShown(window);
-
-  EventUtils.synthesizeMouseAtCenter(
-    historyMode,
-    {},
-    historyMode.documentGlobal
-  );
-
-  let popup = await popupShownPromise;
-  let popupItems = Array.from(popup.children);
-
-  let targetItem = popupItems.find(item => item.value == optionIndexStr);
-
-  if (!targetItem) {
-    throw new Error(
-      "Could not find history mode popup item for value: " + value
-    );
-  }
-
-  let popupHiddenPromise = BrowserTestUtils.waitForPopupEvent(popup, "hidden");
-
-  if (popup.isNativeMenu) {
-    popup.activateItem(targetItem);
-  } else {
-    EventUtils.synthesizeMouseAtCenter(
-      targetItem,
-      {},
-      targetItem.documentGlobal
-    );
-  }
-
-  await popupHiddenPromise;
-}
-
-/**
- * Select the given history mode in the redesigned privacy pane.
- *
- * @param {Window} win - The preferences window which contains the
- * dropdown.
- * @param {string} value - The history mode to select.
- */
-async function selectRedesignedHistoryMode(win, value) {
   let historyMode = win.document.querySelector(
     "setting-group[groupid='history2'] #historyMode"
   );

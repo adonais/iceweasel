@@ -226,6 +226,7 @@ add_task(async function test_toolbar_sidebar_badges() {
 
   // Simulate user closing the sidebar
   EventUtils.synthesizeMouseAtCenter(toolbarButton, {}, window);
+  await SidebarController.waitUntilStable();
   Assert.ok(
     badgeEl.classList.contains("feature-callout"),
     "Toolbar badge should appear when sidebar is closed"
@@ -379,6 +380,7 @@ add_task(async function test_states_for_hide_sidebar_vertical() {
     await SidebarTestUtils.showPanel(win, "viewTabsSidebar");
   }
   await panelShown;
+  await SidebarController.waitUntilStable();
 
   await checkStates({ hidden: false, expanded: true });
 
@@ -389,6 +391,7 @@ add_task(async function test_states_for_hide_sidebar_vertical() {
 
   await checkStates({ hidden: true, expanded: false });
   ok(!SidebarController.isOpen, "Panel is closed.");
+  await SidebarController.waitUntilStable();
 
   EventUtils.synthesizeMouseAtCenter(toolbarButton, {}, win);
   await checkStates({ hidden: false, expanded: true });
@@ -497,12 +500,18 @@ add_task(async function test_keyboard_shortcut() {
   Assert.ok(!sidebar.expanded, "Sidebar initially not expanded");
 
   key.doCommand();
+  await SidebarController.waitUntilStable();
 
   Assert.ok(sidebar.expanded, "Sidebar expanded with keyboard");
 
   key.doCommand();
+  await SidebarController.waitUntilStable();
 
   Assert.ok(!sidebar.expanded, "Closed sidebar with keyboard");
+  await TestUtils.waitForCondition(
+    () => Glean.sidebar.keyboardShortcut.testGetValue()?.length == 2,
+    "Waiting for both keyboard shortcut events."
+  );
   const events = Glean.sidebar.keyboardShortcut.testGetValue();
   Assert.equal(events.length, 2, "Got 2 keyboard events");
   Assert.equal(

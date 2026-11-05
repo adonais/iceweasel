@@ -1,0 +1,28 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+---
+$schema: moz://mozilla.org/schemas/glean/pings/2-0-0
+
+slow-sql:
+  description: |
+    A ping reporting slow SQL statements.
+    Sent on startup with any records from the previous run.
+
+    Reported on Nightly only.
+
+    **Note:** As this contains data from the previous run,
+    the build information (id, version) on this ping is not necessarily that
+    of the build that experienced the contained slow statements.
+  include_client_id: true
+  send_if_empty: false
+  bugs:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=1977639
+  data_reviews:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=1977639
+  notification_emails:
+    - mak@mozilla.com
+  reasons:
+    startup: |
+      The ping was submitted at startup.

@@ -44,15 +44,15 @@ class NewTabAttributionService {
    * @property {number} time_precision - time precision.
    *
    * @typedef {object} allocatedTask
-   * @property {task} task - DAP task settings.
-   * @property {number} defaultMeasurement - Measurement value used if budget is exceeded.
+   * @property {task} [task] - DAP task settings.
+   * @property {number} [defaultMeasurement] - Measurement value used if budget is exceeded.
    * @property {number} index - Measurement value used if budget is not exceeded.
    *
    * @typedef {object} impression - stored event.
    * @property {allocatedTask} conversion - DAP task settings for conversion attribution.
-   * @property {number} lastImpression - Timestamp in milliseconds for last touch matching.
-   * @property {number} lastView - Timestamp in milliseconds for last view matching.
-   * @property {number} lastClick - Timestamp in milliseconds for last click matching.
+   * @property {number} [lastImpression] - Timestamp in milliseconds for last touch matching.
+   * @property {number} [lastView] - Timestamp in milliseconds for last view matching.
+   * @property {number} [lastClick] - Timestamp in milliseconds for last click matching.
    *
    * @typedef {object} budget - stored budget.
    * @property {number} conversions - Number of conversions that have occurred in the budget period.
@@ -63,6 +63,12 @@ class NewTabAttributionService {
   // eslint-disable-next-line no-unused-private-class-members
   #testDapOptions;
 
+  /**
+   * @param {object} [options]
+   * @param {object} [options.dapSender] - Sends reports to DAP.
+   * @param {{ now: () => number }} [options.dateProvider] - Defaults to Date.
+   * @param {object} [options.testDapOptions]
+   */
   constructor({ dapSender, dateProvider, testDapOptions } = {}) {
     this.#dapSenderInternal = dapSender;
     this.#dateProvider = dateProvider ?? Date;

@@ -56,3 +56,16 @@ SOURCES += [
 FINAL_LIBRARY = 'mozavcodec'
 
 include('/media/ffvpx/ffvpxcommon.mozbuild')
+
+SOURCE_HEADERS += [
+	"hpeldsp_arm.h",
+	"idct.h",
+	"idctdsp_arm.h",
+	"mathops.h",
+	"startcode.h",
+	"videodsp_arm.h",
+	"vp8.h",
+	"vp8dsp.h",
+	"vp9dsp_init.h",
+	"vpx_arith.h",
+]

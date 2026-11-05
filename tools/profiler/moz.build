@@ -87,6 +87,8 @@ elif CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] in (
     "x86",
     "x86_64",
     "mips64",
+    "loongarch64",
+    "riscv64",
 ):
     UNIFIED_SOURCES += [
         "core/ProfilerCPUFreq-linux-android.cpp",

@@ -25,6 +25,7 @@ support-files = ["file_cors.sjs"]
 support-files = [
   "hsts_headers.sjs",
   "file_fragment_noscript.html",
+  "file_upgrade_insecure_wsh.py",
 ]
 
 ["browser_httpsonly_prefs.js"]

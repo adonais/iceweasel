@@ -115,16 +115,15 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
   }
 
   // The interrupt only pauses an utterance that is actively speaking and not
-  // already paused; the task remembers that the interruption owns the pause and
-  // ResumeFromMediaControl revives only that one, so a page-initiated pause
-  // issued while interrupted is never overridden when the interrupt ends.
-  void SuspendForInterrupt() override {
+  // already paused; for a transient interruption the task remembers that it
+  // owns the pause and ResumeFromMediaControl revives only that one, so a
+  // page-initiated pause issued while interrupted is never overridden when the
+  // interrupt ends.
+  void SuspendForInterrupt(AudioSessionInterruptKind aKind) override {
     MOZ_ASSERT(NS_IsMainThread());
-    const bool willPause = mTask.IsSpeaking() && !mTask.IsPaused();
-    MEDIA_CONTROL_LOG(
-        "MediaSharedKeysListener {} SuspendForInterrupt in BC {}, pause={}",
-        fmt::ptr(this), mBrowsingContextId, willPause);
-    mTask.PauseFromMediaControl();
+    MEDIA_CONTROL_LOG("MediaSharedKeysListener {} SuspendForInterrupt in BC {}",
+                      fmt::ptr(this), mBrowsingContextId);
+    mTask.PauseFromMediaControl(aKind);
   }
   void ResumeFromInterrupt() override {
     MOZ_ASSERT(NS_IsMainThread());
@@ -344,15 +343,17 @@ void SpeechTaskChild::StopMediaControl() {
   }
 }
 
-void SpeechTaskChild::PauseFromMediaControl() {
+void SpeechTaskChild::PauseFromMediaControl(AudioSessionInterruptKind aKind) {
   const bool willPause = !mPausedByMediaControl && IsSpeaking() && !IsPaused();
-  MEDIA_CONTROL_LOG("SpeechTaskChild {} PauseFromMediaControl, pause={}",
-                    fmt::ptr(this), willPause);
-  if (!willPause) {
-    return;
+  MEDIA_CONTROL_LOG("SpeechTaskChild {} PauseFromMediaControl {}, pause={}",
+                    fmt::ptr(this), EnumValueToString(aKind), willPause);
+  if (willPause) {
+    Pause();
+    mPausedByMediaControl = true;
   }
-  Pause();
-  mPausedByMediaControl = true;
+  if (aKind == AudioSessionInterruptKind::Permanent) {
+    mPausedByMediaControl = false;
+  }
 }
 
 void SpeechTaskChild::ResumeFromMediaControl() {

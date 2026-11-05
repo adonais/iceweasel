@@ -1128,136 +1128,34 @@ PBE_PK11ParamToAlgid(SECOidTag algTag, SECItem *param, PLArenaPool *arena,
 }
 
 /*
- * public, Deprecated, This function is only for binary compatibility with
- * older applications. Does not support PKCS5v2.
- *
- * Applications should use PK11_PBEKeyGen() for keys and PK11_GetPBEIV() for
- * iv values rather than generating PBE bits directly.
+ * This function has been removed, and returns NULL so as to not break
+ * backwards compatibility.
  */
 PBEBitGenContext *
 PBE_CreateContext(SECOidTag hashAlgorithm, PBEBitGenID bitGenPurpose,
                   SECItem *pwitem, SECItem *salt, unsigned int bitsNeeded,
                   unsigned int iterations)
 {
-    SECItem *context = NULL;
-    SECItem mechItem;
-    CK_PBE_PARAMS pbe_params;
-    CK_MECHANISM_TYPE mechanism = CKM_INVALID_MECHANISM;
-    PK11SlotInfo *slot;
-    PK11SymKey *symKey = NULL;
-    unsigned char ivData[8];
-
-    /* use the purpose to select the low level keygen algorithm */
-    switch (bitGenPurpose) {
-        case pbeBitGenIntegrityKey:
-            switch (hashAlgorithm) {
-                case SEC_OID_SHA1:
-                    mechanism = CKM_PBA_SHA1_WITH_SHA1_HMAC;
-                    break;
-                case SEC_OID_MD2:
-                    mechanism = CKM_NSS_PBE_MD2_HMAC_KEY_GEN;
-                    break;
-                case SEC_OID_MD5:
-                    mechanism = CKM_NSS_PBE_MD5_HMAC_KEY_GEN;
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case pbeBitGenCipherIV:
-            if (bitsNeeded > 64) {
-                break;
-            }
-            if (hashAlgorithm != SEC_OID_SHA1) {
-                break;
-            }
-            mechanism = CKM_PBE_SHA1_DES3_EDE_CBC;
-            break;
-        case pbeBitGenCipherKey:
-            if (hashAlgorithm != SEC_OID_SHA1) {
-                break;
-            }
-            switch (bitsNeeded) {
-                case 40:
-                    mechanism = CKM_PBE_SHA1_RC4_40;
-                    break;
-                case 128:
-                    mechanism = CKM_PBE_SHA1_RC4_128;
-                    break;
-                default:
-                    break;
-            }
-        case pbeBitGenIDNull:
-            break;
-    }
-
-    if (mechanism == CKM_INVALID_MECHANISM) {
-        /* we should set an error, but this is a deprecated function, and
-         * we are keeping bug for bug compatibility;)... */
-        return NULL;
-    }
-
-    pbe_params.pInitVector = ivData;
-    pbe_params.pPassword = pwitem->data;
-    pbe_params.ulPasswordLen = pwitem->len;
-    pbe_params.pSalt = salt->data;
-    pbe_params.ulSaltLen = salt->len;
-    pbe_params.ulIteration = iterations;
-    mechItem.data = (unsigned char *)&pbe_params;
-    mechItem.len = sizeof(pbe_params);
-
-    slot = PK11_GetInternalSlot();
-    symKey = PK11_RawPBEKeyGen(slot, mechanism,
-                               &mechItem, pwitem, PR_FALSE, NULL);
-    PK11_FreeSlot(slot);
-    if (symKey != NULL) {
-        if (bitGenPurpose == pbeBitGenCipherIV) {
-            /* NOTE: this assumes that bitsNeeded is a multiple of 8! */
-            SECItem ivItem;
-
-            ivItem.data = ivData;
-            ivItem.len = bitsNeeded / 8;
-            context = SECITEM_DupItem(&ivItem);
-        } else {
-            SECItem *keyData;
-            PK11_ExtractKeyValue(symKey);
-            keyData = PK11_GetKeyData(symKey);
-
-            /* assert bitsNeeded with length? */
-            if (keyData) {
-                context = SECITEM_DupItem(keyData);
-            }
-        }
-        PK11_FreeSymKey(symKey);
-    }
-
-    return (PBEBitGenContext *)context;
+    return NULL;
 }
 
 /*
- * public, Deprecated, This function is only for binary compatibility with
- * older applications. Does not support PKCS5v2.
- *
- * Applications should use PK11_PBEKeyGen() for keys and PK11_GetIV() for
- * iv values rather than generating PBE bits directly.
+ * This function has been removed, and returns NULL so as to not break
+ * backwards compatibility.
  */
 SECItem *
 PBE_GenerateBits(PBEBitGenContext *context)
 {
-    return (SECItem *)context;
+    return NULL;
 }
 
 /*
- * public, Deprecated, This function is only for binary compatibility with
- * older applications. Does not support PKCS5v2.
- *
- * Applications should use PK11_PBEKeyGen() for keys and PK11_GetPBEIV() for
- * iv values rather than generating PBE bits directly.
+ * This function has been removed, and returns so as to not break
+ * backwards compatibility.
  */
 void
 PBE_DestroyContext(PBEBitGenContext *context)
 {
-    SECITEM_FreeItem((SECItem *)context, PR_TRUE);
 }
 
 /*

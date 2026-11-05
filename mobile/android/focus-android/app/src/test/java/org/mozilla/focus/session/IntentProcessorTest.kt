@@ -6,18 +6,23 @@ package org.mozilla.focus.session
 
 import android.content.Context
 import android.content.Intent
+import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.net.toUri
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.selector.allTabs
 import mozilla.components.concept.engine.EngineSession
+import mozilla.components.feature.customtabs.SHORTCUT_CATEGORY
 import mozilla.components.feature.search.ext.createSearchEngine
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.toSafeIntent
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.mozilla.focus.TestFocusApplication
+import org.mozilla.focus.activity.IntentReceiverActivity
 import org.mozilla.focus.ext.components
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -102,4 +107,20 @@ class IntentProcessorTest {
 
         assertEquals(true, tab.content.private)
     }
+
+    @Test
+    fun `GIVEN a custom tab window intent WHEN resolving it THEN IntentReceiverActivity handles it`() {
+        val intent = createCustomTabWindowIntent("https://mozilla.org")
+
+        val activities = context.packageManager.queryIntentActivities(intent, 0)
+
+        assertTrue(activities.any { it.activityInfo.name == IntentReceiverActivity::class.java.name })
+    }
+
+    private fun createCustomTabWindowIntent(url: String): Intent =
+        CustomTabsIntent.Builder().build().intent.apply {
+            data = url.toUri()
+            `package` = context.packageName
+            addCategory(SHORTCUT_CATEGORY)
+        }
 }

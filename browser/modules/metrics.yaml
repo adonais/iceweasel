@@ -206,10 +206,10 @@ browser.engagement:
   uri_count_normal_mode:
     type: counter
     description: >
-      The count of the total non-unique http(s) URIs visited in a
-      subsession, including page reloads, after the session has been
-      restored. URIs on minimized or background tabs may also be counted
-      towards this. Private browsing is not included in this count.
+      The count of the total non-unique http(s) URIs visited, including
+      page reloads, after the session has been restored. URIs on minimized
+      or background tabs may also be counted towards this. Private
+      browsing is not included in this count.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.total_uri_count.
     bugs:
@@ -251,9 +251,8 @@ browser.engagement:
   max_concurrent_tab_count:
     type: quantity
     description: >
-      The count of maximum number of tabs open during a subsession, across
-      all windows, including tabs in private windows and restored at
-      startup.
+      The count of maximum number of tabs open, across all windows,
+      including tabs in private windows and restored at startup.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.max_concurrent_tab_count.
     bugs:
@@ -290,9 +289,8 @@ browser.engagement:
   max_concurrent_window_count:
     type: quantity
     description: >
-      The count of maximum number of browser windows open during a
-      subsession. This includes private windows and the ones opened when
-      starting the browser.
+      The count of maximum number of browser windows open. This includes
+      private windows and the ones opened when starting the browser.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.max_concurrent_window_count.
     bugs:
@@ -308,7 +306,7 @@ browser.engagement:
   max_concurrent_tab_pinned_count:
     type: quantity
     description: >
-      The count of maximum number of pinned tabs open during a subsession.
+      The count of maximum number of pinned tabs open.
       This includes private windows and the ones opened when starting the
       browser. Starting Firefox 85 this includes number of restored pinned
       tabs at startup.
@@ -345,7 +343,7 @@ browser.engagement:
   tab_open_event_count:
     type: counter
     description: >
-      The count of tab open events per subsession, across all windows,
+      The count of tab open events, across all windows,
       after the session has been restored. This includes tab open events
       from private windows and from manual session restorations (i.e.
       after crashes and from about:home), but excludes tabs opened vertically.
@@ -383,8 +381,8 @@ browser.engagement:
   window_open_event_count:
     type: counter
     description: >
-      The count of browser window open events per subsession, after the
-      session has been restored. The count includes private windows and
+      The count of browser window open events, after the session has
+      been restored. The count includes private windows and
       the ones from manual session restorations (i.e. after crashes and
       from about:home).
       This metric was generated to correspond to the Legacy Telemetry
@@ -401,7 +399,7 @@ browser.engagement:
   tab_pinned_event_count:
     type: counter
     description: >
-      The count of tab pinned events per subsession, across all windows,
+      The count of tab pinned events, across all windows,
       after the session has been restored. This includes tab pinned events
       from private windows.
       This metric was generated to correspond to the Legacy Telemetry
@@ -434,7 +432,7 @@ browser.engagement:
   unfiltered_uri_count:
     type: counter
     description: >
-      The count of the total non-unique URIs visited in a subsession, not
+      The count of the total non-unique URIs visited, not
       restricted to a specific protocol, including page reloads and
       about:* pages (other than initial pages such as about:blank, ...),
       after the session has been restored. This does not include
@@ -454,8 +452,8 @@ browser.engagement:
   unique_domains_count:
     type: quantity
     description: >
-      The count of the unique domains visited in a subsession, after the
-      session has been restored. Subdomains under eTLD are aggregated
+      The count of the unique domains visited, after the session has
+      been restored. Subdomains under eTLD are aggregated
       after the first level (i.e. test.example.com and other.example.com
       are only counted once). This does not include background page
       requests and domains from embedded pages or private browsing. The
@@ -1721,6 +1719,61 @@ browser.sanitizer:
       - mbonardo@mozilla.com
     expires: never
     telemetry_mirror: FX_SANITIZE_OPENWINDOWS
+
+  dialog_opened:
+    type: event
+    description: >
+      Recorded when the clear browsing data dialog opens to delete data. Not
+      recorded for the clear on shutdown settings, which use the same dialog
+      to save preferences.
+    extra_keys:
+      entry_point:
+        type: string
+        description: >
+          What the user used to open the dialog: "shortcut", "menu_bar",
+          "app_menu", "quick_action", "address_bar_suggestion",
+          "sidebar_history", "settings_history", "settings_site_data",
+          "fire_button", or "other" for entry points that don't report one.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081506
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081506
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - hthai@mozilla.com
+      - dnguyen@mozilla.com
+    expires: never
+
+  dialog_closed:
+    type: event
+    description: >
+      Recorded once when a clear browsing data dialog recorded by
+      dialog_opened closes. A dialog_opened with no matching dialog_closed
+      means the dialog was still open when the session ended.
+    extra_keys:
+      entry_point:
+        type: string
+        description: >
+          What the user used to open the dialog, as in dialog_opened.
+      outcome:
+        type: string
+        description: >
+          "deleted" if the user confirmed deleting, recorded when the deletion
+          starts; "cancelled" if the user backed out with Cancel, the dialog's
+          close button or Escape; "dismissed" if the dialog closed without a
+          choice, for example from the Settings dialog's close button or
+          because its window closed.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081506
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081506
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - hthai@mozilla.com
+      - dnguyen@mozilla.com
+    expires: never
 
 browser.content_crash:
   dump_unavailable:

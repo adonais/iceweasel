@@ -728,10 +728,10 @@ def add_etw_profile(config, tests):
             extra_options.extend([
                 "--browsertime-arg=chrome.args=--enable-features=EnableEtwExports",
                 "--browsertime-arg=chrome.args=--enable-benchmarking",
-                "--browsertime-arg=chrome.args=--js-flags=--perf-prof",
                 "--browsertime-arg=chrome.args=--js-flags=--enable-etw-stack-walking",
                 "--browsertime-arg=chrome.args=--js-flags=--interpreted-frames-native-stack",
                 "--browsertime-arg=chrome.args=--js-flags=--no-turbo-inlining",
+                "--browsertime-arg=chrome.args=--js-flags=--no-maglev-inlining",
                 "--browsertime-arg=chrome.args=--js-flags=--no-compact-code-space",
             ])
 

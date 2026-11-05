@@ -13,7 +13,9 @@ allowed-tools:
   - Glob
 ---
 
-# Recording
+# Capturing a Firefox profile
+
+## Recording
 
 Use the firefox-devtools MCP:
 
@@ -45,7 +47,7 @@ cannot be combined.
 Keep the recording short. Start the profiler after setup, stop it
 as soon as the action is done.
 
-# Startup
+## Startup
 
 `profiler_start` is too late for startup:
 
@@ -60,17 +62,17 @@ with `MOZ_PROFILER_HELP=1`. `env` replaces what the previous `restart_firefox`
 set, so repeat `MOZ_REMOTE_ALLOW_SYSTEM_ACCESS=1` and any other variable still
 needed.
 
-# Analysis
+## Analysis
 
 Invoke **profiler-analysis** with the profile path and say it is unsymbolicated,
 so it loads with `--with-samply`. Don't read the profile JSON yourself.
 
-# Which Firefox build
+## Which Firefox build
 
 By default, the MCP uses objdir build; `get_firefox_info` shows which binary is running.
 To profile a different Firefox, pass `firefoxPath` to `restart_firefox`.
 
-# Don't profile debug builds for performance analysis
+## Don't profile debug builds for performance analysis
 
 A debug or non-optimized build (`--enable-debug` or `--disable-optimize` in the
 mozconfig) produces profiles that do not reflect what users run. Say so before

@@ -75,10 +75,10 @@ class SourceSurfaceRecording final : public SourceSurface {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(SourceSurfaceRecording, override)
 
-  SourceSurfaceRecording(IntSize aSize, SurfaceFormat aFormat,
+  SourceSurfaceRecording(const IntRect& aRect, SurfaceFormat aFormat,
                          DrawEventRecorderPrivate* aRecorder,
                          SourceSurface* aOriginalSurface = nullptr)
-      : mSize(aSize),
+      : mRect(aRect),
         mFormat(aFormat),
         mRecorder(aRecorder),
         mOriginalSurface(aOriginalSurface) {
@@ -102,7 +102,8 @@ class SourceSurfaceRecording final : public SourceSurface {
   }
 
   SurfaceType GetType() const override { return SurfaceType::RECORDING; }
-  IntSize GetSize() const override { return mSize; }
+  IntSize GetSize() const override { return mRect.Size(); }
+  IntRect GetRect() const override { return mRect; }
   SurfaceFormat GetFormat() const override { return mFormat; }
   already_AddRefed<DataSourceSurface> GetDataSurface() override {
     if (mOriginalSurface) {
@@ -114,7 +115,7 @@ class SourceSurfaceRecording final : public SourceSurface {
 
   already_AddRefed<SourceSurface> ExtractSubrect(const IntRect& aRect) override;
 
-  IntSize mSize;
+  IntRect mRect;
   SurfaceFormat mFormat;
   RefPtr<DrawEventRecorderPrivate> mRecorder;
   // If a SourceSurfaceRecording is returned from an OptimizeSourceSurface call
@@ -412,13 +413,14 @@ void DrawTargetRecording::DrawGlyphs(ScaledFont* aFont,
     userData->recorder->AddScaledFont(aFont);
   }
 
+  MOZ_ASSERT(!aBuffer.mText || mRecorder->SupportsGlyphSourceText(),
+             "Glyph source text provided to a recorder which doesn't support "
+             "it");
   if (aStrokeOptions) {
     RecordEventSelf(RecordedStrokeGlyphs(aFont, aPattern, *aStrokeOptions,
-                                         aOptions, aBuffer.mGlyphs,
-                                         aBuffer.mNumGlyphs));
+                                         aOptions, aBuffer));
   } else {
-    RecordEventSelf(RecordedFillGlyphs(aFont, aPattern, aOptions,
-                                       aBuffer.mGlyphs, aBuffer.mNumGlyphs));
+    RecordEventSelf(RecordedFillGlyphs(aFont, aPattern, aOptions, aBuffer));
   }
 }
 
@@ -511,7 +513,7 @@ void DrawTargetRecording::MarkChanged() {
 
 already_AddRefed<SourceSurface> DrawTargetRecording::Snapshot() {
   RefPtr retSurf =
-      MakeRefPtr<SourceSurfaceRecording>(mRect.Size(), mFormat, mRecorder);
+      MakeRefPtr<SourceSurfaceRecording>(mRect, mFormat, mRecorder);
 
   RecordEventSelfSkipFlushTransform(RecordedSnapshot(ReferencePtr(retSurf)));
 
@@ -521,8 +523,8 @@ already_AddRefed<SourceSurface> DrawTargetRecording::Snapshot() {
 already_AddRefed<SourceSurface>
 DrawTargetRecording::CreateExternalSourceSurface(const IntSize& aSize,
                                                  SurfaceFormat aFormat) {
-  RefPtr retSurf =
-      MakeRefPtr<SourceSurfaceRecording>(aSize, aFormat, mRecorder);
+  RefPtr retSurf = MakeRefPtr<SourceSurfaceRecording>(
+      IntRect(IntPoint(), aSize), aFormat, mRecorder);
 
   return retSurf.forget();
 }
@@ -538,8 +540,8 @@ already_AddRefed<SourceSurface> DrawTargetRecording::SnapshotExternalCanvas(
 
 already_AddRefed<SourceSurface> DrawTargetRecording::IntoLuminanceSource(
     LuminanceType aLuminanceType, float aOpacity) {
-  RefPtr retSurf = MakeRefPtr<SourceSurfaceRecording>(
-      mRect.Size(), SurfaceFormat::A8, mRecorder);
+  RefPtr retSurf =
+      MakeRefPtr<SourceSurfaceRecording>(mRect, SurfaceFormat::A8, mRecorder);
 
   RecordEventSelfSkipFlushTransform(
       RecordedIntoLuminanceSource(retSurf, aLuminanceType, aOpacity));
@@ -553,8 +555,8 @@ already_AddRefed<SourceSurface> SourceSurfaceRecording::ExtractSubrect(
     return nullptr;
   }
 
-  RefPtr subSurf =
-      MakeRefPtr<SourceSurfaceRecording>(aRect.Size(), mFormat, mRecorder);
+  RefPtr subSurf = MakeRefPtr<SourceSurfaceRecording>(
+      IntRect(IntPoint(), aRect.Size()), mFormat, mRecorder);
   mRecorder->RecordEvent(RecordedExtractSubrect(subSurf, this, aRect));
   return subSurf.forget();
 }
@@ -772,6 +774,17 @@ bool DrawTargetRecording::RemoveAllClips() {
   return true;
 }
 
+// Layer bounds are recorded in user space rather than device space, since the
+// draw target played back onto might not be in our device space.
+Rect DrawTargetRecording::DeviceToUserLayerBounds(
+    const IntRect& aBounds) const {
+  Matrix inverse = mTransform;
+  if (aBounds.IsEmpty() || !inverse.Invert()) {
+    return Rect();
+  }
+  return inverse.TransformBounds(Rect(aBounds));
+}
+
 void DrawTargetRecording::PushLayer(bool aOpaque, Float aOpacity,
                                     SourceSurface* aMask,
                                     const Matrix& aMaskTransform,
@@ -782,7 +795,8 @@ void DrawTargetRecording::PushLayer(bool aOpaque, Float aOpacity,
   }
 
   RecordEventSelf(RecordedPushLayer(aOpaque, aOpacity, aMask, aMaskTransform,
-                                    aBounds, aCopyBackground));
+                                    DeviceToUserLayerBounds(aBounds),
+                                    aCopyBackground));
 
   PushedLayer layer(GetPermitSubpixelAA());
   mPushedLayers.push_back(layer);
@@ -799,9 +813,9 @@ void DrawTargetRecording::PushLayerWithBlend(bool aOpaque, Float aOpacity,
     EnsureSurfaceStoredRecording(mRecorder, aMask, "PushLayer");
   }
 
-  RecordEventSelf(RecordedPushLayerWithBlend(aOpaque, aOpacity, aMask,
-                                             aMaskTransform, aBounds,
-                                             aCopyBackground, aCompositionOp));
+  RecordEventSelf(RecordedPushLayerWithBlend(
+      aOpaque, aOpacity, aMask, aMaskTransform,
+      DeviceToUserLayerBounds(aBounds), aCopyBackground, aCompositionOp));
 
   PushedLayer layer(GetPermitSubpixelAA());
   mPushedLayers.push_back(layer);
@@ -861,7 +875,8 @@ already_AddRefed<SourceSurface> DrawTargetRecording::OptimizeSourceSurface(
   }
 
   RefPtr retSurf = MakeRefPtr<SourceSurfaceRecording>(
-      aSurface->GetSize(), aSurface->GetFormat(), mRecorder, aSurface);
+      IntRect(IntPoint(), aSurface->GetSize()), aSurface->GetFormat(),
+      mRecorder, aSurface);
   RecordEventSelfSkipFlushTransform(
       RecordedOptimizeSourceSurface(aSurface, retSurf));
   userData->optimizedSurface = retSurf;
@@ -931,12 +946,28 @@ bool DrawTargetRecording::CanCreateSimilarDrawTarget(
 
 RefPtr<DrawTarget> DrawTargetRecording::CreateClippedDrawTarget(
     const Rect& aBounds, SurfaceFormat aFormat) {
+  IntRect rect = mRect;
+  if (!aBounds.IsEmpty()) {
+    rect = rect.Intersect(RoundedOut(mTransform.TransformBounds(aBounds)));
+  }
+  if (rect.IsEmpty()) {
+    rect.SizeTo(1, 1);
+  }
+  RefPtr<DrawTarget> similarDT = CreateClippedDrawTargetForRect(rect, aFormat);
+  similarDT->SetTransform(mTransform);
+  return similarDT;
+}
+
+RefPtr<DrawTarget> DrawTargetRecording::CreateClippedDrawTargetForRect(
+    const IntRect& aRect, SurfaceFormat aFormat) {
+  // We can't use the generic DrawTargetOffset implementation, since it's
+  // snapshots would be SourceSurfaceOffsets wrapping our recording surfaces,
+  // which we can't record.
   RefPtr<DrawTargetRecording> similarDT =
-      new DrawTargetRecording(this, mRect, aFormat);
+      new DrawTargetRecording(this, aRect, aFormat);
   similarDT->SetOptimizeTransform(mOptimizeTransform);
   RecordEventSelf(
-      RecordedCreateClippedDrawTarget(similarDT.get(), aBounds, aFormat));
-  similarDT->mTransform = similarDT->mRecordedTransform = mTransform;
+      RecordedCreateClippedDrawTarget(similarDT.get(), aRect, aFormat));
   return similarDT;
 }
 

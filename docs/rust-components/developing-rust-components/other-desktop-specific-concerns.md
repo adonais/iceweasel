@@ -38,5 +38,5 @@ However, cycles that go across the FFI using callback interfaces are particularl
 JavaScript callback interfaces can sometimes be avoided if UniFFI [trait interfaces](https://mozilla.github.io/uniffi-rs/latest/types/interfaces.html#exposing-traits-as-interfaces) are used.
 These work similarly to callback interfaces, but can be implemented in either JavaScript or Rust.
 
-Firefox Desktop has some support for using Rust code, for example [Rust code can access XPCOM components](<https://firefox-source-docs.mozilla.org/writing-rust-code/xpcom.html>.
+Firefox Desktop has some support for using Rust code, for example {doc}`Rust code can access XPCOM components </writing-rust-code/xpcom>`.
 You may be able to leverage this to avoid JavaScript altogether and implementing the trait in Firefox Desktop Rust code instead.

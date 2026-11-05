@@ -216,8 +216,7 @@ struct Transition {
    */
   static TerminalState TerminateFailure() { return TerminalState::FAILURE; }
 
- private:
-  Transition();
+  Transition() = delete;
 };
 
 /**

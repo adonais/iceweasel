@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "Security")
+    BUG_COMPONENT = ("Core", "Security: Keystore")
 
 XPIDL_SOURCES += [
     "nsILockstore.idl",
@@ -19,9 +19,18 @@ EXPORTS += [
     "LockstoreService.h",
 ]
 
+EXPORTS.mozilla.security.lockstore += [
+    "ProfileKek.h",
+]
+
 UNIFIED_SOURCES += [
     "LockstoreService.cpp",
+    "ProfileKek.cpp",
 ]
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+    # For MacApplicationDelegate.h.
+    LOCAL_INCLUDES += ["/toolkit/xre"]
 
 FINAL_LIBRARY = "xul"
 

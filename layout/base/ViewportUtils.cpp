@@ -116,6 +116,13 @@ nsPoint ViewportUtils::LayoutToVisual(const nsPoint& aPt, PresShell* aContext) {
   return CSSPoint::ToAppUnits(transformed);
 }
 
+nsRect ViewportUtils::LayoutToVisual(const nsRect& aRect, PresShell* aContext) {
+  auto visualToLayout = mozilla::GetVisualToLayoutTransform(aContext);
+  CSSRect cssRect = CSSRect::FromAppUnits(aRect);
+  cssRect = visualToLayout.Inverse().TransformBounds(cssRect);
+  return CSSRect::ToAppUnits(cssRect);
+}
+
 LayoutDevicePoint ViewportUtils::DocumentRelativeLayoutToVisual(
     const LayoutDevicePoint& aPoint, PresShell* aShell) {
   nsIContent* targetContent = nullptr;

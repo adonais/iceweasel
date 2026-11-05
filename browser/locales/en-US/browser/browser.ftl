@@ -201,6 +201,15 @@ urlbar-split-view-button =
     .tooltiptext = Split view
     .aria-label = Split view
 
+## URLbar context menu
+
+urlbar-menuitem-paste-and-go =
+    .label = Paste and Go
+    .accesskey = G
+urlbar-menuitem-paste-and-search =
+    .label = Paste and Search
+    .accesskey = S
+
 ## Searchbar context menu
 
 clear-search-history =
@@ -429,8 +438,9 @@ bookmark-panel-remove =
 bookmark-panel-show-editor-checkbox =
     .label = Show editor when saving
     .accesskey = S
-bookmark-panel-save-button =
+bookmark-panel-save-button2 =
     .label = Save
+    .accesskey = a
 
 # Width of the bookmark panel.
 # Should be large enough to fully display the Done and
@@ -1161,14 +1171,13 @@ qrcode-image =
 qrcode-close-button =
     .aria-label = Close
 
-# Variables:
-#  $shortcut (String): keyboard shortcut to save a copy of the page
+## Variables:
+##  $shortcut (String): keyboard shortcut to perform the action
+
 toolbar-button-save-page =
   .label = Save page
   .tooltiptext = Save this page ({ $shortcut })
 
-# Variables:
-#  $shortcut (String): keyboard shortcut to open a local file
 toolbar-button-open-file =
   .label = Open file
   .tooltiptext = Open a file ({ $shortcut })
@@ -1181,8 +1190,6 @@ toolbar-button-send-tab =
   .label = Send tab
   .tooltiptext = Send current tab to another device
 
-# Variables
-# $shortcut (string) - Keyboard shortcut to open a new private browsing window
 toolbar-button-new-private-window =
   .label = New private window
   .tooltiptext = Open a new private browsing window ({ $shortcut })
@@ -1195,6 +1202,52 @@ toolbar-button-tab-groups =
   .label = Tab groups
   .tooltiptext = Show your tab groups
 
+toolbar-button-history =
+  .label = History
+  .tooltiptext = Show your history ({ $shortcut })
+
+toolbar-button-find =
+  .label = Find
+  .tooltiptext = Find in this page ({ $shortcut })
+
+toolbar-button-developer =
+  .label = Developer
+  .tooltiptext = Open Web developer tools ({ $shortcut })
+
+toolbar-button-forget =
+  .label = Forget
+  .tooltiptext = Forget about some browsing history
+
+toolbar-zoom-controls =
+  .label = Zoom Controls
+  .title = Zoom controls
+
+toolbar-button-zoom-out =
+  .label = Zoom out
+  .tooltiptext = Zoom out ({ $shortcut })
+
+toolbar-button-zoom-reset-tooltip = Reset zoom level ({ $shortcut })
+
+toolbar-button-zoom-in =
+  .label = Zoom in
+  .tooltiptext = Zoom in ({ $shortcut })
+
+toolbar-edit-controls =
+  .label = Edit controls
+  .title = Edit controls
+
+toolbar-button-cut =
+  .label = Cut
+  .tooltiptext = Cut ({ $shortcut })
+
+toolbar-button-copy =
+  .label = Copy
+  .tooltiptext = Copy ({ $shortcut })
+
+toolbar-button-paste =
+  .label = Paste
+  .tooltiptext = Paste ({ $shortcut })
+
 ## EME notification panel
 
 eme-notifications-drm-content-playing = Some audio or video on this site uses DRM software, which may limit what { -brand-short-name } can let you do with it.
@@ -1202,6 +1255,35 @@ eme-notifications-drm-content-playing-manage = Manage settings
 eme-notifications-drm-content-playing-manage-accesskey = M
 eme-notifications-drm-content-playing-dismiss = Dismiss
 eme-notifications-drm-content-playing-dismiss-accesskey = D
+
+## Notification bars for media playback issues
+
+eme-notifications-drm-content-disabled-message = You must enable DRM to play some audio or video on this page.
+eme-notifications-drm-content-disabled-button =
+    .label = Enable DRM
+    .accesskey = E
+eme-notifications-drm-content-cdm-installing-message = { -brand-short-name } is installing components needed to play the audio or video on this page. Please try again later.
+
+decoder-doctor-no-codecs-linux-message = To play video, you may need to install the required video codecs.
+decoder-doctor-no-hw-acceleration-message = To improve video quality, you may need to install Microsoft’s Media Feature Pack.
+decoder-doctor-no-pulse-audio-message = To play audio, you may need to install the required PulseAudio software.
+decoder-doctor-unsupported-libavcodec-message = libavcodec may be vulnerable or is not supported, and should be updated to play video.
+decoder-doctor-decode-error-message = An error occurred while decoding a media resource.
+decoder-doctor-decode-warning-message = A recoverable error occurred while decoding a media resource.
+decoder-doctor-learn-how-link = Learn how
+decoder-doctor-report-issue-button =
+    .label = Report site issue
+    .accesskey = R
+
+# Variables:
+#   $pluginName (String) - The name of the media plugin that crashed (for example, “Widevine Content Decryption Module”).
+plugin-crashed-notification-message = The { $pluginName } plugin has crashed.
+plugin-crashed-notification-reload-button =
+    .label = Reload page
+    .accesskey = R
+plugin-crashed-notification-submit-button =
+    .label = Submit a crash report
+    .accesskey = S
 
 ## Password save/update panel
 
@@ -1327,19 +1409,13 @@ tabs-toolbar =
 tabs-toolbar-new-tab =
     .label = New Tab
 
-tabs-toolbar-list-all-tabs =
-    .label = List all tabs
-    .tooltiptext = List all tabs
+tabs-toolbar-list-all-tabs-2 =
+    .label = Search and manage tabs
+    .tooltiptext = Search and manage tabs
 
 ## Drop indicator text for pinned tabs when no tabs are pinned.
 
 pinned-tabs-drop-indicator = Drop tab here to pin
-
-## Infobar shown at startup to suggest session-restore
-
-# <img data-l10n-name="icon"/> will be replaced by the application menu icon
-restore-session-startup-suggestion-message = <strong>Open previous tabs?</strong> You can restore your previous session from the { -brand-short-name } application menu <img data-l10n-name="icon"/>, under History.
-restore-session-startup-suggestion-button = Show me how
 
 ## Infobar shown when the user tries to open a file picker and file pickers are blocked by enterprise policy
 
@@ -1441,6 +1517,27 @@ reset-pbm-panel-confirm-button2 =
     .label = Clear private session
     .accesskey = l
 reset-pbm-panel-complete = Private session data deleted
+
+## Fire button. Clears the whole browsing session, then closes every window and
+## opens a new one.
+
+fire-button-toolbar-button =
+    .label = Delete some or all of your browsing data
+    .tooltiptext = Delete some or all of your browsing data
+fire-button-panel-heading = Delete all browsing data?
+fire-button-panel-description = This deletes history, cookies, and site data. You’ll be signed out of sites. This window will close, and { -brand-short-name } will open a new one.
+fire-button-panel-choose-description = If you don’t want to delete everything, choose specific data instead.
+# Opens the "Delete browsing data" dialog, where the user picks
+# which kinds of data to delete. The trailing ellipsis marks that a dialog
+# follows rather than the action happening immediately.
+fire-button-panel-choose-link = Choose…
+fire-button-panel-cancel-button =
+    .label = Cancel
+    .accesskey = C
+fire-button-panel-confirm-button =
+    .label = Delete all
+    .accesskey = D
+fire-button-panel-complete = Browsing data deleted
 
 ## Autorefresh blocker
 

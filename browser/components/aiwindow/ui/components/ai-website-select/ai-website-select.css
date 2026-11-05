@@ -12,7 +12,6 @@
 .website-select-checkbox {
   padding: var(--space-small) var(--space-large);
   border-radius: var(--border-radius-xlarge, var(--border-radius-large));
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--select-background-color);
   color: var(--select-text-color);
   transition: background-color 0.2s ease;
@@ -22,12 +21,10 @@
 }
 
 .website-select-checkbox:hover {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--select-hover-background-color);
 }
 
 .website-select-checkbox:active {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--select-active-background-color);
 }
 

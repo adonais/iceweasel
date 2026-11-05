@@ -21,3 +21,8 @@ FINAL_LIBRARY = "xul-gtest"
 LOCAL_INCLUDES += [
     "/dom/fs/include",
 ]
+
+SOURCE_HEADERS += [
+    "FileSystemMocks.h",
+    "TestHelpers.h",
+]

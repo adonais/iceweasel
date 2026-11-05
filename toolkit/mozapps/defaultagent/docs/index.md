@@ -2,7 +2,7 @@
 
 The Default Browser Agent is a Windows-only scheduled task which runs in the background to collect and submit data about the browser that the user has set as their OS default (that is, the browser that will be invoked by the operating system to open web links that the user clicks on in other programs). Its purpose is to help Mozilla understand user's default browser choices and, in the future, to engage with users at a time when they may not be actively running Firefox.
 
-For information about the specific data that the agent sends, see {doc}`the ping documentation </toolkit/components/telemetry/data/default-browser-ping>`.
+For information about the specific data that the agent sends, see the [default-agent ping](https://dictionary.telemetry.mozilla.org/apps/firefox_desktop_background_defaultagent/pings/default-agent).
 
 ## Scheduled Task
 

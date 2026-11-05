@@ -1315,7 +1315,7 @@ class AndroidArguments(ArgumentContainer):
             {
                 "action": "store",
                 "default": None,
-                "help": "When using --enable-java-coverage, save the code coverage report "
+                "help": "When using --enable-coverage, save the code coverage report "
                 "files to this directory.",
             },
         ],

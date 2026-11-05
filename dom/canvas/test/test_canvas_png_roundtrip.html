@@ -1,0 +1,138 @@
+<!DOCTYPE HTML>
+<meta charset="utf-8">
+<title>Canvas PNG alpha conversion</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+<script>
+SimpleTest.waitForExplicitFinish();
+
+function makeContext(width, height, options = {}) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  return canvas.getContext("2d", options);
+}
+
+function read(ctx) {
+  return ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+}
+
+function checkPixels(actual, expected, message) {
+  is(Array.from(actual.data).join(), Array.from(expected.data).join(), message);
+}
+
+async function loadImage(src) {
+  const image = new Image();
+  image.src = src;
+  await image.decode();
+  return image;
+}
+
+function composite(ctx, background) {
+  const out = makeContext(ctx.canvas.width, ctx.canvas.height, { alpha: false });
+  out.fillStyle = background;
+  out.fillRect(0, 0, out.canvas.width, out.canvas.height);
+  out.drawImage(ctx.canvas, 0, 0);
+  return read(out);
+}
+
+function toBlob(canvas) {
+  return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+}
+
+async function exportImage(canvas, api) {
+  if (api == "toDataURL") {
+    return loadImage(canvas.toDataURL("image/png"));
+  }
+  const blob = await toBlob(canvas);
+  is(blob.type, "image/png", "PNG blob type");
+  const url = URL.createObjectURL(blob);
+  try {
+    return await loadImage(url);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function restore(ctx, image) {
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.drawImage(image, 0, 0);
+}
+
+async function testConversions(options, large = false) {
+  const original = await loadImage(
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGPg2T3JDgADyAGYmiSbAQAAAABJRU5ErkJggg=="
+  );
+  const imported = makeContext(1, 1, options);
+  imported.drawImage(original, 0, 0);
+  is(Array.from(read(imported).data).join(), "12,185,144,62",
+     "Bug 1613369: nearest-quantized PNG readback");
+  is(Array.from(composite(imported, "black").data).join(), "3,45,35,255",
+     "Bug 1613369: stored premultiplied channels, independently of readback rounding");
+
+  const alphas = [0, 1, 2, 3, 8, 16, 62, 127, 128, 129, 250, 254, 255];
+  const channels = [0, 1, 2, 12, 63, 64, 126, 127, 128, 129, 146, 184, 187, 189, 191, 254, 255];
+  const ctx = makeContext(large ? 128 : channels.length,
+                         large ? 128 : alphas.length + 1, options);
+  const input = ctx.createImageData(ctx.canvas.width, ctx.canvas.height);
+  for (let y = 0; y < alphas.length; y++) {
+    for (let x = 0; x < channels.length; x++) {
+      input.data.set([channels[x], channels[channels.length - x - 1],
+                      channels[(x + 5) % channels.length], alphas[y]],
+                     4 * (y * ctx.canvas.width + x));
+    }
+  }
+  const samples = [[127, 0, 0, 8], [184, 189, 191, 250], [184, 189, 191, 255]];
+  const sampleOffset = 4 * alphas.length * ctx.canvas.width;
+  samples.forEach((pixel, i) => input.data.set(pixel, sampleOffset + 4 * i));
+  ctx.putImageData(input, 0, 0);
+  info(`Canvas backend ${JSON.stringify(options)}, large=${large}: ${JSON.stringify(SpecialPowers.wrap(ctx).getDebugInfo(true))}`);
+  const baseline = read(ctx);
+  const black = composite(ctx, "black");
+  const white = composite(ctx, "white");
+  is(Array.from(baseline.data.slice(sampleOffset, sampleOffset + 12)).join(),
+     "128,0,0,8,184,189,191,250,184,189,191,255", "Initial quantization of reported samples");
+
+  for (let cycle = 1; cycle <= 10; cycle++) {
+    ctx.putImageData(read(ctx), 0, 0);
+    checkPixels(read(ctx), baseline, `Direct ImageData restoration ${cycle}`);
+  }
+
+  const dataURL = ctx.canvas.toDataURL("image/png");
+  const urlBytes = Uint8Array.from(atob(dataURL.split(",")[1]), c => c.charCodeAt(0));
+  const blobBytes = new Uint8Array(await (await toBlob(ctx.canvas)).arrayBuffer());
+  is(Array.from(blobBytes).join(), Array.from(urlBytes).join(), "Both PNG APIs encode the same bytes");
+
+  for (const api of ["toDataURL", "toBlob"]) {
+    ctx.putImageData(baseline, 0, 0);
+    const snapshot = await exportImage(ctx.canvas, api);
+    for (let cycle = 1; cycle <= 2; cycle++) {
+      restore(ctx, snapshot);
+      checkPixels(read(ctx), baseline, `${api}: immutable PNG snapshot ${cycle}`);
+    }
+    ctx.putImageData(baseline, 0, 0);
+    for (let cycle = 1; cycle <= 10; cycle++) {
+      restore(ctx, await exportImage(ctx.canvas, api));
+      checkPixels(read(ctx), baseline, `${api}: evolving PNG round trip ${cycle}`);
+      checkPixels(composite(ctx, "black"), black, `${api}: black composite ${cycle}`);
+      checkPixels(composite(ctx, "white"), white, `${api}: white composite ${cycle}`);
+    }
+  }
+}
+
+addLoadEvent(async function() {
+  try {
+    await SpecialPowers.pushPrefEnv({ set: [
+      ["privacy.resistFingerprinting", false],
+      ["privacy.fingerprintingProtection", false],
+    ] });
+    await testConversions({});
+    await testConversions({ willReadFrequently: true });
+    await testConversions({}, true);
+  } catch (error) {
+    ok(false, `${error}\n${error.stack}`);
+  } finally {
+    SimpleTest.finish();
+  }
+});
+</script>

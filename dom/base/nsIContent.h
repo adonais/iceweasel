@@ -57,6 +57,7 @@ class nsIContent : public nsINode {
   using IMEState = mozilla::widget::IMEState;
   using BindContext = mozilla::dom::BindContext;
   using UnbindContext = mozilla::dom::UnbindContext;
+  static constexpr bool kHasWeakReferenceTearoff = true;
 
   void ConstructUbiNode(void* storage) override;
 
@@ -480,9 +481,10 @@ class nsIContent : public nsINode {
   static inline bool RequiresDoneAddingChildren(int32_t aNamespace,
                                                 nsAtom* aName) {
     return (aNamespace == kNameSpaceID_XHTML &&
-            (aName == nsGkAtoms::select || aName == nsGkAtoms::textarea ||
-             aName == nsGkAtoms::head || aName == nsGkAtoms::title ||
-             aName == nsGkAtoms::object || aName == nsGkAtoms::output)) ||
+            (aName == nsGkAtoms::select || aName == nsGkAtoms::option ||
+             aName == nsGkAtoms::textarea || aName == nsGkAtoms::head ||
+             aName == nsGkAtoms::title || aName == nsGkAtoms::object ||
+             aName == nsGkAtoms::output)) ||
            (aNamespace == kNameSpaceID_SVG && aName == nsGkAtoms::title) ||
            (aNamespace == kNameSpaceID_XUL && aName == nsGkAtoms::linkset);
   }
@@ -617,8 +619,7 @@ class nsIContent : public nsINode {
 
   /**
    * Whenever a HeadingReset or HeadingOffset attribute changes on an ancestor,
-   * or a node is slotted/unslotted, all descendant heading elements (including
-   * those in shadow trees and assigned to slots) should be updated.
+   * all shadow-including descendant heading elements should be updated.
    */
   void UpdateHeadingElementsOffsetChange();
 

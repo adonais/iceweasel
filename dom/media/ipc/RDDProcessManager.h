@@ -111,7 +111,7 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   uint32_t mNumUnexpectedCrashes = 0;
 
   // Fields that are associated with the current RDD process.
-  RDDProcessHost* mProcess = nullptr;
+  RefPtr<RDDProcessHost> mProcess;
   uint64_t mProcessToken = 0;
   RDDChild* mRDDChild = nullptr;
   // Collects any pref changes that occur during process launch (after

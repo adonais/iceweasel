@@ -4,6 +4,7 @@ import unittest
 
 import mozunit
 from mozharness.base import log
+from mozharness.mozilla.testing.unittest import DesktopUnittestOutputParser
 
 tmp_dir = "test_log_dir"
 log_name = "test"
@@ -38,6 +39,16 @@ class TestLog(unittest.TestCase):
         l.log_message("blah")
         self.assertTrue(os.path.exists(get_log_file_path()))
         del l
+
+
+class TestOutputParser(unittest.TestCase):
+    def test_unstructured_parser_finish(self):
+        parser = DesktopUnittestOutputParser(
+            suite_category="jittest", error_list=[], log_output=False
+        )
+        parser.add_lines("TEST-PASS | tests/basic/a.js | Success")
+        parser.finish()
+        self.assertEqual(parser.num_errors, 0)
 
 
 if __name__ == "__main__":

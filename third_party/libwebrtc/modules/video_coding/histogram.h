@@ -34,6 +34,7 @@ class Histogram {
   size_t NumValues() const;
 
  private:
+  const size_t max_num_values_;
   // A circular buffer that holds the values that make up the histogram.
   std::vector<size_t> values_;
   std::vector<size_t> buckets_;

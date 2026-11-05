@@ -678,9 +678,6 @@ struct Extensions
     // GL_ANGLE_explicit_context
     bool explicitContextANGLE = false;
 
-    // GL_CHROMIUM_framebuffer_mixed_samples
-    bool framebufferMixedSamplesCHROMIUM = false;
-
     // GL_ANGLE_framebuffer_multisample
     bool framebufferMultisampleANGLE = false;
 
@@ -780,6 +777,9 @@ struct Extensions
     // GL_ANGLE_texture_rectangle
     bool textureRectangleANGLE = false;
 
+    // GL_ANGLE_trim_memory
+    bool trimMemoryANGLE = false;
+
     // GL_ANGLE_vulkan_image
     bool vulkanImageANGLE = false;
 
@@ -812,6 +812,9 @@ struct Extensions
 
     // GL_OES_query_matrix
     bool queryMatrixOES = false;
+
+    // GL_OES_stencil8
+    bool stencil8OES = false;
 
     // GL_OES_texture_cube_map
     bool textureCubeMapOES = false;

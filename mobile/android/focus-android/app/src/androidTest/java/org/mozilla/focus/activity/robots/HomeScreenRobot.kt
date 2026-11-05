@@ -6,6 +6,7 @@ package org.mozilla.focus.activity.robots
 
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.mozilla.focus.R
 import org.mozilla.focus.helpers.TestHelper.appName
@@ -14,6 +15,7 @@ import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.packageName
 import org.mozilla.focus.helpers.TestHelper.waitingTime
 import org.mozilla.focus.helpers.TestHelper.waitingTimeShort
+import org.mozilla.focus.topsites.TOP_SITES_ROW_TEST_TAG
 
 class HomeScreenRobot {
 
@@ -22,20 +24,18 @@ class HomeScreenRobot {
         assertTrue(editURLBar.text.equals(getStringResource(R.string.urlbar_hint)))
     }
 
-    fun verifyOnboardingFirstSlide() = assertTrue(firstSlideTitle.waitForExists(waitingTime))
-
-    fun verifyOnboardingSecondSlide() = assertTrue(secondSlideTitle.waitForExists(waitingTime))
-
-    fun verifyOnboardingThirdSlide() = assertTrue(thirdSlideTitle.waitForExists(waitingTime))
-
-    fun verifyOnboardingLastSlide() = assertTrue(lastSlide.waitForExists(waitingTime))
-
-    fun clickOnboardingNextButton() = nextButton.clickAndWaitForNewWindow(waitingTimeShort)
-
-    fun clickOnboardingFinishButton() = finishButton.clickAndWaitForNewWindow(waitingTimeShort)
-
     fun verifyPageShortcutExists(title: String) {
         assertTrue(topSitesList.getChild(UiSelector().textContains(title)).waitForExists(waitingTime))
+    }
+
+    fun verifyPageShortcutsAreCentered() {
+        val shortcutsRow = topSitesList.getChild(UiSelector().resourceId(TOP_SITES_ROW_TEST_TAG))
+        assertTrue(shortcutsRow.waitForExists(waitingTime))
+        assertEquals(
+            topSitesList.visibleBounds.exactCenterX(),
+            shortcutsRow.visibleBounds.exactCenterX(),
+            1f,
+        )
     }
 
     fun longTapPageShortcut(title: String) {
@@ -125,23 +125,6 @@ private val editURLBar =
 
 private val mainMenu
     get() = mDevice.findObject(UiSelector().description(getStringResource(R.string.content_description_menu)))
-
-/** ******* First Run Locators */
-private val firstSlideTitle =
-    mDevice.findObject(UiSelector().textContains(getStringResource(R.string.firstrun_defaultbrowser_title)))
-
-private val secondSlideTitle =
-    mDevice.findObject(UiSelector().textContains(getStringResource(R.string.firstrun_search_title)))
-
-private val thirdSlideTitle =
-    mDevice.findObject(UiSelector().textContains(getStringResource(R.string.firstrun_shortcut_title)))
-
-private val lastSlide =
-    mDevice.findObject(UiSelector().textContains(getStringResource(R.string.firstrun_privacy_title)))
-
-private val nextButton = mDevice.findObject(UiSelector().resourceId("$packageName:id/next").enabled(true))
-
-private val finishButton = mDevice.findObject(UiSelector().resourceId("$packageName:id/finish").enabled(true))
 
 private val topSitesList = mDevice.findObject(UiSelector().resourceId("$packageName:id/topSites"))
 

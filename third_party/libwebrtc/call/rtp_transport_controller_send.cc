@@ -62,7 +62,6 @@
 
 namespace webrtc {
 namespace {
-const int64_t kRetransmitWindowSizeMs = 500;
 
 constexpr TimeDelta kPacerQueueUpdateInterval = TimeDelta::Millis(25);
 
@@ -119,8 +118,7 @@ RtpTransportControllerSend::RtpTransportControllerSend(
           env_.field_trials().IsEnabled("WebRTC-Bwe-ResetOnAdapterIdChange")),
       network_available_(false),
       congestion_window_size_(DataSize::PlusInfinity()),
-      is_congested_(false),
-      retransmission_rate_limiter_(&env_.clock(), kRetransmitWindowSizeMs) {
+      is_congested_(false) {
   RTC_DCHECK(worker_thread_);
   initial_config_.constraints =
       ConvertConstraints(config.bitrate_config, &env_.clock());
@@ -152,8 +150,7 @@ RtpVideoSenderInterface* RtpTransportControllerSend::CreateRtpVideoSender(
       rtcp_report_interval_ms, send_transport, observers,
       // TODO(holmer): Remove this circular dependency by injecting
       // the parts of RtpTransportControllerSendInterface that are really used.
-      this, &retransmission_rate_limiter_, std::move(fec_controller),
-      frame_encryption_config.frame_encryptor,
+      this, std::move(fec_controller), frame_encryption_config.frame_encryptor,
       frame_encryption_config.crypto_options, std::move(frame_transformer)));
   return video_rtp_senders_.back().get();
 }
@@ -207,7 +204,6 @@ void RtpTransportControllerSend::UpdateControlState() {
   std::optional<TargetTransferRate> update = control_handler_->GetUpdate();
   if (!update)
     return;
-  retransmission_rate_limiter_.SetMaxRate(update->target_rate.bps());
   // We won't create control_handler_ until we have an observers.
   RTC_DCHECK(observer_ != nullptr);
   observer_->OnTargetTransferRate(*update);
@@ -409,14 +405,9 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
     UpdateInitialConstraints(msg.constraints);
   }
 
-  if (is_controller_supporting_ecn && !sending_packets_as_ect1_) {
-    RTC_LOG(LS_INFO)
-        << "Enabling sending packets as ECT1 again after route change. ";
-    sending_packets_as_ect1_ = true;
-    packet_router_.ConfigureForRtcpFeedback(
-        /*set_transport_seq=*/rfc_8888_feedback_negotiated_,
-        sending_packets_as_ect1_);
-  }
+  // The new path may preserve the ECT(1) marking even if the old one did not.
+  ect1_policy_.OnNetworkRouteChanged();
+  packet_router_.SetSendPacketsAsEct1(ect1_policy_.ShouldSendEct1());
 }
 
 void RtpTransportControllerSend::OnNetworkAvailability(bool network_available) {
@@ -599,6 +590,9 @@ void RtpTransportControllerSend::NotifyBweOfPacedSentPacket(
   transport_feedback_adapter_.AddPacket(packet, pacing_info,
                                         transport_overhead_per_packet_.bytes(),
                                         creation_time);
+
+  ect1_policy_.OnPacketSent(creation_time, packet.send_as_ect1());
+  packet_router_.SetSendPacketsAsEct1(ect1_policy_.ShouldSendEct1());
 }
 
 void RtpTransportControllerSend::SetPreferredRtcpCcAckType(
@@ -606,19 +600,15 @@ void RtpTransportControllerSend::SetPreferredRtcpCcAckType(
   RTC_DCHECK_RUN_ON(worker_thread_);
   RTC_DCHECK(preferred_rtcp_cc_ack_type == RtcpFeedbackType::CCFB ||
              preferred_rtcp_cc_ack_type == RtcpFeedbackType::TRANSPORT_CC);
-  if (preferred_rtcp_cc_ack_type == RtcpFeedbackType::CCFB) {
-    rfc_8888_feedback_negotiated_ = true;
-    sending_packets_as_ect1_ = true;
-    RTC_LOG_F(LS_INFO)
-        << "Sending packets as ECT1(1) and assume RFC 8888 feedback.";
-  } else {
-    rfc_8888_feedback_negotiated_ = false;
-    sending_packets_as_ect1_ = false;
-    RTC_LOG_F(LS_INFO) << "Assume TWCC feedback.";
-  }
-  packet_router_.ConfigureForRtcpFeedback(
-      /*set_transport_seq=*/rfc_8888_feedback_negotiated_,
-      sending_packets_as_ect1_);
+  rfc_8888_feedback_negotiated_ =
+      preferred_rtcp_cc_ack_type == RtcpFeedbackType::CCFB;
+  RTC_LOG_F(LS_INFO) << "Assume "
+                     << (rfc_8888_feedback_negotiated_ ? "RFC 8888" : "TWCC")
+                     << " feedback.";
+  packet_router_.SetGenerateTransportSequenceNumbers(
+      rfc_8888_feedback_negotiated_);
+  ect1_policy_.SetFeedbackSupportsEcn(rfc_8888_feedback_negotiated_);
+  packet_router_.SetSendPacketsAsEct1(ect1_policy_.ShouldSendEct1());
   // TODO: bugs.webrtc.org/447037083 - Remove method
   // IncludeOverheadInPacedSender once once support for
   // RFC8888 is per default enabled. Also remove or update and SetPacingFactor
@@ -737,24 +727,9 @@ void RtpTransportControllerSend::HandleTransportPacketsFeedback(
   if (controller_) {
     PostUpdates(controller_->OnTransportPacketsFeedback(feedback));
   }
-  if (sending_packets_as_ect1_) {
-    bool congestion_controller_support_ecn =
-        controller_ && controller_->SupportsEcnAdaptation();
-    // If transport does not support ECN or congestion controller does not
-    // support adaption to ECN, packets should not be sent as ECT(1).
-    if (!feedback.transport_supports_ecn ||
-        !congestion_controller_support_ecn) {
-      sending_packets_as_ect1_ = false;
-      packet_router_.ConfigureForRtcpFeedback(
-          /*set_transport_seq=*/rfc_8888_feedback_negotiated_,
-          sending_packets_as_ect1_);
-      RTC_LOG(LS_INFO) << "Transport is "
-                       << (!feedback.transport_supports_ecn ? "not " : "")
-                       << "ECN capable. Congestion Controller does "
-                       << (congestion_controller_support_ecn ? "" : "not ")
-                       << "support ECN. Stop sending ECT(1).";
-    }
-  }
+  ect1_policy_.OnPacketsFeedback(feedback.HasPacketWithBleachedEct1(),
+                                 feedback.HasPacketWithEcn());
+  packet_router_.SetSendPacketsAsEct1(ect1_policy_.ShouldSendEct1());
 
   // Only update outstanding data if any packet is first time acked.
   UpdateCongestedState();
@@ -790,6 +765,9 @@ void RtpTransportControllerSend::MaybeCreateControllers() {
     controller_ = factory.Create(initial_config_);
     process_interval_ = factory.GetProcessInterval();
   }
+  ect1_policy_.SetCongestionControllerSupportsEcn(
+      controller_->SupportsEcnAdaptation());
+  packet_router_.SetSendPacketsAsEct1(ect1_policy_.ShouldSendEct1());
   UpdateControllerWithTimeInterval();
   StartProcessPeriodicTasks();
 }

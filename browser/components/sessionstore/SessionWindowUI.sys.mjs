@@ -5,7 +5,6 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
-  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SessionStore:
     "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
@@ -163,80 +162,17 @@ export var SessionWindowUI = {
   },
 
   /**
-   * Only show the infobar when canRestoreLastSession and the pref value == 1
+   * Increment the counter gating the startup session restore infobar, so it
+   * isn't shown on the startup that establishes the pref. Runs at shutdown so
+   * the count a startup sees is the one the previous session left behind.
    */
-  async maybeShowRestoreSessionInfoBar() {
-    let win = lazy.BrowserWindowTracker.getTopWindow({
-      allowFromInactiveWorkspace: true,
-    });
-    let count = Services.prefs.getIntPref(
-      "browser.startup.couldRestoreSession.count",
-      0
-    );
-    if (count < 0 || count >= 2) {
-      return;
+  maybeIncrementRestoreSessionSuggestionCount() {
+    const PREF = "browser.startup.couldRestoreSession.count";
+    // The infobar is only shown when the pref is 1. Increment from 0 so we skip
+    // the first session which establishes the pref, and consider it next time.
+    if (Services.prefs.getIntPref(PREF, 0) === 0) {
+      Services.prefs.setIntPref(PREF, 1);
     }
-    if (count == 0) {
-      // We don't show the infobar right after the update which establishes this pref
-      // Increment the counter so we can consider it next time
-      Services.prefs.setIntPref(
-        "browser.startup.couldRestoreSession.count",
-        ++count
-      );
-      return;
-    }
-
-    // We've restarted at least once; we will show the notification if possible.
-    // We can't do that if there's no session to restore, or this is a private window.
-    if (
-      !lazy.SessionStore.canRestoreLastSession ||
-      lazy.PrivateBrowsingUtils.isWindowPrivate(win)
-    ) {
-      return;
-    }
-
-    Services.prefs.setIntPref(
-      "browser.startup.couldRestoreSession.count",
-      ++count
-    );
-
-    const messageFragment = win.document.createDocumentFragment();
-    const message = win.document.createElement("span");
-    const icon = win.document.createElement("img");
-    icon.src = "chrome://browser/skin/menu.svg";
-    icon.setAttribute("data-l10n-name", "icon");
-    icon.className = "inline-icon";
-    message.appendChild(icon);
-    messageFragment.appendChild(message);
-    win.document.l10n.setAttributes(
-      message,
-      "restore-session-startup-suggestion-message"
-    );
-
-    const buttons = [
-      {
-        "l10n-id": "restore-session-startup-suggestion-button",
-        primary: true,
-        callback: () => {
-          win.PanelUI.selectAndMarkItem([
-            "appMenu-history-button",
-            "appMenu-restoreSession",
-          ]);
-        },
-      },
-    ];
-
-    const notifyBox = win.gBrowser.getNotificationBox();
-    const notification = await notifyBox.appendNotification(
-      "startup-restore-session-suggestion",
-      {
-        label: messageFragment,
-        priority: notifyBox.PRIORITY_INFO_MEDIUM,
-      },
-      buttons
-    );
-    // Don't allow it to be immediately hidden:
-    notification.timeout = Date.now() + 3000;
   },
 };
 

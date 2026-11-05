@@ -203,6 +203,28 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
 
     @parameterized(_input_id, el_id=_input_id)
     @parameterized(_textarea_id, el_id=_textarea_id)
+    @parameterized(_textarea_rtl_id, el_id=_textarea_rtl_id)
+    @parameterized(_contenteditable_id, el_id=_contenteditable_id)
+    def test_long_press_on_cursor_to_select_a_word(self, el_id):
+        with self.marionette.using_prefs({
+            "layout.accessiblecaret.hide_carets_for_mouse_input": False
+        }):
+            self.open_test_html(self._selection_html)
+            el = self.marionette.find_element(By.ID, el_id)
+            sel = SelectionManager(el)
+            target_content = sel.content.split()[0]
+
+            # Show the caret at the first word by clicking on it.
+            x, y = self.word_location(el, 0)
+            self.actions.move(el, x, y).click().perform()
+
+            # Goal: Select the first word by long-pressing on the cursor.
+            self.long_press_on_location(el, x, y)
+
+            self.assertEqual(target_content, sel.selected_content)
+
+    @parameterized(_input_id, el_id=_input_id)
+    @parameterized(_textarea_id, el_id=_textarea_id)
     @parameterized(_textarea_disabled_id, el_id=_textarea_disabled_id)
     @parameterized(_textarea_rtl_id, el_id=_textarea_rtl_id)
     @parameterized(_contenteditable_id, el_id=_contenteditable_id)

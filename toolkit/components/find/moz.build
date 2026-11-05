@@ -31,3 +31,8 @@ MOCHITEST_MANIFESTS += ["test/mochitest/mochitest.toml"]
 CRASHTEST_MANIFESTS += ["test/crashtests/crashtests.list"]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "nsFindService.h",
+    "nsWebBrowserFind.h",
+]

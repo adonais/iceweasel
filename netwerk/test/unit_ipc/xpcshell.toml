@@ -83,23 +83,14 @@ prefs = [
 
 ["test_alt-data_closeWithStatus_wrap.js"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
-skip-if = [
-  "isolated_process", # Bug 1709961
-]
 
 ["test_alt-data_cross_process_wrap.js"]
-skip-if = [
-  "isolated_process", # Bug 1709961
-]
 prefs = [
   "network.allow_raw_sockets_in_content_processes=true",
   "network.cache.alt_data.validate_binding_principal=false", # the xpcshell child loads no documents
 ]
 
 ["test_alt-data_simple_wrap.js"]
-skip-if = [
-  "isolated_process", # Bug 1709961
-]
 prefs = [
   "network.allow_raw_sockets_in_content_processes=true",
   "network.cache.alt_data.validate_binding_principal=false", # the xpcshell child loads no documents
@@ -112,9 +103,6 @@ prefs = [
 ]
 
 ["test_cache-entry-id_wrap.js"]
-skip-if = [
-  "isolated_process", # Bug 1709961
-]
 prefs = [
   "network.allow_raw_sockets_in_content_processes=true",
   "network.cache.alt_data.validate_binding_principal=false", # the xpcshell child loads no documents
@@ -177,7 +165,6 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 ["test_http3_prio_disabled_wrap.js"]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64'", # Bug 1982955
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix", # Bug 1807925
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix", # Bug 1807925
 ]
 
@@ -188,9 +175,6 @@ skip-if = [
 ]
 
 ["test_httpcancel_wrap.js"]
-skip-if = [
-  "isolated_process", # Bug 1709961
-]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_httpsuspend_wrap.js"]
@@ -216,9 +200,6 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_redirect-caching_failure_wrap.js"]
-skip-if = [
-  "isolated_process", # Bug 1709961
-]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_redirect-caching_passing_wrap.js"]
@@ -246,9 +227,6 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_redirect_veto_parent.js"]
-skip-if = [
-  "isolated_process", # Bug 1709961
-]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 run-sequentially = ["true"] # doesn't play nice with others.
 

@@ -15,13 +15,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AIWindowUI:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
+  BrowserSearchTelemetry:
+    "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   ContentAnalysisUtils: "resource://gre/modules/ContentAnalysisUtils.sys.mjs",
+  E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrefUtils: "moz-src:///toolkit/modules/PrefUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
+  SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SidebarManager:
     "moz-src:///browser/components/sidebar/SidebarManager.sys.mjs",
 });
@@ -123,12 +127,26 @@ XPCOMUtils.defineLazyPreferenceGetter(
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "highlightToSearchFeatureGate",
-  "browser.highlightToSearch.featureGate"
+  "browser.highlightToSearch.featureGate",
+  null,
+  () => {
+    recordSelectionMenuEnabled();
+    updateIgnoredInputs();
+  }
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "highlightToSearchEnabled",
-  "browser.highlightToSearch.enabled"
+  "browser.highlightToSearch.enabled",
+  null,
+  () => recordSelectionMenuEnabled()
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "highlightToSearchSearchEnabled",
+  "browser.highlightToSearch.search.enabled",
+  null,
+  (_pref, _old, val) => Glean.selectionMenu.searchEnabled.set(val)
 );
 XPCOMUtils.defineLazyPreferenceGetter(lazy, "sidebarRevamp", "sidebar.revamp");
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -149,6 +167,12 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/parserutils;1",
   Ci.nsIParserUtils
 );
+
+function recordSelectionMenuEnabled() {
+  Glean.selectionMenu.enabled.set(
+    lazy.highlightToSearchFeatureGate && lazy.highlightToSearchEnabled
+  );
+}
 
 export const GenAI = {
   // Cache of potentially localized prompt
@@ -320,14 +344,13 @@ export const GenAI = {
    * @returns {bool} can show
    */
   get canShowSelectionMenu() {
-    if (lazy.chatShortcuts && this.canShowChatEntrypoint) {
-      return true;
+    if (lazy.highlightToSearchFeatureGate) {
+      return (
+        lazy.highlightToSearchEnabled &&
+        (this.canShowAIAction || lazy.highlightToSearchSearchEnabled)
+      );
     }
-    return (
-      lazy.highlightToSearchFeatureGate &&
-      lazy.highlightToSearchEnabled &&
-      this.canShowAIAction
-    );
+    return lazy.chatShortcuts && this.canShowChatEntrypoint;
   },
 
   /**
@@ -413,6 +436,8 @@ export const GenAI = {
     Glean.genaiChatbot.shortcuts.set(lazy.chatShortcuts);
     Glean.genaiChatbot.shortcutsCustom.set(lazy.chatShortcutsCustom);
     Glean.genaiChatbot.sidebar.set(lazy.chatSidebar);
+    Glean.selectionMenu.searchEnabled.set(lazy.highlightToSearchSearchEnabled);
+    recordSelectionMenuEnabled();
   },
 
   /**
@@ -513,6 +538,8 @@ export const GenAI = {
       return collapsed.substring(0, truncLength) + Services.locale.ellipsis;
     };
 
+    // Returns the engine the action searches with, or null if the action ends
+    // up hidden, so callers can tell whether the menu has anything to offer.
     panel.setSearchButtonLabel = (selection, browser) => {
       // The default engine getters throw rather than return null until the
       // search service has initialized, and throwing here would stop the panel
@@ -523,12 +550,15 @@ export const GenAI = {
           ? lazy.SearchService.defaultPrivateEngine
           : lazy.SearchService.defaultEngine;
       }
-      if (!engine) {
-        searchActionButton.hidden = true;
-        return;
+      const canShow =
+        !!engine &&
+        lazy.highlightToSearchFeatureGate &&
+        lazy.highlightToSearchEnabled &&
+        lazy.highlightToSearchSearchEnabled;
+      searchActionButton.hidden = !canShow;
+      if (!canShow) {
+        return null;
       }
-      // No matching unhide: the action stays hidden until bug 2069167 gives it
-      // behavior, so showing it here would offer a control that does nothing.
       document.l10n.setAttributes(
         searchActionButton,
         "genai-shortcut-search-button",
@@ -537,7 +567,27 @@ export const GenAI = {
           selection: truncateSelection(selection),
         }
       );
+      return engine;
     };
+
+    searchActionButton.addEventListener("click", () => {
+      const { selection, principal, policyContainer } = panel.selectionData;
+      lazy.SearchUIUtils.loadSearch({
+        window: document.defaultView,
+        searchText: selection,
+        where: "tab",
+        triggeringPrincipal: principal,
+        policyContainer:
+          lazy.E10SUtils.deserializePolicyContainer(policyContainer),
+        sapSource: "text_selection",
+      });
+      Glean.selectionMenu.actionClick.record({
+        action: "search",
+        selection: selection.length,
+        smart_window: lazy.AIWindow.isAIWindowActive(document.defaultView),
+      });
+      panel.hide();
+    });
     const buttonActiveState = "icon";
     const buttonDefaultState = "icon ghost";
     const chatShortcutsOptionsPanel = document.getElementById(
@@ -687,8 +737,9 @@ export const GenAI = {
         });
       }
 
-      // Allow hiding these shortcuts (not shown in Smart Window)
-      if (!currentIsSmartWindow) {
+      // Allow hiding these shortcuts (not shown in Smart Window or with the
+      // Highlight to Search feature turned on)
+      if (!currentIsSmartWindow && !lazy.highlightToSearchFeatureGate) {
         vbox.appendChild(document.createXULElement("toolbarseparator"));
         const hider = addItem();
         document.l10n.setAttributes(hider, "genai-shortcuts-hide");
@@ -804,7 +855,27 @@ export const GenAI = {
       case "GenAI:ShowShortcuts": {
         // Save the latest selection so it can be used by popup
         shortcutPanel.selectionData = data;
-        shortcutPanel.setSearchButtonLabel(data.selection, browser);
+
+        // Smart Window has its own separate gate above and only ever offers
+        // the AI action; don't let the Search action leak in there, and don't
+        // touch the AI button's visibility on that path either.
+        let searchEngine = null;
+        if (!isSmartWindow) {
+          const aiActionButton =
+            shortcutPanel.querySelector("#ai-action-button");
+          const aiVisible = this.canShowAIAction;
+          aiActionButton.hidden = !aiVisible;
+          searchEngine = shortcutPanel.setSearchButtonLabel(
+            data.selection,
+            browser
+          );
+          if (!aiVisible && !searchEngine) {
+            // Nothing to offer: don't open an empty menu or log an impression
+            // of one, and close any menu left from the previous selection.
+            shortcutPanel.hide();
+            return;
+          }
+        }
 
         // Clear any CSS hide from a prior selectionchange so the panel
         // is visible when it opens for the new selection.
@@ -820,6 +891,13 @@ export const GenAI = {
           selection: data.selection.length,
           smart_window: isSmartWindow,
         });
+        if (searchEngine) {
+          lazy.BrowserSearchTelemetry.recordSapImpression(
+            browser,
+            searchEngine,
+            "text_selection"
+          );
+        }
 
         // Position the shortcuts relative to the browser's top-left corner
         const screenYBase = data.screenYDevPx / devicePixelRatio;
@@ -1825,10 +1903,12 @@ function reorderChatProviders() {
  * Update ignored input fields Set.
  */
 function updateIgnoredInputs() {
-  GenAI.ignoredInputs = new Set(
-    // Skip empty string as no input type is ""
-    lazy.chatShortcutsIgnoreFields.split(",").filter(v => v)
-  );
+  // Skip empty string as no input type is ""
+  const ignored = lazy.chatShortcutsIgnoreFields.split(",").filter(v => v);
+  if (lazy.highlightToSearchFeatureGate) {
+    ignored.push("textarea");
+  }
+  GenAI.ignoredInputs = new Set(ignored);
 }
 
 // Initialize on first import

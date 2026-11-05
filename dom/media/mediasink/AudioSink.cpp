@@ -357,8 +357,6 @@ RefPtr<MediaSink::EndedPromise> AudioSink::ResetForReuse(
   mLastProcessedPacket = Nothing();
   mConverter = nullptr;
 
-  // Resuming into a playing state. A pause taken before the seek leaves the
-  // backend stopped, in which case this restarts it for real.
   mAudioStream->Resume();
 
   // Must precede ConnectAudioQueues() and NotifyAudioNeeded(); see

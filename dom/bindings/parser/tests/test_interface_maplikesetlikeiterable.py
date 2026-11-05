@@ -116,6 +116,137 @@ def WebIDLTest(parser, harness):
     ]
 
     #
+    # [DOMBackedStorage]
+    #
+
+    # ECMAMap::Get() returns nullptr for a missing key, so a stored null could
+    # not be told apart from it.
+    for decl in [
+        "setlike<Foo?>",
+        "maplike<long, Foo?>",
+        "maplike<DOMString?, long>",
+    ]:
+        shouldFail(
+            f"[DOMBackedStorage] {decl} with a nullable type",
+            f"""
+            interface Foo {{
+              [DOMBackedStorage] {decl};
+            }};
+            """,
+        )
+
+    shouldFail(
+        "[DOMBackedStorage] maplike with a typedef to a nullable type",
+        """
+        typedef Foo? NullableFoo;
+        interface Foo {
+          [DOMBackedStorage] maplike<long, NullableFoo>;
+        };
+        """,
+    )
+
+    for decl in [
+        "setlike<any>",
+        "setlike<object>",
+        "setlike<ArrayBuffer>",
+        "setlike<JSString>",
+        "setlike<double>",
+        "setlike<unrestricted float>",
+        "setlike<(DOMString or object)>",
+        "setlike<Callback>",
+        "setlike<CallbackInterface>",
+        "setlike<Enum>",
+        "maplike<any, long>",
+        "maplike<long, any>",
+        "maplike<DOMString, object>",
+        "maplike<DOMString, Uint8Array>",
+        "maplike<DOMString, JSString>",
+        "maplike<DOMString, sequence<long>>",
+        "maplike<DOMString, (long or DOMString)>",
+    ]:
+        shouldFail(
+            f"[DOMBackedStorage] {decl} with an unsupported type",
+            f"""
+            callback Callback = undefined ();
+            callback interface CallbackInterface {{
+              undefined handle();
+            }};
+            enum Enum {{ "a" }};
+            interface Foo {{
+              [DOMBackedStorage] {decl};
+            }};
+            """,
+        )
+
+    shouldFail(
+        "[DOMBackedStorage] maplike with a typedef to any",
+        """
+        typedef any AnyAlias;
+        interface Foo {
+          [DOMBackedStorage] maplike<DOMString, AnyAlias>;
+        };
+        """,
+    )
+
+    for decl in [
+        "setlike<long>",
+        "setlike<unsigned long long>",
+        "setlike<DOMString>",
+        "setlike<USVString>",
+        "setlike<UTF8String>",
+        "setlike<Foo>",
+        "maplike<DOMString, Foo>",
+        "maplike<Foo, long>",
+    ]:
+        p = parser.reset()
+        p.parse(
+            f"""
+            interface Foo {{
+              [DOMBackedStorage] {decl};
+            }};
+            """
+        )
+        p.finish()
+        harness.ok(True, f"[DOMBackedStorage] {decl} - Interface passed")
+
+    for decl in [
+        "iterable<long>",
+        "iterable<long, long>",
+        "async_iterable<long>",
+    ]:
+        shouldFail(
+            f"[DOMBackedStorage] on {decl}",
+            f"""
+            interface Foo {{
+              [DOMBackedStorage] {decl};
+            }};
+            """,
+        )
+
+    for decl in [
+        "setlike<long>",
+        "iterable<long, long>",
+        "async_iterable<long>",
+    ]:
+        shouldFail(
+            f"Unknown extended attribute on {decl}",
+            f"""
+            interface Foo {{
+              [Unknown] {decl};
+            }};
+            """,
+        )
+
+    shouldFail(
+        "[GenerateReturnMethod] on iterable",
+        """
+        interface Foo {
+          [GenerateReturnMethod] iterable<long, long>;
+        };
+        """,
+    )
+
+    #
     # Simple Usage Tests
     #
 

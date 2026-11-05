@@ -44,8 +44,8 @@ ApplicationAccessibleWrap::~ApplicationAccessibleWrap() {
   NS_ASSERTION(!mAtkObject, "Shutdown() was not called");
 }
 
-gboolean toplevel_event_watcher(GSignalInvocationHint* ihint,
-                                guint n_param_values,
+gboolean toplevel_event_watcher(GSignalInvocationHint* /*ihint*/,
+                                guint /*n_param_values*/,
                                 const GValue* param_values, gpointer data) {
   static GQuark sQuark_gecko_acc_obj = 0;
 

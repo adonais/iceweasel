@@ -6,7 +6,10 @@
 // via CreateSourceSurfaceFromMacIOSurface produces correct BGRA pixel values
 // for 8-bit and 10-bit biplanar formats (NV12, NV16, P010, P210).
 
+#include <array>
+
 #include "MacIOSurfaceHelpers.h"
+#include "MacIOSurfaceImage.h"
 #include "gtest/gtest.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/MacIOSurface.h"
@@ -115,4 +118,44 @@ TEST(MacIOSurfaceHelpers, P210Readback)
   ASSERT_NO_FATAL_FAILURE(TestBiPlanarMidGrayReadback(
       IntSize(16, 16), IntSize(8, 16), ChromaSubsampling::HALF_WIDTH,
       ColorDepth::COLOR_10));
+}
+
+TEST(MacIOSurfaceImage, RejectedSetDataAllowsValidRetry)
+{
+  constexpr IntSize ySize(4, 4);
+  constexpr int32_t cbCrStride = ySize.width / 2;
+  std::array<uint8_t, ySize.width * ySize.height> y{};
+  // Sized for 4:2:2, the taller of the two chroma layouts tested below.
+  std::array<uint8_t, cbCrStride * ySize.height> cb{};
+  std::array<uint8_t, cbCrStride * ySize.height> cr{};
+  const IntRect invalidRect(4, 0, 0, 4);
+  const IntRect validRect(2, 2, 2, 2);
+
+  RefPtr<ImageContainer> container =
+      new ImageContainer(ImageUsageType::UNKNOWN, ImageContainer::SYNCHRONOUS);
+
+  for (const auto subsampling : {ChromaSubsampling::HALF_WIDTH,
+                                 ChromaSubsampling::HALF_WIDTH_AND_HEIGHT}) {
+    PlanarYCbCrData data;
+    data.mYChannel = y.data();
+    data.mCbChannel = cb.data();
+    data.mCrChannel = cr.data();
+    data.mYStride = ySize.width;
+    data.mCbCrStride = cbCrStride;
+    data.mChromaSubsampling = subsampling;
+    data.mYUVColorSpace = YUVColorSpace::BT709;
+    data.mColorRange = ColorRange::FULL;
+    data.mPictureRect = invalidRect;
+
+    RefPtr<MacIOSurfaceImage> image = new MacIOSurfaceImage(nullptr);
+    EXPECT_FALSE(image->SetData(container, data));
+    ASSERT_EQ(image->GetSurface(), nullptr);
+    EXPECT_EQ(image->GetPictureRect(), IntRect());
+
+    data.mPictureRect = validRect;
+    ASSERT_TRUE(image->SetData(container, data));
+    ASSERT_NE(image->GetSurface(), nullptr);
+    EXPECT_EQ(image->GetPictureRect(), data.mPictureRect);
+    EXPECT_EQ(image->GetSize(), ySize);
+  }
 }

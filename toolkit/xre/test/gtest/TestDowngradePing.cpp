@@ -19,6 +19,10 @@
 
 #include <cstdio>
 
+#ifdef XP_MACOSX
+#  include "nsILocalFileMac.h"
+#endif
+
 using mozilla::Preferences;
 using mozilla::PrefValueKind;
 
@@ -107,29 +111,84 @@ class DowngradePingTest : public ::testing::Test {
     return bytesRead == static_cast<size_t>(fileSize);
   }
 
-  bool WriteUpdateTelemetryJson(uint64_t aTimestampMs) {
+#ifdef XP_MACOSX
+  already_AddRefed<nsILocalFileMac> GetAppBundle() {
     nsCOMPtr<nsIFile> greDir;
-    if (NS_FAILED(NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(greDir))))
+    if (NS_FAILED(NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(greDir)))) {
+      return nullptr;
+    }
+    nsCOMPtr<nsIFile> contentsDir;
+    if (NS_FAILED(greDir->GetParent(getter_AddRefs(contentsDir))) ||
+        !contentsDir) {
+      return nullptr;
+    }
+    nsCOMPtr<nsIFile> appBundle;
+    if (NS_FAILED(contentsDir->GetParent(getter_AddRefs(appBundle))) ||
+        !appBundle) {
+      return nullptr;
+    }
+    nsCOMPtr<nsILocalFileMac> macFile = do_QueryInterface(appBundle);
+    return macFile.forget();
+  }
+#endif
+
+  bool WriteUpdateTelemetryJson(uint64_t aTimestampMs) {
+#ifdef XP_MACOSX
+    nsCOMPtr<nsILocalFileMac> macFile = GetAppBundle();
+    if (!macFile) {
       return false;
+    }
+    char buf[128];
+    SprintfLiteral(buf, "{\"install_timestamp\":\"%" PRIu64 "\"}",
+                   aTimestampMs);
+    nsTArray<uint8_t> value;
+    value.AppendElements(reinterpret_cast<const uint8_t*>(buf), strlen(buf));
+    return NS_SUCCEEDED(
+        macFile->SetXAttr("org.mozilla.update-telemetry"_ns, value));
+#else
+    nsCOMPtr<nsIFile> greDir;
+    if (NS_FAILED(NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(greDir)))) {
+      return false;
+    }
     nsCOMPtr<nsIFile> file;
-    if (NS_FAILED(greDir->Clone(getter_AddRefs(file)))) return false;
-    if (NS_FAILED(file->Append(u"update_telemetry.json"_ns))) return false;
+    if (NS_FAILED(greDir->Clone(getter_AddRefs(file)))) {
+      return false;
+    }
+    if (NS_FAILED(file->Append(u"update_telemetry.json"_ns))) {
+      return false;
+    }
 
     FILE* f = nullptr;
-    if (NS_FAILED(file->OpenANSIFileDesc("w", &f)) || !f) return false;
+    if (NS_FAILED(file->OpenANSIFileDesc("w", &f)) || !f) {
+      return false;
+    }
     fprintf(f, "{\"install_timestamp\":\"%" PRIu64 "\"}", aTimestampMs);
     fclose(f);
     return true;
+#endif
   }
 
   void RemoveUpdateTelemetryJson() {
-    nsCOMPtr<nsIFile> greDir;
-    if (NS_FAILED(NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(greDir))))
+#ifdef XP_MACOSX
+    nsCOMPtr<nsILocalFileMac> macFile = GetAppBundle();
+    if (!macFile) {
       return;
+    }
+    macFile->DelXAttr("org.mozilla.update-telemetry"_ns);
+#else
+    nsCOMPtr<nsIFile> greDir;
+    if (NS_FAILED(NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(greDir)))) {
+      return;
+    }
     nsCOMPtr<nsIFile> file;
-    if (NS_FAILED(greDir->Clone(getter_AddRefs(file)))) return;
-    if (NS_FAILED(file->Append(u"update_telemetry.json"_ns))) return;
+    if (NS_FAILED(greDir->Clone(getter_AddRefs(file)))) {
+      return;
+    }
+    if (NS_FAILED(file->Append(u"update_telemetry.json"_ns))) {
+      return;
+    }
     file->Remove(false);
+#endif
   }
 
 #ifdef XP_WIN
@@ -280,7 +339,7 @@ TEST_F(DowngradePingTest, IsNewUpdateTrue) {
   PRTime lockTime = PRTime(1700000000) * PR_MSEC_PER_SEC;
   uint64_t updateTimestampMs = 1701388800000ULL;
 
-  if (!WriteUpdateTelemetryJson(updateTimestampMs)) return;
+  ASSERT_TRUE(WriteUpdateTelemetryJson(updateTimestampMs));
 
   auto result = GenerateDowngradeTelemetry(
       "test-ping-id"_ns, "131.0_20250201000000/20250201000000"_ns, false, 0,
@@ -306,7 +365,7 @@ TEST_F(DowngradePingTest, IsNewUpdateFalse) {
   uint64_t updateTimestampMs = 1700000000000ULL;
   PRTime lockTime = PRTime(1701388800) * PR_MSEC_PER_SEC;
 
-  if (!WriteUpdateTelemetryJson(updateTimestampMs)) return;
+  ASSERT_TRUE(WriteUpdateTelemetryJson(updateTimestampMs));
 
   auto result = GenerateDowngradeTelemetry(
       "test-ping-id"_ns, "131.0_20250201000000/20250201000000"_ns, false, 0,
@@ -330,7 +389,7 @@ TEST_F(DowngradePingTest, IsNewUpdateFalse) {
 TEST_F(DowngradePingTest, IsNewUpdateAbsentWithoutLockTime) {
   uint64_t updateTimestampMs = 1701388800000ULL;
 
-  if (!WriteUpdateTelemetryJson(updateTimestampMs)) return;
+  ASSERT_TRUE(WriteUpdateTelemetryJson(updateTimestampMs));
 
   auto result = GenerateDowngradeTelemetry(
       "test-ping-id"_ns, "131.0_20250201000000/20250201000000"_ns, false, 0,

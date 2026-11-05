@@ -1,3 +1,6 @@
 aioquic==1.2.0
+cryptography==42.0.8
+pyOpenSSL==24.2.1
+service_identity==24.1.0
 pillow==9.2.0; python_version < '3.9'
 pillow==11.1.0; python_version >= '3.9'

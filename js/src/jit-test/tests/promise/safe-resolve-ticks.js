@@ -84,3 +84,21 @@ function measureNormal() {
   assertEq(safeTick, baseTick,
            "promise-with-promise via SafeResolve settles at the same tick");
 }
+
+// An accessor without a getter returns undefined without running user code.
+const makeSetterOnlyThenObject = () =>
+  Object.defineProperty({}, "then", {set(_) {}});
+
+for (const value of [
+  makeSetterOnlyThenObject(),
+  Object.create(makeSetterOnlyThenObject()),
+]) {
+  const {promise} = Promise.withResolvers();
+  const order = [];
+  safeResolvePromise(promise, value);
+  promise.then(() => order.push("promise"));
+  Promise.resolve().then(() => order.push("next"));
+  drainJobQueue();
+
+  assertEq(order.join(","), "promise,next");
+}

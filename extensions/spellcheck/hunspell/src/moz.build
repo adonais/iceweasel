@@ -26,3 +26,9 @@ if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
     CXXFLAGS += [
         '-Wno-implicit-fallthrough',
     ]
+
+SOURCE_HEADERS += [
+	"hunspell.h",
+	"hunversion.h",
+	"hunvisapi.h",
+]

@@ -36,7 +36,6 @@ public class IPProtectionController {
     SERVICE_STATE_UNINITIALIZED,
     SERVICE_STATE_UNAVAILABLE,
     SERVICE_STATE_UNAUTHENTICATED,
-    SERVICE_STATE_OPTED_OUT,
     SERVICE_STATE_READY
   })
   public @interface ServiceState {}
@@ -50,9 +49,6 @@ public class IPProtectionController {
   /** The user is signed out but eligible. */
   public static final int SERVICE_STATE_UNAUTHENTICATED = 2;
 
-  /** The user has opted out from using VPN. */
-  public static final int SERVICE_STATE_OPTED_OUT = 3;
-
   /** The service is ready to be activated. */
   public static final int SERVICE_STATE_READY = 4;
 
@@ -64,8 +60,6 @@ public class IPProtectionController {
         return SERVICE_STATE_UNAVAILABLE;
       case "unauthenticated":
         return SERVICE_STATE_UNAUTHENTICATED;
-      case "optedout":
-        return SERVICE_STATE_OPTED_OUT;
       case "ready":
         return SERVICE_STATE_READY;
       default:

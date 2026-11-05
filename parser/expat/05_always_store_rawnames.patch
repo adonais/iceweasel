@@ -1,10 +1,10 @@
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -539,6 +539,13 @@ static enum XML_Error doProlog(XML_Parser parser, const ENCODING *enc,
+@@ -521,6 +521,13 @@ static enum XML_Error doProlog(XML_Parser parser, const ENCODING *enc,
                                 enum XML_Account account);
  static enum XML_Error processEntity(XML_Parser parser, ENTITY *entity,
-                                     XML_Bool betweenDecl, enum EntityType type);
+                                     bool betweenDecl, enum EntityType type);
 +/* BEGIN MOZILLA CHANGE (Bug 1746996 - Ensure that storeRawNames is always called) */
 +static enum XML_Error doContentInternal(XML_Parser parser, int startTagLevel,
 +                                        const ENCODING *enc, const char *start,
@@ -15,7 +15,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  static enum XML_Error doContent(XML_Parser parser, int startTagLevel,
                                  const ENCODING *enc, const char *start,
                                  const char *end, const char **endPtr,
-@@ -3216,10 +3223,14 @@ contentProcessor(XML_Parser parser, const char *start, const char *end,
+@@ -3193,10 +3200,14 @@ contentProcessor(XML_Parser parser, const char *start, const char *end,
        parser, parser->m_parentParser ? 1 : 0, parser->m_encoding, start, end,
        endPtr, (XML_Bool)! parser->m_parsingStatus.finalBuffer,
        XML_ACCOUNT_DIRECT);
@@ -30,7 +30,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    return result;
  }
  
-@@ -3337,10 +3348,14 @@ externalEntityContentProcessor(XML_Parser parser, const char *start,
+@@ -3314,10 +3325,14 @@ externalEntityContentProcessor(XML_Parser parser, const char *start,
        = doContent(parser, 1, parser->m_encoding, start, end, endPtr,
                    (XML_Bool)! parser->m_parsingStatus.finalBuffer,
                    XML_ACCOUNT_ENTITY_EXPANSION);
@@ -45,7 +45,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    return result;
  }
  
-@@ -3348,6 +3363,21 @@ static enum XML_Error
+@@ -3325,6 +3340,21 @@ static enum XML_Error
  doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
            const char *s, const char *end, const char **nextPtr,
            XML_Bool haveMore, enum XML_Account account) {

@@ -13,6 +13,7 @@ toolkit.jar:
     content/extensions/parent/ext-browserSettings.js (parent/ext-browserSettings.js)
     content/extensions/parent/ext-browsingData.js (parent/ext-browsingData.js)
 #ifndef ANDROID
+    content/extensions/parent/ext-builtin-widget.js (parent/ext-builtin-widget.js)
     content/extensions/parent/ext-captivePortal.js (parent/ext-captivePortal.js)
 #endif
     content/extensions/parent/ext-contentScripts.js (parent/ext-contentScripts.js)

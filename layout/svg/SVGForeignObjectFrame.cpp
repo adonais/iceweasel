@@ -137,7 +137,7 @@ void SVGForeignObjectFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (!static_cast<const SVGElement*>(GetContent())->HasValidDimensions()) {
     return;
   }
-  nsDisplayList newList(aBuilder);
+  nsDisplayList newList;
   nsDisplayListSet set(&newList, &newList, &newList, &newList, &newList,
                        &newList);
   DisplayOutline(aBuilder, set);

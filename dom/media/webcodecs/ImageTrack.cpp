@@ -85,8 +85,8 @@ void ImageTrack::OnDecodeFramesSuccess(
     gfx::IntSize size = f.mSurface->GetSize();
     gfx::IntRect rect(gfx::IntPoint(0, 0), size);
 
-    Maybe<VideoPixelFormat> format =
-        SurfaceFormatToVideoPixelFormat(f.mSurface->GetFormat());
+    auto image = MakeRefPtr<layers::SourceSurfaceImage>(size, f.mSurface);
+    Maybe<VideoPixelFormat> format = GuessVideoPixelFormat(image);
     MOZ_ASSERT(format, "Unexpected format for image!");
 
     Maybe<uint64_t> duration;
@@ -103,10 +103,15 @@ void ImageTrack::OnDecodeFramesSuccess(
 
     mFramesTimestamp += f.mTimeout;
 
-    auto image = MakeRefPtr<layers::SourceSurfaceImage>(size, f.mSurface);
-    auto frame = MakeRefPtr<VideoFrame>(mParent, image, format, size, rect,
-                                        size, duration, timestamp, colorSpace);
-    mDecodedFrames.AppendElement(std::move(frame));
+    auto frame = VideoFrame::CreateFromImage(mParent, image, format, rect, size,
+                                             duration, timestamp, colorSpace);
+    if (frame.isErr()) {
+      MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
+                  "ImageTrack {} rejected a decoded frame: {}", fmt::ptr(this),
+                  frame.inspectErr().Description());
+      continue;
+    }
+    mDecodedFrames.AppendElement(frame.unwrap());
   }
 }
 

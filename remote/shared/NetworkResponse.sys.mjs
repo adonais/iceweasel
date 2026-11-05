@@ -10,6 +10,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NetworkDataBytes: "chrome://remote/content/shared/NetworkDataBytes.sys.mjs",
 });
 
+const NEWLINE_MERGED_HEADERS = [
+  "proxy-authenticate",
+  "set-cookie",
+  "www-authenticate",
+];
+
 /**
  * The NetworkResponse class is a wrapper around the internal channel which
  * provides getters and methods closer to fetch's response concept
@@ -341,7 +347,16 @@ export class NetworkResponse {
     } else {
       this.#channel.visitResponseHeaders({
         visitHeader(name, value) {
-          headers.push([name, value]);
+          // nsHttpHeaderArray merges some headers as a \n-separated value.
+          // Bug 1943266: Remove this once nsHttpHeaderArray keeps these headers
+          // separate.
+          if (NEWLINE_MERGED_HEADERS.includes(name.toLowerCase())) {
+            for (const v of value.split("\n")) {
+              headers.push([name, v]);
+            }
+          } else {
+            headers.push([name, value]);
+          }
         },
       });
     }

@@ -91,6 +91,10 @@ const NV12BufferInterface* VideoFrameBuffer::GetNV12() const {
   return static_cast<const NV12BufferInterface*>(this);
 }
 
+scoped_refptr<I420BufferInterface> VideoFrameBuffer::ToI420ForInspection() {
+  return ToI420();
+}
+
 scoped_refptr<VideoFrameBuffer> VideoFrameBuffer::GetMappedFrameBuffer(
     std::span<Type> /* types */) {
   RTC_CHECK(type() == Type::kNative);

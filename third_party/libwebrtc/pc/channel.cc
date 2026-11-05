@@ -332,6 +332,16 @@ void BaseChannel::Enable(bool enable) {
   }));
 }
 
+void BaseChannel::EnableSframe() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+
+  worker_thread_->PostTask(SafeTask(alive_, [this] {
+    RTC_DCHECK_RUN_ON(worker_thread());
+    media_send_channel()->EnableSframe();
+    media_receive_channel()->EnableSframe();
+  }));
+}
+
 RTCError BaseChannel::SetLocalContent(const MediaContentDescription* content,
                                       SdpType type) {
   RTC_DCHECK_RUN_ON(worker_thread());

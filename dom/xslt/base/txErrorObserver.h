@@ -15,7 +15,7 @@ class ErrorObserver {
   /**
    * Default Destructor for ErrorObserver
    **/
-  virtual ~ErrorObserver() {};
+  virtual ~ErrorObserver() = default;
 
   /**
    *  Notifies this Error observer of a new error aRes

@@ -1,4 +1,4 @@
-From f5bb199386a6b42ba05e9e70e2fa842174382854 Mon Sep 17 00:00:00 2001
+From 94489cb6a49f6e947977743a43bc5711caa57578 Mon Sep 17 00:00:00 2001
 From: Ashley Hale <ahale@mozilla.com>
 Date: Wed, 1 Mar 2023 18:03:04 -0800
 Subject: [PATCH] Disable ClearView with scissor on Skylake iGPU because of
@@ -14,7 +14,7 @@ Subject: [PATCH] Disable ClearView with scissor on Skylake iGPU because of
  6 files changed, 25 insertions(+)
 
 diff --git a/include/platform/autogen/FeaturesD3D_autogen.h b/include/platform/autogen/FeaturesD3D_autogen.h
-index 6305080..4141d6b 100644
+index 6305080a8..4141d6bc0 100644
 --- a/include/platform/autogen/FeaturesD3D_autogen.h
 +++ b/include/platform/autogen/FeaturesD3D_autogen.h
 @@ -104,6 +104,12 @@ struct FeaturesD3D : FeatureSetBase
@@ -31,7 +31,7 @@ index 6305080..4141d6b 100644
          "useSystemMemoryForConstantBuffers",
          FeatureCategory::D3DWorkarounds,
 diff --git a/include/platform/d3d_features.json b/include/platform/d3d_features.json
-index 7eb7385..60117c7 100644
+index 7eb73858e..60117c77e 100644
 --- a/include/platform/d3d_features.json
 +++ b/include/platform/d3d_features.json
 @@ -114,6 +114,14 @@
@@ -50,7 +50,7 @@ index 7eb7385..60117c7 100644
              "name": "use_system_memory_for_constant_buffers",
              "category": "Workarounds",
 diff --git a/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp b/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
-index f3c5ae5..7d7553b 100644
+index f3c5ae565..7d7553b9d 100644
 --- a/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
 +++ b/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
 @@ -462,6 +462,11 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
@@ -66,7 +66,7 @@ index f3c5ae5..7d7553b 100644
              (formatInfo.redBits > 0 && !r) || (formatInfo.greenBits > 0 && !g) ||
              (formatInfo.blueBits > 0 && !b) || (formatInfo.alphaBits > 0 && !a))
 diff --git a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
-index 6fae418..63bbe58 100644
+index 7f06fc0fc..bcec37463 100644
 --- a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
 +++ b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
 @@ -2175,6 +2175,10 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
@@ -81,11 +81,11 @@ index 6fae418..63bbe58 100644
                              isIntel && isSkylake && capsVersion >= angle::VersionTriple(16, 0, 0) &&
                                  capsVersion < angle::VersionTriple(16, 4771, 0));
 diff --git a/util/autogen/angle_features_autogen.cpp b/util/autogen/angle_features_autogen.cpp
-index e75541b..d8ad61d 100644
+index e13b46e7a..eda561753 100644
 --- a/util/autogen/angle_features_autogen.cpp
 +++ b/util/autogen/angle_features_autogen.cpp
-@@ -321,6 +321,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
-     {Feature::RoundOutputAfterDithering, "roundOutputAfterDithering"},
+@@ -331,6 +331,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
+     {Feature::RoundUp3dTextureSizeToPOTForLimit, "roundUp3dTextureSizeToPOTForLimit"},
      {Feature::SanitizeAMDGPURendererString, "sanitizeAMDGPURendererString"},
      {Feature::ScalarizeVecAndMatConstructorArgs, "scalarizeVecAndMatConstructorArgs"},
 +    {Feature::ScissoredClearArtifacts, "scissoredClearArtifacts"},
@@ -93,11 +93,11 @@ index e75541b..d8ad61d 100644
      {Feature::SetDataFasterThanImageUpload, "setDataFasterThanImageUpload"},
      {Feature::SetDataFasterThanImageUploadOn128bitFormats, "setDataFasterThanImageUploadOn128bitFormats"},
 diff --git a/util/autogen/angle_features_autogen.h b/util/autogen/angle_features_autogen.h
-index 3ecac9d..770e468 100644
+index 5116c2ed1..e81d42634 100644
 --- a/util/autogen/angle_features_autogen.h
 +++ b/util/autogen/angle_features_autogen.h
-@@ -321,6 +321,7 @@ enum class Feature
-     RoundOutputAfterDithering,
+@@ -331,6 +331,7 @@ enum class Feature
+     RoundUp3dTextureSizeToPOTForLimit,
      SanitizeAMDGPURendererString,
      ScalarizeVecAndMatConstructorArgs,
 +    ScissoredClearArtifacts,

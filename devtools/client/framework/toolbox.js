@@ -3789,6 +3789,9 @@ class Toolbox extends EventEmitter {
     if (frameInfo.targetFront) {
       const inspectorFront = await frameInfo.targetFront.getFront("inspector");
       nodeFront = await inspectorFront.walker.documentElement();
+      if (!nodeFront) {
+        return null;
+      }
     } else {
       const inspectorFront = await this.target.getFront("inspector");
       nodeFront = await inspectorFront.walker.getNodeActorFromWindowID(

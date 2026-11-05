@@ -432,19 +432,15 @@ class MOZ_RAII EvalOptions {
  public:
   explicit EvalOptions(EnvKind kind) : kind_(kind) {};
   ~EvalOptions() = default;
+
   const char* filename() const { return filename_.get(); }
   unsigned lineno() const { return lineno_; }
   bool hideFromDebugger() const { return hideFromDebugger_; }
   bool bypassCSP() const { return bypassCSP_; }
-  EnvKind kind() const { return kind_; }
   bool allowRedeclaringExistingLexicalBinding() const {
     return allowRedeclaringExistingLexicalBinding_;
   }
-
-  void setUseInnerBindings() {
-    MOZ_ASSERT(kind_ == EvalOptions::EnvKind::GlobalWithExtraOuterBindings);
-    kind_ = EvalOptions::EnvKind::GlobalWithExtraInnerBindings;
-  }
+  EnvKind kind() const { return kind_; }
 
   [[nodiscard]] bool setFilename(JSContext* cx, const char* filename);
   void setLineno(unsigned lineno) { lineno_ = lineno; }
@@ -452,6 +448,10 @@ class MOZ_RAII EvalOptions {
   void setBypassCSP(bool bypass) { bypassCSP_ = bypass; }
   void setAllowRedeclaringExistingLexicalBinding(bool allow) {
     allowRedeclaringExistingLexicalBinding_ = allow;
+  }
+  void setUseInnerBindings() {
+    MOZ_ASSERT(kind_ == EvalOptions::EnvKind::GlobalWithExtraOuterBindings);
+    kind_ = EvalOptions::EnvKind::GlobalWithExtraInnerBindings;
   }
 };
 

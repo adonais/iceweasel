@@ -16,6 +16,7 @@
 #include "mozilla/layers/Fence.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/ProfilerScreenshots.h"
+#include "mozilla/layers/SyncObject.h"
 #include "mozilla/webrender/RenderCompositor.h"
 #include "mozilla/webrender/RenderTextureHost.h"
 #include "mozilla/widget/CompositorWidget.h"
@@ -228,6 +229,22 @@ RenderedFrameId RendererOGL::UpdateAndRender(
   }
 
   wr_renderer_update(mRenderer);
+
+  // Order the frame after producers that synchronize with the sync object,
+  // once the frame's external images are all known.
+  layers::SyncObjectHost* syncObject = mCompositor->GetSyncObject();
+  if (syncObject && mThread->SyncObjectNeeded() &&
+      !syncObject->Synchronize(/* aFallible */ true)) {
+    mThread->HandleDeviceReset(gfx::DeviceResetDetectPlace::WR_SYNC_OBJRCT,
+                               gfx::DeviceResetReason::UNKNOWN);
+    if (present) {
+      mCompositor->CancelFrame();
+    }
+    if (needPostRenderCall) {
+      mCompositor->GetWidget()->PostRender(&widgetContext);
+    }
+    return RenderedFrameId();
+  }
 
   if (fullRender) {
     wr_renderer_force_redraw(mRenderer);

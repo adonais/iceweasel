@@ -35,12 +35,19 @@ class Logger {
   Mutex mMutex;
 };
 
+class CountingTaskManager : public TaskManager {
+ public:
+  bool IsSuspended(const MutexAutoLock& aProofOfLock) override { return false; }
+};
+
 class ReschedulingTask : public Task {
   static constexpr uint32_t LoopCount = 3;
 
  public:
-  explicit ReschedulingTask(Kind aKind, Logger* aLogger, const char* aName)
-      : Task(aKind, EventQueuePriority::Normal),
+  explicit ReschedulingTask(
+      Kind aKind, Logger* aLogger, const char* aName,
+      EventQueuePriority aPriority = EventQueuePriority::Normal)
+      : Task(aKind, aPriority),
         mCount(0),
         mIsDone(false),
         mLogger(aLogger),
@@ -93,6 +100,101 @@ TEST(TaskController, RescheduleOnMainThread)
   ASSERT_TRUE(mainThreadTask->IsDone());
 
   ASSERT_TRUE(logger.GetLog() == "111");
+}
+
+TEST(TaskController, RescheduleManagedOnMainThread)
+{
+  Logger logger;
+
+  RefPtr manager = MakeRefPtr<CountingTaskManager>();
+  RefPtr mainThreadTask =
+      MakeRefPtr<ReschedulingTask>(Task::Kind::MainThreadOnly, &logger, "1");
+  mainThreadTask->SetManager(manager);
+
+  TaskController::Get()->AddTask(do_AddRef(mainThreadTask));
+  ASSERT_EQ(manager->PendingTaskCount(), 1u);
+
+  while (NS_ProcessNextEvent(nullptr, false)) {
+  }
+
+  ASSERT_TRUE(mainThreadTask->IsDone());
+  ASSERT_TRUE(logger.GetLog() == "111");
+  // A task that reschedules itself is pending again, so the count must not run
+  // below zero on the way.
+  ASSERT_EQ(manager->PendingTaskCount(), 0u);
+}
+
+TEST(TaskController, LowestPriorityRunsLast)
+{
+  Logger logger;
+
+  LowestTaskManager* manager = TaskController::Get()->GetLowestTaskManager();
+  RefPtr lowestTask = MakeRefPtr<ReschedulingTask>(
+      Task::Kind::MainThreadOnly, &logger, "1", EventQueuePriority::Lowest);
+  lowestTask->SetManager(manager);
+  RefPtr normalTask =
+      MakeRefPtr<ReschedulingTask>(Task::Kind::MainThreadOnly, &logger, "2");
+
+  TaskController::Get()->AddTask(do_AddRef(lowestTask));
+  TaskController::Get()->AddTask(do_AddRef(normalTask));
+  ASSERT_EQ(manager->PendingTaskCount(), 1u);
+
+  while (NS_ProcessNextEvent(nullptr, false)) {
+  }
+
+  ASSERT_TRUE(lowestTask->IsDone());
+  ASSERT_TRUE(normalTask->IsDone());
+  // Although it was queued first, the lowest priority task runs only once the
+  // normal priority task is done.
+  ASSERT_TRUE(logger.GetLog() == "222111");
+  ASSERT_EQ(manager->PendingTaskCount(), 0u);
+}
+
+TEST(TaskController, LowestPriorityDoesNotStarveIdle)
+{
+  IdleTaskManager* idleManager = TaskController::Get()->GetIdleTaskManager();
+  ASSERT_TRUE(idleManager);
+
+  // A lowest priority task keeps the main thread from ever running out of
+  // tasks, which is what the idle task manager normally waits for before it
+  // asks for a deadline. Check first that this environment grants idle time at
+  // all, so that a failure below cannot be mistaken for one.
+  {
+    Logger logger;
+    RefPtr aloneTask = MakeRefPtr<ReschedulingTask>(
+        Task::Kind::MainThreadOnly, &logger, "I", EventQueuePriority::Idle);
+    aloneTask->SetManager(idleManager);
+    TaskController::Get()->AddTask(do_AddRef(aloneTask));
+    while (NS_ProcessNextEvent(nullptr, false)) {
+    }
+    ASSERT_TRUE(aloneTask->IsDone())
+    << "no idle time available here";
+  }
+
+  Logger logger;
+  RefPtr lowestTask = MakeRefPtr<ReschedulingTask>(
+      Task::Kind::MainThreadOnly, &logger, "L", EventQueuePriority::Lowest);
+  lowestTask->SetManager(TaskController::Get()->GetLowestTaskManager());
+  RefPtr idleTask = MakeRefPtr<ReschedulingTask>(
+      Task::Kind::MainThreadOnly, &logger, "I", EventQueuePriority::Idle);
+  idleTask->SetManager(idleManager);
+
+  TaskController::Get()->AddTask(do_AddRef(lowestTask));
+  TaskController::Get()->AddTask(do_AddRef(idleTask));
+
+  while (NS_ProcessNextEvent(nullptr, false)) {
+  }
+
+  ASSERT_TRUE(idleTask->IsDone());
+  ASSERT_TRUE(lowestTask->IsDone());
+
+  // The lowest priority task may win the first turn, because the idle task
+  // manager is suspended until someone asks for a deadline. It must not win
+  // all of them: an idle task that was already queued has to overtake it
+  // rather than wait for it to finish.
+  const nsAutoCString& log = logger.GetLog();
+  ASSERT_LT(log.RFindChar('I'), log.RFindChar('L'))
+      << "idle task starved by a lowest priority task, log was " << log.get();
 }
 
 TEST(TaskController, RescheduleOffMainThread)

@@ -721,5 +721,127 @@ def test_perftest_applink_profiling_selects_only_the_applink_tasks():
     assert selected == target_tasks.APPLINK_PROFILING_LABELS
 
 
+def _autoland_task(label, kind="test", shippable=True, optimization=None):
+    return Task(
+        kind=kind,
+        label=label,
+        attributes={
+            "run_on_projects": ["trunk"],
+            "build_type": "opt",
+            "shippable": shippable,
+        },
+        task={},
+        optimization=optimization,
+    )
+
+
+AUTOLAND_TASKS = {
+    "talos-shippable": _autoland_task(
+        "talos-shippable", optimization={"perf-cadence-default": ["talos"]}
+    ),
+    "browsertime-shippable": _autoland_task(
+        "browsertime-shippable",
+        kind="browsertime",
+        optimization={"perf-cadence-backstop": None},
+    ),
+    "mochitest-shippable": _autoland_task(
+        "mochitest-shippable", optimization={"test": ["mochitest"]}
+    ),
+    "mochitest": _autoland_task(
+        "mochitest", shippable=False, optimization={"test": ["mochitest"]}
+    ),
+    "build-shippable": _autoland_task(
+        "build-shippable", kind="build", optimization={"build": ["firefox"]}
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    "method,backstop,expected",
+    (
+        pytest.param(
+            "autoland_tasks",
+            False,
+            {"mochitest", "build-shippable"},
+            id="autoland_drops_shippable_tests_on_non_backstop",
+        ),
+        pytest.param(
+            "autoland_tasks",
+            True,
+            set(AUTOLAND_TASKS),
+            id="autoland_keeps_everything_on_backstop",
+        ),
+        pytest.param(
+            "autoland_perf_shadow_scheduler_tasks",
+            False,
+            {
+                "talos-shippable",
+                "browsertime-shippable",
+                "mochitest",
+                "build-shippable",
+            },
+            id="perf_shadow_scheduler_keeps_perf_tests_on_non_backstop",
+        ),
+        pytest.param(
+            "autoland_perf_shadow_scheduler_tasks",
+            True,
+            set(AUTOLAND_TASKS),
+            id="perf_shadow_scheduler_keeps_everything_on_backstop",
+        ),
+    ),
+)
+def test_autoland_target_tasks(method, backstop, expected):
+    graph = TaskGraph(AUTOLAND_TASKS, Graph(nodes=set(AUTOLAND_TASKS), edges=set()))
+    params = {
+        "project": "autoland",
+        "repository_type": "hg",
+        "hg_branch": "default",
+        "tasks_for": "hg-push",
+        "backstop": backstop,
+    }
+    assert set(get_method(method)(graph, params, {})) == expected
+
+
+@pytest.mark.parametrize(
+    "project,release_type,run_on_projects,expected",
+    (
+        pytest.param("pine", "nightly-pine", ["release"], True, id="pine"),
+        pytest.param(
+            "pine",
+            "nightly-pine",
+            ["mozilla-central-only"],
+            False,
+            id="pine_uses_own_run_on_projects",
+        ),
+        pytest.param("try", "nightly", ["mozilla-central-only"], True, id="try"),
+    ),
+)
+def test_desktop_nightly_filter_on_project_branches(
+    project, release_type, run_on_projects, expected
+):
+    task = Task(
+        kind="build",
+        label="build-macosx64-shippable/opt",
+        attributes={
+            "build_platform": "macosx64-shippable",
+            "shippable": True,
+            "shipping_product": "firefox",
+            "run_on_projects": run_on_projects,
+        },
+        task={},
+    )
+    params = {
+        "project": project,
+        "release_type": release_type,
+        "level": "3",
+        "repository_type": "hg",
+        "hg_branch": "default",
+    }
+    nightly_filter = target_tasks.make_desktop_nightly_filter(
+        {"macosx64-shippable"}, {"trust-domain": "gecko"}
+    )
+    assert nightly_filter(task, params) == expected
+
+
 if __name__ == "__main__":
     main()

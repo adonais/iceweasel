@@ -296,7 +296,60 @@ function logTest(name, test) {
   };
 }
 
+/**
+ * Front-load or postpone Firefox background work that would otherwise run
+ * during the first measured iterations. Each step is independent, and a
+ * failing step is logged rather than failing the test.
+ */
+async function deferBackgroundTasks(context, commands) {
+  const failures = await commands.js.runPrivilegedAsync(`
+    const done = arguments[arguments.length - 1];
+    const steps = {
+      // Mark the background update timer as just fired so that it doesn't
+      // load the update service during the test. This only helps if it runs
+      // before the timer manager's first check (app.update.timerFirstInterval,
+      // 30s after startup by default); otherwise the update service has
+      // already been loaded.
+      "update timer": () => {
+        Services.prefs.setIntPref(
+          "app.update.lastUpdateTime.background-update-timer",
+          Math.round(Date.now() / 1000)
+        );
+      },
+      // Load GMP code now instead of during its late idle callback.
+      "GMP": () => {
+        ChromeUtils.importESModule(
+          "resource://gre/modules/GMPInstallManager.sys.mjs"
+        );
+      },
+      // Write the pending session now. The interval prefs from the Raptor
+      // profile then defer the next save.
+      "session store": async () => {
+        const { SessionSaver } = ChromeUtils.importESModule(
+          "moz-src:///browser/components/sessionstore/SessionSaver.sys.mjs"
+        );
+        await SessionSaver.run();
+      },
+    };
+    (async () => {
+      const failures = [];
+      for (const [name, step] of Object.entries(steps)) {
+        try {
+          await step();
+        } catch (e) {
+          failures.push(name + ": " + e);
+        }
+      }
+      return failures;
+    })().then(done, e => done([String(e)]));
+  `);
+  for (const failure of failures) {
+    context.log.warn(`Failed to defer background task ${failure}`);
+  }
+}
+
 module.exports = {
+  deferBackgroundTasks,
   logTest,
   logTask,
   gatherWindowsPowerUsage,

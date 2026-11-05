@@ -48,8 +48,14 @@ struct LinkHeader;
 
 //----------------------------------------------------------------------
 
+#define NS_CONTENTSINK_IID \
+  {0x7c0e56f4, 0x5e12, 0x4c41, {0xbd, 0x3a, 0x3a, 0x4e, 0x7c, 0x8f, 0x9e, 0x12}}
+
 class nsContentSink : public nsICSSLoaderObserver,
                       public nsSupportsWeakReference {
+ public:
+  NS_INLINE_DECL_STATIC_IID(NS_CONTENTSINK_IID)
+
  protected:
   using Document = mozilla::dom::Document;
 

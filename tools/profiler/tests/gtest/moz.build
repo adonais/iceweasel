@@ -6,11 +6,17 @@ if CONFIG["OS_TARGET"] in ("Android", "Linux") and CONFIG["TARGET_CPU"] in (
     "arm",
     "aarch64",
     "x86_64",
+    "loongarch64",
+    "riscv64",
 ):
     UNIFIED_SOURCES += [
         "LulTest.cpp",
         "LulTestDwarf.cpp",
         "LulTestInfrastructure.cpp",
+    ]
+
+    SOURCE_HEADERS += [
+        "LulTestInfrastructure.h",
     ]
 
 LOCAL_INCLUDES += [

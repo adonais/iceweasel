@@ -350,7 +350,7 @@ class ChannelGetterRunnable final : public WorkerMainThreadRunnable {
         mLoadInfo.mReferrerInfo, getter_AddRefs(channel));
     NS_ENSURE_SUCCESS(mResult, true);
 
-    mResult = mLoadInfo.SetPrincipalsAndCSPFromChannel(channel);
+    mResult = mLoadInfo.SetPrincipalsAndPolicyContainerFromChannel(channel);
     NS_ENSURE_SUCCESS(mResult, true);
 
     mLoadInfo.mChannel = std::move(channel);

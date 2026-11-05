@@ -1,0 +1,20 @@
+---
+extra-js-modules:
+    description: |
+        Prevents new files from being added to EXTRA_JS_MODULES,
+        EXTRA_PP_JS_MODULES or FINAL_TARGET[_PP]_FILES.modules. New modules
+        should use MOZ_SRC_FILES instead.
+    include:
+        - .
+    exclude:
+        # Installs modules into the SpecialPowers test extension rather than
+        # the application.
+        - testing/specialpowers/
+        - python/mozbuild/mozbuild/test/
+        - tools/lint/test/files/
+    extensions:
+        - build
+    support-files:
+        - 'tools/lint/extra-js-modules/**'
+    type: global
+    payload: extra-js-modules:lint

@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-
 /**
  * Elides the middle of a string by replacing it with an elipsis if it is
  * longer than `threshold` characters. Does its best to not break up grapheme
@@ -550,14 +548,11 @@ export var ProcessHangMonitor = {
       return;
     }
 
-    // Show the "debug script" button unconditionally if we are in Developer or Nightly
-    // editions, or if DevTools are opened on the slow tab. Never offer it when
-    // DevTools are disabled by policy, as debugging would be refused anyway.
+    // Show the "debug script" button only if DevTools are opened on the slow tab.
+    // Never offer it when DevTools are disabled by policy, as debugging would be refused anyway.
     if (
       !Services.prefs.getBoolPref("devtools.policy.disabled", false) &&
-      (AppConstants.MOZ_DEV_EDITION ||
-        AppConstants.NIGHTLY_BUILD ||
-        report.scriptBrowser.browsingContext.watchedByDevTools)
+      report.scriptBrowser.browsingContext.watchedByDevTools
     ) {
       buttons.push({
         label: bundle.getString("processHang.button_debug.label"),

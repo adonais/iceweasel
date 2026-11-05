@@ -72,6 +72,8 @@ class InterceptedHttpChannel final
   nsCOMPtr<nsIInputStream> mBodyReader;
   nsCOMPtr<nsISupports> mReleaseHandle;
   nsCOMPtr<nsIProgressEventSink> mProgressSink;
+  // Lets the retargeted OnDataAvailable avoid reading mProgressSink.
+  Atomic<bool> mHasProgressSink{false};
   nsCOMPtr<nsIInterceptedBodyCallback> mBodyCallback;
   nsCOMPtr<nsICacheInfoChannel> mSynthesizedCacheInfo;
   RefPtr<nsInputStreamPump> mPump;

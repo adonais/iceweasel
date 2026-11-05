@@ -1,0 +1,63 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Picture rect of a decoded VP8 frame whose container crops rows</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<video id="video"></video>
+<script>
+// vp8-pixel-crop-rows.webm is a 320x240 VP8 frame with PixelCropTop and
+// PixelCropBottom of 16, so its picture rect is (0,16,320,208).
+const EXPECTED_VISIBLE_RECT = { x: 0, y: 16, width: 320, height: 208 };
+const TARGET_MEDIA_TIME = 1.0;
+
+function waitForPresentedFrame(video, targetMediaTime) {
+  return new Promise(resolve => {
+    function checkFrame(_, metadata) {
+      if (metadata.mediaTime >= targetMediaTime) {
+        resolve(metadata);
+        return;
+      }
+      video.requestVideoFrameCallback(checkFrame);
+    }
+    video.requestVideoFrameCallback(checkFrame);
+  });
+}
+
+add_task(async function croppedRowsPictureRect() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.rdd-process.enabled", false],
+      ["media.utility-process.enabled", false],
+      ["media.allow-audio-non-utility", true],
+    ],
+  });
+
+  const video = document.getElementById("video");
+  await new Promise(resolve => {
+    video.addEventListener("loadeddata", resolve, { once: true });
+    video.src = "vp8-pixel-crop-rows.webm";
+  });
+
+  const seeked = new Promise(resolve =>
+    video.addEventListener("seeked", resolve, { once: true }));
+  const presented = waitForPresentedFrame(video, TARGET_MEDIA_TIME);
+  video.currentTime = TARGET_MEDIA_TIME;
+  await Promise.all([seeked, presented]);
+
+  const frame = new VideoFrame(video);
+  const rect = frame.visibleRect;
+  info(`visibleRect={${rect.x},${rect.y} ${rect.width}x${rect.height}}`);
+  is(rect.x, EXPECTED_VISIBLE_RECT.x, "picture rect x should be the left crop");
+  is(rect.y, EXPECTED_VISIBLE_RECT.y, "picture rect y should be the top crop");
+  is(rect.width, EXPECTED_VISIBLE_RECT.width,
+     "picture rect width should be the coded width minus the column crops");
+  is(rect.height, EXPECTED_VISIBLE_RECT.height,
+     "picture rect height should be the coded height minus the row crops");
+  frame.close();
+});
+</script>
+</body>
+</html>

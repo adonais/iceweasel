@@ -44,65 +44,74 @@ rtc_source_set("module_fec_api") {
 }
 
 if (rtc_include_tests && !build_with_chromium) {
-  rtc_test_suite("modules_tests") {
+  rtc_test_suite("modules_unittests") {
     tests = [
-      "audio_coding:audio_coding_modules_tests",
-      "rtp_rtcp:rtp_rtcp_modules_tests",
-      "video_coding:h264_impl_unittest",
-      "video_coding:video_encoder_decoder_instantiation_tests",
-      "video_coding:videocodec_test_av1",
-      "video_coding:videocodec_test_libvpx",
-      "video_coding:vp8_impl_unittest",
-    ]
-
-    if (rtc_use_h264) {
-      tests += [ "video_coding:videocodec_test_openh264" ]
-    }
-    if (rtc_libvpx_build_vp9) {
-      tests += [ "video_coding:vp9_impl_unittest" ]
-    }
-    if (is_ios || is_mac) {
-      tests += [ "video_coding:videocodec_test_videotoolbox" ]
-    }
-  }
-  rtc_test("modules_unittests") {
-    testonly = true
-
-    deps = [
-      ":module_api",
-      ":module_api_public",
       ":module_common_types_public_unittest",
-      "../test:run_loop",
-      "../test:test_support",
-      "audio_coding:audio_coding_unittests",
-      "audio_device:audio_device_unittests",
-      "audio_mixer:audio_mixer_unittests",
-      "congestion_controller:congestion_controller_unittests",
-      "pacing:pacing_unittests",
-      "remote_bitrate_estimator:remote_bitrate_estimator_unittests",
-      "rtp_rtcp:rtp_rtcp_unittests",
-      "sframe:sframe_unittests",
-      "video_coding:video_coding_unittests",
-      "video_coding/timing:timing_unittests",
+      "audio_device:fine_audio_buffer_unittest",
+      "audio_device:test_audio_device_impl_test",
+      "audio_device:test_audio_device_unittest",
+      "audio_mixer:audio_frame_manipulator_unittest",
+      "audio_mixer:audio_mixer_impl_unittest",
+      "audio_mixer:frame_combiner_unittest",
+      "congestion_controller:ect1_policy_unittest",
+      "congestion_controller:receive_side_congestion_controller_unittest",
+      "congestion_controller:remb_throttler_unittest",
+      "congestion_controller/goog_cc:acknowledged_bitrate_estimator_unittest",
+      "congestion_controller/goog_cc:alr_detector_unittest",
+      "congestion_controller/goog_cc:congestion_window_pushback_controller_unittest",
+      "congestion_controller/goog_cc:delay_based_bwe_unittest",
+      "congestion_controller/goog_cc:goog_cc_network_control_unittest",
+      "congestion_controller/goog_cc:loss_based_bwe_v2_test",
+      "congestion_controller/goog_cc:probe_bitrate_estimator_unittest",
+      "congestion_controller/goog_cc:probe_controller_unittest",
+      "congestion_controller/goog_cc:robust_throughput_estimator_unittest",
+      "congestion_controller/goog_cc:send_side_bandwidth_estimation_unittest",
+      "congestion_controller/goog_cc:trendline_estimator_unittest",
+      "congestion_controller/pcc:monitor_interval_unittest",
+      "congestion_controller/pcc:pcc_bitrate_controller_unittest",
+      "congestion_controller/pcc:pcc_network_controller_unittest",
+      "congestion_controller/pcc:rtt_tracker_unittest",
+      "congestion_controller/pcc:utility_function_unittest",
+      "congestion_controller/rtp:control_handler_unittest",
+      "congestion_controller/rtp:transport_feedback_adapter_unittest",
+      "congestion_controller/rtp:transport_feedback_demuxer_unittest",
+      "congestion_controller/scream:delay_based_congestion_control_unittest",
+      "congestion_controller/scream:loss_estimator_unittest",
+      "congestion_controller/scream:scream_feedback_unittest",
+      "congestion_controller/scream:scream_network_controller_unittest",
+      "congestion_controller/scream:scream_v2_unittest",
+      "congestion_controller/scream/test:cc_feedback_generator_unittests",
+      "pacing:bitrate_prober_unittest",
+      "pacing:interval_budget_unittest",
+      "pacing:pacing_controller_unittest",
+      "pacing:packet_router_unittest",
+      "pacing:prioritized_packet_queue_unittest",
+      "pacing:task_queue_paced_sender_unittest",
+      "remote_bitrate_estimator:aimd_rate_control_unittest",
+      "remote_bitrate_estimator:congestion_control_feedback_generator_unittest",
+      "remote_bitrate_estimator:congestion_control_feedback_tracker_unittest",
+      "remote_bitrate_estimator:inter_arrival_unittest",
+      "remote_bitrate_estimator:overuse_detector_unittest",
+      "remote_bitrate_estimator:packet_arrival_map_test",
+      "remote_bitrate_estimator:remote_bitrate_estimator_abs_send_time_unittest",
+      "remote_bitrate_estimator:remote_bitrate_estimator_single_stream_unittest",
+      "remote_bitrate_estimator:transport_sequence_number_feedback_generator_unittest",
+      "sframe:sframe_decrypt_error_reporter_unittest",
+      "sframe:sframe_encryptor_decryptor_unittest",
     ]
 
-    data_deps = [ "../resources:modules_unittests_data" ]
-
-    if (is_android) {
-      deps += [ "../sdk/android:libjingle_peerconnection_java" ]
+    if (is_linux || is_chromeos || is_mac || is_win) {
+      tests += [ "audio_device:audio_device_unittest" ]
     }
-    if (is_ios) {
-      info_plist = "../test/ios/Info.plist"
-      deps += [ "../resources:modules_unittests_bundle_data" ]
-      configs += [ "..:common_objc" ]
-      ldflags = [ "-ObjC" ]
+    if (is_mac) {
+      tests += [ "audio_device:audio_ring_buffer_mac_unittest" ]
+    }
+    if (is_win) {
+      tests += [ "audio_device:core_audio_utility_win_unittest" ]
     }
   }
-}
 
-if (rtc_include_tests && !build_with_chromium) {
-  rtc_library("module_common_types_public_unittest") {
-    testonly = true
+  rtc_cc_test("module_common_types_public_unittest") {
     sources = [ "module_common_types_public_unittest.cc" ]
     deps = [
       ":module_api_public",

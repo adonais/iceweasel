@@ -14,9 +14,8 @@ transforms:
 kind-dependencies:
     - signing-apk
     - signing-bundle
-
-task-defaults:
-    run-on-repo-type: [hg]
+    # The unsigned build uploads the SBOM.
+    - build-apk
 
 tasks:
     beetmover:

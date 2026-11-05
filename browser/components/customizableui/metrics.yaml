@@ -1,0 +1,156 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Adding a new metric? We have docs for that!
+# https://firefox-source-docs.mozilla.org/toolkit/components/glean/user/new_definitions_file.html
+
+---
+$schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
+$tags:
+  - 'Firefox :: Toolbars and Customization'
+
+fire_button:
+  activated:
+    type: event
+    description: >
+      Recorded when the fire button is activated, before either the
+      confirmation panel or the clear-data dialog is shown. Recorded once per
+      activation, at the same point as the fireButton Nimbus exposure event,
+      so the two agree on who reached the feature. This is the denominator
+      for flow_completed.
+    extra_keys:
+      flow:
+        type: string
+        description: >
+          Which flow the activation started, as resolved from the flow
+          variable of the fireButton Nimbus feature: "panel" or "direct".
+          Read from the same value the widget acted on rather than from
+          browser.fireButton.flow, so an enrollment cannot make the reported
+          flow disagree with the one the user got.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076799
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076799
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - hthai@mozilla.com
+      - dnguyen@mozilla.com
+    expires: never
+  choose_clicked:
+    type: event
+    description: >
+      Recorded when the user clicks "Choose…" in the confirmation panel to
+      pick what to delete, instead of deleting everything. Only the "panel"
+      flow has this link. Recorded on the click, so it counts users who open
+      the clear-data dialog even if they never close it.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076799
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076799
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - hthai@mozilla.com
+      - dnguyen@mozilla.com
+    expires: never
+  flow_completed:
+    type: event
+    description: >
+      Recorded once per activation when the flow reaches a terminal state,
+      whether or not any data was deleted. Pairs with activated: an activated
+      with no matching flow_completed means the user left the flow open until
+      the session ended.
+    extra_keys:
+      flow:
+        type: string
+        description: >
+          Which flow was in effect, "panel" or "direct". Repeated from
+          activated so this event can be analysed without joining the two.
+      outcome:
+        type: string
+        description: >
+          "deleted" if data was cleared, "cancelled" if the user explicitly
+          backed out with Cancel, "dismissed" if the confirmation panel was
+          closed without a choice, for example with Escape or a click
+          outside it, "aborted" if the user confirmed but nothing was deleted
+          because the windows could not be closed, for example when the user
+          chose to stay on a page that asked before leaving.
+      surface:
+        type: string
+        description: >
+          Where the terminal action was taken: "panel" for the confirmation
+          panel's own buttons, "dialog" for the clear-data dialog reached
+          either through the panel's "Choose..." link or directly. The
+          "direct" flow has no panel and so only ever reports "dialog".
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076799
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076799
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - hthai@mozilla.com
+      - dnguyen@mozilla.com
+    expires: never
+
+customize:
+  opened:
+    type: event
+    description: >
+      Recorded when the user enters Customize Toolbar mode.
+    extra_keys:
+      entry_point:
+        type: string
+        description: >
+          Where Customize Toolbar mode was opened from. One of
+          `toolbar_context_menu`, `app_menu`, `overflow_menu`, `menu_bar` or
+          `other`.
+      tab_orientation:
+        type: string
+        description: >
+          The tab orientation at the time customize mode was opened. One of
+          `vertical` or `horizontal`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2078841
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2078841
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mconley@mozilla.com
+      - gijs@mozilla.com
+    expires: never
+
+  restore_defaults:
+    type: event
+    description: >
+      Recorded when the user clicks the "Restore Defaults" button in Customize
+      Toolbar mode.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2078841
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2078841
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mconley@mozilla.com
+      - gijs@mozilla.com
+    expires: never
+
+  undo_restore:
+    type: event
+    description: >
+      Recorded when the user clicks the "Undo" button in Customize Toolbar
+      mode to revert a previous "Restore Defaults".
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2078841
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2078841
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mconley@mozilla.com
+      - gijs@mozilla.com
+    expires: never

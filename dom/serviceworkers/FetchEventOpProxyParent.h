@@ -59,6 +59,7 @@ class FetchEventOpProxyParent final : public PFetchEventOpProxyParent {
 
   RefPtr<FetchEventOpParent> mReal;
   RefPtr<ServiceWorkerFetchEventOpPromise::Private> mLifetimePromise;
+  bool mRespondWithReceived = false;
 };
 
 }  // namespace mozilla::dom

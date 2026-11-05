@@ -11,6 +11,8 @@
 #ifndef malloc_decls_h
 #  define malloc_decls_h
 
+#  include <stdlib.h>
+
 #  include "mozjemalloc_types.h"
 
 #  define MALLOC_FUNCS_MALLOC_BASE 1
@@ -24,15 +26,6 @@
     (MALLOC_FUNCS_ARENA_BASE | MALLOC_FUNCS_ARENA_ALLOC)
 #  define MALLOC_FUNCS_ALL \
     (MALLOC_FUNCS_MALLOC | MALLOC_FUNCS_JEMALLOC | MALLOC_FUNCS_ARENA)
-
-// Some malloc operations require extra includes.  Before using this header with
-// MALLOC_FUNCS unset or containing MALLOC_FUNCS_JEMALLOC you must include
-// this header once, outside a struct/class definition and without MALLOC_DECL
-// set and it will include headers it may later need.
-#  if !defined(MALLOC_DECL) && defined(__cplusplus)
-#    include <functional>
-#    include "mozilla/Maybe.h"
-#  endif
 
 #endif  // malloc_decls_h
 
@@ -150,19 +143,25 @@ MALLOC_DECL(moz_enable_deferred_purge, bool, bool)
 // Parameters:
 // aPeekOnly:     If true, it won't process any purge but just return if some is
 //                needed now or wanted later.
-// aReuseGraceMS: The time to wait after a significant re-use happened before
-//                purging memory in an arena.
+// aReuseGraceMS: The time to wait after a dirty page was reused before purging
+//                memory in an arena.
 // aKeepGoing:    Used to determine if it should continue processing purge
 //                requests and may be used to implement a work budget.  It will
 //                exit if there's no more requests, if it finishes processing an
-//                arena or if this parameter returns false.
+//                arena or if this parameter returns false. May be null.
+//                It is asked only after a span of dirty pages was madvised or
+//                decommitted, so as long as there is anything to purge, every
+//                call frees at least that one span or one spare chunk. A
+//                caller that stops it every time still drains, one step per
+//                call.
+// aClosure:      Handed back to aKeepGoing on every call.
 //
 // The cost of calling this when there is no pending purge is: a mutex
 // lock/unlock and iterating the list of purges. The mutex is never held during
 // expensive operations.
 #    ifdef __cplusplus
 MALLOC_DECL(moz_may_purge_now, may_purge_now_result_t, bool, uint32_t,
-            const mozilla::Maybe<std::function<bool()>>&)
+            purge_keep_going_t, void*)
 #    endif
 
 // Free dirty pages until the max dirty pages threshold is satisfied. Useful

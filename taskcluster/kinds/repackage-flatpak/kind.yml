@@ -19,9 +19,6 @@ kind-dependencies:
     - l10n
     - l10n-signing
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 only-for-build-platforms:
     - linux64/opt
     - linux64-shippable/opt

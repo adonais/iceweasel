@@ -243,6 +243,53 @@ add_task(async function check_x_button() {
   await cleanup();
 });
 
+add_task(async function check_never_button() {
+  let cleanup = await test_rollout(true, true, 0, 0);
+  Services.perms.removeByType("mailto-infobar-dismissed");
+
+  await BrowserTestUtils.withNewTab("https://example.com/", async browser => {
+    let button_never = document.querySelector(
+      "[data-l10n-id='protocolhandler-never-allow-button']"
+    );
+    Assert.notEqual(null, button_never, "is the never-button there?");
+
+    await button_never.click();
+    Assert.equal(
+      null,
+      document.querySelector(selector_mailto_prompt),
+      "prompt hidden after button_never clicked."
+    );
+    Assert.deepEqual(
+      SitePermissions.getForPrincipal(
+        browser.contentPrincipal,
+        "register-protocol-handler"
+      ),
+      { state: SitePermissions.BLOCK, scope: SitePermissions.SCOPE_PERSISTENT },
+      "Never allow persists a BLOCK permission."
+    );
+
+    await WebProtocolHandlerRegistrar._askUserToSetMailtoHandler(
+      browser,
+      protocol,
+      Services.io.newURI("https://example.com"),
+      "https://example.com"
+    );
+
+    Assert.equal(
+      null,
+      document.querySelector(selector_mailto_prompt),
+      "prompt stays hidden after the never button was clicked."
+    );
+
+    SitePermissions.removeFromPrincipal(
+      browser.contentPrincipal,
+      "register-protocol-handler"
+    );
+  });
+
+  await cleanup();
+});
+
 add_task(async function check_bar_is_not_shown() {
   let cleanup = await test_rollout(true, false);
 

@@ -27,10 +27,6 @@ generated-files = "xpcomtest.xpt"
 skip-if = [
   "os == 'win'",
 ]
-# Bug 676998: test fails consistently on Android
-fail-if = [
-  "os == 'android'",
-]
 
 ["test_bug478086.js"]
 
@@ -52,6 +48,13 @@ fail-if = [
 ["test_error_iserror.js"]
 prefs = [
   "javascript.options.experimental.error_iserror=true",
+]
+
+["test_file_copyTo_permissions.js"]
+# Unix permissions on directories only prevent creating children on Linux and macOS.
+run-if = [
+  "os == 'linux'",
+  "os == 'mac'",
 ]
 
 ["test_file_createUnique.js"]
@@ -81,6 +84,8 @@ fail-if = [
 
 ["test_localfile.js"]
 
+["test_logFilePrefReset.js"]
+
 ["test_logFromPreference.js"]
 skip-if = [
   "os == 'android' && release_or_beta", # bug 1841818
@@ -99,9 +104,7 @@ run-if = [
 
 ["test_nsIProcess.js"]
 skip-if = [
-  "os == 'android'", # Bug 1631671
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 676998
-  "os == 'win'", # Bug 1325609
+  "os == 'win'", # Bug 749717
 ]
 
 ["test_nsIProcess_stress.js"]

@@ -129,7 +129,7 @@ LocalAccessible* XULListboxAccessible::CellAt(uint32_t aRowIndex,
   return row->LocalChildAt(aColumnIndex);
 }
 
-bool XULListboxAccessible::IsColSelected(uint32_t aColIdx) {
+bool XULListboxAccessible::IsColSelected(uint32_t /*aColIdx*/) {
   nsCOMPtr<nsIDOMXULMultiSelectControlElement> control =
       Elm()->AsXULMultiSelectControl();
   NS_ASSERTION(control,
@@ -161,7 +161,8 @@ bool XULListboxAccessible::IsRowSelected(uint32_t aRowIdx) {
   return isSelected;
 }
 
-bool XULListboxAccessible::IsCellSelected(uint32_t aRowIdx, uint32_t aColIdx) {
+bool XULListboxAccessible::IsCellSelected(uint32_t aRowIdx,
+                                          uint32_t /*aColIdx*/) {
   return IsRowSelected(aRowIdx);
 }
 

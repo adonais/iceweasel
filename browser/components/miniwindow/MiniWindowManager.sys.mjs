@@ -21,16 +21,26 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * Cross-window manager for Mini Windows. Owns the registry of
  * open mini windows, the per-origin lifecycle observers, and SessionStore integration.
  */
-export const MiniWindowManager = new (class {
-  /** @type {Set<object>} live MiniWindow instances. */
+class MiniWindowManagerClass {
+  /**
+   * Live MiniWindow instances.
+   *
+   * @type {Set<object>}
+   */
   _miniwindows = new Set();
 
-  /** @type {WeakMap<Window, Set<object>>} originWin -> its live mini windows. */
+  /**
+   * Each origin window's live mini windows.
+   *
+   * @type {WeakMap<Window, Set<object>>}
+   */
   #originWinToMinis = new WeakMap();
 
   /**
-   * @type {WeakMap<Window, AbortController>} origin windows with lifecycle
-   * hooks installed, mapped to the controller that removes them.
+   * Origin windows with lifecycle hooks installed, mapped to the controller
+   * that removes them.
+   *
+   * @type {WeakMap<Window, AbortController>}
    */
   #originWinHooks = new WeakMap();
 
@@ -47,15 +57,14 @@ export const MiniWindowManager = new (class {
   /**
    * Pop a cropped region of `tab` into a new mini window.
    *
-   * TODO (later in the stack): the user-facing entry points that call this land
-   * in a later commit; for now it is reached programmatically and by tests.
-   *
    * @param {MozTabbrowserTab} tab - the tab to move.
    * @param {object} cropInfo - see MiniWindow.
    * @param {string} entryPoint - where the pop was initiated.
    * @returns {Promise<object|null>} the MiniWindow, or null.
    */
   async popRegion(tab, cropInfo, entryPoint) {
+    tab.splitview?.unsplitTabs("mini_window");
+
     return this.#pop(tab, cropInfo, entryPoint);
   }
 
@@ -68,6 +77,44 @@ export const MiniWindowManager = new (class {
    */
   async popTab(tab, entryPoint) {
     return this.#pop(tab, null, entryPoint);
+  }
+
+  /**
+   * The tabs popTabs would move. If tabs are in a splitview state,
+   * separates them in the results.
+   *
+   * @param {MozTabbrowserTab[]} tabs
+   * @returns {MozTabbrowserTab[]}
+   */
+  tabsToPop(tabs) {
+    let result = new Set();
+    for (let tab of tabs) {
+      for (let t of tab.splitview?.tabs ?? [tab]) {
+        // about:opentabs is used by splitview when the user
+        // hasn't selected a second tab yet.
+        if (t.linkedBrowser?.currentURI?.spec !== "about:opentabs") {
+          result.add(t);
+        }
+      }
+    }
+    return [...result];
+  }
+
+  /**
+   * Pop each of `tabs`, into their own full-tab mini window. Splitview tabs
+   * are moved into their own mini windows.
+   *
+   * @param {MozTabbrowserTab[]} tabs
+   * @param {string} entryPoint - where the pop was initiated.
+   */
+  async popTabs(tabs, entryPoint) {
+    let toPop = this.tabsToPop(tabs);
+    for (let splitview of new Set(tabs.map(t => t.splitview).filter(Boolean))) {
+      splitview.unsplitTabs("mini_window");
+    }
+    for (let tab of toPop) {
+      await this.popTab(tab, entryPoint);
+    }
   }
 
   /**
@@ -282,4 +329,6 @@ export const MiniWindowManager = new (class {
     let minis = this.#originWinToMinis.get(originWin);
     return minis ? [...minis] : [];
   }
-})();
+}
+
+export const MiniWindowManager = new MiniWindowManagerClass();

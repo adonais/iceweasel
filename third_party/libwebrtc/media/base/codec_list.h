@@ -42,12 +42,23 @@ class CodecList {
   static CodecList CreateFromTrustedData(std::span<const Codec> codecs) {
     return CodecList(codecs);
   }
-  // Inserts a codec into the list if it was not already present.
-  // Returns true if inserted, false if the exact same codec was in the list.
-  // Will DCHECK if the IDs were the same, but codecs were not (binary) equal.
-  // This is consistent with CheckConsistency() only being effective in debug.
-  // TODO: https://issues.webrtc.org/455503439 - consider CHECK.
-  bool PushIfNotPresent(const Codec& codec);
+  // The outcome of PushIfNotPresent().
+  enum class PushResult {
+    // The codec was added to the list.
+    kInserted,
+    // The exact same codec was already in the list; the list is unchanged.
+    kDuplicate,
+    // A different codec with the same payload type was already in the list.
+    // The list is unchanged and an error is logged. This means that the
+    // caller combined codecs that come from different payload type mappings,
+    // which is a programming error.
+    kConflict,
+  };
+
+  // Inserts a codec into the list if no codec with the same payload type is
+  // present. The payload types in the list are kept unique; the codec that is
+  // already in the list is never replaced.
+  [[nodiscard]] PushResult PushIfNotPresent(const Codec& codec);
 
   // Vector-compatible API to access the codecs.
   iterator begin() { return codecs_.begin(); }
@@ -56,21 +67,35 @@ class CodecList {
   const_iterator end() const { return codecs_.end(); }
   const Codec& operator[](size_t i) const { return codecs_[i]; }
   Codec& operator[](size_t i) { return codecs_[i]; }
-  void push_back(const Codec& codec) {
-    codecs_.push_back(codec);
-    CheckConsistency();
-  }
+  // Appends a codec to the list. Payload types must remain unique. Note that
+  // an RTX codec may be added before the codec that it refers to, so the check
+  // that referenced codecs exist is left to CheckConsistency().
+  void push_back(const Codec& codec);
   bool empty() const { return codecs_.empty(); }
   void clear() { codecs_.clear(); }
   size_t size() const { return codecs_.size(); }
   // Access to the whole codec list
   const std::vector<Codec>& codecs() const { return codecs_; }
   std::vector<Codec>& writable_codecs() { return codecs_; }
-  // Verify consistency of the codec list.
+  // Verify consistency of a complete codec list.
   // Examples: checking that all RTX codecs have APT pointing
   // to a codec in the list.
-  // The function will CHECK or DCHECK on inconsistencies.
+  // The function will CHECK or DCHECK on inconsistencies. It must only be
+  // called once the list is fully assembled.
   void CheckConsistency();
+
+  // Marks the list as complete and moves the codecs out of it.
+  //
+  // This verifies the invariants that only hold for a complete list, such as
+  // every RTX codec referring to a codec that is present, and returns an error
+  // if they are violated. Use this rather than codecs() when handing the
+  // codecs to a caller, so that the verification cannot be forgotten. Unlike
+  // CheckConsistency(), an inconsistent list is reported as an error instead
+  // of being fatal, since a list can become inconsistent as the result of the
+  // codecs an application supplied.
+  //
+  // The CodecList is left empty, whether or not the check succeeded.
+  [[nodiscard]] RTCErrorOr<std::vector<Codec>> Finalize() &&;
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const CodecList& list) {

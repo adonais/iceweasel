@@ -171,8 +171,13 @@ def log_crashes(
     stackwalk_binary=None,
     dump_save_path=None,
     quiet=False,
+    group=None,
 ):
-    """Log crashes using a structured logger"""
+    """Log crashes using a structured logger
+
+    :param group: Optional test group (e.g. manifest) to attribute the crashes to,
+                  for when ``test`` alone can't be mapped to one.
+    """
     crash_count = 0
     crash_info = CrashInfo(
         dump_directory,
@@ -193,6 +198,8 @@ def log_crashes(
             continue
         crash_count += 1
         kwargs["quiet"] = quiet
+        if group is not None:
+            kwargs["group"] = group
         logger.crash(process=process, test=test, **kwargs)
     if num_dumps:
         logger.group_end(message)

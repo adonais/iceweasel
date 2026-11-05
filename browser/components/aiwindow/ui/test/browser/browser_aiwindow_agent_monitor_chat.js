@@ -529,6 +529,67 @@ add_task(async function test_watch_url_chip_dispatches_open_link() {
   );
 });
 
+add_task(async function test_create_card_chip_shows_open_tab_title() {
+  const OPEN_URL =
+    "https://example.com/browser/browser/components/aiwindow/ui/test/browser/test_context_url_page.html";
+  const CLOSED_URL = "https://example.org/not-open";
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, OPEN_URL);
+  const openTitle = tab.linkedBrowser.contentTitle;
+  Assert.ok(openTitle, "The open test page has a title");
+
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["Set up a monitor for this page."] },
+  });
+  const win = await openAIWindow();
+
+  try {
+    const aichatBrowser = await getAichatBrowser(win.gBrowser.selectedBrowser);
+    await setupConversationWithToolUI(aichatBrowser, {
+      ...MONITOR_CARD,
+      toolUIData: {
+        ...MONITOR_CARD.toolUIData,
+        properties: {
+          agent: {
+            ...MONITOR_CARD.toolUIData.properties.agent,
+            url: OPEN_URL,
+            watchUrls: [OPEN_URL, CLOSED_URL],
+          },
+        },
+      },
+    });
+
+    await SpecialPowers.spawn(aichatBrowser, [openTitle], async title => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+      const card = await ContentTaskUtils.waitForCondition(
+        () => chatContent.shadowRoot.querySelector("agent-monitor-item"),
+        "Wait for agent-monitor-item"
+      );
+      const chipLabels = () =>
+        [
+          ...card.shadowRoot.querySelectorAll(
+            ".page-pills-row ai-website-chip"
+          ),
+        ].map(chip => chip.getAttribute("label"));
+
+      await ContentTaskUtils.waitForCondition(
+        () => chipLabels()[0] === title,
+        "Wait for the open tab's title to reach its chip"
+      );
+      Assert.deepEqual(
+        chipLabels(),
+        [title, "example.org"],
+        "An open page is labelled with its tab title, others keep the hostname"
+      );
+    });
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    BrowserTestUtils.removeTab(tab);
+    restoreSignIn();
+    await restore();
+  }
+});
+
 // The sidebar's chat header lives in chrome and floats over the chat document,
 // so a dropdown placed against the top of the viewport is painted over and the
 // header's buttons take the clicks meant for its first row (bug 2073461).

@@ -128,12 +128,6 @@ void ResourceAdaptationProcessor::AddResource(
   RTC_LOG(LS_INFO) << "Registered resource \"" << resource->Name() << "\".";
 }
 
-std::vector<scoped_refptr<Resource>> ResourceAdaptationProcessor::GetResources()
-    const {
-  MutexLock crit(&resources_lock_);
-  return resources_;
-}
-
 void ResourceAdaptationProcessor::RemoveResource(
     scoped_refptr<Resource> resource) {
   RTC_DCHECK(resource);

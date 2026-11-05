@@ -7,13 +7,8 @@
 import sys
 
 
-def char_cmp(x, y):
-    rv = cmp(x["nbits"], y["nbits"])
-    if not rv:
-        rv = cmp(x["bpat"], y["bpat"])
-    if not rv:
-        rv = cmp(x["ascii"], y["ascii"])
-    return rv
+def char_key(x):
+    return x["nbits"], x["bpat"], x["ascii"]
 
 
 characters = []
@@ -32,7 +27,7 @@ for line in sys.stdin:
 
     characters.append({"ascii": ascii, "nbits": nbits, "bpat": bpat})
 
-characters.sort(cmp=char_cmp)
+characters.sort(key=char_key)
 raw_entries = []
 for c in characters:
     raw_entries.append((c["ascii"], c["bpat"]))
@@ -140,8 +135,11 @@ sys.stdout.write(
     """/*
  * THIS FILE IS AUTO-GENERATED. DO NOT EDIT!
  */
-#ifndef mozilla__net__Http2HuffmanIncoming_h
-#define mozilla__net__Http2HuffmanIncoming_h
+#ifndef mozilla_net_Http2HuffmanIncoming_h
+#define mozilla_net_Http2HuffmanIncoming_h
+
+#include "mozilla/Assertions.h"
+#include <cstdint>
 
 namespace mozilla {
 namespace net {
@@ -197,6 +195,6 @@ sys.stdout.write(
     """} // namespace net
 } // namespace mozilla
 
-#endif // mozilla__net__Http2HuffmanIncoming_h
+#endif // mozilla_net_Http2HuffmanIncoming_h
 """
 )

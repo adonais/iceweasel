@@ -44,6 +44,7 @@ add_task(async function testPermissionsListing() {
     "3rdPartyStorage",
     "3rdPartyFrameStorage",
     "open-protocol-handler",
+    "register-protocol-handler",
   ];
   if (RESIST_FINGERPRINTING_ENABLED) {
     // Canvas permission should be hidden unless privacy.resistFingerprinting
@@ -240,6 +241,57 @@ add_task(async function testGetAvailableStates() {
     SitePermissions.ALLOW,
     SitePermissions.BLOCK,
   ]);
+
+  Assert.deepEqual(
+    SitePermissions.getAvailableStates("register-protocol-handler"),
+    [SitePermissions.UNKNOWN, SitePermissions.BLOCK]
+  );
+});
+
+add_task(async function testRegisterProtocolHandlerPermission() {
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      "https://example.com"
+    );
+
+  Assert.equal(
+    SitePermissions.getDefault("register-protocol-handler"),
+    SitePermissions.UNKNOWN,
+    "register-protocol-handler defaults to prompting (UNKNOWN)"
+  );
+
+  Assert.deepEqual(
+    SitePermissions.getForPrincipal(principal, "register-protocol-handler"),
+    { state: SitePermissions.UNKNOWN, scope: SitePermissions.SCOPE_PERSISTENT },
+    "No permission stored by default"
+  );
+
+  // A persistent "never allow" round-trips as BLOCK / persistent.
+  SitePermissions.setForPrincipal(
+    principal,
+    "register-protocol-handler",
+    SitePermissions.BLOCK,
+    SitePermissions.SCOPE_PERSISTENT
+  );
+  Assert.deepEqual(
+    SitePermissions.getForPrincipal(principal, "register-protocol-handler"),
+    { state: SitePermissions.BLOCK, scope: SitePermissions.SCOPE_PERSISTENT },
+    "Persistent block is stored"
+  );
+
+  // Setting back to the default removes the stored permission.
+  SitePermissions.setForPrincipal(
+    principal,
+    "register-protocol-handler",
+    SitePermissions.UNKNOWN
+  );
+  Assert.deepEqual(
+    SitePermissions.getForPrincipal(principal, "register-protocol-handler"),
+    { state: SitePermissions.UNKNOWN, scope: SitePermissions.SCOPE_PERSISTENT },
+    "Setting UNKNOWN removes the permission"
+  );
+
+  SitePermissions.removeFromPrincipal(principal, "register-protocol-handler");
 });
 
 add_task(async function testPersistDataOnShutdownPermission() {
@@ -353,6 +405,7 @@ add_task(async function testExactHostMatch() {
     "xr",
     "persistent-storage",
     "open-protocol-handler",
+    "register-protocol-handler",
   ];
   if (RESIST_FINGERPRINTING_ENABLED) {
     // Canvas permission should be hidden unless privacy.resistFingerprinting

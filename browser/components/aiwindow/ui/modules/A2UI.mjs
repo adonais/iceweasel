@@ -3,6 +3,27 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
+ * A generated surface before hydration.
+ *
+ * @typedef {import("../../models/aitab/AITab.sys.mjs").A2UISurface} A2UISurface
+ */
+
+/**
+ * A component with its catalog properties.
+ *
+ * @typedef {import("../../models/aitab/AITab.sys.mjs").A2UIComponent &
+ *   import("../../models/aitab/AITab.sys.mjs").A2UIComponentProps} AITabComponent
+ */
+
+/**
+ * A Smart Page prepared for rendering.
+ *
+ * @typedef {object} HydratedAITabData
+ * @property {string} component - Root component type.
+ * @property {AITabComponent[]} children - Hydrated header and content components.
+ */
+
+/**
  * Parses A2UI JSON objects to prepare for rendering
  */
 export class A2UI {
@@ -12,7 +33,7 @@ export class A2UI {
   #surface;
 
   /**
-   * @param {object} a2ui
+   * @param {A2UISurface} a2ui - Generated surface to hydrate.
    */
   constructor(a2ui) {
     this.#surface = structuredClone(a2ui);
@@ -29,6 +50,8 @@ export class A2UI {
 
   /**
    * Iterates the A2UI JSON and prepares for rendering
+   *
+   * @returns {HydratedAITabData} Page with hydrated child components.
    */
   toUI() {
     const surface = structuredClone(this.#surface);

@@ -29,6 +29,10 @@ if CONFIG["ENABLE_TESTS"]:
         "MozHelpers.cpp",
         "SanityTest.cpp",
     ]
+    SOURCE_HEADERS += [
+        "GTestRunner.h",
+        "MozGTestBench.h",
+    ]
 
     if CONFIG["OS_ARCH"] == "WINNT":
         LOCAL_INCLUDES += [

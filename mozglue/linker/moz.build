@@ -13,3 +13,14 @@ SOURCES += [
 Library("linker")
 
 FINAL_LIBRARY = "mozglue"
+
+SOURCE_HEADERS += [
+    "BaseElf.h",
+    "CustomElf.h",
+    "ElfLoader.h",
+    "Elfxx.h",
+    "Linker.h",
+    "Logging.h",
+    "Mappable.h",
+    "Utils.h",
+]

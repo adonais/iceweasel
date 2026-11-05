@@ -92,41 +92,9 @@ nssCryptokiObject_Equal(
     return (o1->token == o2->token && o1->handle == o2->handle);
 }
 
-NSS_IMPLEMENT PRUint32
-nssPKCS11String_Length(CK_CHAR *pkcs11Str, PRUint32 bufLen)
-{
-    PRInt32 i;
-    for (i = bufLen - 1; i >= 0;) {
-        if (pkcs11Str[i] != ' ' && pkcs11Str[i] != '\0')
-            break;
-        --i;
-    }
-    return (PRUint32)(i + 1);
-}
-
 /*
  * Slot arrays
  */
-
-NSS_IMPLEMENT NSSSlot **
-nssSlotArray_Clone(
-    NSSSlot **slots)
-{
-    NSSSlot **rvSlots = NULL;
-    NSSSlot **sp = slots;
-    PRUint32 count = 0;
-    while (sp && *sp)
-        count++;
-    if (count > 0) {
-        rvSlots = nss_ZNEWARRAY(NULL, NSSSlot *, count + 1);
-        if (rvSlots) {
-            for (sp = slots, count = 0; *sp; sp++) {
-                rvSlots[count++] = nssSlot_AddRef(*sp);
-            }
-        }
-    }
-    return rvSlots;
-}
 
 NSS_IMPLEMENT void
 nssSlotArray_Destroy(
@@ -139,13 +107,6 @@ nssSlotArray_Destroy(
         }
         nss_ZFreeIf(slots);
     }
-}
-
-NSS_IMPLEMENT void
-NSSSlotArray_Destroy(
-    NSSSlot **slots)
-{
-    nssSlotArray_Destroy(slots);
 }
 
 NSS_IMPLEMENT void

@@ -37,6 +37,21 @@ if CONFIG["MOZ_PLACES"]:
         "SyncedBookmarksMirror.h",
     ]
 
+    SOURCE_HEADERS += [
+        "nsCachedFaviconProtocolHandler.h",
+        "nsNavBookmarks.h",
+        "nsNavHistory.h",
+        "nsNavHistoryQuery.h",
+        "nsNavHistoryResult.h",
+        "nsPlacesIndexes.h",
+        "nsPlacesMacros.h",
+        "nsPlacesTables.h",
+        "nsPlacesTriggers.h",
+        "PlaceInfo.h",
+        "SQLFunctions.h",
+        "VisitInfo.h",
+    ]
+
     UNIFIED_SOURCES += [
         "ConcurrentConnection.cpp",
         "Database.cpp",

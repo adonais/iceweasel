@@ -14,17 +14,18 @@
 namespace mozilla {
 
 #define EVENT_QUEUE_PRIORITY_LIST(EVENT_PRIORITY) \
-  EVENT_PRIORITY(Idle, 0)                         \
-  EVENT_PRIORITY(DeferredTimers, 1)               \
-  EVENT_PRIORITY(Low, 2)                          \
-  EVENT_PRIORITY(InputLow, 3)                     \
-  EVENT_PRIORITY(Normal, 4)                       \
-  EVENT_PRIORITY(MediumHigh, 5)                   \
-  EVENT_PRIORITY(InputHigh, 6)                    \
-  EVENT_PRIORITY(Vsync, 7)                        \
-  EVENT_PRIORITY(InputHighest, 8)                 \
-  EVENT_PRIORITY(RenderBlocking, 9)               \
-  EVENT_PRIORITY(Control, 10)
+  EVENT_PRIORITY(Lowest, 0)                       \
+  EVENT_PRIORITY(Idle, 1)                         \
+  EVENT_PRIORITY(DeferredTimers, 2)               \
+  EVENT_PRIORITY(Low, 3)                          \
+  EVENT_PRIORITY(InputLow, 4)                     \
+  EVENT_PRIORITY(Normal, 5)                       \
+  EVENT_PRIORITY(MediumHigh, 6)                   \
+  EVENT_PRIORITY(InputHigh, 7)                    \
+  EVENT_PRIORITY(Vsync, 8)                        \
+  EVENT_PRIORITY(InputHighest, 9)                 \
+  EVENT_PRIORITY(RenderBlocking, 10)              \
+  EVENT_PRIORITY(Control, 11)
 
 enum class EventQueuePriority {
 #define EVENT_PRIORITY(NAME, VALUE) NAME = VALUE,

@@ -397,59 +397,6 @@ VideoFramePool<LIBAV_VER>::GetVideoFrameSurface(
   return videoSurface;
 }
 
-static gfx::SurfaceFormat GetSurfaceFormat(enum AVPixelFormat aPixFmt) {
-  switch (aPixFmt) {
-    case AV_PIX_FMT_YUV420P10LE:
-      return gfx::SurfaceFormat::YUV420P10;
-    case AV_PIX_FMT_YUV420P:
-      return gfx::SurfaceFormat::YUV420;
-    default:
-      return gfx::SurfaceFormat::UNKNOWN;
-  }
-}
-
-// TODO: Add support for AV_PIX_FMT_YUV444P / AV_PIX_FMT_GBRP
-RefPtr<VideoFrameSurface<LIBAV_VER>>
-VideoFramePool<LIBAV_VER>::GetVideoFrameSurface(
-    const layers::PlanarYCbCrData& aData, AVCodecContext* aAVCodecContext) {
-  gfx::SurfaceFormat format = GetSurfaceFormat(aAVCodecContext->pix_fmt);
-  if (format == gfx::SurfaceFormat::UNKNOWN) {
-    DMABUF_LOG("Unsupported FFmpeg DMABuf format {:x}",
-               static_cast<int>(aAVCodecContext->pix_fmt));
-    return nullptr;
-  }
-
-  MutexAutoLock lock(mSurfaceLock);
-  UpdateRendererUsageLocked();
-
-  RefPtr<VideoFrameSurface<LIBAV_VER>> videoSurface =
-      GetTargetVideoFrameSurfaceLocked(sInvalidFFMPEGSurfaceID,
-                                       /* aRecycleSurface */ false);
-  RefPtr<DMABufSurfaceYUV> surface = videoSurface->GetDMABufSurface();
-
-  DMABUF_LOG("Using SW DMABufSurface UID {}", surface->GetUID());
-
-  if (!surface->UpdateYUVData(aData, format)) {
-    DMABUF_LOG("  failed to convert YUV data to DMABuf memory!");
-    return nullptr;
-  }
-
-  if (MOZ_UNLIKELY(!mTextureCreationWorks)) {
-    mTextureCreationWorks = Some(surface->VerifyTextureCreation());
-    if (!*mTextureCreationWorks) {
-      DMABUF_LOG("  failed to create texture over DMABuf memory!");
-      return nullptr;
-    }
-  }
-
-  // Disable recycling for copied DMABuf surfaces as we can't ensure
-  // match between FFmpeg frame with DMABufSurface.
-  // It doesn't matter much as surface copy/texture upload uses extra
-  // GPU resources anyway.
-  videoSurface->DisableRecycle();
-  return videoSurface;
-}
-
 // Convert an FFmpeg-specific DRM descriptor into a
 // VADRMPRIMESurfaceDescriptor.  There is no fundamental difference between
 // the descriptor structs and using the latter means this can use all the

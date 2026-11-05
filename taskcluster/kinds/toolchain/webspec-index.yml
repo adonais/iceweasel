@@ -25,7 +25,7 @@ linux64-webspec-index:
         toolchain:
             - linux64-clang-toolchain
             - linux64-rust-toolchain
-            - linux64-toolchain-sysroot
+            - sysroot-x86_64-linux-gnu
 
 linux64-aarch64-webspec-index:
     treeherder:
@@ -36,7 +36,7 @@ linux64-aarch64-webspec-index:
         toolchain:
             - linux64-clang-toolchain
             - linux64-rust-toolchain
-            - linux64-aarch64-toolchain-sysroot
+            - sysroot-aarch64-linux-gnu
 
 macosx64-webspec-index:
     treeherder:
@@ -60,26 +60,22 @@ macosx64-aarch64-webspec-index:
             - linux64-rust-macos-toolchain
             - macosx64-sdk-toolchain
 
-win32-webspec-index:
-    treeherder:
-        symbol: TW32(webspec-index)
-    worker:
-        env:
-            EXTRA_PATH: /builds/worker/fetches/nasm
-    run:
-        arguments: ['i686-pc-windows-msvc']
-    fetches:
-        toolchain:
-            - linux64-clang-toolchain
-            - linux64-nasm
-            - linux64-rust-windows-toolchain
-            - vs-toolchain
-
 win64-webspec-index:
     treeherder:
         symbol: TW64(webspec-index)
     run:
         arguments: ['x86_64-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows-toolchain
+            - vs-toolchain
+
+win64-aarch64-webspec-index:
+    treeherder:
+        symbol: TWA64(webspec-index)
+    run:
+        arguments: ['aarch64-pc-windows-msvc']
     fetches:
         toolchain:
             - linux64-clang-toolchain

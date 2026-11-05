@@ -1,0 +1,61 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script type="application/javascript" src="pc.js"></script>
+  <script type="application/javascript" src="helpers_from_wpt/sdp.js"></script>
+</head>
+<body>
+<pre id="test">
+<script type="application/javascript">
+  createHTML({
+    bug: "1909443",
+    title: "No rtcp-fb or fmtp for payload types excluded by setCodecPreferences"
+  });
+
+  function unlistedPayloadTypes(sdp) {
+    return SDPUtils.getMediaSections(sdp).flatMap(section => {
+      const listed = new Set(SDPUtils.getPayloadTypes(section));
+      return [
+        ...SDPUtils.getFmtpPayloadTypes(section),
+        ...SDPUtils.getRtcpFbPayloadTypes(section),
+      ].filter(pt => pt != "*" && !listed.has(pt));
+    });
+  }
+
+  runNetworkTest(async () => {
+    const pc = new RTCPeerConnection();
+    const transceiver = pc.addTransceiver("video");
+    const codecs = RTCRtpSender.getCapabilities("video").codecs;
+    ok(codecs.some(c => c.mimeType == "video/VP8"), "VP8 is available");
+    transceiver.setCodecPreferences(
+      codecs.filter(c => c.mimeType != "video/VP8")
+    );
+
+    const offer = await pc.createOffer();
+    ok(!offer.sdp.match(/a=rtpmap:\d+ VP8\//), "VP8 not offered");
+    isDeeply(
+      unlistedPayloadTypes(offer.sdp),
+      [],
+      "No rtcp-fb or fmtp lines for payload types missing from m= line"
+    );
+
+    const pc2 = new RTCPeerConnection();
+    await pc.setLocalDescription(offer);
+    await pc2.setRemoteDescription(offer);
+    const answer = await pc2.createAnswer();
+    await pc2.setLocalDescription(answer);
+    await pc.setRemoteDescription(answer);
+
+    const reoffer = await pc.createOffer();
+    isDeeply(
+      unlistedPayloadTypes(reoffer.sdp),
+      [],
+      "No stale rtcp-fb or fmtp lines in the re-offer"
+    );
+    pc.close();
+    pc2.close();
+  });
+</script>
+</pre>
+</body>
+</html>

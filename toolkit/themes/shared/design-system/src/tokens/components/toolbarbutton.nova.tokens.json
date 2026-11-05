@@ -54,6 +54,12 @@
       },
       "selected": {
         "value": "{toolbarbutton.outline.color.active}"
+      },
+      "disabled": {
+        "value": {
+          "default": "transparent",
+          "forcedColors": "{button.border.color.disabled}"
+        }
       }
     },
     "offset": {

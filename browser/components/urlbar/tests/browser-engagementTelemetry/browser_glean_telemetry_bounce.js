@@ -294,3 +294,248 @@ add_task(async function test_other_engagement() {
     await BrowserTestUtils.removeTab(tab);
   });
 });
+
+/**
+ * Stubs the interactions of the page an engagement loaded to fall within the
+ * bounce threshold, then navigates back to the page the engagement started
+ * from, which triggers the bounce. The caller restores the stub.
+ *
+ * @param {string} startURL
+ *   The page the engagement started from.
+ */
+async function goBackWithinBounceThreshold(startURL) {
+  let browser = gBrowser.selectedBrowser;
+  let now = Date.now();
+  sinon
+    .stub(Interactions, "getRecentInteractionsForBrowser")
+    .returns([{ created_at: now + 60000, totalViewTime: 1000 }]);
+
+  gBrowser.goBack();
+  await TestUtils.waitForCondition(
+    () => browser.currentURI?.spec == startURL,
+    "Waiting for previous page to load"
+  );
+  await Interactions.interactionUpdatePromise;
+}
+
+add_task(async function test_bounce_search_mode_enter() {
+  await doTest(async () => {
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "https://example.com/"
+    );
+
+    await openPopup("test");
+    await UrlbarTestUtils.activateSearchModeSwitcherItem(
+      window,
+      `panel-item[data-engine-name="${(await SearchService.getDefault()).name}"]`
+    );
+    await doEnter();
+    await goBackWithinBounceThreshold("https://example.com/");
+
+    await assertBounceTelemetry([
+      {
+        view_time: "1",
+        selected_result: "search_engine",
+        search_mode: "search_engine",
+        interaction: "typed",
+        engagement_type: "enter",
+      },
+    ]);
+
+    sinon.restore();
+    await PlacesUtils.history.clear();
+    BrowserTestUtils.removeTab(tab);
+  });
+});
+
+// Opening an engine's results page from the search mode switcher tracks no
+// bounce of its own, so its load triggers the bounce of the page it leaves.
+add_task(async function test_bounce_search_mode_switcher_shift_click() {
+  await doTest(async () => {
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "https://example.com/"
+    );
+
+    await openPopup("test");
+    await doEnter();
+
+    let now = Date.now();
+    sinon
+      .stub(Interactions, "getRecentInteractionsForBrowser")
+      .returns([{ created_at: now + 60000, totalViewTime: 1000 }]);
+
+    await openPopup("other");
+    let popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
+    let engineItem = popup.querySelector(
+      `panel-item[data-engine-name="${(await SearchService.getDefault()).name}"]`
+    );
+    let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+    EventUtils.synthesizeMouseAtCenter(engineItem, { shiftKey: true });
+    await loaded;
+
+    await assertBounceTelemetry([
+      {
+        view_time: "1",
+        selected_result: "search_engine",
+        engagement_type: "enter",
+      },
+    ]);
+
+    sinon.restore();
+    await PlacesUtils.history.clear();
+    BrowserTestUtils.removeTab(tab);
+  });
+});
+
+add_task(async function test_bounce_paste_and_go_url() {
+  await doTest(async () => {
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "https://example.com/"
+    );
+
+    await doPasteAndGo("https://example.org/");
+    await goBackWithinBounceThreshold("https://example.com/");
+
+    await assertBounceTelemetry([
+      {
+        view_time: "1",
+        interaction: "pasted",
+        engagement_type: "paste_go",
+      },
+    ]);
+
+    sinon.restore();
+    await PlacesUtils.history.clear();
+    BrowserTestUtils.removeTab(tab);
+  });
+});
+
+// Paste & go of a search term has no result for the pasted value, so the
+// parent resolves a heuristic result for it and picks that after the
+// engagement has been recorded.
+add_task(async function test_bounce_paste_and_go_search() {
+  await doTest(async () => {
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "https://example.com/"
+    );
+
+    await doPasteAndGo("test");
+    await goBackWithinBounceThreshold("https://example.com/");
+
+    await assertBounceTelemetry([
+      {
+        view_time: "1",
+        interaction: "pasted",
+        engagement_type: "paste_go",
+      },
+    ]);
+
+    sinon.restore();
+    await PlacesUtils.history.clear();
+    BrowserTestUtils.removeTab(tab);
+  });
+});
+
+// An engine search picked while the page of an earlier pick is still tracked
+// triggers that page's bounce, with the earlier pick's search mode, and tracks
+// a bounce of its own.
+add_task(async function test_bounce_engine_search_after_pick() {
+  await doTest(async () => {
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "https://example.com/"
+    );
+
+    await openPopup("test");
+    await doEnter();
+    let firstPageURL = gBrowser.selectedBrowser.currentURI.spec;
+
+    let now = Date.now();
+    sinon
+      .stub(Interactions, "getRecentInteractionsForBrowser")
+      .returns([{ created_at: now + 60000, totalViewTime: 1000 }]);
+
+    await openPopup("other");
+    await UrlbarTestUtils.activateSearchModeSwitcherItem(
+      window,
+      `panel-item[data-engine-name="${(await SearchService.getDefault()).name}"]`
+    );
+    await doEnter();
+    await Interactions.interactionUpdatePromise;
+
+    await assertBounceTelemetry([
+      { view_time: "1", search_mode: "", engagement_type: "enter" },
+    ]);
+
+    sinon.restore();
+    await goBackWithinBounceThreshold(firstPageURL);
+
+    await assertBounceTelemetry([
+      { view_time: "1", search_mode: "", engagement_type: "enter" },
+      {
+        view_time: "1",
+        search_mode: "search_engine",
+        engagement_type: "enter",
+      },
+    ]);
+
+    sinon.restore();
+    await PlacesUtils.history.clear();
+    BrowserTestUtils.removeTab(tab);
+  });
+});
+
+/**
+ * Engages with Alt+Enter, which opens the page in a new tab, then closes that
+ * tab and the tab the engagement happened in. Only closing the new tab records
+ * a bounce.
+ *
+ * @param {Function} search
+ *   Starts the search to engage with.
+ */
+async function doNewTabBounceTest(search) {
+  await doTest(async () => {
+    let sourceTab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "https://example.com/"
+    );
+
+    await search();
+    let onNewTab = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
+    EventUtils.synthesizeKey("KEY_Enter", { altKey: true });
+    let resultTab = await onNewTab;
+
+    let now = Date.now();
+    sinon
+      .stub(Interactions, "getRecentInteractionsForBrowser")
+      .returns([{ created_at: now + 60000, totalViewTime: 1000 }]);
+
+    await BrowserTestUtils.removeTab(resultTab);
+    await assertBounceTelemetry([{ view_time: "1", engagement_type: "enter" }]);
+
+    await BrowserTestUtils.removeTab(sourceTab);
+    await Interactions.interactionUpdatePromise;
+    await assertBounceTelemetry([{ view_time: "1", engagement_type: "enter" }]);
+
+    sinon.restore();
+    await PlacesUtils.history.clear();
+  });
+}
+
+add_task(async function test_bounce_new_tab() {
+  await doNewTabBounceTest(() => openPopup("test"));
+});
+
+add_task(async function test_bounce_new_tab_search_mode() {
+  await doNewTabBounceTest(async () => {
+    await openPopup("test");
+    await UrlbarTestUtils.activateSearchModeSwitcherItem(
+      window,
+      `panel-item[data-engine-name="${(await SearchService.getDefault()).name}"]`
+    );
+  });
+});

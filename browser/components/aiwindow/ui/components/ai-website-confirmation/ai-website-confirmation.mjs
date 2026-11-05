@@ -12,6 +12,7 @@ import "chrome://global/content/elements/moz-button.mjs";
 const SELECTION_CHANGE_EVENT = "ai-website-confirmation:selection-change";
 const CLOSE_CONFIRMATION_EVENT = "ai-website-confirmation:close";
 const SUBMIT_CONFIRMATION_EVENT = "ai-website-confirmation:submit";
+const TOGGLE_ALL_EVENT = "ai-website-confirmation:toggle-all";
 
 /**
  * A container component for listing and managing multiple AI website selects
@@ -67,14 +68,30 @@ export class AIWebsiteConfirmation extends MozLitElement {
   }
 
   /**
+   * Whether every tab is checked. False for a card with no tabs, so the
+   * toggle button offers "Select all".
+   */
+  get #allTabsChecked() {
+    return !!this.tabs.length && this.tabs.every(tab => tab.checked);
+  }
+
+  /**
    * Handle Toggle All
    */
   handleToggleAll() {
-    if (this.tabs.every(tab => tab.checked)) {
-      this.deselectAll();
-    } else {
+    const allSelected = !this.#allTabsChecked;
+    if (allSelected) {
       this.selectAll();
+    } else {
+      this.deselectAll();
     }
+    this.dispatchEvent(
+      new CustomEvent(TOGGLE_ALL_EVENT, {
+        bubbles: true,
+        composed: true,
+        detail: { allSelected },
+      })
+    );
   }
 
   /**
@@ -151,7 +168,7 @@ export class AIWebsiteConfirmation extends MozLitElement {
   }
 
   render() {
-    const allSelected = this.tabs.length && this.tabs.every(tab => tab.checked);
+    const allSelected = this.#allTabsChecked;
     const toggleButtonL10nId = allSelected
       ? "smart-window-confirm-deselect-all"
       : "smart-window-confirm-select-all";

@@ -44,7 +44,7 @@
     }
   }
 
-  @media (height > 700px) {
+  @media (height > #{$break-point-sticky-search}) {
     // Accounts for the search overlay, which would otherwise cover the heading.
     .ds-section .section-title {
       scroll-margin-block-start: calc(#{$search-height-new} + 3 * var(--space-xlarge));

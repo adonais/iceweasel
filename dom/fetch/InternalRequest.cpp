@@ -362,6 +362,8 @@ RequestDestination InternalRequest::MapContentPolicyTypeToRequestDestination(
       return RequestDestination::_empty;
     case nsIContentPolicy::TYPE_WEB_TRANSPORT:
       return RequestDestination::_empty;
+    case nsIContentPolicy::TYPE_INTERNAL_SPECULATION_RULES:
+      return RequestDestination::_empty;
     case nsIContentPolicy::TYPE_INTERNAL_EXTERNAL_RESOURCE:
       return RequestDestination::Image;
     case nsIContentPolicy::TYPE_JSON:

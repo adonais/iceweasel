@@ -282,7 +282,7 @@ nsresult JsepSessionImpl::CreateOfferMsection(const JsepOfferOptions& options,
   }
 
   SdpMediaSection* msection = &local->AddMediaSection(
-      transceiver.GetMediaType(), transceiver.mJsDirection, 0, protocol,
+      transceiver.GetMediaTypeInfo(), transceiver.mJsDirection, 0, protocol,
       sdp::kIPv4, "0.0.0.0");
 
   // Some of this stuff (eg; mid) sticks around even if disabled
@@ -316,8 +316,9 @@ nsresult JsepSessionImpl::CreateOfferMsection(const JsepOfferOptions& options,
   }
 
   if (msection->GetMediaType() != SdpMediaSection::MediaType::kApplication) {
-    // Ditto for extmap-allow-mixed
-    msection->GetAttributeList().SetAttribute(
+    // Ditto for extmap-allow-mixed Add to session level instead of media
+    // level. Adding more than once is a no-op.
+    local->GetAttributeList().SetAttribute(
         MakeUnique<SdpFlagAttribute>(SdpAttribute::kExtmapAllowMixedAttribute));
   }
 
@@ -326,6 +327,14 @@ nsresult JsepSessionImpl::CreateOfferMsection(const JsepOfferOptions& options,
 
   transceiver.mSendTrack.AddToOffer(mSsrcGenerator, msection);
   transceiver.mRecvTrack.AddToOffer(mSsrcGenerator, msection);
+
+  // The send track keeps codecs excluded by setCodecPreferences (so they can
+  // still be used if negotiated), and writes their fmtp/rtcp-fb. The recv
+  // track, which determines the m= line formats, never adds them. Drop the
+  // attributes of payload types that did not make it into the m= line.
+  if (msection->GetMediaType() != SdpMediaSection::kApplication) {
+    msection->RemoveUnlistedPayloadTypeAttributes();
+  }
 
   AddExtmap(msection);
 
@@ -420,8 +429,8 @@ JsepSession::Result JsepSessionImpl::CreateOffer(
         });
 
     if (!dcTransceiver) {
-      AddTransceiver(
-          JsepTransceiver(SdpMediaSection::MediaType::kApplication, *mUuidGen));
+      AddTransceiver(JsepTransceiver(
+          {.type = SdpMediaSection::MediaType::kApplication}, *mUuidGen));
     }
   }
 
@@ -669,7 +678,7 @@ nsresult JsepSessionImpl::CreateAnswerMsection(
   SdpDirectionAttribute::Direction direction =
       reverse(remoteMsection.GetDirection()) & transceiver.mJsDirection;
   SdpMediaSection& msection =
-      sdp->AddMediaSection(remoteMsection.GetMediaType(), direction, 9,
+      sdp->AddMediaSection(remoteMsection.GetMediaTypeInfo(), direction, 9,
                            remoteMsection.GetProtocol(), sdp::kIPv4, "0.0.0.0");
 
   nsresult rv = mSdpHelper.CopyStickyParams(remoteMsection, &msection);
@@ -1822,7 +1831,7 @@ Maybe<JsepTransceiver> JsepSessionImpl::GetTransceiverForRemote(
   }
 
   // Make a new transceiver
-  JsepTransceiver newTransceiver(msection.GetMediaType(), *mUuidGen,
+  JsepTransceiver newTransceiver(msection.GetMediaTypeInfo(), *mUuidGen,
                                  SdpDirectionAttribute::kRecvonly);
   newTransceiver.SetLevel(level);
   newTransceiver.SetOnlyExistsBecauseOfSetRemote(true);
@@ -1926,7 +1935,7 @@ void JsepSessionImpl::RollbackLocalOffer() {
       continue;
     }
 
-    JsepTransceiver temp(transceiver.GetMediaType(), *mUuidGen);
+    JsepTransceiver temp(transceiver.GetMediaTypeInfo(), *mUuidGen);
     InitTransceiver(temp);
     transceiver.Rollback(temp, false);
     mOldTransceivers.push_back(transceiver);
@@ -1950,7 +1959,7 @@ void JsepSessionImpl::RollbackRemoteOffer() {
       // attached to the remote offer.
       // We rollback even for transceivers we will remove, just to ensure we end
       // up at the starting state.
-      JsepTransceiver temp(transceiver.GetMediaType(), *mUuidGen);
+      JsepTransceiver temp(transceiver.GetMediaTypeInfo(), *mUuidGen);
       InitTransceiver(temp);
       transceiver.Rollback(temp, true);
 

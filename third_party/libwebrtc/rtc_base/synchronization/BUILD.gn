@@ -34,7 +34,6 @@ rtc_source_set("mutex") {
     "..:checks",
     "..:macromagic",
     "../system:no_unique_address",
-    "//third_party/abseil-cpp/absl/base:core_headers",
   ]
   if (rtc_use_absl_mutex) {
     deps += [ "//third_party/abseil-cpp/absl/synchronization" ]
@@ -65,10 +64,6 @@ rtc_library("yield_policy") {
   sources = [
     "yield_policy.cc",
     "yield_policy.h",
-  ]
-  deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
   ]
 }
 

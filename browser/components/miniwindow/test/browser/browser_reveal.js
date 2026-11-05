@@ -66,3 +66,55 @@ add_task(async function test_top_edge_reveals_toolbox() {
 
   removeTestTabs();
 });
+
+const TALL_PAGE_URL =
+  "https://example.com/document-builder.sjs?html=" +
+  encodeURIComponent('<div style="height: 5000px"></div>');
+
+/**
+ * Scroll the page in `browser` to `y`, resolving once it has moved.
+ *
+ * @param {XULBrowserElement} browser
+ * @param {number} y
+ */
+function scrollPageTo(browser, y) {
+  return SpecialPowers.spawn(browser, [y], async targetY => {
+    content.scrollTo(0, targetY);
+    await ContentTaskUtils.waitForCondition(
+      () => Math.abs(content.visualViewport.pageTop - targetY) < 1,
+      "the page scrolled"
+    );
+  });
+}
+
+add_task(async function test_scrolling_reveals_and_hides_toolbox() {
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TALL_PAGE_URL
+  );
+
+  // A full-tab mini window, so no crop framing scrolls the page back.
+  let miniWin = await popWholeTabForTest(tab);
+  let popup = [...MiniWindowManager._miniwindows][0];
+  let toolbox = miniWin.document.getElementById("navigator-toolbox");
+
+  // Keep the pointer clear of the top edge, which reveals the bar on its own.
+  await moveMouseTo(miniWin, 50, 100);
+
+  await scrollPageTo(popup.browser, 500);
+  await TestUtils.waitForCondition(
+    () => !toolbox.classList.contains("mini-window-revealed"),
+    "scrolling down hides the toolbox"
+  );
+
+  await scrollPageTo(popup.browser, 100);
+  await TestUtils.waitForCondition(
+    () => toolbox.classList.contains("mini-window-revealed"),
+    "scrolling up reveals the toolbox"
+  );
+
+  popup.close();
+  await BrowserTestUtils.domWindowClosed(miniWin);
+  assertNoMiniWindowsOpen();
+  removeTestTabs();
+});

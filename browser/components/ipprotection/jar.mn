@@ -20,3 +20,5 @@ browser.jar:
     content/browser/ipprotection/ipprotection-locations.mjs (content/ipprotection-locations.mjs)
     content/browser/ipprotection/locations-subview.css (content/locations-subview.css)
     content/browser/ipprotection/locations-list.mjs (content/locations-list.mjs)
+    content/browser/ipprotection/vpn-site-rules-list.css (content/vpn-site-rules-list.css)
+    content/browser/ipprotection/vpn-site-rules-list.mjs (content/vpn-site-rules-list.mjs)

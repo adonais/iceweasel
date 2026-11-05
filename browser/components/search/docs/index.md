@@ -20,4 +20,4 @@ Preferences
 telemetry
 ```
 
-[toolkit search service]: https://firefox-source-docs.mozilla.org/toolkit/search/index.html
+[toolkit search service]: /toolkit/search/index.md

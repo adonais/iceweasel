@@ -195,8 +195,8 @@ export const VALID_CREDIT_CARD_FIELDS = [
   "cc-exp-month",
   "cc-exp-year",
   "cc-type",
-  // TODO: Uncomment this when storage is ready.
-  // "cc-csc",
+  // cc-csc is kept only as an unknown field here. RustAutofillCreditCardsAdapter
+  // is the store that holds it as a field of its own.
 ];
 
 const VALID_CREDIT_CARD_COMPUTED_FIELDS = [
@@ -1743,6 +1743,10 @@ export class CreditCardsBase extends AutofillRecords {
     );
   }
 
+  _recordReadProcessor(creditCard) {
+    lazy.CreditCardRecord.stripSecurityCodeWhenDisabled(creditCard);
+  }
+
   async computeFields(creditCard) {
     // NOTE: Remember to bump the schema version number if any of the existing
     //       computing algorithm changes. (No need to bump when just adding new
@@ -1819,8 +1823,8 @@ export class CreditCardsBase extends AutofillRecords {
 
   /**
    * Hand a card over with its number in the clear, so the receiving store can
-   * encrypt it under whatever scheme that store uses. Today both use the OS key
-   * store; they will not always.
+   * encrypt it under its own key. This store's is the OS key store's; the Rust
+   * store holds one of its own.
    *
    * Unlike _stripComputedFields, a decrypt failure is not swallowed here. There
    * it is deliberate, so a card whose number cannot be read can still have its
@@ -1838,10 +1842,42 @@ export class CreditCardsBase extends AutofillRecords {
     }
     exported["cc-number"] = await lazy.OSKeyStore.decrypt(
       exported["cc-number-encrypted"],
-      "formautofill_cc"
+      // Not a user reading a card, so kept apart from their reads.
+      "formautofill_migration"
     );
     delete exported["cc-number-encrypted"];
     return exported;
+  }
+
+  /**
+   * The cleartext of an encrypted field of a stored record.
+   *
+   * Which fields a store keeps encrypted, where it keeps their ciphertext and
+   * what key reads them back is the store's business, so a consumer names the
+   * field it wants of the collection it read the record from. Here the OS key
+   * store does the re-authentication as part of decrypting.
+   *
+   * @param {object} record A record this store handed out.
+   * @param {string} field The field to read, e.g. "cc-number".
+   * @param {object} [options]
+   * @param {string|false} [options.reauth] The OS re-authentication prompt to
+   *   show first, or false to read it without one.
+   * @param {string} [options.trigger] What is asking, for the OS key store's
+   *   own telemetry.
+   * @returns {Promise<?string>} The cleartext, or null if the record holds
+   *   nothing encrypted under that field -- in which case nothing is asked of
+   *   the user.
+   */
+  decryptField(
+    record,
+    field,
+    { reauth = false, trigger = "formautofill_cc" } = {}
+  ) {
+    const ciphertext = record[lazy.CreditCardRecord.ciphertextField(field)];
+    if (!ciphertext) {
+      return Promise.resolve(null);
+    }
+    return lazy.OSKeyStore.decrypt(ciphertext, trigger, reauth);
   }
 
   async _stripComputedFields(creditCard) {
@@ -1976,7 +2012,9 @@ export class CreditCardsBase extends AutofillRecords {
       );
 
       if (decrypted == record["cc-number"]) {
-        yield recordInStorage;
+        const clonedRecord = this._cloneAndCleanUp(recordInStorage);
+        this._recordReadProcessor(clonedRecord);
+        yield clonedRecord;
       }
     }
     return null;

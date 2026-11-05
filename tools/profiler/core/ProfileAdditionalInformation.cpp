@@ -90,8 +90,8 @@ JSString* mozilla::ProfileGenerationAdditionalInformation::
             JS_NewUCStringCopyN(aCx, srcText.chars().get(), srcText.length());
       },
       [&](const ProfilerJSSourceData::SourceTextUTF8& srcText) {
-        result =
-            JS_NewStringCopyN(aCx, srcText.chars().get(), srcText.length());
+        result = JS_NewStringCopyUTF8N(
+            aCx, JS::UTF8Chars(srcText.chars().get(), srcText.length()));
       },
       [&](const ProfilerJSSourceData::RetrievableFile&) {
         const char* filename = aSourceData.filePath();
@@ -119,8 +119,8 @@ JSString* mozilla::ProfileGenerationAdditionalInformation::
         }
 
         const auto& srcText = data.as<ProfilerJSSourceData::SourceTextUTF8>();
-        result =
-            JS_NewStringCopyN(aCx, srcText.chars().get(), srcText.length());
+        result = JS_NewStringCopyUTF8N(
+            aCx, JS::UTF8Chars(srcText.chars().get(), srcText.length()));
       },
       [&](const ProfilerJSSourceData::Unavailable&) {});
   return result;

@@ -93,7 +93,7 @@
 //!
 
 use api::{BorderRadius, ClipMode, ImageMask, ClipId, ClipChainId};
-use api::{FillRule, ImageKey, ImageRendering};
+use api::{ImageKey, ImageRendering};
 use api::units::*;
 use crate::image_tiling::{self, Repetition};
 use crate::border::BorderRadiusAu;
@@ -555,10 +555,23 @@ impl ClipTreeBuilder {
         parent: Option<ClipChainId>,
         clips: I,
     ) {
-        let parent = parent.map(|ref id| self.clip_chain_map[id]);
+        let parent = parent.map(|ref parent_id| match self.clip_chain_map.get(parent_id) {
+            Some(index) => *index,
+            None => panic!(
+                "webrender: missing clip-chain {:?} in define_clip_chain parent of {:?} (defined_chains={})",
+                parent_id,
+                id,
+                self.clip_chain_map.len(),
+            ),
+        });
         let index = self.clip_chains.len();
-        let clips = clips.map(|clip_id| {
-            self.clip_map[&clip_id]
+        let clips = clips.map(|clip_id| match self.clip_map.get(&clip_id) {
+            Some(entry) => *entry,
+            None => panic!(
+                "webrender: missing clip {:?} in define_clip_chain (defined_clips={})",
+                clip_id,
+                self.clip_map.len(),
+            ),
         }).collect();
         self.clip_chains.push(ClipChain {
             parent,
@@ -588,7 +601,14 @@ impl ClipTreeBuilder {
             if clip_chain_id != ClipChainId::INVALID {
                 self.clip_handles_buffer.clear();
 
-                let clip_chain_index = self.clip_chain_map[&clip_chain_id];
+                let clip_chain_index = match self.clip_chain_map.get(&clip_chain_id) {
+                    Some(index) => *index,
+                    None => panic!(
+                        "webrender: missing clip-chain {:?} in push_clip_chain (defined_chains={})",
+                        clip_chain_id,
+                        self.clip_chain_map.len(),
+                    ),
+                };
                 ClipTreeBuilder::add_clips(
                     clip_chain_index,
                     &mut seen_clips,
@@ -625,7 +645,14 @@ impl ClipTreeBuilder {
         };
 
         self.clip_handles_buffer.clear();
-        let clip_entry = self.clip_map[&clip_id];
+        let clip_entry = match self.clip_map.get(&clip_id) {
+            Some(entry) => *entry,
+            None => panic!(
+                "webrender: missing clip {:?} in push_clip_id (defined_clips={})",
+                clip_id,
+                self.clip_map.len(),
+            ),
+        };
 
         if seen_clips.insert(clip_entry) {
             self.clip_handles_buffer.push(clip_entry);
@@ -883,7 +910,14 @@ impl ClipTreeBuilder {
         self.clip_handles_buffer.clear();
 
         for clip_id in extra_clips {
-            let entry = self.clip_map[clip_id];
+            let entry = match self.clip_map.get(clip_id) {
+                Some(entry) => *entry,
+                None => panic!(
+                    "webrender: missing clip {:?} in build_for_tile_cache (defined_clips={})",
+                    clip_id,
+                    self.clip_map.len(),
+                ),
+            };
             self.clip_handles_buffer.push(entry);
         }
 
@@ -2182,64 +2216,6 @@ fn rounded_rectangle_contains_box_quick(
     }
 
     true
-}
-
-/// Test where point p is relative to the infinite line that passes through the segment
-/// defined by p0 and p1. Point p is on the "left" of the line if the triangle (p0, p1, p)
-/// forms a counter-clockwise triangle.
-/// > 0 is left of the line
-/// < 0 is right of the line
-/// == 0 is on the line
-pub fn is_left_of_line(
-    p_x: f32,
-    p_y: f32,
-    p0_x: f32,
-    p0_y: f32,
-    p1_x: f32,
-    p1_y: f32,
-) -> f32 {
-    (p1_x - p0_x) * (p_y - p0_y) - (p_x - p0_x) * (p1_y - p0_y)
-}
-
-pub fn polygon_contains_point(
-    point: &LayoutPoint,
-    rect: &LayoutRect,
-    polygon: &PolygonKey,
-) -> bool {
-    if !rect.contains(*point) {
-        return false;
-    }
-
-    // p is a LayoutPoint that we'll be comparing to dimensionless PointKeys,
-    // which were created from LayoutPoints, so it all works out.
-    let p = LayoutPoint::new(point.x - rect.min.x, point.y - rect.min.y);
-
-    // Calculate a winding number for this point.
-    let mut winding_number: i32 = 0;
-
-    let count = polygon.point_count as usize;
-
-    for i in 0..count {
-        let p0 = polygon.points[i];
-        let p1 = polygon.points[(i + 1) % count];
-
-        if p0.y <= p.y {
-            if p1.y > p.y {
-                if is_left_of_line(p.x, p.y, p0.x, p0.y, p1.x, p1.y) > 0.0 {
-                    winding_number = winding_number + 1;
-                }
-            }
-        } else if p1.y <= p.y {
-            if is_left_of_line(p.x, p.y, p0.x, p0.y, p1.x, p1.y) < 0.0 {
-                winding_number = winding_number - 1;
-            }
-        }
-    }
-
-    match polygon.fill_rule {
-        FillRule::Nonzero => winding_number != 0,
-        FillRule::Evenodd => winding_number.abs() % 2 == 1,
-    }
 }
 
 pub fn projected_rect_contains(

@@ -18,6 +18,10 @@
 #include "absl/container/inlined_vector.h"
 #include "api/transport/rtp/corruption_detection_message.h"
 
+#ifndef WEBRTC_WITHOUT_RUST
+#include "modules/rtp_rtcp/corruption_detection_extension_cxx.rs.h"
+#endif
+
 namespace webrtc {
 namespace {
 
@@ -35,6 +39,7 @@ bool CorruptionDetectionExtension::Parse(std::span<const uint8_t> data,
   if (message == nullptr) {
     return false;
   }
+#ifdef WEBRTC_WITHOUT_RUST
   if ((data.size() != kMandatoryPayloadBytes &&
        data.size() <= kConfigurationBytes) ||
       data.size() > kMaxValueSizeBytes) {
@@ -52,6 +57,22 @@ bool CorruptionDetectionExtension::Parse(std::span<const uint8_t> data,
   message->sample_values_.assign(data.begin() + kConfigurationBytes,
                                  data.end());
   return true;
+#else
+  rust::Box<RustCorruptionDetectionExtension> parsed =
+      create_corruption_detection_message();
+  if (!parsed->parse(rust::Slice(data))) {
+    return false;
+  }
+  message->interpret_sequence_index_as_most_significant_bits_ =
+      parsed->interpret_sequence_index_as_most_significant_bits();
+  message->sequence_index_ = parsed->sequence_index();
+  message->std_dev_ = parsed->std_dev();
+  message->luma_error_threshold_ = parsed->luma_error_threshold();
+  message->chroma_error_threshold_ = parsed->chroma_error_threshold();
+  std::span samples = parsed->sample_values();
+  message->sample_values_.assign(samples.begin(), samples.end());
+  return true;
+#endif
 }
 
 bool CorruptionDetectionExtension::Write(

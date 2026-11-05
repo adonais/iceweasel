@@ -42,6 +42,7 @@ dependencies {
     testRuntimeOnly libs.junit.platform.launcher
     testRuntimeOnly libs.junit.vintage
     testImplementation libs.kotlinx.coroutines
+    testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.robolectric
 
     androidTestImplementation project(':components:support-android-test')
@@ -52,6 +53,7 @@ dependencies {
     androidTestImplementation libs.androidx.test.rules
     androidTestImplementation libs.androidx.test.runner
     androidTestImplementation libs.kotlin.test
+    androidTestImplementation libs.kotlinx.coroutines.test
 
     androidTestRuntimeOnly libs.okhttp
 }

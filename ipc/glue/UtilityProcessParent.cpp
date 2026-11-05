@@ -199,6 +199,7 @@ void UtilityProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
   }
 
   mHost->OnChannelClosed(aWhy);
+  mHost = nullptr;
 }
 
 // To ensure that IPDL is finished before UtilityParent gets deleted.

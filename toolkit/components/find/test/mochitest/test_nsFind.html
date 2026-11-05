@@ -202,10 +202,16 @@ async function runTests() {
 
   function assertFound(node, value) {
     ok(find(node, value), "\"" + value + "\" should be found");
+    rf.findBackwards = true;
+    ok(find(node, value), "\"" + value + "\" should be found (backwards)");
+    rf.findBackwards = false;
   }
 
   function assertNotFound(node, value) {
     ok(!find(node, value), "\"" + value + "\" should not be found");
+    rf.findBackwards = true;
+    ok(!find(node, value), "\"" + value + "\" should not be found (backwards)");
+    rf.findBackwards = false;
   }
 
   const nacSearchStart = document.getElementById("nacSearchStart");
@@ -392,6 +398,59 @@ async function runTests() {
   assertFound(selectElement, "optgroup");
   assertFound(selectElement, "OptionInOptGroup");
 
+  //// segmenterWordBoundaries tests
+  rf.segmenterWordBoundaries = true;
+  rf.entireWord = true;
+
+  // Simple tests (from above)
+  assertFound(entireWord, "one");
+  assertNotFound(entireWord, "on");
+  assertFound(entireWord, "(one)");
+  assertFound(entireWord, "two");
+  assertFound(entireWord, "[two]");
+  assertFound(entireWord, "[three]");
+  assertFound(entireWord, "foo");
+  assertFound(entireWord, "-foo");
+  assertFound(entireWord, "bar");
+  assertNotFound(entireWord, "-fo");
+  assertNotFound(entireWord, "-ba");
+
+  // complex tests that work with or without segmenter boundaries
+  var numbers = document.getElementById("numbers");
+  assertFound(quotes, "didn't");
+  assertFound(numbers, "3.5");
+  assertFound(numbers, "40.2");
+  var cjk = document.getElementById("cjk");
+  assertFound(cjk, "日本語");   // 日本語 = "Japanese (language)"
+
+  // Tests that don't work without segmenterWordBoundaries option
+  assertNotFound(quotes, "didn");
+  assertNotFound(quotes, "doesn");
+  assertNotFound(numbers, "5");
+  assertNotFound(numbers, "3.");
+  assertNotFound(numbers, "2");
+  assertNotFound(cjk, "日本");  // 日本 = "Japan"
+
+  // Tests the 3 explicit word boundary cache inserts for node edges
+  var nodeBoundary = document.getElementById("nodeBoundary");
+  assertFound(display, "This");
+  assertNotFound(display, "his");
+  assertFound(nodeBoundary, "sunflower");
+  assertNotFound(nodeBoundary, "sun");
+  assertNotFound(nodeBoundary, "flower");
+  assertFound(entireWord, "-bar");
+
+  // Test force break for native anonymous subtrees. These should be changed
+  // if AnalyzeNode changes to not include break for nac border.
+  var nac = document.getElementById("nacBoundary");
+  assertNotFound(nac, "alphabeta");    // across list items
+  assertNotFound(nac, "zetagamma");    // across ::before marker
+  assertNotFound(nac, "deltaepsilon"); // across input NAC
+  assertFound(nac, "zeta");
+
+  rf.segmenterWordBoundaries = false;
+  rf.entireWord = false;
+
   // Do these test at the end since they trigger failure screenshots in
   // the test harness, and we want as much information as possible about
   // any OTHER tests that may have already failed.
@@ -446,6 +505,7 @@ async function runTests() {
 #tabular div { display: table-row; }
 #tabular div div { display: table-cell; }
 #nacSearchContainer::before { content: "generated content"; display: block; }
+#nacBoundary .genContent::before { content: "zeta"; }
 </style>
 </head>
 <body onload="runTests()">
@@ -501,6 +561,21 @@ async function runTests() {
   <div><div>One</div><div>Two</div><div>Three</div></div>
   <div><div></div><div></div><div>several whole words</div></div>
   <div><div>one</div><div>more</div><div>row</div></div>
+</div>
+<div id="nacBoundary">
+  <ul><li>alpha</li><li>beta</li></ul>
+  <p class="genContent">gamma</p>
+  <p><input type="text" value="delta">epsilon</p>
+</div>
+<div id="nodeBoundary">
+  <p>sun<b>flower</b> seed</p>
+</div>
+<div id="numbers">
+  <p>3.5 and 4<b>0</b>.2</p>
+</div>
+<div id="cjk">
+  <!-- 日本語のテキスト = "Japanese text" -->
+  <p>日本語のテキスト</p>
 </div>
 <p id="nonspace">&#x2000D;&#x10000A;</p>
 <p id="space"> <br>&nbsp;</p>

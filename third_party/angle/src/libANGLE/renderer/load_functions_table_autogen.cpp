@@ -1988,7 +1988,7 @@ LoadImageFunctionInfo G8_B8_R8_3PLANE_420_UNORM_ANGLE_to_default(GLenum type)
     switch (type)
     {
         case GL_UNSIGNED_BYTE:
-            return LoadImageFunctionInfo(UnimplementedLoadFunction, true);
+            return LoadImageFunctionInfo(LoadYuvToNative, true);
         default:
             UNREACHABLE();
             return LoadImageFunctionInfo(UnreachableLoadFunction, true);
@@ -3233,6 +3233,8 @@ LoadImageFunctionInfo RGB565_to_R8G8B8A8_UNORM(GLenum type)
     {
         case GL_UNSIGNED_BYTE:
             return LoadImageFunctionInfo(LoadToNative3To4<GLubyte, 0xFF>, true);
+        case GL_UNSIGNED_INT_2_10_10_10_REV_EXT:
+            return LoadImageFunctionInfo(LoadRGB10A2ToRGBA8, true);
         case GL_UNSIGNED_SHORT_5_6_5:
             return LoadImageFunctionInfo(LoadR5G6B5ToRGBA8, true);
         default:

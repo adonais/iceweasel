@@ -1,0 +1,29 @@
+From c74ab933d47e8c22778eddbb28b38155fc7e9123 Mon Sep 17 00:00:00 2001
+From: Nicholas Rishel <nrishel@mozilla.com>
+Date: Fri, 16 Oct 2026 14:05:44 -0700
+Subject: [PATCH] Fall back to CLOCK_MONOTONIC when CLOCK_MONOTONIC_RAW is
+ undefined, e.g. on Solaris.
+
+---
+ src/common/system_utils_linux.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/common/system_utils_linux.cpp b/src/common/system_utils_linux.cpp
+index 8ff5755710a1..b7389ddefa4b 100644
+--- a/src/common/system_utils_linux.cpp
++++ b/src/common/system_utils_linux.cpp
+@@ -18,6 +18,11 @@
+ 
+ #include <array>
+ 
++#ifndef CLOCK_MONOTONIC_RAW
++// CLOCK_MONOTONIC_RAW is undefined on Solaris.
++#    define CLOCK_MONOTONIC_RAW CLOCK_MONOTONIC
++#endif
++
+ namespace angle
+ {
+ std::string GetExecutablePath()
+-- 
+2.49.0.windows.1
+

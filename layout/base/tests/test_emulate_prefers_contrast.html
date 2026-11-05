@@ -1,0 +1,67 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Emulation of prefers-contrast</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+<style>
+  #test {
+    color: rgb(1, 2, 3);
+
+    @media (prefers-contrast: no-preference) {
+      color: rgb(10, 10, 10);
+    }
+
+    @media (prefers-contrast: more) {
+      color: rgb(20, 20, 20);
+    }
+
+    @media (prefers-contrast: less) {
+      color: rgb(30, 30, 30);
+    }
+
+    @media (prefers-contrast: custom) {
+      color: rgb(40, 40, 40);
+    }
+  }
+</style>
+<div id="test"></div>
+<script>
+  const COLORS = {
+    "no-preference": "rgb(10, 10, 10)",
+    "more": "rgb(20, 20, 20)",
+    "less": "rgb(30, 30, 30)",
+    "custom": "rgb(40, 40, 40)",
+  };
+
+  function getColor() {
+    return getComputedStyle(document.getElementById("test")).color;
+  }
+
+  function getMatchingValues() {
+    return Object.keys(COLORS).filter(
+      value => window.matchMedia(`(prefers-contrast: ${value})`).matches
+    );
+  }
+
+  const bc = SpecialPowers.wrap(window).browsingContext.top;
+  ok("prefersContrastOverride" in bc, "API should exist");
+  is(bc.prefersContrastOverride, "none", "Override shouldn't be active.");
+
+  const initialValues = getMatchingValues();
+  info(`Original prefers-contrast values: ${JSON.stringify(initialValues)}`);
+  is(initialValues.length, 1, "Exactly one prefers-contrast value matches initially");
+  const [initialValue] = initialValues;
+  const initialColor = getColor();
+  is(initialColor, COLORS[initialValue], "base color matches the original preference");
+
+  for (const value of Object.keys(COLORS)) {
+    bc.prefersContrastOverride = value;
+    is(bc.prefersContrastOverride, value, `Override is set to '${value}'`);
+    is(getColor(), COLORS[value], `Emulating '${value}' works, color is now ${COLORS[value]}`);
+    is(JSON.stringify(getMatchingValues()), JSON.stringify([value]), `Only '${value}' matches`);
+  }
+
+  bc.prefersContrastOverride = "none";
+  is(getColor(), initialColor, "Clearing the override restores the original preference state");
+  is(JSON.stringify(getMatchingValues()), JSON.stringify(initialValues), "matchMedia reports the original value again");
+</script>

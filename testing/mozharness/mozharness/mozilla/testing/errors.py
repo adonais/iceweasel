@@ -173,3 +173,98 @@ LogcatErrorList = [
         "explanation": "A content process has violated the system call sandbox (bug 790923)",
     },
 ]
+
+
+# Treeherder failure summary {{{1
+class TreeherderErrorParser:
+    """Port of Treeherder's ErrorParser, the heuristic selecting the task log
+    lines shown in a job's Failure Summary.
+
+    Keep the terms and expressions in sync with
+    https://github.com/mozilla/treeherder/blob/master/treeherder/log_parser/parsers.py
+    (snapshot of 2026-09-09). Treeherder strips the worker's "[task ...] "
+    prefix, then matches the line as mozharness printed it, with its
+    "HH:MM:SS LEVEL - " prefix (RE_ERR_1_MATCH, RE_MOZHARNESS_PREFIX). Lines
+    are matched here from the level and message of the mozharness log record
+    instead, so no prefix has to be parsed.
+    """
+
+    IN_SEARCH_TERMS = (
+        "TEST-UNEXPECTED-",
+        "fatal error",
+        "FATAL ERROR",
+        "Hit MOZ_CRASH",
+        "REFTEST ERROR",
+        "PROCESS-CRASH",
+        "Assertion fail",
+        "###!!! ABORT:",
+        "SUMMARY: AddressSanitizer",
+        "SUMMARY: ThreadSanitizer",
+        "SUMMARY: UndefinedBehaviorSanitizer",
+        "ThreadSanitizer: nested bug",
+        "Automation Error:",
+        "command timed out:",
+        "wget: unable ",
+        "bash.exe: *** ",
+        "Unsuccessful task run with exit code: 137",
+        "YOU ARE LEAKING THE WORLD",
+    )
+
+    RE_ERR_MATCH = re.compile(
+        r"^g?make(?:\[\d+\])?: \*\*\*"
+        r"|^[A-Za-z.]+Error: "
+        r"|^[A-Za-z.]*Exception: "
+        r"|^\[  FAILED  \] "
+        r"|^remoteFailed:"
+        r"|^rm: cannot "
+        r"|^abort:"
+        r"|^\[taskcluster\] Error:"
+        r"|^\[[\w._-]+:(?:error|exception)\]"
+    )
+
+    RE_ERR_SEARCH = re.compile(
+        r" error\(\d*\):"
+        r"|:\d+: error:"
+        r"| error R?C\d*:"
+        r"|ERROR [45]\d\d:"
+        r"|mozmake\.(?:exe|EXE)(?:\[\d+\])?: \*\*\*"
+    )
+
+    RE_EXCLUDE_1_SEARCH = re.compile(
+        r"TEST-(?:INFO|PASS) "
+        r"|A content process crashed and MOZ_CRASHREPORTER_SHUTDOWN is set, shutting down"
+    )
+
+    RE_EXCLUDE_2_SEARCH = re.compile(
+        r"I[ /](Gecko|TestRunner).*TEST-UNEXPECTED-"
+        r"|Assertion failure$"
+        r"|^TEST-UNEXPECTED-WARNING\b"
+        r"|^TimeoutException: "
+        r"|^ImportError: No module named pygtk$"
+        r"|non-fatal error"
+    )
+
+    ERROR_LEVELS = ("ERROR", "CRITICAL", "FATAL")
+
+    def is_error_line(self, level, message):
+        """Whether Treeherder selects the line of a mozharness log record.
+
+        Args:
+            level (str): the record's level name.
+            message (str): the record's message.
+        """
+        if self.RE_EXCLUDE_1_SEARCH.search(message):
+            return False
+
+        if level in self.ERROR_LEVELS:
+            return True
+
+        trimline = message.lstrip(" ").rstrip()
+        if self.RE_EXCLUDE_2_SEARCH.search(trimline):
+            return False
+
+        return bool(
+            any(term in trimline for term in self.IN_SEARCH_TERMS)
+            or self.RE_ERR_MATCH.match(trimline)
+            or self.RE_ERR_SEARCH.search(trimline)
+        )

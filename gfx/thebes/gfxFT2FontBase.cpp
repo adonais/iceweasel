@@ -252,6 +252,7 @@ void gfxFT2FontBase::InitMetrics() {
 
   if (MOZ_UNLIKELY(mStyle.AdjustedSizeMustBeZero())) {
     mSpaceGlyph = GetGlyph(' ');
+    mIsValid = true;
     return;
   }
 
@@ -350,6 +351,7 @@ void gfxFT2FontBase::InitMetrics() {
 
     SanitizeMetrics(false);
     UnlockFTFace();
+    mIsValid = true;
     return;
   }
 
@@ -500,6 +502,7 @@ void gfxFT2FontBase::InitMetrics() {
   UnlockFTFace();
 
   InitExtraMetrics(emHeight, lineHeight);
+  mIsValid = true;
 }
 
 void gfxFT2FontBase::InitExtraMetrics(gfxFloat aEmHeight,

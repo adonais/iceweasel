@@ -18,12 +18,17 @@ import {
   actionTypes as at,
   actionCreators as ac,
 } from "resource://newtab/common/Actions.mjs";
+import {
+  isWidgetAddable,
+  PREF_WIDGETS_SYSTEM_TIMER_ENABLED as PREF_SYSTEM_TIMER_ENABLED,
+  PREF_WIDGETS_TIMER_ENABLED as PREF_TIMER_ENABLED,
+  WIDGET_REGISTRY,
+} from "resource://newtab/common/WidgetsRegistry.mjs";
 
-const PREF_TIMER_ENABLED = "widgets.timer.enabled";
-const PREF_SYSTEM_TIMER_ENABLED = "widgets.system.timer.enabled";
 const PREF_TIMER_SHOW_NOTIFICATIONS =
   "widgets.focusTimer.showSystemNotifications";
 const CACHE_KEY = "timer_widget";
+const TIMER_ENTRY = WIDGET_REGISTRY.find(w => w.id === "focusTimer");
 
 const AlertNotification = Components.Constructor(
   "@mozilla.org/alert-notification;1",
@@ -75,14 +80,10 @@ export class TimerFeed {
   get enabled() {
     const prefs = this.store.getState()?.Prefs.values;
     const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
-    const nimbusTimerTrainhopEnabled =
-      prefs.trainhopConfig?.widgets?.timerEnabled;
 
     return (
       prefs?.[PREF_TIMER_ENABLED] &&
-      (prefs?.[PREF_SYSTEM_TIMER_ENABLED] ||
-        nimbusTimerEnabled ||
-        nimbusTimerTrainhopEnabled)
+      (isWidgetAddable(TIMER_ENTRY, prefs) || nimbusTimerEnabled)
     );
   }
 
@@ -118,6 +119,7 @@ export class TimerFeed {
     switch (action.data.name) {
       case PREF_TIMER_ENABLED:
       case PREF_SYSTEM_TIMER_ENABLED:
+      case "region":
       case "trainhopConfig":
       case "widgetsConfig": {
         if (this.enabled && !this.initialized) {

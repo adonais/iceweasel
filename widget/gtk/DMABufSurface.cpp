@@ -53,7 +53,6 @@
 #include "ImageContainer.h"
 #include "ScopedGLHelpers.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/FileHandleWrapper.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -1577,9 +1576,8 @@ DMABufSurfaceYUV::DMABufSurfaceYUV()
       mWidthAligned(),
       mHeightAligned(),
       mDrmFormats() {
-  for (int i = 0; i < BUFFER_SURFACE_PLANES; i++) {
-    mBufferModifiers[i] = DRM_FORMAT_MOD_INVALID;
-  }
+  std::fill(std::begin(mBufferModifiers), std::end(mBufferModifiers),
+            DRM_FORMAT_MOD_INVALID);
 }
 
 DMABufSurfaceYUV::~DMABufSurfaceYUV() {
@@ -1904,6 +1902,13 @@ bool DMABufSurfaceYUV::UpdateYUVData(mozilla::gl::GLContext* aGLContext,
     return false;
   }
 
+  if (!aSourceSurface->CreateTextures(aGLContext)) {
+    LOGDMABUF(
+        "DMABufSurfaceYUV::UpdateYUVData() failed to create BufferSurface "
+        "textures!");
+    return false;
+  }
+
   gfx::IntSize size = aSourceSurface->GetSize();
 
   mWidthAligned[0] = mWidth[0] = size.width;
@@ -1955,92 +1960,6 @@ bool DMABufSurfaceYUV::UpdateYUVData(mozilla::gl::GLContext* aGLContext,
   // TODO: Move to upper level? Add an argument?
   ReleaseTextures();
   return ret;
-}
-
-// Copy a single YCbCr plane, preserving its source stride. aSkip is the
-// number of extra samples between consecutive pixels (0 for tightly packed
-// planes, as produced by software decoders).
-static void CopyYCbCrPlane(uint8_t* aDst, const uint8_t* aSrc,
-                           const gfx::IntSize& aSize, int32_t aStride,
-                           int32_t aSkip) {
-  if (!aSkip) {
-    memcpy(aDst, aSrc, size_t(aSize.height) * aStride);
-    return;
-  }
-  for (int32_t y = 0; y < aSize.height; y++) {
-    const uint8_t* src = aSrc + y * aStride;
-    uint8_t* dst = aDst + y * aStride;
-    for (int32_t x = 0; x < aSize.width; x++) {
-      *dst++ = *src;
-      src += 1 + aSkip;
-    }
-  }
-}
-
-// TODO: Remove when we remove DMABuf direct upload from ffmpeg
-// and transfer SMM surfaces instead.
-bool DMABufSurfaceYUV::UpdateYUVData(
-    const mozilla::layers::PlanarYCbCrData& aData,
-    gfx::SurfaceFormat aImageFormat) {
-  LOGDMABUF("DMABufSurfaceYUV::UpdateYUVData() PlanarYCbCrData.");
-
-  if (GetHWFormat(aImageFormat) == gfx::SurfaceFormat::UNKNOWN) {
-    LOGDMABUF("DMABufSurfaceYUV::UpdateYUVData() wrong format!");
-    return false;
-  }
-
-  // Wrap aData into a SHM surface first, so we can reuse the same
-  // texture-to-DMABuf blit path used for other BufferSurface sources
-  // (see UpdateYUVData(GLContext*, BufferSurface*)) instead of uploading
-  // the YCbCr planes to a DMABuf-backed texture directly.
-  gfx::IntSize ySize = aData.YDataSize();
-  gfx::IntSize cbCrSize = aData.CbCrDataSize();
-  uint32_t yOffset, cbOffset, crOffset;
-  ImageDataSerializer::ComputeYCbCrOffsets(aData.mYStride, ySize.height,
-                                           aData.mCbCrStride, cbCrSize.height,
-                                           yOffset, cbOffset, crOffset);
-
-  Maybe<uint32_t> bufferSize = ImageDataSerializer::ComputeYCbCrBufferSize(
-      aData.mPictureRect, ySize, aData.mYStride, cbCrSize, aData.mCbCrStride,
-      yOffset, cbOffset, crOffset, aData.mColorDepth, aData.mChromaSubsampling);
-  if (bufferSize.isNothing()) {
-    LOGDMABUF("  failed to compute YCbCr buffer size!");
-    return false;
-  }
-
-  auto buffer = MakeUnique<uint8_t[]>(*bufferSize);
-  CopyYCbCrPlane(buffer.get() + yOffset, aData.mYChannel, ySize, aData.mYStride,
-                 aData.mYSkip);
-  CopyYCbCrPlane(buffer.get() + cbOffset, aData.mCbChannel, cbCrSize,
-                 aData.mCbCrStride, aData.mCbSkip);
-  CopyYCbCrPlane(buffer.get() + crOffset, aData.mCrChannel, cbCrSize,
-                 aData.mCbCrStride, aData.mCrSkip);
-
-  YCbCrDescriptor desc(
-      aData.mPictureRect, ySize, aData.mYStride, cbCrSize, aData.mCbCrStride,
-      yOffset, cbOffset, crOffset, aData.mStereoMode, aData.mColorDepth,
-      aData.mYUVColorSpace, aData.mColorRange, aData.mTransferFunction,
-      aData.mChromaSubsampling, aData.mHDRMetadata);
-  RefPtr<SHMBufSurfaceYUV> shmSurface =
-      SHMBufSurfaceYUV::Create(buffer.get(), BufferDescriptor(desc));
-  if (!shmSurface) {
-    LOGDMABUF("  failed to wrap YCbCr data into a SHM surface!");
-    return false;
-  }
-
-  StaticMutexAutoLock lock(sSnapshotContextMutex);
-  RefPtr<GLContext> context = ClaimSnapshotGLContext();
-  auto releaseContext =
-      MakeScopeExit([&] { ReturnSnapshotGLContext(context); });
-
-  if (!shmSurface->CreateTextures(context)) {
-    LOGDMABUF("  failed to upload YCbCr data to textures!");
-    return false;
-  }
-  auto releaseShmTextures =
-      MakeScopeExit([&] { shmSurface->ReleaseTextures(); });
-
-  return UpdateYUVData(context, shmSurface);
 }
 
 bool DMABufSurfaceYUV::Create(const SurfaceDescriptor& aDesc) {
@@ -2757,7 +2676,6 @@ already_AddRefed<DMABufSurfaceRGBA> DMABufSurfaceYUV::ConvertHLGToPQ(
 
   target->SetTransferFunction(gfx::TransferFunction::PQ);
   target->SetYUVColorSpace(gfx::YUVColorSpace::BT2020);
-  target->SetColorRange(gfx::ColorRange::FULL);
   target->SetColorPrimaries(gfx::ColorSpace2::BT2020);
   target->SetHDRMetadata(GetHDRMetadata());
 

@@ -6,6 +6,8 @@
 
 #include <stdint.h>
 
+#include <algorithm>
+
 #include "AnnexB.h"
 #include "BitReader.h"
 #include "BitWriter.h"
@@ -1335,15 +1337,8 @@ mozilla::Maybe<mozilla::gfx::HDRMetadata> H265::ParseSEIHDRMetadata(
   return Some(hdr);
 }
 
-#ifdef MOZ_WMF
-static void AppendSEIInt(MediaByteBuffer* aDest, size_t aValue) {
-  while (aValue >= 0xff) {
-    aDest->AppendElement(0xff);
-    aValue -= 0xff;
-  }
-  aDest->AppendElement(static_cast<uint8_t>(aValue));
-}
-
+// The reverse of H265::DecodeNALUnit: prepend the two-byte NAL unit header in
+// aHeader and re-apply emulation prevention to aRBSP.
 static already_AddRefed<MediaByteBuffer> EncodeH265NALUnit(
     const uint8_t* aHeader, const MediaByteBuffer* aRBSP) {
   RefPtr<MediaByteBuffer> nalu = new MediaByteBuffer;
@@ -1362,6 +1357,15 @@ static already_AddRefed<MediaByteBuffer> EncodeH265NALUnit(
     nalu->AppendElement(b);
   }
   return nalu.forget();
+}
+
+#ifdef MOZ_WMF
+static void AppendSEIInt(MediaByteBuffer* aDest, size_t aValue) {
+  while (aValue >= 0xff) {
+    aDest->AppendElement(0xff);
+    aValue -= 0xff;
+  }
+  aDest->AppendElement(static_cast<uint8_t>(aValue));
 }
 
 /* static */
@@ -1762,6 +1766,142 @@ already_AddRefed<mozilla::MediaByteBuffer> H265::CreateNewExtraData(
   return extradata.forget();
 }
 
+// Replace the 96-bit general profile, tier and level fields from the H.265
+// 7.3.3 profile_tier_level() syntax.
+static void RewriteProfileTierLevel(BitReader& aReader, BitWriter& aWriter,
+                                    const H265CodecDetails& aDetails) {
+  (void)aReader.AdvanceBits(96);
+  aWriter.WriteBits(aDetails.general_profile_space, 2);
+  aWriter.WriteBit(aDetails.general_tier_flag);
+  aWriter.WriteBits(aDetails.general_profile_idc, 5);
+  aWriter.WriteU32(aDetails.general_profile_compatibility_flags);
+  aWriter.WriteBits(aDetails.general_constraint_indicator_flags, 48);
+  aWriter.WriteU8(aDetails.general_level_idc);
+}
+
+/* static */
+already_AddRefed<mozilla::MediaByteBuffer> H265::CreateExtraData(
+    const H265CodecDetails& aDetails, const gfx::IntSize& aSize) {
+  // H.265 6.2: "The variables SubWidthC and SubHeightC are specified in
+  // Table 6-1, depending on the chroma format sampling structure, which is
+  // specified through chroma_format_idc and separate_colour_plane_flag."
+  // For chroma_format_idc == 1, Table 6-1 specifies
+  // SubWidthC == 2 and SubHeightC == 2.
+  static constexpr uint8_t kChromaFormatIdc420 = 1;
+  static constexpr uint32_t kSubWidthC = 2;
+  static constexpr uint32_t kSubHeightC = 2;
+  // H.265 7.4.3.2.1: "pic_width_in_luma_samples shall not be equal to 0 and
+  // shall be an integer multiple of MinCbSizeY." The same is true for
+  // pic_height_in_luma_samples. MinCbSizeY is 8 in the canned SPS.
+  static constexpr uint32_t kMinCbSizeY = 8;
+
+  RefPtr<MediaByteBuffer> fakeExtraData = CreateFakeExtraData();
+  auto parseResult = HVCCConfig::Parse(fakeExtraData);
+  MOZ_ASSERT(parseResult.isOk());
+  HVCCConfig hvcc = parseResult.unwrap();
+  const Maybe<H265NALU> vps =
+      hvcc.GetFirstAvaiableNALU(H265NALU::NAL_TYPES::VPS_NUT);
+  const Maybe<H265NALU> sps =
+      hvcc.GetFirstAvaiableNALU(H265NALU::NAL_TYPES::SPS_NUT);
+  const Maybe<H265NALU> pps =
+      hvcc.GetFirstAvaiableNALU(H265NALU::NAL_TYPES::PPS_NUT);
+  MOZ_ASSERT(vps && sps && pps);
+
+  const uint8_t bitDepthMinus8 =
+      aDetails.general_profile_idc == H265ProfileTierLevel::kProfileIdcMain10
+          ? 2
+          : 0;
+
+  RefPtr<MediaByteBuffer> newVPSRbsp = new MediaByteBuffer();
+  {
+    RefPtr<MediaByteBuffer> rbsp = DecodeNALUnit(vps->mNALU);
+    BitReader reader(rbsp, BitReader::GetBitLength(rbsp));
+    BitWriter writer(newVPSRbsp);
+    // Copy the H.265 7.3.2.1 fields from vps_video_parameter_set_id through
+    // vps_reserved_0xffff_16bits unchanged.
+    writer.WriteU32(reader.ReadU32());
+    RewriteProfileTierLevel(reader, writer, aDetails);
+    while (reader.BitsLeft()) {
+      writer.WriteBit(reader.ReadBit());
+    }
+    writer.CloseWithRbspTrailing();
+  }
+  RefPtr<MediaByteBuffer> newVPS =
+      EncodeH265NALUnit(vps->mNALU.Elements(), newVPSRbsp);
+
+  RefPtr<MediaByteBuffer> newSPSRbsp = new MediaByteBuffer();
+  {
+    RefPtr<MediaByteBuffer> rbsp = DecodeNALUnit(sps->mNALU);
+    BitReader reader(rbsp, BitReader::GetBitLength(rbsp));
+    BitWriter writer(newSPSRbsp);
+    // Copy the H.265 7.3.2.2.1 fields from sps_video_parameter_set_id through
+    // sps_temporal_id_nesting_flag unchanged.
+    writer.WriteBits(reader.ReadBits(8), 8);
+    RewriteProfileTierLevel(reader, writer, aDetails);
+    writer.WriteUE(reader.ReadUE());  // sps_seq_parameter_set_id
+
+    const uint32_t chromaFormatIdc = reader.ReadUE();
+    MOZ_ASSERT(chromaFormatIdc == kChromaFormatIdc420);
+    writer.WriteUE(chromaFormatIdc);
+
+    const uint32_t width = static_cast<uint32_t>(std::max(aSize.width, 1));
+    const uint32_t height = static_cast<uint32_t>(std::max(aSize.height, 1));
+    const uint32_t codedWidth =
+        ((width + kMinCbSizeY - 1) / kMinCbSizeY) * kMinCbSizeY;
+    const uint32_t codedHeight =
+        ((height + kMinCbSizeY - 1) / kMinCbSizeY) * kMinCbSizeY;
+    (void)reader.ReadUE();  // pic_width_in_luma_samples
+    (void)reader.ReadUE();  // pic_height_in_luma_samples
+    writer.WriteUE(codedWidth);
+    writer.WriteUE(codedHeight);
+
+    const bool needsConformanceWindow =
+        codedWidth != width || codedHeight != height;
+    (void)reader.ReadBit();  // conformance_window_flag
+    writer.WriteBit(needsConformanceWindow);
+    if (needsConformanceWindow) {
+      // conf_win_{left,right,top,bottom}_offset. The offsets are in chroma
+      // samples, so an odd difference rounds the visible size up by one luma
+      // sample, as it does in H264::CreateExtraData.
+      writer.WriteUE(0);
+      writer.WriteUE((codedWidth - width) / kSubWidthC);
+      writer.WriteUE(0);
+      writer.WriteUE((codedHeight - height) / kSubHeightC);
+    }
+
+    (void)reader.ReadUE();  // bit_depth_luma_minus8
+    (void)reader.ReadUE();  // bit_depth_chroma_minus8
+    writer.WriteUE(bitDepthMinus8);
+    writer.WriteUE(bitDepthMinus8);
+
+    while (reader.BitsLeft()) {
+      writer.WriteBit(reader.ReadBit());
+    }
+    writer.CloseWithRbspTrailing();
+  }
+  RefPtr<MediaByteBuffer> newSPS =
+      EncodeH265NALUnit(sps->mNALU.Elements(), newSPSRbsp);
+
+  hvcc.general_profile_space = aDetails.general_profile_space;
+  hvcc.general_tier_flag = aDetails.general_tier_flag;
+  hvcc.general_profile_idc = aDetails.general_profile_idc;
+  hvcc.general_profile_compatibility_flags =
+      aDetails.general_profile_compatibility_flags;
+  hvcc.general_constraint_indicator_flags =
+      aDetails.general_constraint_indicator_flags;
+  hvcc.general_level_idc = aDetails.general_level_idc;
+  hvcc.chroma_format_idc = kChromaFormatIdc420;
+  hvcc.bit_depth_luma_minus8 = bitDepthMinus8;
+  hvcc.bit_depth_chroma_minus8 = bitDepthMinus8;
+
+  // Appended in NALU type order, which the FFmpeg decoder on Linux requires.
+  nsTArray<H265NALU> nalus;
+  nalus.AppendElement(H265NALU(newVPS->Elements(), newVPS->Length()));
+  nalus.AppendElement(H265NALU(newSPS->Elements(), newSPS->Length()));
+  nalus.AppendElement(*pps);
+  return CreateNewExtraData(hvcc, nalus);
+}
+
 template <typename Pred>
 static Result<bool, nsresult> SampleContainsNalu(
     const mozilla::MediaRawData* aSample, Pred aIsWantedNalu) {
@@ -1780,7 +1920,7 @@ static Result<bool, nsresult> SampleContainsNalu(
   BufferReader reader(aSample->Data(), sampleSize);
   RefPtr<mozilla::MediaByteBuffer> extradata = new mozilla::MediaByteBuffer;
   while (reader.Remaining() > nalLenSize) {
-    // ISO/IEC 14496-15, 4.2.3.2 Syntax. (NALUSample) Reading the size of NALU.
+    // ISO/IEC 14496-15 4.2.3.2, NALUSample syntax. Read the NAL unit size.
     uint32_t nalLen = 0;
     switch (nalLenSize) {
       case 1:

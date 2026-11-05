@@ -344,6 +344,55 @@ export class FeatureModel {
   }
 
   /**
+   * Convert discretized location topics into this model's interest features.
+   * Returns null if a required coarse timezone value is unavailable or invalid.
+   */
+  transformLocationTopicsToInterestVector(
+    locationTopics = {},
+    coarseInferredInterests = {}
+  ) {
+    const timeZoneFeature = this.interestVectorModel.timeZoneOffset;
+    const { timeZoneOffset } = coarseInferredInterests;
+    if (
+      timeZoneFeature &&
+      (!Number.isInteger(timeZoneOffset) ||
+        timeZoneOffset < 0 ||
+        timeZoneOffset > timeZoneFeature.thresholds?.length)
+    ) {
+      return null;
+    }
+    return Object.fromEntries(
+      Object.entries(this.interestVectorModel).map(([name, feature]) => {
+        // we keep the user's measured timezoneoffset instead of replacing
+        if (name === "timeZoneOffset") {
+          return [name, timeZoneOffset];
+        }
+        return [
+          name,
+          // we assume the max discrete value of clicks so location vector gets full confidence
+          // the uncertainty of the location based features are baked into the grid and priors
+          name === SPECIAL_FEATURE_CLICK
+            ? (feature.thresholds?.length ?? 0)
+            : (locationTopics[name] ?? 0),
+        ];
+      })
+    );
+  }
+
+  computePrivateLocationInterestVector(locationInterestVector) {
+    return Object.fromEntries(
+      Object.entries(locationInterestVector)
+        .filter(([name]) =>
+          this.privateFeatures ? this.privateFeatures.includes(name) : true
+        )
+        .map(([name, value]) => [
+          name,
+          this.interestVectorModel[name].applyDifferentialPrivacy(value),
+        ])
+    );
+  }
+
+  /**
    * Computes an interest vector or aggregate based on the model and raw sql inout.
    *
    * @param {object} config

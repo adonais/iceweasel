@@ -1,5 +1,4 @@
 [DEFAULT]
-dupe-manifest = true
 support-files = [
   "../widgets/popup_shared.js",
   "../widgets/tree_shared.js",
@@ -51,19 +50,15 @@ support-files = [
 ]
 prefs = [
   "gfx.font_rendering.fallback.async=false",
-  "browser.nova.enabled=false",
 ]
 
 ["test_about_networking.html"]
 
 ["test_arrowpanel.xhtml"]
 skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929437
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 1727507
-  "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1797751
   "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1797751
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1797751
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1797751
 ]
 
@@ -85,23 +80,14 @@ run-if = [
 ["test_autocomplete_placehold_last_complete.xhtml"]
 
 ["test_autocomplete_with_composition_on_input.html"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929437
-]
 
 ["test_browser_drop.xhtml"]
 
 ["test_bug263683.xhtml"]
 
 ["test_bug304188.xhtml"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1957808
-]
 
 ["test_bug331215.xhtml"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1339326 #Bug 1582327
-]
 
 ["test_bug360220.xhtml"]
 
@@ -176,9 +162,6 @@ support-files = [
 ["test_editor_for_input_with_autocomplete.html"]
 
 ["test_findbar.xhtml"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1929437
-]
 
 ["test_findbar_entireword.xhtml"]
 
@@ -224,6 +207,8 @@ skip-if = [
 
 ["test_menu_mouse_menuactive.xhtml"]
 
+["test_menu_typeahead_label_start.xhtml"]
+
 ["test_menu_withcapture.xhtml"]
 
 ["test_menuchecks.xhtml"]
@@ -266,7 +251,6 @@ support-files = ["window_navigate_persist.html"]
 
 ["test_panel.xhtml"]
 skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929437
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
 ]
 
@@ -355,7 +339,6 @@ support-files = ["window_preferences_onsyncfrompreference.xhtml"]
 
 ["test_tooltip.xhtml"]
 skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929437
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2030058
 ]
 

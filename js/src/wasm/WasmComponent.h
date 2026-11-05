@@ -543,16 +543,6 @@ struct ComponentSortIndex {
   bool operator==(const ComponentSortIndex& other) const = default;
 };
 
-struct ComponentSortIndexHasher {
-  using Lookup = ComponentSortIndex;
-  static HashNumber hash(const Lookup& l) {
-    return mozilla::HashGeneric(l.sort, l.index);
-  }
-  static bool match(const ComponentSortIndex& k, const Lookup& l) {
-    return k == l;
-  }
-};
-
 enum class ComponentAliasKind : uint8_t {
   CoreExport,
   Export,
@@ -588,7 +578,8 @@ enum class ComponentAliasKind : uint8_t {
 // component to fetch an item from.
 //
 // The second field, itemIndex_, is simply a uint32_t item index like you'd find
-// anywhere else.
+// anywhere else. For core export aliases, which refer to their item by name, it
+// is instead an index into the component's list of core export alias names.
 class ComponentItem {
   uint32_t whatAndWhere_;
   uint32_t itemIndex_;
@@ -686,17 +677,6 @@ class ComponentItem {
     return whatAndWhere_ & AliasInstanceMask;
   }
 
-  // Outer aliases are a fun special case that comes up often enough to deserve
-  // a short helper.
-  bool isOuterAlias() const {
-    return kind() == ItemKind::Alias &&
-           aliasKind() == ComponentAliasKind::Outer;
-  }
-  ComponentSortIndex outerAliasSortIndex() const {
-    MOZ_RELEASE_ASSERT(isOuterAlias());
-    return ComponentSortIndex(sort(), itemIndex());
-  }
-
   bool operator==(const ComponentItem& other) const = default;
 };
 
@@ -734,52 +714,16 @@ struct CoreInstanceDescFromModule {
 class ComponentInlineExports {
   using ExportMap = mozilla::HashMap<CacheableName, ComponentSortIndex,
                                      CacheableNameHasher, SystemAllocPolicy>;
-  using OriginalIndexMap =
-      mozilla::HashMap<ComponentSortIndex, uint32_t, ComponentSortIndexHasher,
-                       SystemAllocPolicy>;
 
-  // Maps from export names to ComponentSortIndexes in this "instance"'s index
-  // space.
+  // Maps from export names to the sortidx of the exported item in the
+  // component's index spaces.
   ExportMap exports_;
 
-  // Maps from exported items in this instance to the original indices of the
-  // items being re-exported.
-  OriginalIndexMap originalIndices_;
-
  public:
-  struct Builder {
-    uint32_t numFuncs = 0;
-    uint32_t numTypes = 0;
-    uint32_t numComponents = 0;
-    uint32_t numInstances = 0;
-    uint32_t numCoreFunctions = 0;
-    uint32_t numCoreTables = 0;
-    uint32_t numCoreMemories = 0;
-    uint32_t numCoreGlobals = 0;
-    uint32_t numCoreTags = 0;
-    uint32_t numCoreTypes = 0;
-    uint32_t numCoreModules = 0;
-    uint32_t numCoreInstances = 0;
+  [[nodiscard]] bool addExport(CacheableName&& name,
+                               ComponentSortIndex exported);
 
-    uint32_t trackItemOfSort(ComponentSort sort);
-  };
-
-  bool addExport(Builder* builder, CacheableName&& name,
-                 ComponentSortIndex exported);
-
-  // Gets a sortidx representing the given exported item within this
-  // inline-export instance (i.e. not the original sortidx of the item being
-  // re-exported).
-  mozilla::Maybe<ComponentSortIndex> getExport(const CacheableName& name) const;
-
-  // Given an export that originated from this instance, resolves the sortidx of
-  // the original item being re-exported. Crashes if the item does not exist.
-  ComponentSortIndex resolveOriginal(ComponentSortIndex expFromThis) const;
-
-  // Combines getExport + resolveOriginal to get the original sortidx within the
-  // component, for a given export name.
-  ComponentSortIndex mustResolveExportToOriginal(
-      const CacheableName& name) const;
+  const ExportMap& exports() const { return exports_; }
 };
 
 // Instructions for instantiating a core instance.
@@ -788,28 +732,18 @@ class CoreInstanceDesc {
       mozilla::Variant<CoreInstanceDescFromModule, ComponentInlineExports>;
 
   CoreInstanceVariant desc_;
-
-  // The owning component for this instance.
-  const Component* component_;
+  SharedCoreInstanceType type_;
 
  public:
-  explicit CoreInstanceDesc(const Component* c,
-                            CoreInstanceDescFromModule&& fromModule)
-      : desc_(std::move(fromModule)), component_(c) {}
-  explicit CoreInstanceDesc(const Component* c,
-                            ComponentInlineExports&& inlineExports)
-      : desc_(std::move(inlineExports)), component_(c) {}
+  explicit CoreInstanceDesc(CoreInstanceDescFromModule&& fromModule,
+                            SharedCoreInstanceType type)
+      : desc_(std::move(fromModule)), type_(std::move(type)) {}
+  explicit CoreInstanceDesc(ComponentInlineExports&& inlineExports,
+                            SharedCoreInstanceType type)
+      : desc_(std::move(inlineExports)), type_(std::move(type)) {}
 
   const CoreInstanceVariant& desc() const { return desc_; }
-
-  // Gets an export from a core instance by name.
-  mozilla::Maybe<ComponentSortIndex> getExport(const CacheableName& name) const;
-
-  const TypeDef& getCoreFuncType(uint32_t coreFuncIndex) const;
-  const TableDesc& getTable(uint32_t tableIndex) const;
-  const MemoryDesc& getMemory(uint32_t memoryIndex) const;
-  const GlobalDesc& getGlobal(uint32_t globalIndex) const;
-  const TagDesc& getTag(uint32_t tagIndex) const;
+  const CoreInstanceType& type() const { return *type_; }
 };
 
 // Describes an import or export from a wasm component.
@@ -909,6 +843,8 @@ class ComponentExport {
 class Component : public JS::WasmComponent {
  public:
   using CoreModuleVector = mozilla::Vector<SharedModule, 0, SystemAllocPolicy>;
+  using CoreModuleTypeVector =
+      mozilla::Vector<SharedCoreModuleType, 0, SystemAllocPolicy>;
   using CoreInstanceVector =
       mozilla::Vector<CoreInstanceDesc, 0, SystemAllocPolicy>;
   using TypeVector = mozilla::Vector<ComponentType, 0, SystemAllocPolicy>;
@@ -919,14 +855,13 @@ class Component : public JS::WasmComponent {
   using ImportVector = mozilla::Vector<ComponentImport, 0, SystemAllocPolicy>;
   using ExportVector = mozilla::Vector<ComponentExport, 0, SystemAllocPolicy>;
   using ItemVector = mozilla::Vector<ComponentItem, 0, SystemAllocPolicy>;
-  using AliasNameMap =
-      mozilla::HashMap<ComponentSortIndex, CacheableName,
-                       ComponentSortIndexHasher, SystemAllocPolicy>;
   using ImportExportMap = mozilla::HashMap<mozilla::Span<const char>, size_t,
                                            NameHasher, SystemAllocPolicy>;
 
  private:
   CoreModuleVector definedCoreModules_;
+  // Parallel to definedCoreModules_.
+  CoreModuleTypeVector definedCoreModuleTypes_;
   CoreInstanceVector definedCoreInstances_;
   TypeVector definedTypes_;
   FuncVector definedFuncs_;
@@ -956,17 +891,9 @@ class Component : public JS::WasmComponent {
   ItemVector coreModules_;
   ItemVector coreInstances_;
 
-  // TODO(wasm-cm): Right now, instantiation requires us to get JS object
-  // wrappers for all values we pass as imports. This means that we need to look
-  // everything up from the instance's exports object, which means we need to
-  // know the names of all the exports. This really should not be necessary,
-  // because within the component model we have the index of everything
-  // statically, but we don't store the JS objects for tables, globals, etc.
-  // anywhere but the exports object today, and refactoring this is way too
-  // invasive for the current state of the project. So, the current hack is to
-  // just store all the names for all aliases of exports, so when we find such
-  // an item, we can look it up here instead of going to the thing by index.
-  AliasNameMap aliasNames_;
+  // The export names of all core export aliases, indexed by the alias's
+  // ComponentItem::itemIndex().
+  CacheableNameVector coreExportAliasNames_;
 
   template <typename T>
   bool addDefinedItem(
@@ -979,6 +906,18 @@ class Component : public JS::WasmComponent {
     }
     return indexSpaceVector.append(ComponentItem::defined(sort, index));
   }
+
+  ItemVector& mutableCoreIndexSpace(ComponentSort sort) {
+    return const_cast<ItemVector&>(std::as_const(*this).coreIndexSpace(sort));
+  }
+
+  // Maps an index in the core module index space to an index in
+  // definedCoreModules_.
+  uint32_t definedCoreModuleIndex(uint32_t modIndex) const;
+
+  // Gets the type of a core export alias from its instance's type.
+  const CoreExternType& getCoreExportAliasType(
+      ComponentSortIndex sortIndex) const;
 
  public:
   Component() = default;
@@ -1029,43 +968,37 @@ class Component : public JS::WasmComponent {
   }
 
   const ItemVector& coreTables() const { return coreTables_; }
-  const TableDesc& getCoreTable(uint32_t tableIndex) const;
-  [[nodiscard]] bool addCoreTable(ComponentItem tableItem) {
-    MOZ_RELEASE_ASSERT(tableItem.kind() == ComponentItem::ItemKind::Alias);
-    MOZ_RELEASE_ASSERT(tableItem.sort() == ComponentSort::CoreTable);
-    return coreTables_.append(tableItem);
-  }
-
   const ItemVector& coreMemories() const { return coreMemories_; }
-  const MemoryDesc& getCoreMemory(uint32_t memoryIndex) const;
-  [[nodiscard]] bool addCoreMemory(ComponentItem memoryItem) {
-    MOZ_RELEASE_ASSERT(memoryItem.kind() == ComponentItem::ItemKind::Alias);
-    MOZ_RELEASE_ASSERT(memoryItem.sort() == ComponentSort::CoreMemory);
-    return coreMemories_.append(memoryItem);
-  }
-
   const ItemVector& coreGlobals() const { return coreGlobals_; }
-  const GlobalDesc& getCoreGlobal(uint32_t globalIndex) const;
-  [[nodiscard]] bool addCoreGlobal(ComponentItem globalItem) {
-    MOZ_RELEASE_ASSERT(globalItem.kind() == ComponentItem::ItemKind::Alias);
-    MOZ_RELEASE_ASSERT(globalItem.sort() == ComponentSort::CoreGlobal);
-    return coreGlobals_.append(globalItem);
+  const ItemVector& coreTags() const { return coreTags_; }
+
+  // Gets the index space for a core func, table, memory, global, or tag sort.
+  const ItemVector& coreIndexSpace(ComponentSort sort) const;
+
+  // Adds an alias of a core instance's export (a core func, table, memory,
+  // global, or tag) to the index space for its sort.
+  [[nodiscard]] bool addCoreExportAlias(ComponentSort sort,
+                                        uint32_t instanceIndex,
+                                        CacheableName&& name) {
+    // Store name into coreExportAliasNames_, and build an alias
+    // ComponentItem where the itemIndex is an index into that list.
+    ComponentItem item =
+        ComponentItem::alias(ComponentAliasKind::CoreExport, sort,
+                             instanceIndex, coreExportAliasNames_.length());
+    return coreExportAliasNames_.append(std::move(name)) &&
+           mutableCoreIndexSpace(sort).append(item);
   }
 
-  const ItemVector& coreTags() const { return coreTags_; }
-  const TagDesc& getCoreTag(uint32_t tagIndex) const;
-  bool addCoreTag(ComponentItem tagItem) {
-    MOZ_RELEASE_ASSERT(tagItem.kind() == ComponentItem::ItemKind::Alias);
-    MOZ_RELEASE_ASSERT(tagItem.sort() == ComponentSort::CoreTag);
-    return coreTags_.append(tagItem);
+  // Gets the export name of a core export alias.
+  const CacheableName& coreExportAliasName(ComponentItem alias) const {
+    MOZ_RELEASE_ASSERT(alias.aliasKind() == ComponentAliasKind::CoreExport);
+    return coreExportAliasNames_[alias.itemIndex()];
   }
 
   const ItemVector& coreModules() const { return coreModules_; }
   SharedModule getCoreModule(uint32_t modIndex) const;
-  [[nodiscard]] bool addCoreModule(SharedModule module) {
-    return addDefinedItem(ComponentSort::CoreModule, std::move(module),
-                          definedCoreModules_, coreModules_);
-  }
+  const CoreModuleType& getCoreModuleType(uint32_t modIndex) const;
+  [[nodiscard]] bool addCoreModule(SharedModule module);
 
   const ItemVector& coreInstances() const { return coreInstances_; }
   const CoreInstanceDesc& getCoreInstance(uint32_t instanceIndex) const;
@@ -1078,11 +1011,6 @@ class Component : public JS::WasmComponent {
   // the appropriate index space.
   ComponentItem resolveSortIndex(ComponentSortIndex sortIndex) const;
 
-  [[nodiscard]] bool saveExportNameForAlias(ComponentSortIndex sortIndexOfAlias,
-                                            CacheableName&& name);
-  const CacheableName& getExportNameForAlias(
-      ComponentSortIndex sortIndexOfAlias) const;
-
   // --------------------------------------------------------------------------
   // Utilities for accessing type information
 
@@ -1092,6 +1020,9 @@ class Component : public JS::WasmComponent {
 
   // Gets the type of a core func (not a component func).
   const TypeDef& getTypeForCoreFunc(uint32_t coreFuncIndex) const;
+
+  // Gets the type of a core func, table, memory, global, or tag.
+  CoreExternType getCoreItemType(ComponentSortIndex sortIndex) const;
 
   size_t gcMallocBytesExcludingCode() const {
     // TODO(wasm-cm): Right now, this only sums up the sizes of the inner
@@ -1139,17 +1070,28 @@ class ComponentInstance {
   // The wasm::Component for this instance.
   const SharedComponent component_;
 
-  using CoreInstanceVector =
-      GCVector<HeapPtr<WasmInstanceObject*>, 0, SystemAllocPolicy>;
-  // An array of all the core instances owned by this component instance. NOTE!
-  // This array is sparse; its indices will always correspond 1:1 with
-  // Component::coreInstances(), but not all such instances will get a
-  // WasmInstanceObject.
-  CoreInstanceVector coreInstances_;
+  using CoreInstanceExportsVector =
+      GCVector<HeapPtr<JSObject*>, 0, SystemAllocPolicy>;
+  // The exports object of every core instance, whether instantiated from a
+  // module or built from inline exports. Indices correspond 1:1 with
+  // Component::coreInstances().
+  CoreInstanceExportsVector coreInstanceExports_;
 
   // Only WasmComponentInstanceObject can call the private trace function.
   friend class js::WasmComponentInstanceObject;
   void tracePrivate(JSTracer* trc);
+
+  // Gets the JS value of a core func, table, memory, global, or tag in the
+  // component's index spaces.
+  [[nodiscard]] bool getCoreItemJSValue(JSContext* cx,
+                                        ComponentSortIndex sortIndex,
+                                        MutableHandleValue val) const;
+  [[nodiscard]] bool instantiateCoreModule(
+      JSContext* cx, const CoreInstanceDescFromModule& desc,
+      MutableHandleObject exportsObj) const;
+  [[nodiscard]] bool instantiateInlineExports(
+      JSContext* cx, const ComponentInlineExports& inlineExports,
+      MutableHandleObject exportsObj) const;
 
  public:
   ComponentInstance(JSContext* cx, Handle<WasmComponentInstanceObject*> object,
@@ -1163,14 +1105,13 @@ class ComponentInstance {
 
   [[nodiscard]] bool init(JSContext* cx);
 
-  // Gets a core instance object for a given index in the component, if one
-  // exists. (It may not; inline-export instances do not get actual objects.)
-  // The result may therefore be null.
-  WasmInstanceObject* coreInstance(uint32_t index) const {
-    if (coreInstances_.length() <= index) {
+  // Gets the exports object of a core instance, or null if the index is out of
+  // range.
+  JSObject* coreInstanceExports(uint32_t index) const {
+    if (coreInstanceExports_.length() <= index) {
       return nullptr;
     }
-    return coreInstances_[index];
+    return coreInstanceExports_[index];
   }
 };
 

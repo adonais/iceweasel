@@ -407,10 +407,6 @@ APZEventResult APZBridge::ReceiveInputEvent(WidgetInputEvent& aEvent,
       return result;
     }
   }
-
-  MOZ_ASSERT_UNREACHABLE("Invalid WidgetInputEvent type.");
-  result.SetStatusAsConsumeNoDefault();
-  return result;
 }
 
 std::ostream& operator<<(std::ostream& aOut, const SideBits& aSideBits) {

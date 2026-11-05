@@ -13,7 +13,6 @@ XPIDL_SOURCES += [
     "nsIDOMXULMenuListElement.idl",
     "nsIDOMXULMultSelectCntrlEl.idl",
     "nsIDOMXULRadioGroupElement.idl",
-    "nsIDOMXULRelatedElement.idl",
     "nsIDOMXULSelectCntrlEl.idl",
     "nsIDOMXULSelectCntrlItemEl.idl",
 ]

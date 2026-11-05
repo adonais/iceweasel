@@ -624,6 +624,12 @@ add_task(async function test_fetchData_OHTTP() {
     "should not send cookies"
   );
 
+  Assert.equal(
+    Object.keys(ObliviousHTTP.ohttpRequest.firstCall.args[3].headers).join(),
+    "content-type",
+    "should send headers that ohttpRequest can enumerate"
+  );
+
   info("AdsFeed: fetchData() should construct request body");
   Assert.equal(
     ObliviousHTTP.ohttpRequest.firstCall.args[3].body,

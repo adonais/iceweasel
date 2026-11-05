@@ -62,7 +62,7 @@ class CustomTabMenuTest {
         assertTrue(items.hasItem(CustomTabItem.OpenInApp))
         assertEquals(
             Text.Resource(R.string.menu_open_with_default_browser2, listOf(APP_NAME)),
-            items.item(CustomTabItem.OpenInBrowser).title,
+            items.item(CustomTabItem.OpenInBrowser).title.text,
         )
     }
 
@@ -108,7 +108,7 @@ class CustomTabMenuTest {
         val callerItems = groups.last().items
 
         assertTrue(groups.dropLast(1).flatMap { it.items }.none { it.onClickEvent is CustomTabMenuItemTapped })
-        assertEquals(Text.String("Open in caller"), callerItems.single().title)
+        assertEquals(Text.String("Open in caller"), callerItems.single().title.text)
         assertEquals(CustomTabMenuItemTapped(callerItem), callerItems.single().onClickEvent)
     }
 
@@ -131,7 +131,7 @@ class CustomTabMenuTest {
         assertEquals(action, state.webCompatReporterAction(state.customTabs.single()))
         assertEquals(
             Text.String("Report broken site…"),
-            menu(state).currentMenuGroups().flatMap { it.items }.item(CustomTabItem.ReportSiteIssue).title,
+            menu(state).currentMenuGroups().flatMap { it.items }.item(CustomTabItem.ReportSiteIssue).title.text,
         )
     }
 

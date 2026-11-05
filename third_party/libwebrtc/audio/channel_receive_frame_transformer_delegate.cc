@@ -146,9 +146,11 @@ ChannelReceiveFrameTransformerDelegate::ChannelReceiveFrameTransformerDelegate(
     ReceiveFrameCallback receive_frame_callback,
     scoped_refptr<FrameTransformerInterface> frame_transformer,
     TaskQueueBase* absl_nonnull channel_receive_thread)
-    : receive_frame_callback_(receive_frame_callback),
+    : receive_frame_callback_(std::move(receive_frame_callback)),
       frame_transformer_(std::move(frame_transformer)),
-      channel_receive_thread_(channel_receive_thread) {}
+      channel_receive_thread_(channel_receive_thread) {
+  RTC_DCHECK(receive_frame_callback_);
+}
 
 void ChannelReceiveFrameTransformerDelegate::Init() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
@@ -171,7 +173,9 @@ void ChannelReceiveFrameTransformerDelegate::Transform(
     Timestamp receive_time) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   if (short_circuit_) {
-    receive_frame_callback_(packet, header, receive_time);
+    if (receive_frame_callback_) {
+      receive_frame_callback_(packet, header, receive_time);
+    }
   } else {
     frame_transformer_->Transform(
         std::make_unique<TransformableIncomingAudioFrame>(

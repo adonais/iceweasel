@@ -24,6 +24,13 @@ class MOZ_STACK_CLASS gfxVarsCollectUpdates;
 #  define GFX_VARS_LIST_ANDROID(_)                               \
     _(PlatformMediaCodecsSupported, MediaCodecsSupported,        \
       MediaCodecsSupported())                                    \
+    _(PlatformMediaCodecs10BitSupported, MediaCodecsSupported,   \
+      MediaCodecsSupported())                                    \
+    _(PlatformH264HwDecodeMaxSize, IntSize, IntSize())           \
+    _(PlatformHEVCHwDecodeMaxSize, IntSize, IntSize())           \
+    _(PlatformVP8HwDecodeMaxSize, IntSize, IntSize())            \
+    _(PlatformVP9HwDecodeMaxSize, IntSize, IntSize())            \
+    _(PlatformAV1HwDecodeMaxSize, IntSize, IntSize())            \
     _(PlatformUnmappedSwDecodeMimeTypes, nsCString, nsCString()) \
     _(PlatformUnmappedHwDecodeMimeTypes, nsCString, nsCString()) \
     _(WidevineSupport, DrmSchemeSupport, DrmSchemeSupport::Unknown)
@@ -137,7 +144,7 @@ class MOZ_STACK_CLASS gfxVarsCollectUpdates;
   _(AdapterVendorID, nsCString, nsCString())                       \
   _(AdapterDeviceID, nsCString, nsCString())                       \
   _(AdapterDriverVersion, nsCString, nsCString())                  \
-  _(UseAImageReaderVideoGpuProcessAndroid, bool, false)            \
+  _(ForceAImageReaderAndroid, bool, false)                         \
   _(AllowMetalAngleWebGL, bool, false)                             \
   _(CanUseVulkanHardwareVideoDecoding, bool, false)                \
   GFX_VARS_LIST_ANDROID(_)                                         \

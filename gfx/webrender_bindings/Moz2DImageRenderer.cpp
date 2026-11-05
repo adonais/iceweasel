@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <memory>
 #include <unordered_map>
 
 #include "GeckoProfiler.h"
@@ -218,7 +219,7 @@ void AddBlobFont(WrFontInstanceKey aInstanceKey, WrFontKey aFontKey,
     }
     if (aNumVariations) {
       font.mNumVariations = aNumVariations;
-      font.mVariations.reset(new wr::FontVariation[aNumVariations]);
+      font.mVariations = std::make_unique<wr::FontVariation[]>(aNumVariations);
       PodCopy(font.mVariations.get(),
               reinterpret_cast<const wr::FontVariation*>(aVariations),
               aNumVariations);

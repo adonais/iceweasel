@@ -1316,8 +1316,6 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 // NOTE(hqle): this is part of EXT_multisample_compatibility.
                 // NOTE(hqle): MSAA feature.
                 break;
-            case gl::state::DIRTY_BIT_COVERAGE_MODULATION:
-                break;
             case gl::state::DIRTY_BIT_FRAMEBUFFER_SRGB_WRITE_CONTROL_MODE:
                 break;
             case gl::state::DIRTY_BIT_CURRENT_VALUES:
@@ -1326,6 +1324,10 @@ angle::Result ContextMtl::syncState(const gl::Context *context,
                 break;
             }
             case gl::state::DIRTY_BIT_PROVOKING_VERTEX:
+                break;
+            case gl::state::DIRTY_BIT_CLIP_CONTROL:
+                updateFrontFace(glState);
+                invalidateDriverUniforms();
                 break;
             case gl::state::DIRTY_BIT_EXTENDED:
                 updateExtendedState(glState, extendedDirtyBits);
@@ -1352,10 +1354,6 @@ void ContextMtl::updateExtendedState(const gl::State &glState,
     {
         switch (extendedDirtyBit)
         {
-            case gl::state::EXTENDED_DIRTY_BIT_CLIP_CONTROL:
-                updateFrontFace(glState);
-                invalidateDriverUniforms();
-                break;
             case gl::state::EXTENDED_DIRTY_BIT_CLIP_DISTANCES:
                 invalidateDriverUniforms();
                 break;
@@ -2221,20 +2219,24 @@ void ContextMtl::onBackbufferResized(const gl::Context *context, WindowSurfaceMt
 angle::Result ContextMtl::onOcclusionQueryBegin(const gl::Context *context, QueryMtl *query)
 {
     ASSERT(mOcclusionQuery == nullptr);
-    mOcclusionQuery = query;
 
+    if (mRenderEncoder.valid() && !mOcclusionQueryPool.canAllocateQueryOffset(this))
+    {
+        endEncoding(true);
+    }
     if (mRenderEncoder.valid())
     {
-        // if render pass has started, start the query in the encoder
-        return startOcclusionQueryInRenderPass(query, true);
+        ANGLE_TRY(startOcclusionQueryInRenderPass(query, true));
     }
     else
     {
         query->resetVisibilityResult(this);
     }
 
+    mOcclusionQuery = query;
     return angle::Result::Continue;
 }
+
 void ContextMtl::onOcclusionQueryEnd(const gl::Context *context, QueryMtl *query)
 {
     ASSERT(mOcclusionQuery == query);
@@ -2270,16 +2272,6 @@ void ContextMtl::disableActiveOcclusionQueryInRenderPass()
     ASSERT(mRenderEncoder.valid());
     mRenderEncoder.setVisibilityResultMode(MTLVisibilityResultModeDisabled,
                                            mOcclusionQuery->getAllocatedVisibilityOffsets().back());
-}
-
-angle::Result ContextMtl::restartActiveOcclusionQueryInRenderPass()
-{
-    if (!mOcclusionQuery || mOcclusionQuery->getAllocatedVisibilityOffsets().empty())
-    {
-        return angle::Result::Continue;
-    }
-
-    return startOcclusionQueryInRenderPass(mOcclusionQuery, false);
 }
 
 angle::Result ContextMtl::startOcclusionQueryInRenderPass(QueryMtl *query, bool clearOldValue)
@@ -2506,10 +2498,18 @@ angle::Result ContextMtl::setupDrawImpl(const gl::Context *context,
         ANGLE_TRY(handleDirtyRenderPass(context));
     }
 
-    if (mOcclusionQuery && mOcclusionQueryPool.getNumRenderPassAllocatedQueries() == 0)
+    if (mOcclusionQuery &&
+        mRenderEncoder.getVisibilityResultMode() == MTLVisibilityResultModeDisabled)
     {
-        // The occlusion query is still active, and a new render pass has started.
-        // We need to continue the querying process in the new render encoder.
+        // The occlusion query is still active, and a new render pass has started or we have paused
+        // the querying process. We need to continue the querying process.
+        if (!mOcclusionQueryPool.canAllocateQueryOffset(this))
+        {
+            // The render pass visibility query offset limit has been reached. End the current
+            // encoding; the caller will retry with a new render encoder.
+            endEncoding(true);
+            return angle::Result::Continue;
+        }
         ANGLE_TRY(startOcclusionQueryInRenderPass(mOcclusionQuery, false));
     }
 

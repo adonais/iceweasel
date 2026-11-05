@@ -20,6 +20,9 @@ class AutoClose {
   AutoClose() : mMutex("net::AutoClose.mMutex") {}
   ~AutoClose() { CloseAndRelease(); }
 
+  void operator=(const AutoClose<T>&) = delete;
+  AutoClose(const AutoClose<T>&) = delete;
+
   explicit operator bool() {
     MutexAutoLock lock(mMutex);
     return mPtr;
@@ -46,9 +49,6 @@ class AutoClose {
       ptr->Close();
     }
   }
-
-  void operator=(const AutoClose<T>&) = delete;
-  AutoClose(const AutoClose<T>&) = delete;
 
   nsCOMPtr<T> mPtr MOZ_GUARDED_BY(mMutex);
   Mutex mMutex;

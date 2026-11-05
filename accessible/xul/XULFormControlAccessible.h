@@ -47,6 +47,7 @@ class XULButtonAccessible : public AccessibleWrap {
   virtual ~XULButtonAccessible();
 
   // LocalAccessible
+  virtual ENameValueFlag NativeName(nsString& aName) const override;
   virtual bool AttributeChangesState(nsAtom* aAttribute) override;
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                                    AttrModType aModType,
@@ -55,6 +56,12 @@ class XULButtonAccessible : public AccessibleWrap {
 
   // XULButtonAccessible
   bool ContainsMenu() const;
+
+  /**
+   * Whether the button has an accessible for a XUL label child, which means the
+   * label is visible and the name can be computed from the subtree.
+   */
+  bool HasVisibleLabel() const;
 };
 
 /**
@@ -148,9 +155,6 @@ class XULToolbarButtonAccessible : public XULButtonAccessible {
 
   // nsXULToolbarButtonAccessible
   static bool IsSeparator(LocalAccessible* aAccessible);
-
-  // Widgets
-  virtual bool IsAcceptableChild(nsIContent* aEl) const override;
 
  protected:
   // LocalAccessible

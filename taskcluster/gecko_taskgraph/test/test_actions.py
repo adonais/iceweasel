@@ -679,53 +679,105 @@ def test_add_all_browsertime(mocker, run_action, get_artifact):
     assert "build" not in to_run
 
 
-def test_gecko_profile(mocker, responses, run_action, get_artifact):
+@pytest.mark.parametrize(
+    "test_platform,node_toolchain,has_node",
+    (
+        pytest.param(
+            "linux2404-64-shippable/opt", "linux64-node-24", False, id="linux"
+        ),
+        pytest.param(
+            "macosx1500-aarch64-shippable/opt",
+            "macosx64-aarch64-node-24",
+            False,
+            id="macosx-aarch64",
+        ),
+        pytest.param(
+            "macosx1470-64-shippable/opt", "macosx64-node-22", False, id="macosx"
+        ),
+        pytest.param(
+            "windows11-64-24h2-shippable/opt",
+            "win64-node-24",
+            True,
+            id="windows-existing-node",
+        ),
+        # Backfilled pushes may predate the current node version.
+        pytest.param(
+            "linux2404-64-shippable/opt",
+            "linux64-node-22",
+            False,
+            id="linux-older-graph",
+        ),
+    ),
+)
+def test_gecko_profile(
+    mocker,
+    responses,
+    run_action,
+    get_artifact,
+    test_platform,
+    node_toolchain,
+    has_node,
+):
     task_id = "tid"
+    fetches = []
+    if has_node:
+        fetches.append({
+            "artifact": "public/build/node.tar.zst",
+            "extract": True,
+            "task": f"<toolchain-{node_toolchain}>",
+        })
     task_def = {
         "metadata": {"name": "test-raptor"},
         "payload": {
             "command": [["run-tests"]],
-            "env": {"MOZ_FETCHES": {"task-reference": "[]"}},
+            "env": {"MOZ_FETCHES": {"task-reference": json.dumps(fetches)}},
         },
         "extra": {
             "suite": "raptor",
             "treeherder": {"symbol": "R", "groupName": "Raptor"},
         },
     }
-    graph = make_graph(
+    toolchain_platform = node_toolchain.rsplit("-node-", 1)[0]
+    toolchain_labels = ["profiler-node-tools", f"{toolchain_platform}-samply"]
+    tasks = [
         make_task(
             label="test-raptor",
             kind="test",
-            attributes={"unittest_suite": "raptor"},
+            attributes={"unittest_suite": "raptor", "test_platform": test_platform},
             task_def={
                 "name": "test-raptor",
                 "deadline": "",
                 "payload": {
                     "command": [["run-tests"]],
-                    "env": {"MOZ_FETCHES": {"task-reference": "[]"}},
+                    "env": {"MOZ_FETCHES": {"task-reference": json.dumps(fetches)}},
                 },
                 "extra": {
                     "suite": "raptor",
                     "treeherder": {"symbol": "R", "groupName": "Raptor"},
                 },
             },
-        ),
+        )
+    ]
+    tasks.extend(
         make_task(
-            label="toolchain-linux64-samply",
+            label=f"toolchain-{name}",
             kind="toolchain",
-            task_def={"name": "toolchain-linux64-samply"},
-        ),
-        make_task(
-            label="toolchain-profiler-node-tools",
-            kind="toolchain",
-            task_def={"name": "toolchain-profiler-node-tools"},
-        ),
-        make_task(
-            label="toolchain-linux64-node-22",
-            kind="toolchain",
-            task_def={"name": "toolchain-linux64-node-22"},
-        ),
+            task_def={"name": f"toolchain-{name}"},
+        )
+        for name in toolchain_labels
     )
+    node_label = f"toolchain-{node_toolchain}"
+    tasks.append(
+        make_task(
+            label=node_label,
+            kind="toolchain",
+            attributes={"toolchain-alias": [f"{toolchain_platform}-node"]},
+            task_def={"name": node_label},
+        )
+    )
+    if has_node:
+        tasks.append(("test-raptor", node_label, node_label))
+    graph = make_graph(*tasks)
 
     responses.get(
         "http://hg.example.com/json-pushes?version=2&startID=99&endID=100",
@@ -763,6 +815,16 @@ def test_gecko_profile(mocker, responses, run_action, get_artifact):
 
     to_run = get_artifact("to-run-100.json")
     assert "test-raptor" in to_run
+
+    result_graph = get_artifact("task-graph-100.json")
+    labels = {task_id: task["label"] for task_id, task in result_graph.items()}
+    result = next(t for t in result_graph.values() if t["label"] == "test-raptor")
+    node_fetches = [
+        labels[f["task"]]
+        for f in json.loads(result["task"]["payload"]["env"]["MOZ_FETCHES"])
+        if f["artifact"] == "public/build/node.tar.zst"
+    ]
+    assert node_fetches == [node_label]
 
 
 def test_side_by_side(mocker, responses, run_action, get_artifact):

@@ -9,11 +9,13 @@
 #include "Units.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/FlushType.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/PresShellForwards.h"
 #include "nsCaseTreatment.h"
 #include "nsIAccessibleEvent.h"
 #include "nsIContent.h"
 #include "nsPoint.h"
+#include "nsString.h"
 #include "nsTArray.h"
 
 class nsAttrValue;
@@ -362,6 +364,13 @@ class nsCoreUtils {
            aContent->IsGeneratedContentContainerForAfter() ||
            aContent->IsGeneratedContentContainerForMarker();
   }
+
+  /**
+   * Return the alternative text specified in the CSS content property for the
+   * given content, or Nothing if no alternative text was specified. The
+   * returned string might be empty if it was explicitly specified as empty.
+   */
+  static mozilla::Maybe<nsString> GetCssAltContent(nsIContent* aContent);
 
   /**
    * Return the anchor frame for the given CSS positioned frame, or null if:

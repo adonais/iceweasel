@@ -13,6 +13,12 @@ val topobjdir = mozconfig["topobjdir"] as String
 
 layout.buildDirectory.set(file("$topobjdir/gradle/build/mobile/android/android-components/plugins/publicsuffixlist"))
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        allWarningsAsErrors.set(true)
+    }
+}
+
 dependencies {
     implementation(libs.okhttp)
     implementation(libs.okio)

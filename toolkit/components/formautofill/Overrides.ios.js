@@ -15,6 +15,7 @@ const ModuleOverrides = {
   "FormAutofill.sys.mjs": "FormAutofill.ios.sys.mjs",
   "EntryFile.sys.mjs": "FormAutofillChild.ios.sys.mjs",
   "LoginHelper.sys.mjs": "EmptyModule.sys.mjs",
+  "FormAutofillStorage.sys.mjs": "EmptyModule.sys.mjs",
 };
 
 // We need this because not all webpack libraries used in iOS are ES Modules

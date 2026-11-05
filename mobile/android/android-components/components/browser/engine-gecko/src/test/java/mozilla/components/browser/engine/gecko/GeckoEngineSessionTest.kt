@@ -3766,6 +3766,7 @@ class GeckoEngineSessionTest {
                     appIntent: Intent?,
                     fallbackUrl: String?,
                     appName: String?,
+                    sourceUrl: String?,
                 ) {
                     observedUrl = url
                     observedIntent = appIntent
@@ -3868,6 +3869,7 @@ class GeckoEngineSessionTest {
                     appIntent: Intent?,
                     fallbackUrl: String?,
                     appName: String?,
+                    sourceUrl: String?,
                 ) {
                     observedUrl = url
                     observedIntent = appIntent
@@ -4128,17 +4130,20 @@ class GeckoEngineSessionTest {
                 var observedIntent: Intent? = null
                 var observedFallbackUrl: String? = null
                 var observedAppName: String? = null
+                var observedSourceUrl: String? = null
 
                 override fun onLaunchIntentRequest(
                     url: String,
                     appIntent: Intent?,
                     fallbackUrl: String?,
                     appName: String?,
+                    sourceUrl: String?,
                 ) {
                     observedUrl = url
                     observedIntent = appIntent
                     observedFallbackUrl = fallbackUrl
                     observedAppName = appName
+                    observedSourceUrl = sourceUrl
                 }
 
                 fun reset() {
@@ -4146,10 +4151,12 @@ class GeckoEngineSessionTest {
                     observedIntent = null
                     observedFallbackUrl = null
                     observedAppName = null
+                    observedSourceUrl = null
                 }
             }
 
         engineSession.register(observer)
+        engineSession.currentUrl = "https://www.mozilla.org"
 
         navigationDelegate.value.onLoadRequest(
             mock(),
@@ -4160,6 +4167,7 @@ class GeckoEngineSessionTest {
         assertEquals("result1", observer.observedUrl)
         assertEquals("fallback1", observer.observedFallbackUrl)
         assertEquals("app1", observer.observedAppName)
+        assertEquals("https://www.mozilla.org", observer.observedSourceUrl)
 
         observer.reset()
         navigationDelegate.value.onLoadRequest(
@@ -4171,6 +4179,7 @@ class GeckoEngineSessionTest {
         assertEquals("result2", observer.observedUrl)
         assertEquals("fallback2", observer.observedFallbackUrl)
         assertEquals("app2", observer.observedAppName)
+        assertEquals("https://www.mozilla.org", observer.observedSourceUrl)
 
         observer.reset()
         navigationDelegate.value.onLoadRequest(
@@ -4182,6 +4191,21 @@ class GeckoEngineSessionTest {
         assertEquals("result3", observer.observedUrl)
         assertEquals("fallback3", observer.observedFallbackUrl)
         assertEquals("app3", observer.observedAppName)
+        assertNull(observer.observedSourceUrl)
+
+        observer.reset()
+        navigationDelegate.value.onLoadRequest(
+            mock(),
+            mockLoadRequest("https://www.example.org", triggeredByRedirect = false, isDirectNavigation = true),
+        )
+        navigationDelegate.value.onLoadRequest(
+            mock(),
+            mockLoadRequest("sample:triggeredByRedirect", triggeredByRedirect = true, isDirectNavigation = false),
+        )
+
+        assertNotNull(observer.observedIntent)
+        assertEquals("result1", observer.observedUrl)
+        assertNull(observer.observedSourceUrl)
     }
 
     @Test
@@ -4271,6 +4295,7 @@ class GeckoEngineSessionTest {
                     appIntent: Intent?,
                     fallbackUrl: String?,
                     appName: String?,
+                    sourceUrl: String?,
                 ) {
                     observedUrl = url
                     observedIntent = appIntent
@@ -4353,6 +4378,7 @@ class GeckoEngineSessionTest {
                     appIntent: Intent?,
                     fallbackUrl: String?,
                     appName: String?,
+                    sourceUrl: String?,
                 ) {
                     observedUrl = url
                     observedIntent = appIntent
@@ -4425,6 +4451,7 @@ class GeckoEngineSessionTest {
                     appIntent: Intent?,
                     fallbackUrl: String?,
                     appName: String?,
+                    sourceUrl: String?,
                 ) {
                     observedUrl = url
                     observedIntent = appIntent

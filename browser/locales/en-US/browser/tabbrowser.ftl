@@ -505,6 +505,8 @@ tab-context-reverse-split-view =
     .label = Reverse Tabs
     .accesskey = r
 tab-context-badge-new = New
+# The label of a badge shown in menu items to call out features that are in beta.
+tab-context-badge-beta = Beta
 
 ## Manage Split View (icon in the address bar & three-dot menu in the footer)
 

@@ -71,3 +71,10 @@ if CONFIG["FUZZING_INTERFACES"] and CONFIG["LIBFUZZER"]:
 LICENSED_UNDER += [
     "v8",
 ]
+
+SOURCE_HEADERS += [
+    "RegExpAPI.h",
+    "RegExpNativeMacroAssembler.h",
+    "RegExpShim.h",
+    "RegExpTypes.h",
+]

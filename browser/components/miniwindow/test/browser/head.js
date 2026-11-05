@@ -105,6 +105,16 @@ async function waitForNoMiniWindowsOpen() {
 }
 
 /**
+ * Close every open mini window and wait until they've all torn down.
+ */
+async function closeAllMiniWindows() {
+  for (let mini of [...MiniWindowManager._miniwindows]) {
+    mini.close();
+  }
+  await waitForNoMiniWindowsOpen();
+}
+
+/**
  * Remove leftover test tabs (tabs get moved between windows, so tests track
  * them by URL rather than by reference).
  *
@@ -116,20 +126,6 @@ function removeTestTabs(urlPrefix = "https://example.com/") {
       BrowserTestUtils.removeTab(t);
     }
   }
-}
-
-/**
- * Parse the x/y out of a CSS "translate(Xpx, Ypx)" transform. CSS serializes
- * translate(0px, 0px) down to translate(0px), so the second value is optional
- * and defaults to 0.
- *
- * @param {string} transform
- */
-function parseTranslate(transform) {
-  let m = /translate\(([-\d.]+)px(?:,\s*([-\d.]+)px)?\)/.exec(transform);
-  return m
-    ? { x: parseFloat(m[1]), y: m[2] !== undefined ? parseFloat(m[2]) : 0 }
-    : null;
 }
 
 /**

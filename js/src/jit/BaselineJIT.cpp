@@ -769,6 +769,27 @@ void BaselineCompileQueue::trace(JSTracer* trc) {
   }
 }
 
+JSScript* BaselineCompileQueue::pop() {
+  // To keep our invariants simple, we pop from the end of the queue.
+  MOZ_ASSERT(!isEmpty());
+  assertInvariants();
+  numQueued_--;
+  JSScript* result = queue_[numQueued_];
+  queue_[numQueued_] = nullptr;
+  assertInvariants();
+  return result;
+}
+
+bool BaselineCompileQueue::enqueue(JSScript* script) {
+  if (numQueued_ >= JitOptions.baselineQueueCapacity) {
+    return false;  // Queue is full
+  }
+  queue_[numQueued_] = script;
+  numQueued_++;
+  assertInvariants();
+  return true;
+}
+
 void BaselineCompileQueue::remove(JSScript* script) {
   assertInvariants();
   for (uint32_t i = 0; i < numQueued_; i++) {
@@ -781,13 +802,11 @@ void BaselineCompileQueue::remove(JSScript* script) {
   assertInvariants();
 }
 
-BaselineScript* BaselineScript::New(JSContext* cx,
-                                    uint32_t warmUpCheckPrologueOffset,
-                                    uint32_t profilerEnterToggleOffset,
-                                    uint32_t profilerExitToggleOffset,
-                                    size_t retAddrEntries, size_t osrEntries,
-                                    size_t debugTrapEntries,
-                                    size_t resumeEntries) {
+BaselineScript* BaselineScript::New(
+    JSContext* cx, uint32_t warmUpCheckPrologueOffset,
+    uint32_t profilerEnterToggleOffset, uint32_t profilerExitToggleOffset,
+    uint32_t debugModeOSREpilogueOffset, size_t retAddrEntries,
+    size_t osrEntries, size_t debugTrapEntries, size_t resumeEntries) {
   // Compute size including trailing arrays.
   CheckedInt<Offset> size = sizeof(BaselineScript);
   size += CheckedInt<Offset>(resumeEntries) * sizeof(uintptr_t);
@@ -808,7 +827,7 @@ BaselineScript* BaselineScript::New(JSContext* cx,
   }
   BaselineScript* script = new (raw)
       BaselineScript(warmUpCheckPrologueOffset, profilerEnterToggleOffset,
-                     profilerExitToggleOffset);
+                     profilerExitToggleOffset, debugModeOSREpilogueOffset);
 
   Offset cursor = sizeof(BaselineScript);
 
@@ -840,9 +859,9 @@ BaselineScript* BaselineScript::New(JSContext* cx,
 BaselineScript* BaselineScript::Copy(JSContext* cx, BaselineScript* bs) {
   BaselineScript* script = jit::BaselineScript::New(
       cx, bs->warmUpCheckPrologueOffset_, bs->profilerEnterToggleOffset_,
-      bs->profilerExitToggleOffset_, bs->retAddrEntries().size(),
-      bs->osrEntries().size(), bs->debugTrapEntries().size(),
-      bs->resumeEntryList().size());
+      bs->profilerExitToggleOffset_, bs->debugModeOSREpilogueOffset_,
+      bs->retAddrEntries().size(), bs->osrEntries().size(),
+      bs->debugTrapEntries().size(), bs->resumeEntryList().size());
   if (!script) {
     return nullptr;
   }
@@ -869,6 +888,8 @@ BaselineScript* BaselineScript::Copy(JSContext* cx, BaselineScript* bs) {
              bs->profilerEnterToggleOffset_);
   MOZ_ASSERT(script->profilerExitToggleOffset_ ==
              bs->profilerExitToggleOffset_);
+  MOZ_ASSERT(script->debugModeOSREpilogueOffset_ ==
+             bs->debugModeOSREpilogueOffset_);
   MOZ_ASSERT(script->resumeEntriesOffset_ == bs->resumeEntriesOffset_);
   MOZ_ASSERT(script->retAddrEntriesOffset_ == bs->retAddrEntriesOffset_);
   MOZ_ASSERT(script->osrEntriesOffset_ == bs->osrEntriesOffset_);

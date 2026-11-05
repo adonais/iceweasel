@@ -407,7 +407,7 @@ TEST_P(psm_CertificateCompression, DecoderCorrectlyDecodes) {
     return;
   }
   SECItem encodedItem = {siBuffer, testCase.encodedBuf, testCase.encodedBufLen};
-  std::unique_ptr<uint8_t[]> decodedEncodedBuffer =
+  auto decodedEncodedBuffer =
       std::make_unique<uint8_t[]>(testCase.decodedBufLen);
   size_t usedLen = 0;
 
@@ -423,8 +423,7 @@ TEST_P(psm_CertificateCompression, DecoderCorrectlyDecodes) {
 
 TEST_F(psm_CertificateCompression, TestAbridgedCertsRoundTrip) {
   SECItem encodedItem = {siBuffer, encodedBufferExampleAbridged, 1145};
-  std::unique_ptr<uint8_t[]> decodedEncodedBuffer =
-      std::make_unique<uint8_t[]>(2575);
+  auto decodedEncodedBuffer = std::make_unique<uint8_t[]>(2575);
   std::fill_n(decodedEncodedBuffer.get(), 2575, 0);
 
   size_t usedLen = 0;

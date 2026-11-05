@@ -10,13 +10,20 @@ const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
 const { ERRORS, IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
 );
+const { IPPMode } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs"
+);
 const { AUTH_ERRORS } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPAuthProvider.sys.mjs"
 );
-const { IPPPermissionRules, IPPPrincipalRules, IPPSiteRuleManager } =
-  ChromeUtils.importESModule(
-    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs"
-  );
+const {
+  IPPPermissionRules,
+  IPPPrincipalRules,
+  IPPSiteRuleManager,
+  IPPTabRules,
+} = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs"
+);
 const { ProxyPass, ProxyUsage, Entitlement } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs"
 );
@@ -75,6 +82,49 @@ function waitForProxyState(state) {
   );
 }
 /* exported waitForProxyState */
+
+/**
+ * A document channel stub that records how it was cancelled.
+ *
+ * @param {string} url
+ */
+function makeDocumentChannel(url) {
+  const uri = Services.io.newURI(url);
+  return {
+    isDocument: true,
+    URI: uri,
+    loadInfo: {
+      loadingPrincipal: Services.scriptSecurityManager.createContentPrincipal(
+        uri,
+        {}
+      ),
+      triggeringPrincipal: { isSystemPrincipal: true },
+    },
+    cancelStatus: null,
+    cancel(status) {
+      this.cancelStatus = status;
+    },
+  };
+}
+/* exported makeDocumentChannel */
+
+/**
+ * Runs a channel through the filter and returns the proxy info it resolved
+ * with, or undefined while it is queued.
+ *
+ * @param {IPPChannelFilter} filter
+ * @param {object} channel
+ */
+function applyFilter(filter, channel) {
+  let result;
+  filter.applyFilter(channel, "default", {
+    onProxyFilterResult(info) {
+      result = info;
+    },
+  });
+  return result;
+}
+/* exported applyFilter */
 
 async function putServerInRemoteSettings(
   server = {

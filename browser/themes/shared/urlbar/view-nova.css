@@ -14,6 +14,10 @@
      and selected rows while keeping the view's entire hover area contiguous. It's
      row padding that `background-clip: content-box` keeps out of the background. */
   --urlbarview-row-gutter: var(--space-xsmall);
+  &[uidensity="compact"] {
+    --urlbarview-row-gutter: var(--space-xxsmall);
+  }
+
   /* The view's own margin, which urlbar.css also derives the joint
      background's outsets from. Negative here so the selection rect is flush
      with the input container's border edge, compensating the row's gutter. */
@@ -1722,7 +1726,6 @@
     .urlbarView-realtime-item[sport-category="hockey"] > &,
     .urlbarView-realtime-item[sport-category="racing"] > &,
     .urlbarView-realtime-item[sport-category="soccer"] > & {
-      /* stylelint-disable-next-line max-nesting-depth */
       > .urlbarView-sports-date-chiclet-day,
       > .urlbarView-sports-date-chiclet-month {
         display: none;

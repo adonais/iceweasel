@@ -518,7 +518,6 @@ Tester.prototype = {
       "constructor",
       "top",
       "Application",
-      "__SS_tabsToRestore",
       "webConsoleCommandController",
       // Thunderbird
       "MailMigrator",
@@ -1122,6 +1121,104 @@ Tester.prototype = {
     }
   },
 
+  _getAllPermissions() {
+    let perms = new Map();
+    for (let perm of Services.perms.all) {
+      perms.set(`${perm.principal.origin} ${perm.type}`, perm);
+    }
+    return perms;
+  },
+
+  // Permissions Gecko adds by itself in response to user interaction, page
+  // loads or storage access grants.
+  _isAutomaticPermission({ type, capability }) {
+    return (
+      [
+        "storageAccessAPI",
+        "highValueCOOP",
+        "highValueIsLoggedIn",
+        "highValueHasSavedLogin",
+      ].includes(type) ||
+      type.startsWith("3rdPartyStorage^") ||
+      type.startsWith("3rdPartyFrameStorage^") ||
+      (type == "https-only-load-insecure" &&
+        capability ==
+          Ci.nsIHttpsOnlyModePermission.HTTPSFIRST_LOAD_INSECURE_ALLOW)
+    );
+  },
+
+  async checkPermissionsAfterTest() {
+    await window.SpecialPowers.flushPermissions();
+
+    const describe = p =>
+      p
+        ? `capability ${p.capability}, expireType ${p.expireType}, expireTime ${p.expireTime}`
+        : "unset";
+    const isSame = (a, b) =>
+      a?.capability == b?.capability &&
+      a?.expireType == b?.expireType &&
+      a?.expireTime == b?.expireTime;
+    const isThunderbird = AppConstants.MOZ_APP_NAME == "thunderbird";
+    let base = this._basePermissions;
+    let current = this._getAllPermissions();
+    let changed = false;
+    for (let key of new Set([...base.keys(), ...current.keys()])) {
+      let before = base.get(key);
+      let after = current.get(key);
+      if (isSame(before, after)) {
+        continue;
+      }
+      let { principal, type } = after || before;
+      if (this._isAutomaticPermission(after || before)) {
+        if (before) {
+          Services.perms.addFromPrincipal(
+            principal,
+            type,
+            before.capability,
+            before.expireType,
+            before.expireTime
+          );
+        } else {
+          Services.perms.removeFromPrincipal(principal, type);
+        }
+        continue;
+      }
+      changed = true;
+      this.currentTest.addResult(
+        new testResult({
+          name: `test left a permission changed: ${type} for ${principal.origin} (was ${describe(before)}, now ${describe(after)})`,
+          // Thunderbird tests haven't been fixed yet, see bug 2081390.
+          pass: isThunderbird,
+          todo: isThunderbird,
+          allowFailure: this.currentTest.allowFailure,
+        })
+      );
+    }
+    if (!changed) {
+      return;
+    }
+    // Restoring permissions one by one would turn default permissions into
+    // stored ones, and EXPIRE_POLICY permissions can't be removed one by one.
+    // removeAll() clears everything and re-imports the defaults.
+    Services.perms.removeAll();
+    current = this._getAllPermissions();
+    for (let [key, perm] of base) {
+      if (isSame(perm, current.get(key))) {
+        continue;
+      }
+      Services.perms.addFromPrincipal(
+        perm.principal,
+        perm.type,
+        perm.capability,
+        perm.expireType,
+        perm.expireTime
+      );
+    }
+    // Default permissions added during the test (eg. by RemotePermissionService)
+    // are re-imported by removeAll(), don't report them again for the next test.
+    this._basePermissions = this._getAllPermissions();
+  },
+
   /**
    * In the event that a test module left any traces in Session Restore state,
    * clean those up so that each test module starts execution with the same
@@ -1172,6 +1269,7 @@ Tester.prototype = {
     // On first call (no currentTest yet), check for initial window state issues
     if (!this.currentTest) {
       this.checkWindowsState();
+      this._basePermissions = this._getAllPermissions();
     } else {
       this.PerTestCoverageUtils.afterTestSync();
 
@@ -1452,6 +1550,10 @@ Tester.prototype = {
       // profile for a failing test: a test whose only failure is a stale tab or
       // a leaked window would otherwise not have failed yet.
       this.checkWindowsState();
+
+      // After checkWindowsState, so that permissions changed by closing tabs or
+      // windows the test left open are attributed to this test.
+      await this.checkPermissionsAfterTest();
 
       await this.notifyProfilerOfTestEnd();
 

@@ -1180,6 +1180,46 @@ add_task(async function test__deleteLastBackup_file_does_not_exist() {
 });
 
 /**
+ * Tests that deleting the last backup also removes the now-empty backup folder
+ * when that folder is read-only, as OneDrive can mark the folders it syncs.
+ */
+add_task(
+  { skip_if: () => AppConstants.platform != "win" },
+  async function test_deleteLastBackup_removes_readonly_folder() {
+    const BACKUP_LOCATION_PREF_NAME = "browser.backup.location";
+    let originalLocation = Services.prefs.getStringPref(
+      BACKUP_LOCATION_PREF_NAME
+    );
+    let backupDirPath = await IOUtils.createUniqueDirectory(
+      PathUtils.tempDir,
+      "readonlyBackupFolderTest"
+    );
+    Services.prefs.setStringPref(BACKUP_LOCATION_PREF_NAME, backupDirPath);
+    registerCleanupFunction(async () => {
+      Services.prefs.setStringPref(BACKUP_LOCATION_PREF_NAME, originalLocation);
+      if (await IOUtils.exists(backupDirPath)) {
+        await IOUtils.setWindowsAttributes(backupDirPath, { readOnly: false });
+        await maybeRemovePath(backupDirPath);
+      }
+    });
+
+    await testDeleteLastBackupHelper(async lastBackupFilePath => {
+      Assert.equal(
+        PathUtils.parent(lastBackupFilePath),
+        backupDirPath,
+        "The backup was written to the test's backup folder."
+      );
+      await IOUtils.setWindowsAttributes(backupDirPath, { readOnly: true });
+    });
+
+    Assert.ok(
+      !(await IOUtils.exists(backupDirPath)),
+      "The read-only backup folder was removed."
+    );
+  }
+);
+
+/**
  * Tests that loadBackupFileInfo properly handles errors, and clears file info
  * for errors that indicate that the file is invalid.
  */

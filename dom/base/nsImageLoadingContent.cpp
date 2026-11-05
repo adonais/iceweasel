@@ -641,6 +641,9 @@ static void ReplayImageStatus(imgIRequest* aRequest,
     return;
   }
 
+  // Notifications can cancel the request being replayed.
+  nsCOMPtr<imgIRequest> kungFuDeathGrip(aRequest);
+
   uint32_t status = 0;
   nsresult rv = aRequest->GetImageStatus(&status);
   if (NS_FAILED(rv)) {
@@ -677,6 +680,10 @@ void nsImageLoadingContent::AddNativeObserver(
   if (NS_WARN_IF(!aObserver)) {
     return;
   }
+
+  RefPtr<nsImageLoadingContent> kungFuDeathGrip(this);
+  nsCOMPtr<imgINotificationObserver> observerGrip(aObserver);
+  nsAutoScriptBlocker scriptBlocker;
 
   if (!mObserverList.mObserver) {
     // Don't touch the linking of the list!

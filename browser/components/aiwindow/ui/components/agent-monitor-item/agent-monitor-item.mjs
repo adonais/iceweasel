@@ -125,6 +125,9 @@ const WEEKDAYS = [
  *  - agent-monitor-item:edit-toggle  detail: { editing }
  *  - agent-monitor-item:submit       detail: { mode, id, monitorName, condition, watchUrls, schedule }
  *  - agent-monitor-item:draft-change detail: { draft: MonitorDraft|null }
+ *  - agent-monitor-item:resolve-titles detail: { urls } - Asks for the page
+ *    titles of form pages that have none. Whoever answers dispatches
+ *    agent-monitor-item:titles-resolved, detail: { titles }, on this card.
  *  - agent-monitor-item:cancel
  *  - agent-monitor-item:delete       detail: { id }
  *  - agent-monitor-item:pause        detail: { id, paused }
@@ -197,6 +200,7 @@ export class AgentMonitorItem extends MozLitElement {
     pendingUrl: { type: String, state: true },
     pendingUrlError: { type: Object, state: true },
     fieldErrors: { type: Object, state: true },
+    resolvedTitles: { type: Object, state: true },
   };
 
   constructor() {
@@ -218,11 +222,16 @@ export class AgentMonitorItem extends MozLitElement {
     this.pendingUrl = "";
     this.pendingUrlError = null;
     this.fieldErrors = { name: null, condition: null, pages: null };
+    this.resolvedTitles = {};
     this.#draftName = null;
+    this.addEventListener("agent-monitor-item:titles-resolved", event => {
+      this.resolvedTitles = { ...this.resolvedTitles, ...event.detail?.titles };
+    });
   }
 
   #draftName;
   #draftPersistTimer = null;
+  #requestedTitleUrls = new Set();
 
   willUpdate(changed) {
     if (changed.has("agent")) {
@@ -234,6 +243,34 @@ export class AgentMonitorItem extends MozLitElement {
     }
   }
 
+  updated(changed) {
+    if (
+      changed.has("pageUrls") ||
+      changed.has("mode") ||
+      changed.has("editing")
+    ) {
+      this.#requestMissingTitles();
+    }
+  }
+
+  #requestMissingTitles() {
+    if (this.mode !== "create" && !this.editing) {
+      return;
+    }
+    const urls = this.pageUrls.filter(
+      url => !this.#titleFor(url) && !this.#requestedTitleUrls.has(url)
+    );
+    if (!urls.length) {
+      return;
+    }
+    urls.forEach(url => this.#requestedTitleUrls.add(url));
+    this.#dispatch("agent-monitor-item:resolve-titles", { urls });
+  }
+
+  #titleFor(url) {
+    return this.resolvedTitles[url] || this.agent?.watchUrlTitles?.[url];
+  }
+
   disconnectedCallback() {
     if (this.#draftPersistTimer) {
       this.#flushDraft();
@@ -243,6 +280,7 @@ export class AgentMonitorItem extends MozLitElement {
 
   #seedFromAgent() {
     this.#draftName = null;
+    this.#requestedTitleUrls.clear();
 
     const { watchUrls, url, condition, expanded } = this.agent ?? {};
     let seededUrls = [];
@@ -375,6 +413,10 @@ export class AgentMonitorItem extends MozLitElement {
     return this.#draftName ?? this.agent?.monitorName ?? "";
   }
 
+  get #isAtMaxUrls() {
+    return this.pageUrls.length >= this.maxWatchUrls;
+  }
+
   focusName() {
     this.shadowRoot?.querySelector(".monitor-name-input")?.focus();
   }
@@ -397,8 +439,11 @@ export class AgentMonitorItem extends MozLitElement {
   // focused. Returns the keys that failed.
   #validateForm() {
     // A URL left in the input has to be committed before submit, so a valid one
-    // isn't silently dropped and an invalid one sets pendingUrlError.
-    if (this.pendingUrl.trim()) {
+    // isn't silently dropped and an invalid one sets pendingUrlError. Once the
+    // cap is reached there's no room for it, so it's ignored instead.
+    if (this.#isAtMaxUrls) {
+      this.pendingUrlError = null;
+    } else if (this.pendingUrl.trim()) {
       this.#addUrl();
     }
     const errors = { name: null, condition: null, pages: null };
@@ -534,7 +579,7 @@ export class AgentMonitorItem extends MozLitElement {
       this.pendingUrlError = { id: "ai-tasks-alert-error-duplicate-url" };
       return;
     }
-    if (this.pageUrls.length >= this.maxWatchUrls) {
+    if (this.#isAtMaxUrls) {
       this.pendingUrlError = {
         id: "ai-tasks-alert-error-max-urls",
         args: { maxUrls: this.maxWatchUrls },
@@ -546,6 +591,15 @@ export class AgentMonitorItem extends MozLitElement {
     this.pendingUrlError = null;
     this.#clearFieldError("pages");
     this.#persistDraft();
+  }
+
+  async #handleAddUrl() {
+    this.#addUrl();
+    if (this.#isAtMaxUrls) {
+      await this.updateComplete;
+      // Give a fallback focus to the pages field if the add button is removed
+      this.#focusField("pages");
+    }
   }
 
   #removeUrl(url) {
@@ -701,15 +755,17 @@ export class AgentMonitorItem extends MozLitElement {
               @input=${this.#onPendingUrlInput}
               @keydown=${this.#onPendingUrlKeydown}
             ></moz-input-url>
-            <moz-button
-              size="small"
-              type="icon ghost"
-              class="add-page-btn"
-              iconsrc="chrome://global/skin/icons/plus.svg"
-              data-l10n-id="ai-tasks-alert-add-url"
-              data-l10n-attrs="aria-label"
-              @click=${() => this.#addUrl()}
-            ></moz-button>
+            ${this.#isAtMaxUrls
+              ? nothing
+              : html`<moz-button
+                  size="small"
+                  type="icon ghost"
+                  class="add-page-btn"
+                  iconsrc="chrome://global/skin/icons/plus.svg"
+                  data-l10n-id="ai-tasks-alert-add-url"
+                  data-l10n-attrs="aria-label"
+                  @click=${() => this.#handleAddUrl()}
+                ></moz-button>`}
           </div>
           ${this.#renderFieldError(
             this.pendingUrlError ?? this.fieldErrors.pages
@@ -722,8 +778,7 @@ export class AgentMonitorItem extends MozLitElement {
                       type="context-chip"
                       size="small"
                       removable
-                      label=${this.agent?.watchUrlTitles?.[url] ??
-                      this.#displayUrl(url)}
+                      label=${this.#titleFor(url) || this.#displayUrl(url)}
                       .iconSrc=${`page-icon:${url}`}
                       title=${url}
                       @ai-website-chip:remove=${() => this.#removeUrl(url)}

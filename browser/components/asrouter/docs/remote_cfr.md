@@ -30,7 +30,7 @@ For release and ESR, for security reasons, you will also need to run the applica
 2. **Add Messaging System JSON**
    - On the left-hand side, under the **Workspace** bucket, click on the `cfr` collection.
    - Select `Create record` to open a text field.
-   - Paste valid [Messaging System JSON](https://firefox-source-docs.mozilla.org/toolkit/components/messaging-system/docs/index.html) into the text field.
+   - Paste valid {doc}`Messaging System JSON </toolkit/components/messaging-system/docs/index>` into the text field.
    - Ensure the following fields are accurate:
      - `id`: Unique identifier for the message.
      - `last_modified`: Current date and time in milliseconds.

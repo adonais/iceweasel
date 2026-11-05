@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 
 #include "AudioSegment.h"
@@ -3533,8 +3534,8 @@ already_AddRefed<MediaSink> MediaDecoderStateMachine::CreateAudioSink() {
 
   auto audioSinkCreator = [s = RefPtr<MediaDecoderStateMachine>(this), this]() {
     MOZ_ASSERT(OnTaskQueue());
-    UniquePtr<AudioSink> audioSink{new AudioSink(
-        mTaskQueue, mAudioQueue, Info().mAudio, mShouldResistFingerprinting)};
+    auto audioSink = std::make_unique<AudioSink>(
+        mTaskQueue, mAudioQueue, Info().mAudio, mShouldResistFingerprinting);
     mAudibleListener.DisconnectIfExists();
     mAudibleListener = audioSink->AudibleEvent().Connect(
         mTaskQueue, this, &MediaDecoderStateMachine::AudioAudibleChanged);
@@ -4264,7 +4265,7 @@ void MediaDecoderStateMachine::EnqueueFirstFrameLoadedEvent() {
   MediaDecoderEventVisibility visibility =
       firstFrameBeenLoaded ? MediaDecoderEventVisibility::Suppressed
                            : MediaDecoderEventVisibility::Observable;
-  mFirstFrameLoadedEvent.Notify(UniquePtr<MediaInfo>(new MediaInfo(Info())),
+  mFirstFrameLoadedEvent.Notify(std::make_unique<MediaInfo>(Info()),
                                 visibility);
 }
 

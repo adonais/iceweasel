@@ -212,7 +212,6 @@ set_config(
 def check_maintenance_service(mainteance_service, updater):
     if mainteance_service and not updater:
         die("--enable-updater is required to --enable-maintenance-service")
-    return mainteance_service
 
 
 # Update agent (currently Windows and macOS only)
@@ -252,7 +251,6 @@ def check_update_agent(update_agent, backgroundtasks, updater):
         die("--enable-backgroundtasks is required to --enable-update-agent")
     if update_agent and not updater:
         die("--enable-updater is required to --enable-update-agent")
-    return update_agent
 
 
 # Enable or disable the default browser agent, which monitors the user's default

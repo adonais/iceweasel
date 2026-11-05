@@ -37,7 +37,7 @@ class SVGRectElement final : public SVGRectElementBase {
   Maybe<Rect> GetGeometryBounds(
       const StrokeOptions& aStrokeOptions, const Matrix& aToBoundsSpace,
       const Matrix* aToNonScalingStrokeSpace = nullptr) override;
-  void GetAsSimplePath(SimplePath* aSimplePath) override;
+  void GetAsSimpleShape(SimpleShape* aShape) override;
   already_AddRefed<Path> BuildPath(PathBuilder* aBuilder = nullptr) override;
   bool IsClosedLoop() const override { return true; }
 

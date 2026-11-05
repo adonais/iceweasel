@@ -1217,10 +1217,16 @@ CVPixelBufferRef AppleVTEncoder::CreateCVPixelBuffer(Image* aSource) {
       return nullptr;
     }
 
+    const auto sizes = yuv->GetPlaneSizes();
+    if (!sizes) {
+      LOGE("Invalid YCbCr picture rect");
+      return nullptr;
+    }
+
     size_t numPlanes = NumberOfPlanes(pixelFormat);
 
-    auto ySize = yuv->YDataSize();
-    auto cbcrSize = yuv->CbCrDataSize();
+    const auto& ySize = sizes->mY;
+    const auto& cbcrSize = sizes->mCbCr;
     void* addresses[3] = {};
     size_t widths[3] = {};
     size_t heights[3] = {};

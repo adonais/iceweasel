@@ -3,10 +3,8 @@
 
 "use strict";
 
-// A window in fullscreen covers the screen, so the position we compute for a
-// window that a tab is detached into gets clamped into the corner of the
-// screen. Check that we leave the position of the new window alone in that
-// case, and keep passing the drop position the rest of the time.
+// Only macOS leaves the position of a window detached from fullscreen unset.
+// Other platforms need the drop position to select the destination screen.
 
 /**
  * Drags aTab out of the tab strip and returns the properties that would have
@@ -88,15 +86,20 @@ add_task(async function test_detach_from_fullscreen_window() {
 
   let props = await detachTabWithoutOpeningWindow(tab);
   ok(props, "The tab was detached");
-  ok(
-    !("screenX" in props) && !("screenY" in props),
-    "The new window picks its own position"
-  );
-  is(
-    props.suppressinitialfullscreen,
-    1,
-    "The new window doesn't enter fullscreen on its initial show"
-  );
+  if (AppConstants.platform == "macosx") {
+    ok(
+      !("screenX" in props) && !("screenY" in props),
+      "The new window picks its own position"
+    );
+    is(
+      props.suppressinitialfullscreen,
+      1,
+      "The new window doesn't enter fullscreen on its initial show"
+    );
+  } else {
+    ok(Number.isFinite(props.screenX), "The drop position was passed along");
+    ok(Number.isFinite(props.screenY), "The drop position was passed along");
+  }
 
   await toggleFullScreen();
   ok(!window.fullScreen, "The window left fullscreen");

@@ -17,7 +17,6 @@ support-files = [
 
 ["browser_thumbnails_bg_basic.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && verify-standalone",
   "os == 'win' && os_version == '11.26200' && verify-standalone",
 ]
 

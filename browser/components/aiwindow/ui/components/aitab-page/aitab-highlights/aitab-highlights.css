@@ -1,0 +1,97 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  display: block;
+
+  --aitab-highlights-gap: 48px;
+  --aitab-highlights-item-gap: 32px;
+  --aitab-highlights-item-spacing: 24px;
+  --aitab-highlights-padding-block: 80px;
+  --aitab-highlights-padding-inline: 118px;
+}
+
+.aitab-highlights {
+  display: flex;
+  flex-direction: column;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  gap: var(--aitab-highlights-gap);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding-block: var(--aitab-highlights-padding-block);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding-inline: var(--aitab-highlights-padding-inline);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-radius: var(--aitab-hero-radius);
+  border: var(--border-width) solid var(--border-color-transparent);
+  color: var(--text-color);
+
+  @media not (forced-colors) {
+    --background-color-box: light-dark(var(--color-violet-desaturated-0, var(--color-violet-0)), color-mix(in srgb, var(--color-violet-30) 12%, transparent));
+
+    background-color: var(--background-color-box);
+  }
+}
+
+.aitab-highlights-title {
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.aitab-highlights-list {
+  display: flex;
+  flex-direction: column;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  gap: var(--aitab-highlights-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aitab-highlight {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  gap: var(--aitab-highlights-item-gap);
+  align-items: start;
+
+  & + & {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    border-block-start: var(--border-width) solid var(--smartwindow-border-color);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    padding-block-start: var(--aitab-highlights-item-spacing);
+  }
+
+  @media (width > 900px) {
+    &:not(:only-child) {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    }
+  }
+}
+
+.aitab-highlight-statement,
+.aitab-highlight-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+}
+
+.aitab-highlight-evidence {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  gap: var(--aitab-highlights-item-spacing);
+}
+
+.aitab-highlight-title,
+.aitab-highlight-body {
+  overflow-wrap: anywhere;
+}
+
+.aitab-highlight-body {
+  line-height: 28px;
+}
+
+.aitab-highlight-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-small);
+}

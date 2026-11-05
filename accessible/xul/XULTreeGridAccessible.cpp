@@ -128,7 +128,7 @@ void XULTreeGridAccessible::ColDescription(uint32_t aColIdx,
   }
 }
 
-bool XULTreeGridAccessible::IsColSelected(uint32_t aColIdx) {
+bool XULTreeGridAccessible::IsColSelected(uint32_t /*aColIdx*/) {
   // If all the row has been selected, then all the columns are selected.
   // Because we can't select a column alone.
   return SelectedItemCount() == RowCount();
@@ -146,7 +146,8 @@ bool XULTreeGridAccessible::IsRowSelected(uint32_t aRowIdx) {
   return isSelected;
 }
 
-bool XULTreeGridAccessible::IsCellSelected(uint32_t aRowIdx, uint32_t aColIdx) {
+bool XULTreeGridAccessible::IsCellSelected(uint32_t aRowIdx,
+                                           uint32_t /*aColIdx*/) {
   return IsRowSelected(aRowIdx);
 }
 
@@ -269,7 +270,7 @@ ENameValueFlag XULTreeGridRowAccessible::DirectName(nsString& aName) const {
 }
 
 LocalAccessible* XULTreeGridRowAccessible::LocalChildAtPoint(
-    int32_t aX, int32_t aY, EWhichChildAtPoint aWhichChild) {
+    int32_t aX, int32_t aY, EWhichChildAtPoint /*aWhichChild*/) {
   nsIFrame* frame = GetFrame();
   if (!frame) return nullptr;
 
@@ -572,7 +573,8 @@ uint64_t XULTreeGridCellAccessible::NativeInteractiveState() const {
 
 int32_t XULTreeGridCellAccessible::IndexInParent() const { return ColIdx(); }
 
-Relation XULTreeGridCellAccessible::RelationByType(RelationType aType) const {
+Relation XULTreeGridCellAccessible::RelationByType(
+    RelationType /*aType*/) const {
   return Relation();
 }
 
@@ -635,7 +637,7 @@ LocalAccessible* XULTreeGridCellAccessible::GetSiblingAtOffset(
 }
 
 void XULTreeGridCellAccessible::DispatchClickEvent(
-    uint32_t aActionIndex) const {
+    uint32_t /*aActionIndex*/) const {
   if (IsDefunct()) return;
 
   RefPtr<dom::XULTreeElement> tree = mTree;

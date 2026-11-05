@@ -161,7 +161,7 @@ add_task(async function test_hide_tabs_and_sidebar_persists_in_new_window() {
   await SidebarTestUtils.showPanel(window, "viewCustomizeSidebar");
 
   // Collapse the launcher (simulates "Hide tabs and sidebar" being active)
-  SidebarController._state.launcherVisible = false;
+  SidebarController._state.userLauncherVisible = false;
 
   const newWin = lazy.BrowserWindowTracker.openWindow({
     openerWindow: window,

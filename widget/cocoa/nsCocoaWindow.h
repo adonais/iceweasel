@@ -487,7 +487,7 @@ class nsCocoaWindow final : public nsIWidget {
   NSWindow* GetCocoaWindow() { return [[mWindow retain] autorelease]; }
 
   void SetMenuBar(RefPtr<nsMenuBarX>&& aMenuBar);
-  nsMenuBarX* GetMenuBar();
+  already_AddRefed<nsMenuBarX> GetMenuBar();
 
   void SetInputContext(const InputContext& aContext,
                        const InputContextAction& aAction) override;

@@ -155,6 +155,16 @@ add_task(async function test_doorhanger_not_shown_when_autofill_untouched() {
   await removeAllRecords();
 
   await Services.fog.testFlushAllChildren();
+  if (RUST_CREDIT_CARD_STORE) {
+    // This store holds its key in NSS and makes no OS key store call, so the
+    // reads below are not recorded here. Nothing counts them yet.
+    is(
+      (Glean.creditcard.osKeystoreDecrypt.testGetValue() ?? []).length,
+      0,
+      "No OS key store read was recorded while this store served"
+    );
+    return;
+  }
   let testEvents = Glean.creditcard.osKeystoreDecrypt.testGetValue();
   is(testEvents.length, 2, "Events were recorded");
   is(testEvents[0].extra.trigger, "formautofill_cc", "Trigger was correct");

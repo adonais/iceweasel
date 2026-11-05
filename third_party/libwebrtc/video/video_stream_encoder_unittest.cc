@@ -84,7 +84,6 @@
 #include "call/adaptation/test/fake_adaptation_constraint.h"
 #include "call/adaptation/test/fake_resource.h"
 #include "call/adaptation/video_source_restrictions.h"
-#include "call/adaptation/video_stream_adapter.h"
 #include "call/video_send_stream.h"
 #include "common_video/h264/h264_common.h"
 #include "media/engine/webrtc_video_engine.h"
@@ -285,16 +284,14 @@ class CpuOveruseDetectorProxy : public OveruseFrameDetector {
   CpuOveruseDetectorProxy(const Environment& env,
                           CpuOveruseMetricsObserver* metrics_observer)
       : OveruseFrameDetector(env, metrics_observer),
-        last_target_framerate_fps_(-1),
-        framerate_updated_event_(true /* manual_reset */,
-                                 false /* initially_signaled */) {}
+        last_target_framerate_fps_(-1) {}
   ~CpuOveruseDetectorProxy() override {}
 
   void OnTargetFramerateUpdated(int framerate_fps) override {
     MutexLock lock(&lock_);
     last_target_framerate_fps_ = framerate_fps;
     OveruseFrameDetector::OnTargetFramerateUpdated(framerate_fps);
-    framerate_updated_event_.Set();
+    framerate_updated_ = true;
   }
 
   int GetLastTargetFramerate() {
@@ -304,38 +301,19 @@ class CpuOveruseDetectorProxy : public OveruseFrameDetector {
 
   CpuOveruseOptions GetOptions() { return options_; }
 
-  Event* framerate_updated_event() { return &framerate_updated_event_; }
+  // Returns whether OnTargetFramerateUpdated() has been called since the
+  // previous call to this method, and clears the flag.
+  bool ConsumeFramerateUpdated() {
+    MutexLock lock(&lock_);
+    bool framerate_updated = framerate_updated_;
+    framerate_updated_ = false;
+    return framerate_updated;
+  }
 
  private:
   Mutex lock_;
   int last_target_framerate_fps_ RTC_GUARDED_BY(lock_);
-  Event framerate_updated_event_;
-};
-
-class FakeVideoSourceRestrictionsListener
-    : public VideoSourceRestrictionsListener {
- public:
-  FakeVideoSourceRestrictionsListener()
-      : was_restrictions_updated_(false), restrictions_updated_event_() {}
-  ~FakeVideoSourceRestrictionsListener() override {
-    RTC_DCHECK(was_restrictions_updated_);
-  }
-
-  Event* restrictions_updated_event() { return &restrictions_updated_event_; }
-
-  // VideoSourceRestrictionsListener implementation.
-  void OnVideoSourceRestrictionsUpdated(
-      VideoSourceRestrictions restrictions,
-      const VideoAdaptationCounters& adaptation_counters,
-      scoped_refptr<Resource> reason,
-      const VideoSourceRestrictions& unfiltered_restrictions) override {
-    was_restrictions_updated_ = true;
-    restrictions_updated_event_.Set();
-  }
-
- private:
-  bool was_restrictions_updated_;
-  Event restrictions_updated_event_;
+  bool framerate_updated_ RTC_GUARDED_BY(lock_) = false;
 };
 
 auto WantsFps(Matcher<int> fps_matcher) {
@@ -446,6 +424,15 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
       TimeController* time_controller,
       std::unique_ptr<FrameCadenceAdapterInterface> cadence_adapter,
       std::unique_ptr<TaskQueueBase, TaskQueueDeleter> encoder_queue,
+      // Points at `encoder_queue`, which is owned by VideoStreamEncoder. Passed
+      // separately because it has been moved by the time the members below are
+      // initialized.
+      TaskQueueBase* encoder_queue_ptr,
+      // Owned by the caller for the same reason: the base class constructor
+      // runs before the members of this class are initialized.
+      scoped_refptr<FakeResource> fake_cpu_resource,
+      scoped_refptr<FakeResource> fake_quality_resource,
+      FakeAdaptationConstraint* fake_adaptation_constraint,
       SendStatisticsProxy* stats_proxy,
       VideoStreamEncoderSettings settings,
       VideoStreamEncoder::BitrateAllocationCallbackType
@@ -464,34 +451,31 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
             std::move(encoder_queue),
             allocation_callback_type,
             nullptr,  // encoder_selector
-            std::move(encoder_switch_request_callback)),
+            std::move(encoder_switch_request_callback),
+            AdaptationInjectionsForTest{
+                .resources = {{fake_quality_resource,
+                               VideoAdaptationReason::kQuality},
+                              {fake_cpu_resource, VideoAdaptationReason::kCpu}},
+                .constraints = {fake_adaptation_constraint}}),
         time_controller_(time_controller),
-        fake_cpu_resource_(FakeResource::Create("FakeResource[CPU]")),
-        fake_quality_resource_(FakeResource::Create("FakeResource[QP]")),
-        fake_adaptation_constraint_("FakeAdaptationConstraint") {
-    InjectAdaptationResource(fake_quality_resource_,
-                             VideoAdaptationReason::kQuality);
-    InjectAdaptationResource(fake_cpu_resource_, VideoAdaptationReason::kCpu);
-    InjectAdaptationConstraint(&fake_adaptation_constraint_);
-  }
+        encoder_queue_ptr_(encoder_queue_ptr),
+        fake_cpu_resource_(std::move(fake_cpu_resource)),
+        fake_quality_resource_(std::move(fake_quality_resource)) {}
 
   void SetSourceAndWaitForRestrictionsUpdated(
       VideoSourceInterface<VideoFrame>* source,
       const DegradationPreference& degradation_preference) {
-    FakeVideoSourceRestrictionsListener listener;
-    AddRestrictionsListenerForTesting(&listener);
     SetSource(source, degradation_preference);
-    listener.restrictions_updated_event()->Wait(TimeDelta::Seconds(5));
-    RemoveRestrictionsListenerForTesting(&listener);
+    // Restrictions are updated on the encoder queue.
+    WaitUntilTaskQueueIsIdle();
   }
 
   void SetSourceAndWaitForFramerateUpdated(
       VideoSourceInterface<VideoFrame>* source,
       const DegradationPreference& degradation_preference) {
-    overuse_detector_proxy_->framerate_updated_event()->Reset();
     SetSource(source, degradation_preference);
-    overuse_detector_proxy_->framerate_updated_event()->Wait(
-        TimeDelta::Seconds(5));
+    // The target framerate is updated on the encoder queue.
+    WaitUntilTaskQueueIsIdle();
   }
 
   void OnBitrateUpdatedAndWaitForManagedResources(DataRate target_bitrate,
@@ -513,50 +497,39 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
 
   // Triggers resource usage measurements on the fake CPU resource.
   void TriggerCpuOveruse() {
-    Event event;
-    encoder_queue()->PostTask([this, &event] {
+    encoder_queue_ptr_->PostTask([this] {
       fake_cpu_resource_->SetUsageState(ResourceUsageState::kOveruse);
-      event.Set();
     });
-    ASSERT_TRUE(event.Wait(TimeDelta::Seconds(5)));
-    time_controller_->AdvanceTime(TimeDelta::Zero());
+    WaitUntilTaskQueueIsIdle();
   }
 
   void TriggerCpuUnderuse() {
-    Event event;
-    encoder_queue()->PostTask([this, &event] {
+    encoder_queue_ptr_->PostTask([this] {
       fake_cpu_resource_->SetUsageState(ResourceUsageState::kUnderuse);
-      event.Set();
     });
-    ASSERT_TRUE(event.Wait(TimeDelta::Seconds(5)));
-    time_controller_->AdvanceTime(TimeDelta::Zero());
+    WaitUntilTaskQueueIsIdle();
   }
 
   // Triggers resource usage measurements on the fake quality resource.
   void TriggerQualityLow() {
-    Event event;
-    encoder_queue()->PostTask([this, &event] {
+    encoder_queue_ptr_->PostTask([this] {
       fake_quality_resource_->SetUsageState(ResourceUsageState::kOveruse);
-      event.Set();
     });
-    ASSERT_TRUE(event.Wait(TimeDelta::Seconds(5)));
-    time_controller_->AdvanceTime(TimeDelta::Zero());
+    WaitUntilTaskQueueIsIdle();
   }
+
   void TriggerQualityHigh() {
-    Event event;
-    encoder_queue()->PostTask([this, &event] {
+    encoder_queue_ptr_->PostTask([this] {
       fake_quality_resource_->SetUsageState(ResourceUsageState::kUnderuse);
-      event.Set();
     });
-    ASSERT_TRUE(event.Wait(TimeDelta::Seconds(5)));
-    time_controller_->AdvanceTime(TimeDelta::Zero());
+    WaitUntilTaskQueueIsIdle();
   }
 
   TimeController* const time_controller_;
+  TaskQueueBase* const encoder_queue_ptr_;
   CpuOveruseDetectorProxy* overuse_detector_proxy_;
   scoped_refptr<FakeResource> fake_cpu_resource_;
   scoped_refptr<FakeResource> fake_quality_resource_;
-  FakeAdaptationConstraint fake_adaptation_constraint_;
 };
 
 // Simulates simulcast behavior and makes highest stream resolutions divisible
@@ -962,9 +935,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
     VideoStreamEncoderSettings settings = video_send_config_.encoder_settings;
     video_stream_encoder_ = std::make_unique<VideoStreamEncoderUnderTest>(
         env_, &time_controller_, std::move(cadence_adapter),
-        std::move(encoder_queue), stats_proxy_.get(), std::move(settings),
-        allocation_callback_type, num_cores,
-        std::move(encoder_switch_request_callback_));
+        std::move(encoder_queue), encoder_queue_ptr,
+        FakeResource::Create("FakeResource[CPU]"),
+        FakeResource::Create("FakeResource[QP]"), &fake_adaptation_constraint_,
+        stats_proxy_.get(), std::move(settings), allocation_callback_type,
+        num_cores, std::move(encoder_switch_request_callback_));
     video_stream_encoder_->SetSink(&sink_, /*rotation_applied=*/false);
     video_stream_encoder_->SetSource(&video_source_,
                                      DegradationPreference::MAINTAIN_FRAMERATE);
@@ -1144,6 +1119,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
       info.requested_resolution_alignment = requested_resolution_alignment_;
       info.apply_alignment_to_all_simulcast_layers =
           apply_alignment_to_all_simulcast_layers_;
+      info.max_pixels_per_frame = max_pixels_per_frame_;
       info.preferred_pixel_formats = preferred_pixel_formats_;
       info.enable_cpu_overuse_detection = enable_cpu_overuse_detection_;
       if (is_qp_trusted_.has_value()) {
@@ -1185,6 +1161,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
     void SetApplyAlignmentToAllSimulcastLayers(bool b) {
       MutexLock lock(&local_mutex_);
       apply_alignment_to_all_simulcast_layers_ = b;
+    }
+
+    void SetMaxPixelsPerFrame(std::optional<size_t> max_pixels_per_frame) {
+      MutexLock lock(&local_mutex_);
+      max_pixels_per_frame_ = max_pixels_per_frame;
     }
 
     void SetIsHardwareAccelerated(bool is_hardware_accelerated) {
@@ -1443,6 +1424,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     uint32_t requested_resolution_alignment_ RTC_GUARDED_BY(local_mutex_) = 1;
     bool apply_alignment_to_all_simulcast_layers_ RTC_GUARDED_BY(local_mutex_) =
         false;
+    std::optional<size_t> max_pixels_per_frame_ RTC_GUARDED_BY(local_mutex_);
     bool is_hardware_accelerated_ RTC_GUARDED_BY(local_mutex_) = false;
     bool enable_cpu_overuse_detection_ RTC_GUARDED_BY(local_mutex_) = true;
     scoped_refptr<EncodedImageBufferInterface> encoded_image_data_
@@ -1747,6 +1729,10 @@ class VideoStreamEncoderTest : public ::testing::Test {
   std::unique_ptr<MockableSendStatisticsProxy> stats_proxy_;
   TestSink sink_;
   AdaptingFrameForwarder video_source_{&time_controller_};
+  // Declared before `video_stream_encoder_` so that it outlives the encoder it
+  // is registered with.
+  FakeAdaptationConstraint fake_adaptation_constraint_{
+      "FakeAdaptationConstraint"};
   std::unique_ptr<VideoStreamEncoderUnderTest> video_stream_encoder_;
   EncoderSwitchRequestCallback encoder_switch_request_callback_;
 };
@@ -3086,6 +3072,52 @@ TEST_F(VideoStreamEncoderTest, SinkWantsRotationApplied) {
 TEST_F(VideoStreamEncoderTest, SinkWantsDefaultUnlimitedBeforeFirstFrame) {
   ASSERT_TRUE(video_source_.has_sinks());
   EXPECT_THAT(video_source_.sink_wants(), UnlimitedSinkWants());
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, EncoderMaxPixelsPerFrameAppliedToSinkWants) {
+  constexpr int kMaxPixels = 640 * 360;
+  fake_encoder_.SetMaxPixelsPerFrame(kMaxPixels);
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      kTargetBitrate, kTargetBitrate, 0, 0, 0);
+
+  // The first frame configures the encoder and pushes its limit to the source.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, 1280, 720));
+  WaitForEncodedFrame(1);
+  EXPECT_EQ(video_source_.sink_wants().max_pixel_count, kMaxPixels);
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, EncoderMaxPixelsPerFrameDownscalesSource) {
+  constexpr int kMaxPixels = 640 * 360;
+  fake_encoder_.SetMaxPixelsPerFrame(kMaxPixels);
+  video_source_.set_adaptation_enabled(true);
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      kTargetBitrate, kTargetBitrate, 0, 0, 0);
+
+  int64_t timestamp_ms = kFrameIntervalMs;
+  video_source_.IncomingCapturedFrame(CreateFrame(timestamp_ms, 1280, 720));
+  WaitForEncodedFrame(timestamp_ms);
+
+  // The next frame is downscaled by the source to fit the encoder's limit.
+  timestamp_ms += kFrameIntervalMs;
+  video_source_.IncomingCapturedFrame(CreateFrame(timestamp_ms, 1280, 720));
+  WaitForEncodedFrame(timestamp_ms);
+  EXPECT_LE(
+      fake_encoder_.GetLastInputWidth() * fake_encoder_.GetLastInputHeight(),
+      kMaxPixels);
+  EXPECT_LT(fake_encoder_.GetLastInputWidth(), 1280);
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest,
+       EncoderWithoutMaxPixelsPerFrameLeavesSinkWantsUnlimited) {
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      kTargetBitrate, kTargetBitrate, 0, 0, 0);
+  video_source_.IncomingCapturedFrame(CreateFrame(1, 1280, 720));
+  WaitForEncodedFrame(1);
+  EXPECT_EQ(video_source_.sink_wants().max_pixel_count,
+            std::numeric_limits<int>::max());
   video_stream_encoder_->Stop();
 }
 
@@ -6125,15 +6157,13 @@ TEST_F(VideoStreamEncoderTest,
                                           kMaxPayloadLength);
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
-  video_stream_encoder_->overuse_detector_proxy_->framerate_updated_event()
-      ->Reset();
+  video_stream_encoder_->overuse_detector_proxy_->ConsumeFramerateUpdated();
   video_source_.IncomingCapturedFrame(
       CreateFrame(2, kFrameWidth, kFrameHeight));
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
-  EXPECT_FALSE(
-      video_stream_encoder_->overuse_detector_proxy_->framerate_updated_event()
-          ->Wait(TimeDelta::Millis(10)));
+  EXPECT_FALSE(video_stream_encoder_->overuse_detector_proxy_
+                   ->ConsumeFramerateUpdated());
 
   video_stream_encoder_->Stop();
 }
@@ -6160,15 +6190,13 @@ TEST_F(VideoStreamEncoderTest,
                                           kMaxPayloadLength);
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
-  video_stream_encoder_->overuse_detector_proxy_->framerate_updated_event()
-      ->Reset();
+  video_stream_encoder_->overuse_detector_proxy_->ConsumeFramerateUpdated();
   video_source_.IncomingCapturedFrame(
       CreateFrame(2, kFrameWidth, kFrameHeight));
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
-  EXPECT_FALSE(
-      video_stream_encoder_->overuse_detector_proxy_->framerate_updated_event()
-          ->Wait(TimeDelta::Millis(10)));
+  EXPECT_FALSE(video_stream_encoder_->overuse_detector_proxy_
+                   ->ConsumeFramerateUpdated());
 
   fake_encoder_.SetEnableCpuOveruseDetection(true);
   video_encoder_config = video_encoder_config_.Copy();
@@ -6176,15 +6204,13 @@ TEST_F(VideoStreamEncoderTest,
                                           kMaxPayloadLength);
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
-  video_stream_encoder_->overuse_detector_proxy_->framerate_updated_event()
-      ->Reset();
+  video_stream_encoder_->overuse_detector_proxy_->ConsumeFramerateUpdated();
   video_source_.IncomingCapturedFrame(
       CreateFrame(3, kFrameWidth, kFrameHeight));
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
-  EXPECT_TRUE(
-      video_stream_encoder_->overuse_detector_proxy_->framerate_updated_event()
-          ->Wait(TimeDelta::Millis(10)));
+  EXPECT_TRUE(video_stream_encoder_->overuse_detector_proxy_
+                  ->ConsumeFramerateUpdated());
 
   video_stream_encoder_->Stop();
 }
@@ -9048,6 +9074,8 @@ TEST_F(VideoStreamEncoderTest, NoPreferenceDefaultFallbackToVP8Enabled) {
 
   VideoFrame frame = CreateFrame(1, kDontCare, kDontCare);
   video_source_.IncomingCapturedFrame(frame);
+
+  AdvanceTime(TimeDelta::Zero());
 
   video_stream_encoder_->Stop();
   // The encoders produced by the VideoEncoderProxyFactory have a pointer back

@@ -16,7 +16,6 @@
 #include "nsIGIOService.h"
 #include "nsIStringBundle.h"
 #include "nsServiceManagerUtils.h"
-#include "nsIImageLoadingContent.h"
 #include "nsIINIParser.h"
 #include "imgIRequest.h"
 #include "imgIContainer.h"
@@ -24,9 +23,7 @@
 #include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/WidgetUtilsGtk.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/dom/Promise.h"
-#include "nsImageToPixbuf.h"
 #include "nsXULAppAPI.h"
 
 #ifdef MOZ_ENABLE_DBUS
@@ -169,7 +166,7 @@ bool nsGNOMEShellService::CheckHandlerMatchesAppName(
 }
 
 NS_IMETHODIMP
-nsGNOMEShellService::IsDefaultBrowser(bool aForAllTypes,
+nsGNOMEShellService::IsDefaultBrowser(bool /*aForAllTypes*/,
                                       bool* aIsDefaultBrowser) {
   *aIsDefaultBrowser = false;
 
@@ -340,38 +337,9 @@ nsGNOMEShellService::GetCanSetDesktopBackground(bool* aResult) {
   return NS_OK;
 }
 
-static nsresult WriteImage(const nsCString& aPath, imgIContainer* aImage) {
-  RefPtr<GdkPixbuf> pixbuf = nsImageToPixbuf::ImageToPixbuf(aImage);
-  if (!pixbuf) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  gboolean res = gdk_pixbuf_save(pixbuf, aPath.get(), "png", nullptr, nullptr);
-  return res ? NS_OK : NS_ERROR_FAILURE;
-}
-
 NS_IMETHODIMP
-nsGNOMEShellService::SetDesktopBackground(dom::Element* aElement,
-                                          int32_t aPosition,
-                                          const nsACString& aImageName) {
-  nsCOMPtr<nsIImageLoadingContent> imageContent = do_QueryInterface(aElement);
-  if (!imageContent) {
-    return NS_ERROR_FAILURE;
-  }
-
-  // get the image container
-  nsCOMPtr<imgIRequest> request;
-  imageContent->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
-                           getter_AddRefs(request));
-  if (!request) {
-    return NS_ERROR_FAILURE;
-  }
-  nsCOMPtr<imgIContainer> container;
-  request->GetImage(getter_AddRefs(container));
-  if (!container) {
-    return NS_ERROR_FAILURE;
-  }
-
+nsGNOMEShellService::SetDesktopBackgroundFile(nsIFile* aFile,
+                                              int32_t aPosition) {
   // Set desktop wallpaper filling style
   nsAutoCString options;
   if (aPosition == BACKGROUND_TILE)
@@ -387,34 +355,13 @@ nsGNOMEShellService::SetDesktopBackground(dom::Element* aElement,
   else
     options.AssignLiteral("centered");
 
-  // Write the background file to the home directory.
-  nsAutoCString filePath(PR_GetEnv("HOME"));
-  nsAutoString brandName;
-
-  // get the product brand name from localized strings
-  if (nsCOMPtr<nsIStringBundleService> bundleService =
-          components::StringBundle::Service()) {
-    nsCOMPtr<nsIStringBundle> brandBundle;
-    bundleService->CreateBundle(SHELL_BRAND_PROPERTIES_URI,
-                                getter_AddRefs(brandBundle));
-    if (bundleService) {
-      brandBundle->GetStringFromName("brandShortName", brandName);
-    }
-  }
-
-  // build the file name
-  filePath.Append('/');
-  filePath.Append(NS_ConvertUTF16toUTF8(brandName));
-  filePath.AppendLiteral("_wallpaper.png");
-
-  // write the image to a file in the home dir
-  MOZ_TRY(WriteImage(filePath, container));
-
   widget::GSettings::Collection bgSettings(kDesktopBGSchema);
   if (!bgSettings) {
     return NS_ERROR_FAILURE;
   }
 
+  nsAutoCString filePath;
+  MOZ_TRY(aFile->GetNativePath(filePath));
   GUniquePtr<gchar> fileURI(
       g_filename_to_uri(filePath.get(), nullptr, nullptr));
   if (!fileURI) {

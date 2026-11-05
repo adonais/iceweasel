@@ -180,7 +180,7 @@ enum ConvolveMatrixEdgeMode {
 enum ConvolveMatrixInputs { IN_CONVOLVE_MATRIX_IN = 0 };
 
 enum DisplacementMapAtts {
-  ATT_DISPLACEMENT_MAP_SCALE = 0,  // Float
+  ATT_DISPLACEMENT_MAP_SCALE = 0,  // Size
   ATT_DISPLACEMENT_MAP_X_CHANNEL,  // ColorChannel
   ATT_DISPLACEMENT_MAP_Y_CHANNEL   // ColorChannel
 };

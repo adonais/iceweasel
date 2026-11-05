@@ -21,10 +21,7 @@ class WMFDecoderModule : public PlatformDecoderModule {
   // Initializes the module, loads required dynamic libraries, etc.
   nsresult Startup() override;
 
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-      const CreateDecoderParams& aParams) override;
-
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+  RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override;
 
   bool SupportsColorDepth(
@@ -52,6 +49,11 @@ class WMFDecoderModule : public PlatformDecoderModule {
  private:
   WMFDecoderModule() = default;
   virtual ~WMFDecoderModule() = default;
+
+  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
+      const CreateDecoderParams& aParams, MediaResult* aError);
+  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+      const CreateDecoderParams& aParams);
 
   static inline StaticMutex sMutex;
   static inline bool sSupportedTypesInitialized MOZ_GUARDED_BY(sMutex) = false;

@@ -6,7 +6,8 @@
 
 Metrics and pings that exist in Nightly but not yet in an older Firefox can't be
 compiled into the build that an XPI train-hops onto, so they are registered at
-runtime from this payload. When generated, it is the diff of New Tab's local
+runtime from this payload. The same goes for existing events that gained
+extra_keys. When generated, it is the diff of New Tab's local
 metrics.yaml and pings.yaml against the definitions as of the Firefox version the
 payload is named for.
 
@@ -72,12 +73,26 @@ def local_major_version():
     return int(version.strip().split(".")[0])
 
 
+def has_new_extra_keys(main_metric, compare_metric):
+    """Whether an event metric gained extra_keys that compare_metric lacks.
+
+    glean-core drops the whole event when it sees an unknown extra key, so
+    these events have to be re-registered at runtime with the full key list.
+    """
+    if main_metric.get("type") != "event" or compare_metric.get("type") != "event":
+        return False
+    main_keys = set(main_metric.get("extra_keys") or {})
+    compare_keys = set(compare_metric.get("extra_keys") or {})
+    return bool(main_keys - compare_keys)
+
+
 def get_new_metrics(main_yaml, compare_yaml):
     """Return categories/metrics present in main_yaml but not compare_yaml.
 
     main_yaml is New Tab's local (Nightly) definitions; compare_yaml is the
     target channel's (Beta/Release). The result is what needs runtime
-    registration on that channel.
+    registration on that channel. Existing event metrics that gained
+    extra_keys are included too (see has_new_extra_keys).
     """
     new_metrics_yaml = {}
     for category in main_yaml:
@@ -89,7 +104,9 @@ def get_new_metrics(main_yaml, compare_yaml):
             continue
         new_metrics = {}
         for metric in main_yaml[category]:
-            if metric not in compare_yaml[category]:
+            if metric not in compare_yaml[category] or has_new_extra_keys(
+                main_yaml[category][metric], compare_yaml[category][metric]
+            ):
                 new_metrics[metric] = main_yaml[category][metric]
         if new_metrics:
             new_metrics_yaml[category] = new_metrics

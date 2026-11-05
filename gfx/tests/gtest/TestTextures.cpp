@@ -182,8 +182,10 @@ void TestTextureClientYCbCr(TextureClient* client, PlanarYCbCrData& ycbcrData) {
   auto bufferDesc = descriptor.get_SurfaceDescriptorBuffer();
   ASSERT_EQ(bufferDesc.desc().type(), BufferDescriptor::TYCbCrDescriptor);
   auto ycbcrDesc = bufferDesc.desc().get_YCbCrDescriptor();
-  ASSERT_EQ(ycbcrDesc.ySize(), ycbcrData.YDataSize());
-  ASSERT_EQ(ycbcrDesc.cbCrSize(), ycbcrData.CbCrDataSize());
+  const auto sizes = ycbcrData.GetPlaneSizes();
+  ASSERT_TRUE(sizes);
+  ASSERT_EQ(ycbcrDesc.ySize(), sizes->mY);
+  ASSERT_EQ(ycbcrDesc.cbCrSize(), sizes->mCbCr);
   ASSERT_EQ(ycbcrDesc.stereoMode(), ycbcrData.mStereoMode);
 
   // host deserialization
@@ -245,9 +247,14 @@ void TestYCbCrDescriptorTransferFunction(
   clientData.mCbSkip = 0;
   clientData.mCrSkip = 0;
 
+  const auto clientSizes = clientData.GetPlaneSizes();
+  ASSERT_TRUE(clientSizes);
+  ASSERT_EQ(clientSizes->mY, ySurface->GetSize());
+  ASSERT_EQ(clientSizes->mCbCr, cbSurface->GetSize());
+
   RefPtr<TextureClient> client = TextureClient::CreateForYCbCr(
-      aImageBridge, clientData.mPictureRect, clientData.YDataSize(),
-      clientData.mYStride, clientData.CbCrDataSize(), clientData.mCbCrStride,
+      aImageBridge, clientData.mPictureRect, ySurface->GetSize(),
+      clientData.mYStride, cbSurface->GetSize(), clientData.mCbCrStride,
       StereoMode::MONO, ColorDepth::COLOR_8, YUVColorSpace::BT2020,
       ColorRange::LIMITED, aTF, clientData.mChromaSubsampling,
       TextureFlags::DEALLOCATE_CLIENT, aHDRMetadata);
@@ -341,6 +348,11 @@ TEST(Layers, TextureYCbCrSerialization)
   clientData.mCrSkip = 0;
   clientData.mCrSkip = 0;
 
+  const auto clientSizes = clientData.GetPlaneSizes();
+  ASSERT_TRUE(clientSizes);
+  ASSERT_EQ(clientSizes->mY, ySurface->GetSize());
+  ASSERT_EQ(clientSizes->mCbCr, cbSurface->GetSize());
+
   gfxPlatform::GetPlatform();
   uint32_t namespaceId = 1;
   ImageBridgeChild::InitSameProcess(namespaceId);
@@ -364,8 +376,8 @@ TEST(Layers, TextureYCbCrSerialization)
   }
 
   RefPtr<TextureClient> client = TextureClient::CreateForYCbCr(
-      imageBridge, clientData.mPictureRect, clientData.YDataSize(),
-      clientData.mYStride, clientData.CbCrDataSize(), clientData.mCbCrStride,
+      imageBridge, clientData.mPictureRect, ySurface->GetSize(),
+      clientData.mYStride, cbSurface->GetSize(), clientData.mCbCrStride,
       StereoMode::MONO, ColorDepth::COLOR_8, YUVColorSpace::BT601,
       ColorRange::LIMITED, TransferFunction::BT709,
       clientData.mChromaSubsampling, TextureFlags::DEALLOCATE_CLIENT);

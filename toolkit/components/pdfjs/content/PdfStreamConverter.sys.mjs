@@ -827,6 +827,11 @@ class ChromeActions {
   }
 
   openAboutPdfFeatures() {
+    const doc = this.domWindow.document;
+    if (!doc.hasValidTransientUserGestureActivation) {
+      return;
+    }
+    doc.consumeTransientUserGestureActivation();
     const actor = getActor(this.domWindow);
     actor?.sendAsyncMessage("PDFJS:Parent:openAboutPdfFeatures");
   }

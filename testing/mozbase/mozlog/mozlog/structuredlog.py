@@ -638,6 +638,7 @@ class StructuredLogger:
         List(Any, "crashing_thread_stack", default=None, optional=True),
         Unicode("subsuite", default=None, optional=True),
         Boolean("quiet", default=False, optional=True),
+        Unicode("group", default=None, optional=True),
     )
     def crash(self, data):
         if data["stackwalk_errors"] is None:

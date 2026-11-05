@@ -5,9 +5,12 @@
 #ifndef FFmpegVideoFramePool_h_
 #define FFmpegVideoFramePool_h_
 
+#include <va/va.h>
+
 #include "FFmpegLibWrapper.h"
 #include "FFmpegLibs.h"
 #include "FFmpegLog.h"
+#include "libavutil/hwcontext_drm.h"
 #include "mozilla/layers/DMABUFSurfaceImage.h"
 #include "mozilla/widget/DMABufDevice.h"
 #include "mozilla/widget/DMABufSurface.h"
@@ -148,8 +151,6 @@ class VideoFramePool<LIBAV_VER> {
       AVDRMFrameDescriptor& aDesc, int aWidth, int aHeight,
       AVCodecContext* aAVCodecContext, AVFrame* aAVFrame,
       const FFmpegLibWrapper* aLib);
-  RefPtr<VideoFrameSurface<LIBAV_VER>> GetVideoFrameSurface(
-      const layers::PlanarYCbCrData& aData, AVCodecContext* aAVCodecContext);
 
   void ReleaseUnusedVAAPIFrames();
   void FlushFFmpegFrames();

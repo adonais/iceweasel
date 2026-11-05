@@ -13,16 +13,26 @@
 }
 
 .PanelUI-remotetabs-notabsforclient-label {
+  /* Aligns with macOS toolbarbutton labels; no exact space token. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-start: 19px;
+  /* macOS panel label size; no design token equivalent. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 13px;
+  /* Rem space tokens don't preserve 4px under macOS 11px root. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: 4px 0;
 }
 
 #PanelUI-remotetabs[mainview] .PanelUI-remotetabs-notabsforclient-label {
+  /* Aligns with macOS mainview toolbarbutton labels; no exact space token. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-start: 23px;
 }
 
 #PanelUI-remotetabs-tabslist {
+  /* Rem space tokens don't preserve 4px under macOS 11px root. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-bottom: 4px;
 }
 
@@ -31,6 +41,8 @@
   border-radius: var(--border-radius-xsmall);
   color: var(--button-text-color);
   background-color: var(--button-background-color);
+  /* Compact macOS panel button padding; rem space tokens don't preserve these px values. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: 2px 6px;
 
   &:not([disabled]):hover {

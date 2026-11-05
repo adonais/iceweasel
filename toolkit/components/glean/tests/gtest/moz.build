@@ -11,3 +11,7 @@ if not CONFIG["MOZ_GLEAN_ANDROID"]:
     TEST_HARNESS_FILES.gtest += ["../pytest/jogfile_output"]
 
 FINAL_LIBRARY = "xul-gtest"
+
+SOURCE_HEADERS += [
+    "FOGFixture.h",
+]

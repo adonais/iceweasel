@@ -5,6 +5,8 @@
 #ifndef mozilla_image_decoders_GIF2_H
 #define mozilla_image_decoders_GIF2_H
 
+#include <cstdint>
+
 #define MAX_LZW_BITS 12
 #define MAX_BITS 4097  // 2^MAX_LZW_BITS+1
 #define MAX_COLORS 256

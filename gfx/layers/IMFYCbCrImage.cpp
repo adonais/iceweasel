@@ -40,6 +40,11 @@ bool IMFYCbCrImage::CopyDataToTexture(const Data& aData, ID3D11Device* aDevice,
                                       DXGIYCbCrTextureData* aTextureData) {
   MOZ_ASSERT(aTextureData);
 
+  const auto sizes = aData.GetPlaneSizes();
+  if (!sizes) {
+    return false;
+  }
+
   if (!gfx::DeviceManagerDx::Get()->CanInitializeKeyedMutexTextures()) {
     return false;
   }
@@ -58,12 +63,12 @@ bool IMFYCbCrImage::CopyDataToTexture(const Data& aData, ID3D11Device* aDevice,
   D3D11_BOX box;
   box.front = box.top = box.left = 0;
   box.back = 1;
-  box.right = aData.YDataSize().width;
-  box.bottom = aData.YDataSize().height;
+  box.right = sizes->mY.width;
+  box.bottom = sizes->mY.height;
   ctx->UpdateSubresource(textureY, 0, &box, aData.mYChannel, aData.mYStride, 0);
 
-  box.right = aData.CbCrDataSize().width;
-  box.bottom = aData.CbCrDataSize().height;
+  box.right = sizes->mCbCr.width;
+  box.bottom = sizes->mCbCr.height;
   ctx->UpdateSubresource(textureCb, 0, &box, aData.mCbChannel,
                          aData.mCbCrStride, 0);
   ctx->UpdateSubresource(textureCr, 0, &box, aData.mCrChannel,

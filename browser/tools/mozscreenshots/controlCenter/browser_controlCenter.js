@@ -16,6 +16,28 @@ add_task(async function capture() {
   if (!shouldCapture()) {
     return;
   }
+  registerCleanupFunction(async () => {
+    // The ControlCenter configurations set every site permission for
+    // test1.example.com, and unblock tracking.example.org.
+    let principal =
+      Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+        "https://test1.example.com"
+      );
+    await new Promise(resolve =>
+      Services.clearData.deleteDataFromPrincipal(
+        principal,
+        false,
+        Ci.nsIClearDataService.CLEAR_PERMISSIONS,
+        resolve
+      )
+    );
+    Services.perms.removeFromPrincipal(
+      Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+        "https://tracking.example.org"
+      ),
+      "trackingprotection"
+    );
+  });
   let sets = ["LightweightThemes", "ControlCenter"];
 
   await TestRunner.start(sets, "controlCenter");

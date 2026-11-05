@@ -1011,7 +1011,7 @@ gfxFont::gfxFont(const RefPtr<UnscaledFont>& aUnscaledFont,
       mAdjustedSize(-1.0),       // negative to indicate "not yet initialized"
       mFUnitsConvFactor(-1.0f),  // negative to indicate "not yet initialized"
       mAntialiasOption(anAAOption),
-      mIsValid(true),
+      mIsValid(false),  // subclass sets true if initialization is successful
       mApplySyntheticBold(false),
       mKerningEnabled(false),
       mMathInitialized(false) {
@@ -1841,7 +1841,10 @@ class GlyphBufferAzure {
         mBuffer(*mAutoBuffer.addr()),
         mBufSize(AUTO_BUFFER_SIZE),
         mCapacity(0),
-        mNumGlyphs(0) {}
+        mNumGlyphs(0),
+        mNextClusterStart(0),
+        mNextClusterEnd(0),
+        mBufferedClustersEnd(0) {}
 
   ~GlyphBufferAzure() {
     if (mNumGlyphs > 0) {
@@ -1893,12 +1896,25 @@ class GlyphBufferAzure {
     Glyph* glyph = mBuffer + mNumGlyphs++;
     glyph->mIndex = aGlyphID;
     glyph->mPosition = aPt;
+    if (mRunParams.sourceText) {
+      mBufferedClusters.AppendElement(mNextClusterStart);
+      mBufferedClustersEnd = mNextClusterEnd;
+    }
+  }
+
+  // Record that the glyphs about to be output via OutputGlyph came from the
+  // source text between byte offsets aStart and aEnd in
+  // mRunParams.sourceText. Only meaningful if mRunParams.sourceText is set.
+  void SetNextCluster(uint32_t aStart, uint32_t aEnd) {
+    mNextClusterStart = aStart;
+    mNextClusterEnd = aEnd;
   }
 
   void Flush() {
     if (mNumGlyphs > 0) {
       FlushGlyphs();
       mNumGlyphs = 0;
+      mBufferedClusters.ClearAndRetainStorage();
     }
   }
 
@@ -1916,6 +1932,19 @@ class GlyphBufferAzure {
     gfx::GlyphBuffer buf;
     buf.mGlyphs = mBuffer;
     buf.mNumGlyphs = mNumGlyphs;
+    if (mRunParams.sourceText) {
+      // Pass only the source text for the buffered glyphs, rebasing their
+      // cluster offsets accordingly, since we might be flushing part way
+      // through the run.
+      MOZ_ASSERT(mBufferedClusters.Length() == mNumGlyphs);
+      uint32_t start = mBufferedClusters[0];
+      for (uint32_t& cluster : mBufferedClusters) {
+        cluster -= start;
+      }
+      buf.mText = mRunParams.sourceText->BeginReading() + start;
+      buf.mTextLength = mBufferedClustersEnd - start;
+      buf.mClusters = mBufferedClusters.Elements();
+    }
 
     const gfxContext::AzureState& state = mRunParams.context->CurrentState();
 
@@ -2043,6 +2072,19 @@ class GlyphBufferAzure {
   uint32_t mCapacity;   // amount of buffer size reserved
   uint32_t mNumGlyphs;  // number of glyphs actually present in the buffer
 
+  // One entry per glyph in mBuffer, specifying the byte offset in
+  // mRunParams.sourceText where that glyph's source text starts. Only
+  // populated if mRunParams.sourceText is set; see gfx::GlyphBuffer.
+  nsTArray<uint32_t> mBufferedClusters;
+  // The byte offsets in mRunParams.sourceText where the source text for the
+  // glyphs output by the next OutputGlyph calls starts and ends; see
+  // SetNextCluster.
+  uint32_t mNextClusterStart;
+  uint32_t mNextClusterEnd;
+  // The byte offset in mRunParams.sourceText where the source text for the
+  // last glyph in mBuffer ends.
+  uint32_t mBufferedClustersEnd;
+
 #undef AUTO_BUFFER_SIZE
 };
 
@@ -2096,9 +2138,26 @@ bool gfxFont::DrawGlyphs(const gfxShapedText* aShapedText,
   uint32_t capacityMult = 1 + aBuffer.mFontParams.extraStrikes;
   aBuffer.AddCapacity(aCount, capacityMult);
 
+  const uint32_t* charToByte = aBuffer.mRunParams.sourceCharToByte;
+  // The index of the first character after the current cluster, which is the
+  // next character that has glyphs of its own.
+  uint32_t clusterEnd = 0;
+
   bool emittedGlyphs = false;
 
   for (uint32_t i = 0; i < aCount; ++i, ++glyphData) {
+    if (charToByte && i >= clusterEnd) {
+      // Map the source text of this character and any following characters
+      // without glyphs of their own (e.g. those consumed by a ligature) to the
+      // glyphs for this character.
+      clusterEnd = i + 1;
+      while (clusterEnd < aCount &&
+             !glyphData[clusterEnd - i].IsSimpleGlyph() &&
+             glyphData[clusterEnd - i].GetGlyphCount() == 0) {
+        ++clusterEnd;
+      }
+      aBuffer.SetNextCluster(charToByte[i], charToByte[clusterEnd]);
+    }
     if (glyphData->IsSimpleGlyph()) {
       float advance =
           glyphData->GetSimpleAdvance() * aBuffer.mFontParams.advanceDirection;
@@ -4227,8 +4286,6 @@ void gfxFont::SetupGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphID,
 // If this returns TRUE without setting the mIsValid flag, then we -did-
 // apparently find an sfnt, but it was too broken to be used.
 bool gfxFont::InitMetricsFromSfntTables() {
-  mIsValid = false;  // font is NOT valid in case of early return
-
   const uint32_t kHheaTableTag = TRUETYPE_TAG('h', 'h', 'e', 'a');
   const uint32_t kOS_2TableTag = TRUETYPE_TAG('O', 'S', '/', '2');
 
@@ -4326,14 +4383,11 @@ bool gfxFont::InitMetricsFromSfntTables() {
   hb_font_destroy(hbFont);
 
   mIsValid = true;
-
   return true;
 }
 
 #if MOZ_FONTATIONS
 bool gfxFont::InitMetricsFromSkrifa() {
-  mIsValid = false;
-
   const auto* skf = mFontEntry->GetSkrifaFont();
   if (!skf) {
     return false;

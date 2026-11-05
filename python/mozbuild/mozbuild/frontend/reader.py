@@ -33,6 +33,7 @@ from io import StringIO
 from itertools import chain
 
 import mozpack.path as mozpath
+import mozshellutil
 from mozpack.files import FileFinder
 
 from mozbuild.backend.configenvironment import ConfigEnvironment
@@ -68,6 +69,10 @@ from .sandbox import (
 
 def log(logger, level, action, params, formatter):
     logger.log(level, formatter, extra={"action": action, "params": params})
+
+
+def _init_gyp_worker(env):
+    os.environ.update(env)
 
 
 class EmptyConfig:
@@ -868,7 +873,20 @@ class BuildReader:
             # (as well as inexistent in older versions). So we cap ourselves
             # to 60, see https://bugs.python.org/issue26903#msg365886.
             max_workers = min(max_workers, 60)
-        self._gyp_worker_pool = ProcessPoolExecutor(max_workers=max_workers)
+        # The NSS gyp configuration uses CC and CFLAGS to determine the
+        # floating-point ABI on arm. Only set them in the gyp worker processes,
+        # as leaking them into our own environment would affect any other
+        # command spawned later by the same mach invocation (e.g. gradle
+        # rerunning configure, bug 2072855).
+        gyp_env = {
+            "CC": mozshellutil.quote(*config.substs.get("CC", ())),
+            "CFLAGS": mozshellutil.quote(*config.substs.get("CC_BASE_FLAGS", ())),
+        }
+        self._gyp_worker_pool = ProcessPoolExecutor(
+            max_workers=max_workers,
+            initializer=_init_gyp_worker,
+            initargs=(gyp_env,),
+        )
         self._gyp_processors = []
         self._execution_time = 0.0
         self._file_count = 0

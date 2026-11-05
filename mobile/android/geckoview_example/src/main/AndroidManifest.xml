@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.CREDENTIAL_MANAGER_SET_ORIGIN" />
@@ -61,6 +62,16 @@
                 android:label="GeckoView Example"
                 android:theme="@style/GeckoViewTheme"
                 android:exported="false">
+        </activity>
+        <activity
+                android:name=".PictureInPictureActivity"
+                android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+                android:exported="false"
+                android:launchMode="singleTask"
+                android:resizeableActivity="true"
+                android:supportsPictureInPicture="true"
+                android:taskAffinity="${applicationId}.PictureInPicture"
+                android:theme="@style/GeckoViewTheme">
         </activity>
         <activity
                 android:name=".SettingsActivity"

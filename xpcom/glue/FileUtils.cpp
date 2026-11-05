@@ -341,7 +341,7 @@ void mozilla::ReadAhead(mozilla::filedesc_t aFd, const size_t aOffset,
 
 #elif defined(LINUX)
 
-  posix_fadvise(aFd, aOffset, aCount, POSIX_FADV_WILLNEED);
+  (void)posix_fadvise(aFd, aOffset, aCount, POSIX_FADV_WILLNEED);
 
 #elif defined(XP_MACOSX)
 

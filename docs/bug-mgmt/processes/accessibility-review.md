@@ -92,7 +92,7 @@ Please complete all following self-review tasks **before requesting a design rev
 - **Perform a contrast audit**: Using either a [Figma Contrast Checker tool](https://www.figma.com/color-contrast-checker/) or a third-party [Figma plugin that audits contrast](https://www.figma.com/community/plugin/748533339900865323/Contrast), check your designs for color contrast sufficiency. Your designs should be at least "AA" rated in order to pass accessibility review. "AAA" is even better! If there are particular components that are difficult to adjust to meet "AA" standards, make a note in the figma file and the a11y team will provide specific guidance during review.
 - **Add focus order and role annotations**: Focus order annotations describe the behaviour a keyboard user should expect when navigating your design. Generally this follows the reading order. Note that we only care about focusable elements here (ie. links, buttons, inputs, etc.).
 Role annotations help screen readers and other assistive technologies identify the "kind" of component they're navigating through. These mappings expose semantic information to the user. You can find a [list of common roles here](https://www.codeinwp.com/blog/wai-aria-roles/). You do not need to annotate every view in your design, pick those with the largest amount of new content. We recommend using a [set of Acorn's A11y Annotation Components for Figma to annotate focus and roles](https://acorn.firefox.com/latest/support/resources/designer/a11y-figma-annotations-KFdQgdPq) for this process. [The Acorn Design System team created an expansive guide](https://acorn.firefox.com/latest/support/resources/designer/overview-yZ8W9lVu) for creating annotations and built these components in both the File Presentation Library and in the UX Project Template in Figma.
-- **Create Windows High-Contrast Mode (HCM) mockups**: Our designs should be accessible to users [running HCM](https://docs.google.com/document/d/1El3XJiAdA5gFcG7H9iI1dNmLbht0hXfi_oKBZPWx3t0/edit). You can read more about [how HCM affects color selection](https://firefox-source-docs.mozilla.org/accessible/ColorsAndHighContrastMode.html), and [how to design for HCM](https://wiki.mozilla.org/Accessibility/Design_Guide). Using the ["Night Sky" HCM palette](https://www.figma.com/file/XQrEePCCJebjlVBQwNggQ6/Pro-Client-Accessibility-Reviews?node-id=25%3A3848), translate your designs into High Contrast. Remember, it's important we use these colors **semantically**, not based on a desire for a particular aesthetic. Colors are labelled according to their uses -- `Background` for page background, `Button Text` for button or control text, `Selected Item Background` for backgrounds of selected or active items, etc.. You do not need to mock up every view in your design, pick those with the largest amount of new content. You can find [examples of previous HCM mock ups here](https://www.figma.com/file/XQrEePCCJebjlVBQwNggQ6/Accessibility).
+- **Create Windows High-Contrast Mode (HCM) mockups**: Our designs should be accessible to users [running HCM](https://docs.google.com/document/d/1El3XJiAdA5gFcG7H9iI1dNmLbht0hXfi_oKBZPWx3t0/edit). You can read more about {doc}`how HCM affects color selection </accessible/ColorsAndHighContrastMode>`, and [how to design for HCM](https://wiki.mozilla.org/Accessibility/Design_Guide). Using the ["Night Sky" HCM palette](https://www.figma.com/file/XQrEePCCJebjlVBQwNggQ6/Pro-Client-Accessibility-Reviews?node-id=25%3A3848), translate your designs into High Contrast. Remember, it's important we use these colors **semantically**, not based on a desire for a particular aesthetic. Colors are labelled according to their uses -- `Background` for page background, `Button Text` for button or control text, `Selected Item Background` for backgrounds of selected or active items, etc.. You do not need to mock up every view in your design, pick those with the largest amount of new content. You can find [examples of previous HCM mock ups here](https://www.figma.com/file/XQrEePCCJebjlVBQwNggQ6/Accessibility).
 Where possible, we should rely on SVG's and PNG's for image content to increase adaptability.
 
 ## Requesting Engineering Review
@@ -129,47 +129,31 @@ flag:
   accessibility review once changes are made to address the accessibility
   team's initial round of feedback.
 
-## Phabricator Review Group
+## Platform Phabricator Reviews
 
-There is also an
-[accessibility-frontend-reviewers](https://phabricator.services.mozilla.com/tag/accessibility-frontend-reviewers/)
-group on Phabricator. We recommend using the automated review tool described below before submitting
-to the review group. This group should only be used if:
+If you are making changes to the code inside of the `accessible/` module,
+you should request review from the module owners and/or peers via the
+`#accessibility-platform-reviewers` review group.
 
-1. The patch addresses a complex change requested
-   **by an accessibility team member** as part of an engineering review and
-   you aren't confident that the patch correctly addresses the change; or
-2. There is a very specific aspect of accessibility implemented in the patch and
-   you would like the accessibility team to confirm whether it has been
-   implemented correctly. You should first discuss your approach with the team
-   in the #accessibility channel on slack.
+This group should not be used to request review of accessibility-related
+changes outside the module. Please see the following section for additional
+guidance.
 
-After tagging the accessibility-frontend-reviewers group, review-bot will
-prompt you for some additional information about your patch. **Your patch
-will be removed from our queue until you post a comment with the requested
-information, and re-add the group.**
+## Frontend Phabricator Reviews
 
-Here's what you'll see:
+Many accessibility issues can be addressed and landed without code review from
+the accessibility team. Usually, it is sufficient to get review from the owners or
+peers of the module where the bug is filed. However:
 
-```markdown
-You've tagged the accessibility team for review. If you've already spoken
-to a team member about your request, please request review from the
-specific team member you spoke to.
+- If your patch addresses a complex change requested **by an accessibility team member**,
+and you aren't confident that the patch correctly addresses the change, please
+tag that specific team member for review.
 
-Otherwise, please do ALL of the following:
-
-    1. Post a comment describing the specific accessibility behaviour
-       you're looking for feedback about
-    2. Attach screenshots showing behaviour before and after your
-       patch (if this is a visual change)
-    3. Post a description of screen reader output/behaviour before
-       and after your patch (if this change affects assistive
-       technology users)
-
-Once you have posted all of the above, please re-add the group.
-The group will not be removed again after you re-add it if the
-above conditions are met.
-```
+- If there is a specific aspect of accessibility implemented in the patch, and
+you would like the accessibility team to confirm whether it has been
+implemented correctly, you should first discuss your approach with the team
+in the #accessibility channel on Slack or Matrix. We will discuss your approach there, and
+identify a reviewer if needed.
 
 If you would like the accessibility team to assess **whether a feature
 or change is sufficiently accessible**, this is not the right pathway.
@@ -178,6 +162,18 @@ Please request an accessibility **engineering** review as described above.
 Without this, the accessibility team will not have sufficient context or
 understanding of the change or how to test it.
 This is necessary to thoroughly assess its accessibility.
+
+When reaching out in the accessibility channel, or tagging a team member on Phabricator,
+please include the following information. This will help us complete your review in
+a timely fashion.
+
+1. Post a comment describing the specific accessibility behaviour
+you're looking for feedback about
+2. Attach screenshots showing behaviour before and after your
+patch (if this is a visual change)
+3. Post a description of screen reader output/behaviour before
+and after your patch (if this change affects assistive
+technology users)
 
 ## Automated Accessibility Review Skill
 

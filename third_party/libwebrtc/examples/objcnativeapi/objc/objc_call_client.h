@@ -71,8 +71,6 @@ class ObjCCallClient {
       RTC_GUARDED_BY(thread_checker_);
   std::unique_ptr<webrtc::Thread> network_thread_
       RTC_GUARDED_BY(thread_checker_);
-  std::unique_ptr<webrtc::Thread> worker_thread_
-      RTC_GUARDED_BY(thread_checker_);
   std::unique_ptr<webrtc::Thread> signaling_thread_
       RTC_GUARDED_BY(thread_checker_);
 

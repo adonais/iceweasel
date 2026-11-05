@@ -130,6 +130,24 @@ pub extern "C" fn qcms_profile_is_sRGB(profile: &Profile) -> bool {
     profile.is_sRGB()
 }
 
+/// Fills in the chromaticities of an RGB profile's colorants and white point.
+/// Returns false, leaving the outputs untouched, if they aren't available.
+#[no_mangle]
+pub extern "C" fn qcms_profile_get_primaries(
+    profile: &Profile,
+    primaries: &mut qcms_CIE_xyYTRIPLE,
+    white_point: &mut qcms_CIE_xyY,
+) -> bool {
+    match profile.colorant_chromaticities() {
+        Some((p, w)) => {
+            *primaries = p;
+            *white_point = w;
+            true
+        }
+        None => false,
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn qcms_profile_release(profile: *mut Profile) {
     drop(Box::from_raw(profile));

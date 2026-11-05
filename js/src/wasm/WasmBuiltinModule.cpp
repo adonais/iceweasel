@@ -192,14 +192,14 @@ bool CompileBuiltinModule(JSContext* cx,
       }
     }
 
-    if (!moduleMeta->imports.append(Import(std::move(moduleString),
-                                           std::move(fieldString),
-                                           DefinitionKind::Memory))) {
+    if (!moduleMeta->imports.emplaceBack(std::move(moduleString),
+                                         std::move(fieldString),
+                                         DefinitionKind::Memory)) {
       ReportOutOfMemory(cx);
       return false;
     }
-    if (!codeMeta->memories.append(MemoryDesc(
-            Limits(0, Nothing(), memory->shared, PageSize::Standard)))) {
+    if (!codeMeta->memories.emplaceBack(
+            Limits(0, Nothing(), memory->shared, PageSize::Standard))) {
       ReportOutOfMemory(cx);
       return false;
     }
@@ -249,8 +249,8 @@ bool CompileBuiltinModule(JSContext* cx,
     CacheableName exportName;
     if (!CacheableName::fromUTF8Chars(builtinModuleFunc.exportName(),
                                       &exportName) ||
-        !moduleMeta->exports.append(Export(std::move(exportName), funcIndex,
-                                           DefinitionKind::Function))) {
+        !moduleMeta->exports.emplaceBack(std::move(exportName), funcIndex,
+                                         DefinitionKind::Function)) {
       ReportOutOfMemory(cx);
       return false;
     }

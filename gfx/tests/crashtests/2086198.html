@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<meta name="viewport" content="width=2100,initial-scale=0.4">
+<input>
+<script>
+window.addEventListener("load", async () => {
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  document.querySelector("input").focus();
+  SpecialPowers.DOMWindowUtils.zoomToFocusedInput();
+
+  document.documentElement.style.display = "none";
+  document.documentElement.getBoundingClientRect();
+
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  document.documentElement.removeAttribute("class");
+});
+</script>
+</html>

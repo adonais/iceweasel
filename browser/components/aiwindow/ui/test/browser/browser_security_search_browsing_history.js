@@ -417,7 +417,7 @@ add_task(async function test_search_browsing_history_returns_sanitized_data() {
     ])
   );
 
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await BrowserTestUtils.closeWindow(win);
 });
@@ -515,7 +515,7 @@ add_task(
 
     assertModelHistoryPayloadSanitized(conversation);
 
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await BrowserTestUtils.closeWindow(win);
   }
@@ -586,7 +586,7 @@ add_task(async function test_search_browsing_history_no_results_shape() {
     "untrustedInput stays false when there are no results."
   );
 
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await BrowserTestUtils.closeWindow(win);
 });
@@ -662,7 +662,7 @@ add_task(async function test_search_browsing_history_caps_results() {
   // Even at the cap, no record reaches the model with thumbnail/favicon.
   assertModelHistoryPayloadSanitized(conversation);
 
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await BrowserTestUtils.closeWindow(win);
 });
@@ -732,7 +732,7 @@ add_task(
       );
     }
 
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await BrowserTestUtils.closeWindow(win);
   }

@@ -1520,19 +1520,13 @@ export class SidebarBookmarks extends SidebarPage {
     return html`
       ${this.stylesheet()}
       <div class="sidebar-panel">
-        <sidebar-panel-header
-          data-l10n-id="sidebar-menu-bookmarks-header"
-          data-l10n-attrs="heading"
-          view="viewBookmarksSidebar"
-        >
-          <div class="options-container">
-            <moz-input-search
-              data-l10n-id="firefoxview-search-text-box-bookmarks"
-              data-l10n-attrs="placeholder"
-              @MozInputSearch:search=${this.onSearchQuery}
-            ></moz-input-search>
-          </div>
-        </sidebar-panel-header>
+        <div class="options-container">
+          <moz-input-search
+            data-l10n-id="firefoxview-search-text-box-bookmarks"
+            data-l10n-attrs="placeholder"
+            @MozInputSearch:search=${this.onSearchQuery}
+          ></moz-input-search>
+        </div>
         <div class="sidebar-panel-scrollable-content" tabindex="-1">
           ${when(
             this.searchQuery,

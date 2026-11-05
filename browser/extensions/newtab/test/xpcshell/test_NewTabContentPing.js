@@ -8,9 +8,28 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
+const MIN_SUBMISSION_DELAY_PREF =
+  "browser.newtabpage.activity-stream.telemetry.privatePing.minSubmissionDelayMs";
+const MAX_SUBMISSION_DELAY_PREF =
+  "browser.newtabpage.activity-stream.telemetry.privatePing.maxSubmissionDelayMs";
+
+const DWELL_TIME_ENABLED_PREF =
+  "browser.newtabpage.activity-stream.telemetry.privatePing.dwellTime.enabled";
+const MIN_SUBMISSION_DELAY = Services.prefs.getIntPref(
+  MIN_SUBMISSION_DELAY_PREF,
+  1000
+);
 const MAX_SUBMISSION_DELAY = Services.prefs.getIntPref(
-  "browser.newtabpage.activity-stream.telemetry.privatePing.maxSubmissionDelayMs",
-  5000
+  MAX_SUBMISSION_DELAY_PREF,
+  6000
+);
+
+// The ping widens the window whenever the configured maximum is closer than
+// this to the minimum, which the shipped defaults are.
+const SUBMISSION_DELAY_MIN_RANGE = 5000;
+const EFFECTIVE_MAX_SUBMISSION_DELAY = Math.max(
+  MAX_SUBMISSION_DELAY,
+  MIN_SUBMISSION_DELAY + SUBMISSION_DELAY_MIN_RANGE
 );
 
 add_setup(() => {
@@ -97,11 +116,15 @@ add_task(async function test_recordEvent_sanitizes_and_buffers() {
     async () => {
       // Submit Callback
       let delay = await ping.testOnlyForceFlush();
-      Assert.greater(delay, 1000, "Picked a random value greater than 1000");
-      Assert.less(
+      Assert.greaterOrEqual(
         delay,
-        MAX_SUBMISSION_DELAY,
-        "Picked a random value less than MAX_SUBMISSION_DELAY"
+        MIN_SUBMISSION_DELAY,
+        "Picked a random value at or above MIN_SUBMISSION_DELAY"
+      );
+      Assert.lessOrEqual(
+        delay,
+        EFFECTIVE_MAX_SUBMISSION_DELAY,
+        "Picked a random value at or below EFFECTIVE_MAX_SUBMISSION_DELAY"
       );
     }
   );
@@ -397,4 +420,310 @@ add_task(async function test_secureRandIntInRange() {
       "Random value in range"
     );
   }
+});
+
+/**
+ * Pin the random delay selection to one end of its range, so the effective
+ * minimum and maximum can be read back exactly rather than sampled.
+ *
+ * @param {object} sandbox a sinon sandbox
+ * @returns {object} a holder whose `end` is "min" or "max"
+ */
+function stubDelaySelection(sandbox) {
+  const pick = { end: "min" };
+  sandbox
+    .stub(NewTabContentPing, "secureRandIntInRange")
+    .callsFake(range => (pick.end === "min" ? 0 : range - 1));
+  return pick;
+}
+
+/**
+ * Schedule and immediately flush, returning the delay that was selected.
+ *
+ * @param {object} ping a NewTabContentPing
+ * @returns {Promise<number>} the selected delay in milliseconds
+ */
+async function selectedDelayMs(ping) {
+  ping.scheduleSubmission({});
+  return ping.testOnlyForceFlush();
+}
+
+/**
+ * The one click event in the ping that was just submitted.
+ *
+ * @returns {object} the recorded event
+ */
+function onlyClickEvent() {
+  const events = Glean.newtabContent.click.testGetValue();
+  Assert.equal(events.length, 1, "Exactly one click event in the ping");
+  return events[0];
+}
+
+/**
+ * Turn the dwell time feature on. Each test that calls this clears the pref
+ * again before it ends.
+ */
+function enableDwellTime() {
+  Services.prefs.setBoolPref(DWELL_TIME_ENABLED_PREF, true);
+}
+
+const gConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(
+  Ci.nsIConsoleAPIStorage
+);
+
+/**
+ * How many console.error calls since the last clearEvents() mention a
+ * newtab-content submission delay.
+ *
+ * @returns {number}
+ */
+function countSubmissionDelayErrors() {
+  return gConsoleAPIStorage
+    .getEvents()
+    .filter(
+      event =>
+        event.level === "error" &&
+        event.arguments.some(arg => String(arg).includes("submission delay"))
+    ).length;
+}
+
+add_task(async function test_submission_delay_clamps() {
+  info(
+    "NewTabContentPing should raise a minimum submission delay below 1000 up " +
+      "to 1000, and raise a maximum that sits less than 5000 above the " +
+      "minimum to exactly 5000 above it. Only a configuration that cannot be " +
+      "right, a minimum below 1000 or a maximum below the minimum, is " +
+      "reported as an error."
+  );
+  let sandbox = sinon.createSandbox();
+  let pick = stubDelaySelection(sandbox);
+  let ping = new NewTabContentPing();
+  await ping.test_only_resetAllStats();
+
+  // Configured minimum, configured maximum, effective minimum, effective
+  // maximum, and whether it is reported. The shipped defaults are the third
+  // row; the second is what older Firefox builds ship.
+  const cases = [
+    [10, 30000, 1000, 30000, true],
+    [1000, 5000, 1000, 6000, false],
+    [1000, 6000, 1000, 6000, false],
+    [50000, 51000, 50000, 55000, false],
+    [50000, 60000, 50000, 60000, false],
+    [50000, 6000, 50000, 55000, true],
+  ];
+  for (const [minPref, maxPref, min, max, reported] of cases) {
+    Services.prefs.setIntPref(MIN_SUBMISSION_DELAY_PREF, minPref);
+    Services.prefs.setIntPref(MAX_SUBMISSION_DELAY_PREF, maxPref);
+    gConsoleAPIStorage.clearEvents();
+    pick.end = "min";
+    Assert.equal(
+      await selectedDelayMs(ping),
+      min,
+      `min=${minPref} max=${maxPref} never waits less than ${min}`
+    );
+    pick.end = "max";
+    Assert.equal(
+      await selectedDelayMs(ping),
+      max,
+      `min=${minPref} max=${maxPref} never waits more than ${max}`
+    );
+    Assert.equal(
+      countSubmissionDelayErrors(),
+      reported ? 2 : 0,
+      `min=${minPref} max=${maxPref} is ${reported ? "" : "not "}reported, ` +
+        "once per schedule"
+    );
+  }
+
+  Services.prefs.clearUserPref(MIN_SUBMISSION_DELAY_PREF);
+  Services.prefs.clearUserPref(MAX_SUBMISSION_DELAY_PREF);
+  sandbox.restore();
+});
+
+add_task(async function test_dwell_time_lands_on_the_click_row() {
+  info(
+    "recordDwellTime should write the dwell time onto the buffered click its " +
+      "token identifies, and the token itself should never be recorded"
+  );
+  enableDwellTime();
+  let ping = new NewTabContentPing();
+  await ping.test_only_resetAllStats();
+
+  ping.recordEvent(
+    "click",
+    {
+      corpus_item_id: "story-1",
+      is_sponsored: "false",
+      // Belt and braces: the payload has no business carrying this either.
+      dwell_id: 7,
+    },
+    "port1:7"
+  );
+  Assert.ok(
+    ping.recordDwellTime("port1:7", 12345),
+    "The click was still buffered"
+  );
+  ping.scheduleSubmission({});
+
+  await GleanPings.newtabContent.testSubmission(
+    () => {
+      const click = onlyClickEvent();
+      Assert.equal(click.extra.dwell_time, "12345", "The measured dwell time");
+      Assert.equal(
+        click.extra.corpus_item_id,
+        "story-1",
+        "On the row that already disclosed the story"
+      );
+      Assert.equal(
+        click.extra.dwell_id,
+        undefined,
+        "No pairing token reached the ping"
+      );
+    },
+    async () => {
+      await ping.testOnlyForceFlush();
+    }
+  );
+  Services.prefs.clearUserPref(DWELL_TIME_ENABLED_PREF);
+});
+
+add_task(async function test_dwell_time_after_submission_is_a_no_op() {
+  info(
+    "recordDwellTime and trackDwellTime should report that they found " +
+      "nothing once the click has been submitted, rather than throwing"
+  );
+  let ping = new NewTabContentPing();
+  await ping.test_only_resetAllStats();
+
+  ping.recordEvent("click", { corpus_item_id: "story-1" }, "port1:1");
+  ping.scheduleSubmission({});
+  await ping.testOnlyForceFlush();
+
+  Assert.equal(
+    ping.recordDwellTime("port1:1", 20000),
+    false,
+    "There is no row left to write a measurement on"
+  );
+  Assert.equal(
+    ping.trackDwellTime("port1:1", () => 5000),
+    false,
+    "Nor one to track"
+  );
+});
+
+add_task(async function test_tracked_dwell_time_is_read_at_submission() {
+  info(
+    "A tracked click should report whatever its reader returns when the ping " +
+      "is sent, not when it was tracked, and no dwell time for a null"
+  );
+  enableDwellTime();
+  let ping = new NewTabContentPing();
+  await ping.test_only_resetAllStats();
+
+  let readSoFar = 0;
+  ping.recordEvent("click", { corpus_item_id: "read" }, "port1:1");
+  ping.recordEvent("click", { corpus_item_id: "unread" }, "port1:2");
+  Assert.ok(
+    ping.trackDwellTime("port1:1", () => readSoFar),
+    "The click was still buffered"
+  );
+  Assert.ok(
+    ping.trackDwellTime("port1:2", () => null),
+    "And so was the other"
+  );
+  readSoFar = 20000;
+  ping.scheduleSubmission({});
+
+  await GleanPings.newtabContent.testSubmission(
+    () => {
+      const clicks = Object.fromEntries(
+        Glean.newtabContent.click
+          .testGetValue()
+          .map(click => [click.extra.corpus_item_id, click.extra])
+      );
+      Assert.equal(
+        clicks.read.dwell_time,
+        "20000",
+        "The value at submission, not at tracking"
+      );
+      Assert.equal(
+        clicks.unread.dwell_time,
+        undefined,
+        "A null reading sends the click without a dwell time"
+      );
+    },
+    async () => {
+      await ping.testOnlyForceFlush();
+    }
+  );
+  Services.prefs.clearUserPref(DWELL_TIME_ENABLED_PREF);
+});
+
+add_task(async function test_a_measured_dwell_time_replaces_the_reader() {
+  info(
+    "A dwell time recordDwellTime measured should be reported as measured. " +
+      "The user has left the page, so a reader left by trackDwellTime has " +
+      "nothing more to say."
+  );
+  enableDwellTime();
+  let ping = new NewTabContentPing();
+  await ping.test_only_resetAllStats();
+
+  ping.recordEvent("click", { corpus_item_id: "story-1" }, "port1:1");
+  ping.trackDwellTime("port1:1", () => 0);
+  ping.recordDwellTime("port1:1", 40000);
+  ping.scheduleSubmission({});
+
+  await GleanPings.newtabContent.testSubmission(
+    () => {
+      Assert.equal(
+        onlyClickEvent().extra.dwell_time,
+        "40000",
+        "The measurement was reported whole"
+      );
+    },
+    async () => {
+      await ping.testOnlyForceFlush();
+    }
+  );
+  Services.prefs.clearUserPref(DWELL_TIME_ENABLED_PREF);
+});
+
+add_task(async function test_dwell_time_is_dropped_when_the_feature_is_off() {
+  info(
+    "A click should reach the ping without its dwell time if the feature was " +
+      "turned off after the dwell time was written, whether it was measured " +
+      "or still being read"
+  );
+  let ping = new NewTabContentPing();
+  await ping.test_only_resetAllStats();
+  enableDwellTime();
+
+  ping.recordEvent("click", { corpus_item_id: "measured" }, "port1:1");
+  ping.recordEvent("click", { corpus_item_id: "tracked" }, "port1:2");
+  Assert.ok(ping.recordDwellTime("port1:1", 10000), "Measured row buffered");
+  Assert.ok(
+    ping.trackDwellTime("port1:2", () => 10000),
+    "Tracked row buffered"
+  );
+  Services.prefs.setBoolPref(DWELL_TIME_ENABLED_PREF, false);
+  ping.scheduleSubmission({});
+
+  await GleanPings.newtabContent.testSubmission(
+    () => {
+      const clicks = Glean.newtabContent.click.testGetValue();
+      Assert.equal(clicks.length, 2, "Both clicks were still sent");
+      for (const click of clicks) {
+        Assert.equal(
+          click.extra.dwell_time,
+          undefined,
+          `${click.extra.corpus_item_id} carries no dwell time`
+        );
+      }
+    },
+    async () => {
+      await ping.testOnlyForceFlush();
+    }
+  );
+  Services.prefs.clearUserPref(DWELL_TIME_ENABLED_PREF);
 });

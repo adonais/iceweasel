@@ -255,6 +255,10 @@ void RemoteWorkerManager::LaunchInternal(
   MOZ_ASSERT(aTargetActor == mParentActor ||
              mChildActors.Contains(aTargetActor));
 
+  if (aController->IsTerminated()) {
+    return;
+  }
+
   auto principalOrErr = PrincipalInfoToPrincipal(aData.principalInfo());
   if (NS_WARN_IF(principalOrErr.isErr())) {
     AsyncCreationFailed(aController);

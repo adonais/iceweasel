@@ -22,9 +22,9 @@ class WebTransportStreamProxy final
 
   explicit WebTransportStreamProxy(WebTransportStreamBase* aStream);
 
-  NS_IMETHOD SendStopSending(uint8_t aError) override;
+  NS_IMETHOD SendStopSending(uint64_t aErrorCode) override;
   NS_IMETHOD SendFin() override;
-  NS_IMETHOD Reset(uint8_t aErrorCode) override;
+  NS_IMETHOD Reset(uint64_t aErrorCode) override;
   NS_IMETHOD GetSendStreamStats(
       nsIWebTransportStreamStatsCallback* aCallback) override;
   NS_IMETHOD GetReceiveStreamStats(

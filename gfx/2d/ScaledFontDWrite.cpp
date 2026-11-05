@@ -272,18 +272,18 @@ bool UnscaledFontDWrite::GetFontDescriptor(FontDescriptorOutput aCb,
                                            void* aBaton) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!mFont) {
-    return false;
-  }
-
   // We cache the font file name as it involves multiple DirectWrite calls.
   if (mFontFileName.empty()) {
+    if (!mFont) {
+      return false;
+    }
+
     if (!GetFontFileName(mFontFace, mFontFileName)) {
       return false;
     }
   }
-  uint32_t index = mFontFace->GetIndex();
 
+  uint32_t index = mFontFace->GetIndex();
   aCb(reinterpret_cast<const uint8_t*>(mFontFileName.data()),
       mFontFileName.size() * sizeof(WCHAR), index, aBaton);
   return true;
@@ -686,6 +686,7 @@ already_AddRefed<UnscaledFont> UnscaledFontDWrite::CreateFromFontDescriptor(
       return nullptr;
     }
     RefPtr unscaledFont = new UnscaledFontDWrite(fontFace, nullptr);
+    unscaledFont->mFontFileName.assign(path, path + pathLen);
     return unscaledFont.forget();
   }
   MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {

@@ -14,6 +14,15 @@ prefs = [
   "security.utility_pkcs11_module_process.enabled=true",
 ]
 
+["test_osclientcerts_module.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
+]
+
+["test_pkcs11_module.js"]
+
+["test_pkcs11_moduleDB.js"]
+
 ["test_pkcs11_module_client_auth.js"]
 run-sequentially = ["true"] # hardcoded ports
 skip-if = [
@@ -22,3 +31,9 @@ skip-if = [
 prefs = [
   "security.pki.certificate_transparency.mode=1",
 ]
+
+["test_pkcs11_remote_process.js"]
+
+["test_pkcs11_slot.js"]
+
+["test_pkcs11_token.js"]

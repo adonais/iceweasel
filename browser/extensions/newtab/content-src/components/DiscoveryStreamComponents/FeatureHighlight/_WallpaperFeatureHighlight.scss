@@ -151,7 +151,6 @@
     &.inset-block-start::after {
       inset-inline-end: calc(var(--space-xlarge) / -2 + var(--border-width));
       background: var(--background-color-box);
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       border: var(--border-width) solid var(--nova-highlight-border-gradient-end);
       border-start-end-radius: var(--border-radius-small);
       box-shadow: none;

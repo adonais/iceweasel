@@ -44,3 +44,8 @@ if not CONFIG["MOZ_SYSTEM_NSS"]:
         USE_LIBS += ["nssutil3"]
 
 Library("tlsserver")
+
+SOURCE_HEADERS += [
+    "OCSPCommon.h",
+    "TLSServer.h",
+]

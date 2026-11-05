@@ -8,7 +8,7 @@ const { PlacesUIUtils } = ChromeUtils.importESModule(
   "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs"
 );
 
-let rootDir = do_get_file("chromefiles/", true);
+let rootDir = do_get_tempdir();
 
 add_task(async function setup_fakePaths() {
   let pathId;

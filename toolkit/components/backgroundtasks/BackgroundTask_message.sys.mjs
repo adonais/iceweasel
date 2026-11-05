@@ -236,7 +236,9 @@ async function handleCommandLine(commandLine) {
     console.log(`Saw --randomizationId: ${randomizationId}`);
     Services.prefs.setCharPref("app.normandy.user_id", randomizationId);
   }
-  outputInfo({ randomizationId: lazy.ClientEnvironmentBase.randomizationId });
+  outputInfo({
+    randomizationId: lazy.ClientEnvironmentBase.legacyRandomizationId,
+  });
 
   // Allow to override Nimbus experiments with `--experiments /path/to/data.json`.
   let experiments = commandLine.handleFlagWithParam(

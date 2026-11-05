@@ -167,8 +167,6 @@ class RenderDXGIYCbCrTextureHost final : public RenderTextureHostSWGL {
   gfx::IntSize GetSize(uint8_t aChannelIndex) const;
   GLuint GetGLHandle(uint8_t aChannelIndex) const;
 
-  bool SyncObjectNeeded() override { return true; }
-
   gfx::ColorRange GetColorRange() const { return mColorRange; }
 
   // RenderTextureHostSWGL

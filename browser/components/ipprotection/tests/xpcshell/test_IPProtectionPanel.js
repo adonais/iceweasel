@@ -468,7 +468,7 @@ add_task(async function test_showing_refreshes_usage_when_paused() {
   let refreshUsageStub = sinon.stub(IPPProxyManager, "refreshUsage").resolves();
 
   ipProtectionPanel.state.paused = false;
-  ipProtectionPanel.showing(ipProtectionPanel.panel);
+  await ipProtectionPanel.showing(ipProtectionPanel.panel);
 
   Assert.ok(
     refreshUsageStub.notCalled,
@@ -476,7 +476,7 @@ add_task(async function test_showing_refreshes_usage_when_paused() {
   );
 
   ipProtectionPanel.state.paused = true;
-  ipProtectionPanel.showing(ipProtectionPanel.panel);
+  await ipProtectionPanel.showing(ipProtectionPanel.panel);
   Assert.ok(
     refreshUsageStub.calledOnce,
     "refreshUsage should be called when opening the panel while paused"
@@ -488,7 +488,7 @@ add_task(async function test_showing_refreshes_usage_when_paused() {
 });
 
 /**
- * Tests that opening the panel reads the isPremium getter on panel open.
+ * Tests that opening the panel calls isPremium on panel open.
  */
 add_task(async function test_showing_checks_is_premium_once() {
   let ipProtectionPanel = new IPProtectionPanel();
@@ -496,37 +496,37 @@ add_task(async function test_showing_checks_is_premium_once() {
 
   // Check that the state is set on panel open
   let premiumValue = true;
-  let isPremiumSpy = sinon.spy(() => premiumValue);
+  let isPremiumSpy = sinon.spy(async () => premiumValue);
   let isPremiumStub = sinon
     .stub(IPProtectionPanel.prototype, "isPremium")
-    .get(isPremiumSpy);
+    .callsFake(isPremiumSpy);
 
-  ipProtectionPanel.showing(ipProtectionPanel.panel);
+  await ipProtectionPanel.showing(ipProtectionPanel.panel);
 
   Assert.equal(
     isPremiumSpy.callCount,
     1,
-    "isPremium should be read when the panel opens"
+    "isPremium should be called when the panel opens"
   );
   Assert.equal(
     ipProtectionPanel.state.isPremium,
     true,
-    "isPremium state should be set from the getter"
+    "isPremium state should be set from the method's result"
   );
 
   // Checks that the state is re-set on panel open if it was previously true
   premiumValue = false;
-  ipProtectionPanel.showing(ipProtectionPanel.panel);
+  await ipProtectionPanel.showing(ipProtectionPanel.panel);
 
   Assert.equal(
     isPremiumSpy.callCount,
     2,
-    "isPremium should be read once more on the second panel open"
+    "isPremium should be called once more on the second panel open"
   );
   Assert.equal(
     ipProtectionPanel.state.isPremium,
     false,
-    "isPremium state should follow the getter when it changes between opens"
+    "isPremium state should follow the method's result when it changes between opens"
   );
 
   isPremiumStub.restore();
@@ -535,45 +535,32 @@ add_task(async function test_showing_checks_is_premium_once() {
 });
 
 /**
- * Tests that showLocationButtonBadge is true when the dismissed pref is not set.
+ * Tests that opening the panel doesn't update premium status if hidden while
+ * the premium check is pending.
  */
-add_task(async function test_location_badge_initial_state_pref_unset() {
-  Services.prefs.clearUserPref(
-    "browser.ipProtection.locationButtonBadgeDismissed"
-  );
-
+add_task(async function test_showing_aborts_when_hidden() {
   let ipProtectionPanel = new IPProtectionPanel();
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
+
+  let premiumCheck = Promise.withResolvers();
+  let isPremiumStub = sinon
+    .stub(ipProtectionPanel, "isPremium")
+    .returns(premiumCheck.promise);
+
+  let showingPromise = ipProtectionPanel.showing(ipProtectionPanel.panel);
+  ipProtectionPanel.hiding();
+  premiumCheck.resolve(true);
+  await showingPromise;
 
   Assert.equal(
-    ipProtectionPanel.state.showLocationButtonBadge,
-    true,
-    "showLocationButtonBadge should be true when pref is not set"
-  );
-
-  ipProtectionPanel.uninit();
-});
-
-/**
- * Tests that showLocationButtonBadge is false when the dismissed pref is set to true.
- */
-add_task(async function test_location_badge_initial_state_pref_set() {
-  Services.prefs.setBoolPref(
-    "browser.ipProtection.locationButtonBadgeDismissed",
-    true
-  );
-
-  let ipProtectionPanel = new IPProtectionPanel();
-
-  Assert.equal(
-    ipProtectionPanel.state.showLocationButtonBadge,
+    ipProtectionPanel.state.isPremium,
     false,
-    "showLocationButtonBadge should be false when pref is set to true"
+    "isPremium state should not be updated when opening the panel is cancelled"
   );
 
+  isPremiumStub.restore();
   ipProtectionPanel.uninit();
-  Services.prefs.clearUserPref(
-    "browser.ipProtection.locationButtonBadgeDismissed"
-  );
+  Services.prefs.clearUserPref("browser.ipProtection.everOpenedPanel");
 });
 
 function dispatchUsageEvent(max, remaining) {

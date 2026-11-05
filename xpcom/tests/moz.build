@@ -50,3 +50,8 @@ LOCAL_INCLUDES += [
 ]
 
 CRASHTEST_MANIFESTS += ["crashtests/crashtests.list"]
+
+SOURCE_HEADERS += [
+    "resources.h",
+    "TestingAtomList.h",
+]

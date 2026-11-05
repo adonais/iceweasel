@@ -75,3 +75,63 @@ add_task(async function test_with_input_and_results() {
   await browserLoadedPromise;
   ok(true, "Successfully loaded " + url);
 });
+
+const PASTE_AND_GO_L10N_ID = "urlbar-menuitem-paste-and-go";
+const PASTE_AND_SEARCH_L10N_ID = "urlbar-menuitem-paste-and-search";
+
+add_task(async function test_label_url() {
+  await assertLabelForClipboard("http://example.com/", PASTE_AND_GO_L10N_ID);
+});
+
+add_task(async function test_label_scheme_less_url() {
+  await assertLabelForClipboard("example.com", PASTE_AND_GO_L10N_ID);
+  await assertLabelForClipboard("example.com/path?q=1", PASTE_AND_GO_L10N_ID);
+  await assertLabelForClipboard("192.168.1.1", PASTE_AND_GO_L10N_ID);
+});
+
+add_task(async function test_label_search_term() {
+  await assertLabelForClipboard("firefox browser", PASTE_AND_SEARCH_L10N_ID);
+});
+
+add_task(async function test_label_clipboard_too_large() {
+  await assertLabelForClipboard(
+    "firefox browser ".repeat(UrlbarShared.MAX_TEXT_LENGTH),
+    PASTE_AND_GO_L10N_ID
+  );
+});
+
+add_task(async function test_label_search_mode() {
+  gURLBar.searchMode = { source: UrlbarShared.RESULT_SOURCE.HISTORY };
+  Assert.ok(gURLBar.searchMode, "The urlbar is in a search mode");
+  try {
+    await assertLabelForClipboard(
+      "http://example.com/",
+      PASTE_AND_SEARCH_L10N_ID
+    );
+  } finally {
+    gURLBar.handleRevert();
+  }
+});
+
+add_task(async function test_label_keyword_disabled() {
+  await SpecialPowers.pushPrefEnv({ set: [["keyword.enabled", false]] });
+  await assertLabelForClipboard("firefox browser", PASTE_AND_GO_L10N_ID);
+  await SpecialPowers.popPrefEnv();
+});
+
+async function assertLabelForClipboard(clipboardText, expectedL10nId) {
+  await SimpleTest.promiseClipboardChange(clipboardText, () => {
+    clipboardHelper.copyString(clipboardText);
+  });
+
+  await UrlbarTestUtils.withContextMenu(window, async popup => {
+    let menuitem = popup.querySelector('[anonid="paste-and-go"]:not([hidden])');
+    Assert.ok(!menuitem.disabled, "Paste and go is enabled");
+    await BrowserTestUtils.waitForMutationCondition(
+      menuitem,
+      { attributes: true, attributeFilter: ["data-l10n-id"] },
+      () => menuitem.getAttribute("data-l10n-id") == expectedL10nId,
+      `Label settles on ${expectedL10nId}`
+    );
+  });
+}

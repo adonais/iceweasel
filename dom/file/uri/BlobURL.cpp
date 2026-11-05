@@ -37,6 +37,21 @@ NS_INTERFACE_MAP_END_INHERITING(mozilla::net::nsSimpleURI)
 
 BlobURL::BlobURL() : mRevoked(false) {}
 
+BlobURL::~BlobURL() = default;
+
+already_AddRefed<mozilla::net::nsSimpleURI> BlobURL::StartClone() {
+  RefPtr<BlobURL> url = new BlobURL();
+  url->mRevoked = mRevoked;
+  url->mNullOriginEntry = mNullOriginEntry;
+  return url.forget();
+}
+
+nsIPrincipal* BlobURL::GetNullOriginPrincipal() {
+  MOZ_ASSERT(!mNullOriginEntry || mNullOriginEntry->mSpec == SpecIgnoringRef(),
+             "Invalid NullOriginEntry in BlobURL");
+  return mNullOriginEntry ? mNullOriginEntry->mPrincipal.get() : nullptr;
+}
+
 // nsISerializable methods:
 
 NS_IMETHODIMP
@@ -52,7 +67,7 @@ nsresult BlobURL::ReadPrivate(nsIObjectInputStream* aStream) {
   rv = aStream->ReadBoolean(&mRevoked);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // NOTE: We intentionally do not persist nullPrincipal here.
+  // NOTE: We intentionally do not persist nullOriginPrincipal here.
   //
   // The null principal would be meaningless if this blob URL was persisted into
   // long-term storage (which is generally the use of `nsIObjectInputStream`).
@@ -74,7 +89,7 @@ BlobURL::Write(nsIObjectOutputStream* aStream) {
   rv = aStream->WriteBoolean(mRevoked);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // NOTE: We intentionally do not persist nullPrincipal here. (see above)
+  // NOTE: We intentionally do not persist nullOriginPrincipal here. (see above)
 
   return NS_OK;
 }
@@ -90,7 +105,7 @@ void BlobURL::Serialize(mozilla::ipc::URIParams& aParams) {
 
   hostParams.revoked() = mRevoked;
 
-  hostParams.nullPrincipal() = mNullPrincipal;
+  hostParams.nullOriginPrincipal() = GetNullOriginPrincipal();
 
   aParams = std::move(hostParams);
 }
@@ -109,14 +124,26 @@ bool BlobURL::Deserialize(const mozilla::ipc::URIParams& aParams) {
     return false;
   }
 
-  if (OriginPart() != "null"_ns && hostParams.nullPrincipal()) {
-    NS_ERROR("Received nullPrincipal for non-null BlobURL");
+  if (!Scheme().EqualsLiteral("blob")) {
+    NS_ERROR("Received non-blob scheme for BlobURL");
+    return false;
+  }
+
+  if (OriginPart() != "null"_ns && hostParams.nullOriginPrincipal()) {
+    NS_ERROR("Received nullOriginPrincipal for non-null BlobURL");
+    return false;
+  }
+
+  auto nullOriginEntry = BlobURLNullOriginEntry::Intern(
+      SpecIgnoringRef(), hostParams.nullOriginPrincipal());
+  if (nullOriginEntry.isErr()) {
+    NS_ERROR("Received inconsistent principal entry for BlobURL");
     return false;
   }
 
   mRevoked = hostParams.revoked();
 
-  mNullPrincipal = hostParams.nullPrincipal();
+  mNullOriginEntry = nullOriginEntry.unwrap();
 
   return true;
 }
@@ -164,4 +191,14 @@ BlobURL::Mutate(nsIURIMutator** aMutator) {
   }
   mutator.forget(aMutator);
   return NS_OK;
+}
+
+NS_IMETHODIMP
+BlobURL::Mutator::CacheProtocolState() {
+  if (!mURI) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+  return BlobURLProtocolHandler::GetBlobURLProtocolState(
+      mURI->SpecIgnoringRef(), &mURI->mRevoked,
+      getter_AddRefs(mURI->mNullOriginEntry));
 }

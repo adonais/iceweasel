@@ -22,8 +22,8 @@ export class MarionetteReftestChild extends JSWindowActorChild {
     super();
 
     // This promise will resolve with the URL recorded in the "load" event
-    // handler. This URL will not be impacted by any hash modification that
-    // might be performed by the test script.
+    // handler. The URL might have been impacted by hash modifications in
+    // load handlers of the test.
     // The harness should be loaded before loading any test page, so the actors
     // should be registered before the "load" event is received for a test page.
     this._loadedURLPromise = new Promise(
@@ -85,7 +85,9 @@ export class MarionetteReftestChild extends JSWindowActorChild {
   async reftestWait(options = {}) {
     const { url, useRemote } = options;
     const loadedURL = await this._loadedURLPromise;
-    if (loadedURL !== url) {
+    // Ignore hash because fragment navigations are synchronous and tests
+    // perform them during load handlers that run before ours.
+    if (loadedURL.split("#")[0] !== url.split("#")[0]) {
       lazy.logger.debug(
         `Window URL does not match the expected URL "${loadedURL}" !== "${url}"`
       );

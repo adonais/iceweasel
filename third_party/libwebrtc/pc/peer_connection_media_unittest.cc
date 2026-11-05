@@ -36,6 +36,7 @@
 #include "api/rtp_transceiver_direction.h"
 #include "api/rtp_transceiver_interface.h"
 #include "api/scoped_refptr.h"
+#include "api/video_codecs/sdp_video_format.h"
 #include "media/base/codec.h"
 #include "media/base/fake_media_engine.h"
 #include "media/base/media_channel.h"
@@ -51,6 +52,7 @@
 #include "pc/rtp_transceiver.h"
 #include "pc/session_description.h"
 #include "pc/test/enable_fake_media.h"
+#include "pc/test/full_codec_matrix.h"
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ref_counted_object.h"
@@ -71,10 +73,13 @@ using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
 using RTCOfferAnswerOptions = PeerConnectionInterface::RTCOfferAnswerOptions;
 using ::testing::Bool;
 using ::testing::Combine;
+using ::testing::Contains;
 using ::testing::ElementsAre;
+using ::testing::Field;
 using ::testing::Gt;
 using ::testing::HasSubstr;
 using ::testing::NotNull;
+using ::testing::StrCaseEq;
 using ::testing::UnorderedElementsAreArray;
 using ::testing::Values;
 
@@ -2210,6 +2215,168 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan, SetCodecPreferencesVideoNoRtx) {
   ASSERT_EQ(codecs.size(), 2u);
   EXPECT_EQ(codecs[0].name, "bar");
   EXPECT_EQ(codecs[1].name, kRedCodecName);
+}
+
+// Returns the set of payload types used by all media sections of `description`.
+std::set<int> PayloadTypesIn(const SessionDescriptionInterface* description) {
+  std::set<int> payload_types;
+  for (const ContentInfo& content : description->description()->contents()) {
+    for (const Codec& codec : content.media_description()->codecs()) {
+      payload_types.insert(codec.id.value());
+    }
+  }
+  return payload_types;
+}
+
+// A peer that bundles many media sections and renegotiates repeatedly must
+// keep reusing the payload types it has already assigned. Allocating a new
+// payload type on every negotiation exhausts the 61 dynamic payload types,
+// after which createOffer fails with "All available dynamic PTs have been
+// assigned".
+TEST_F(PeerConnectionMediaTestUnifiedPlan,
+       RepeatedRenegotiationDoesNotExhaustPayloadTypes) {
+  constexpr int kSectionsPerMediaType = 7;
+  constexpr int kNegotiationRounds = 10;
+
+  auto make_engine = [] {
+    auto engine = std::make_unique<FakeMediaEngine>();
+    engine->SetAudioCodecs({CreateAudioCodec(111, kOpusCodecName, 48000, 2),
+                            CreateAudioCodec(103, "isac", 16000, 1),
+                            CreateAudioCodec(0, kPcmuCodecName, 8000, 1)});
+    engine->SetVideoCodecs(
+        {CreateVideoCodec(96, "vp8"), CreateVideoRtxCodec(97, 96),
+         CreateVideoCodec(98, "vp9"), CreateVideoRtxCodec(99, 98),
+         CreateVideoCodec(100, "av1"), CreateVideoRtxCodec(101, 100)});
+    return engine;
+  };
+
+  RTCConfiguration config;
+  config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+  auto caller = CreatePeerConnection(config, make_engine());
+  auto callee = CreatePeerConnection(config, make_engine());
+  ASSERT_THAT(caller, NotNull());
+  ASSERT_THAT(callee, NotNull());
+
+  for (int i = 0; i < kSectionsPerMediaType; ++i) {
+    caller->AddTransceiver(MediaType::AUDIO);
+    caller->AddTransceiver(MediaType::VIDEO);
+  }
+
+  std::set<int> payload_types_of_first_offer;
+  for (int round = 0; round < kNegotiationRounds; ++round) {
+    ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()))
+        << "Negotiation round " << round << " failed";
+    std::set<int> payload_types =
+        PayloadTypesIn(caller->pc()->local_description());
+    if (round == 0) {
+      payload_types_of_first_offer = payload_types;
+      ASSERT_FALSE(payload_types_of_first_offer.empty());
+    } else {
+      EXPECT_EQ(payload_types, payload_types_of_first_offer)
+          << "Payload type assignment changed in negotiation round " << round;
+    }
+  }
+}
+
+TEST_F(PeerConnectionMediaTestUnifiedPlan,
+       RepeatedRenegotiationDoesNotExhaustPayloadTypesBalancedBundle) {
+  constexpr int kSectionsPerMediaType = 4;
+  constexpr int kNegotiationRounds = 5;
+
+  auto make_engine = [] {
+    auto engine = std::make_unique<FakeMediaEngine>();
+    engine->SetAudioCodecs({CreateAudioCodec(111, kOpusCodecName, 48000, 2),
+                            CreateAudioCodec(103, "isac", 16000, 1),
+                            CreateAudioCodec(0, kPcmuCodecName, 8000, 1)});
+    engine->SetVideoCodecs(
+        {CreateVideoCodec(96, "vp8"), CreateVideoRtxCodec(97, 96),
+         CreateVideoCodec(98, "vp9"), CreateVideoRtxCodec(99, 98),
+         CreateVideoCodec(100, "av1"), CreateVideoRtxCodec(101, 100)});
+    return engine;
+  };
+
+  RTCConfiguration config;
+  config.bundle_policy = PeerConnectionInterface::kBundlePolicyBalanced;
+  auto caller = CreatePeerConnection(config, make_engine());
+  auto callee = CreatePeerConnection(config, make_engine());
+  ASSERT_THAT(caller, NotNull());
+  ASSERT_THAT(callee, NotNull());
+
+  for (int i = 0; i < kSectionsPerMediaType; ++i) {
+    caller->AddTransceiver(MediaType::AUDIO);
+    caller->AddTransceiver(MediaType::VIDEO);
+  }
+
+  std::set<int> payload_types_of_first_offer;
+  for (int round = 0; round < kNegotiationRounds; ++round) {
+    ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()))
+        << "Negotiation round " << round << " failed";
+    std::set<int> payload_types =
+        PayloadTypesIn(caller->pc()->local_description());
+    if (round == 0) {
+      payload_types_of_first_offer = payload_types;
+      ASSERT_FALSE(payload_types_of_first_offer.empty());
+    } else {
+      EXPECT_EQ(payload_types, payload_types_of_first_offer)
+          << "Payload type assignment changed in negotiation round " << round;
+    }
+  }
+}
+
+// The codecs of a peer that munges codecs of its own into its offer, as the
+// application in https://issues.webrtc.org/564178627 does. Two of them, VP8
+// and AV1 profile 1, are codecs that the local endpoint has as well; the rest
+// only take up payload types. The payload types that collide with the ones
+// that the payload type picker reserves for audio codecs are moved elsewhere
+// by the picker, so the offer ends up with 45 payload types either way, which
+// leaves 8 of the 61 dynamic payload types free.
+std::vector<Codec> MungedOfferCodecs() {
+  const std::vector<SdpVideoFormat> formats = test::HardwareVideoFormats();
+  std::vector<Codec> codecs = {CreateVideoCodec(96, formats.front()),
+                               CreateVideoCodec(97, formats.back())};
+  for (const auto& [first, last] : {std::pair{35, 63}, std::pair{98, 111}}) {
+    for (int pt = first; pt <= last; ++pt) {
+      codecs.push_back(CreateVideoCodec(pt, "munged" + std::to_string(pt)));
+    }
+  }
+  return codecs;
+}
+
+// Regression test for https://issues.webrtc.org/564178627. An endpoint with
+// hardware codecs supports 14 video formats, each with a retransmission codec
+// of its own, so its codec matrix needs more payload types than the offer of
+// the munging peer has left. The answer therefore only contains the codecs
+// that the application asked for if the codecs that it did not ask for are
+// left without a payload type.
+TEST_F(PeerConnectionMediaTestUnifiedPlan,
+       AnswerWithHardwareCodecMatrixUnderPayloadTypePressure) {
+  auto caller_engine = std::make_unique<FakeMediaEngine>();
+  caller_engine->SetVideoCodecs(MungedOfferCodecs());
+  auto callee_engine = std::make_unique<FakeMediaEngine>();
+  callee_engine->SetVideoCodecs(test::HardwareVideoCodecs());
+
+  auto caller = CreatePeerConnectionWithVideo(std::move(caller_engine));
+  auto callee = CreatePeerConnection(std::move(callee_engine));
+  ASSERT_THAT(caller, NotNull());
+  ASSERT_THAT(callee, NotNull());
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  auto transceivers = callee->pc()->GetTransceivers();
+  ASSERT_EQ(transceivers.size(), 1u);
+  RtpCapabilities capabilities =
+      callee->pc_factory()->GetRtpReceiverCapabilities(MediaType::VIDEO);
+  std::erase_if(capabilities.codecs, [](const RtpCodecCapability& codec) {
+    return codec.name != "VP8" && codec.name != "AV1" &&
+           codec.name != kRtxCodecName;
+  });
+  ASSERT_TRUE(transceivers[0]->SetCodecPreferences(capabilities.codecs).ok());
+
+  std::unique_ptr<SessionDescriptionInterface> answer = callee->CreateAnswer();
+  ASSERT_THAT(answer, NotNull());
+  const std::vector<Codec>& codecs =
+      answer->description()->contents()[0].media_description()->codecs();
+  EXPECT_THAT(codecs, Contains(Field(&Codec::name, StrCaseEq("VP8"))));
+  EXPECT_THAT(codecs, Contains(Field(&Codec::name, StrCaseEq("AV1"))));
 }
 
 INSTANTIATE_TEST_SUITE_P(PeerConnectionMediaTest,

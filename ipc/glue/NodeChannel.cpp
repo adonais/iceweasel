@@ -117,7 +117,7 @@ void NodeChannel::SendEventMessage(UniquePtr<IPC::Message> aMessage) {
   // Make sure we're not sending a message with one of our special internal
   // types ,as those should only be sent using the corresponding methods on
   // NodeChannel.
-  MOZ_DIAGNOSTIC_ASSERT(aMessage->type() != BROADCAST_MESSAGE_TYPE &&
+  MOZ_DIAGNOSTIC_ASSERT(aMessage->type() != DEAD_PROXY_MESSAGE_TYPE &&
                         aMessage->type() != INTRODUCE_MESSAGE_TYPE &&
                         aMessage->type() != REQUEST_INTRODUCTION_MESSAGE_TYPE &&
                         aMessage->type() != ACCEPT_INVITE_MESSAGE_TYPE);
@@ -141,10 +141,16 @@ void NodeChannel::Introduce(Introduction aIntroduction) {
   SendMessage(std::move(message));
 }
 
-void NodeChannel::Broadcast(UniquePtr<IPC::Message> aMessage) {
-  MOZ_DIAGNOSTIC_ASSERT(aMessage->type() == BROADCAST_MESSAGE_TYPE,
-                        "Can only broadcast messages with the correct type");
-  SendMessage(std::move(aMessage));
+void NodeChannel::DeadProxy(const NodeName& aProxyNode,
+                            const PortName& aProxyPort) {
+  MOZ_ASSERT(aProxyNode != mojo::core::ports::kInvalidNodeName);
+  MOZ_ASSERT(aProxyPort != mojo::core::ports::kInvalidPortName);
+  auto message =
+      MakeUnique<IPC::Message>(MSG_ROUTING_CONTROL, DEAD_PROXY_MESSAGE_TYPE);
+  IPC::MessageWriter writer(*message);
+  WriteParam(&writer, aProxyNode);
+  WriteParam(&writer, aProxyPort);
+  SendMessage(std::move(message));
 }
 
 void NodeChannel::AcceptInvite(const NodeName& aRealName,
@@ -229,9 +235,15 @@ void NodeChannel::OnMessageReceived(UniquePtr<IPC::Message> aMessage) {
       }
       break;
     }
-    case BROADCAST_MESSAGE_TYPE: {
-      mListener->OnBroadcast(mName, std::move(aMessage));
-      return;
+    case DEAD_PROXY_MESSAGE_TYPE: {
+      NodeName proxyNode;
+      PortName proxyPort;
+      if (IPC::ReadParam(&reader, &proxyNode) &&
+          IPC::ReadParam(&reader, &proxyPort)) {
+        mListener->OnDeadProxy(mName, proxyNode, proxyPort);
+        return;
+      }
+      break;
     }
     case ACCEPT_INVITE_MESSAGE_TYPE: {
       NodeName realName;
@@ -276,8 +288,9 @@ void NodeChannel::OnChannelConnected(base::ProcessId aPeerPid) {
 
   // We may need to tell the GeckoChildProcessHost which we were created by that
   // the channel has been connected to unblock completing the process launch.
-  if (mChildProcessHost) {
-    mChildProcessHost->OnChannelConnected(aPeerPid);
+  RefPtr<GeckoChildProcessHost> host(mChildProcessHost);
+  if (host) {
+    host->OnChannelConnected(aPeerPid);
   }
 }
 

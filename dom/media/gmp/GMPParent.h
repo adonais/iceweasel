@@ -216,7 +216,7 @@ class GMPParent final : public PGMPParent,
   const uint32_t mPluginId;
   GMPPluginType mPluginType = GMPPluginType::Unknown;
   nsTArray<GMPCapability> mCapabilities;
-  GMPProcessParent* mProcess;
+  RefPtr<GMPProcessParent> mProcess;
   bool mDeleteProcessOnlyOnUnload;
   bool mAbnormalShutdownInProgress;
   bool mIsBlockingDeletion;

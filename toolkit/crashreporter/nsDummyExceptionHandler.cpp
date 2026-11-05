@@ -136,12 +136,6 @@ nsresult RecordXPCOMPlatformAnnotations() { return NS_ERROR_NOT_IMPLEMENTED; }
 
 bool GetAnnotation(const nsACString& key, nsACString& data) { return false; }
 
-nsresult RegisterAppMemory(void* ptr, size_t length) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-nsresult UnregisterAppMemory(void* ptr) { return NS_ERROR_NOT_IMPLEMENTED; }
-
 void SetIncludeContextHeap(bool aValue) {}
 
 bool GetServerURL(nsACString& aServerURL) { return false; }

@@ -393,12 +393,12 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   void ScrollToSelectedOption() { return ScrollToOption(SelectedIndex()); }
 
-  void ResetListBoxSelection(bool aAllowScrolling);
-
  protected:
   virtual ~HTMLSelectElement();
 
   // Helper Methods
+  void ResetListBoxSelection();
+
   /**
    * Check whether the option specified by the index is selected
    * @param aIndex the index

@@ -7,3 +7,14 @@ with Files('**'):
 
 DIRS += ['src']
 
+# The zlib license appreciates but does not require an acknowledgment in the
+# product documentation.
+LICENSES += ['zlib']
+LICENSES['zlib'].title = 'zlib License'
+LICENSES['zlib'].text = 'LICENSE'
+LICENSES['zlib'].acknowledgement = (
+    'The <a href="https://www.zlib.net/">zlib</a> compression library '
+    '(Jean-loup Gailly, Mark Adler and team)'
+)
+
+LICENSED_UNDER += ['zlib']

@@ -5,6 +5,7 @@
 import os
 import shutil
 import tempfile
+import textwrap
 import unittest
 
 import mozpack.path as mozpath
@@ -16,7 +17,9 @@ from mozbuild.licenses import (
     LicenseCollection,
     LicenseError,
     app_license_blocks,
+    covering_licenses,
     covering_manifest,
+    declared_coverage,
     from_context,
 )
 
@@ -101,6 +104,18 @@ class TestLicenseCollection(unittest.TestCase):
         collection = LicenseCollection()
         collection.add(self.notice("mpl", text=self.html))
         self.assertTrue(collection.records()[0]["html"])
+
+    def test_markdown_line_breaks_are_dropped(self):
+        markdown = mozpath.join(self.tmpdir, "LICENSE.md")
+        with open(markdown, "w") as fh:
+            fh.write("Copyright A.<br>\nCopyright B. <br/>\nKeep <br> inline\n")
+        collection = LicenseCollection()
+        collection.add(self.notice("libjpeg", text=markdown))
+        record = collection.records()[0]
+        self.assertFalse(record["html"])
+        self.assertEqual(
+            record["text"], "Copyright A.\nCopyright B. \nKeep <br> inline\n"
+        )
 
     def test_non_license_object_is_ignored(self):
         self.assertFalse(LicenseCollection().add(object()))
@@ -296,6 +311,65 @@ class TestAppLicenseBlocks(unittest.TestCase):
 
     def test_a_context_generating_nothing_has_no_blocks(self):
         self.assertEqual(app_license_blocks(self.context(None)), [])
+
+
+class TestDeclaredCoverage(unittest.TestCase):
+    """The coverage `mach vendor rust` reads from moz.build syntax trees."""
+
+    def setUp(self):
+        self.tmpdir = mozpath.normpath(tempfile.mkdtemp())
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def coverage(self, files):
+        for relpath, body in files.items():
+            path = mozpath.join(self.tmpdir, relpath)
+            os.makedirs(mozpath.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(textwrap.dedent(body))
+        return declared_coverage(self.tmpdir, list(files))
+
+    def test_licenses_paths_in_every_branch(self):
+        coverage = self.coverage({
+            "licenses/moz.build": """
+                LICENSES += ["bsd"]
+                LICENSES["bsd"].spdx = "BSD-3-Clause"
+                LICENSES["bsd"].paths = ["third_party/rust/a/"]
+                if CONFIG["MOZ_B"]:
+                    LICENSES["bsd"].paths += ["third_party/rust/b"]
+            """
+        })
+        self.assertEqual(coverage["bsd"]["spdx"], "BSD-3-Clause")
+        self.assertEqual(
+            coverage["bsd"]["paths"], {"third_party/rust/a", "third_party/rust/b"}
+        )
+        self.assertEqual(covering_licenses("third_party/rust/a", coverage), ["bsd"])
+        self.assertEqual(covering_licenses("third_party/rust/b", coverage), ["bsd"])
+        self.assertEqual(covering_licenses("third_party/rust/ab", coverage), [])
+
+    def test_licensed_under(self):
+        coverage = self.coverage({
+            "lib/moz.build": 'LICENSED_UNDER += ["bsd"]\n',
+            "glue/moz.build": """
+                LICENSED_UNDER += ["mit"]
+                LICENSED_UNDER["mit"].paths = ["../third_party/rust/c"]
+            """,
+        })
+        self.assertEqual(covering_licenses("lib/sub", coverage), ["bsd"])
+        self.assertEqual(covering_licenses("third_party/rust/c", coverage), ["mit"])
+        self.assertEqual(covering_licenses("glue", coverage), [])
+
+    def test_non_literals_are_not_counted(self):
+        coverage = self.coverage({
+            "moz.build": """
+                CRATES = ["third_party/rust/a"]
+                LICENSES["bsd"].paths = CRATES
+                LICENSES[ID].paths = ["third_party/rust/b"]
+            """
+        })
+        self.assertEqual(covering_licenses("third_party/rust/a", coverage), [])
+        self.assertEqual(covering_licenses("third_party/rust/b", coverage), [])
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@
     --panel-list-border-color: var(--border-color-deemphasized);
     --panel-list-border-radius: var(--panel-border-radius);
     --panel-list-box-shadow: var(--popup-box-shadow);
+    --panel-list-padding-block: var(--panel-padding-block);
     --panel-list-text-color: var(--text-color);
   }
 
@@ -21,6 +22,7 @@
     @layer tokens-foundation-nova {
       --panel-list-border-color: var(--panel-border-color);
       --panel-list-box-shadow: var(--panel-box-shadow);
+      --panel-list-padding-block: var(--space-small);
     }
   }
 }

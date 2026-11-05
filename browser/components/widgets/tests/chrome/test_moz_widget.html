@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>moz-widget tests</title>
+    <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+    <script src="chrome://mochikit/content/tests/SimpleTest/ExtensionTestUtils.js"></script>
+    <script src="chrome://global/content/customElements.js"></script>
+    <link
+      rel="stylesheet"
+      href="chrome://mochikit/content/tests/SimpleTest/test.css"
+    />
+    <link
+      rel="stylesheet"
+      href="chrome://global/skin/design-system/tokens-brand.css"
+    />
+    <link rel="localization" href="toolkit/global/textActions.ftl" />
+    <script
+      type="module"
+      src="chrome://browser/content/widgets/moz-widget.mjs"
+    ></script>
+  </head>
+
+  <body>
+    <p id="display"></p>
+    <div id="content"></div>
+    <pre id="test"></pre>
+    <script>
+      const WIDGET_DOCUMENT = "about:blank";
+
+      function createWidget({ supportsXULElements, ...props } = {}) {
+        const widget = document.createElement("moz-widget");
+        widget.setAttribute("widget-id", "testWidget");
+        widget.setAttribute("size", "large");
+        if (supportsXULElements !== undefined) {
+          Object.defineProperty(widget, "supportsXULElements", {
+            value: supportsXULElements,
+          });
+        }
+        Object.assign(widget, props);
+        document.getElementById("content").append(widget);
+        return widget;
+      }
+
+      const IAB_WIDTH = 300;
+      const IAB_HEIGHT = 250;
+
+      add_task(async function test_widget_sizes() {
+        const expected = {
+          small: [IAB_WIDTH / 2, IAB_HEIGHT / 2, "small"],
+          medium: [IAB_WIDTH, IAB_HEIGHT / 2, "medium"],
+          large: [IAB_WIDTH, IAB_HEIGHT, "large"],
+          unknown: [IAB_WIDTH, IAB_HEIGHT, "large"],
+        };
+
+        for (const [size, [width, height, sizeName]] of Object.entries(
+          expected
+        )) {
+          const widget = createWidget({ size });
+          await widget.updateComplete;
+
+          const rect = widget.getBoundingClientRect();
+          is(rect.width, width, `${size} width`);
+          is(rect.height, height, `${size} height`);
+          is(
+            getComputedStyle(widget).getPropertyValue("--widget-size"),
+            sizeName,
+            `${size} --widget-size`
+          );
+          widget.remove();
+        }
+      });
+
+      add_task(async function test_slotted_widget() {
+        const widget = createWidget({ title: "Test widget" });
+        await widget.updateComplete;
+
+        ok(!widget.frame, "no frame");
+        ok(widget.shadowRoot.querySelector("slot:not([name])"), "default slot");
+        is(
+          widget.shadowRoot.querySelector(".widget").getAttribute("aria-label"),
+          "Test widget",
+          "widget label"
+        );
+        widget.remove();
+      });
+
+      add_task(async function test_title_attribute() {
+        const widget = createWidget();
+        widget.setAttribute("title", "Test widget");
+        await widget.updateComplete;
+
+        is(widget.title, "Test widget", "title property");
+        ok(!widget.hasAttribute("title"), "title taken off the host");
+        ok(
+          widget.dataset.l10nAttrs.split(",").includes("title"),
+          "fluent may set title"
+        );
+        widget.remove();
+      });
+
+      add_task(async function test_iframe_src() {
+        const widget = createWidget({
+          supportsXULElements: false,
+          src: WIDGET_DOCUMENT,
+          title: "Test widget",
+        });
+        await widget.updateComplete;
+
+        const frame = widget.frame;
+        is(frame.localName, "iframe", "iframe used for a content document");
+        is(frame.getAttribute("src"), WIDGET_DOCUMENT, "iframe src");
+        is(
+          frame.getAttribute("sandbox"),
+          "allow-forms allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox",
+          "sandbox"
+        );
+        is(frame.getAttribute("title"), "Test widget", "frame title");
+        ok(
+          !widget.shadowRoot.querySelector(".widget").hasAttribute("aria-label"),
+          "article unnamed"
+        );
+
+        widget.src = null;
+        await widget.updateComplete;
+        ok(!widget.frame, "frame dropped");
+        widget.remove();
+      });
+
+      add_task(async function test_browser_src_change() {
+        const widget = createWidget({ src: WIDGET_DOCUMENT });
+        await widget.updateComplete;
+
+        const browser = widget.frame;
+        is(browser.localName, "browser", "browser");
+
+        const otherSrc = `${WIDGET_DOCUMENT}#other`;
+        widget.src = otherSrc;
+        await widget.updateComplete;
+        is(widget.frame, browser, "same browser");
+        is(browser.getAttribute("src"), otherSrc, "browser src");
+        await SimpleTest.promiseWaitForCondition(
+          () => browser.browsingContext.currentURI?.spec == otherSrc,
+          "browser navigated"
+        );
+
+        widget.src = null;
+        await widget.updateComplete;
+        ok(!widget.frame, "frame dropped");
+        ok(!browser.isConnected, "browser removed");
+        widget.remove();
+      });
+
+      add_task(async function test_extension_src() {
+        const extension = ExtensionTestUtils.loadExtension({
+          files: {
+            "widget.html":
+              '<!doctype html><meta charset="utf-8">' +
+              '<script src="widget.js"><\/script>',
+            "widget.js": function () {
+              /* globals browser */
+              browser.test.sendMessage("test-document-loaded");
+            },
+          },
+        });
+        await extension.startup();
+
+        const policy = WebExtensionPolicy.getByHostname(extension.uuid);
+        const src = `moz-extension://${extension.uuid}/widget.html`;
+        const widget = createWidget({
+          src,
+          remoteType: "extension",
+          browsingContextGroupId: policy.browsingContextGroupId,
+        });
+        await widget.updateComplete;
+
+        is(widget.frame.localName, "browser", "browser used for a chrome document");
+        await extension.awaitMessage("test-document-loaded");
+        is(
+          widget.frame.browsingContext.group.id,
+          policy.browsingContextGroupId,
+          "extension browsing context group"
+        );
+
+        widget.remove();
+        await extension.unload();
+      });
+    </script>
+  </body>
+</html>

@@ -47,7 +47,7 @@ platform_microbenchmarks/platform_microbenchmarks
 * [Profiling with xperf](profiling_with_xperf.md) How to use Microsoft's Xperf tool to profile Mozilla code.
 * [Profiling with Concurrency Visualizer](profiling_with_concurrency_visualizer.md) How to use Visual Studio's Concurrency Visualizer tool to profile Mozilla code.
 * [Profiling with Zoom](profiling_with_zoom.md) Zoom is a profiler for Linux done by the people who made Shark.
-* [Adding a new telemetry probe](https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/start/adding-a-new-probe.html) Information on how to add a new measurement to the Telemetry performance-reporting system
+* {doc}`Adding a new telemetry probe </toolkit/components/telemetry/start/adding-a-new-probe>` Information on how to add a new measurement to the Telemetry performance-reporting system
 
 ## Power Profiling
 

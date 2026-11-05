@@ -271,8 +271,6 @@
 
     /** panel **/
     --panel-background-color: var(--popup-background-color);
-    --panel-border-color: var(--popup-border-color);
-    --panel-border-radius: var(--popup-border-radius);
     --panel-menuitem-border-radius: var(--border-radius-large);
     --panel-text-color: var(--text-color);
 
@@ -295,8 +293,8 @@
 
     /** toolbar **/
     --toolbar-background-color: light-dark(rgba(255, 255, 255, 40%), rgba(0, 0, 0, 20%));
-    --toolbar-field-background-color: var(--toolbar-background-color);
     --toolbar-field-background-color-focus: var(--background-color-box);
+    --toolbar-field-background-color: light-dark(var(--color-white-alpha-40), var(--color-black-alpha-20));
     --toolbar-field-border-color: light-dark(var(--color-gray-20), var(--color-gray-60));
     --toolbar-field-border-color-focus: var(--focus-outline-color);
     --toolbar-field-text-color: light-dark(var(--color-violet-desaturated-70), var(--color-violet-desaturated-10));
@@ -310,17 +308,18 @@
     --toolbarbutton-icon-fill-attention: var(--color-accent-primary);
     --toolbarbutton-opacity-disabled: 0.4;
     --toolbarbutton-outline-color: transparent;
+    --toolbarbutton-outline-color-disabled: transparent;
     --toolbarbutton-outline-color-selected: var(--toolbarbutton-outline-color-active);
     --toolbarbutton-outline-offset: -1px;
 
     /** toolbox **/
     --toolbox-background-color: light-dark(var(--color-white), var(--color-gray-70));
-    --toolbox-background-color-gradient-leading: light-dark(var(--color-violet-10), var(--color-violet-desaturated-70));
-    --toolbox-background-color-gradient-trailing: light-dark(var(--color-orange-10), var(--color-orange-70));
     --toolbox-background-color-inactive: transparent;
 
     /* This gradient is only used for Nova */
-    --toolbox-background-gradient: linear-gradient(96deg, color-mix(var(--toolbox-background-color-gradient-leading) 50%, transparent) 39.84%, color-mix(var(--toolbox-background-color-gradient-trailing) 50%, transparent) 101.72%);
+    --toolbox-background-gradient: linear-gradient(96deg, color-mix(var(--toolbox-background-gradient-leading) 50%, transparent) 39.84%, color-mix(var(--toolbox-background-gradient-trailing) 50%, transparent) 101.72%);
+    --toolbox-background-gradient-leading: light-dark(var(--color-violet-10), var(--color-violet-desaturated-70));
+    --toolbox-background-gradient-trailing: light-dark(var(--color-orange-10), var(--color-orange-70));
     --toolbox-text-color: var(--text-color);
 
     /* Figma aliases this to toolbox/text/color so designers see a real color, but CSS must use currentColor: the tab inherits --lwt-text-color under an lwtheme and --toolbox-text-color-inactive in a background window, neither of which --toolbox-text-color tracks. Listed in figma-import.mjs's FIGMA_IGNORES so the alias doesn't overwrite this. */
@@ -339,6 +338,7 @@
       --text-color-error: inherit;
 
       /** toolbar **/
+      --toolbar-field-background-color: Field;
       --toolbar-field-border-color-focus: var(--focus-outline-color);
     }
   }
@@ -438,13 +438,14 @@
       --toolbarbutton-outline-color: var(--button-border-color);
       --toolbarbutton-outline-color-hover: var(--button-border-color-hover);
       --toolbarbutton-outline-color-active: var(--button-border-color-active);
+      --toolbarbutton-outline-color-disabled: var(--button-border-color-disabled);
 
       /** toolbox **/
-      --toolbox-background-color-gradient-leading: Canvas;
-      --toolbox-background-color-gradient-trailing: Canvas;
 
       /* This gradient is only used for Nova */
       --toolbox-background-gradient: image(transparent);
+      --toolbox-background-gradient-leading: Canvas;
+      --toolbox-background-gradient-trailing: Canvas;
     }
   }
 }

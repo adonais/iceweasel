@@ -807,7 +807,7 @@ bool LMoveGroup::add(LAllocation from, LAllocation to, LDefinition::Type type) {
   // clang-format on
 
 #endif
-  return moves_.append(LMove(from, to, type));
+  return moves_.emplaceBack(from, to, type);
 }
 
 bool LMoveGroup::addAfter(LAllocation from, LAllocation to,

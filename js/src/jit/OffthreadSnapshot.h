@@ -38,7 +38,6 @@ class OffthreadGCPtr {
     ptr_ = ptr;
   }
 
- private:
   void operator=(OffthreadGCPtr<T>& other) = delete;
 };
 

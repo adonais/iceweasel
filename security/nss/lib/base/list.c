@@ -132,22 +132,10 @@ nssList_Destroy(nssList *list)
 }
 
 NSS_IMPLEMENT void
-nssList_SetCompareFunction(nssList *list, nssListCompareFunc compareFunc)
-{
-    list->compareFunc = compareFunc;
-}
-
-NSS_IMPLEMENT void
 nssList_SetSortFunction(nssList *list, nssListSortFunc sortFunc)
 {
     /* XXX if list already has elements, sort them */
     list->sortFunc = sortFunc;
-}
-
-NSS_IMPLEMENT nssListCompareFunc
-nssList_GetCompareFunction(nssList *list)
-{
-    return list->compareFunc;
 }
 
 NSS_IMPLEMENT void
@@ -261,16 +249,6 @@ nssList_Remove(nssList *list, void *data)
     }
     NSSLIST_UNLOCK_IF(list);
     return PR_SUCCESS;
-}
-
-NSS_IMPLEMENT void *
-nssList_Get(nssList *list, void *data)
-{
-    nssListElement *node;
-    NSSLIST_LOCK_IF(list);
-    node = nsslist_get_matching_element(list, data);
-    NSSLIST_UNLOCK_IF(list);
-    return (node) ? node->data : NULL;
 }
 
 NSS_IMPLEMENT PRUint32

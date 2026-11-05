@@ -4,6 +4,7 @@ support-files = [
   "page.html",
   "block_list.txt",
   "annotate_list.txt",
+  "empty_script.js",
 ]
 
 ["browser_about_url_classifier.js"]
@@ -13,6 +14,8 @@ support-files = [
 ["browser_content_classifier_content_script.js"]
 
 ["browser_content_classifier_engines_pref.js"]
+
+["browser_content_classifier_fingerprinters_passive.js"]
 
 ["browser_content_classifier_first_party.js"]
 

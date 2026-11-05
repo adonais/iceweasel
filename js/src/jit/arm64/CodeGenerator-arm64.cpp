@@ -69,24 +69,6 @@ void CodeGeneratorARM64::emitBranch(Assembler::Condition cond,
   }
 }
 
-void CodeGeneratorARM64::emitBailoutOOL(LSnapshot* snapshot) {
-  masm.push(Imm32(snapshot->snapshotOffset()));
-  jumpToDeoptLabel();
-}
-
-void CodeGeneratorARM64::bailoutIf(Assembler::Condition condition,
-                                   LSnapshot* snapshot) {
-  encode(snapshot);
-
-  InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  auto* ool = new (alloc()) LambdaOutOfLineCode(
-      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
-  addOutOfLineCode(ool,
-                   new (alloc()) BytecodeSite(tree, tree->script()->code()));
-
-  masm.B(ool->entry(), condition);
-}
-
 void CodeGeneratorARM64::bailoutIfTest(Assembler::Condition condition,
                                        ARMRegister rt, LSnapshot* snapshot) {
   encode(snapshot);
@@ -3888,6 +3870,35 @@ void CodeGenerator::visitWasmReplaceLaneSimd128(LWasmReplaceLaneSimd128* ins) {
       break;
     default:
       MOZ_CRASH("ReplaceLane SimdOp not implemented");
+  }
+#else
+  MOZ_CRASH("No SIMD");
+#endif
+}
+
+void CodeGenerator::visitWasmMoveLaneSimd128(LWasmMoveLaneSimd128* ins) {
+#ifdef ENABLE_JIT_SIMD
+  MOZ_ASSERT(ToFloatRegister(ins->lhs()) == ToFloatRegister(ins->output()));
+  ARMFPRegister dest(ToFloatRegister(ins->lhs()), 128);
+  ARMFPRegister src(ToFloatRegister(ins->rhs()), 128);
+  uint32_t laneIndex = ins->mir()->laneIndex();
+  uint32_t srcLaneIndex = ins->mir()->srcLaneIndex();
+
+  switch (ins->mir()->simdOp()) {
+    case wasm::SimdOp::I8x16ReplaceLane:
+      masm.Mov(dest.V16B(), laneIndex, src.V16B(), srcLaneIndex);
+      break;
+    case wasm::SimdOp::I16x8ReplaceLane:
+      masm.Mov(dest.V8H(), laneIndex, src.V8H(), srcLaneIndex);
+      break;
+    case wasm::SimdOp::I32x4ReplaceLane:
+      masm.Mov(dest.V4S(), laneIndex, src.V4S(), srcLaneIndex);
+      break;
+    case wasm::SimdOp::I64x2ReplaceLane:
+      masm.Mov(dest.V2D(), laneIndex, src.V2D(), srcLaneIndex);
+      break;
+    default:
+      MOZ_CRASH("MoveLane SimdOp not implemented");
   }
 #else
   MOZ_CRASH("No SIMD");

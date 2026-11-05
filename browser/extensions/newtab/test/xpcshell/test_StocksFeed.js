@@ -119,9 +119,84 @@ add_task(async function test_isEnabled_gating() {
   Assert.ok(feed.isEnabled(), "enabled when user + system prefs true");
 
   feed.store.getState = () => ({
+    Prefs: {
+      values: {
+        "widgets.stocks.enabled": true,
+        region: "US",
+        trainhopConfig: { widgetStocks: { visible: true } },
+      },
+    },
+  });
+  Assert.ok(
+    feed.isEnabled(),
+    "enabled when user pref true + trainhopConfig.widgetStocks.visible"
+  );
+
+  feed.store.getState = () => ({
     Prefs: { values: { "widgets.stocks.enabled": false } },
   });
   Assert.ok(!feed.isEnabled(), "disabled when user pref false");
+
+  const trainhop = { widgets: { stocksEnabled: true } };
+  feed.store.getState = () => ({
+    Prefs: {
+      values: { "widgets.stocks.enabled": true, trainhopConfig: trainhop },
+    },
+  });
+  Assert.ok(!feed.isEnabled(), "trainhop reveal ignored without a region");
+
+  feed.store.getState = () => ({
+    Prefs: {
+      values: {
+        "widgets.stocks.enabled": true,
+        region: "US",
+        trainhopConfig: trainhop,
+      },
+    },
+  });
+  Assert.ok(feed.isEnabled(), "enabled via trainhop once the region resolves");
+  sandbox.restore();
+});
+
+add_task(async function test_region_resolves_after_init() {
+  let sandbox = sinon.createSandbox();
+  const fetchStub = stubFeed(sandbox, {
+    fetchResult: [
+      {
+        custom_details: {
+          polygon: {
+            values: [
+              {
+                ticker: "SPY",
+                name: "SPDR S&P 500 ETF Trust",
+                last_price: "$559.44 USD",
+                todays_change_perc: "+0.20",
+              },
+            ],
+          },
+        },
+      },
+    ],
+  });
+
+  const values = {
+    "widgets.stocks.enabled": true,
+    trainhopConfig: { widgets: { stocksEnabled: true } },
+  };
+  let feed = new StocksFeed();
+  feed.store = {
+    dispatch: sinon.spy(),
+    getState: () => ({ Prefs: { values } }),
+  };
+
+  await feed.onAction({ type: actionTypes.INIT });
+  Assert.strictEqual(feed.loaded, false, "not loaded without a region");
+  Assert.ok(!fetchStub.called, "no Merino fetch without a region");
+
+  values.region = "FR";
+  await feed.onPrefChangedAction({ data: { name: "region", value: "FR" } });
+  Assert.ok(feed.loaded, "loaded once the region resolves");
+  Assert.equal(fetchStub.callCount, 1, "fetched once the region resolves");
   sandbox.restore();
 });
 

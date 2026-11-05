@@ -7,6 +7,10 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "nsNotifyAddrListener.cpp",
     ]
 
+    SOURCE_HEADERS += [
+        "nsNotifyAddrListener.h",
+    ]
+
 LOCAL_INCLUDES += [
     "/netwerk/base",
 ]

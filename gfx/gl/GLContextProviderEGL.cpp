@@ -185,8 +185,8 @@ static EGLSurface CreateSurfaceFromNativeWindow(
     gfxCriticalNote << "Failed to obtain native window from Surface";
     return EGL_NO_SURFACE;
   }
-  const auto& display = egl.mLib->fGetDisplay(EGL_DEFAULT_DISPLAY);
-  newSurface = egl.mLib->fCreateWindowSurface(display, config, nativeWindow, 0);
+  newSurface =
+      egl.mLib->fCreateWindowSurface(egl.mDisplay, config, nativeWindow, 0);
   ANativeWindow_release(nativeWindow);
 #else
   newSurface = egl.fCreateWindowSurface(config, window, nullptr);
@@ -323,16 +323,8 @@ already_AddRefed<GLContext> GLContextEGLFactory::Create(
   return glContext.forget();
 }
 
-/* static */
 EGLSurface GLContextEGL::CreateEGLSurfaceForCompositorWidget(
     widget::CompositorWidget* aCompositorWidget, const EGLConfig aConfig) {
-  nsCString discardFailureId;
-  const auto egl = DefaultEglDisplay(&discardFailureId);
-  if (!egl) {
-    gfxCriticalNote << "Failed to load EGL library 6!";
-    return EGL_NO_SURFACE;
-  }
-
   MOZ_ASSERT(aCompositorWidget);
   EGLNativeWindowType window =
       GET_NATIVE_WINDOW_FROM_COMPOSITOR_WIDGET(aCompositorWidget);
@@ -340,8 +332,7 @@ EGLSurface GLContextEGL::CreateEGLSurfaceForCompositorWidget(
     gfxCriticalNote << "window is null";
     return EGL_NO_SURFACE;
   }
-
-  return mozilla::gl::CreateSurfaceFromNativeWindow(*egl, window, aConfig);
+  return mozilla::gl::CreateSurfaceFromNativeWindow(*mEgl, window, aConfig);
 }
 
 GLContextEGL::GLContextEGL(const std::shared_ptr<EglDisplay> egl,

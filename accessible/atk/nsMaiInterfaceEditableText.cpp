@@ -26,7 +26,7 @@ static void setTextContentsCB(AtkEditableText* aText, const gchar* aString) {
 }
 
 static void insertTextCB(AtkEditableText* aText, const gchar* aString,
-                         gint aLength, gint* aPosition) {
+                         gint /*aLength*/, gint* aPosition) {
   if (Accessible* acc = GetInternalObj(ATK_OBJECT(aText))) {
     if (acc->IsTextRole()) {
       return;

@@ -56,6 +56,18 @@ class RTC_EXPORT BuiltinAudioProcessingBuilder
     return *this;
   }
 
+  // Returns the echo canceller config to inject when APM is created.
+  const std::optional<EchoCanceller3Config>& echo_canceller_config() const {
+    return echo_canceller_config_;
+  }
+
+  // Returns the echo canceller multichannel config to inject when APM is
+  // created.
+  const std::optional<EchoCanceller3Config>&
+  echo_canceller_multichannel_config() const {
+    return echo_canceller_multichannel_config_;
+  }
+
   // Sets the echo controller factory to inject when APM is created.
   BuiltinAudioProcessingBuilder& SetEchoControlFactory(
       std::unique_ptr<EchoControlFactory> echo_control_factory) {

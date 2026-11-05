@@ -4,7 +4,6 @@
 
 package org.mozilla.gecko.media;
 
-import android.media.MediaCrypto;
 import android.util.Log;
 
 final class RemoteMediaDrmBridge implements GeckoMediaDrm {
@@ -142,13 +141,6 @@ final class RemoteMediaDrmBridge implements GeckoMediaDrm {
     RemoteManager.getInstance().onRemoteMediaDrmBridgeReleased(mRemote);
     mRemote = null;
     mCallbacksFwd = null;
-  }
-
-  @Override
-  public synchronized MediaCrypto getMediaCrypto() {
-    if (DEBUG) Log.d(LOGTAG, "getMediaCrypto(), should not enter here!");
-    assertTrue(false);
-    return null;
   }
 
   @Override

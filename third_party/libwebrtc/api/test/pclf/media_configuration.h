@@ -366,6 +366,8 @@ struct AudioConfig {
   // According to bugs.webrtc.org/4762 WebRTC supports synchronization only
   // for pair of single audio and single video stream.
   std::optional<std::string> sync_group;
+  // If true, the input file will be repeated for the duration of the call.
+  bool repeat = true;
 };
 
 struct VideoCodecConfig {

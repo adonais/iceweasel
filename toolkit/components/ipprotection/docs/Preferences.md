@@ -61,11 +61,6 @@ know what you are doing.
 
 : Cached proxy usage JSON used during startup.
 
-`browser.ipProtection.locationListCache` (string, default: `""`)
-
-: Cached Guardian location list shared between `IPProtectionService` and
-  `GuardianClient`.
-
 `browser.ipProtection.hasUpgraded` (boolean, default: `false`)
 
 : Cached flag indicating the user has a paid subscription.
@@ -92,6 +87,12 @@ know what you are doing.
 : Milliseconds to wait for a proxy activation or a proxy pass rotation to finish
   before aborting the attempt and moving to the error state.
 
+`browser.ipProtection.serviceWaitTimeout` (integer, default: `90000`)
+
+: Milliseconds `start()` holds traffic for a service that is not `READY` yet
+  but may still become so, as during startup. A wait is not a request, so it
+  is not bounded by the guardian timeout.
+
 `browser.ipProtection.guardian.retryAfter` (integer, default: `500`)
 
 : Milliseconds to delay before retrying a proxy pass fetch that failed with a
@@ -103,10 +104,13 @@ know what you are doing.
 
 `browser.ipProtection.mode` (integer, default: `0`)
 
-: Selects which requests are proxied by `IPPChannelFilter`:
-  `0` routes all traffic (`MODE_FULL`), `1` only private browsing windows
-  (`MODE_PB`), `2` only requests classified as tracking (`MODE_TRACKER`),
-  (`MODE_INCLUSION`), `3` routes no traffic unless matching `browser.ipProtection.inclusion.match_patterns`.
+: `IPPMode` value new connections start in; anything else is treated as
+  `MODE_FULL`. Read at connection start, so it leaves a running connection
+  alone.
+
+  :::{seealso}
+  [IPPMode](Constants.md#proxy-modes)
+  :::
 
 `browser.ipProtection.inclusion.match_patterns` (string, default: `""`)
 
@@ -150,10 +154,6 @@ know what you are doing.
 
 : Controls whether the VPN egress location is displayed in the status panel.
 
-`browser.ipProtection.siteExceptionsHintsEnabled` (boolean, default: `true`)
-
-: Controls whether site exception confirmation hints are shown in the toolbar button.
-
 `browser.ipProtection.onboardingMessageMask` (integer, default: `0`)
 
 : Bitmask tracking which onboarding messages have already been shown.
@@ -171,6 +171,15 @@ know what you are doing.
 `browser.ipProtection.everOpenedPanel` (boolean, default: `false`)
 
 : Tracks if the user has ever opened the VPN panel.
+
+`browser.ipProtection.openedPanelSince160` (boolean, default: `false`)
+
+: Tracks if the user has opened the VPN panel since release 160.
+
+`browser.ipProtection.siteInclusionPromptShown` (boolean, default: `false`)
+
+: Tracks if the panel has shown the prompt to always turn on VPN for a site, so
+  it is only shown once.
 
 `browser.ipProtection.hasSeenFeature` (boolean, default: `false`, `true` on
 Nightly)

@@ -187,8 +187,45 @@ bool BaselineCompilerHandler::recordCallRetAddr(RetAddrEntry::Kind kind,
     return false;
   }
 
+  if (CanTriggerBaselineDebugModeOSR(kind)) {
+    MOZ_ASSERT_IF(lastDebugModeOSRPointOffset_ && !masm_.oom(),
+                  retOffset - *lastDebugModeOSRPointOffset_ >=
+                      Assembler::PatchWrite_NearCallSize());
+    lastDebugModeOSRPointOffset_ = mozilla::Some(retOffset);
+  }
+
   return true;
 }
+
+template <>
+void BaselineCompilerCodeGen::ensureDebugModeOSRPointSpace() {
+  const mozilla::Maybe<uint32_t>& lastOffset =
+      handler.lastDebugModeOSRPointOffset();
+  if (!lastOffset) {
+    return;
+  }
+
+  // Ensure that the previous DebugModeOSR point has sufficient space before
+  // emitting the next eligible call or finishing code generation.
+  if (masm.currentOffset() - *lastOffset <
+      Assembler::PatchWrite_NearCallSize()) {
+    int32_t paddingSize = Assembler::PatchWrite_NearCallSize();
+    paddingSize -= masm.currentOffset() - *lastOffset;
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+    masm.nop(paddingSize);
+#else
+    for (int32_t i = 0; i < paddingSize; i += Assembler::NopSize()) {
+      masm.nop();
+    }
+#endif
+  }
+
+  MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - *lastOffset >=
+                                 Assembler::PatchWrite_NearCallSize());
+}
+
+template <>
+void BaselineInterpreterCodeGen::ensureDebugModeOSRPointSpace() {}
 
 bool BaselineInterpreterHandler::recordCallRetAddr(RetAddrEntry::Kind kind,
                                                    uint32_t retOffset) {
@@ -312,6 +349,13 @@ bool BaselineCompiler::compileImpl() {
     return false;
   }
 
+  // Ensure that the DebugModeOSR point space doesn't overflow out of the
+  // BaselineScript's code.
+  ensureDebugModeOSRPointSpace();
+
+  perfSpewer_.recordOffset(masm, "DebugModeOSREpilogue");
+  emitDebugModeOSREpilogue();
+
   perfSpewer_.recordOffset(masm, "OOLPostBarrierSlot");
   emitOutOfLinePostBarrierSlot();
 
@@ -349,8 +393,9 @@ bool BaselineCompiler::finishCompile(JSContext* cx) {
         cx, warmUpCheckPrologueOffset_.offset(),
         profilerEnterFrameToggleOffset_.offset(),
         profilerExitFrameToggleOffset_.offset(),
-        handler.retAddrEntries().length(), handler.osrEntries().length(),
-        debugTrapEntries_.length(), script->resumeOffsets().size()));
+        debugModeOSREpilogueOffset_.offset(), handler.retAddrEntries().length(),
+        handler.osrEntries().length(), debugTrapEntries_.length(),
+        script->resumeOffsets().size()));
     if (!baselineScript) {
       return false;
     }
@@ -762,15 +807,13 @@ bool BaselineCompilerCodeGen::emitNextIC() {
   size_t firstStubOffset = ICScript::offsetOfFirstStub(entryIndex);
   masm.loadPtr(Address(ICStubReg, firstStubOffset), ICStubReg);
 
+  RetAddrEntry::Kind kind = RetAddrEntry::Kind::IC;
+  ensureDebugModeOSRPointSpace();
+
   CodeOffset returnOffset;
   EmitCallIC(masm, &returnOffset);
 
-  RetAddrEntry::Kind kind = RetAddrEntry::Kind::IC;
-  if (!handler.retAddrEntries().emplaceBack(pcOffset, kind, returnOffset)) {
-    return false;
-  }
-
-  return true;
+  return handler.recordCallRetAddr(kind, returnOffset.offset());
 }
 
 template <>
@@ -879,6 +922,11 @@ bool BaselineCodeGen<Handler>::callVMInternal(VMFunctionId id,
 #endif
     masm.push(FrameDescriptor(FrameType::BaselineJS));
   }
+
+  if (CanTriggerBaselineDebugModeOSR(kind)) {
+    ensureDebugModeOSRPointSpace();
+  }
+
   // Perform the call.
   uint32_t callOffset = masm.callJit(code);
 
@@ -1996,6 +2044,8 @@ bool BaselineCompiler::emitDebugTrap() {
   bool enabled = DebugAPI::stepModeEnabled(script) ||
                  DebugAPI::hasBreakpointsAt(script, handler.pc());
 
+  ensureDebugModeOSRPointSpace();
+
   // Emit patchable call to debug trap handler.
   JitCode* handlerCode =
       runtime->jitRuntime()->debugTrapHandler(DebugTrapHandlerKind::Compiler);
@@ -2009,6 +2059,16 @@ bool BaselineCompiler::emitDebugTrap() {
   // Add a RetAddrEntry for the return offset -> pc mapping.
   return handler.recordCallRetAddr(RetAddrEntry::Kind::DebugTrap,
                                    masm.currentOffset());
+}
+
+void BaselineCompiler::emitDebugModeOSREpilogue() {
+  AutoCreatedBy acb(masm, "BaselineCompiler::emitDebugModeOSREpilogue");
+
+  debugModeOSREpilogueOffset_ = CodeOffset(masm.currentOffset());
+#ifdef JS_USE_LINK_REGISTER
+  masm.pushReturnAddress();
+#endif
+  masm.jump(runtime->jitRuntime()->getBaselineDebugModeOSRHandler());
 }
 
 template <typename Handler>
@@ -6708,6 +6768,8 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   // Mark the generator as running.
   masm.storeValue(Int32Value(AbstractGeneratorObject::RESUME_INDEX_RUNNING),
                   resumeIndexSlot);
+
+  ensureDebugModeOSRPointSpace();
 
   // Call the callee's JIT code. Its prologue sees the descriptor bit and
   // dispatches to the resume point.

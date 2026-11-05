@@ -33,3 +33,9 @@ LICENSED_UNDER += ["libffi"]
 LICENSED_UNDER["libffi"].paths = [
     "libffi",
 ]
+
+SOURCE_HEADERS += [
+    "CTypes.h",
+    "Library.h",
+    "typedefs.h",
+]

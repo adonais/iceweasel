@@ -271,6 +271,9 @@ skip-if = [
 ["test_wheeltransaction.xhtml"]
 support-files = ["window_wheeltransaction.xhtml"]
 
+["test_window_size_constraints.xhtml"]
+support-files = ["window_size_constraints.xhtml"]
+
 # Windows
 # taskbar_previews.xhtml
 # window_state_windows.xhtml

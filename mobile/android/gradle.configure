@@ -22,9 +22,6 @@ def with_gradle(value):
             "see https://bugzilla.mozilla.org/show_bug.cgi?id=1414415."
         )
 
-    if value:
-        return True
-
 
 @depends(host, "--with-gradle", build_environment)
 @imports(_from="os.path", _import="isfile")
@@ -425,45 +422,6 @@ set_config(
 )
 
 
-@depends(gradle_android_build_config, "--disable-android-bundle")
-def gradle_android_archive_fenix_subproject_tasks(build_config, aab_enabled):
-    """Gradle tasks run by |mach android archive-geckoview| if just building fenix."""
-    tasks = [
-        "fenix:assemble{fenix.variant.name}".format(fenix=build_config.fenix),
-    ]
-
-    if aab_enabled:
-        tasks += [
-            "fenix:bundle{fenix.variant.name}".format(fenix=build_config.fenix),
-        ]
-    return tasks
-
-
-set_config(
-    "GRADLE_ANDROID_ARCHIVE_FENIX_SUBPROJECT_TASKS",
-    gradle_android_archive_fenix_subproject_tasks,
-)
-
-
-@depends(gradle_android_build_config, "--disable-android-bundle")
-def gradle_android_archive_focus_subproject_tasks(build_config, aab_enabled):
-    """Gradle tasks run by |mach android archive-geckoview| if just building focus."""
-    tasks = [
-        "focus-android:assemble{focus.variant.name}".format(focus=build_config.focus),
-    ]
-    if aab_enabled:
-        tasks += [
-            "focus-android:bundle{focus.variant.name}".format(focus=build_config.focus),
-        ]
-    return tasks
-
-
-set_config(
-    "GRADLE_ANDROID_ARCHIVE_FOCUS_SUBPROJECT_TASKS",
-    gradle_android_archive_focus_subproject_tasks,
-)
-
-
 @depends(gradle_android_build_config)
 def gradle_android_geckoview_docs_tasks(build_config):
     """Gradle tasks run by |mach android geckoview-docs|."""
@@ -515,23 +473,6 @@ def gradle_android_geckoview_docs_output_files(build_config):
 set_config(
     "GRADLE_ANDROID_GECKOVIEW_DOCS_OUTPUT_FILES",
     gradle_android_geckoview_docs_output_files,
-)
-
-
-@depends(gradle_android_build_config)
-def gradle_android_archive_coverage_artifacts_tasks(build_config):
-    """Gradle tasks run by |mach android archive-coverage-artifacts|."""
-    return [
-        "geckoview:archiveClassfiles{geckoview.variant.name}".format(
-            geckoview=build_config.geckoview
-        ),
-        "geckoview:copyCoverageDependencies",
-    ]
-
-
-set_config(
-    "GRADLE_ANDROID_ARCHIVE_COVERAGE_ARTIFACTS_TASKS",
-    gradle_android_archive_coverage_artifacts_tasks,
 )
 
 

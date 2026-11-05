@@ -25,6 +25,10 @@ SOURCES += [
     "../../chromium/sandbox/linux/services/syscall_wrappers.cc",
 ]
 
+SOURCE_HEADERS += [
+    "LinuxCapabilities.h",
+]
+
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     SOURCES["../../chromium/sandbox/linux/services/syscall_wrappers.cc"].flags += [
         "-Wno-empty-body",

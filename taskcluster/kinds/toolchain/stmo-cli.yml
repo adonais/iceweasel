@@ -25,7 +25,7 @@ linux64-stmo-cli:
         toolchain:
             - linux64-clang-toolchain
             - linux64-rust-toolchain
-            - linux64-toolchain-sysroot
+            - sysroot-x86_64-linux-gnu
 
 linux64-aarch64-stmo-cli:
     treeherder:
@@ -36,7 +36,7 @@ linux64-aarch64-stmo-cli:
         toolchain:
             - linux64-clang-toolchain
             - linux64-rust-toolchain
-            - linux64-aarch64-toolchain-sysroot
+            - sysroot-aarch64-linux-gnu
 
 macosx64-stmo-cli:
     treeherder:
@@ -65,6 +65,17 @@ win64-stmo-cli:
         symbol: TW64(stmo-cli)
     run:
         arguments: ['x86_64-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows-toolchain
+            - vs-toolchain
+
+win64-aarch64-stmo-cli:
+    treeherder:
+        symbol: TWA64(stmo-cli)
+    run:
+        arguments: ['aarch64-pc-windows-msvc']
     fetches:
         toolchain:
             - linux64-clang-toolchain

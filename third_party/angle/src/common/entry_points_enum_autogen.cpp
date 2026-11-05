@@ -708,8 +708,6 @@ const char *GetEntryPointName(EntryPoint ep)
             return "glCopyTexture3DANGLE";
         case EntryPoint::GLCopyTextureCHROMIUM:
             return "glCopyTextureCHROMIUM";
-        case EntryPoint::GLCoverageModulationCHROMIUM:
-            return "glCoverageModulationCHROMIUM";
         case EntryPoint::GLCreateMemoryObjectsEXT:
             return "glCreateMemoryObjectsEXT";
         case EntryPoint::GLCreateProgram:
@@ -2010,6 +2008,8 @@ const char *GetEntryPointName(EntryPoint ep)
             return "glTranslatef";
         case EntryPoint::GLTranslatex:
             return "glTranslatex";
+        case EntryPoint::GLTrimMemoryANGLE:
+            return "glTrimMemoryANGLE";
         case EntryPoint::GLUniform1f:
             return "glUniform1f";
         case EntryPoint::GLUniform1fv:

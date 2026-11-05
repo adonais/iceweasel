@@ -3,19 +3,17 @@
 
 "use strict";
 
-add_task(
-  async function test_appearance_sidebar_visible_when_redesign_enabled() {
-    let tab = await openPrefsTab("appearance");
-    let doc = tab.linkedBrowser.contentDocument;
+add_task(async function test_appearance_sidebar_visible() {
+  let tab = await openPrefsTab("appearance");
+  let doc = tab.linkedBrowser.contentDocument;
 
-    is_element_visible(
-      doc.getElementById("category-appearance"),
-      "Appearance category is visible when settings redesign is enabled"
-    );
+  is_element_visible(
+    doc.getElementById("category-appearance"),
+    "Appearance category is visible"
+  );
 
-    await BrowserTestUtils.removeTab(tab);
-  }
-);
+  await BrowserTestUtils.removeTab(tab);
+});
 
 add_task(async function test_appearance_pane_loads_setting_groups() {
   let tab = await openPrefsTab("appearance");
@@ -98,9 +96,6 @@ add_task(async function test_related_settings_home_link_navigates() {
 });
 
 add_task(async function test_related_settings_tabs_browsing_link_navigates() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
   await openPreferencesViaOpenPreferencesAPI("appearance", {
     leaveOpen: true,
   });
@@ -423,9 +418,6 @@ add_task(
 );
 
 add_task(async function test_browser_layout_group_in_tabs_browsing_pane() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
   await openPreferencesViaOpenPreferencesAPI("tabsBrowsing", {
     leaveOpen: true,
   });

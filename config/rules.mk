@@ -226,15 +226,6 @@ endif
 TAG_PROGRAM		= xargs etags -a
 
 #
-# Turn on C++ linking if we have any .cpp or .mm files
-# (moved this from config.mk so that config.mk can be included
-#  before the CPPSRCS are defined)
-#
-ifneq ($(HOST_CPPSRCS),)
-HOST_CPP_PROG_LINK	= 1
-endif
-
-#
 # MacOS X specific stuff
 #
 
@@ -433,7 +424,7 @@ $(HOST_SIMPLE_PROGRAMS): host_%$(HOST_BIN_SUFFIX): $(HOST_LIBS) $(GLOBAL_DEPS)
 ifeq (WINNT_clang-cl,$(HOST_OS_ARCH)_$(HOST_CC_TYPE))
 	$(HOST_LINKER) -OUT:$@ -PDB:$(HOST_PDBFILE) $($(notdir $@)_OBJS) $(WIN32_EXE_LDFLAGS) $(HOST_LDFLAGS) $(HOST_LINKER_LIBPATHS) $(HOST_LIBS) $(HOST_EXTRA_LIBS)
 else
-ifneq (,$(HOST_CPPSRCS)$(USE_HOST_CXX))
+ifeq ($(HOST_CPP_PROG_LINK),1)
 	$(HOST_CXX) $(HOST_OUTOPTION)$@ $(HOST_CXX_LDFLAGS) $(HOST_LDFLAGS) $($(notdir $@)_OBJS) $(HOST_LIBS) $(HOST_EXTRA_LIBS)
 else
 	$(HOST_CC) $(HOST_OUTOPTION)$@ $(HOST_C_LDFLAGS) $(HOST_LDFLAGS) $($(notdir $@)_OBJS) $(HOST_LIBS) $(HOST_EXTRA_LIBS)

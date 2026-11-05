@@ -35,7 +35,6 @@ moz-button[type="ghost"] {
   --button-text-color-ghost-hover: var(--button-text-color-ghost);
   --button-text-color-ghost-selected: var(--button-text-color-ghost);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     --button-background-color-ghost: transparent;
     --button-background-color-ghost-hover: var(--smartwindow-panel-item-background-color-hover);

@@ -121,7 +121,7 @@ class TestBulkActor extends Actor {
   async jsonReply({ length, copyTo }) {
     Assert.equal(length, really_long().length);
 
-    const outputFile = getTestTempFile("bulk-output", true);
+    const outputFile = getTestTempFile("bulk-output");
     outputFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, parseInt("666", 8));
 
     const output = FileUtils.openSafeFileOutputStream(outputFile);
@@ -156,7 +156,7 @@ var replyHandlers = {
     // Receive bulk data reply from server
     Assert.equal(length, really_long().length);
 
-    const outputFile = getTestTempFile("bulk-output", true);
+    const outputFile = getTestTempFile("bulk-output");
     outputFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, parseInt("666", 8));
 
     const output = FileUtils.openSafeFileOutputStream(outputFile);
@@ -304,12 +304,12 @@ function verify_files() {
 }
 
 function cleanup_files() {
-  const inputFile = getTestTempFile("bulk-input", true);
+  const inputFile = getTestTempFile("bulk-input");
   if (inputFile.exists()) {
     inputFile.remove(false);
   }
 
-  const outputFile = getTestTempFile("bulk-output", true);
+  const outputFile = getTestTempFile("bulk-output");
   if (outputFile.exists()) {
     outputFile.remove(false);
   }

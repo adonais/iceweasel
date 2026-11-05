@@ -1612,7 +1612,7 @@ class PersistentRooted : public detail::RootedTraits<T>::PersistentBase,
 
   template <typename RootHolder, typename... CtorArgs,
             typename = std::enable_if_t<detail::IsTraceable_v<T>, RootHolder>>
-  explicit PersistentRooted(const RootHolder& cx, CtorArgs... args)
+  explicit PersistentRooted(const RootHolder& cx, CtorArgs&&... args)
       : ptr(std::forward<CtorArgs>(args)...) {
     registerWithRootLists(cx);
   }

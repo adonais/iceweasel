@@ -116,7 +116,7 @@ class JsepCodecDescription {
         mEnabled(true),
         mStronglyPreferred(false),
         mDirection(sdp::kSend) {}
-  virtual ~JsepCodecDescription() {}
+  virtual ~JsepCodecDescription() = default;
 
   virtual SdpMediaSection::MediaType Type() const = 0;
 

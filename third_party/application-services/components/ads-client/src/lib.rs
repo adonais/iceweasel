@@ -8,26 +8,24 @@ use std::collections::HashMap;
 use client::error::ComponentError;
 use error_support::handle_error;
 use mars::error::CallbackRequestError;
-use parking_lot::Mutex;
 use url::Url as AdsClientUrl;
 
 use client::AdsClient;
 use http_cache::CachePolicy;
 use mars::ad_request::{AdPlacementRequest, AdRequestFlags};
+mod ads;
 #[cfg(feature = "stateful")]
 pub mod ads_store;
+pub mod bytesize;
 mod client;
-pub mod common;
+pub mod clock;
 mod ffi;
 pub mod http_cache;
 mod mars;
 #[cfg(feature = "stateful")]
 pub mod request;
-pub mod shutdown;
 pub mod telemetry;
 
-use crate::shutdown::ShutdownReferences;
-pub use ffi::telemetry::MozAdsTelemetryWrapper;
 pub use ffi::*;
 
 #[cfg(test)]
@@ -43,31 +41,17 @@ uniffi::custom_type!(AdsClientUrl, String, {
 
 #[derive(uniffi::Object)]
 pub struct MozAdsClient {
-    inner: Mutex<AdsClient<MozAdsTelemetryWrapper>>,
-    shutdown_references: ShutdownReferences<MozAdsTelemetryWrapper>,
+    inner: AdsClient,
 }
 
 #[uniffi::export]
 impl MozAdsClient {
     pub fn clear_cache(&self) -> AdsClientApiResult<()> {
-        let inner = self.inner.lock();
-        inner
+        self.inner
             .clear_cache()
             .map_err(|e| MozAdsClientApiError::Other {
                 reason: format!("Failed to clear cache: {}", e),
             })
-    }
-
-    // Allows the ads-client to unload some references and prepare for a safe shutdown.
-    // Other methods should not be called after this one.
-    // Currently, we attempt to shutdown and log any errors instead of returning them.
-    // However, we may yet want to do so, so we keep the Result.
-    #[uniffi::method()]
-    pub fn shutdown(&self) -> AdsClientApiResult<()> {
-        if let Err(e) = self.shutdown_references.shutdown() {
-            error_support::error!("Could not successfully shutdown ads-client: {e}");
-        }
-        Ok(())
     }
 
     #[handle_error(ComponentError)]
@@ -80,8 +64,7 @@ impl MozAdsClient {
         let url = AdsClientUrl::parse(&click_url)
             .map_err(|e| ComponentError::RecordClick(CallbackRequestError::InvalidUrl(e).into()))?;
         let ohttp = options.map(|o| o.ohttp).unwrap_or(false);
-        let inner = self.inner.lock();
-        inner
+        self.inner
             .record_click(url, ohttp)
             .map_err(ComponentError::RecordClick)
     }
@@ -97,8 +80,7 @@ impl MozAdsClient {
             ComponentError::RecordImpression(CallbackRequestError::InvalidUrl(e).into())
         })?;
         let ohttp = options.map(|o| o.ohttp).unwrap_or(false);
-        let inner = self.inner.lock();
-        inner
+        self.inner
             .record_impression(url, ohttp)
             .map_err(ComponentError::RecordImpression)
     }
@@ -114,8 +96,7 @@ impl MozAdsClient {
         let url = AdsClientUrl::parse(&report_url)
             .map_err(|e| ComponentError::ReportAd(CallbackRequestError::InvalidUrl(e).into()))?;
         let ohttp = options.map(|o| o.ohttp).unwrap_or(false);
-        let inner = self.inner.lock();
-        inner
+        self.inner
             .report_ad(url, reason.into(), ohttp)
             .map_err(ComponentError::ReportAd)
     }
@@ -127,14 +108,14 @@ impl MozAdsClient {
         moz_ad_requests: Vec<MozAdsPlacementRequest>,
         options: Option<MozAdsRequestOptions>,
     ) -> AdsClientApiResult<HashMap<String, MozAdsImage>> {
-        let inner = self.inner.lock();
         let requests: Vec<AdPlacementRequest> = moz_ad_requests.iter().map(|r| r.into()).collect();
         let options = options.unwrap_or_default();
         let flags = AdRequestFlags::from(&options);
         let ohttp = options.ohttp;
         let cache_policy = options.cache_policy.map(CachePolicy::from);
         let blocks = options.blocks;
-        let response = inner
+        let response = self
+            .inner
             .request_image_ads(requests, flags, cache_policy, ohttp, blocks)
             .map_err(ComponentError::RequestAds)?;
         Ok(response.into_iter().map(|(k, v)| (k, v.into())).collect())
@@ -147,15 +128,38 @@ impl MozAdsClient {
         moz_ad_requests: Vec<MozAdsPlacementRequestWithCount>,
         options: Option<MozAdsRequestOptions>,
     ) -> AdsClientApiResult<HashMap<String, Vec<MozAdsSpoc>>> {
-        let inner = self.inner.lock();
         let requests: Vec<AdPlacementRequest> = moz_ad_requests.iter().map(|r| r.into()).collect();
         let options = options.unwrap_or_default();
         let flags = AdRequestFlags::from(&options);
         let ohttp = options.ohttp;
         let cache_policy = options.cache_policy.map(CachePolicy::from);
         let blocks = options.blocks;
-        let response = inner
+        let response = self
+            .inner
             .request_spoc_ads(requests, flags, cache_policy, ohttp, blocks)
+            .map_err(ComponentError::RequestAds)?;
+        Ok(response
+            .into_iter()
+            .map(|(k, v)| (k, v.into_iter().map(|spoc| spoc.into()).collect()))
+            .collect())
+    }
+
+    #[handle_error(ComponentError)]
+    #[uniffi::method(default(options = None))]
+    pub fn request_spoc_or_image_ads(
+        &self,
+        moz_ad_requests: Vec<MozAdsPlacementRequestWithCount>,
+        options: Option<MozAdsRequestOptions>,
+    ) -> AdsClientApiResult<HashMap<String, Vec<MozAdsImageOrSpoc>>> {
+        let requests: Vec<AdPlacementRequest> = moz_ad_requests.iter().map(|r| r.into()).collect();
+        let options = options.unwrap_or_default();
+        let flags = AdRequestFlags::from(&options);
+        let ohttp = options.ohttp;
+        let cache_policy = options.cache_policy.map(CachePolicy::from);
+        let blocks = options.blocks;
+        let response = self
+            .inner
+            .request_spoc_or_image_ads(requests, flags, cache_policy, ohttp, blocks)
             .map_err(ComponentError::RequestAds)?;
         Ok(response
             .into_iter()
@@ -170,16 +174,27 @@ impl MozAdsClient {
         moz_ad_requests: Vec<MozAdsPlacementRequest>,
         options: Option<MozAdsRequestOptions>,
     ) -> AdsClientApiResult<HashMap<String, MozAdsTile>> {
-        let inner = self.inner.lock();
         let requests: Vec<AdPlacementRequest> = moz_ad_requests.iter().map(|r| r.into()).collect();
         let options = options.unwrap_or_default();
         let flags = AdRequestFlags::from(&options);
         let ohttp = options.ohttp;
         let cache_policy = options.cache_policy.map(CachePolicy::from);
         let blocks = options.blocks;
-        let response = inner
-            .request_tile_ads(requests, flags, cache_policy, ohttp, blocks)
+        let relevance = options.relevance;
+        let response = self
+            .inner
+            .request_tile_ads(requests, flags, cache_policy, ohttp, blocks, relevance)
             .map_err(ComponentError::RequestAds)?;
         Ok(response.into_iter().map(|(k, v)| (k, v.into())).collect())
+    }
+
+    // Allows the ads-client to unload some references and prepare for a safe shutdown.
+    // Other methods should not be called after this one.
+    // Currently, we shutdown (with no expected errors).
+    // However, future shutdowns may require an error to be logged, so we keep the Result.
+    #[uniffi::method()]
+    pub fn shutdown(&self) -> AdsClientApiResult<()> {
+        self.inner.shutdown();
+        Ok(())
     }
 }

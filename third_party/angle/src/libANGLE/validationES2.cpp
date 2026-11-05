@@ -12,6 +12,7 @@
 
 #include "libANGLE/validationES2_autogen.h"
 
+#include <array>
 #include <cstdint>
 
 #include "common/BinaryStream.h"
@@ -835,6 +836,113 @@ bool ValidateWebGLName(const Context *context, angle::EntryPoint entryPoint, con
     return true;
 }
 
+bool ValidateFramebufferTexture2DTarget(const Context *context,
+                                        angle::EntryPoint entryPoint,
+                                        Texture *tex,
+                                        TextureTarget textarget,
+                                        GLint level)
+{
+    const Caps &caps = context->getCaps();
+
+    switch (textarget)
+    {
+        case TextureTarget::_2D:
+        {
+            if (level > log2(caps.max2DTextureSize))
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_VALUE, kInvalidMipLevel);
+                return false;
+            }
+            if (tex->getType() != TextureType::_2D)
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kInvalidTextureTarget);
+                return false;
+            }
+        }
+        break;
+
+        case TextureTarget::Rectangle:
+        {
+            if (level != 0)
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_VALUE, kInvalidMipLevel);
+                return false;
+            }
+            if (tex->getType() != TextureType::Rectangle)
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kTextureTargetMismatch);
+                return false;
+            }
+        }
+        break;
+
+        case TextureTarget::CubeMapNegativeX:
+        case TextureTarget::CubeMapNegativeY:
+        case TextureTarget::CubeMapNegativeZ:
+        case TextureTarget::CubeMapPositiveX:
+        case TextureTarget::CubeMapPositiveY:
+        case TextureTarget::CubeMapPositiveZ:
+        {
+            if (level > log2(caps.maxCubeMapTextureSize))
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_VALUE, kInvalidMipLevel);
+                return false;
+            }
+            if (tex->getType() != TextureType::CubeMap)
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kTextureTargetMismatch);
+                return false;
+            }
+        }
+        break;
+
+        case TextureTarget::_2DMultisample:
+        {
+            if (context->getClientVersion() < ES_3_1 &&
+                !context->getExtensions().textureMultisampleANGLE)
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION,
+                                       kMultisampleTextureExtensionOrES31Required);
+                return false;
+            }
+
+            if (level != 0)
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_VALUE, kLevelNotZero);
+                return false;
+            }
+            if (tex->getType() != TextureType::_2DMultisample)
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kTextureTargetMismatch);
+                return false;
+            }
+        }
+        break;
+
+        case TextureTarget::External:
+        {
+            if (!context->getExtensions().YUVTargetEXT)
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kYUVTargetExtensionRequired);
+                return false;
+            }
+
+            if (tex->getType() != TextureType::External)
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kTextureTargetMismatch);
+                return false;
+            }
+        }
+        break;
+
+        default:
+            ANGLE_VALIDATION_ERROR(GL_INVALID_ENUM, kInvalidTextureTarget);
+            return false;
+    }
+
+    return true;
+}
+
 bool ValidateSrcBlendFunc(const PrivateState &state,
                           ErrorSet *errors,
                           angle::EntryPoint entryPoint,
@@ -1635,14 +1743,18 @@ bool ValidateES2TexImageParameters(const Context *context,
             return false;
         }
 
-        const gl::InternalFormat &internalFormatInfo =
-            gl::GetInternalFormatInfo(internalformat, type);
+        const InternalFormat &internalFormatInfo = GetInternalFormatInfo(internalformat, type);
         if (!ValidImageAllocationSize(context, entryPoint, width, height, 1, 0,
                                       internalFormatInfo.sizedInternalFormat))
         {
             // Error already generated
             return false;
         }
+
+        // No need to take disallowNonZeroBaseLevelAndIncompatibleLevelsOnHardenedContexts into
+        // account as BASE_LEVEL is a feature of ES3, and this is an ES2-specific validation
+        // function.
+        ASSERT(texture->getState().getEffectiveBaseLevel() == 0);
     }
 
     // From GL_CHROMIUM_color_buffer_float_rgb[a]:
@@ -1657,8 +1769,8 @@ bool ValidateES2TexImageParameters(const Context *context,
     }
 
     GLenum sizeCheckFormat = isSubImage ? format : internalformat;
-    return ValidImageDataSize(context, entryPoint, texType, width, height, 1, sizeCheckFormat, type,
-                              pixels, outImageSize);
+    return ValidImageDataSize(context, entryPoint, texType, width, height, 1, isSubImage,
+                              sizeCheckFormat, type, pixels, outImageSize);
 }
 
 bool ValidateCompressedTexImage(const Context *context,
@@ -1726,24 +1838,34 @@ bool ValidateCompressedTexImage(const Context *context,
         ASSERT(maxDimension > 0);
     }
 
+    const InternalFormat &internalFormatInfo = GetSizedInternalFormatInfo(internalformat);
+
     // Texture bound to target can be redefined.
     {
         Texture *texture = context->getTextureByType(texType);
         ASSERT(texture != nullptr);
-
-        if (ANGLE_UNLIKELY(!ValidateNoActivePLSConflict(context, entryPoint, texture->id())))
-        {
-            return false;
-        }
 
         if (ANGLE_UNLIKELY(texture->getImmutableFormat()))
         {
             ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kTextureIsImmutable);
             return false;
         }
-    }
 
-    const InternalFormat &internalFormatInfo = GetSizedInternalFormatInfo(internalformat);
+        // The command may be called on a texture that currently has a renderable internal format.
+        if (ANGLE_UNLIKELY(!ValidateNotAttachmentWithActivePLS(context, entryPoint, texture->id())))
+        {
+            // Error already generated.
+            return false;
+        }
+
+        if (context->isHardenedContext() &&
+            !ValidateHardenedContextTextureLevelRedefine(context, entryPoint, texture, level, width,
+                                                         height, depth, internalFormatInfo))
+        {
+            // Error already generated
+            return false;
+        }
+    }
 
     // Format is known and supported in the current context.
     {
@@ -1963,7 +2085,7 @@ bool ValidateCompressedTexImage(const Context *context,
             return false;
         }
 
-        if (context->isWebGL() || context->isHardenedContext())
+        if (context->isHardenedContext())
         {
             if (ANGLE_UNLIKELY(pixelUnpackBuffer->hasTFBBindingConflict()))
             {
@@ -2219,7 +2341,7 @@ bool ValidateCompressedTexSubImage(const Context *context,
             return false;
         }
 
-        if (context->isWebGL() || context->isHardenedContext())
+        if (context->isHardenedContext())
         {
             if (ANGLE_UNLIKELY(pixelUnpackBuffer->hasTFBBindingConflict()))
             {
@@ -2977,8 +3099,9 @@ bool ValidateBlitFramebufferANGLE(const Context *context,
         }
     }
 
-    GLenum masks[]       = {GL_DEPTH_BUFFER_BIT, GL_STENCIL_BUFFER_BIT};
-    GLenum attachments[] = {GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT};
+    static constexpr std::array<GLenum, 2> masks = {GL_DEPTH_BUFFER_BIT, GL_STENCIL_BUFFER_BIT};
+    static constexpr std::array<GLenum, 2> attachments = {GL_DEPTH_ATTACHMENT,
+                                                          GL_STENCIL_ATTACHMENT};
     for (size_t i = 0; i < 2; i++)
     {
         if (mask & masks[i])
@@ -3441,7 +3564,7 @@ bool ValidateMapBufferBase(const Context *context,
         }
     }
 
-    if (context->isWebGL() || context->isHardenedContext())
+    if (context->isHardenedContext())
     {
         if (buffer->hasTFBBindingConflict())
         {
@@ -3510,26 +3633,6 @@ bool ValidateBindUniformLocationCHROMIUM(const Context *context,
     return true;
 }
 
-bool ValidateCoverageModulationCHROMIUM(const PrivateState &state,
-                                        ErrorSet *errors,
-                                        angle::EntryPoint entryPoint,
-                                        GLenum components)
-{
-    switch (components)
-    {
-        case GL_RGB:
-        case GL_RGBA:
-        case GL_ALPHA:
-        case GL_NONE:
-            break;
-        default:
-            errors->validationError(entryPoint, GL_INVALID_ENUM, kInvalidCoverageComponents);
-            return false;
-    }
-
-    return true;
-}
-
 bool ValidateCopyTextureCHROMIUM(const Context *context,
                                  angle::EntryPoint entryPoint,
                                  TextureID sourceId,
@@ -3572,8 +3675,8 @@ bool ValidateCopyTextureCHROMIUM(const Context *context,
         return false;
     }
 
-    GLsizei sourceWidth  = static_cast<GLsizei>(source->getWidth(sourceTarget, sourceLevel));
-    GLsizei sourceHeight = static_cast<GLsizei>(source->getHeight(sourceTarget, sourceLevel));
+    const GLsizei sourceWidth  = static_cast<GLsizei>(source->getWidth(sourceTarget, sourceLevel));
+    const GLsizei sourceHeight = static_cast<GLsizei>(source->getHeight(sourceTarget, sourceLevel));
     if (sourceWidth == 0 || sourceHeight == 0)
     {
         ANGLE_VALIDATION_ERRORF(GL_INVALID_OPERATION, kInvalidInternalFormat, internalFormat);
@@ -3655,6 +3758,14 @@ bool ValidateCopyTextureCHROMIUM(const Context *context,
     if (source == dest && sourceLevel == destLevel)
     {
         ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kInvalidSourceTextureSameAsDestTexture);
+        return false;
+    }
+
+    if (context->isHardenedContext() && !ValidateHardenedContextTextureLevelRedefine(
+                                            context, entryPoint, dest, destLevel, sourceWidth,
+                                            sourceHeight, 1, destInternalFormatInfo))
+    {
+        // Error already generated
         return false;
     }
 
@@ -3833,8 +3944,9 @@ bool ValidateCompressedCopyTextureCHROMIUM(const Context *context,
         return false;
     }
 
-    if (source->getWidth(TextureTarget::_2D, 0) == 0 ||
-        source->getHeight(TextureTarget::_2D, 0) == 0)
+    const GLsizei sourceWidth  = static_cast<GLsizei>(source->getWidth(TextureTarget::_2D, 0));
+    const GLsizei sourceHeight = static_cast<GLsizei>(source->getHeight(TextureTarget::_2D, 0));
+    if (sourceWidth == 0 || sourceHeight == 0)
     {
         ANGLE_VALIDATION_ERROR(GL_INVALID_VALUE, kSourceTextureLevelZeroDefined);
         return false;
@@ -3869,6 +3981,14 @@ bool ValidateCompressedCopyTextureCHROMIUM(const Context *context,
     if (source == dest)
     {
         ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kInvalidSourceTextureSameAsDestTexture);
+        return false;
+    }
+
+    if (context->isHardenedContext() &&
+        !ValidateHardenedContextTextureLevelRedefine(context, entryPoint, dest, 0, sourceWidth,
+                                                     sourceHeight, 1, *sourceFormat.info))
+    {
+        // Error already generated
         return false;
     }
 
@@ -3986,7 +4106,7 @@ bool ValidateBufferData(const Context *context,
     }
 
     // Do some additional WebGL-specific validation
-    if (ANGLE_UNLIKELY(context->isWebGL() || context->isHardenedContext()))
+    if (ANGLE_UNLIKELY(context->isHardenedContext()))
     {
         if (buffer->hasTFBBindingConflict())
         {
@@ -4058,7 +4178,7 @@ bool ValidateBufferSubData(const Context *context,
     }
 
     // Do some additional WebGL-specific validation
-    if (ANGLE_UNLIKELY(context->isWebGL() || context->isHardenedContext()))
+    if (ANGLE_UNLIKELY(context->isHardenedContext()))
     {
         if (buffer->hasTFBBindingConflict())
         {
@@ -5522,108 +5642,15 @@ bool ValidateFramebufferTexture2D(const Context *context,
         Texture *tex = context->getTexture(texture);
         ASSERT(tex);
 
-        const Caps &caps = context->getCaps();
-
-        switch (textarget)
+        if (!ValidateFramebufferTexture2DTarget(context, entryPoint, tex, textarget, level))
         {
-            case TextureTarget::_2D:
-            {
-                if (level > log2(caps.max2DTextureSize))
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_VALUE, kInvalidMipLevel);
-                    return false;
-                }
-                if (tex->getType() != TextureType::_2D)
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kInvalidTextureTarget);
-                    return false;
-                }
-            }
-            break;
+            return false;
+        }
 
-            case TextureTarget::Rectangle:
-            {
-                if (level != 0)
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_VALUE, kInvalidMipLevel);
-                    return false;
-                }
-                if (tex->getType() != TextureType::Rectangle)
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kTextureTargetMismatch);
-                    return false;
-                }
-            }
-            break;
-
-            case TextureTarget::CubeMapNegativeX:
-            case TextureTarget::CubeMapNegativeY:
-            case TextureTarget::CubeMapNegativeZ:
-            case TextureTarget::CubeMapPositiveX:
-            case TextureTarget::CubeMapPositiveY:
-            case TextureTarget::CubeMapPositiveZ:
-            {
-                if (level > log2(caps.maxCubeMapTextureSize))
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_VALUE, kInvalidMipLevel);
-                    return false;
-                }
-                if (tex->getType() != TextureType::CubeMap)
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kTextureTargetMismatch);
-                    return false;
-                }
-            }
-            break;
-
-            case TextureTarget::_2DMultisample:
-            {
-                if (context->getClientVersion() < ES_3_1 &&
-                    !context->getExtensions().textureMultisampleANGLE)
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION,
-                                           kMultisampleTextureExtensionOrES31Required);
-                    return false;
-                }
-
-                if (level != 0)
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_VALUE, kLevelNotZero);
-                    return false;
-                }
-                if (tex->getType() != TextureType::_2DMultisample)
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kTextureTargetMismatch);
-                    return false;
-                }
-            }
-            break;
-
-            case TextureTarget::External:
-            {
-                if (!context->getExtensions().YUVTargetEXT)
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kYUVTargetExtensionRequired);
-                    return false;
-                }
-
-                if (attachment != GL_COLOR_ATTACHMENT0)
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kInvalidAttachment);
-                    return false;
-                }
-
-                if (tex->getType() != TextureType::External)
-                {
-                    ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kTextureTargetMismatch);
-                    return false;
-                }
-            }
-            break;
-
-            default:
-                ANGLE_VALIDATION_ERROR(GL_INVALID_ENUM, kInvalidTextureTarget);
-                return false;
+        if (textarget == TextureTarget::External && attachment != GL_COLOR_ATTACHMENT0)
+        {
+            ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kInvalidAttachment);
+            return false;
         }
     }
 
@@ -6078,18 +6105,27 @@ bool ValidateFramebufferTexture2DMultisampleEXT(const Context *context,
         return false;
     }
 
-    // EXT_multisampled_render_to_texture returns INVALID_OPERATION when a sample number higher than
-    // the maximum sample number supported by this format is passed.
-    // The getMaxSamples method is only guaranteed to be valid when the context is ES3.
-    if (texture.value != 0 && context->getClientVersion() >= ES_3_0)
+    if (texture.value != 0)
     {
-        Texture *tex                  = context->getTexture(texture);
-        GLenum sizedInternalFormat    = tex->getFormat(textarget, level).info->sizedInternalFormat;
-        const TextureCaps &formatCaps = context->getTextureCaps().get(sizedInternalFormat);
-        if (static_cast<GLuint>(samples) > formatCaps.sampleCounts.getMaxSamples())
+        Texture *tex = context->getTexture(texture);
+
+        if (!ValidateFramebufferTexture2DTarget(context, entryPoint, tex, textarget, level))
         {
-            ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kSamplesOutOfRange);
             return false;
+        }
+
+        // EXT_multisampled_render_to_texture returns INVALID_OPERATION when a sample number higher
+        // than the maximum sample number supported by this format is passed.
+        // The getMaxSamples method is only guaranteed to be valid when the context is ES3.
+        if (context->getClientVersion() >= ES_3_0)
+        {
+            GLenum sizedInternalFormat = tex->getFormat(textarget, level).info->sizedInternalFormat;
+            const TextureCaps &formatCaps = context->getTextureCaps().get(sizedInternalFormat);
+            if (static_cast<GLuint>(samples) > formatCaps.sampleCounts.getMaxSamples())
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kSamplesOutOfRange);
+                return false;
+            }
         }
     }
 

@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "NSSErrorsService.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -513,13 +514,19 @@ void CreatePushHashKey(const nsCString& scheme, const nsCString& hostHeader,
                        uint64_t serial, const nsACString& pathInfo,
                        nsCString& outOrigin, nsCString& outKey);
 
+// The nsresult carrier (NS_ERROR_WEBTRANSPORT_CODE_BASE..
+// NS_ERROR_WEBTRANSPORT_CODE_END) reserves only 256 values, so these two
+// stay 8-bit; callers that need the full application-code range (0..2^32-1)
+// use WebTransportErrorToHttp3Error()/Http3ErrorToWebTransportError()
+// directly, and only clamp for this carrier.
 nsresult GetNSResultFromWebTransportError(uint8_t aErrorCode);
 
 uint8_t GetWebTransportErrorFromNSResult(nsresult aResult);
 
-uint64_t WebTransportErrorToHttp3Error(uint8_t aErrorCode);
+uint64_t WebTransportErrorToHttp3Error(uint32_t aErrorCode);
 
-uint8_t Http3ErrorToWebTransportError(uint64_t aErrorCode);
+// Nothing if aErrorCode is not a WebTransport application error code.
+mozilla::Maybe<uint32_t> Http3ErrorToWebTransportError(uint64_t aErrorCode);
 
 bool PossibleZeroRTTRetryError(nsresult aReason);
 

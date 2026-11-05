@@ -88,6 +88,10 @@ interface HTMLMediaElement : HTMLElement {
   [CEReactions, SetterThrows]
            attribute boolean defaultMuted;
 
+  // lazy loading
+  [CEReactions, SetterThrows, Pref="media.lazy_loading.enabled"]
+           attribute DOMString loading;
+
   // TODO: Bug 847379
   // tracks
   [Pref="media.track.enabled"]

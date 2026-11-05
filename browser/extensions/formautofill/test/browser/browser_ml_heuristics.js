@@ -9,7 +9,7 @@ const { FormAutofillML } = ChromeUtils.importESModule(
 );
 
 let detectedFields = [
-  // first test
+  // first ML test
   "given-name",
   "family-name",
   "street-address",
@@ -17,23 +17,46 @@ let detectedFields = [
   "address-level1",
   "postal-code",
   "country",
-  // second test
+  // second ML test
   "postal-code",
   "cc-exp-month",
   "cc-exp-year",
   "cc-csc",
+  // third ML test
+  "other",
+  "tel",
+  "given-name",
+  // fourth ML test
+  "other",
+  "tel",
+  "given-name",
+  // sixth ML test
+  "given-name",
 ];
+
+let expectedDetectFieldsResult;
 
 //eslint-disable-next-line no-unused-vars
 function detectFields(fieldDetails) {
+  if (!expectedDetectFieldsResult) {
+    return false;
+  }
+
+  let mlFieldResults = [];
+  let results = [];
   for (let fd of fieldDetails) {
-    if (fd.fieldName || !fd.mlData) {
+    if (!FormAutofillUtils.canUseML(fd)) {
       continue;
     }
 
-    fd.fieldName = detectedFields.shift();
-    fd.reason = "ml";
+    mlFieldResults.push(fd);
+    results.push({ label: detectedFields.shift() });
   }
+
+  let ML = new FormAutofillML();
+  ML.applyResults(mlFieldResults, results);
+
+  return true;
 }
 
 add_setup(async function () {
@@ -55,7 +78,6 @@ add_setup(async function () {
     set: [
       ["extensions.formautofill.useml", true],
       ["extensions.formautofill.useml.nativeOnnxAvailable", true],
-      ["extensions.formautofill.useml.successful", false],
     ],
   });
 
@@ -65,8 +87,7 @@ add_setup(async function () {
 });
 
 add_heuristic_tests([
-  // This first test should run with "extensions.formautofill.useml.successful" set to false, so
-  // should use heuristics and not ML inference.
+  // This first test runs where ML inference fails, so this should fallback to heuristics.
   {
     fixtureData: `
       <p><label>givenname: <input type="text" id="given-name" name="given-name"/></label></p>
@@ -79,11 +100,12 @@ add_heuristic_tests([
       <p><label>country: <input type="text" id="country" name="country"/></label></p>
       <p><label>tel: <input type="text" id="tel" name="tel" autocomplete="tel"/></label></p>
       <p><label>email: <input type="email" id="email" name="email"/></label></p>`,
+    onTestStart: async () => {
+      expectedDetectFieldsResult = false;
+    },
     onTestComplete: async () => {
-      // Assign the preference after the test.
-      await SpecialPowers.pushPrefEnv({
-        set: [["extensions.formautofill.useml.successful", true]],
-      });
+      // All other tests should have successful ML inference.
+      expectedDetectFieldsResult = true;
       await assertTelemetry({
         given_name: "0",
         family_name: "0",
@@ -182,6 +204,90 @@ add_heuristic_tests([
       {
         invalid: true,
         fields: [{ fieldName: "postal-code", reason: "ml" }],
+      },
+    ],
+  },
+  // This tests when the ML gives different results than heuristics.
+  {
+    fixtureData: `
+      <p><label>Organization<input id="special"></label></p>
+      <p><label>tel: <input type="text" id="tel" name="tel"/></label></p>
+      <p><label>email: <input type="email" id="email" name="email"/></label></p>
+      <p><label>family name: <input id="family" name="familyname"/></label></p>`,
+    expectedResult: [
+      {
+        fields: [
+          { fieldName: "tel", reason: "ml" },
+          // The model isn't used here because type="email" fields are always
+          // considered email fields.
+          { fieldName: "email", reason: "regex-heuristic" },
+          // The model returns 'given-name' which overrides the heuristics.
+          { fieldName: "given-name", reason: "ml" },
+        ],
+      },
+    ],
+  },
+  // When extensions.formautofill.useml.other preference is set, when the
+  // model returns 'other', the result is treated as unidentified.
+  {
+    fixtureData: `
+      <p><label>Organization<input id="special"></label></p>
+      <p><label>tel: <input type="text" id="tel" name="tel"/></label></p>
+      <p><label>email: <input type="email" id="email" name="email"/></label></p>
+      <p><label>family name: <input id="family" name="familyname"/></label></p>`,
+    onTestSetup: () => {
+      return SpecialPowers.pushPrefEnv({
+        set: [["extensions.formautofill.useml.useHeuristicsForOther", true]],
+      });
+    },
+    onTestComplete: () => {
+      return SpecialPowers.popPrefEnv();
+    },
+    expectedResult: [
+      {
+        fields: [
+          // The model returns 'other' so heuristics should be used.
+          { fieldName: "organization", reason: "regex-heuristic" },
+          { fieldName: "tel", reason: "ml" },
+          // The model isn't used here because type="email" fields are always
+          // considered email fields.
+          { fieldName: "email", reason: "regex-heuristic" },
+          // The model returns 'given-name' which overrides the heuristics.
+          { fieldName: "given-name", reason: "ml" },
+        ],
+      },
+    ],
+  },
+  // When a form has only two fields, the form isn't valid so don't load the ML inference.
+  {
+    fixtureData: `
+      <label for="firstName">First:</label>
+      <input id="firstName" name="firstName">
+      <label for="lastName">Last:</label>
+      <input id="lastName" name="lastName">`,
+    expectedResult: [
+      {
+        invalid: true,
+        fields: [
+          { fieldName: "given-name", reason: "regex-heuristic" },
+          { fieldName: "family-name", reason: "regex-heuristic" },
+        ],
+      },
+    ],
+  },
+  // However if one of the fields has an autocomplete attribute, it is valid.
+  {
+    fixtureData: `
+      <label for="firstName">First:</label>
+      <input id="firstName" name="firstName">
+      <label for="lastName">Last:</label>
+      <input id="lastName" name="lastName" autocomplete="family-name">`,
+    expectedResult: [
+      {
+        fields: [
+          { fieldName: "given-name", reason: "ml" },
+          { fieldName: "family-name", reason: "autocomplete" },
+        ],
       },
     ],
   },

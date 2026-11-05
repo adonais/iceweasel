@@ -142,3 +142,27 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] != 'windows':
 
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
     DEFINES['UNICODE'] = True
+
+SOURCE_HEADERS += [
+	"hb-cairo.h",
+	"hb-fontations.h",
+	"hb-ft.h",
+	"hb-gdi.h",
+	"hb-gobject-structs.h",
+	"hb-gobject.h",
+	"hb-gpu.h",
+	"hb-graphite2.h",
+	"hb-icu.h",
+	"hb-raster.h",
+	"hb-subset-depend.h",
+	"hb-subset-serialize.h",
+	"hb-subset.h",
+	"hb-uniscribe.h",
+	"hb-vector.h",
+	"hb-wasm-api.h",
+]
+
+# The text is upstream's COPYING, which lists the current copyright holders.
+LICENSES += ['harfbuzz']
+LICENSES['harfbuzz'].title = 'HarfBuzz License'
+LICENSES['harfbuzz'].paths = ['gfx/harfbuzz']

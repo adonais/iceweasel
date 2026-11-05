@@ -265,7 +265,7 @@ class nsStandardURL : public nsIFileURL,
 
   int32_t Port() { return mPort == -1 ? mDefaultPort : mPort; }
 
-  void ReplacePortInSpec(int32_t aNewPort);
+  bool ReplacePortInSpec(int32_t aNewPort);
   void Clear();
   void InvalidateCache(bool invalidateCachedFile = true);
 
@@ -323,6 +323,9 @@ class nsStandardURL : public nsIFileURL,
   int32_t ReplaceSegment(uint32_t pos, uint32_t len, const char* val,
                          uint32_t valLen);
   int32_t ReplaceSegment(uint32_t pos, uint32_t len, const nsACString& val);
+  // Whether replacing aOldLen bytes of mSpec with aNewLen bytes would exceed
+  // network.standard-url.max-length.
+  bool ExceedsMaxLength(uint32_t aOldLen, uint32_t aNewLen) const;
 
   nsresult ParseURL(const char* spec, int32_t specLen);
 

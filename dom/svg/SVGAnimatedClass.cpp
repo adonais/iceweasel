@@ -19,7 +19,8 @@ void SVGAnimatedClass::SetBaseValue(const nsAString& aValue,
 
   aSVGElement->SetMayHaveClass();
   if (aDoSetAttr) {
-    aSVGElement->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, aValue, true);
+    aSVGElement->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, aValue, true,
+                         dom::IsKnownNewAttr::No);
   }
   if (!mAnimVal.IsVoid()) {
     aSVGElement->AnimationNeedsResample();

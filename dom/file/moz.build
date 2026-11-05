@@ -60,3 +60,8 @@ XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell.toml"]
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "StringBlobImpl.h",
+    "TemporaryFileBlobImpl.h",
+]

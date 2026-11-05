@@ -627,7 +627,7 @@ nsresult nsCocoaWindow::SynthesizeNativeTouchpadDoubleTap(
 
 bool nsCocoaWindow::SendEventToNativeMenuSystem(NSEvent* aEvent) {
   bool handled = false;
-  if (nsMenuBarX* mb = GetMenuBar()) {
+  if (RefPtr<nsMenuBarX> mb = GetMenuBar()) {
     // Check if main menu wants to handle the event.
     handled = mb->PerformKeyEquivalent(aEvent);
   }
@@ -740,7 +740,7 @@ nsresult nsCocoaWindow::GetNativeMenuItemKeyEquivalent(
 
   // Not [NSApp mainMenu]: that may belong to a different window, for example
   // the hidden window's menu bar.
-  nsMenuBarX* menuBar = GetMenuBar();
+  RefPtr<nsMenuBarX> menuBar = GetMenuBar();
   if (!menuBar) {
     return NS_ERROR_FAILURE;
   }
@@ -795,7 +795,7 @@ nsresult nsCocoaWindow::GetNativeMenuItemKeyEquivalent(
 // Used for testing native menu system structure and event handling.
 nsresult nsCocoaWindow::ForceUpdateNativeMenuAt(const nsAString& indexString) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
-  if (nsMenuBarX* mb = GetMenuBar()) {
+  if (RefPtr<nsMenuBarX> mb = GetMenuBar()) {
     if (indexString.IsEmpty())
       mb->ForceNativeMenuReload();
     else
@@ -1620,18 +1620,22 @@ already_AddRefed<a11y::LocalAccessible> nsCocoaWindow::GetWindowAccessible() {
   }
 
   // mAccessible might be dead if accessibility was previously disabled and is
-  // now being enabled again.
+  // now being enabled again. It might also still be alive but shut down, which
+  // leaves it without a document, for example after the window's document was
+  // replaced.
   if (mAccessible && mAccessible->IsAlive()) {
     RefPtr<a11y::LocalAccessible> ret;
     CallQueryReferent(mAccessible.get(), static_cast<a11y::LocalAccessible**>(
                                              getter_AddRefs(ret)));
-    return ret.forget();
+    if (ret && ret->Document()) {
+      return ret.forget();
+    }
   }
 
   // need to fetch the accessible anew, because it has gone away.
   // cache the accessible in our weak ptr
   RefPtr<a11y::LocalAccessible> acc = GetRootAccessible();
-  if (GetWindowType() == WindowType::Popup) {
+  if (acc && GetWindowType() == WindowType::Popup) {
     // If we're a popup panel, we want to return the accessible for the
     // content of the panel, not the accessible for the document.
     if (nsIFrame* popupFrame = GetFrame()) {
@@ -7220,6 +7224,17 @@ void nsCocoaWindow::DispatchSizeModeEvent() {
   }
 }
 
+// MOZ_WINDOW_OCCLUSION set to anything but "1" disables occlusion tracking, as
+// it does on Windows. Test harnesses set it because they run several browser
+// windows on one screen, and an occluded window's documents become hidden.
+static bool IsOcclusionTrackingDisabledByEnv() {
+  static const bool sDisabled = [] {
+    const char* env = getenv("MOZ_WINDOW_OCCLUSION");
+    return env && *env != '1';
+  }();
+  return sDisabled;
+}
+
 void nsCocoaWindow::DispatchOcclusionEvent() {
   if (!mWindow) {
     return;
@@ -7251,7 +7266,7 @@ void nsCocoaWindow::DispatchOcclusionEvent() {
 
   // Our new occlusion state is true if the window is not visible.
   bool newOcclusionState =
-      !keyOrMainNonFullscreen &&
+      !IsOcclusionTrackingDisabledByEnv() && !keyOrMainNonFullscreen &&
       !(mHasStartedNativeFullscreen ||
         ([mWindow occlusionState] & NSWindowOcclusionStateVisible));
 
@@ -7297,7 +7312,8 @@ void nsCocoaWindow::SetMenuBar(RefPtr<nsMenuBarX>&& aMenuBar) {
   // other menu bar has been painted yet so that some reasonable menu bar is
   // displayed when the app starts up.
   if (mMenuBar && ((!gSomeMenuBarPainted &&
-                    nsMenuUtilsX::GetHiddenWindowMenuBar() == mMenuBar) ||
+                    RefPtr<nsMenuBarX>(
+                        nsMenuUtilsX::GetHiddenWindowMenuBar()) == mMenuBar) ||
                    mWindow.isMainWindow)) {
     // We do an async paint in order to prevent crashes when macOS is actively
     // enumerating the menu items in `NSApp.mainMenu`.
@@ -7367,7 +7383,9 @@ LayoutDeviceIntMargin nsCocoaWindow::NormalSizeModeClientToWindowMargin() {
   NS_OBJC_END_TRY_BLOCK_RETURN({});
 }
 
-nsMenuBarX* nsCocoaWindow::GetMenuBar() { return mMenuBar; }
+already_AddRefed<nsMenuBarX> nsCocoaWindow::GetMenuBar() {
+  return do_AddRef(mMenuBar);
+}
 
 void nsCocoaWindow::CaptureRollupEvents(bool aDoCapture) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
@@ -7498,7 +7516,10 @@ void nsCocoaWindow::SetWindowTransform(const gfx::Matrix& aTransform) {
     return;
   }
 
-  gfx::Matrix transform = aTransform;
+  bool isIdentity = aTransform.IsIdentity();
+  if (isIdentity && mWindowTransformIsIdentity) {
+    return;
+  }
 
   // aTransform is a transform that should be applied to the window relative
   // to its regular position: If aTransform._31 is 100, then we want the
@@ -7510,36 +7531,48 @@ void nsCocoaWindow::SetWindowTransform(const gfx::Matrix& aTransform) {
   // In the example above, this means that we need to call
   // CGSSetWindowTransform with a horizontal translation of -windowPos.x - 100.
   // So we need to invert the transform and adjust it by the window's position.
-  if (!transform.Invert()) {
-    // Treat non-invertible transforms as the identity transform.
-    transform = gfx::Matrix();
-  }
-
-  bool isIdentity = transform.IsIdentity();
-  if (isIdentity && mWindowTransformIsIdentity) {
-    return;
-  }
-
-  transform.PreTranslate(-mBounds.x, -mBounds.y);
-
-  // Snap translations to device pixels, to match what we do for CSS transforms
-  // and because the window server rounds down instead of to nearest.
-  if (!transform.HasNonTranslation() && transform.HasNonIntegerTranslation()) {
-    auto snappedTranslation = gfx::IntPoint::Round(transform.GetTranslation());
-    transform =
-        gfx::Matrix::Translation(snappedTranslation.x, snappedTranslation.y);
-  }
-
+  //
   // We also need to account for the backing scale factor: aTransform is given
   // in device pixels, but CGSSetWindowTransform works with logical display
   // pixels.
-  CGFloat backingScale = BackingScaleFactor();
-  transform.PreScale(backingScale, backingScale);
-  transform.PostScale(1 / backingScale, 1 / backingScale);
+  const DesktopToLayoutDeviceScale scale = GetDesktopToDeviceScale();
+  CGAffineTransform cgTransform;
+  if (!aTransform.HasNonAxisAlignedTransform() && aTransform._11 > 0 &&
+      aTransform._22 > 0 && !mBounds.IsEmpty()) {
+    // Snap the transformed window rect to logical display pixels: the window
+    // server places transformed windows on whole pixels, even on HiDPI
+    // displays, rounding outwards.
+    const DesktopRect snapped = [&] {
+      const LayoutDeviceRect bounds(mBounds);
+      const auto transformed =
+          LayoutDeviceRect::FromUnknownRect(aTransform.TransformBounds(
+              gfx::Rect(gfx::Point(), bounds.Size().ToUnknownSize()))) +
+          bounds.TopLeft();
+      DesktopRect result = transformed / scale;
+      result.Round();
+      result.width = std::max(result.width, 1.0f);
+      result.height = std::max(result.height, 1.0f);
+      return result;
+    }();
+    const DesktopSize untransformedSize = mBounds.Size() / scale;
+    const auto scaleX = CGFloat(untransformedSize.width) / snapped.width;
+    const auto scaleY = CGFloat(untransformedSize.height) / snapped.height;
+    cgTransform = CGAffineTransformMake(
+        scaleX, 0, 0, scaleY, -snapped.x * scaleX, -snapped.y * scaleY);
+  } else {
+    gfx::Matrix transform = aTransform;
+    if (!transform.Invert()) {
+      // Treat non-invertible transforms as the identity transform.
+      transform = gfx::Matrix();
+    }
+    transform.PreTranslate(-mBounds.x, -mBounds.y);
+    transform.PreScale(scale.scale, scale.scale);
+    transform.PostScale(1 / scale.scale, 1 / scale.scale);
+    cgTransform = GfxMatrixToCGAffineTransform(transform);
+  }
 
   CGSConnection cid = _CGSDefaultConnection();
-  CGSSetWindowTransform(cid, [mWindow windowNumber],
-                        GfxMatrixToCGAffineTransform(transform));
+  CGSSetWindowTransform(cid, [mWindow windowNumber], cgTransform);
 
   mWindowTransformIsIdentity = isIdentity;
 
@@ -7711,7 +7744,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   nsCocoaWindow* geckoWidget = [windowDelegate geckoWidget];
   NS_ASSERTION(geckoWidget, "Window delegate not returning a gecko widget!");
 
-  if (nsMenuBarX* geckoMenuBar = geckoWidget->GetMenuBar()) {
+  if (RefPtr<nsMenuBarX> geckoMenuBar = geckoWidget->GetMenuBar()) {
     // We do an async paint in order to prevent crashes when macOS is actively
     // enumerating the menu items in `NSApp.mainMenu`.
     geckoMenuBar->PaintAsyncIfNeeded();

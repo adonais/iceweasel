@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<?csp default-src chrome: resource:; object-src 'none'; script-src-attr 'none';
+style-src chrome:; ?>
+
+<window
+  id="VPNSiteRuleDialog"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+  data-l10n-id="ip-protection-site-rule-window"
+  data-l10n-attrs="title"
+>
+  <dialog
+    id="vpn-site-rule-dialog"
+    buttons="accept,cancel"
+    buttondisabledaccept="true"
+    data-l10n-id="ip-protection-site-rule-dialog"
+    data-l10n-attrs="buttonlabelaccept, buttonaccesskeyaccept"
+  >
+    <linkset>
+      <html:link rel="stylesheet" href="chrome://global/skin/global.css" />
+      <html:link
+        rel="stylesheet"
+        href="chrome://browser/content/preferences/dialogs/vpnSiteRule.css"
+      />
+      <html:link rel="localization" href="browser/ipProtection.ftl" />
+    </linkset>
+
+    <script src="chrome://browser/content/preferences/dialogs/vpnSiteRule.js" />
+
+    <html:moz-fieldset class="vpn-site-rule-form">
+      <html:p
+        id="vpnSiteRuleIntro"
+        data-l10n-id="ip-protection-site-rule-intro"
+      ></html:p>
+
+      <html:moz-message-bar
+        id="vpnSiteRuleSaveError"
+        type="error"
+        data-l10n-id="ip-protection-site-rule-save-error"
+        hidden="true"
+      ></html:moz-message-bar>
+
+      <html:div class="vpn-site-rule-field">
+        <html:moz-input-text
+          id="vpnSiteRuleWebsite"
+          data-l10n-id="ip-protection-site-rule-website-field"
+        ></html:moz-input-text>
+        <html:div id="vpnSiteRuleError" class="vpn-site-rule-error"></html:div>
+      </html:div>
+
+      <html:moz-select
+        id="vpnSiteRuleStatus"
+        data-l10n-id="ip-protection-site-rule-status-field"
+        value="on"
+      >
+        <html:moz-option
+          value="on"
+          data-l10n-id="ip-protection-site-rule-status-on"
+        ></html:moz-option>
+        <html:moz-option
+          value="off"
+          data-l10n-id="ip-protection-site-rule-status-off"
+        ></html:moz-option>
+      </html:moz-select>
+    </html:moz-fieldset>
+  </dialog>
+</window>

@@ -6,6 +6,7 @@
 const LAST_USED_PREF = "browser.urlbar.lastUrlbarSearchSeconds";
 
 add_setup(async function () {
+  Services.prefs.clearUserPref(LAST_USED_PREF);
   await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + "searchSuggestionEngine.xml",
     setAsDefault: true,

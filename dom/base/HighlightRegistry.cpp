@@ -7,8 +7,6 @@
 #include "Document.h"
 #include "Highlight.h"
 #include "PresShell.h"
-#include "mozilla/CompactPair.h"
-#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/HighlightBinding.h"
 #include "mozilla/dom/HighlightRegistryBinding.h"
 #include "nsAtom.h"
@@ -22,18 +20,16 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(HighlightRegistry)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(HighlightRegistry)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument)
-  for (auto const& iter : tmp->mHighlightsOrdered) {
-    iter.second()->RemoveFromHighlightRegistry(*tmp, *iter.first());
+  for (const auto& [name, highlight] : tmp->Maplike()) {
+    highlight->RemoveFromHighlightRegistry(*tmp, *name);
   }
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mHighlightsOrdered)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mMapData)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(HighlightRegistry)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocument)
-  for (size_t i = 0; i < tmp->mHighlightsOrdered.Length(); ++i) {
-    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mHighlightsOrdered[i].second())
-  }
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMapData)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(HighlightRegistry)
@@ -47,8 +43,8 @@ HighlightRegistry::HighlightRegistry(Document* aDocument)
     : mDocument(aDocument) {}
 
 HighlightRegistry::~HighlightRegistry() {
-  for (auto const& iter : mHighlightsOrdered) {
-    iter.second()->RemoveFromHighlightRegistry(*this, *iter.first());
+  for (const auto& [name, highlight] : Maplike()) {
+    highlight->RemoveFromHighlightRegistry(*this, *name);
   }
 }
 
@@ -71,12 +67,12 @@ void HighlightRegistry::MaybeAddRangeToHighlightSelection(
     // once their nodes enter the document.
     return;
   }
-  for (auto const& iter : mHighlightsOrdered) {
-    if (iter.second() != &aHighlight) {
+  for (const auto& [name, highlight] : Maplike()) {
+    if (highlight != &aHighlight) {
       continue;
     }
 
-    const RefPtr<nsAtom> highlightName = iter.first();
+    const RefPtr<nsAtom> highlightName = name;
     frameSelection->AddHighlightSelectionRange(highlightName, aHighlight,
                                                aRange);
   }
@@ -90,12 +86,11 @@ void HighlightRegistry::MaybeRemoveRangeFromHighlightSelection(
   }
   MOZ_ASSERT(frameSelection->GetPresShell());
 
-  for (auto const& iter : mHighlightsOrdered) {
-    if (iter.second() != &aHighlight) {
+  for (const auto& [name, highlight] : Maplike()) {
+    if (highlight != &aHighlight) {
       continue;
     }
-
-    const RefPtr<nsAtom> highlightName = iter.first();
+    const RefPtr<nsAtom> highlightName = name;
     frameSelection->RemoveHighlightSelectionRange(highlightName, aRange);
   }
 }
@@ -105,12 +100,11 @@ void HighlightRegistry::RemoveHighlightSelection(Highlight& aHighlight) {
   if (!frameSelection) {
     return;
   }
-  for (auto const& iter : mHighlightsOrdered) {
-    if (iter.second() != &aHighlight) {
+  for (const auto& [name, highlight] : Maplike()) {
+    if (highlight != &aHighlight) {
       continue;
     }
-
-    const RefPtr<nsAtom> highlightName = iter.first();
+    const RefPtr<nsAtom> highlightName = name;
     frameSelection->RemoveHighlightSelection(highlightName);
   }
 }
@@ -120,128 +114,86 @@ void HighlightRegistry::RepaintHighlightSelection(Highlight& aHighlight) {
   if (!frameSelection) {
     return;
   }
-  for (auto const& iter : mHighlightsOrdered) {
-    if (iter.second() != &aHighlight) {
+  for (const auto& [name, highlight] : Maplike()) {
+    if (highlight != &aHighlight) {
       continue;
     }
-
-    const RefPtr<nsAtom> highlightName = iter.first();
+    const RefPtr<nsAtom> highlightName = name;
     frameSelection->RepaintHighlightSelection(highlightName);
   }
 }
 
 void HighlightRegistry::RepaintAllHighlightSelections() {
-  if (mHighlightsOrdered.IsEmpty()) {
+  if (Maplike().IsEmpty()) {
     return;
   }
   RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
   if (!frameSelection) {
     return;
   }
-  for (auto const& iter : mHighlightsOrdered) {
-    frameSelection->RepaintHighlightSelection(iter.first());
+  for (const auto& [name, highlight] : Maplike()) {
+    frameSelection->RepaintHighlightSelection(name);
   }
 }
 
 void HighlightRegistry::AddHighlightSelectionsToFrameSelection() {
-  if (mHighlightsOrdered.IsEmpty()) {
+  if (Maplike().IsEmpty()) {
     return;
   }
   RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
   if (!frameSelection) {
     return;
   }
-  for (auto const& iter : mHighlightsOrdered) {
-    RefPtr<nsAtom> highlightName = iter.first();
-    RefPtr<Highlight> highlight = iter.second();
-    frameSelection->AddHighlightSelection(highlightName, *highlight);
+  for (const auto& [name, highlight] : Maplike()) {
+    RefPtr<nsAtom> highlightName = name;
+    RefPtr<Highlight> highlightOwned = highlight;
+    frameSelection->AddHighlightSelection(highlightName, *highlightOwned);
   }
 }
 
-HighlightRegistry* HighlightRegistry::Set(const nsAString& aKey,
-                                          Highlight& aValue, ErrorResult& aRv) {
-  // manually check if the highlight `aKey` is already registered to be able to
-  // provide a fast path later that avoids calling `std::find_if()`.
-  const bool highlightAlreadyPresent =
-      HighlightRegistry_Binding::MaplikeHelpers::Has(this, aKey, aRv);
-  if (aRv.Failed()) {
-    return this;
-  }
-  HighlightRegistry_Binding::MaplikeHelpers::Set(this, aKey, aValue, aRv);
-  if (aRv.Failed()) {
-    return this;
-  }
+void HighlightRegistry::Set(nsAtom& aKey, Highlight& aValue, ErrorResult& aRv) {
   RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
-  RefPtr<nsAtom> highlightNameAtom = NS_AtomizeMainThread(aKey);
-  if (highlightAlreadyPresent) {
-    // If the highlight named `aKey` was present before, replace its value.
-    auto foundIter =
-        std::find_if(mHighlightsOrdered.begin(), mHighlightsOrdered.end(),
-                     [&highlightNameAtom](auto const& aElm) {
-                       return aElm.first() == highlightNameAtom;
-                     });
-    MOZ_ASSERT(foundIter != mHighlightsOrdered.end(),
-               "webIDL maplike and DOM mirror are not in sync");
-    foundIter->second()->RemoveFromHighlightRegistry(*this, *highlightNameAtom);
+  // If the highlight named `aKey` was present before, replace its value.
+  if (auto* oldValue = Maplike().Get(&aKey)) {
+    oldValue->RemoveFromHighlightRegistry(*this, aKey);
     if (frameSelection) {
-      frameSelection->RemoveHighlightSelection(highlightNameAtom);
+      frameSelection->RemoveHighlightSelection(MOZ_KnownLive(&aKey));
     }
-    foundIter->second() = &aValue;
-  } else {
-    mHighlightsOrdered.AppendElement(
-        CompactPair<RefPtr<nsAtom>, RefPtr<Highlight>>(highlightNameAtom,
-                                                       &aValue));
   }
-  aValue.AddToHighlightRegistry(*this, *highlightNameAtom);
+  MaplikeMixin::Set(aKey, aValue, aRv);
+  aValue.AddToHighlightRegistry(*this, aKey);
   if (frameSelection) {
-    frameSelection->AddHighlightSelection(highlightNameAtom, aValue);
+    frameSelection->AddHighlightSelection(MOZ_KnownLive(&aKey),
+                                          MOZ_KnownLive(aValue));
   }
-  return this;
 }
 
-void HighlightRegistry::Clear(ErrorResult& aRv) {
-  HighlightRegistry_Binding::MaplikeHelpers::Clear(this, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
+void HighlightRegistry::Clear() {
   auto frameSelection = GetFrameSelection();
   AutoFrameSelectionBatcher batcher(__FUNCTION__);
   batcher.AddFrameSelection(frameSelection);
-  for (auto const& iter : mHighlightsOrdered) {
-    const RefPtr<nsAtom>& highlightName = iter.first();
-    const RefPtr<Highlight>& highlight = iter.second();
+  for (const auto& [name, highlight] : Maplike()) {
+    const RefPtr<nsAtom> highlightName = name;
     highlight->RemoveFromHighlightRegistry(*this, *highlightName);
     if (frameSelection) {
-      // The selection batcher makes sure that no script is run in this call.
-      // However, `nsFrameSelection::RemoveHighlightSelection` is marked
-      // `MOZ_CAN_RUN_SCRIPT`, therefore `MOZ_KnownLive` is needed regardless.
-      frameSelection->RemoveHighlightSelection(MOZ_KnownLive(highlightName));
+      frameSelection->RemoveHighlightSelection(highlightName);
     }
   }
-
-  mHighlightsOrdered.Clear();
+  MaplikeMixin::Clear();
 }
 
-bool HighlightRegistry::Delete(const nsAString& aKey, ErrorResult& aRv) {
-  if (!HighlightRegistry_Binding::MaplikeHelpers::Delete(this, aKey, aRv)) {
+bool HighlightRegistry::Delete(nsAtom& aKey) {
+  const RefPtr highlight = Maplike().Get(&aKey);
+  if (!highlight) {
     return false;
   }
-  RefPtr<nsAtom> highlightNameAtom = NS_AtomizeMainThread(aKey);
-  auto foundIter =
-      std::find_if(mHighlightsOrdered.cbegin(), mHighlightsOrdered.cend(),
-                   [&highlightNameAtom](auto const& aElm) {
-                     return aElm.first() == highlightNameAtom;
-                   });
-  MOZ_ASSERT(foundIter != mHighlightsOrdered.cend(),
-             "HighlightRegistry: maplike and internal data are out of sync!");
-
-  RefPtr<Highlight> highlight = foundIter->second();
-  mHighlightsOrdered.RemoveElementAt(foundIter);
+  DebugOnly<bool> deleted = MaplikeMixin::Delete(aKey);
+  MOZ_ASSERT(deleted);
 
   if (auto frameSelection = GetFrameSelection()) {
-    frameSelection->RemoveHighlightSelection(highlightNameAtom);
+    frameSelection->RemoveHighlightSelection(MOZ_KnownLive(&aKey));
   }
-  highlight->RemoveFromHighlightRegistry(*this, *highlightNameAtom);
+  highlight->RemoveFromHighlightRegistry(*this, aKey);
   return true;
 }
 
@@ -250,7 +202,7 @@ void HighlightRegistry::HighlightsFromPoint(
     float aX, float aY, const HighlightsFromPointOptions& aOptions,
     nsTArray<HighlightHitResult>& aResult) {
   MOZ_ASSERT(mDocument);
-  if (mHighlightsOrdered.IsEmpty()) {
+  if (Maplike().IsEmpty()) {
     return;
   }
 
@@ -299,8 +251,7 @@ void HighlightRegistry::HighlightsFromPoint(
 
   // 2. Otherwise, let results be an empty sequence.
   // 3. For each Highlight highlight in this HighlightRegistry:
-  for (const auto& namedHighlight : Reversed(mHighlightsOrdered)) {
-    const auto& highlight = namedHighlight.second();
+  for (const auto& [name, highlight] : Reversed(Maplike())) {
     // Note: Step 3.2 (iterate ranges) is implemented in RangesAtPoint().
     nsTArray<RefPtr<AbstractRange>> rangesAtPoint =
         highlight->RangesAtPoint(aX, aY, aOptions.mShadowRoots, topmostElement);

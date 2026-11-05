@@ -51,15 +51,13 @@ impl PingUploader for ViaductUploader {
             return UploadResult::http_status(200);
         }
 
-        // Localhost-destined pings are sent without OHTTP,
-        // even if configured to use OHTTP.
-        let result = if localhost_port == 0 && requires_ohttp {
+        let result = if requires_ohttp {
             // This ping requires OHTTP, but Firefox has additional requirements that may make
             // us unwilling to.
             if !should_ohttp_upload(&upload_request) {
                 return UploadResult::unrecoverable_failure();
             }
-            ohttp_upload(upload_request)
+            ohttp_upload(upload_request, localhost_port)
         } else {
             viaduct_upload(upload_request)
         };
@@ -114,9 +112,12 @@ fn should_ohttp_upload(upload_request: &PingUploadRequest) -> bool {
     !upload_request.body_has_info_sections
 }
 
-fn ohttp_upload(upload_request: PingUploadRequest) -> Result<UploadResult, ViaductUploaderError> {
+fn ohttp_upload(
+    upload_request: PingUploadRequest,
+    localhost_port: i32,
+) -> Result<UploadResult, ViaductUploaderError> {
     static CELL: OnceCell<Vec<u8>> = once_cell::sync::OnceCell::new();
-    let config = CELL.get_or_try_init(|| get_config())?;
+    let config = CELL.get_or_try_init(|| get_config(localhost_port))?;
 
     let binary_request = bhttp_encode(upload_request)?;
 
@@ -128,8 +129,12 @@ fn ohttp_upload(upload_request: PingUploadRequest) -> Result<UploadResult, Viadu
     let ohttp_request = ohttp::ClientRequest::from_encoded_config(config)?;
     let (capsule, ohttp_response) = ohttp_request.encapsulate(&binary_request)?;
 
-    const OHTTP_RELAY_URL: &str = "https://mozilla-ohttp.fastly-edge.com/";
-    let parsed_relay_url = Url::parse(OHTTP_RELAY_URL)?;
+    let parsed_relay_url = if localhost_port > 0 {
+        Url::parse(&format!("http://localhost:{localhost_port}/"))?
+    } else {
+        const OHTTP_RELAY_URL: &str = "https://mozilla-ohttp.fastly-edge.com/";
+        Url::parse(OHTTP_RELAY_URL)?
+    };
 
     log::trace!("FOG ohttp uploader uploading to {}", parsed_relay_url);
 
@@ -157,11 +162,15 @@ fn ohttp_upload(upload_request: PingUploadRequest) -> Result<UploadResult, Viadu
     }
 }
 
-fn get_config() -> Result<Vec<u8>, ViaductUploaderError> {
-    const OHTTP_CONFIG_URL: &str =
-        "https://prod.ohttp-gateway.prod.webservices.mozgcp.net/ohttp-configs";
-    log::trace!("Getting OHTTP config from {}", OHTTP_CONFIG_URL);
-    let parsed_config_url = Url::parse(OHTTP_CONFIG_URL)?;
+fn get_config(localhost_port: i32) -> Result<Vec<u8>, ViaductUploaderError> {
+    let parsed_config_url = if localhost_port > 0 {
+        Url::parse(&format!("http://localhost:{localhost_port}/ohttp-configs"))?
+    } else {
+        const OHTTP_CONFIG_URL: &str =
+            "https://prod.ohttp-gateway.prod.webservices.mozgcp.net/ohttp-configs";
+        Url::parse(OHTTP_CONFIG_URL)?
+    };
+    log::trace!("Getting OHTTP config from {}", parsed_config_url);
     Ok(Request::get(parsed_config_url).send()?.body)
 }
 

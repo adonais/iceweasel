@@ -83,6 +83,11 @@ public:
     SkPDFIndirectReference makeOutline(SkPDFDocument* doc) const;
     SkString getRootLanguage();
 
+    // Returns an indirect reference to a Namespace dictionary for the given namespace URI,
+    // creating and caching one the first time each distinct URI is seen so that structure
+    // elements sharing a namespace (e.g. MathML) also share a single Namespace object.
+    SkPDFIndirectReference namespaceRef(const SkString& namespaceURI, SkPDFDocument* doc) const;
+
     // An entry in an ordered map from an element identifier to an indirect reference to its
     // corresponding structure element.
     struct IDTreeEntry {
@@ -94,6 +99,7 @@ private:
 
     SkArenaAlloc fArena;
     skia_private::THashMap<int, SkPDFStructElem*> fStructElemForElemId;
+    mutable skia_private::THashMap<SkString, SkPDFIndirectReference> fNamespaceRefForURI;
     SkPDFStructElem* fRoot = nullptr;
     SkPDF::Metadata::Outline fOutline = SkPDF::Metadata::Outline::None;
 

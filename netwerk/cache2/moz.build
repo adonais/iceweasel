@@ -69,3 +69,23 @@ LOCAL_INCLUDES += [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "CacheCrypto.h",
+    "CacheEntry.h",
+    "CacheFile.h",
+    "CacheFileChunk.h",
+    "CacheFileContextEvictor.h",
+    "CacheFileInputStream.h",
+    "CacheFileIOManager.h",
+    "CacheFileMetadata.h",
+    "CacheFileOutputStream.h",
+    "CacheFileUtils.h",
+    "CacheHashUtils.h",
+    "CacheIndex.h",
+    "CacheIndexContextIterator.h",
+    "CacheIndexIterator.h",
+    "CacheIOThread.h",
+    "CacheLog.h",
+    "CacheStorage.h",
+]

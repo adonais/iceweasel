@@ -128,6 +128,8 @@ Or for Raptor-Browsertime (use `chrome` for desktop, and `chrome-m` for mobile):
 ./mach raptor -t amazon --app chrome --browsertime-chromedriver <PATH/TO/CHROMEDRIVER>
 ```
 
+On desktop, Raptor uses Chrome from its default install location.
+
 ## Running on Safari Technology Preview
 
 Safari Technology Preview comes bundled with an appropriate `safaridriver` binary, and Browsertime (via selenium) automatically launches this.
@@ -143,8 +145,10 @@ You can launch vanilla Browsertime with Safari Technology Preview as follows:
 Or with Raptor-Browsertime
 
 ```
-./mach raptor -t speedometer3 --app safari-tp --binary "/Applications/Safari Technology Preview.app/Contents/MacOS/Safari Technology Preview"
+./mach raptor -t speedometer3 --app safari-tp
 ```
+
+Raptor uses Safari Technology Preview from `/Applications`.
 
 ## Running Page-load tests with third party WebExtensions
 
@@ -279,6 +283,8 @@ With Browsertime you can now use the exposed start/stop commands of the gecko pr
 If you want to run the test in CI then you will want to ensure you set the `--extra-profiler-run` flag in the mozharness extra options for where your test is defined in the {searchfox}`browsertime-desktop yaml file <mozilla-central/rev/2e06f92ba068e32a9a7213ee726e8171f91605c7:taskcluster/ci/test/browsertime-desktop.yml#404-406>`. Otherwise you can just pass the `--extra-profiler-run` flag locally in your command line.
 
 Both of these steps are required to satisfy the `_expose_browser_profiler()` {searchfox}`method <mozilla-central/rev/11d085b63cf74b35737d9c036be80434883dd3f6:testing/raptor/raptor/browsertime/base.py#241>` so that the option, {searchfox}`expose_profiler <mozilla-central/rev/11d085b63cf74b35737d9c036be80434883dd3f6:testing/raptor/raptor/browsertime/base.py#383-386>`, is passed into your browsertime script. Finally, it should be as simple as calling the `start()` & `stop()` commands in your {searchfox}`script <mozilla-central/rev/11d085b63cf74b35737d9c036be80434883dd3f6:testing/raptor/browsertime/speedometer3.js#14,30-37,58-65>`.
+
+Interactive tests that use `test_cmds` automatically wrap each `measure.start` and `measure.stop` pair with the exposed profiler when `expose_browser_profiler` is set and profiling is enabled for the run, such as with `--gecko-profile` or the extra profiler run. This produces one profile per measured page; nav-bench uses this mechanism to profile each site and navigation phase separately.
 
 For the gecko profiler, you should also keep in mind these {searchfox}`default parameters <mozilla-central/rev/2e06f92ba068e32a9a7213ee726e8171f91605c7:testing/raptor/raptor/browsertime/base.py#474-495>`, which you may or may not want to change yourself in your tests configuration file.
 

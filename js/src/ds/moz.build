@@ -18,3 +18,20 @@ UNIFIED_SOURCES += [
 
 if CONFIG["FUZZING_JS_FUZZILLI"]:
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "AvlTree.h",
+    "BitArray.h",
+    "Bitmap.h",
+    "Fifo.h",
+    "FixedLengthVector.h",
+    "IdValuePair.h",
+    "InlineTable.h",
+    "LifoAlloc.h",
+    "Nestable.h",
+    "PriorityQueue.h",
+    "SinglyLinkedList.h",
+    "SlimLinkedList.h",
+    "Sort.h",
+    "TraceableFifo.h",
+]

@@ -1,0 +1,11 @@
+[DEFAULT]
+tags = "devtools"
+subsuite = "devtools"
+support-files = [
+  "head.js",
+  "!/devtools/client/shared/test/shared-head.js",
+]
+
+["browser_settings_preference_bindings.js"]
+
+["browser_settings_rulers.js"]

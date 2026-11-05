@@ -25,12 +25,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -48,12 +52,13 @@ import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.menu.R
 import mozilla.components.compose.menu.data.MenuItemBadge
 import mozilla.components.compose.menu.data.MenuItemSummary
+import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.store.MenuEvent
 import mozilla.components.compose.menu.ui.MenuItemState.DEFAULT
 import mozilla.components.ui.icons.R as iconsR
 
-private const val ANIMATION_DURATION_MS = 75
+private const val ANIMATION_DURATION_MS = 300
 
 /**
  * A menu item that can be expanded to show others or collapsed to hide them.
@@ -76,7 +81,7 @@ private const val ANIMATION_DURATION_MS = 75
  */
 @Composable
 fun ExpandableHeaderItem(
-    title: Text,
+    title: MenuItemTitle,
     subMenuItems: List<StandardMenuItem>,
     modifier: Modifier = Modifier,
     hideOnExpand: Boolean = false,
@@ -91,19 +96,21 @@ fun ExpandableHeaderItem(
     actionButtonText: Text? = null,
     state: MenuItemState = DEFAULT,
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
-    val contentDescriptionValue = contentDescription?.value ?: title
+    var isExpanded by rememberSaveable { mutableStateOf(false) }
+    val contentDescriptionValue = contentDescription?.value ?: title.text.value
     val expandedDescription = stringResource(composeBaseR.string.mozac_compose_base_a11y_state_label_expanded)
     val collapsedDescription = stringResource(composeBaseR.string.mozac_compose_base_a11y_state_label_collapsed)
     val statefulContentDescription =
         remember(isExpanded) {
             "$contentDescriptionValue. ${if (isExpanded) expandedDescription else collapsedDescription}"
         }
+    var headerHeight by remember { mutableIntStateOf(0) }
 
     if (!hideOnExpand || !isExpanded) {
         Row(
             modifier =
                 modifier
+                    .onSizeChanged { headerHeight = it.height }
                     .background(MaterialTheme.colorScheme.surfaceBright)
                     .defaultMinSize(
                         minHeight =
@@ -129,7 +136,7 @@ fun ExpandableHeaderItem(
                         onClickEvent?.let { onInteraction(it) }
                     }
                     .padding(
-                        horizontal = AcornTheme.layout.space.static200,
+                        horizontal = AcornTheme.layout.space.dynamic200,
                         vertical = AcornTheme.layout.space.static100,
                     ),
             verticalAlignment = CenterVertically,
@@ -147,18 +154,20 @@ fun ExpandableHeaderItem(
         }
     }
 
-    MenuItemAnimation(isExpanded) {
+    // Sub-items replacing their header start from its height, so that the menu only grows when expanding.
+    MenuItemAnimation(isExpanded = isExpanded, initialHeight = if (hideOnExpand) headerHeight else 0) {
         subMenuItems.forEach {
             MenuListItem(
                 title = it.title,
                 contentDescription = it.contentDescription,
-                modifier = Modifier,
+                modifier = Modifier.clip(MaterialTheme.shapes.extraSmall),
                 role = it.role,
                 summary = it.summary,
                 icon = it.icon,
                 showNewIndicator = it.showNewIndicator,
                 badge = it.badge,
                 actionButton = it.actionButton,
+                trailingIcon = it.trailingIcon,
                 state = it.state,
                 onClickEvent = it.onClickEvent,
                 onShownEvent = it.onShownEvent,
@@ -168,9 +177,17 @@ fun ExpandableHeaderItem(
     }
 }
 
+/**
+ * Animates showing or hiding sub-items.
+ *
+ * @param isExpanded Whether the sub-items should be shown.
+ * @param initialHeight Height, in pixels, from which the sub-items start expanding.
+ * @param content The sub-items to show.
+ */
 @Composable
 private fun MenuItemAnimation(
     isExpanded: Boolean,
+    initialHeight: Int,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     AnimatedVisibility(
@@ -178,6 +195,7 @@ private fun MenuItemAnimation(
         enter =
             expandVertically(
                 expandFrom = Alignment.Top,
+                initialHeight = { fullHeight -> initialHeight.coerceAtMost(fullHeight) },
                 animationSpec =
                     tween(
                         durationMillis = ANIMATION_DURATION_MS,
@@ -263,7 +281,7 @@ private fun ChevronBadge(
 private fun ExpandableHeaderItemPreview() = AcornTheme {
     Surface {
         ExpandableHeaderItem(
-            title = Text.String("Title"),
+            title = MenuItemTitle(Text.String("Title")),
             contentDescription = Text.String(""),
             subMenuItems = emptyList(),
             summary = MenuItemSummary(Text.String("Summary")),

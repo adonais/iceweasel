@@ -38,8 +38,8 @@ template <typename Fn>
 struct Caller;
 
 template <typename Fn, typename... Params>
-std::invoke_result_t<Fn, Params...> CallFunctionRef(FunctionRef<Fn> aRef,
-                                                    Params... aParams) {
+std::invoke_result_t<Fn, Params&&...> CallFunctionRef(FunctionRef<Fn> aRef,
+                                                      Params&&... aParams) {
   return aRef(std::forward<Params>(aParams)...);
 }
 

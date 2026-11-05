@@ -150,7 +150,7 @@ class MyClass {
     this.#reg = /[a-zA-Z]/gv;
   }
   #a
-  #b = 'default value'
+  #b = "default value"
   #reg
   static #someStaticPrivate
   #getA() {

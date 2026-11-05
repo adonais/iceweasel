@@ -1,0 +1,36 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  display: block;
+  background-color: var(--aitab-footer-background-color);
+
+  --aitab-footer-background-color: var(--color-violet-desaturated-90, var(--color-violet-110));
+  --aitab-footer-brand-text-color: var(--color-white);
+
+  @media (forced-colors) {
+    --aitab-footer-background-color: var(--background-color-canvas);
+    --aitab-footer-brand-text-color: var(--text-color);
+  }
+}
+
+.aitab-footer {
+  padding-block: var(--space-xlarge) var(--space-xxlarge);
+}
+
+.aitab-footer-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-small);
+  color: var(--aitab-footer-brand-text-color);
+  font-size: var(--font-size-xlarge);
+
+  &::before {
+    content: "";
+    inline-size: var(--size-item-large);
+    block-size: var(--size-item-large);
+    background: url("chrome://browser/content/aiwindow/assets/smart-window.svg") center / contain no-repeat;
+  }
+}

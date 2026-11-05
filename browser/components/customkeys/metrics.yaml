@@ -25,13 +25,13 @@ browser.customkeys:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1635774
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2041176
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076956
     data_sensitivity:
       - interaction
     notification_emails:
       - accessibility@mozilla.com
       - jteh@mozilla.com
-      - kbryant@mozilla.com
-    expires: 161
+    expires: 168
 
   opened:
     type: counter
@@ -42,10 +42,10 @@ browser.customkeys:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1635774
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2041176
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076956
     data_sensitivity:
       - interaction
     notification_emails:
       - accessibility@mozilla.com
       - jteh@mozilla.com
-      - kbryant@mozilla.com
-    expires: 161
+    expires: 168

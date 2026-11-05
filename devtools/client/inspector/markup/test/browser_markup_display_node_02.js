@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
- http://creativecommons.org/publicdomain/zero/1.0/ */
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
@@ -46,7 +46,7 @@ const TEST_DATA = [
     },
   },
   {
-    desc: "Reusing the 'grid' node, updating the display to 'grid again",
+    desc: "Reusing the 'grid' node, updating the display to 'grid' again",
     selector: "#grid",
     before: {
       visible: false,
@@ -102,6 +102,66 @@ const TEST_DATA = [
     },
   },
   {
+    desc: "Showing an 'inline-grid' node by changing its style property",
+    selector: "#block",
+    before: {
+      visible: true,
+      textContent: "grid",
+      interactive: true,
+    },
+    async changeStyle() {
+      await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+        const node = content.document.getElementById("block");
+        node.style.display = "inline-grid";
+      });
+    },
+    after: {
+      textContent: "inline-grid",
+      visible: true,
+      interactive: true,
+    },
+  },
+  {
+    desc: "Showing a 'grid-lanes' node by changing its style property",
+    selector: "#block",
+    before: {
+      visible: true,
+      textContent: "inline-grid",
+      interactive: true,
+    },
+    async changeStyle() {
+      await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+        const node = content.document.getElementById("block");
+        node.style.display = "grid-lanes";
+      });
+    },
+    after: {
+      textContent: "grid-lanes",
+      visible: true,
+      interactive: true,
+    },
+  },
+  {
+    desc: "Showing an 'inline-grid-lanes' node by changing its style property",
+    selector: "#block",
+    before: {
+      visible: true,
+      textContent: "grid-lanes",
+      interactive: true,
+    },
+    async changeStyle() {
+      await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+        const node = content.document.getElementById("block");
+        node.style.display = "inline-grid-lanes";
+      });
+    },
+    after: {
+      textContent: "inline-grid-lanes",
+      visible: true,
+      interactive: true,
+    },
+  },
+  {
     desc: "Showing a 'flex' node by removing its hidden attribute",
     selector: "#flex",
     before: {
@@ -121,6 +181,7 @@ const TEST_DATA = [
 ];
 
 add_task(async function () {
+  await pushPref("layout.css.display-grid-lanes.enabled", true);
   const { inspector } = await openInspectorForURL(
     "data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI)
   );

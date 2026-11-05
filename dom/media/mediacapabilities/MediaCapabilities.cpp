@@ -4,16 +4,20 @@
 
 #include "MediaCapabilities.h"
 
+#include <type_traits>
 #include <utility>
 
+#include "AOMDecoder.h"
 #include "AllocationPolicy.h"
 #include "DecoderTraits.h"
+#include "H265.h"
 #include "MP4Decoder.h"
 #include "MediaCapabilitiesValidation.h"
 #include "MediaInfo.h"
 #include "MediaRecorder.h"
 #include "PDMFactorySupport.h"
 #include "VPXDecoder.h"
+#include "VideoUtils.h"
 #include "WindowRenderer.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -270,6 +274,63 @@ static InfoType UnsupportedInfo() {
   info.mSmooth = false;
   info.mPowerEfficient = false;
   return info;
+}
+
+// Only for WithAllocPolicy. The process-wide SingleAllocPolicy that strict
+// video decoder probes are serialized through, and the queue that owns it. A
+// function-local static in WithAllocPolicy would be one per template
+// instantiation, so it lives here.
+struct ProbeAllocPolicy {
+  const RefPtr<TaskQueue> mQueue;  // mPolicy->Cancel() must run here.
+  const RefPtr<SingleAllocPolicy> mPolicy;
+};
+
+// Creates the policy on first use and clears it at XPCOMShutdownThreads.
+static ProbeAllocPolicy* GetProbeAllocPolicy() {
+  static UniquePtr<ProbeAllocPolicy> sPolicy = []() {
+    SchedulerGroup::Dispatch(
+        NS_NewRunnableFunction("GetProbeAllocPolicy", []() {
+          ClearOnShutdown(&sPolicy, ShutdownPhase::XPCOMShutdownThreads);
+        }));
+    RefPtr<TaskQueue> queue =
+        TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
+                          "MediaCapabilities::ProbeAllocPolicy");
+    return MakeUnique<ProbeAllocPolicy>(
+        queue, MakeRefPtr<SingleAllocPolicy>(TrackInfo::TrackType::kVideoTrack,
+                                             queue));
+  }();
+  return sPolicy.get();
+}
+
+// Runs aFunction(AllocPolicy*) with the shared policy while holding a
+// ShutdownBlockingTicket, so shutdown does not reach XPCOMShutdownThreads,
+// where GlobalAllocPolicy is cleared, until the returned promise has settled.
+// Resolves an empty support set instead if shutdown has begun, and cancels the
+// allocations still queued when shutdown starts.
+template <typename Function,
+          typename PromiseType = typename std::invoke_result_t<
+              Function, AllocPolicy*>::element_type>
+static RefPtr<PromiseType> WithAllocPolicy(const nsAString& aName,
+                                           Function&& aFunction) {
+  auto ticket = media::ShutdownBlockingTicket::Create(
+      aName, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__);
+  if (!ticket) {
+    LOG("Shutting down, not probing codec support for {}",
+        NS_ConvertUTF16toUTF8(aName).get());
+    typename PromiseType::ResolveValueType unsupported;
+    return PromiseType::CreateAndResolve(unsupported, __func__);
+  }
+  ProbeAllocPolicy* policy = GetProbeAllocPolicy();
+  ticket->ShutdownPromise()->Then(
+      policy->mQueue, __func__,
+      [policy = policy->mPolicy]() { policy->Cancel(); }, []() {});
+  return aFunction(policy->mPolicy.get())
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [ticket = std::move(ticket)](
+                 typename PromiseType::ResolveOrRejectValue&& aValue) {
+               return PromiseType::CreateAndResolveOrReject(std::move(aValue),
+                                                            __func__);
+             });
 }
 
 // Whether aMime signals AV1 tier=1 with an explicit level below 4.0
@@ -958,6 +1019,83 @@ static MediaCapabilitiesDecodingInfo CreateVideoDecodingInfo(
   return info;
 }
 
+// Lowest AV1 seq_level_idx whose MaxPicSize fits aImage. Falls back to
+// "maximum parameters" when no defined level fits or the size overflows.
+static uint8_t AV1SeqLevelIdxForImage(const gfx::IntSize& aImage) {
+  // 31 imposes no level constraints, for sizes larger than any defined level.
+  constexpr uint8_t kMaxParameters = 31;
+  const CheckedInt<uint32_t> pixels =
+      CheckedInt<uint32_t>(aImage.width) * CheckedInt<uint32_t>(aImage.height);
+  if (!pixels.isValid()) {
+    return kMaxParameters;
+  }
+  struct Level {
+    uint32_t mMaxPicSize;
+    uint8_t mSeqLevelIdx;
+  };
+  // Rows are levels 2.0, 2.1, 3.0, 3.1, 4.0, 5.0, 6.0.
+  static constexpr Level kLevels[] = {
+      {147456, 0},  {278784, 1},   {665856, 4},   {1065024, 5},
+      {2359296, 8}, {8912896, 12}, {35651584, 16}};
+  for (const auto& level : kLevels) {
+    if (pixels.value() <= level.mMaxPicSize) {
+      return level.mSeqLevelIdx;
+    }
+  }
+  return kMaxParameters;
+}
+
+// Derive the decoder configuration a codec string leaves out: a common default
+// for VP8, VP9 and AV1, and for HEVC the profile, tier and level that the
+// string does carry.
+static void MaybeSynthesizeCodecConfig(VideoInfo* aInfo,
+                                       const MediaContainerType& aContainer) {
+  if (aInfo->mExtraData && !aInfo->mExtraData->IsEmpty()) {
+    return;
+  }
+  if (VPXDecoder::IsVPX(aInfo->mMimeType)) {
+    // The string carries no profile, so assume the common VP8/VP9 case.
+    VPXDecoder::VPXStreamInfo info;
+    info.mProfile = 0;
+    info.mBitDepth = 8;
+    RefPtr<MediaByteBuffer> extraData = new MediaByteBuffer();
+    VPXDecoder::GetVPCCBox(extraData, info);
+    aInfo->mExtraData = std::move(extraData);
+    LOG("Synthesized default config for profile-less {}",
+        aInfo->mMimeType.get());
+  } else if (AOMDecoder::IsAV1(aInfo->mMimeType)) {
+    // The string carries no profile, so assume the common AV1 case.
+    AOMDecoder::AV1SequenceInfo info;
+    info.mImage = aInfo->mImage;
+    info.mProfile = 0;
+    info.mBitDepth = 8;
+    AOMDecoder::OperatingPoint op;
+    op.mLevel = AV1SeqLevelIdxForImage(aInfo->mImage);
+    info.mOperatingPoints.AppendElement(op);
+    RefPtr<MediaByteBuffer> extraData = new MediaByteBuffer();
+    bool hasSeqHdr = false;
+    AOMDecoder::WriteAV1CBox(info, extraData, hasSeqHdr);
+    aInfo->mExtraData = std::move(extraData);
+    LOG("Synthesized default config for profile-less {} (seq_level_idx={})",
+        aInfo->mMimeType.get(), static_cast<unsigned>(op.mLevel));
+  } else if (MP4Decoder::IsHEVC(aInfo->mMimeType)) {
+    // The track exists only because one of the codecs parsed as HEVC, so the
+    // loop always finds it.
+    for (const auto& codec : aContainer.ExtendedType().Codecs().Range()) {
+      H265CodecDetails details;
+      if (!ExtractH265CodecDetails(codec, &details)) {
+        continue;
+      }
+      aInfo->mExtraData = H265::CreateExtraData(details, aInfo->mImage);
+      LOG("Synthesized config for {} (profile_idc={}, level_idc={})",
+          aInfo->mMimeType.get(),
+          static_cast<unsigned>(details.general_profile_idc),
+          static_cast<unsigned>(details.general_level_idc));
+      break;
+    }
+  }
+}
+
 void MediaCapabilities::CreateNonWebRTCDecodingInfo(
     const MediaDecodingConfiguration& aConfiguration, Promise* aPromise,
     Maybe<MediaContainerType> aVideoContainer,
@@ -984,6 +1122,8 @@ void MediaCapabilities::CreateNonWebRTCDecodingInfo(
       aPromise->MaybeRejectWithTypeError("Invalid VideoConfiguration");
       return;
     }
+    MaybeSynthesizeCodecConfig(videoTracks[0]->GetAsVideoInfo(),
+                               *aVideoContainer);
     tracks.AppendElements(std::move(videoTracks));
   }
   if (aConfiguration.mAudio.WasPassed()) {
@@ -1283,24 +1423,24 @@ MediaCapabilities::CheckVideoDecodingInfo(
                 TrackingId trackingId(TrackingId::Source::MediaCapabilities,
                                       sTrackingIdCounter++,
                                       TrackingId::TrackAcrossProcesses::Yes);
+                const CreateDecoderParams::OptionSet options{
+                    CreateDecoderParams::Option::Default,
+                    CreateDecoderParams::Option::AssertCanInstantiate};
                 CreateDecoderParams params{
-                    *config, compositor,
+                    *config,
+                    compositor,
                     CreateDecoderParams::VideoFrameRate(frameRate),
-                    TrackInfo::kVideoTrack, Some(std::move(trackingId))};
+                    TrackInfo::kVideoTrack,
+                    Some(std::move(trackingId)),
+                    options};
                 // We want to ensure that all decoder's queries are occurring
                 // only once at a time as it can quickly exhaust the system
                 // resources otherwise.
-                static RefPtr<AllocPolicy> sVideoAllocPolicy = [&taskQueue]() {
-                  SchedulerGroup::Dispatch(NS_NewRunnableFunction(
-                      "MediaCapabilities::AllocPolicy:Video", []() {
-                        ClearOnShutdown(&sVideoAllocPolicy,
-                                        ShutdownPhase::XPCOMShutdownThreads);
-                      }));
-                  return new SingleAllocPolicy(
-                      TrackInfo::TrackType::kVideoTrack, taskQueue);
-                }();
-                return PDMFactory::StrictSupportsAsync(params,
-                                                       sVideoAllocPolicy);
+                return WithAllocPolicy(
+                    u"MediaCapabilities::CheckVideoDecodingInfo"_ns,
+                    [&params](AllocPolicy* aPolicy) {
+                      return PDMFactory::StrictSupportsAsync(params, aPolicy);
+                    });
               });
         }
 

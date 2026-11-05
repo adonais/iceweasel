@@ -39,7 +39,6 @@ BROWSER_CHROME_MANIFESTS += [
     "content/test/browser-linkHandling/browser.toml",
     "content/test/browser-mathml/browser.toml",
     "content/test/browser-maximized/browser.toml",
-    "content/test/browser-maximized/browserNova.toml",
     "content/test/browser-menubar/browser.toml",
     "content/test/browser-metaTags/browser.toml",
     "content/test/browser-mousepostracker/browser.toml",

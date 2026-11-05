@@ -8,6 +8,8 @@ mod responder;
 #[cfg(feature = "xpcom")]
 mod service;
 
+#[cfg(feature = "xpcom")]
+pub use self::{initiator::CtapCableInitiatorHandshake, responder::CtapCableResponder};
 pub use self::{
     initiator::{Initiator, InitiatorHandshake},
     responder::Responder,

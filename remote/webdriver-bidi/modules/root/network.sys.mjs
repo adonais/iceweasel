@@ -542,6 +542,9 @@ class NetworkModule extends RootBiDiModule {
    *
    * @throws {InvalidArgumentError}
    *     Raised if an argument is of an invalid type or value.
+   * @throws {UnsupportedOperationError}
+   *     Raised if neither "contexts" nor "userContexts" are provided in a
+   *     session restricted to a single user context.
    */
   async addDataCollector(options = {}) {
     const {
@@ -592,6 +595,16 @@ class NetworkModule extends RootBiDiModule {
       );
     }
 
+    if (
+      contextIds === null &&
+      userContextIds === null &&
+      this._isSessionRestricted
+    ) {
+      throw new lazy.error.UnsupportedOperationError(
+        `Adding a data collector without "contexts" or "userContexts" is not supported in a session restricted to a single user context`
+      );
+    }
+
     const navigables = new Set();
     const userContexts = new Set();
     if (contextIds !== null) {
@@ -628,14 +641,7 @@ class NetworkModule extends RootBiDiModule {
           lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
         );
 
-        const internalId =
-          lazy.UserContextManager.getInternalIdById(userContextId);
-
-        if (internalId === null) {
-          throw new lazy.error.NoSuchUserContextError(
-            `User context with id: ${userContextId} doesn't exist`
-          );
-        }
+        this._assertUserContextId(userContextId);
 
         userContexts.add(userContextId);
       }
@@ -1738,14 +1744,7 @@ class NetworkModule extends RootBiDiModule {
           lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
         );
 
-        const internalId =
-          lazy.UserContextManager.getInternalIdById(userContextId);
-
-        if (internalId === null) {
-          throw new lazy.error.NoSuchUserContextError(
-            `User context with id: ${userContextId} doesn't exist`
-          );
-        }
+        this._assertUserContextId(userContextId);
 
         userContexts.add(userContextId);
       }
@@ -3187,6 +3186,10 @@ class NetworkModule extends RootBiDiModule {
       this.#hasNetworkConditionsOffline = true;
       this.#networkListener.startListening();
     }
+  }
+
+  static get supportedCommandsInRestrictedSession() {
+    return ["addDataCollector", "getData", "removeDataCollector"];
   }
 
   static get supportedEvents() {

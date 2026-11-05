@@ -13,32 +13,19 @@ const MAX_EXPIRY = Number.MAX_SAFE_INTEGER;
 /**
  * The external API implemented by the SessionCookies module.
  */
-export var SessionCookies = Object.freeze({
-  collect() {
-    return SessionCookiesInternal.collect();
-  },
-
-  restore(cookies) {
-    SessionCookiesInternal.restore(cookies);
-  },
-});
-
-/**
- * The internal API.
- */
-var SessionCookiesInternal = {
+class _SessionCookies {
   /**
    * Stores whether we're initialized, yet.
    */
-  _initialized: false,
+  #initialized = false;
 
   /**
    * Retrieve an array of all stored session cookies.
    */
   collect() {
-    this._ensureInitialized();
+    this.#ensureInitialized();
     return CookieStore.toArray();
-  },
+  }
 
   /**
    * Restores a given list of session cookies.
@@ -104,7 +91,7 @@ var SessionCookiesInternal = {
         }
       }
     }
-  },
+  }
 
   /**
    * Handles observers notifications that are sent whenever cookies are added,
@@ -123,59 +110,59 @@ var SessionCookiesInternal = {
 
     switch (notification.action) {
       case COOKIE_ADDED:
-        this._addCookie(notification.cookie);
+        this.#addCookie(notification.cookie);
         break;
       case COOKIE_CHANGED:
-        this._updateCookie(notification.cookie);
+        this.#updateCookie(notification.cookie);
         break;
       case COOKIE_DELETED:
-        this._removeCookie(notification.cookie);
+        this.#removeCookie(notification.cookie);
         break;
       case ALL_COOKIES_CLEARED:
         CookieStore.clear();
         break;
       case COOKIES_BATCH_DELETED:
-        this._removeCookies(notification.batchDeletedCookies);
+        this.#removeCookies(notification.batchDeletedCookies);
         break;
       default:
         throw new Error("Unhandled session-cookie-changed notification.");
     }
-  },
+  }
 
   /**
    * If called for the first time in a session, iterates all cookies in the
    * cookies service and puts them into the store if they're session cookies.
    */
-  _ensureInitialized() {
-    if (this._initialized) {
+  #ensureInitialized() {
+    if (this.#initialized) {
       return;
     }
-    this._reloadCookies();
-    this._initialized = true;
+    this.#reloadCookies();
+    this.#initialized = true;
     Services.obs.addObserver(this, "session-cookie-changed");
 
     // Listen for privacy level changes to reload cookies when needed.
     Services.prefs.addObserver("browser.sessionstore.privacy_level", () => {
-      this._reloadCookies();
+      this.#reloadCookies();
     });
-  },
+  }
 
   /**
    * Adds a given cookie to the store.
    */
-  _addCookie(cookie) {
+  #addCookie(cookie) {
     cookie.QueryInterface(Ci.nsICookie);
 
     // Store only session cookies, obey the privacy level.
     if (cookie.isSession && lazy.PrivacyLevel.canSave(cookie.isSecure)) {
       CookieStore.add(cookie);
     }
-  },
+  }
 
   /**
    * Updates a given cookie.
    */
-  _updateCookie(cookie) {
+  #updateCookie(cookie) {
     cookie.QueryInterface(Ci.nsICookie);
 
     // Store only session cookies, obey the privacy level.
@@ -184,33 +171,33 @@ var SessionCookiesInternal = {
     } else {
       CookieStore.delete(cookie);
     }
-  },
+  }
 
   /**
    * Removes a given cookie from the store.
    */
-  _removeCookie(cookie) {
+  #removeCookie(cookie) {
     cookie.QueryInterface(Ci.nsICookie);
 
     if (cookie.isSession) {
       CookieStore.delete(cookie);
     }
-  },
+  }
 
   /**
    * Removes a given list of cookies from the store.
    */
-  _removeCookies(cookies) {
+  #removeCookies(cookies) {
     for (let i = 0; i < cookies.length; i++) {
-      this._removeCookie(cookies.queryElementAt(i, Ci.nsICookie));
+      this.#removeCookie(cookies.queryElementAt(i, Ci.nsICookie));
     }
-  },
+  }
 
   /**
    * Iterates all cookies in the cookies service and puts them into the store
    * if they're session cookies. Obeys the user's chosen privacy level.
    */
-  _reloadCookies() {
+  #reloadCookies() {
     CookieStore.clear();
 
     // Bail out if we're not supposed to store cookies at all.
@@ -219,10 +206,12 @@ var SessionCookiesInternal = {
     }
 
     for (let cookie of Services.cookies.sessionCookies) {
-      this._addCookie(cookie);
+      this.#addCookie(cookie);
     }
-  },
-};
+  }
+}
+
+export const SessionCookies = new _SessionCookies();
 
 /**
  * The internal storage that keeps track of session cookies.

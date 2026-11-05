@@ -263,7 +263,7 @@ def cargo(
             build = command_context._spawn(BuildDriver)
             ret = build.build(
                 command_context.metrics,
-                what=["pre-export", "export"],
+                what=["rust-prereqs"],
                 jobs=jobs,
                 verbose=verbose,
                 mach_context=command_context._mach_context,
@@ -1132,7 +1132,7 @@ def gtest(
         return 1
 
     res = command_context._mach_context.commands.dispatch(
-        "build", command_context._mach_context, what=["recurse_gtest"]
+        "build", command_context._mach_context, what=["gtest"]
     )
     if res:
         print("Could not build xul-gtest")

@@ -4,17 +4,15 @@
 
 const lazy = {};
 
-ChromeUtils.defineLazyGetter(lazy, "gStringBundle", function () {
-  return Services.strings.createBundle(
-    "chrome://browser/locale/siteData.properties"
-  );
-});
-
-ChromeUtils.defineLazyGetter(lazy, "gBrandBundle", function () {
-  return Services.strings.createBundle(
-    "chrome://branding/locale/brand.properties"
-  );
-});
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "l10n",
+  () =>
+    new Localization(
+      ["browser/preferences/siteDataSettings.ftl", "branding/brand.ftl"],
+      true
+    )
+);
 
 ChromeUtils.defineESModuleGetters(lazy, {
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
@@ -593,19 +591,15 @@ export var SiteDataManager = {
       return args.allowed;
     }
 
-    let brandName = lazy.gBrandBundle.GetStringFromName("brandShortName");
     let flags =
       Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0 +
       Services.prompt.BUTTON_TITLE_CANCEL * Services.prompt.BUTTON_POS_1 +
       Services.prompt.BUTTON_POS_0_DEFAULT;
-    let title = lazy.gStringBundle.GetStringFromName(
-      "clearSiteDataPromptTitle"
-    );
-    let text = lazy.gStringBundle.formatStringFromName(
-      "clearSiteDataPromptText",
-      [brandName]
-    );
-    let btn0Label = lazy.gStringBundle.GetStringFromName("clearSiteDataNow");
+    let [title, text, btn0Label] = lazy.l10n.formatValuesSync([
+      "site-data-clear-all-prompt-title",
+      "site-data-clear-all-prompt-text",
+      "site-data-clear-all-prompt-button",
+    ]);
 
     let result = Services.prompt.confirmEx(
       win,

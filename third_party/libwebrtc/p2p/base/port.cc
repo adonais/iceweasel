@@ -381,6 +381,19 @@ void Port::OnReadPacket(const ReceivedIpPacket& packet, ProtocolType proto) {
   } else if (!msg) {
     // STUN message handled already
   } else if (msg->type() == STUN_BINDING_REQUEST) {
+    if (ice_role_ == ICEROLE_UNKNOWN) {
+      // The port has not been assigned an ICE role, which means that it has
+      // not been taken over by an ICE agent (yet), e.g. because it was pruned
+      // before becoming ready. Without a role the request can't be handled
+      // (see MaybeIceRoleConflict), so drop it.
+      RTC_LOG(LS_WARNING) << ToString() << ": Dropping "
+                          << StunMethodToString(msg->type())
+                          << " id=" << hex_encode(msg->transaction_id())
+                          << " from unknown address "
+                          << addr.ToSensitiveString()
+                          << " since the port has no ICE role.";
+      return;
+    }
     RTC_LOG(LS_INFO) << "Received " << StunMethodToString(msg->type())
                      << " id=" << hex_encode(msg->transaction_id())
                      << " from unknown address " << addr.ToSensitiveString();

@@ -215,6 +215,13 @@ bool ExtractH264CodecDetails(const nsAString& aCodecs, uint8_t& aProfile,
                              uint8_t& aConstraint, H264_LEVEL& aLevel,
                              H264CodecStringStrictness aStrictness);
 
+// Extracts the profile, tier and level elements of an HEVC codecs parameter
+// string, per ISO/IEC 14496-15 Annex E.3.
+// Returns false on failure.
+struct H265CodecDetails;
+bool ExtractH265CodecDetails(const nsAString& aCodec,
+                             H265CodecDetails* aDetails);
+
 struct VideoColorSpace {
   // Default values are set according to
   // https://www.webmproject.org/vp9/mp4/#optional-fields

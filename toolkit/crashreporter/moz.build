@@ -96,6 +96,9 @@ if CONFIG["MOZ_CRASHREPORTER"]:
         UNIFIED_SOURCES += [
             "mac_utils.mm",
         ]
+        SOURCE_HEADERS += [
+            "mac_utils.h",
+        ]
 
     MOZ_SRC_FILES += [
         "CrashReports.sys.mjs",
@@ -146,4 +149,9 @@ with Files("**"):
 LICENSED_UNDER += ["google-bsd"]
 LICENSED_UNDER["google-bsd"].paths = [
     "google-breakpad",
+]
+
+SOURCE_HEADERS += [
+    "ExtraFileParser.h",
+    "nsExceptionHandlerUtils.h",
 ]

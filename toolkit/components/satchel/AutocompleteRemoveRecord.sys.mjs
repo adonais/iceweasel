@@ -60,8 +60,13 @@ export const AutocompleteRemoveRecord = {
       {}
     );
 
-    return (
-      result.QueryInterface(Ci.nsIPropertyBag2).get("buttonNumClicked") == 0
-    );
+    const confirmed =
+      result.QueryInterface(Ci.nsIPropertyBag2).get("buttonNumClicked") == 0;
+    Glean.autocomplete.recordDialogInteraction.record({
+      record_type: recordType,
+      interaction_type: confirmed ? "confirm" : "cancel",
+      update_type: "delete",
+    });
+    return confirmed;
   },
 };

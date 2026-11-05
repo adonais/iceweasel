@@ -31,6 +31,7 @@
 #include "vm/DateObject.h"
 #include "vm/Float16.h"
 #include "vm/Interpreter.h"
+#include "vm/JitActivation.h"
 #include "vm/JSAtomUtils.h"  // AtomizeString
 #include "vm/PlainObject.h"  // js::PlainObject
 #include "vm/SelfHosting.h"
@@ -1172,8 +1173,22 @@ bool DebugEpilogue(JSContext* cx, BaselineFrame* frame, const jsbytecode* pc,
   if (!ok) {
     // Pop this frame by updating packedExitFP, so that the exception
     // handling code will start at the previous frame.
+    JitActivation* activation = cx->activation()->asJit();
     JitFrameLayout* prefix = frame->framePrefix();
-    EnsureUnwoundJitExitFrame(cx->activation()->asJit(), prefix);
+    if (frame->hasPendingDebugModeOSRReturn()) {
+      auto* exitFrame =
+          reinterpret_cast<ExitFrameLayout*>(activation->jsExitFP());
+      MOZ_ASSERT(exitFrame->isWrapperExit());
+      MOZ_ASSERT(exitFrame->prevType() == FrameType::BaselineJS);
+      MOZ_ASSERT(exitFrame->callerFramePtr() ==
+                 reinterpret_cast<uint8_t*>(prefix));
+      auto* site = cx->runtime()->jitRuntime()->lookupDebugModeOSRReturnSite(
+          exitFrame->returnAddress());
+      MOZ_RELEASE_ASSERT(site);
+      frame->clearPendingDebugModeOSRReturn();
+      cx->runtime()->jitRuntime()->releaseDebugModeOSRReturnSite(site);
+    }
+    EnsureUnwoundJitExitFrame(activation, prefix);
     return false;
   }
 

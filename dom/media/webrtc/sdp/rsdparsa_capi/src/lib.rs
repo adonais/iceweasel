@@ -163,6 +163,26 @@ pub unsafe extern "C" fn sdp_get_session_connection(
     }
 }
 
+// Remove in Bug 2072767 - only needed for error reporting
+#[no_mangle]
+pub unsafe extern "C" fn sdp_get_media_section_line_number(sdp: StringView, level: u64) -> u64 {
+    match std::str::from_utf8(sdp.as_slice()) {
+        Ok(sdp) => sdp
+            .lines()
+            .enumerate()
+            .filter_map(|(i, l)| {
+                if l.trim().starts_with("m=") {
+                    Some(i as u64)
+                } else {
+                    None
+                }
+            })
+            .nth(level as usize)
+            .unwrap_or(0),
+        Err(_) => 0,
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn sdp_add_media_section(
     session: *mut SdpSession,

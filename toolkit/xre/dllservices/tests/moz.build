@@ -62,3 +62,7 @@ if CONFIG["CC_TYPE"] in ("gcc", "clang"):
 TEST_DIRS += [
     "gtest",
 ]
+
+SOURCE_HEADERS += [
+    "AssemblyPayloads.h",
+]

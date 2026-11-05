@@ -9,6 +9,12 @@ SOURCES += [
     "nsRemoteService.cpp",
 ]
 
+SOURCE_HEADERS += [
+    "nsRemoteClient.h",
+    "nsRemoteServer.h",
+    "nsRemoteService.h",
+]
+
 BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 
 XPCOM_MANIFESTS += [
@@ -31,6 +37,12 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
             "nsDBusRemoteClient.cpp",
             "nsDBusRemoteServer.cpp",
         ]
+
+        SOURCE_HEADERS += [
+            "nsDBusRemoteClient.h",
+            "nsDBusRemoteServer.h",
+        ]
+
         EXPORTS += [
             "nsUnixRemoteServer.h",
             "RemoteUtils.h",
@@ -42,6 +54,12 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
             "nsXRemoteClient.cpp",
             "nsXRemoteServer.cpp",
         ]
+
+        SOURCE_HEADERS += [
+            "nsGTKRemoteServer.h",
+            "nsXRemoteClient.h",
+            "nsXRemoteServer.h",
+        ]
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
@@ -50,10 +68,19 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
         "nsWinRemoteServer.cpp",
         "WinRemoteMessage.cpp",
     ]
+    SOURCE_HEADERS += [
+        "nsWinRemoteClient.h",
+        "nsWinRemoteServer.h",
+        "WinRemoteMessage.h",
+    ]
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     SOURCES += [
         "nsMacRemoteClient.mm",
         "nsMacRemoteServer.mm",
+    ]
+    SOURCE_HEADERS += [
+        "nsMacRemoteClient.h",
+        "nsMacRemoteServer.h",
     ]
 
 LOCAL_INCLUDES += [

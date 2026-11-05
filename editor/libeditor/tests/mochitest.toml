@@ -33,7 +33,6 @@ skip-if = [
 ["test_abs_positioner_positioning_elements.html"]
 skip-if = [
   "os == 'android'", # Bug 1525959
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1929435
   "xorigin", # Inconsistent pass/fail in opt and debug
 ]
 
@@ -535,6 +534,11 @@ skip-if = [
   "xorigin", # Testing internal API for comm-central
 ]
 
+["test_mailcite_insert_text_after_split.html"]
+skip-if = [
+  "xorigin", # Testing internal API for comm-central
+]
+
 ["test_mailcite_keep_preceding_br_after_insert.html"]
 skip-if = [
   "xorigin", # Testing internal API for comm-central
@@ -714,6 +718,9 @@ skip-if = [
 ]
 
 ["test_state_change_on_reframe.html"]
+
+["test_svg_designMode_blur.html"]
+support-files = ["file_svg_designMode_blur.svg"]
 
 ["test_tb_htmlmail_reply_below_quote.html"]
 

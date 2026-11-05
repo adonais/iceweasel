@@ -162,7 +162,7 @@ Atomic<bool, Relaxed> gCrashRequestedByTest(false);
  * profiler_save_profile_to_file only needs the profiler state lock, and the
  * sampled main-thread stack it captures shows what is blocking shutdown.
  */
-void MaybeSaveShutdownHangProfile() {
+void MaybeSaveShutdownHangProfile(mozilla::ShutdownPhase aPhase) {
   if (!profiler_is_active() || gCrashRequestedByTest) {
     return;
   }
@@ -185,6 +185,8 @@ void MaybeSaveShutdownHangProfile() {
   // it surfaces in Treeherder's failure summary (the main thread is blocked, so
   // we can't route this through the test harness's structured log), naming the
   // artifact in the "profile uploaded in <file>" form the dashboards recognize.
+  // Treeherder searches for bugs by the field after the prefix, so put the
+  // shutdown phase there rather than a text shared by every hang.
   const char* uploadDir = PR_GetEnv("MOZ_UPLOAD_DIR");
   if (!uploadDir || !*uploadDir) {
     return;
@@ -204,8 +206,8 @@ void MaybeSaveShutdownHangProfile() {
 
   profiler_save_profile_to_file(path.get());
   printf_stderr(
-      "TEST-UNEXPECTED-FAIL | shutdown hang | profile uploaded in %s\n",
-      filename.get());
+      "TEST-UNEXPECTED-FAIL | %s | shutdown hang, profile uploaded in %s\n",
+      mozilla::AppShutdown::GetShutdownPhaseName(aPhase), filename.get());
 }
 
 /**
@@ -284,7 +286,7 @@ void RunWatchdog(void*) {
 
     CollectShutdownHangAnnotations();
 
-    MaybeSaveShutdownHangProfile();
+    MaybeSaveShutdownHangProfile(lastPhase);
 
     MOZ_ASSERT(lastPhase != mozilla::ShutdownPhase::NotInShutdown);
 

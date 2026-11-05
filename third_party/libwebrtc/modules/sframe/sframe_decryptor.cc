@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <span>
 
 #include "api/make_ref_counted.h"
@@ -39,10 +38,8 @@ SframeDecryptFailure ToSframeDecryptFailure(const sframe::SFrameError& error) {
     case sframe::SFrameErrorType::authentication_error:
     case sframe::SFrameErrorType::crypto_error:
       return SframeDecryptFailure::Authentication();
-    case sframe::SFrameErrorType::invalid_parameter_error:
-      // TODO(webrtc:479862368): Populate `key_id` once third party sframe
-      // exposes the parsed header on the error.
-      return SframeDecryptFailure::KeyId(std::nullopt);
+    case sframe::SFrameErrorType::unknown_key_id_error:
+      return SframeDecryptFailure::KeyId(error.key_id());
     default:
       return SframeDecryptFailure::Syntax();
   }

@@ -458,3 +458,27 @@ add_task(async function test_changed_notification() {
     "network:captive-portal-connectivity-changed"
   );
 });
+
+add_task(async function test_disabled_service_does_not_check() {
+  Services.prefs.setBoolPref(PREF_CAPTIVE_ENABLED, false);
+  equal(cps.state, Ci.nsICaptivePortalService.UNKNOWN);
+
+  let requests = 0;
+  httpserver.registerPathHandler("/captive.html", (metadata, response) => {
+    requests++;
+    contentHandler(metadata, response);
+  });
+
+  cps.recheckCaptivePortal();
+  Services.obs.notifyObservers(null, "captive-portal-login-success");
+
+  // Wait for several minInterval periods so a rearmed timer would have fired.
+  await new Promise(resolve => do_timeout(500, resolve));
+
+  equal(requests, 0, "No check is performed while the service is disabled");
+
+  Services.obs.notifyObservers(null, "captive-portal-login-abort");
+  equal(cps.state, Ci.nsICaptivePortalService.UNKNOWN);
+
+  restoreSharedConfig();
+});

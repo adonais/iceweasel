@@ -198,3 +198,25 @@ ipprotection:
       - kpatenio@mozilla.com
       - vpn-telemetry@mozilla.com
     expires: never
+
+  rules_page_opened:
+    type: event
+    description: >
+      Recorded when a user opens the VPN site rules page in settings
+      (about:settings#vpnSiteRules) via a Manage VPN Rules button.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081951
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081951
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - rking@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+    extra_keys:
+      entrypoint:
+        type: string
+        description: >
+          Where the user opened the page from: "panel" for the button in the
+          VPN panel, "settings" for the button in about:settings#privacy.

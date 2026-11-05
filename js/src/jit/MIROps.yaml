@@ -4988,6 +4988,25 @@
 - name: WasmReplaceLaneSimd128
   gen_boilerplate: false
 
+# (v128, v128) -> v128 replace_lane of lhs with a lane extracted from rhs.
+# simdOp is the replace_lane operation, which gives the lane size, and
+# srcLaneIndex is in units of that lane size.
+- name: WasmMoveLaneSimd128
+  operands:
+    lhs: Simd128
+    rhs: Simd128
+  arguments:
+    laneIndex: uint32_t
+    srcLaneIndex: uint32_t
+    simdOp: wasm::SimdOp
+  type_policy: none
+  result_type: Simd128
+  movable: true
+  congruent_to: if_operands_and_arguments_equal
+  alias_set: none
+  clone: true
+  generate_lir: true
+
 - name: WasmUnarySimd128
   operands:
     src: Simd128

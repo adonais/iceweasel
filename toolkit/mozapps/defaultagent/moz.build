@@ -9,7 +9,6 @@ JAR_MANIFESTS += ["jar.mn"]
 DIRS += ["proxy"]
 
 UNIFIED_SOURCES += [
-    "Cache.cpp",
     "common.cpp",
     "DefaultAgent.cpp",
     "DefaultBrowser.cpp",
@@ -55,7 +54,6 @@ OS_LIBS += [
     "shlwapi",
     "taskschd",
     "userenv",
-    "wininet",
     "ws2_32",
     "ntdll",
 ]
@@ -73,8 +71,8 @@ XPCOM_MANIFESTS += [
 
 XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell/xpcshell.toml"]
 
-# If defines are added to this list that are required by the Cache,
-# SetDefaultBrowser, or their dependencies (Registry, EventLog, common),
+# If defines are added to this list that are required by SetDefaultBrowser
+# or its dependencies (Registry, EventLog, common),
 # tests/gtest/moz.build will need to be updated as well.
 for var in ("MOZ_APP_BASENAME", "MOZ_APP_DISPLAYNAME", "MOZ_APP_VENDOR"):
     DEFINES[var] = '"%s"' % CONFIG[var]
@@ -95,4 +93,19 @@ EXTRA_JS_MODULES.backgroundtasks += [
 
 EXTRA_JS_MODULES += [
     "DefaultAgentScheduler.sys.mjs",
+]
+
+SOURCE_HEADERS += [
+    "common.h",
+    "DefaultBrowser.h",
+    "DefaultPDF.h",
+    "EventLog.h",
+    "Notification.h",
+    "Policy.h",
+    "Registry.h",
+    "ScheduledTask.h",
+    "ScheduledTaskRemove.h",
+    "SetDefaultBrowser.h",
+    "Telemetry.h",
+    "UtfConvert.h",
 ]

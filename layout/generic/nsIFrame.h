@@ -1841,9 +1841,7 @@ class nsIFrame : public nsQueryFrame {
    * which return a baseline from GetBaseline which is not useful for
    * caret positioning.
    */
-  virtual nscoord GetCaretBaseline() const {
-    return GetLogicalBaseline(GetWritingMode());
-  }
+  virtual nscoord GetCaretBaseline() const;
 
   // Gets a caret baseline suitable for the frame if the frame doesn't have one.
   nscoord GetFontMetricsDerivedCaretBaseline() const;
@@ -4581,6 +4579,21 @@ class nsIFrame : public nsQueryFrame {
    */
   bool IsGeneratedContentFrame() const {
     return HasAnyStateBits(NS_FRAME_GENERATED_CONTENT);
+  }
+
+  /**
+   * Return a generated content root frame, i.e., a frame for a generated child
+   * of the first non-generated content ancestor.
+   */
+  const nsIFrame* GetGeneratedRootFrame() const;
+
+  /**
+   * Return a generated content root frame, i.e., a frame for a generated child
+   * of the first non-generated content ancestor.
+   */
+  nsIFrame* GetGeneratedRootFrame() {
+    return const_cast<nsIFrame*>(
+        const_cast<const nsIFrame*>(this)->GetGeneratedRootFrame());
   }
 
   /**

@@ -82,9 +82,6 @@ support-files = [
 ["browser_resources_platform_messages.js"]
 
 ["browser_resources_reflows.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1767771
-]
 
 ["browser_resources_root_node.js"]
 

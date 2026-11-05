@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that blur is not fired at unexpected time for designMode SVG document.</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<iframe></iframe>
+<script>
+"use strict";
+const iframe = document.querySelector("iframe");
+add_task(async () => {
+  const {promise, resolve} = Promise.withResolvers();
+  onmessage = e => resolve(e);
+  iframe.focus();
+  iframe.src = "file_svg_designMode_blur.svg";
+  const message = await promise;
+  is(message.data, "notDuringAppend",
+     "blur should fire eventually, but not synchronously in append()");
+});
+</script>
+</body>
+</html>

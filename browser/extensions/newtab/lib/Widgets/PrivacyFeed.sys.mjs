@@ -85,6 +85,7 @@ const ENABLEMENT_PREFS = new Set([
   PREF_WIDGETS_ENABLED,
   PRIVACY_ENTRY.enabledPref,
   PRIVACY_ENTRY.systemEnabledPref,
+  "region",
   "trainhopConfig",
   // Synthetic value from PrefsFeed; turning history back on resumes fetching.
   "recordsHistory",

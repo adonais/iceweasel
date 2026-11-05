@@ -44,7 +44,11 @@ function disallowAdditionalProperties(section) {
   // Otherwise, the validator expects all properties of any `oneOf` item to be
   // present.
   if (isObject(section)) {
-    if (section.properties && !("recordType" in section.properties)) {
+    if (
+      section.properties &&
+      !("recordType" in section.properties) &&
+      !("additionalProperties" in section)
+    ) {
       section.additionalProperties = false;
     }
     if ("then" in section) {
@@ -118,12 +122,13 @@ add_setup(async function () {
   updateAppInfo({ ID: "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}" });
 });
 
-add_task(async function test_search_config_validates_to_schema() {
+add_task(async function test_search_config_v2_validates_to_schema() {
+  Services.prefs.setBoolPref("browser.search.configV3.featureGate", false);
   let selector = new SearchEngineSelector(() => {});
 
   await assertSearchConfigValidates({
     collectionName: "search-config-v2",
-    collectionData: await selector.getEngineConfiguration(),
+    collectionData: await selector.getEngineConfiguration(true),
     getEntryId: entry => entry.identifier,
     extraAssertsFn: entry => {
       // All engine objects should have the base URL defined for each entry in
@@ -142,10 +147,37 @@ add_task(async function test_search_config_validates_to_schema() {
   });
 });
 
-add_task(async function test_search_config_valid_partner_codes() {
+add_task(async function test_search_config_v3_validates_to_schema() {
+  Services.prefs.setBoolPref("browser.search.configV3.featureGate", true);
+
   let selector = new SearchEngineSelector(() => {});
 
-  for (let entry of await selector.getEngineConfiguration()) {
+  await assertSearchConfigValidates({
+    collectionName: "search-config-v3",
+    collectionData: await selector.getEngineConfiguration(true),
+    getEntryId: entry => entry.identifier,
+    extraAssertsFn: entry => {
+      // All engine objects should have the base URL defined for each entry in
+      // entry.base.urls.
+      // Unfortunately this is difficult to enforce in the schema as it would
+      // need a `required` field that works across multiple levels.
+      if (entry.recordType == "engine") {
+        for (let urlEntry of Object.values(entry.base.urls)) {
+          Assert.ok(
+            urlEntry.base,
+            "Should have a base url for every URL defined on the top-level base object."
+          );
+        }
+      }
+    },
+  });
+});
+
+add_task(async function test_search_config_v2_valid_partner_codes() {
+  Services.prefs.setBoolPref("browser.search.configV3.featureGate", false);
+  let selector = new SearchEngineSelector(() => {});
+
+  for (let entry of await selector.getEngineConfiguration(true)) {
     if (entry.recordType == "engine") {
       for (let variant of entry.variants) {
         if (
@@ -174,10 +206,47 @@ add_task(async function test_search_config_valid_partner_codes() {
   }
 });
 
+add_task(async function test_search_config_v3_valid_partner_codes() {
+  Services.prefs.setBoolPref("browser.search.configV3.featureGate", true);
+  let selector = new SearchEngineSelector(() => {});
+
+  for (let entry of await selector.getEngineConfiguration(true)) {
+    if (entry.recordType == "engine") {
+      for (let variant of entry.variants) {
+        if ("partner" in variant && "distributions" in variant.environment) {
+          for (let [sap, partnerDetails] of Object.entries(variant.partner)) {
+            Assert.ok(
+              partnerDetails.telemetrySuffix,
+              `${entry.identifier} variant should have a telemetrySuffix for ${sap} when a distribution is specified with a partnerCode.`
+            );
+          }
+        }
+
+        for (let subVariant of variant.subVariants ?? []) {
+          if (
+            "partner" in subVariant &&
+            "distributions" in subVariant.environment
+          ) {
+            for (let [sap, partnerDetails] of Object.entries(
+              subVariant.partner
+            )) {
+              Assert.ok(
+                partnerDetails.telemetrySuffix,
+                `${entry.identifier} sub-variant should have a telemetrySuffix for ${sap} when a distribution is specified with a partnerCode.`
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+});
+
 add_task(
-  async function test_search_config_all_locales_are_in_available_locales() {
+  async function test_search_config_v2_all_locales_are_in_available_locales() {
+    Services.prefs.setBoolPref("browser.search.configV3.featureGate", false);
     let selector = new SearchEngineSelector(() => {});
-    let config = await selector.getEngineConfiguration();
+    let config = await selector.getEngineConfiguration(true);
     let availableLocales = new Set(
       config.find(entry => entry.recordType == "availableLocales").locales
     );
@@ -197,17 +266,29 @@ add_task(
   }
 );
 
-add_task(async function test_search_config_override_validates_to_schema() {
-  let collectionData = await RemoteSettings(
-    SearchUtils.SETTINGS_OVERRIDES_KEY
-  ).get();
+add_task(
+  async function test_search_config_v3_all_locales_are_in_available_locales() {
+    Services.prefs.setBoolPref("browser.search.configV3.featureGate", true);
+    let selector = new SearchEngineSelector(() => {});
+    let config = await selector.getEngineConfiguration(true);
+    let availableLocales = new Set(
+      config.find(entry => entry.recordType == "availableLocales").locales
+    );
 
-  await assertSearchConfigValidates({
-    collectionName: "search-config-overrides-v2",
-    collectionData,
-    getEntryId: entry => entry.identifier,
-  });
-});
+    let localesInConfig = SearchTestUtils.extractAvailableLocales(config);
+
+    Assert.deepEqual(
+      Array.from(localesInConfig.difference(availableLocales)),
+      [],
+      "Available locales should have all the locales listed in other parts of the configuration"
+    );
+    Assert.deepEqual(
+      Array.from(availableLocales.difference(localesInConfig)),
+      [],
+      "Available locales should not have any locales not listed in other parts of the configuration"
+    );
+  }
+);
 
 add_task(async function test_search_config_icons_validates_to_schema() {
   let searchIcons = RemoteSettings("search-config-icons");

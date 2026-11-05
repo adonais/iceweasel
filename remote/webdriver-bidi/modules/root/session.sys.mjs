@@ -14,7 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
-  getWebDriverSessionById:
+  getWebDriverSessionByInternalSessionId:
     "chrome://remote/content/shared/webdriver/Session.sys.mjs",
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
@@ -78,7 +78,9 @@ class SessionModule extends RootBiDiModule {
    * Session clean up will happen later in WebDriverBiDiConnection class.
    */
   async end() {
-    const session = lazy.getWebDriverSessionById(this.messageHandler.sessionId);
+    const session = lazy.getWebDriverSessionByInternalSessionId(
+      this.messageHandler.internalSessionId
+    );
 
     if (session.http) {
       throw new lazy.error.UnsupportedOperationError(
@@ -114,6 +116,9 @@ class SessionModule extends RootBiDiModule {
    *     A unique subscription identifier.
    * @throws {InvalidArgumentError}
    *     If <var>events</var> or <var>contexts</var> are not valid types.
+   * @throws {UnsupportedOperationError}
+   *     If neither <var>contexts</var> nor <var>userContexts</var> are
+   *     provided in a session restricted to a single user context.
    */
   async subscribe(params = {}) {
     const { events, contexts: contextIds = null, userContexts = null } = params;
@@ -127,6 +132,16 @@ class SessionModule extends RootBiDiModule {
 
     if (userContexts !== null) {
       this.#assertNonEmptyArrayWithStrings(userContexts, "userContexts");
+    }
+
+    if (
+      contextIds === null &&
+      userContexts === null &&
+      this._isSessionRestricted
+    ) {
+      throw new lazy.error.UnsupportedOperationError(
+        `Subscribing without "contexts" or "userContexts" is not supported in a session restricted to a single user context`
+      );
     }
 
     const eventNames = new Set();
@@ -158,14 +173,7 @@ class SessionModule extends RootBiDiModule {
       }
     } else if (inputUserContextIds.size !== 0) {
       for (const userContextId of inputUserContextIds) {
-        const internalId =
-          lazy.UserContextManager.getInternalIdById(userContextId);
-
-        if (internalId === null) {
-          throw new lazy.error.NoSuchUserContextError(
-            `User context with id: ${userContextId} doesn't exist`
-          );
-        }
+        const internalId = this._getUserContextInternalId(userContextId);
 
         lazy.UserContextManager.getTabsForUserContext(internalId).forEach(
           item => subscriptionNavigables.add(item)
@@ -965,6 +973,10 @@ class SessionModule extends RootBiDiModule {
     }
 
     return listeners;
+  }
+
+  static get supportedCommandsInRestrictedSession() {
+    return ["end", "subscribe", "unsubscribe"];
   }
 }
 

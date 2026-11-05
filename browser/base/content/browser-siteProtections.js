@@ -1335,6 +1335,11 @@ var gProtectionsHandler = {
       shimId: "DisqusEmbed",
       displayName: "Disqus",
     },
+    {
+      matchPatterns: ["https://*.sendtonews.com/*"],
+      shimId: "SendToNewsEmbed",
+      displayName: "STN Video",
+    },
   ],
 
   /**

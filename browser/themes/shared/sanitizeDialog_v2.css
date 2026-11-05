@@ -59,6 +59,43 @@
   margin-inline: 4px;
 }
 
+dialog[inbrowserwindow]:not([inClearOnShutdown]) #titleRow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin-block-end: var(--space-large);
+}
+
+dialog[inbrowserwindow]:not([inClearOnShutdown]) #titleText {
+  grid-column: 2;
+  text-align: center;
+}
+
+#sanitizeDialogClose {
+  display: none;
+}
+
+dialog[inbrowserwindow]:not([inClearOnShutdown]) #sanitizeDialogClose {
+  display: inline-block;
+  grid-column: 3;
+  justify-self: end;
+}
+
+/* The buttons are in the dialog's shadow DOM, so restyle them via their tokens. */
+dialog:not([inClearOnShutdown]) {
+  --button-background-color-primary: var(--button-background-color-destructive);
+  --button-background-color-primary-hover: var(--button-background-color-destructive-hover);
+  --button-background-color-primary-active: var(--button-background-color-destructive-active);
+  --button-background-color-primary-disabled: var(--button-background-color-destructive-disabled);
+  --button-border-color-primary: var(--button-border-color-destructive);
+  --button-border-color-primary-hover: var(--button-border-color-destructive-hover);
+  --button-border-color-primary-active: var(--button-border-color-destructive-active);
+  --button-text-color-primary: var(--button-text-color-destructive);
+  --button-text-color-primary-hover: var(--button-text-color-destructive-hover);
+  --button-text-color-primary-active: var(--button-text-color-destructive-active);
+  --button-text-color-primary-disabled: var(--button-text-color-destructive-disabled);
+}
+
 .checkboxWithDescription {
   padding: 8px 0;
 }

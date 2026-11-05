@@ -9,6 +9,108 @@ $schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
 $tags:
   - 'Toolkit :: General'
 
+browser_utils:
+  category_dispatch_error:
+    type: event
+    description: >
+      Recorded when a consumer invoked through
+      BrowserUtils.callModulesFromCategory throws. category_consumer_result
+      counts the consumers that returned or threw per category. The
+      categories dispatched this way, and the startup or window teardown
+      phase each one runs in, are listed in
+      https://firefox-source-docs.mozilla.org/browser/BrowserStartup.html
+
+      A consumer that hangs, that is dropped because its window closed, or
+      that throws from work it left unawaited is not reported, so the absence
+      of this event does not mean every consumer ran.
+    extra_keys:
+      category:
+        description: >
+          The category whose consumer failed, e.g. "browser-window-idle-tasks".
+        type: string
+      module:
+        description: >
+          The URI of the module the failing consumer is registered from, e.g.
+          "moz-src:///browser/components/downloads/DownloadsCommon.sys.mjs".
+          "other" for a URI outside moz-src://, resource:// and chrome://,
+          which an entry registered at runtime can pick freely.
+        type: string
+      consumer:
+        description: >
+          The failing consumer's `object.method` identifier as registered in
+          the category manager, e.g. "gSync.init". "other" if it is not an
+          identifier, which an entry registered at runtime can pick freely.
+        type: string
+      errorName:
+        description: >
+          The thrown error's name: a JS error or DOMException name such as
+          "TypeError", or an `NS_ERROR_*` name when the consumer threw an
+          XPCOM exception or a bare nsresult. Empty if the thrown value has no
+          name, "other" if that name is not an identifier.
+        type: string
+    bugs:
+      - https://bugzil.la/2073453
+    data_reviews:
+      - https://bugzil.la/2073453
+    notification_emails:
+      - dlee@mozilla.com
+    expires: never
+    data_sensitivity:
+      - technical
+
+  category_consumer_result:
+    type: dual_labeled_counter
+    description: >
+      The number of consumers invoked through
+      BrowserUtils.callModulesFromCategory that returned or threw, per
+      category. success + failure is the number of consumer runs, so the
+      failure rate of a category is failure / (success + failure).
+    dual_labels:
+      key:
+        description: >
+          The dispatched category. A category missing from the labels is
+          counted as `__other__`.
+        labels:
+          - browser-before-ui-startup
+          - browser-best-effort-idle-startup
+          - browser-first-window-ready
+          - browser-idle-startup
+          - browser-quit-application-granted
+          - browser-window-before-initial-xul-layout
+          - browser-window-before-initial-xul-layout-document-preparation
+          - browser-window-delayed-startup
+          - browser-window-domcontentloaded
+          - browser-window-domcontentloaded-before-tabbrowser
+          - browser-window-domcontentloaded-tabbrowser
+          - browser-window-final-unload
+          - browser-window-idle-tasks
+          - browser-window-load
+          - browser-window-load-before-sessionstore-init
+          - browser-window-location-change
+          - browser-window-sessionstore-initialized
+          - browser-window-unload
+          - browser-window-unload-begin
+          - browser-window-unload-delayed-startup
+          - browser-window-unload-tabbrowser
+          - first-startup-new-profile
+          - initial-migration-did-import-default-bookmarks
+          - initial-migration-will-import-default-bookmarks
+          - search-service-notification
+      category:
+        description: Whether the consumer returned or threw.
+        labels:
+          - success
+          - failure
+    bugs:
+      - https://bugzil.la/2073453
+    data_reviews:
+      - https://bugzil.la/2073453
+    notification_emails:
+      - dlee@mozilla.com
+    expires: never
+    data_sensitivity:
+      - technical
+
 mozstorage:
   sqlitejsm_transaction_timeout:
     type: labeled_counter

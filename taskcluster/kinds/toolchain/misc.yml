@@ -97,6 +97,48 @@ linux64-libdmg:
             - linux64-clang-toolchain
             - linux64-toolchain-sysroot
 
+macosx64-libdmg:
+    description: "libdmg-hfsplus toolchain build"
+    attributes:
+        local-toolchain: true
+    treeherder:
+        symbol: TM(libdmg-hfs+)
+    run:
+        script: build-dmg-hfsplus-macosx.sh
+        arguments: ['x86_64-apple-darwin']
+        resources:
+            - 'taskcluster/scripts/misc/macos-setup.sh'
+        toolchain-artifact: public/build/dmg.tar.zst
+        toolchain-alias: macosx64-dmg
+    fetches:
+        fetch:
+            - libdmg-hfsplus
+            - xz
+        toolchain:
+            - linux64-clang-toolchain
+            - macosx64-sdk-toolchain
+
+macosx64-aarch64-libdmg:
+    description: "libdmg-hfsplus toolchain build"
+    attributes:
+        local-toolchain: true
+    treeherder:
+        symbol: TMA64(libdmg-hfs+)
+    run:
+        script: build-dmg-hfsplus-macosx.sh
+        arguments: ['aarch64-apple-darwin']
+        resources:
+            - 'taskcluster/scripts/misc/macos-setup.sh'
+        toolchain-artifact: public/build/dmg.tar.zst
+        toolchain-alias: macosx64-aarch64-dmg
+    fetches:
+        fetch:
+            - libdmg-hfsplus
+            - xz
+        toolchain:
+            - linux64-clang-toolchain
+            - macosx64-sdk-toolchain
+
 linux64-mkbom:
     description: "mkbom toolchain build"
     attributes:

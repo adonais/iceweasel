@@ -47,3 +47,12 @@ LOCAL_INCLUDES += [
     "/dom/base",
     "/dom/html",
 ]
+
+SOURCE_HEADERS += [
+    "BasicTableLayoutStrategy.h",
+    "FixedTableLayoutStrategy.h",
+    "nsITableLayoutStrategy.h",
+    "nsTableColFrame.h",
+    "nsTableColGroupFrame.h",
+    "SpanningCellSorter.h",
+]

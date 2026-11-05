@@ -18,6 +18,7 @@
 #include "nsContentUtils.h"
 #include "nsEscape.h"
 #include "nsIFile.h"
+#include "nsIMutableArray.h"
 #include "nsISupportsPrimitives.h"
 #include "nsObjCExceptions.h"
 #include "nsPrimitiveHelpers.h"

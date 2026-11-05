@@ -10,6 +10,7 @@ UNIFIED_SOURCES += [
     "test_asyncStatementExecution_transaction.cpp",
     "test_binding_arrays.cpp",
     "test_binding_params.cpp",
+    "test_encrypted_open.cpp",
     "test_file_perms.cpp",
     "test_interruptSynchronousConnection.cpp",
     "test_mutex.cpp",
@@ -37,3 +38,7 @@ LOCAL_INCLUDES += [
 ]
 
 FINAL_LIBRARY = "xul-gtest"
+
+SOURCE_HEADERS += [
+    "storage_test_harness.h",
+]

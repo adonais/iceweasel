@@ -93,6 +93,9 @@ with Files("config/**"):
 with Files("docs/**"):
     BUG_COMPONENT = ("Toolkit", "Telemetry")
 
+with Files("docs/DistributionIni.md"):
+    BUG_COMPONENT = ("Firefox", "Distributions")
+
 with Files("fonts/**"):
     BUG_COMPONENT = ("Core", "Graphics: Text")
 

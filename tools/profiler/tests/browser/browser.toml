@@ -23,7 +23,9 @@ support-files = ["simple.html", "test_dedup_script.js"]
 support-files = [
   "simple.html",
   "page_with_external_js.html",
-  "external_script.js"
+  "external_script.js",
+  "page_with_utf8_external_js.html",
+  "utf8_external_script.js",
 ]
 
 ["browser_test_feature_js_sources_shutdown_process.js"]

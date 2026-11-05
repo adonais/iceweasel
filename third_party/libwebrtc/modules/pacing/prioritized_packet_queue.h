@@ -19,6 +19,7 @@
 #include <list>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
 #include "api/units/data_size.h"
@@ -96,7 +97,10 @@ class PrioritizedPacketQueue {
   void SetPauseState(bool paused, Timestamp now);
 
   // Remove any packets matching the given SSRC.
-  void RemovePacketsForSsrc(uint32_t ssrc);
+  // TODO(bugs.webrtc.org/564720400): Either remove or make permanent returning
+  // removed packets to allow retransmission.
+  std::vector<std::unique_ptr<RtpPacketToSend>> RemovePacketsForSsrc(
+      uint32_t ssrc);
 
   // Checks if the queue for the given SSRC has original (retransmissions not
   // counted) video packets containing keyframe data.

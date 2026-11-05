@@ -1,7 +1,7 @@
 diff --git a/expat/lib/expat_external.h b/expat/lib/expat_external.h
 --- a/expat/lib/expat_external.h
 +++ b/expat/lib/expat_external.h
-@@ -140,6 +140,9 @@ extern "C" {
+@@ -152,6 +152,9 @@ extern "C" {
  #    endif
  #  endif
  
@@ -11,7 +11,7 @@ diff --git a/expat/lib/expat_external.h b/expat/lib/expat_external.h
  #  ifdef XML_UNICODE /* Information is UTF-16 encoded. */
  #    ifdef XML_UNICODE_WCHAR_T
  typedef wchar_t XML_Char;
-@@ -153,6 +156,9 @@ typedef char XML_Char;
+@@ -165,6 +168,9 @@ typedef char XML_Char;
  typedef char XML_LChar;
  #  endif   /* XML_UNICODE */
  
@@ -24,7 +24,7 @@ diff --git a/expat/lib/expat_external.h b/expat/lib/expat_external.h
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -200,6 +200,9 @@ typedef char ICHAR;
+@@ -202,6 +202,9 @@ typedef char ICHAR;
  
  #endif
  
@@ -34,7 +34,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  #ifdef XML_UNICODE
  
  #  ifdef XML_UNICODE_WCHAR_T
-@@ -217,6 +220,9 @@ typedef char ICHAR;
+@@ -219,6 +222,9 @@ typedef char ICHAR;
  
  #endif
  

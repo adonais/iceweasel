@@ -128,32 +128,27 @@ TStructure::TStructure(TSymbolTable *symbolTable,
       mImplementingInterfaceBlock(false)
 {}
 
-void TStructure::createSamplerSymbols(const char *namePrefix,
-                                      const TString &apiNamePrefix,
-                                      TVector<const TVariable *> *outputSymbols,
-                                      TMap<const TVariable *, TString> *outputSymbolsToAPINames,
-                                      TSymbolTable *symbolTable) const
-{
-    ASSERT(containsSamplers());
-    for (const auto *field : *mFields)
-    {
-        const TType *fieldType = field->type();
-        if (IsSampler(fieldType->getBasicType()) || fieldType->isStructureContainingSamplers())
-        {
-            std::stringstream fieldName = sh::InitializeStream<std::stringstream>();
-            fieldName << namePrefix << "_" << field->name();
-            TString fieldApiName = apiNamePrefix + ".";
-            fieldApiName += field->name().data();
-            fieldType->createSamplerSymbols(ImmutableString(fieldName.str()), fieldApiName,
-                                            outputSymbols, outputSymbolsToAPINames, symbolTable);
-        }
-    }
-}
-
 void TStructure::setName(const ImmutableString &name)
 {
     ImmutableString *mutableName = const_cast<ImmutableString *>(&mName);
     *mutableName                 = name;
+
+    // If this was a nameless struct, currently it's only given an empty name such that one is
+    // generated for it.  Where the name matters (shader input and output variables), the nameless
+    // struct remains nameless.  This can change in the future such that those structs can also be
+    // given a name: http://anglebug.com/545212084
+    if (mSymbolType == SymbolType::Empty)
+    {
+        ASSERT(name.empty());
+        mSymbolType = SymbolType::AngleInternal;
+    }
+}
+
+void TStructure::forceGeneratedName() const
+{
+    ASSERT(mSymbolType == SymbolType::Empty);
+    ASSERT(mName == "");
+    const_cast<TStructure *>(this)->mSymbolType = SymbolType::AngleInternal;
 }
 
 TInterfaceBlock::TInterfaceBlock(TSymbolTable *symbolTable,

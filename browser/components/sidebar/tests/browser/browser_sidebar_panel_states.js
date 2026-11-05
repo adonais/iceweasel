@@ -24,28 +24,33 @@ add_task(async function test_enable_revamp_with_open_sidebar() {
   Assert.ok(sidebarContainer.hidden, "The sidebar launcher is hidden");
   Assert.ok(!sidebarHeader.hidden, "The sidebar header is visible");
 
-  // the new sidebar launcher element should be visible
-  // and the switcher from the old sidebar should be hidden now
-  info("Waiting for sidebar main to be visible and header hidden");
-  let sidebarVisibilitiesChanged = Promise.all([
-    BrowserTestUtils.waitForMutationCondition(
-      sidebarContainer,
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => !sidebarContainer.hidden
-    ),
-    BrowserTestUtils.waitForMutationCondition(
-      sidebarHeader,
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => sidebarHeader.hidden
-    ),
-  ]);
+  // the switcher from the old sidebar should be hidden now
+  info("Waiting for the legacy sidebar header to be hidden");
+  let headerHidden = BrowserTestUtils.waitForMutationCondition(
+    sidebarHeader,
+    { attributes: true, attributeFilter: ["hidden"] },
+    () => sidebarHeader.hidden
+  );
 
   // restore the revamp pref to true
   await SpecialPowers.popPrefEnv();
-  await sidebarVisibilitiesChanged;
+  await headerHidden;
+  await SidebarController.waitUntilStable();
 
-  Assert.ok(!sidebarContainer.hidden, "The sidebar launcher is visible");
+  Assert.ok(SidebarController.isOpen, "The panel is still open");
+  Assert.equal(
+    SidebarController.currentID,
+    "viewHistorySidebar",
+    "The open panel carried over to the revamped sidebar"
+  );
   Assert.ok(sidebarHeader.hidden, "The sidebar header is hidden");
+  // The launcher is the user's to reveal in this visibility mode, and the
+  // panel opening doesn't do it for them.
+  Assert.ok(sidebarContainer.hidden, "The sidebar launcher stays hidden");
+  await SidebarTestUtils.ensureLauncherVisible(
+    newWin,
+    "The launcher can still be revealed with the toolbar button"
+  );
 
   await BrowserTestUtils.closeWindow(newWin);
 });

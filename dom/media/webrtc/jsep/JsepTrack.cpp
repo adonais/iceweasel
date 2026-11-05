@@ -146,7 +146,7 @@ void JsepTrack::PopulateCodecs(
   mPrototypeCodecs.clear();
   mUsePreferredCodecsOrder = aUsePreferredCodecsOrder;
   for (const auto& prototypeCodec : aPreferredCodecs) {
-    if (prototypeCodec->Type() == mType) {
+    if (prototypeCodec->Type() == mType.type) {
       mPrototypeCodecs.emplace_back(prototypeCodec->Clone());
       mPrototypeCodecs.back()->mDirection = mDirection;
     }
@@ -329,7 +329,7 @@ void JsepTrack::RecvTrackSetLocal(const SdpMediaSection& aMsection) {
 void JsepTrack::SendTrackSetRemote(SsrcGenerator& aSsrcGenerator,
                                    const SdpMediaSection& aRemoteMsection) {
   mInHaveRemote = true;
-  if (mType == SdpMediaSection::kApplication) {
+  if (mType.type == SdpMediaSection::kApplication) {
     return;
   }
 
@@ -337,7 +337,7 @@ void JsepTrack::SendTrackSetRemote(SsrcGenerator& aSsrcGenerator,
 
   // TODO: Current language in webrtc-pc is completely broken, and so I will
   // not be quoting it here.
-  if ((mType == SdpMediaSection::kVideo) &&
+  if ((mType.type == SdpMediaSection::kVideo) &&
       aRemoteMsection.GetAttributeList().HasAttribute(
           SdpAttribute::kSimulcastAttribute)) {
     // Note: webrtc-pc does not appear to support the full IETF simulcast
@@ -391,7 +391,7 @@ void JsepTrack::SendTrackSetRemote(SsrcGenerator& aSsrcGenerator,
 void JsepTrack::AddToMsection(
     const std::vector<UniquePtr<JsepCodecDescription>>& codecs,
     SdpMediaSection* msection) const {
-  if (msection->GetMediaType() != mType) {
+  if (msection->GetMediaType() != mType.type) {
     MOZ_MTLOG(ML_ERROR, "AddToMsection called on wrong media section type");
     MOZ_ASSERT(false);
     return;
@@ -405,8 +405,8 @@ void JsepTrack::AddToMsection(
     codec->AddToMediaSection(*msection);
   }
 
-  if ((mDirection == sdp::kSend) && (mType != SdpMediaSection::kApplication) &&
-      msection->IsSending()) {
+  if ((mDirection == sdp::kSend) &&
+      (mType.type != SdpMediaSection::kApplication) && msection->IsSending()) {
     if (mStreamIds.empty()) {
       msection->AddMsid("-", mTrackId);
     } else {
@@ -423,7 +423,7 @@ void JsepTrack::UpdateSsrcs(SsrcGenerator& ssrcGenerator, size_t encodings) {
     MOZ_ASSERT(false);
     return;
   }
-  if (mType == SdpMediaSection::kApplication) {
+  if (mType.type == SdpMediaSection::kApplication) {
     MOZ_MTLOG(ML_ERROR, "UpdateSsrcs called on application media section");
     MOZ_ASSERT(false);
     return;
@@ -497,7 +497,7 @@ void JsepTrack::AddToMsection(const std::vector<std::string>& aRids,
 
   bool requireRtxSsrcs = rtxEnabled && msection->IsSending();
 
-  if (mType != SdpMediaSection::kApplication && mDirection == sdp::kSend) {
+  if (mType.type != SdpMediaSection::kApplication && mDirection == sdp::kSend) {
     UpdateSsrcs(ssrcGenerator, aRids.size());
 
     if (requireRtxSsrcs) {

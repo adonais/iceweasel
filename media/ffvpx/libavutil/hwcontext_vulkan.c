@@ -803,7 +803,6 @@ static const VulkanOptExtension optional_device_exts[] = {
 #ifdef VK_KHR_internally_synchronized_queues
     { VK_KHR_INTERNALLY_SYNCHRONIZED_QUEUES_EXTENSION_NAME,   FF_VK_EXT_INTERNAL_QUEUE_SYNC    },
 #endif
-    { VK_NV_OPTICAL_FLOW_EXTENSION_NAME,                      FF_VK_EXT_OPTICAL_FLOW           },
 
     /* Imports/exports */
     { VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,               FF_VK_EXT_EXTERNAL_FD_MEMORY     },
@@ -2633,8 +2632,10 @@ static int switch_layout(AVHWFramesContext *hwfc, FFVkExecPool *ectx,
     if (err < 0)
         return err;
 
+    /* NONE does not block any stage, so this queue's layout transition
+     * races a decode write submitted on the video queue. */
     err = ff_vk_exec_add_dep_frame(&p->vkctx, exec, &tmp_frame,
-                                   VK_PIPELINE_STAGE_2_NONE,
+                                   VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                                    VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
     if (err < 0)
         return err;

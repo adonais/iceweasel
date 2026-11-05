@@ -8,7 +8,9 @@ import hashlib
 import os
 import pathlib
 import sys
+import threading
 import time
+from concurrent.futures import Future
 
 import requests
 from taskgraph import create
@@ -71,11 +73,15 @@ class BugbugTimeoutException(Exception):
     pass
 
 
-@functools.cache
-def get_session():
+def _new_session():
     s = requests.Session()
     s.headers.update({"X-API-KEY": "gecko-taskgraph"})
     return requests_retry_session(retries=5, session=s)
+
+
+@functools.cache
+def get_session():
+    return _new_session()
 
 
 def _perfherder_artifact_path(base_path, perfherder_data):
@@ -121,15 +127,13 @@ def _write_perfherder_data(lower_is_better):
             json.dump(perfherder_data, f)
 
 
-@functools.cache
-def push_schedules(branch, rev):
+def _fetch_push_schedules(branch, rev, session, *, write_perfherder_data=True):
     # Noop if we're in test-action-callback
     if create.testing:
         return
 
     url = BUGBUG_BASE_URL + f"/push/{branch}/{rev}/schedules"
     start = monotonic()
-    session = get_session()
 
     # On try there is no fallback and pulling is slower, so we allow bugbug more
     # time to compute the results.
@@ -151,12 +155,13 @@ def push_schedules(branch, rev):
         i += 1
     end = monotonic()
 
-    _write_perfherder_data(
-        lower_is_better={
-            "bugbug_push_schedules_time": end - start,
-            "bugbug_push_schedules_retries": i,
-        }
-    )
+    if write_perfherder_data:
+        _write_perfherder_data(
+            lower_is_better={
+                "bugbug_push_schedules_time": end - start,
+                "bugbug_push_schedules_retries": i,
+            }
+        )
 
     data = r.json()
     if r.status_code == 202:
@@ -171,6 +176,38 @@ def push_schedules(branch, rev):
         }
 
     return data
+
+
+@functools.cache
+def push_schedules(branch, rev):
+    return _fetch_push_schedules(branch, rev, get_session())
+
+
+def start_push_schedules(branch, rev):
+    """Start querying bugbug for the push schedules in a daemon thread.
+
+    Returns a `Future` that callers can either check or ignore; since the
+    thread is a daemon, it won't keep the process alive if bugbug is slow.
+
+    The future isn't cached, so that the processes taskgraph forks to load kinds
+    don't wait for a thread that isn't copied into them. The thread uses its own
+    session, so that those processes don't inherit and reuse its open
+    connections, and so that it doesn't share a session with the main thread.
+    """
+    future = Future()
+
+    def run():
+        try:
+            future.set_result(
+                _fetch_push_schedules(
+                    branch, rev, _new_session(), write_perfherder_data=False
+                )
+            )
+        except Exception as e:
+            future.set_exception(e)
+
+    threading.Thread(target=run, daemon=True).start()
+    return future
 
 
 @functools.cache

@@ -295,3 +295,8 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
 
 # Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "ColorPickerParent.h",
+    "MMPrinter.h",
+]

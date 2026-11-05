@@ -329,6 +329,51 @@
         }
       ],
       [
+        "labeled_custom_distribution",
+        "labeled_custom_dist",
+        [
+          "metrics"
+        ],
+        "ping",
+        false,
+        false,
+        {
+          "bucket_count": 100,
+          "histogram_type": "exponential",
+          "ordered_labels": null,
+          "range_max": 100,
+          "range_min": 0
+        }
+      ],
+      [
+        "labeled_memory_distribution",
+        "labeled_memory_dist",
+        [
+          "metrics"
+        ],
+        "ping",
+        false,
+        false,
+        {
+          "memory_unit": "byte",
+          "ordered_labels": null
+        }
+      ],
+      [
+        "labeled_timing_distribution",
+        "labeled_timing_dist",
+        [
+          "metrics"
+        ],
+        "ping",
+        false,
+        false,
+        {
+          "ordered_labels": null,
+          "time_unit": "nanosecond"
+        }
+      ],
+      [
         "counter",
         "optimizable_counter_metric",
         [

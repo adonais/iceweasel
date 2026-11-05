@@ -5,6 +5,7 @@
 package mozilla.components.browser.engine.system
 
 import android.app.Activity
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslCertificate
@@ -1547,5 +1548,59 @@ class SystemEngineViewTest {
         assertFalse(result.canOverscrollTop())
         assertFalse(result.canOverscrollRight())
         assertFalse(result.canOverscrollBottom())
+    }
+
+    @Test
+    fun `GIVEN a page is loaded WHEN an app intent is intercepted THEN the source URL is that page`() {
+        val engineSession = SystemEngineSession(testContext)
+        engineSession.currentUrl = "https://www.mozilla.org"
+
+        assertEquals("https://www.mozilla.org", interceptAppIntent(engineSession))
+    }
+
+    @Test
+    fun `GIVEN no page is loaded WHEN an app intent is intercepted THEN there is no source URL`() {
+        assertNull(interceptAppIntent(SystemEngineSession(testContext)))
+    }
+
+    private fun interceptAppIntent(engineSession: SystemEngineSession): String? {
+        SystemEngineView(testContext).render(engineSession)
+
+        engineSession.settings.requestInterceptor =
+            object : RequestInterceptor {
+                override fun onLoadRequest(
+                    engineSession: EngineSession,
+                    uri: String,
+                    lastUri: String?,
+                    hasUserGesture: Boolean,
+                    isSameDomain: Boolean,
+                    isRedirect: Boolean,
+                    isDirectNavigation: Boolean,
+                    isSubframeRequest: Boolean,
+                ): RequestInterceptor.InterceptionResponse =
+                    RequestInterceptor.InterceptionResponse.AppIntent(mock(), uri, null, null)
+            }
+
+        var observedSourceUrl: String? = null
+        engineSession.register(
+            object : EngineSession.Observer {
+                override fun onLaunchIntentRequest(
+                    url: String,
+                    appIntent: Intent?,
+                    fallbackUrl: String?,
+                    appName: String?,
+                    sourceUrl: String?,
+                ) {
+                    observedSourceUrl = sourceUrl
+                }
+            }
+        )
+
+        val request = mock<WebResourceRequest>()
+        whenever(request.isForMainFrame).thenReturn(true)
+        whenever(request.url).thenReturn("zxing://scan".toUri())
+        engineSession.webView.webViewClient.shouldInterceptRequest(engineSession.webView, request)
+
+        return observedSourceUrl
     }
 }

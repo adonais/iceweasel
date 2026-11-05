@@ -22,9 +22,9 @@
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/dom/SVGUseElement.h"
+#include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/Touch.h"
-#include "mozilla/dom/TreeIterator.h"
 #include "mozilla/dom/UnbindContext.h"
 #include "mozilla/mozInlineSpellChecker.h"
 #include "mozilla/widget/IMEData.h"
@@ -309,9 +309,8 @@ already_AddRefed<URLExtraData> nsIContent::GetURLDataForStyleAttr(
 }
 
 void nsIContent::UpdateHeadingElementsOffsetChange() {
-  TreeIterator<FlattenedChildIterator> iter(*this);
-  for (; iter.GetCurrent(); iter.GetNext()) {
-    if (auto* heading = HTMLHeadingElement::FromNode(iter.GetCurrent())) {
+  for (nsINode* node : ShadowIncludingTreeIterator(*this)) {
+    if (auto* heading = HTMLHeadingElement::FromNode(node)) {
       heading->UpdateLevel(true);
     }
   }

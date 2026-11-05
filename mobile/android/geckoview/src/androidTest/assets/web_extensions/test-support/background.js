@@ -23,8 +23,23 @@ const APIS = {
   GetLinkColor({ tab, selector }) {
     return browser.test.getLinkColor(tab.id, selector);
   },
+  IsVideoCloning({ tab, selector }) {
+    return browser.test.isVideoCloning(tab.id, selector);
+  },
+  GetVideoStatusMessage({ tab, selector }) {
+    return browser.test.getVideoStatusMessage(tab.id, selector);
+  },
   GetPidForTab({ tab }) {
     return browser.test.getPidForTab(tab.id);
+  },
+  GetBrowsingContextGroupIdForTab({ tab }) {
+    return browser.test.getBrowsingContextGroupIdForTab(tab.id);
+  },
+  GetRemoteTypeForTab({ tab }) {
+    return browser.test.getRemoteTypeForTab(tab.id);
+  },
+  MintPictureInPicturePlacementToken({ tab }) {
+    return browser.test.mintPictureInPicturePlacementToken(tab.id);
   },
   WaitForContentTransformsReceived({ tab }) {
     return browser.test.waitForContentTransformsReceived(tab.id);

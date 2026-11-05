@@ -41,7 +41,6 @@
   align-self: flex-start;
   background: transparent;
   border: none;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   color: var(--ai-action-text-color);
   cursor: pointer;
   display: flex;
@@ -174,7 +173,6 @@
 }
 
 .action-result-expanded {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   color: var(--ai-action-text-color);
   display: flex;
   flex-direction: column;
@@ -239,7 +237,6 @@
 
 .action-result-undo::part(button) {
   position: relative;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   box-shadow: var(--smartwindow-shadow, var(--box-shadow-level-2));
 }
 

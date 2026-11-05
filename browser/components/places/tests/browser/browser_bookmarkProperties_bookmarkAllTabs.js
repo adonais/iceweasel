@@ -32,9 +32,9 @@ add_task(async function bookmark_all_tabs() {
 
       let namepicker = dialog.document.getElementById("editBMPanel_namePicker");
       Assert.ok(!namepicker.readOnly, "Name field is writable");
-      let folderName = dialog.document
-        .getElementById("stringBundle")
-        .getString("bookmarkAllTabsDefault");
+      let folderName = await dialog.document.l10n.formatValue(
+        "bookmark-properties-default-name-all-tabs-folder"
+      );
       Assert.equal(namepicker.value, folderName, "Name field is correct.");
 
       let promiseBookmarkAdded =

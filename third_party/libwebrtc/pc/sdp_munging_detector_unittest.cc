@@ -10,6 +10,7 @@
 #include "pc/sdp_munging_detector.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -64,6 +65,7 @@
 #include "pc/test/integration_test_helpers.h"
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/event.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/strings/string_format.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/metrics.h"
@@ -83,6 +85,7 @@ namespace webrtc {
 
 using ::testing::ElementsAre;
 using ::testing::Eq;
+using ::testing::Gt;
 using ::testing::IsEmpty;
 using ::testing::IsTrue;
 using ::testing::Not;
@@ -667,8 +670,7 @@ TEST_F(SdpMungingTest, IceOptions) {
   std::unique_ptr<SessionDescriptionInterface> offer = pc->CreateOffer();
   auto& transport_infos = offer->description()->transport_infos();
   ASSERT_EQ(transport_infos.size(), 1u);
-  transport_infos[0].description.transport_options.push_back(
-      "something-unsupported");
+  transport_infos[0].description.AddOption("somethingunsupported");
   RTCError error;
   EXPECT_TRUE(pc->SetLocalDescription(std::move(offer), &error));
   EXPECT_THAT(
@@ -685,8 +687,7 @@ TEST_F(SdpMungingTest, IceOptionsRenomination) {
   ASSERT_EQ(transport_infos.size(), 1u);
   ASSERT_THAT(transport_infos[0].description.transport_options,
               ElementsAre("trickle"));
-  transport_infos[0].description.transport_options.push_back(
-      ICE_OPTION_RENOMINATION);
+  transport_infos[0].description.AddOption(ICE_OPTION_RENOMINATION);
   RTCError error;
   EXPECT_TRUE(pc->SetLocalDescription(std::move(offer), &error));
   EXPECT_THAT(
@@ -728,6 +729,56 @@ TEST_F(SdpMungingTest, IceOptionsTrickle) {
   EXPECT_THAT(
       metrics::Samples("WebRTC.PeerConnection.SdpMunging.Offer.Initial"),
       ElementsAre(Pair(SdpMungingType::kIceOptionsTrickle, 1)));
+}
+
+TEST_F(SdpMungingTest, IceOptionsAddSpedDisallowed) {
+  auto pc = CreatePeerConnection("WebRTC-IceHandshakeDtls/Disabled/");
+  pc->AddAudioTrack("audio_track", {});
+
+  std::unique_ptr<SessionDescriptionInterface> offer = pc->CreateOffer();
+  auto& transport_infos = offer->description()->transport_infos();
+  ASSERT_EQ(transport_infos.size(), 1u);
+  ASSERT_THAT(transport_infos[0].description.transport_options,
+              ElementsAre("trickle"));
+  transport_infos[0].description.AddOption("sped");
+  RTCError error;
+  EXPECT_FALSE(pc->SetLocalDescription(std::move(offer), &error));
+  EXPECT_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpMunging.Offer.Initial"),
+      ElementsAre(Pair(SdpMungingType::kIceOptionsSped, 1)));
+  EXPECT_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpMunging.SdpOutcome.Rejected"),
+      ElementsAre(Pair(SdpMungingType::kIceOptionsSped, 1)));
+  EXPECT_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpMunging.Outcome"),
+      ElementsAre(Pair(static_cast<int>(SdpMungingOutcome::kRejected), 1)));
+}
+
+TEST_F(SdpMungingTest, IceOptionsRemoveSpedDisallowed) {
+  if (!SSLStreamAdapter::IsBoringSsl()) {
+    GTEST_SKIP() << "DTLS-in-STUN requires BoringSSL.";
+  }
+  auto pc = CreatePeerConnection("WebRTC-IceHandshakeDtls/Enabled/");
+  pc->AddAudioTrack("audio_track", {});
+
+  std::unique_ptr<SessionDescriptionInterface> offer = pc->CreateOffer();
+  auto& transport_infos = offer->description()->transport_infos();
+  ASSERT_EQ(transport_infos.size(), 1u);
+  ASSERT_THAT(transport_infos[0].description.transport_options,
+              ElementsAre("trickle", "sped", "googspedv1"));
+  auto& options = transport_infos[0].description.transport_options;
+  options.erase(std::find(options.begin(), options.end(), "sped"));
+  RTCError error;
+  EXPECT_FALSE(pc->SetLocalDescription(std::move(offer), &error));
+  EXPECT_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpMunging.Offer.Initial"),
+      ElementsAre(Pair(SdpMungingType::kIceOptionsSped, 1)));
+  EXPECT_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpMunging.SdpOutcome.Rejected"),
+      ElementsAre(Pair(SdpMungingType::kIceOptionsSped, 1)));
+  EXPECT_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpMunging.Outcome"),
+      ElementsAre(Pair(static_cast<int>(SdpMungingOutcome::kRejected), 1)));
 }
 
 TEST_F(SdpMungingTest, DtlsRole) {
@@ -1346,6 +1397,50 @@ TEST_F(SdpMungingTest, PayloadTypeChanged) {
   EXPECT_THAT(
       metrics::Samples("WebRTC.PeerConnection.SdpMunging.Offer.Initial"),
       ElementsAre(Pair(SdpMungingType::kPayloadTypes, 1)));
+}
+
+// An application can swap the payload types of two codecs, which leaves the
+// RTX codecs pointing at each other's codecs. Creating a re-offer from such a
+// description adds an RTX codec to the codec list before the codec that it
+// refers to, which must not be treated as an inconsistent codec list.
+TEST_F(SdpMungingTest, PayloadTypesSwappedFollowedByReoffer) {
+  std::unique_ptr<PeerConnectionWrapper> pc = CreatePeerConnection();
+  pc->AddVideoTrack("video_track", {});
+
+  std::unique_ptr<SessionDescriptionInterface> offer = pc->CreateOffer();
+  auto& contents = offer->description()->contents();
+  ASSERT_THAT(contents, SizeIs(1));
+  auto* media_description = contents[0].media_description();
+  ASSERT_THAT(media_description, NotNull());
+  std::vector<Codec> codecs = media_description->codecs();
+  // Swap the payload types of the first two media codecs, keeping the payload
+  // types of the RTX codecs, which now refer to the other codec.
+  std::vector<size_t> media_indices;
+  for (size_t i = 0; i < codecs.size(); ++i) {
+    if (codecs[i].IsMediaCodec()) {
+      media_indices.push_back(i);
+    }
+  }
+  ASSERT_THAT(media_indices.size(), Gt(1u));
+  const PayloadType first_payload_type = codecs[media_indices[0]].id;
+  const PayloadType second_payload_type = codecs[media_indices[1]].id;
+  codecs[media_indices[0]].id = second_payload_type;
+  codecs[media_indices[1]].id = first_payload_type;
+  media_description->set_codecs(codecs);
+
+  RTCError error;
+  ASSERT_TRUE(pc->SetLocalDescription(std::move(offer), &error));
+  EXPECT_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpMunging.Offer.Initial"),
+      ElementsAre(Pair(SdpMungingType::kPayloadTypes, 1)));
+
+  // The re-offer keeps the payload types that the application assigned.
+  std::unique_ptr<SessionDescriptionInterface> reoffer = pc->CreateOffer();
+  ASSERT_THAT(reoffer, NotNull());
+  const std::vector<Codec>& reoffer_codecs =
+      reoffer->description()->contents()[0].media_description()->codecs();
+  EXPECT_THAT(reoffer_codecs[media_indices[0]].id, Eq(second_payload_type));
+  EXPECT_THAT(reoffer_codecs[media_indices[1]].id, Eq(first_payload_type));
 }
 
 TEST_F(SdpMungingTest, AudioCodecsReordered) {

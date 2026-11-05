@@ -74,7 +74,7 @@
     border-radius: var(--card-border-radius);
     padding: 0 var(--space-xlarge);
     margin-top: var(--space-medium);
-    /* stylelint-disable-next-line -- Figma design */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- Figma design */
     height: 255px;
     overflow: auto;
     scrollbar-width: thin;
@@ -86,7 +86,7 @@
   &.loading {
     .loading-skeleton {
       width: 100%;
-      /* stylelint-disable-next-line -- Figma design */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- Figma design */
       height: 255px;
     }
   }

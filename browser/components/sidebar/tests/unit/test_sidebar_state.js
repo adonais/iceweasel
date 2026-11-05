@@ -39,7 +39,6 @@ const mockController = {
   sidebarRevampVisibility: "always-show",
   sidebars: new Set(["viewBookmarksSidebar"]),
   updateToolbarButton: sinon.stub(),
-  SidebarManager: { hasSidebarLauncherBeenVisible: false },
   requestMaxWidthUpdate: sinon.stub(),
 };
 
@@ -56,7 +55,7 @@ add_task(async function test_load_legacy_session_restore_data() {
   const props = sidebarState.getProperties();
   Assert.equal(props.panelWidth, 300, "The panel was resized.");
   Assert.equal(props.launcherExpanded, true, "The launcher is expanded.");
-  Assert.equal(props.launcherVisible, true, "The launcher is visible.");
+  Assert.equal(props.userLauncherVisible, true, "The launcher is visible.");
   Assert.ok(
     mockController.showInitially.calledWith("viewBookmarksSidebar"),
     "Bookmarks panel was shown."
@@ -72,7 +71,7 @@ add_task(async function test_load_prerevamp_session_restore_data() {
 
   const props = sidebarState.getProperties();
   Assert.ok(props.panelOpen, "The panel is marked as open.");
-  Assert.equal(props.launcherVisible, true, "The launcher is visible.");
+  Assert.equal(props.userLauncherVisible, true, "The launcher is visible.");
   Assert.equal(props.command, "viewBookmarksSidebar", "The command matches.");
   Assert.ok(
     mockController.showInitially.calledWith("viewBookmarksSidebar"),
@@ -128,6 +127,6 @@ add_task(async function test_load_hidden_panel_state() {
 
   const props = sidebarState.getProperties();
   Assert.ok(!props.panelOpen, "The panel is marked as closed.");
-  Assert.equal(props.launcherVisible, true, "The launcher is visible.");
+  Assert.equal(props.userLauncherVisible, true, "The launcher is visible.");
   Assert.equal(props.command, "viewBookmarksSidebar", "The command matches.");
 });

@@ -392,52 +392,42 @@ a.hidden,
 }
 
 .social-bar {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--social-color);
 }
 
 .hover-social .social-bar {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--social-highlight-color);
 }
 
 .cookie-bar {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cookie-color);
 }
 
 .hover-cookie .cookie-bar {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cookie-highlight-color);
 }
 
 .tracker-bar {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--tracker-color);
 }
 
 .hover-tracker .tracker-bar {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--tracker-highlight-color);
 }
 
 .fingerprinter-bar {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--fingerprinter-color);
 }
 
 .hover-fingerprinter .fingerprinter-bar {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--fingerprinter-highlight-color);
 }
 
 .cryptominer-bar {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cryptominer-color);
 }
 
 .hover-cryptominer .cryptominer-bar {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cryptominer-highlight-color);
 }
 
@@ -488,7 +478,6 @@ input[type="radio"] {
 }
 
 #highlight {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background: var(--tab-highlight);
   position: absolute;
   height: 3px;
@@ -597,7 +586,6 @@ label:hover {
 input[data-type="social"]:checked ~ #highlight,
 .hover-social label[for="tab-social"] ~ #highlight-hover,
 label[for="tab-social"]:hover ~ #highlight-hover {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--social-color);
   grid-area: social;
 }
@@ -605,7 +593,6 @@ label[for="tab-social"]:hover ~ #highlight-hover {
 input[data-type="cookie"]:checked ~ #highlight,
 .hover-cookie label[for="tab-cookie"] ~ #highlight-hover,
 label[for="tab-cookie"]:hover ~ #highlight-hover {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cookie-color);
   grid-area: cookie;
 }
@@ -613,7 +600,6 @@ label[for="tab-cookie"]:hover ~ #highlight-hover {
 input[data-type="tracker"]:checked ~ #highlight,
 .hover-tracker label[for="tab-tracker"] ~ #highlight-hover,
 label[for="tab-tracker"]:hover ~ #highlight-hover {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--tracker-color);
   grid-area: tracker;
 }
@@ -621,7 +607,6 @@ label[for="tab-tracker"]:hover ~ #highlight-hover {
 input[data-type="fingerprinter"]:checked ~ #highlight,
 .hover-fingerprinter label[for="tab-fingerprinter"] ~ #highlight-hover,
 label[for="tab-fingerprinter"]:hover ~ #highlight-hover {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--fingerprinter-color);
   grid-area: fingerprinter;
 }
@@ -629,7 +614,6 @@ label[for="tab-fingerprinter"]:hover ~ #highlight-hover {
 input[data-type="cryptominer"]:checked ~ #highlight,
 .hover-cryptominer label[for="tab-cryptominer"] ~ #highlight-hover,
 label[for="tab-cryptominer"]:hover ~ #highlight-hover {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cryptominer-color);
   grid-area: cryptominer;
 }
@@ -677,7 +661,6 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 }
 
 .block {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--block-background-color);
   border-radius: var(--border-radius-small);
   text-align: center;
@@ -985,7 +968,6 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 
 .number-of-breaches.block {
   font-size: 1.45em;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--breaches-background-color);
   padding: 15px;
   grid-column: 1 / 2;
@@ -1099,7 +1081,6 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 
 .new-banner {
   width: 100%;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background: var(--feature-banner-color);
 }
 

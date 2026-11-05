@@ -30,6 +30,7 @@ from mozbuild.frontend.data import (
     LocalizedFiles,
     LocalizedPreprocessedFiles,
     MozSrcFiles,
+    PerSourceFlag,
     Program,
     RustLibrary,
     RustProgram,
@@ -222,6 +223,25 @@ class TestEmitterBasic(unittest.TestCase):
         self.assertEqual(flags.flags["WARNINGS_AS_ERRORS"], ["-Werror"])
         self.assertEqual(flags.flags["MOZBUILD_CFLAGS"], ["-Os", "-funroll-loops"])
         self.assertEqual(flags.flags["MOZBUILD_CXXFLAGS"], ["-funroll-loops", "-Os"])
+
+    def test_per_source_object_deps(self):
+        reader = self.reader("per-source-object-deps")
+        objs = self.read_topsrcdir(reader)
+        flags = [o for o in objs if isinstance(o, PerSourceFlag)]
+        self.assertEqual(len(flags), 1)
+        self.assertEqual(mozpath.basename(flags[0].file_name), "gen.s")
+        generated, source = flags[0].object_deps
+        self.assertIsInstance(generated, ObjDirPath)
+        self.assertEqual(generated, "!include.S")
+        self.assertIsInstance(source, SourcePath)
+        self.assertEqual(source, "included.inc")
+
+    def test_per_source_object_deps_missing(self):
+        reader = self.reader("per-source-object-deps-missing")
+        with self.assertRaisesRegex(
+            SandboxValidationError, "Dependency of gen.s does not exist"
+        ):
+            self.read_topsrcdir(reader)
 
     def test_asflags(self):
         reader = self.reader("asflags", extra_substs={"ASFLAGS": ["-safeseh"]})

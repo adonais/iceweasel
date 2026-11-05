@@ -720,6 +720,45 @@ static int32_t Bitmask(const T& v) {
   return result;
 }
 
+static uint32_t IntegerLaneBytes(wasm::SimdOp op) {
+  switch (op) {
+    case wasm::SimdOp::I8x16ExtractLaneS:
+    case wasm::SimdOp::I8x16ExtractLaneU:
+    case wasm::SimdOp::I8x16ReplaceLane:
+      return 1;
+    case wasm::SimdOp::I16x8ExtractLaneS:
+    case wasm::SimdOp::I16x8ExtractLaneU:
+    case wasm::SimdOp::I16x8ReplaceLane:
+      return 2;
+    case wasm::SimdOp::I32x4ExtractLane:
+    case wasm::SimdOp::I32x4ReplaceLane:
+      return 4;
+    case wasm::SimdOp::I64x2ExtractLane:
+    case wasm::SimdOp::I64x2ReplaceLane:
+      return 8;
+    default:
+      return 0;
+  }
+}
+
+MDefinition* MWasmReplaceLaneSimd128::foldsTo(TempAllocator& alloc) {
+  // Fold replace_lane(v, extract_lane(w)) into one lane move when the
+  // extracted lane is at least as wide as the replaced one, as the replaced
+  // lane then takes the low bits of the extracted lane.
+  if (!canMoveLane() || !rhs()->isWasmReduceSimd128()) {
+    return this;
+  }
+  MWasmReduceSimd128* extract = rhs()->toWasmReduceSimd128();
+  uint32_t dstBytes = IntegerLaneBytes(simdOp());
+  uint32_t srcBytes = IntegerLaneBytes(extract->simdOp());
+  if (dstBytes == 0 || srcBytes < dstBytes) {
+    return this;
+  }
+  uint32_t srcLaneIndex = extract->imm() * (srcBytes / dstBytes);
+  return MWasmMoveLaneSimd128::New(alloc, lhs(), extract->input(), laneIndex(),
+                                   srcLaneIndex, simdOp());
+}
+
 MDefinition* MWasmReduceSimd128::foldsTo(TempAllocator& alloc) {
 #  ifdef DEBUG
   auto logging = mozilla::MakeScopeExit([&] {

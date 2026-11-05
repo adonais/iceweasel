@@ -12,7 +12,7 @@
   .touch-none {
     /* This size ensures the page height is taller than the viewport height without the dynamic toolbar
      * but shorter than the viewport height with the dyanmic toolbar, which we need to trigger the bug. */
-    height: 98lvh;
+    height: calc(100svh + (100lvh - 100svh) / 2);
     margin: 0;
     touch-action: none;
   }

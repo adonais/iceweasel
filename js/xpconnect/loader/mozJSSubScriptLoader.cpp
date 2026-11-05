@@ -137,6 +137,8 @@ static bool EvalStencil(JSContext* cx, HandleObject targetObj,
     return false;
   }
 
+  ScriptLoader::AssociateFetchInfoWithSystemClassicScript(script, uri);
+
   if (JS_IsGlobalObject(targetObj)) {
     if (!JS_ExecuteScript(cx, script, retval)) {
       return false;

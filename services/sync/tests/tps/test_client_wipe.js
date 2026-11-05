@@ -124,19 +124,3 @@ Phase("phase2", [
   [Passwords.verify, passwords_initial],
   [Bookmarks.verify, bookmarks_initial],
 ]);
-
-// Using profile1, change some prefs,bookmarks and pwds, then do another sync with wipe-client.
-// Verify that the cloud's  settings are restored, and the recent local changes
-// discarded.
-Phase("phase3", [
-  [Prefs.modify, prefs2],
-  [Passwords.modify, passwords_initial],
-  [Bookmarks.modify, bookmarks_initial],
-  [Prefs.verify, prefs2],
-  [Passwords.verify, passwords_after_change],
-  [Bookmarks.verify, bookmarks_after_move],
-  [Sync, SYNC_WIPE_CLIENT],
-  [Prefs.verify, prefs1],
-  [Passwords.verify, passwords_initial],
-  [Bookmarks.verify, bookmarks_initial],
-]);

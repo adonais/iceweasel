@@ -14,9 +14,6 @@ transforms:
 kind-dependencies:
     - repackage
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 only-for-build-platforms:
     - win32-devedition/opt
     - win32-shippable/opt

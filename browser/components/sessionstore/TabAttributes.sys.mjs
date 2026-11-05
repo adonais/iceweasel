@@ -8,18 +8,8 @@ const PERSISTED_ATTRIBUTES = ["customizemode"];
 // A set of tab attributes to persist. We will read a given list of tab
 // attributes when collecting tab data and will re-set those attributes when
 // the given tab data is restored to a new tab.
-export var TabAttributes = Object.freeze({
-  get(tab) {
-    return TabAttributesInternal.get(tab);
-  },
-
-  set(tab, data = {}) {
-    TabAttributesInternal.set(tab, data);
-  },
-});
-
-var TabAttributesInternal = {
-  get(tab) {
+export class TabAttributes {
+  static get(tab) {
     let data = {};
 
     for (let name of PERSISTED_ATTRIBUTES) {
@@ -29,9 +19,9 @@ var TabAttributesInternal = {
     }
 
     return data;
-  },
+  }
 
-  set(tab, data = {}) {
+  static set(tab, data = {}) {
     // Clear & Set attributes.
     for (let name of PERSISTED_ATTRIBUTES) {
       tab.removeAttribute(name);
@@ -39,5 +29,5 @@ var TabAttributesInternal = {
         tab.setAttribute(name, data[name]);
       }
     }
-  },
-};
+  }
+}

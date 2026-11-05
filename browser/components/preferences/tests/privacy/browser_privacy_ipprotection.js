@@ -568,6 +568,7 @@ add_task(async function test_not_opted_in_section_visible_when_empty() {
   await setupVpnPrefs({
     feature: true,
     entitlementCache: "",
+    siteInclusions: false,
   });
 
   await BrowserTestUtils.withNewTab(
@@ -590,6 +591,39 @@ add_task(async function test_not_opted_in_section_visible_when_empty() {
     }
   );
 });
+
+// Tests that the not opted in section shows with the correct copy once site inclusions is enabled
+add_task(
+  async function test_not_opted_in_section_visible_with_site_inclusions_enabled() {
+    await setupVpnPrefs({
+      feature: true,
+      entitlementCache: "",
+      siteInclusions: true,
+    });
+
+    await BrowserTestUtils.withNewTab(
+      { gBrowser, url: "about:preferences#privacy" },
+      async function (browser) {
+        let settingGroup = testSettingsGroupVisible(browser);
+        let notOptedInSection = settingGroup?.querySelector(
+          "#ipProtectionNotOptedInV2"
+        );
+        is_element_visible(
+          notOptedInSection,
+          "Not opted in section version two is shown"
+        );
+
+        let getStartedButton = settingGroup?.querySelector(
+          "#getStartedButtonV2"
+        );
+        is_element_visible(
+          getStartedButton,
+          "Get started button version two is shown"
+        );
+      }
+    );
+  }
+);
 
 // Test that clicking the "Get started" button start the optin flow.
 add_task(async function test_get_started_button() {
@@ -775,6 +809,7 @@ add_task(async function test_not_opted_in_section_hidden_when_opted_in() {
   await setupVpnPrefs({
     feature: true,
     entitlementCache: '{"some":"data"}',
+    siteInclusions: false,
   });
 
   await BrowserTestUtils.withNewTab(

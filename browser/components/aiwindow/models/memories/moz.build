@@ -5,6 +5,10 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "Machine Learning: General")
 
+DIRS += [
+    "journeys",
+]
+
 MOZ_SRC_FILES += [
     "Memories.sys.mjs",
     "MemoriesChatSource.sys.mjs",

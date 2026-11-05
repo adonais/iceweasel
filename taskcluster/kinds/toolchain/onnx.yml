@@ -6,6 +6,8 @@ task-defaults:
     worker-type: b-linux-docker-amd
     worker:
         max-run-time: 1800
+        env:
+            MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
     use-python: "3.11"
     attributes:
         local-toolchain: true
@@ -22,6 +24,8 @@ task-defaults:
 
 onnxruntime-x86_64-linux-gnu:
     description: "ONNX Runtime (linux x64)"
+    attributes:
+        enable-full-crashsymbols: true
     treeherder:
         symbol: TL(onnx)
     run:
@@ -34,10 +38,13 @@ onnxruntime-x86_64-linux-gnu:
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - linux64-dump_syms
             - sysroot-x86_64-linux-gnu
 
 onnxruntime-aarch64-linux-gnu:
     description: "ONNX Runtime (linux aarch64)"
+    attributes:
+        enable-full-crashsymbols: true
     treeherder:
         symbol: TLA64(onnx)
     run:
@@ -50,10 +57,13 @@ onnxruntime-aarch64-linux-gnu:
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - linux64-dump_syms
             - sysroot-aarch64-linux-gnu
 
 onnxruntime-x86_64-windows-msvc:
     description: "ONNX Runtime (win64 x64)"
+    attributes:
+        enable-full-crashsymbols: true
     worker-type: b-win2022
     worker:
         max-run-time: 7200
@@ -69,12 +79,15 @@ onnxruntime-x86_64-windows-msvc:
             - vs-toolchain
             - win64-cmake
             - win64-clang
+            - win64-dump_syms
         fetch:
             - win64-ninja
 
 
 onnxruntime-i686-windows-msvc:
     description: "ONNX Runtime (win32 x86)"
+    attributes:
+        enable-full-crashsymbols: true
     worker-type: b-win2022
     worker:
         max-run-time: 7200
@@ -90,12 +103,15 @@ onnxruntime-i686-windows-msvc:
             - vs-toolchain
             - win64-cmake
             - win64-clang
+            - win64-dump_syms
         fetch:
             - win64-ninja
 
 
 onnxruntime-aarch64-windows-msvc:
     description: "ONNX Runtime (win64 aarch64)"
+    attributes:
+        enable-full-crashsymbols: true
     worker-type: b-win2022
     worker:
         max-run-time: 7200
@@ -111,12 +127,15 @@ onnxruntime-aarch64-windows-msvc:
             - vs-toolchain
             - win64-cmake
             - win64-clang
+            - win64-dump_syms
         fetch:
             - win64-ninja
 
 
 onnxruntime-x86_64-apple-darwin:
     description: "ONNX Runtime (macOS x64)"
+    attributes:
+        enable-full-crashsymbols: true
     treeherder:
         symbol: TM(onnx)
     run:
@@ -127,11 +146,14 @@ onnxruntime-x86_64-apple-darwin:
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - linux64-dump_syms
             - macosx64-sdk-toolchain
 
 
 onnxruntime-aarch64-apple-darwin:
     description: "ONNX Runtime (macOS aarch64)"
+    attributes:
+        enable-full-crashsymbols: true
     treeherder:
         symbol: TMA64(onnx)
     run:
@@ -142,6 +164,7 @@ onnxruntime-aarch64-apple-darwin:
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - linux64-dump_syms
             - macosx64-sdk-toolchain
 
 

@@ -98,3 +98,22 @@ add_task(async function test_itemsGoWithTheSearchbar() {
   Assert.equal(count("clear-search-history"), 1, "The item is back");
   Assert.equal(count("paste-and-go"), 2, "The items aren't duplicated");
 });
+
+add_task(async function test_pasteAndGoLabel() {
+  const url = "https://example.com/";
+  await SimpleTest.promiseClipboardChange(url, () => {
+    clipboardHelper.copyString(url);
+  });
+
+  await SearchbarTestUtils.withContextMenu(window, async popup => {
+    let menuitem = popup.querySelector('[anonid="paste-and-go"]:not([hidden])');
+    await BrowserTestUtils.waitForMutationCondition(
+      menuitem,
+      { attributes: true, attributeFilter: ["data-l10n-id"] },
+      () =>
+        menuitem.getAttribute("data-l10n-id") ==
+        "urlbar-menuitem-paste-and-search",
+      "The searchbar's item settles on Paste and Search"
+    );
+  });
+});

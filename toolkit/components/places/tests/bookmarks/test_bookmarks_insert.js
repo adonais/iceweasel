@@ -213,6 +213,30 @@ add_task(async function test_insert_into_root_throws() {
   sandbox.restore();
 });
 
+add_task(async function test_insert_into_non_folder_rejects() {
+  let bm = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "http://example.com/",
+  });
+  await Assert.rejects(
+    PlacesUtils.bookmarks.insert({
+      parentGuid: bm.guid,
+      url: "http://example.com/child",
+    }),
+    /parentGuid must be a folder/,
+    "Should reject when inserting a bookmark into a bookmark."
+  );
+  await Assert.rejects(
+    PlacesUtils.bookmarks.insert({
+      parentGuid: bm.guid,
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    }),
+    /parentGuid must be a folder/,
+    "Should reject when inserting a folder into a bookmark."
+  );
+  await PlacesUtils.bookmarks.remove(bm);
+});
+
 add_task(async function long_title_trim() {
   let longtitle = "a";
   for (let i = 0; i < 4096; i++) {

@@ -20,7 +20,10 @@ export var BrowserTelemetryUtils = {
       tabs = aWindows;
     } else {
       for (const win of aWindows) {
-        tabs = tabs.concat(win.gBrowser.tabs);
+        // Windows that are still opening don't have a gBrowser yet.
+        if (win.gBrowser) {
+          tabs = tabs.concat(win.gBrowser.tabs);
+        }
       }
     }
 

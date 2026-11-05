@@ -168,6 +168,8 @@ class TCPSocket final : public DOMEventTargetHelper,
   void ActivateTLSHelper();
   // Enable TLS on this socket, dispatch to STSThread if necessary.
   void ActivateTLS();
+  // Discard received data that has not been delivered yet.
+  void DiscardPendingInput();
   // Dispatch an error event if necessary, then dispatch a "close" event.
   nsresult MaybeReportErrorAndCloseIfOpen(nsresult status);
 

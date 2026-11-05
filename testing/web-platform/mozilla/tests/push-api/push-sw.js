@@ -18,3 +18,14 @@ onpushsubscriptionchange = ev => {
     newSubscription: ev.newSubscription?.toJSON(),
   });
 }
+
+onfetch = ev => {
+  const searchParams = new URLSearchParams(new URL(ev.request.url).search);
+  if (searchParams.has("intercept")) {
+    ev.respondWith(() => Promise.reject());
+  }
+};
+
+onactivate = ev => {
+  ev.waitUntil(clients.claim());
+};

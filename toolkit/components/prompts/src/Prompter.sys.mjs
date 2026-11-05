@@ -1133,8 +1133,16 @@ class ModalPrompter {
               args.channel.URI
             );
         } catch (e) {
-          // isThirdPartyURI failes for about:/blob/data URIs
-          console.warn("nsPrompter: isThirdPartyURI failed: " + e);
+          // isThirdPartyURI failes for about:/blob/data URIs. For error pages,
+          // compare against the URI that failed to load instead, and treat
+          // anything else as cross domain.
+          try {
+            args.isTopLevelCrossDomainAuth = Services.scriptSecurityManager
+              .createContentPrincipal(this.browsingContext.currentURI, {})
+              .isThirdPartyURI(args.channel.URI);
+          } catch {
+            args.isTopLevelCrossDomainAuth = true;
+          }
         }
       }
     } else {

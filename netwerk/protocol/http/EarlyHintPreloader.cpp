@@ -34,6 +34,7 @@
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIChannel.h"
 #include "nsIContentSecurityPolicy.h"
+#include "nsICookieJarSettings.h"
 #include "nsIHttpChannel.h"
 #include "nsIInputStream.h"
 #include "nsILoadContext.h"
@@ -218,6 +219,13 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
     return;
   }
 
+  // The image the document picks from imagesrcset can't be determined here,
+  // so it may differ from href.
+  if (destination == ASDestination::DESTINATION_IMAGE &&
+      !aLinkHeader.mSrcset.IsEmpty()) {
+    return;
+  }
+
   nsCOMPtr<nsIURI> uri;
   NS_ENSURE_SUCCESS_VOID(
       NS_NewURI(getter_AddRefs(uri), aLinkHeader.mHref, nullptr, aBaseURI));
@@ -246,11 +254,14 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
     return;
   }
 
+  // The document fetches compression dictionaries as fetch preloads.
   nsContentPolicyType contentPolicyType =
-      aIsModulepreload ? (IsScriptLikeOrInvalid(aLinkHeader.mAs)
-                              ? nsContentPolicyType::TYPE_SCRIPT
-                              : nsContentPolicyType::TYPE_INVALID)
-                       : AsValueToContentPolicy(as);
+      aLinkHeader.mRel.LowerCaseEqualsLiteral("compression-dictionary")
+          ? nsContentPolicyType::TYPE_INTERNAL_FETCH_PRELOAD
+      : aIsModulepreload ? (IsScriptLikeOrInvalid(aLinkHeader.mAs)
+                                ? nsContentPolicyType::TYPE_SCRIPT
+                                : nsContentPolicyType::TYPE_INVALID)
+                         : AsValueToContentPolicy(as);
 
   if (contentPolicyType == nsContentPolicyType::TYPE_INVALID) {
     return;
@@ -415,6 +426,9 @@ nsresult EarlyHintPreloader::OpenChannel(
 
   NS_ENSURE_SUCCESS(rv, rv);
 
+  mURI = aURI;
+  mLoadInfo = mChannel->LoadInfo();
+
   RefPtr<nsHttpChannel> httpChannelObject = do_QueryObject(mChannel);
   if (!httpChannelObject) {
     mChannel = nullptr;
@@ -473,6 +487,72 @@ void EarlyHintPreloader::SetLinkHeader(const LinkHeader& aLinkHeader) {
 
 bool EarlyHintPreloader::IsFromContentParent(dom::ContentParentId aCpId) const {
   return aCpId == mCpId;
+}
+
+bool EarlyHintPreloader::MatchesRequest(nsIURI* aURI,
+                                        nsILoadInfo* aLoadInfo) const {
+  if (!mURI || !mLoadInfo || !aURI || !aLoadInfo) {
+    return false;
+  }
+
+  bool equals = false;
+  if (NS_FAILED(mURI->EqualsExceptRef(aURI, &equals))) {
+    return false;
+  }
+
+  if (!equals) {
+    return false;
+  }
+
+  if (mLoadInfo->GetExternalContentPolicyType() !=
+      aLoadInfo->GetExternalContentPolicyType()) {
+    return false;
+  }
+
+  if (nsContentSecurityManager::SecurityModeToRequestMode(
+          mLoadInfo->GetSecurityMode()) !=
+      nsContentSecurityManager::SecurityModeToRequestMode(
+          aLoadInfo->GetSecurityMode())) {
+    return false;
+  }
+
+  if (mLoadInfo->GetCookiePolicy() != aLoadInfo->GetCookiePolicy()) {
+    return false;
+  }
+
+  nsIPrincipal* loadingPrincipal = aLoadInfo->GetLoadingPrincipal();
+  if (!loadingPrincipal) {
+    return false;
+  }
+
+  if (!mLoadInfo->GetLoadingPrincipal()->Equals(loadingPrincipal)) {
+    return false;
+  }
+
+  if (!mLoadInfo->TriggeringPrincipal()->Equals(
+          aLoadInfo->TriggeringPrincipal())) {
+    return false;
+  }
+
+  if (mLoadInfo->GetOriginAttributes() != aLoadInfo->GetOriginAttributes()) {
+    return false;
+  }
+
+  nsCOMPtr<nsICookieJarSettings> cjs;
+  if (NS_FAILED(mLoadInfo->GetCookieJarSettings(getter_AddRefs(cjs)))) {
+    return false;
+  }
+
+  nsCOMPtr<nsICookieJarSettings> otherCjs;
+  if (NS_FAILED(aLoadInfo->GetCookieJarSettings(getter_AddRefs(otherCjs)))) {
+    return false;
+  }
+
+  nsAutoString partitionKey;
+  nsAutoString otherPartitionKey;
+  cjs->GetPartitionKey(partitionKey);
+  otherCjs->GetPartitionKey(otherPartitionKey);
+  return partitionKey == otherPartitionKey;
 }
 
 bool EarlyHintPreloader::Register(dom::ContentParentId aCpId,

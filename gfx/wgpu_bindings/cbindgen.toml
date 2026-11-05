@@ -17,7 +17,10 @@ autogen_warning = """/* DO NOT MODIFY THIS MANUALLY! This file was generated usi
 
 #include "nsString.h"
 
+// Opaque struct types that C++ only sees behind a pointer
 struct WGPUByteBuf;
+struct WGPUBufferMapping;
+
 using WGPUNonZeroU64 = uint64_t;
 using WGPUOption_BufferSize = uint64_t;
 using WGPUOption_NonZeroU32 = uint32_t;
@@ -47,6 +50,8 @@ using WGPURenderBundleEncoderId = uint64_t;
 using WGPUComputePipelineId = uint64_t;
 using WGPUDeviceId = uint64_t;
 using WGPUFeaturesWebGPU = uint64_t;
+using WGPUBufferUsagesWebGPU = uint32_t;
+using WGPUShaderStagesWebGPU = uint32_t;
 using WGPUPipelineLayoutId = uint64_t;
 using WGPUQuerySetId = uint64_t;
 using WGPUQueueId = uint64_t;
@@ -88,7 +93,6 @@ exclude = [
 	"Option_QuerySetId",
 	"Option_DeviceId",
 ]
-include = ["BufferUsages"]
 
 [export.rename]
 "nsString" = "nsString"

@@ -652,13 +652,18 @@ async function assertSelectorEnginesEqualsExpected(
         aliases: [],
         charset: "UTF-8",
         optional: false,
-        partnerCode: "",
-        telemetrySuffix: "",
         orderHint: null,
-        clickUrl: null,
         isNewUntil: null,
         ...expectedEngines[i],
       };
+      if (SearchUtils.configV3FeatureGate) {
+        expectedEngines[i].partner ||= null;
+        expectedEngines[i].deprecated ??= false;
+      } else {
+        expectedEngines[i].partnerCode ||= "";
+        expectedEngines[i].telemetrySuffix ||= "";
+        expectedEngines[i].clickUrl ||= null;
+      }
       expectedEngines[i].classification =
         expectedEngines[i].classification == "general"
           ? SearchEngineClassification.GENERAL

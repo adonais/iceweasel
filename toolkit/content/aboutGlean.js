@@ -395,9 +395,11 @@ function loadStoredSubmittedPings() {
           ping => ping.documentId === e.target.value
         );
         if (SUBMITTED_PING !== undefined) {
-          const allMetrics = Object.values(
+          const allMetrics = Object.keys(
             SUBMITTED_PING.payload.metrics ?? {}
-          ).reduce((acc, curr) => {
+          ).reduce((acc, currKey) => {
+            const curr = (SUBMITTED_PING.payload.metrics ?? {})[currKey];
+            const type = getTypeFromPingKey(currKey);
             return {
               ...acc,
               ...Object.keys(curr).reduce((acc, key) => {
@@ -430,7 +432,16 @@ function loadStoredSubmittedPings() {
                   datum.storedValue = curr[key];
                   datum.loaded = true;
                 } else {
-                  console.warn(`Unable to find metric ${category}.${metric}`);
+                  MAPPED_METRIC_DATA.push({
+                    category,
+                    fullName: `${category}.${metric}`,
+                    loaded: true,
+                    metric: undefined,
+                    name: metric,
+                    storedValue: curr[key],
+                    type,
+                    value: undefined,
+                  });
                 }
 
                 return acc;
@@ -475,30 +486,116 @@ function loadStoredSubmittedPings() {
               datum.storedValue = value;
               datum.loaded = true;
             } else {
-              console.warn(`Unable to find metric ${category}.${metric}`);
+              MAPPED_METRIC_DATA.push({
+                category,
+                fullName: `${category}.${metric}`,
+                loaded: true,
+                metric: undefined,
+                name: metric,
+                storedValue: value,
+                type: "Event",
+                value: undefined,
+              });
             }
           });
           SUBMITTED_PING.payload.allMetrics = {
             ...allMetrics,
             ...allEvents,
           };
+          document.getElementById("submitted-ping-info").hidden = false;
+          document.getElementById("submitted-ping-client-info").textContent =
+            prettyPrint(SUBMITTED_PING.payload.client_info);
+          document.getElementById("submitted-ping-ping-info").textContent =
+            prettyPrint(SUBMITTED_PING.payload.ping_info);
         } else {
           SUBMITTED_PING = undefined;
           MAPPED_METRIC_DATA.forEach(datum => {
             datum.storedValue = undefined;
           });
+          document.getElementById("submitted-ping-info").hidden = true;
         }
       } else {
         SUBMITTED_PING = undefined;
         MAPPED_METRIC_DATA.forEach(datum => {
           datum.storedValue = undefined;
         });
+        document.getElementById("submitted-ping-info").hidden = true;
       }
       updateFilteredMetricData(
         document.getElementById("filter-metrics").value.toLowerCase()
       );
     });
   }
+}
+
+function getTypeFromPingKey(key) {
+  let type = "";
+  switch (key) {
+    case "boolean":
+      type = "Boolean";
+      break;
+    case "counter":
+      type = "Counter";
+      break;
+    case "custom_distribution":
+      type = "CustomDistribution";
+      break;
+    case "datetime":
+      type = "Datetime";
+      break;
+    case "dual_labeled_counter":
+      type = "DualLabeledCounter";
+      break;
+    case "labeled_boolean":
+      type = "LabeledBoolean";
+      break;
+    case "labeled_counter":
+      type = "LabeledCounter";
+      break;
+    case "labeled_custom_distribution":
+      type = "LabeledCustomDistribution";
+      break;
+    case "labeled_memory_distribution":
+      type = "LabeledMemoryDistribution";
+      break;
+    case "labeled_quantity":
+      type = "LabeledQuantity";
+      break;
+    case "labeled_timing_distribution":
+      type = "LabeledTimingDistribution";
+      break;
+    case "memory_distribution":
+      type = "MemoryDistribution";
+      break;
+    case "object":
+      type = "Object";
+      break;
+    case "quantity":
+      type = "Quantity";
+      break;
+    case "rate":
+      type = "Rate";
+      break;
+    case "string":
+      type = "String";
+      break;
+    case "string_list":
+      type = "StringList";
+      break;
+    case "timespan":
+      type = "Timespan";
+      break;
+    case "timing_distribution":
+      type = "TimingDistribution";
+      break;
+    case "url":
+      type = "Url";
+      break;
+    case "uuid":
+      type = "Uuid";
+      break;
+  }
+  return type;
 }
 
 /**

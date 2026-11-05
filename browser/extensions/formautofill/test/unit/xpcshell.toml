@@ -83,6 +83,8 @@ head = "head_addressComponent.js"
 
 ["test_migrateRecords.js"]
 
+["test_ml_regex_hint.js"]
+
 ["test_nameUtils.js"]
 
 ["test_parseAddressFormat.js"]
@@ -104,6 +106,12 @@ head = "head_addressComponent.js"
 ["test_rust_autofill_address_adapter.js"]
 
 ["test_rust_autofill_address_bridged_engine.js"]
+# The dry runs start on the storage singleton when the add-on starts, before
+# the test body runs, and can still be in flight when the test shuts down.
+prefs = [
+  "extensions.formautofill.addresses.storage.rust.runMigrationTest=false",
+  "extensions.formautofill.creditCards.storage.rust.runMigrationTest=false",
+]
 
 ["test_rust_autofill_address_migration.js"]
 
@@ -117,7 +125,16 @@ prefs = ["services.sync.engine.addresses.available=true"]
 
 ["test_rust_autofill_credit_card_adapter.js"]
 
+["test_rust_autofill_credit_card_bridged_engine.js"]
+
 ["test_rust_autofill_credit_card_migration.js"]
+
+["test_rust_autofill_credit_card_sync_engine.js"]
+head = "head.js ../../../../../services/sync/tests/unit/head_appinfo.js ../../../../../services/common/tests/unit/head_helpers.js ../../../../../services/sync/tests/unit/head_helpers.js ../../../../../services/sync/tests/unit/head_http_server.js"
+# Registering the credit cards engine at all is conditional, and the pref is
+# read when Service builds its engine table -- too early for the test body to
+# set it.
+prefs = ["services.sync.engine.creditcards.available=true"]
 
 ["test_savedFieldNames.js"]
 

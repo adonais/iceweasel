@@ -1086,9 +1086,6 @@ class ContentParent final : public PContentParent,
       const MaybeDiscarded<WindowContext>& aContext,
       WindowContext::BaseTransaction&& aTransaction, uint64_t aEpoch);
 
-  mozilla::ipc::IPCResult RecvAddSecurityState(
-      const MaybeDiscarded<WindowContext>& aContext, uint32_t aStateFlags);
-
   mozilla::ipc::IPCResult RecvFirstIdle();
 
   mozilla::ipc::IPCResult RecvDeviceReset();
@@ -1131,8 +1128,10 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvAcquireHWInferenceProcess();
 
+#  ifdef MOZ_WEBSPEECH
   mozilla::ipc::IPCResult RecvCreateSpeechRecognition(
       Endpoint<hwinference::PSpeechRecognitionParent>&& aEndpoint);
+#  endif
 
   mozilla::ipc::IPCResult RecvReleaseHWInferenceConnection();
 #endif  // !ANDROID
@@ -1502,7 +1501,7 @@ class ContentParent final : public PContentParent,
   // release these objects in ShutDownProcess.  See the comment there for more
   // details.
 
-  GeckoChildProcessHost* mSubprocess;
+  RefPtr<GeckoChildProcessHost> mSubprocess;
   const TimeStamp mLaunchTS;  // used to calculate time to start content process
   TimeStamp mLaunchYieldTS;   // used to calculate async launch main thread time
 

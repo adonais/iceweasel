@@ -69,6 +69,17 @@ describe("<DSLinkMenu>", () => {
       );
     });
 
+    it("should pass the card's dwell label to Open in a New Window", () => {
+      renderMenu({ ...ValidDSLinkMenuProps, dwellLabel: "story_sponsored" });
+      const openInNewWindow = PanelListItems.mock.calls
+        .at(-1)[0]
+        .options.find(o => o.id === "newtab-menu-open-new-window");
+      expect(openInNewWindow.action.data).toHaveProperty(
+        "dwell_label",
+        "story_sponsored"
+      );
+    });
+
     it("should build the correct menu options for recommended stories", () => {
       // CheckBookmark, Separator, OpenInNewWindow, OpenInPrivateWindow,
       // Separator, BlockUrl

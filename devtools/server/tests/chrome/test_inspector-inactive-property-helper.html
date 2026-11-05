@@ -9,20 +9,21 @@
 "use strict";
 SimpleTest.waitForExplicitFinish();
 
+function pushPref(preferenceName, value) {
+  return new Promise(resolve => {
+    const options = {"set": [[preferenceName, value]]};
+    SpecialPowers.pushPrefEnv(options, resolve);
+  });
+}
+
 (async function() {
   const { require } = ChromeUtils.importESModule("resource://devtools/shared/loader/Loader.sys.mjs");
   const { getInactiveCssDataForProperty } = require("devtools/server/actors/utils/inactive-property-helper");
   const { DocumentWalker } = require("devtools/server/actors/inspector/document-walker");
 
-  const TEXT_FRAGMENTS = "dom.text_fragments.enabled";
-
-  Services.prefs.setBoolPref(TEXT_FRAGMENTS, true);
-
-  SimpleTest.registerCleanupFunction(() => {
-    Services.prefs.clearUserPref(TEXT_FRAGMENTS);
-  });
-
   const FOLDER = "./inactive-property-helper";
+
+  await pushPref("layout.css.display-grid-lanes.enabled", true);
 
   // Each file should `export default` an array of objects, representing each test case.
   // A single test case is an object of the following shape:

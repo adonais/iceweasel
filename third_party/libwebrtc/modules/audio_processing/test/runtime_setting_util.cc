@@ -24,7 +24,9 @@ void ReplayRuntimeSetting(AudioProcessing* apm,
   // PlayoutVolumeChange are supported.
   RTC_CHECK(setting.has_capture_pre_gain() ||
             setting.has_capture_fixed_post_gain() ||
-            setting.has_playout_volume_change());
+            setting.has_playout_volume_change() ||
+            setting.has_capture_output_used() ||
+            setting.has_playout_audio_device_change());
 
   if (setting.has_capture_pre_gain()) {
     apm->SetRuntimeSetting(

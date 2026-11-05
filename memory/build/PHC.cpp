@@ -593,29 +593,36 @@ class PHC : public BaseAllocClass {
     if (!tlsLastDelay.init()) {
       MOZ_CRASH();
     }
+  }
 
-    // This constructor is part of PHC's very early initialisation,
-    // see phc_init(), and if PHC is default-on it'll start marking allocations
+  bool Init() {
+    // This function is part of PHC's very early initialisation, see
+    // phc_init(), and if PHC is default-on it'll start marking allocations
     // and we must setup the delay.  However once XPCOM starts it'll call
     // SetState() which will re-initialise the RNG and allocation delay.
 
-#ifdef EARLY_BETA_OR_EARLIER
-    Resize(16 * 1024 * 1024);
+#ifdef NIGHTLY_BUILD
+    const size_t array_size = 16 * 1024 * 1024;
 #else
     // Before Bug 1867191 PHC used no more than approximately 1.1MB when it was
     // set to a round number of 256 pages.  To keep the size the same we now
     // specify this strange total size, but will follow-up with a more sensible
     // maximum in the future.
-    Resize((1024 + 128) * 1024);
+    const size_t array_size = (1024 + 128) * 1024;
 #endif
+    if (!Resize(array_size)) {
+      return false;
+    }
 
     {
       MutexAutoLock lock(mMutex);
       ForceSetNewAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64()));
     }
+
+    return true;
   }
 
-  void Resize(size_t aSizeBytes) {
+  bool Resize(size_t aSizeBytes) {
     // -1 since the last page in the virtual address space must be a guard page.
     size_t max_pages = (kPhcVirtualReservation / kPhcPageSize / 2) - 1;
     size_t size_pages = aSizeBytes / kPhcPageSize;
@@ -626,14 +633,18 @@ class PHC : public BaseAllocClass {
     size_t old_size_pages = NumAllocPages();
     if (size_pages > old_size_pages) {
       Log("Growing PHC storage from %zu to %zu\n", old_size_pages, size_pages);
-      if (mAllocPages.GrowTo(size_pages)) {
-        for (size_t i = old_size_pages; i < size_pages; i++) {
-          AppendPageToFreeList(i);
-        }
+      if (!mAllocPages.GrowTo(size_pages)) {
+        return false;
+      }
+
+      for (size_t i = old_size_pages; i < size_pages; i++) {
+        AppendPageToFreeList(i);
       }
     } else if (size_pages < old_size_pages) {
       Log("Shrink requested and ignored.");
     }
+
+    return true;
   }
 
   uint64_t Random64() MOZ_REQUIRES(mMutex) { return mRNG.next(); }
@@ -1408,6 +1419,12 @@ void phc_init() {
   // sPHC is never freed. It lives for the life of the process.
   PHC::sPHC = new (fallible) PHC();
   if (!PHC::sPHC) {
+    PHC::sRegion.ReleaseVirtualAddresses();
+    return;
+  }
+  if (!PHC::sPHC->Init()) {
+    delete PHC::sPHC;
+    PHC::sPHC = nullptr;
     PHC::sRegion.ReleaseVirtualAddresses();
     return;
   }

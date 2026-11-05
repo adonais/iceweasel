@@ -46,7 +46,6 @@ namespace webrtc {
 
 class AudioDeviceModule;
 class PacketRouter;
-class RateLimiter;
 class ReceiveStatistics;
 class RtpPacketReceived;
 class RtpRtcp;

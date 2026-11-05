@@ -48,6 +48,7 @@
         <service android:name=".TestRuntimeService$instance1" android:enabled="true" android:exported="false" android:process=":runtime1" />
 
         <service android:name=".TrackingPermissionService" android:enabled="true" android:exported="false" android:process=":tp" />
+        <service android:name=".ExtensionProcessCrashService" android:enabled="true" android:exported="false" android:process=":extcrash" />
 
         <provider android:name="org.mozilla.geckoview.test.TestContentProvider"
                   android:authorities="org.mozilla.geckoview.test.provider"

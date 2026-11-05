@@ -57,6 +57,11 @@ uint32_t HashDjb2(const uint8_t* src, uint64_t count, uint32_t seed) {
     simd_size = 1;  // Any count.
   }
 #endif
+#if defined(HAS_HASHDJB2_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    HashDjb2_SSE = HashDjb2_WASMSIMD;
+  }
+#endif
 
   while (count >= (uint64_t)kBlockSize) {
     seed = HashDjb2_SSE(src, kBlockSize, seed);
@@ -175,6 +180,11 @@ uint64_t ComputeHammingDistance(const uint8_t* src_a,
     simd_size = 1;  // Any count.
   }
 #endif
+#if defined(HAS_HAMMINGDISTANCE_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    HammingDistance = HammingDistance_WASMSIMD;
+  }
+#endif
   remainder = count & (kBlockSize - 1) & ~(simd_size - 1);
 
 #ifdef _OPENMP
@@ -238,6 +248,11 @@ uint64_t ComputeSumSquareError(const uint8_t* src_a,
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     SumSquareError = SumSquareError_AVX512BW;
     simd_size = 1;  // Any count.
+  }
+#endif
+#if defined(HAS_SUMSQUAREERROR_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    SumSquareError = SumSquareError_WASMSIMD;
   }
 #endif
   remainder = count & (kBlockSize - 1) & ~(simd_size - 1);

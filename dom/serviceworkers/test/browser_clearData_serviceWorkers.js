@@ -238,13 +238,15 @@ add_task(async function test_clear_by_time_range_scopes_to_window() {
     "Origin B is active before we move it out of the window"
   );
 
-  // Move origin B out of the window and check it really left: MoveOriginInTime
-  // stores the timestamp in seconds into a table of microseconds, so the entry
-  // may end up evicted rather than moved.
+  // Move origin B out of the window and check it really left.
   SAS.moveOriginInTime(activeB, now - 5 * ONE_HOUR_US);
   Assert.ok(
     !findActivePrincipal(ORIGIN_B, windowStart, windowEnd),
     "Origin B is no longer active within the clearing window"
+  );
+  Assert.ok(
+    findActivePrincipal(ORIGIN_B, now - 6 * ONE_HOUR_US, now - 4 * ONE_HOUR_US),
+    "Origin B is active at the timestamp it was moved to"
   );
 
   let flags = await deleteDataInTimeRange(

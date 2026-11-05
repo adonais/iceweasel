@@ -76,6 +76,10 @@ requesttimeoutfactor = 2  # Slow on Mac in verify mode
 
 ["test_quicksuggest_sports.js"]
 
+["test_quicksuggest_temporal.js"]
+
+["test_quicksuggest_temporalResults.js"]
+
 ["test_quicksuggest_topPicks.js"]
 
 ["test_quicksuggest_wikipedia.js"]

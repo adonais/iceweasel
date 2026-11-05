@@ -153,7 +153,7 @@ add_task(async function test_tab_group_context_mentions() {
       "Tab group mention ids are not recorded as seen URLs"
     );
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await BrowserTestUtils.closeWindow(win);
   }
@@ -237,7 +237,7 @@ add_task(async function test_expanded_tab_group_members() {
       "A quick prompt expands the tab group chips of the header"
     );
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await BrowserTestUtils.closeWindow(win);
   }

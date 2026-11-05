@@ -648,6 +648,9 @@ EXPORTS
     ; GL_ANGLE_translated_shader_source
     glGetTranslatedShaderSourceANGLE
 
+    ; GL_ANGLE_trim_memory
+    glTrimMemoryANGLE
+
     ; GL_ANGLE_vulkan_image
     glAcquireTexturesANGLE
     glReleaseTexturesANGLE
@@ -673,9 +676,6 @@ EXPORTS
     ; GL_CHROMIUM_copy_texture
     glCopySubTextureCHROMIUM
     glCopyTextureCHROMIUM
-
-    ; GL_CHROMIUM_framebuffer_mixed_samples
-    glCoverageModulationCHROMIUM
 
     ; GL_CHROMIUM_lose_context
     glLoseContextCHROMIUM
@@ -1192,6 +1192,8 @@ EXPORTS
     ; GL_OES_shader_multisample_interpolation
 
     ; GL_OES_standard_derivatives
+
+    ; GL_OES_stencil8
 
     ; GL_OES_surfaceless_context
 

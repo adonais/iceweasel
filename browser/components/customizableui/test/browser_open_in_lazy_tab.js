@@ -11,9 +11,9 @@ add_task(async function open_customize_mode_in_lazy_tab() {
 
   is(tab.linkedPanel, null, "Tab should be lazy");
 
-  let title = gNavigatorBundle.getFormattedString("customizeMode.tabTitle", [
-    document.getElementById("bundle_brand").getString("brandShortName"),
-  ]);
+  let title = await gBrowser.tabLocalization.formatValue(
+    "tabbrowser-customizemode-tab-title"
+  );
   is(tab.label, title, "Tab should have correct title");
 
   let customizePromise = BrowserTestUtils.waitForEvent(

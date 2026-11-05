@@ -2,7 +2,9 @@
   "plugins": [
     "jsdoc-plugins/accept-typescript-types.mjs",
     "jsdoc-plugins/skip-anonymous-locals.mjs",
-    "jsdoc-plugins/skip-unnamed-members.mjs"
+    "jsdoc-plugins/skip-private-members.mjs",
+    "jsdoc-plugins/skip-type-casts.mjs",
+    "jsdoc-plugins/convert-descriptions-to-rst.mjs"
   ],
   "source": {
     "includePattern": ".+\\.m?jsm?$"

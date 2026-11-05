@@ -174,7 +174,9 @@ open class DefaultComponents(private val applicationContext: Context) {
         )
     }
 
-    val permissionStorage by lazy { OnDiskSitePermissionsStorage(applicationContext) }
+    val permissionStorage by lazy {
+        OnDiskSitePermissionsStorage(applicationContext, coroutineScope = applicationScope)
+    }
 
     val thumbnailStorage by lazy { ThumbnailStorage(applicationContext) }
 

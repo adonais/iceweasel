@@ -859,6 +859,26 @@ SDPUtils.parseMLine = function(mediaSection) {
   };
 };
 
+// Returns the payload types listed on the m= line of a media section.
+SDPUtils.getPayloadTypes = function(mediaSection) {
+  return SDPUtils.parseMLine(mediaSection).fmt.split(" ");
+};
+
+// Returns the payload types referenced by a=fmtp lines of a media section.
+SDPUtils.getFmtpPayloadTypes = function(mediaSection) {
+  return SDPUtils.matchPrefixAndTrim(mediaSection, "a=fmtp:").map(
+    l => l.split(" ")[0]
+  );
+};
+
+// Returns the payload types referenced by a=rtcp-fb lines of a media section.
+// May include "*".
+SDPUtils.getRtcpFbPayloadTypes = function(mediaSection) {
+  return SDPUtils.matchPrefixAndTrim(mediaSection, "a=rtcp-fb:").map(
+    l => l.split(" ")[0]
+  );
+};
+
 SDPUtils.parseOLine = function(mediaSection) {
   var line = SDPUtils.matchPrefix(mediaSection, "o=")[0];
   var parts = line.substr(2).split(" ");

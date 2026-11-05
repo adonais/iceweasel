@@ -82,11 +82,13 @@
 #include "mozilla/PublicSSL.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/ConnectionAllowlists.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Location.h"
 #include "mozilla/dom/PeerConnectionImplBinding.h"
 #include "mozilla/dom/PluginCrashedEvent.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RTCCertificate.h"
 #include "mozilla/dom/RTCDataChannelBinding.h"
@@ -491,6 +493,12 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   mWindow = aWindow;
   NS_ENSURE_STATE(mWindow);
 
+  if (dom::ConnectionAllowlists* allowlists =
+          PolicyContainer::GetConnectionAllowlists(
+              aWindow->GetPolicyContainer())) {
+    mBlockedByConnectionAllowlists = allowlists->ShouldBlockWebRTC(mWindow);
+  }
+
   // Now rummage through the objects to get a usable origin
   nsCOMPtr<nsIScriptGlobalObject> sgo = do_QueryInterface(mWindow);
   NS_ENSURE_STATE(sgo);
@@ -565,7 +573,7 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
                                   header.direction);
   }
 
-  if (XRE_IsContentProcess()) {
+  if (XRE_IsContentProcess() && !mBlockedByConnectionAllowlists) {
     mStunAddrsRequest =
         net::StunAddrsRequestChild::Create(new StunAddrsHandler(this));
   }
@@ -798,7 +806,7 @@ already_AddRefed<RTCRtpTransceiver> PeerConnectionImpl::AddTransceiver(
     return nullptr;
   }
 
-  JsepTransceiver jsepTransceiver(*type, *mUuidGen);
+  JsepTransceiver jsepTransceiver({.type = *type}, *mUuidGen);
   jsepTransceiver.SetRtxIsAllowed(mRtxIsAllowed);
 
   // Do this last, since it is not possible to roll back.
@@ -1078,8 +1086,8 @@ PeerConnectionImpl::CreateDataChannel(
     dcTransceiver->RestartDatachannelTransceiver();
     mJsepSession->SetTransceiver(*dcTransceiver);
   } else {
-    mJsepSession->AddTransceiver(
-        JsepTransceiver(SdpMediaSection::MediaType::kApplication, *mUuidGen));
+    mJsepSession->AddTransceiver(JsepTransceiver(
+        {.type = SdpMediaSection::MediaType::kApplication}, *mUuidGen));
   }
 
   RefPtr<RTCDataChannel> retval;
@@ -2611,8 +2619,14 @@ void PeerConnectionImpl::SetConfiguration(
 
 nsresult PeerConnectionImpl::SetConfiguration(
     const RTCConfiguration& aConfiguration) {
-  nsresult rv = mTransportHandler->SetIceConfig(
-      aConfiguration.mIceServers, aConfiguration.mIceTransportPolicy);
+  // All ICE servers are administratively prohibited, but they should still be
+  // visible in getConfiguration().
+  nsresult rv =
+      mBlockedByConnectionAllowlists
+          ? mTransportHandler->SetIceConfig(nsTArray<dom::RTCIceServer>(),
+                                            aConfiguration.mIceTransportPolicy)
+          : mTransportHandler->SetIceConfig(aConfiguration.mIceServers,
+                                            aConfiguration.mIceTransportPolicy);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4624,6 +4638,13 @@ void PeerConnectionImpl::AddIceCandidate(const std::string& aCandidate,
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!aTransportId.empty());
 
+  // All remote candidates are administratively prohibited. They still end up
+  // in the remote description, but ICE never learns about them. We still pass
+  // along end-of-candidates.
+  if (mBlockedByConnectionAllowlists && !aCandidate.empty()) {
+    return;
+  }
+
   bool obfuscate_host_addresses = Preferences::GetBool(
       "media.peerconnection.ice.obfuscate_host_addresses", false);
 
@@ -4779,6 +4800,11 @@ nsresult PeerConnectionImpl::SetTargetForDefaultLocalAddressLookup() {
 
 void PeerConnectionImpl::EnsureIceGathering(bool aDefaultRouteOnly,
                                             bool aObfuscateHostAddresses) {
+  // All local addresses are administratively prohibited.
+  if (mBlockedByConnectionAllowlists) {
+    return;
+  }
+
   if (!mTargetForDefaultLocalAddressLookupIsSet) {
     nsresult rv = SetTargetForDefaultLocalAddressLookup();
     if (NS_FAILED(rv)) {

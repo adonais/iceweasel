@@ -1025,6 +1025,17 @@ let gPermissions = {
       states: [SitePermissions.UNKNOWN, SitePermissions.ALLOW],
     },
 
+    // Whether a site may prompt to register a protocol handler via
+    // navigator.registerProtocolHandler. ALLOW is never stored, accepting a
+    // prompt registers the handler without recording a permission. Unlike
+    // open-protocol-handler this is not keyed per scheme. It is keyed on the
+    // top-level site, also for requests from its iframes.
+    "register-protocol-handler": {
+      labelID: "register-protocol-handler",
+      exactHostMatch: true,
+      states: [SitePermissions.UNKNOWN, SitePermissions.BLOCK],
+    },
+
     xr: {
       exactHostMatch: true,
     },

@@ -63,3 +63,14 @@ if CONFIG["CC_TYPE"] in ("clang", "gcc"):
         "-Wno-error=unused-function",
         "-Wno-unused-local-typedefs",
     ]
+
+SOURCE_HEADERS += [
+    "ApplicationAccessibleWrap.h",
+    "DocAccessibleWrap.h",
+    "DOMtoATK.h",
+    "InterfaceInitFuncs.h",
+    "nsMai.h",
+    "nsMaiHyperlink.h",
+    "nsStateMap.h",
+    "RootAccessibleWrap.h",
+]

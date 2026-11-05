@@ -11,7 +11,6 @@
 #include "mozilla/dom/PContentPermissionRequestParent.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "nsIContentPermissionPrompt.h"
-#include "nsIMutableArray.h"
 #include "nsIPrincipal.h"
 #include "nsPIDOMWindow.h"
 #include "nsTArray.h"
@@ -21,6 +20,7 @@
 // https://bugzilla.mozilla.org/show_bug.cgi?id=932421#c3 for why.
 #undef LoadImage
 
+class nsIMutableArray;
 class nsPIDOMWindowInner;
 class nsContentPermissionRequestProxy;
 class RemotePermissionRequest;

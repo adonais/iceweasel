@@ -379,6 +379,10 @@ if (IsCSSPropertyPrefEnabled("layout.css.line-clamp.enabled")) {
   supported_properties["line-clamp"] = [ test_pos_integer_or_none_transition ];
 }
 
+if (IsCSSPropertyPrefEnabled("layout.css.display-grid-lanes.enabled")) {
+  supported_properties["fit-tolerance"] = [ test_grid_gap ];
+}
+
 supported_properties["contain-intrinsic-width"] = [ test_length_transition, test_auto_with_length_transition ];
 supported_properties["contain-intrinsic-height"] = supported_properties["contain-intrinsic-width"];
 supported_properties["content-visibility"] = [test_content_visibility_transition];

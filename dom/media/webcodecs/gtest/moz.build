@@ -4,10 +4,12 @@
 
 UNIFIED_SOURCES += [
     "TestVideoFrame.cpp",
+    "TestWebCodecsUtils.cpp",
 ]
 
 LOCAL_INCLUDES += [
     "!/ipc/ipdl/_ipdlheaders",
+    "/dom/media/gtest",
     "/dom/media/webcodecs",
     "/gfx/2d",
     "/ipc/chromium/src/",

@@ -362,7 +362,7 @@ bool nsFileControlFrame::DnDListener::CanDropTheseFiles(
 void nsFileControlFrame::SyncDisabledState() {
   if (mContent->AsElement()->State().HasState(ElementState::DISABLED)) {
     mBrowseFilesOrDirs->SetAttr(kNameSpaceID_None, nsGkAtoms::disabled, u""_ns,
-                                true);
+                                true, IsKnownNewAttr::No);
   } else {
     mBrowseFilesOrDirs->UnsetAttr(kNameSpaceID_None, nsGkAtoms::disabled, true);
   }

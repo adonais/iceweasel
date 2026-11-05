@@ -200,6 +200,8 @@ export const MODEL_FEATURES = Object.freeze({
   REAL_TIME_CONTEXT_DATE: "real-time-context-date",
   REAL_TIME_CONTEXT_TAB: "real-time-context-tab",
   REAL_TIME_CONTEXT_MENTIONS: "real-time-context-mentions",
+  // per-turn active tab and @mention fragments
+  BROWSER_CONTEXT: "browser-context",
   MEMORIES_CONTEXT: "memories-context",
   // agents
   AGENT_MONITOR: "agent-monitor",
@@ -257,7 +259,7 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
   },
   [MODEL_FEATURES.SMART_FORM_FILL]: 1,
   [MODEL_FEATURES.TITLE_GENERATION]: 1,
-  [MODEL_FEATURES.TAB_GROUP_NAMING]: 1,
+  [MODEL_FEATURES.TAB_GROUP_NAMING]: 2,
   [MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]: 3,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP]: 1,
@@ -279,11 +281,14 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
   [MODEL_FEATURES.REAL_TIME_CONTEXT_DATE]: 1,
   [MODEL_FEATURES.REAL_TIME_CONTEXT_TAB]: 1,
   [MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS]: 1,
+  [MODEL_FEATURES.BROWSER_CONTEXT]: 1,
   // agents
   [MODEL_FEATURES.AGENT_MONITOR]: 2,
   // search agent
   [MODEL_FEATURES.SEARCH_ANSWER_GENERATION]: 1,
-  // aitab structured-page generation
+  // aitab structured-page generation. Paired with the `version` major in
+  // models/aitab/component_schema.json (AITab.loadAssets rejects a mismatch).
+  // Bump both, plus the aitab records in the packaged dump, in one patch.
   [MODEL_FEATURES.AITAB]: 1,
 });
 
@@ -732,15 +737,39 @@ export function _clearModelsDataCacheForTesting() {
   _modelsDataCache = null;
 }
 
+// `{#key}...{/key}` alone on its line(s), with its indent and line end, so a
+// dropped section takes its line with it. The body stops at the nearest
+// `{/key}`, so a section followed by other text is never paired with a later
+// one's closing tag.
+const PROMPT_STANDALONE_SECTION_REGEX =
+  /^([ \t]*)\{#(\w+)\}((?:(?!\{\/\2\})[\s\S])*?)\{\/\2\}([ \t]*(?:\r?\n|$))/gm;
+const PROMPT_INLINE_SECTION_REGEX = /\{#(\w+)\}([\s\S]*?)\{\/\1\}/g;
+
 /**
  * Renders a prompt from a string, replacing placeholders with provided strings.
+ *
+ * `{key}` is replaced with the value of `key`. `{#key}...{/key}` keeps its
+ * content only when `key` has a non-empty value; otherwise the section is
+ * removed, along with its whole line when nothing else is on that line.
  *
  * @param {string} rawPromptContent               The raw prompt as a string
  * @param {Map<string, string>} stringsToReplace  A map of placeholder strings to their replacements
  * @returns {Promise<string>}                     The rendered prompt
  */
 export function renderPrompt(rawPromptContent, stringsToReplace = {}) {
-  let finalPromptContent = rawPromptContent;
+  const hasValue = key => {
+    const value = stringsToReplace[key];
+    return Boolean(value) || value === 0;
+  };
+  let finalPromptContent = rawPromptContent
+    .replace(
+      PROMPT_STANDALONE_SECTION_REGEX,
+      (match, indent, key, content, lineEnd) =>
+        hasValue(key) ? indent + content + lineEnd : ""
+    )
+    .replace(PROMPT_INLINE_SECTION_REGEX, (match, key, content) =>
+      hasValue(key) ? content : ""
+    );
 
   for (const [orig, repl] of Object.entries(stringsToReplace)) {
     const regex = new RegExp(`{${orig}}`, "g");

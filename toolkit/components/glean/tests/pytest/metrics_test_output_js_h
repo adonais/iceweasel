@@ -28,18 +28,21 @@ enum MetricTypeId {
   EVENT = 7,
   LABELED_BOOLEAN = 8,
   LABELED_COUNTER = 9,
-  LABELED_STRING = 10,
-  MEMORY_DISTRIBUTION = 11,
-  NUMERATOR = 12,
-  OBJECT = 13,
-  QUANTITY = 14,
-  RATE = 15,
-  STRING = 16,
-  STRING_LIST = 17,
-  TEXT = 18,
-  TIMESPAN = 19,
-  TIMING_DISTRIBUTION = 20,
-  UUID = 21,
+  LABELED_CUSTOM_DISTRIBUTION = 10,
+  LABELED_MEMORY_DISTRIBUTION = 11,
+  LABELED_STRING = 12,
+  LABELED_TIMING_DISTRIBUTION = 13,
+  MEMORY_DISTRIBUTION = 14,
+  NUMERATOR = 15,
+  OBJECT = 16,
+  QUANTITY = 17,
+  RATE = 18,
+  STRING = 19,
+  STRING_LIST = 20,
+  TEXT = 21,
+  TIMESPAN = 22,
+  TIMING_DISTRIBUTION = 23,
+  UUID = 24,
 };
 
 // The category lookup table's entry type
@@ -91,7 +94,7 @@ Maybe<uint32_t> MetricByNameLookup(const nsACString&);
 Maybe<uint32_t> CategoryByNameLookup(const nsACString&);
 
 extern const category_entry_t sCategoryByNameLookupEntries[4];
-extern const metric_entry_t sMetricByNameLookupEntries[58];
+extern const metric_entry_t sMetricByNameLookupEntries[61];
 
 } // namespace mozilla::glean
 #endif // mozilla_GleanJSMetricsLookup_h

@@ -84,7 +84,7 @@ void ObjCCallClient::Call(RTC_OBJC_TYPE(RTCVideoCapturer) * capturer,
   remote_sink_ = webrtc::ObjCToNativeVideoRenderer(remote_renderer);
 
   video_source_ = webrtc::ObjCToNativeVideoCapturer(
-      capturer, env_, signaling_thread_.get(), worker_thread_.get());
+      capturer, env_, signaling_thread_.get(), network_thread_.get());
 
   CreatePeerConnection();
   Connect();
@@ -112,10 +112,6 @@ void ObjCCallClient::CreatePeerConnectionFactory() {
   network_thread_->SetName("network_thread", nullptr);
   RTC_CHECK(network_thread_->Start()) << "Failed to start thread";
 
-  worker_thread_ = webrtc::Thread::Create();
-  worker_thread_->SetName("worker_thread", nullptr);
-  RTC_CHECK(worker_thread_->Start()) << "Failed to start thread";
-
   signaling_thread_ = webrtc::Thread::Create();
   signaling_thread_->SetName("signaling_thread", nullptr);
   RTC_CHECK(signaling_thread_->Start()) << "Failed to start thread";
@@ -123,7 +119,6 @@ void ObjCCallClient::CreatePeerConnectionFactory() {
   webrtc::PeerConnectionFactoryDependencies dependencies;
   dependencies.env = env_;
   dependencies.network_thread = network_thread_.get();
-  dependencies.worker_thread = worker_thread_.get();
   dependencies.signaling_thread = signaling_thread_.get();
   dependencies.audio_encoder_factory =
       webrtc::CreateBuiltinAudioEncoderFactory();

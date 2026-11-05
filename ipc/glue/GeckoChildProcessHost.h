@@ -18,8 +18,6 @@
 #include "mozilla/ipc/LaunchError.h"
 #include "mozilla/ipc/ScopedPort.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/LinkedList.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
@@ -97,8 +95,8 @@ typedef mozilla::MozPromise<base::ProcessHandle, LaunchError, false>
 // REMOTETYPE line as the current one.
 extern LazyLogModule gChildProcessLifecycleLog;
 
-class GeckoChildProcessHost : public SupportsWeakPtr,
-                              public LinkedListElement<GeckoChildProcessHost> {
+class GeckoChildProcessHost
+    : public SupportsThreadSafeWeakPtr<GeckoChildProcessHost> {
  protected:
   typedef mozilla::Monitor Monitor;
   typedef std::vector<std::string> StringVector;
@@ -107,18 +105,10 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
   using ProcessId = base::ProcessId;
   using ProcessHandle = base::ProcessHandle;
 
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(GeckoChildProcessHost)
+
   explicit GeckoChildProcessHost(GeckoProcessType aProcessType,
                                  bool aIsFileContent = false);
-
-  // Causes the object to be deleted, on the I/O thread, after any
-  // pending asynchronous work (like launching) is complete.  This
-  // method can be called from any thread.  If called from the I/O
-  // thread itself, deletion won't happen until the event loop spins;
-  // otherwise, it could happen immediately.
-  //
-  // GeckoChildProcessHost instances must not be deleted except
-  // through this method.
-  void Destroy();
 
   static uint32_t GetUniqueID();
 
@@ -229,20 +219,17 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
   // blocked in child processes due to sandboxing.
   void DisableOSActivityMode();
 #endif  // defined(MOZ_SANDBOX) && defined(XP_MACOSX)
-  typedef std::function<void(GeckoChildProcessHost*)> GeckoProcessCallback;
 
-  // Iterates over all instances and calls aCallback with each one of them.
-  // This method will lock any addition/removal of new processes
-  // so you need to make sure the callback is as fast as possible.
-  //
-  // To reiterate: the callbacks are executed synchronously.
-  static void GetAll(const GeckoProcessCallback& aCallback);
+  // Captures a snapshot view of the list of all processes.
+  static nsTArray<RefPtr<GeckoChildProcessHost>> GetAll();
 
   friend class BaseProcessLauncher;
   friend class PosixProcessLauncher;
   friend class WindowsProcessLauncher;
 
  protected:
+  friend class SupportsThreadSafeWeakPtr<GeckoChildProcessHost>;
+
   virtual ~GeckoChildProcessHost();
   GeckoProcessType mProcessType;
   GeckoChildID mChildID;
@@ -340,18 +327,10 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
  private:
   DISALLOW_EVIL_CONSTRUCTORS(GeckoChildProcessHost);
 
-  // Removes the instance from sGeckoChildProcessHosts
-  void RemoveFromProcessList();
-
   // Mac and Windows. Set this up before we're called from a different thread.
   nsCOMPtr<nsIFile> mProfileDir;
 
-  mozilla::Atomic<bool> mDestroying;
-
-  static uint32_t sNextUniqueID;
-  static StaticAutoPtr<LinkedList<GeckoChildProcessHost>>
-      sGeckoChildProcessHosts MOZ_GUARDED_BY(sMutex);
-  static StaticMutex sMutex;
+  static std::atomic<uint32_t> sNextUniqueID;
 };
 
 nsCOMPtr<nsISerialEventTarget> GetIPCLauncher();

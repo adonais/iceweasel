@@ -25,7 +25,6 @@
     --button-background-color-ghost-hover: light-dark(var(--color-violet-0), color-mix(in srgb, var(--color-violet-20) 24%, transparent));
     --button-background-color-ghost-active: light-dark(var(--color-violet-10), color-mix(in srgb, var(--color-violet-0) 24%, transparent));
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       --button-icon-fill: var(--smartwindow-icon-color-accent-primary-desaturated);
     }

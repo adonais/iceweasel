@@ -5241,7 +5241,7 @@ void MacroAssemblerRiscv64::ma_mv(Register dest, Register src) {
   mv(dest, src);
 }
 
-// This method generates lui + addi instruction block that can be modified by
+// This method generates lui + addiw instruction block that can be modified by
 // patchLi32.
 BufferOffset MacroAssemblerRiscv64::ma_liPatchable(Register dest, Imm32 imm) {
   AutoForbidPoolsAndNops afp(this, 2);
@@ -5249,7 +5249,7 @@ BufferOffset MacroAssemblerRiscv64::ma_liPatchable(Register dest, Imm32 imm) {
 
   auto [high_20, low_12] = ToHigh20Low12(imm.value);
   lui(dest, high_20);
-  addi(dest, dest, low_12);
+  addiw(dest, dest, low_12);
 
   return offset;
 }
@@ -5259,7 +5259,7 @@ void MacroAssemblerRiscv64::patchLi32(CodeOffset offset, Imm32 imm) {
   Instruction* inst1 =
       getInstructionAt(BufferOffset(offset.offset() + kInstrSize));
   MOZ_ASSERT(inst0->IsLui());
-  MOZ_ASSERT(inst1->IsAddi());
+  MOZ_ASSERT(inst1->IsAddiw());
 
   auto [high_20, low_12] = ToHigh20Low12(imm.value);
 

@@ -34,6 +34,25 @@ using ::testing::MockFunction;
 using ::testing::NiceMock;
 using ::testing::Return;
 constexpr Timestamp kStartTime = Timestamp::Seconds(1000);
+
+// Records TaskQueueBase::Current() at the point where it is destroyed.
+class DestructionObserver {
+ public:
+  explicit DestructionObserver(TaskQueueBase** destroyed_on)
+      : destroyed_on_(destroyed_on) {}
+  DestructionObserver(DestructionObserver&& other)
+      : destroyed_on_(std::exchange(other.destroyed_on_, nullptr)) {}
+  DestructionObserver(const DestructionObserver&) = delete;
+  DestructionObserver& operator=(const DestructionObserver&) = delete;
+  ~DestructionObserver() {
+    if (destroyed_on_ != nullptr) {
+      *destroyed_on_ = TaskQueueBase::Current();
+    }
+  }
+
+ private:
+  TaskQueueBase** destroyed_on_;
+};
 }  // namespace
 
 TEST(SimulatedTimeControllerTest, TaskIsStoppedOnStop) {
@@ -177,6 +196,22 @@ TEST(SimulatedTimeControllerTest, CreateThreadWithSocketServer) {
   t2->PostTask([&] { task_has_run = true; });
   sim.AdvanceTime(TimeDelta::Zero());
   EXPECT_TRUE(task_has_run);
+}
+
+TEST(SimulatedTimeControllerTest, PendingTasksAreDestroyedOnTheTaskQueue) {
+  GlobalSimulatedTimeController sim(kStartTime);
+  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> task_queue =
+      sim.GetTaskQueueFactory()->CreateTaskQueue(
+          "TestQueue", TaskQueueFactory::Priority::kNormal);
+  TaskQueueBase* task_queue_ptr = task_queue.get();
+
+  TaskQueueBase* destroyed_on = nullptr;
+  task_queue->PostTask([observer = DestructionObserver(&destroyed_on)] {});
+
+  // Deletes the queue, which destroys the pending task without running it.
+  task_queue = nullptr;
+
+  EXPECT_EQ(destroyed_on, task_queue_ptr);
 }
 
 }  // namespace webrtc

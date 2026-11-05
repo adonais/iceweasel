@@ -49,6 +49,7 @@ folder_prefix:
 default_locales:
     - multi
 tasktype_map:
+    build-apk: build
     signing-apk: signing
     signing-bundle: signing
 platform_names:
@@ -113,3 +114,27 @@ mapping:
             - ${folder_prefix}${product}-${version}-android
         from:
             - signing-bundle
+    sbom.json:
+        <<: *default
+        description: "CycloneDX software bill of materials describing what the app packages"
+        pretty_name: ${product}-${version}.${locale}.android.sbom.json
+        destinations:
+            - ${folder_prefix}${product}-${version}-android
+        from:
+            - build-apk
+        only_for_platforms:
+            - fenix-nightly
+            - fenix-beta
+            - fenix-release
+    sbom-build-tooling.json:
+        <<: *default
+        description: "CycloneDX software bill of materials describing the tooling used to build and test"
+        pretty_name: ${product}-${version}.${locale}.android.sbom-build-tooling.json
+        destinations:
+            - ${folder_prefix}${product}-${version}-android
+        from:
+            - build-apk
+        only_for_platforms:
+            - fenix-nightly
+            - fenix-beta
+            - fenix-release

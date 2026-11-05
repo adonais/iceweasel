@@ -30,6 +30,7 @@ import mozilla.components.concept.sync.Profile
 import mozilla.components.feature.qr.QrFeature
 import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
 import mozilla.components.service.fxa.FxaAuthData
+import mozilla.components.service.fxa.FxaService
 import mozilla.components.service.fxa.ServerConfig
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.support.base.log.Log
@@ -99,6 +100,7 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
                         val url =
                             accountManager.beginAuthentication(
                                 pairingUrl = pairingUrl,
+                                service = FxaService.Sync.identifier,
                                 entrypoint = SampleFxAEntryPoint.HomeMenu,
                                 authScopes = scopes,
                             )
@@ -144,7 +146,11 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
     }
 
     private suspend fun beginAuthentication(): String? =
-        accountManager.beginAuthentication(entrypoint = SampleFxAEntryPoint.HomeMenu, authScopes = scopes)
+        accountManager.beginAuthentication(
+            service = FxaService.Sync.identifier,
+            entrypoint = SampleFxAEntryPoint.HomeMenu,
+            authScopes = scopes,
+        )
 
     override fun onDestroy() {
         super.onDestroy()

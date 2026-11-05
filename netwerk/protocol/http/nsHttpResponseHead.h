@@ -143,6 +143,9 @@ class nsHttpResponseHead {
   // automatically under one lock.
   [[nodiscard]] nsresult VisitHeaders(nsIHttpHeaderVisitor* visitor,
                                       nsHttpHeaderArray::VisitorFilter filter);
+  [[nodiscard]] nsresult VisitHeaders(
+      nsHttpHeaderArray::VisitorFilter aFilter,
+      nsHttpHeaderArray::VisitorCallback aCallback);
   [[nodiscard]] nsresult GetOriginalHeader(const nsHttpAtom& aHeader,
                                            nsIHttpHeaderVisitor* aVisitor);
 

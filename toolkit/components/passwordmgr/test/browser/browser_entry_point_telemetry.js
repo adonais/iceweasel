@@ -1,7 +1,7 @@
 const TEST_ORIGIN = "https://example.com";
 
 add_setup(async function () {
-  Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
 });
 
 add_task(async function mainMenu_entryPoint() {
@@ -42,14 +42,11 @@ add_task(async function mainMenu_entryPoint() {
   let passwordManager = await openPasswordManager(openingFunc);
   info("mainMenu_entryPoint, password manager dialog shown");
 
-  await LoginTestUtils.telemetry.waitForEventCount(1);
-  TelemetryTestUtils.assertEvents(
-    [["pwmgr", "open_management", "mainmenu"]],
-    {
-      category: "pwmgr",
-      method: "open_management",
-    },
-    { clear: true, process: "content" }
+  await Services.fog.testFlushAllChildren();
+  Assert.equal(
+    Glean.pwmgr.openManagementMainmenu.testGetValue().length,
+    1,
+    "One main menu event"
   );
 
   info("mainMenu_entryPoint, close dialog and main menu");
@@ -86,10 +83,11 @@ add_task(async function pageInfo_entryPoint() {
       info("pageInfo_entryPoint, waiting for the passwords manager dialog");
       let passwordManager = await openPasswordManager(openingFunc);
 
-      TelemetryTestUtils.assertEvents(
-        [["pwmgr", "open_management", "pageinfo"]],
-        { category: "pwmgr", method: "open_management" },
-        { clear: true, process: "content" }
+      await Services.fog.testFlushAllChildren();
+      Assert.equal(
+        Glean.pwmgr.openManagementPageinfo.testGetValue().length,
+        1,
+        "One pageinfo event"
       );
 
       info("pageInfo_entryPoint, close dialog and pageInfo");

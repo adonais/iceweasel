@@ -21,5 +21,6 @@
 --editable ../mozbase/mozserve
 --editable ../mozbase/mozscreenshot
 --editable ../mozbase/mozshellutil
+--editable ../mozbase/mozsystemmonitor
 --editable ../mozbase/moztest
 --editable ../mozbase/mozversion

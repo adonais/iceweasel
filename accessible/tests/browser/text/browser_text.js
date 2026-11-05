@@ -382,19 +382,20 @@ addAccessibleTask(
     testCharacterCount(i2, 6);
     testText(i2, 0, 6, "10. i2");
     info("Removing i1");
-    // XXX Bug 2054419: Removing a node from an earlier list causes extraneous
-    // text inserted events to be fired for items in later lists. In this case,
-    // that happens for i4. We need to wait for that event here as well to avoid
-    // it impacting the next test.
+    // Removing a node from an earlier list reflows the bullets of items in later
+    // lists, but their text doesn't change, so there should be no events for
+    // them.
     const i4 = findAccessibleChildByID(docAcc, "i4");
-    let changed = waitForEvents([
-      [EVENT_TEXT_INSERTED, i2],
-      [EVENT_TEXT_INSERTED, i4],
-    ]);
-    await invokeContentTask(browser, [], () => {
-      content.document.getElementById("i1").remove();
-    });
-    await changed;
+    await contentSpawnMutation(
+      browser,
+      {
+        expected: [[EVENT_TEXT_INSERTED, i2]],
+        unexpected: [[EVENT_TEXT_INSERTED, i4]],
+      },
+      () => {
+        content.document.getElementById("i1").remove();
+      }
+    );
     // This ensures the offsets cache is updated correctly.
     testCharacterCount(i2, 5);
     testText(i2, 0, 5, "9. i2");
@@ -404,7 +405,7 @@ addAccessibleTask(
     testCharacterCount(i4, 4);
     testText(i4, 0, 4, "10. ");
     info("Removing i3");
-    changed = waitForEvent(EVENT_TEXT_INSERTED, i4);
+    const changed = waitForEvent(EVENT_TEXT_INSERTED, i4);
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("i3").remove();
     });

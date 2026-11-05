@@ -1,7 +1,7 @@
 "use strict";
 
 const { WebVTT } = ChromeUtils.importESModule(
-  "resource://gre/modules/vtt.sys.mjs"
+  "moz-src:///dom/media/webvtt/vtt.sys.mjs"
 );
 
 let fakeWindow = {

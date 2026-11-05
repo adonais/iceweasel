@@ -8,7 +8,6 @@
      the group's color, the way ActionsProviderTabGroups sets them on a urlbar
      row. A group whose color is unknown, such as one that has since been
      closed, draws like a gray group. */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--tab-group-color);
   border-radius: var(--border-radius-medium);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */

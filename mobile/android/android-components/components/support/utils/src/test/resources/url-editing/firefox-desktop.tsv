@@ -1,0 +1,48 @@
+# Outputs of losslessDecodeDisplaySpec from browser/components/urlbar/content/UrlbarInputBase.mjs
+# Firefox revision 4452e9a17a29f762c5af6326f45c000dcf3117bb; evaluated with Node.js 26.8.1.
+# Input URL	Desktop output. ASCII cases omit backslash, which Android intentionally keeps encoded.
+https://example.com/%00x%01x%02x%03x%04x%05x%06x%07x%08x%09x%0ax%0bx%0cx%0dx%0ex%0fx%10x%11x%12x%13x%14x%15x%16x%17x%18x%19x%1ax%1bx%1cx%1dx%1ex%1fx%20x%21x%22x%23x%24x%25x%26x%27x%28x%29x%2ax%2bx%2cx%2dx%2ex%2fx%30x%31x%32x%33x%34x%35x%36x%37x%38x%39x%3ax%3bx%3cx%3dx%3ex%3fx%40x%41x%42x%43x%44x%45x%46x%47x%48x%49x%4ax%4bx%4cx%4dx%4ex%4fx%50x%51x%52x%53x%54x%55x%56x%57x%58x%59x%5ax%5bx%5dx%5ex%5fx%60x%61x%62x%63x%64x%65x%66x%67x%68x%69x%6ax%6bx%6cx%6dx%6ex%6fx%70x%71x%72x%73x%74x%75x%76x%77x%78x%79x%7ax%7bx%7cx%7dx%7ex%7fx	https://example.com/%00x%01x%02x%03x%04x%05x%06x%07x%08x%09x%0Ax%0Bx%0Cx%0Dx%0Ex%0Fx%10x%11x%12x%13x%14x%15x%16x%17x%18x%19x%1Ax%1Bx%1Cx%1Dx%1Ex%1Fx x!x"x%23x%24x%25x%26x'x(x)x*x%2bx%2cx-x.x%2fx0x1x2x3x4x5x6x7x8x9x%3ax%3bx<x%3dx>x%3fx%40xAxBxCxDxExFxGxHxIxJxKxLxMxNxOxPxQxRxSxTxUxVxWxXxYxZx[x]x^x_x`xaxbxcxdxexfxgxhxixjxkxlxmxnxoxpxqxrxsxtxuxvxwxxxyxzx{x|x}x~x%7Fx
+https://example.com/?q=%00x%01x%02x%03x%04x%05x%06x%07x%08x%09x%0ax%0bx%0cx%0dx%0ex%0fx%10x%11x%12x%13x%14x%15x%16x%17x%18x%19x%1ax%1bx%1cx%1dx%1ex%1fx%20x%21x%22x%23x%24x%25x%26x%27x%28x%29x%2ax%2bx%2cx%2dx%2ex%2fx%30x%31x%32x%33x%34x%35x%36x%37x%38x%39x%3ax%3bx%3cx%3dx%3ex%3fx%40x%41x%42x%43x%44x%45x%46x%47x%48x%49x%4ax%4bx%4cx%4dx%4ex%4fx%50x%51x%52x%53x%54x%55x%56x%57x%58x%59x%5ax%5bx%5dx%5ex%5fx%60x%61x%62x%63x%64x%65x%66x%67x%68x%69x%6ax%6bx%6cx%6dx%6ex%6fx%70x%71x%72x%73x%74x%75x%76x%77x%78x%79x%7ax%7bx%7cx%7dx%7ex%7fx	https://example.com/?q=%00x%01x%02x%03x%04x%05x%06x%07x%08x%09x%0Ax%0Bx%0Cx%0Dx%0Ex%0Fx%10x%11x%12x%13x%14x%15x%16x%17x%18x%19x%1Ax%1Bx%1Cx%1Dx%1Ex%1Fx x!x"x%23x%24x%25x%26x'x(x)x*x%2bx%2cx-x.x%2fx0x1x2x3x4x5x6x7x8x9x%3ax%3bx<x%3dx>x%3fx%40xAxBxCxDxExFxGxHxIxJxKxLxMxNxOxPxQxRxSxTxUxVxWxXxYxZx[x]x^x_x`xaxbxcxdxexfxgxhxixjxkxlxmxnxoxpxqxrxsxtxuxvxwxxxyxzx{x|x}x~x%7Fx
+https://example.com/#%00x%01x%02x%03x%04x%05x%06x%07x%08x%09x%0ax%0bx%0cx%0dx%0ex%0fx%10x%11x%12x%13x%14x%15x%16x%17x%18x%19x%1ax%1bx%1cx%1dx%1ex%1fx%20x%21x%22x%23x%24x%25x%26x%27x%28x%29x%2ax%2bx%2cx%2dx%2ex%2fx%30x%31x%32x%33x%34x%35x%36x%37x%38x%39x%3ax%3bx%3cx%3dx%3ex%3fx%40x%41x%42x%43x%44x%45x%46x%47x%48x%49x%4ax%4bx%4cx%4dx%4ex%4fx%50x%51x%52x%53x%54x%55x%56x%57x%58x%59x%5ax%5bx%5dx%5ex%5fx%60x%61x%62x%63x%64x%65x%66x%67x%68x%69x%6ax%6bx%6cx%6dx%6ex%6fx%70x%71x%72x%73x%74x%75x%76x%77x%78x%79x%7ax%7bx%7cx%7dx%7ex%7fx	https://example.com/#%00x%01x%02x%03x%04x%05x%06x%07x%08x%09x%0Ax%0Bx%0Cx%0Dx%0Ex%0Fx%10x%11x%12x%13x%14x%15x%16x%17x%18x%19x%1Ax%1Bx%1Cx%1Dx%1Ex%1Fx x!x"x%23x%24x%25x%26x'x(x)x*x%2bx%2cx-x.x%2fx0x1x2x3x4x5x6x7x8x9x%3ax%3bx<x%3dx>x%3fx%40xAxBxCxDxExFxGxHxIxJxKxLxMxNxOxPxQxRxSxTxUxVxWxXxYxZx[x]x^x_x`xaxbxcxdxexfxgxhxixjxkxlxmxnxoxpxqxrxsxtxuxvxwxxxyxzx{x|x}x~x%7Fx
+https://example.com/a%20	https://example.com/a%20
+https://example.com/a%20%20%20b	https://example.com/a%20%20 b
+https://example.com/a%20%20%20	https://example.com/a%20%20%20
+https://example.com/a%20%C2%A0b	https://example.com/a%20%C2%A0b
+https://example.com/a%20%E2%80%8Db	https://example.com/a%20‍b
+https://example.com/a%21b%2Ec	https://example.com/a!b.c
+https://example.com/%252F/%41	https://example.com/%252F/%41
+https://example.com/%2520/%41	https://example.com/%2520/A
+https://example.com/%25%41	https://example.com/%25A
+https://example.com/%41?q=%FF	https://example.com/%41?q=%FF
+https://example.com/%41?q=%C0%AF	https://example.com/%41?q=%C0%AF
+https://example.com/%41?q=%ED%A0%80	https://example.com/%41?q=%ED%A0%80
+https://example.com/%41?q=%E2%82	https://example.com/%41?q=%E2%82
+https://example.com/%41?q=%F4%90%80%80	https://example.com/%41?q=%F4%90%80%80
+https://example.com/%41?q=%GG	https://example.com/%41?q=%GG
+https://example.com/%41?q=%2	https://example.com/%41?q=%2
+https://example.com/%41?q=%	https://example.com/%41?q=%
+https://example.com/caf%C3%A9/%CE%B1/%F0%9F%98%80	https://example.com/café/α/😀
+https://example.com/a%2fb?q=a%26b%3dc&x=&x=2	https://example.com/a%2fb?q=a%26b%3dc&x=&x=2
+https://example.com/a%D8%9Cb	https://example.com/a%D8%9Cb
+https://example.com/a%E2%80%8Eb	https://example.com/a%E2%80%8Eb
+https://example.com/a%E2%80%AEb	https://example.com/a%E2%80%AEb
+https://example.com/a%E2%81%A6b	https://example.com/a%E2%81%A6b
+https://example.com/a%E2%80%8Bb	https://example.com/a%E2%80%8Bb
+https://example.com/a%E2%80%8Cb	https://example.com/a‌b
+https://example.com/a%E2%80%8Db	https://example.com/a‍b
+https://example.com/a%EF%B8%8Fb	https://example.com/a%EF%B8%8Fb
+https://example.com/a%F3%A0%84%80b	https://example.com/a%F3%A0%84%80b
+https://example.com/a%C2%A0b	https://example.com/a%C2%A0b
+https://example.com/a%E2%A0%80b	https://example.com/a%E2%A0%80b
+https://example.com/a%EF%BF%BCb	https://example.com/a%EF%BF%BCb
+https://example.com/a%F0%9F%94%8Fb	https://example.com/a%F0%9F%94%8Fb
+https://example.com/a%F0%9F%94%90b	https://example.com/a%F0%9F%94%90b
+https://example.com/a%F0%9F%94%91b	https://example.com/a%F0%9F%94%91b
+https://example.com/a%F0%9F%94%92b	https://example.com/a%F0%9F%94%92b
+https://example.com/a%F0%9F%94%93b	https://example.com/a%F0%9F%94%93b
+https://example.com/a%F0%9F%9B%A1b	https://example.com/a%F0%9F%9B%A1b
+https://example.com/a%F0%93%90%B0b	https://example.com/a%F0%93%90%B0b
+https://example.com/a%CD%B8b	https://example.com/a%CD%B8b
+https://example.com/a%EE%80%80b	https://example.com/a%EE%80%80b
+https://example.com/a%F3%B0%80%80b	https://example.com/a%F3%B0%80%80b
+https://example.com/a%F4%8F%BF%BDb	https://example.com/a%F4%8F%BF%BDb

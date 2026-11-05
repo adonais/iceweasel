@@ -198,6 +198,20 @@ extern "C" {
 #define HAS_SCALEARGBFILTERCOLS_RVV
 #endif
 
+// The following are available for WebAssembly SIMD128:
+#if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
+#define HAS_SCALEARGBCOLS_WASMSIMD
+#define HAS_SCALEARGBCOLSUP2_WASMSIMD
+#define HAS_SCALEARGBFILTERCOLS_WASMSIMD
+#define HAS_SCALEARGBROWDOWN2_WASMSIMD
+#define HAS_SCALEARGBROWDOWNEVEN_WASMSIMD
+#define HAS_SCALEFILTERCOLS_WASMSIMD
+#define HAS_SCALEROWDOWN2_WASMSIMD
+#define HAS_SCALEROWDOWN34_WASMSIMD
+#define HAS_SCALEROWDOWN38_WASMSIMD
+#define HAS_SCALEROWDOWN4_WASMSIMD
+#endif
+
 // Scale ARGB vertically with bilinear interpolation.
 void ScalePlaneVertical(int src_height,
                         int dst_width,
@@ -1696,6 +1710,179 @@ void ScaleRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
                               uint8_t* dst_ptr,
                               ptrdiff_t dst_stride,
                               int dst_width);
+
+void ScaleRowDown2_WASMSIMD(const uint8_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst_ptr,
+                            int dst_width);
+void ScaleRowDown2Linear_WASMSIMD(const uint8_t* src_ptr,
+                                  ptrdiff_t src_stride,
+                                  uint8_t* dst_ptr,
+                                  int dst_width);
+void ScaleRowDown2Box_WASMSIMD(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               int dst_width);
+void ScaleRowDown4_WASMSIMD(const uint8_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst_ptr,
+                            int dst_width);
+void ScaleRowDown4Box_WASMSIMD(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               int dst_width);
+void ScaleRowDown34_WASMSIMD(const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint8_t* dst_ptr,
+                             int dst_width);
+void ScaleRowDown34_0_Box_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleRowDown34_1_Box_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleRowDown38_WASMSIMD(const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint8_t* dst_ptr,
+                             int dst_width);
+void ScaleRowDown38_3_Box_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleRowDown38_2_Box_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleRowDown2_Any_WASMSIMD(const uint8_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                int dst_width);
+void ScaleRowDown2Linear_Any_WASMSIMD(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      int dst_width);
+void ScaleRowDown2Box_Any_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleRowDown2Box_Odd_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleRowDown4_Any_WASMSIMD(const uint8_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                int dst_width);
+void ScaleRowDown4Box_Any_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleRowDown34_Any_WASMSIMD(const uint8_t* src_ptr,
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst_ptr,
+                                 int dst_width);
+void ScaleRowDown34_0_Box_Any_WASMSIMD(const uint8_t* src_ptr,
+                                       ptrdiff_t src_stride,
+                                       uint8_t* dst_ptr,
+                                       int dst_width);
+void ScaleRowDown34_1_Box_Any_WASMSIMD(const uint8_t* src_ptr,
+                                       ptrdiff_t src_stride,
+                                       uint8_t* dst_ptr,
+                                       int dst_width);
+void ScaleRowDown38_Any_WASMSIMD(const uint8_t* src_ptr,
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst_ptr,
+                                 int dst_width);
+void ScaleRowDown38_3_Box_Any_WASMSIMD(const uint8_t* src_ptr,
+                                       ptrdiff_t src_stride,
+                                       uint8_t* dst_ptr,
+                                       int dst_width);
+void ScaleRowDown38_2_Box_Any_WASMSIMD(const uint8_t* src_ptr,
+                                       ptrdiff_t src_stride,
+                                       uint8_t* dst_ptr,
+                                       int dst_width);
+void ScaleFilterCols_WASMSIMD(uint8_t* dst_ptr,
+                              const uint8_t* src_ptr,
+                              int dst_width,
+                              int x,
+                              int dx);
+void ScaleFilterCols_Any_WASMSIMD(uint8_t* dst_ptr,
+                                  const uint8_t* src_ptr,
+                                  int dst_width,
+                                  int x,
+                                  int dx);
+void ScaleARGBRowDown2_WASMSIMD(const uint8_t* src_argb,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_argb,
+                                int dst_width);
+void ScaleARGBRowDown2Linear_WASMSIMD(const uint8_t* src_argb,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_argb,
+                                      int dst_width);
+void ScaleARGBRowDown2Box_WASMSIMD(const uint8_t* src_argb,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_argb,
+                                   int dst_width);
+void ScaleARGBRowDown2_Any_WASMSIMD(const uint8_t* src_ptr,
+                                    ptrdiff_t src_stride,
+                                    uint8_t* dst_ptr,
+                                    int dst_width);
+void ScaleARGBRowDown2Linear_Any_WASMSIMD(const uint8_t* src_ptr,
+                                          ptrdiff_t src_stride,
+                                          uint8_t* dst_ptr,
+                                          int dst_width);
+void ScaleARGBRowDown2Box_Any_WASMSIMD(const uint8_t* src_ptr,
+                                       ptrdiff_t src_stride,
+                                       uint8_t* dst_ptr,
+                                       int dst_width);
+void ScaleARGBRowDownEven_WASMSIMD(const uint8_t* src_argb,
+                                   ptrdiff_t src_stride,
+                                   int src_stepx,
+                                   uint8_t* dst_argb,
+                                   int dst_width);
+void ScaleARGBRowDownEvenBox_WASMSIMD(const uint8_t* src_argb,
+                                      ptrdiff_t src_stride,
+                                      int src_stepx,
+                                      uint8_t* dst_argb,
+                                      int dst_width);
+void ScaleARGBRowDownEven_Any_WASMSIMD(const uint8_t* src_ptr,
+                                       ptrdiff_t src_stride,
+                                       int src_stepx,
+                                       uint8_t* dst_ptr,
+                                       int dst_width);
+void ScaleARGBRowDownEvenBox_Any_WASMSIMD(const uint8_t* src_ptr,
+                                          ptrdiff_t src_stride,
+                                          int src_stepx,
+                                          uint8_t* dst_ptr,
+                                          int dst_width);
+void ScaleARGBCols_WASMSIMD(uint8_t* dst_argb,
+                            const uint8_t* src_argb,
+                            int dst_width,
+                            int x,
+                            int dx);
+void ScaleARGBCols_Any_WASMSIMD(uint8_t* dst_ptr,
+                                const uint8_t* src_ptr,
+                                int dst_width,
+                                int x,
+                                int dx);
+void ScaleARGBFilterCols_WASMSIMD(uint8_t* dst_argb,
+                                  const uint8_t* src_argb,
+                                  int dst_width,
+                                  int x,
+                                  int dx);
+void ScaleARGBFilterCols_Any_WASMSIMD(uint8_t* dst_ptr,
+                                      const uint8_t* src_ptr,
+                                      int dst_width,
+                                      int x,
+                                      int dx);
+void ScaleARGBColsUp2_WASMSIMD(uint8_t* dst_argb,
+                               const uint8_t* src_argb,
+                               int dst_width,
+                               int x,
+                               int dx);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

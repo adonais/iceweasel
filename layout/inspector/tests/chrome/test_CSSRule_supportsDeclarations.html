@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=2081765
+-->
+<title>Test for CSSRule::supportsDeclarations</title>
+<script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css" />
+
+<style id=s>
+  html {
+    @media screen {
+      container-name: main;
+    }
+
+    @scope (body) {
+      color: red;
+    }
+  }
+
+  @keyframes k {
+    to {
+      color: hotpink;
+    }
+  }
+
+  @media (screen) {}
+
+  @page {}
+
+  @position-try --pt {}
+</style>
+<script>
+  add_task(async () => {
+    const [
+      cssRule,
+      keyframesRule,
+      mediaRule,
+      pageRule,
+      positionTryRule,
+    ] = s.sheet.cssRules;
+    const [nestedMediaRule, nestedScopeRule] = cssRule.cssRules;
+    const [cssNestedDeclarations] = nestedMediaRule.cssRules;
+    const [keyframeRule] = keyframesRule.cssRules;
+
+    const cases = [{
+      rule: cssRule,
+      className: "CSSStyleRule",
+      supportsDeclarations: true,
+    }, {
+      rule: nestedMediaRule,
+      className: "CSSMediaRule",
+      supportsDeclarations: false,
+    }, {
+      rule: nestedScopeRule,
+      className: "CSSScopeRule",
+      supportsDeclarations: true,
+    }, {
+      rule: cssNestedDeclarations,
+      className: "CSSNestedDeclarations",
+      supportsDeclarations: true,
+    }, {
+      rule: keyframesRule,
+      className: "CSSKeyframesRule",
+      supportsDeclarations: false,
+    }, {
+      rule: keyframeRule,
+      className: "CSSKeyframeRule",
+      supportsDeclarations: true,
+    }, {
+      rule: mediaRule,
+      className: "CSSMediaRule",
+      supportsDeclarations: false,
+    }, {
+      rule: pageRule,
+      className: "CSSPageRule",
+      supportsDeclarations: true,
+    }, {
+      rule: positionTryRule,
+      className: "CSSPositionTryRule",
+      supportsDeclarations: true,
+    }];
+
+    for (const { rule, className, supportsDeclarations } of cases) {
+      const cls = SpecialPowers.ChromeUtils.getClassName(rule);
+      is(cls, className, `Got expected rule`);
+      // Don't run actual check if we have a different class than the expected one.
+      if (cls !== className) {
+        continue;
+      }
+
+      is(
+        rule.supportsDeclarations(),
+        supportsDeclarations,
+        `supportsDeclarations returned expected value for ${cls} rule`
+      );
+    }
+  });
+</script>

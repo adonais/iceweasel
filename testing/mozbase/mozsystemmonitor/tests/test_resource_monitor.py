@@ -3,10 +3,15 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import multiprocessing
+import os
+import subprocess
+import sys
 import time
 import unittest
+from unittest import mock
 
 import mozunit
+import pytest
 
 try:
     import psutil
@@ -17,6 +22,7 @@ from mozsystemmonitor.resourcemonitor import (
     SystemResourceMonitor,
     SystemResourceUsage,
     _parse_hg_source_url,
+    _process_sampling_interval,
 )
 
 UBSAN_FILE = "/builds/worker/checkouts/gecko/third_party/llama.cpp/ggml/src/ggml-c.c"
@@ -1455,6 +1461,62 @@ class TestLsanLeakFrameRewrite(unittest.TestCase):
         self.assertEqual(len(leaks), 1)
         _, _, data = leaks[0]
         self.assertNotIn("stack", data)
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        (None, None),
+        ("", None),
+        ("0", None),
+        ("2.5", 2.5),
+        ("yes", 0.1),
+    ],
+)
+def test_process_sampling_interval(value, expected):
+    env = {} if value is None else {"MOZ_PROCESS_SAMPLING": value}
+    with mock.patch.dict(os.environ, env):
+        if value is None:
+            os.environ.pop("MOZ_PROCESS_SAMPLING", None)
+        assert _process_sampling_interval(0.1) == expected
+
+
+@pytest.mark.skipif(psutil is None, reason="Resource monitor requires psutil.")
+def test_process_sampling_with_interval():
+    with mock.patch.dict(os.environ, {"MOZ_PROCESS_SAMPLING": "0.5"}):
+        monitor = SystemResourceMonitor(poll_interval=0.1)
+        monitor.start()
+        subprocess.run([sys.executable, "-c", "import time; time.sleep(2)"], check=True)
+        time.sleep(0.6)
+        monitor.stop()
+    cmds = [cmd for pid, start, end, cmd, ppid in monitor.processes]
+    assert any("time.sleep(2)" in cmd for cmd in cmds), cmds
+
+
+@pytest.mark.skipif(psutil is None, reason="Resource monitor requires psutil.")
+def test_process_sampling_still_running():
+    sleep = [sys.executable, "-c", "import time; time.sleep(60)"]
+    before = subprocess.Popen(sleep + ["before"])
+    try:
+        with mock.patch.dict(os.environ, {"MOZ_PROCESS_SAMPLING": "0.1"}):
+            monitor = SystemResourceMonitor(poll_interval=0.1)
+            monitor.start()
+            # Let the monitor take its first sample, which is what it
+            # considers to be running before it started.
+            time.sleep(0.5)
+            during = subprocess.Popen(sleep + ["during"])
+            try:
+                time.sleep(1)
+                monitor.stop()
+            finally:
+                during.kill()
+                during.wait()
+    finally:
+        before.kill()
+        before.wait()
+    cmds = [cmd for pid, start, end, cmd, ppid in monitor.processes]
+    assert any(cmd.endswith(" during") for cmd in cmds), cmds
+    assert not any(cmd.endswith(" before") for cmd in cmds), cmds
 
 
 if __name__ == "__main__":

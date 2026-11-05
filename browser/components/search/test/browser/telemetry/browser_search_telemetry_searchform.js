@@ -154,9 +154,9 @@ add_task(async function test_appProvided() {
       'panel-item[data-engine-name="Second Engine"]'
     );
     let popupHidden = testUtils.searchModeSwitcherPopupClosed(window);
+    let loaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
     EventUtils.synthesizeMouseAtCenter(item, { shiftKey: true });
-    await popupHidden;
-    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    await Promise.all([popupHidden, loaded]);
 
     let events = Glean.sap.searchFormCounts.testGetValue();
     Assert.equal(events.length, 1, "Event was recorded");
@@ -178,9 +178,9 @@ add_task(async function test_extension() {
       `panel-item[data-engine-name="${TEST_ENGINE_NAME}"]`
     );
     let popupHidden = testUtils.searchModeSwitcherPopupClosed(window);
+    let loaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
     EventUtils.synthesizeMouseAtCenter(item, { shiftKey: true });
-    await popupHidden;
-    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    await Promise.all([popupHidden, loaded]);
 
     let events = Glean.sap.searchFormCounts.testGetValue();
     Assert.equal(events.length, 1, "Event was recorded");
@@ -206,15 +206,18 @@ add_task(async function test_actualSearch() {
       'panel-item[data-engine-name="Second Engine"]'
     );
     let popupHidden = testUtils.searchModeSwitcherPopupClosed(window);
+    let loaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
     EventUtils.synthesizeMouseAtCenter(item, { shiftKey: true });
-    await popupHidden;
-    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    await Promise.all([popupHidden, loaded]);
 
     let events = Glean.sap.searchFormCounts.testGetValue();
     // Since we used the unified search button to search (not to open the search
     // form), no event should be recorded in `sap.searchFormCounts`.
     Assert.equal(events, null, "No search form event was recorded");
 
+    if (sap == "searchbar") {
+      document.getElementById("searchbar-new").handleRevert();
+    }
     resetTelemetry();
     BrowserTestUtils.removeTab(tab);
   }

@@ -584,7 +584,11 @@ nsresult TRRServiceChannel::Connect() {
     return rv;
   }
 
-  return mTransaction->AsyncRead(this, getter_AddRefs(mTransactionPump));
+  rv = mTransaction->AsyncRead(this, getter_AddRefs(mTransactionPump));
+  if (NS_FAILED(rv)) {
+    (void)gHttpHandler->CancelTransaction(mTransaction, rv);
+  }
+  return rv;
 }
 
 nsresult TRRServiceChannel::SetupTransaction() {

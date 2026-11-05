@@ -2,10 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import React from "react";
-import { render, fireEvent } from "@testing-library/react";
+import React, { useContext } from "react";
+import { render, fireEvent, waitFor } from "@testing-library/react";
 import { actionTypes as at } from "common/Actions.mjs";
 import { Spaces } from "content-src/components/Spaces/Spaces";
+import { SpaceActiveContext } from "content-src/lib/SpaceActiveContext";
 
 const SPACES = [
   { id: "stories", content: <div data-testid="stories-content" /> },
@@ -24,6 +25,16 @@ function switchData(dispatch) {
   const [action] = dispatch.mock.calls.at(-1);
   expect(action.type).toBe(at.SPACES_USER_EVENT);
   return action.data;
+}
+
+// A story card in a section grid laid out at one column, where CardSections
+// sizes it with col-1-<size>.
+function SectionCard({ className = "ds-card col-1-medium", ...props }) {
+  return (
+    <div className="ds-section-grid" style={{ "--sections-col-count": "1" }}>
+      <article className={className} {...props} />
+    </div>
+  );
 }
 
 describe("Spaces", () => {
@@ -52,6 +63,31 @@ describe("Spaces", () => {
     expect(panels[0].hasAttribute("inert")).toBe(false);
     expect(panels[1].getAttribute("aria-hidden")).toBe("true");
     expect(panels[1].hasAttribute("inert")).toBe(true);
+  });
+
+  it("tells only the active space's content that it is active", () => {
+    function ActiveFlag({ id }) {
+      return (
+        <div data-testid={id} data-active={useContext(SpaceActiveContext)} />
+      );
+    }
+    const { container, getByTestId } = setup([
+      { id: "stories", content: <ActiveFlag id="stories-flag" /> },
+      { id: "widgets", content: <ActiveFlag id="widgets-flag" /> },
+    ]);
+    expect(getByTestId("stories-flag").dataset.active).toBe("true");
+    expect(getByTestId("widgets-flag").dataset.active).toBe("false");
+
+    fireEvent.click(container.querySelector("#spaces-tab-widgets"));
+
+    expect(getByTestId("stories-flag").dataset.active).toBe("false");
+    expect(getByTestId("widgets-flag").dataset.active).toBe("true");
+  });
+
+  it("does not peek outside the peek variant", () => {
+    const { container } = setup();
+    expect(container.querySelector(".spaces-peek-box")).toBeNull();
+    expect(container.querySelector(".space.peeking")).toBeNull();
   });
 
   it("offsets each space from the active one, so only one is in view", () => {
@@ -255,6 +291,48 @@ describe("Spaces with arrows", () => {
     expect(switchData(dispatch).space).toBe("stories");
   });
 
+  it("shows the tablist too when asked, and keeps the panels labelled", () => {
+    const { container } = render(
+      <Spaces
+        spaces={SPACES}
+        defaultId="widgets"
+        arrows={true}
+        tablist={true}
+        dispatch={jest.fn()}
+      />
+    );
+    expect(container.querySelectorAll(".spaces-arrow-rail")).toHaveLength(2);
+    expect(container.querySelectorAll('[role="tab"]')).toHaveLength(3);
+    const panel = container.querySelector("#spaces-panel-widgets");
+    expect(panel.getAttribute("role")).toBe("tabpanel");
+    expect(panel.getAttribute("aria-labelledby")).toBe("spaces-tab-widgets");
+  });
+
+  it("keeps the arrows and the tab selection in step", () => {
+    const { container, getByRole } = render(
+      <Spaces
+        spaces={SPACES}
+        arrows={true}
+        tablist={true}
+        dispatch={jest.fn()}
+      />
+    );
+    fireEvent.click(
+      container.querySelector(".spaces-arrow-rail.next moz-button")
+    );
+    expect(
+      container
+        .querySelector("#spaces-tab-widgets")
+        .getAttribute("aria-selected")
+    ).toBe("true");
+    fireEvent.click(container.querySelector("#spaces-tab-activity"));
+    expect(
+      container.querySelector(".spaces-arrow-rail.prev moz-button").dataset
+        .l10nId
+    ).toBe("newtab-spaces-tab-widgets");
+    expect(getByRole("tablist")).toBeTruthy();
+  });
+
   it("records an arrow switch", () => {
     const { arrow, dispatch } = setupArrows();
     fireEvent.click(arrow("next"));
@@ -263,5 +341,412 @@ describe("Spaces with arrows", () => {
       previous_space: "stories",
       method: "arrow",
     });
+  });
+});
+
+describe("Spaces with preview", () => {
+  const PREVIEW_SPACES = [
+    {
+      id: "stories",
+      content: <article className="ds-card" data-testid="first-story" />,
+    },
+    {
+      id: "widgets",
+      content: (
+        <div className="widgets-container">
+          <div data-testid="first-widget" />
+        </div>
+      ),
+    },
+    { id: "activity", content: <div /> },
+  ];
+
+  function setupPreview({ spaces = PREVIEW_SPACES } = {}) {
+    const dispatch = jest.fn();
+    document.mozSetImageElement = jest.fn();
+    const utils = render(
+      <Spaces spaces={spaces} preview={true} dispatch={dispatch} />
+    );
+    const tab = id => utils.container.querySelector(`#spaces-tab-${id}`);
+    const previewBox = () => utils.container.querySelector(".spaces-preview");
+    return { dispatch, tab, previewBox, ...utils };
+  }
+
+  afterEach(() => {
+    delete document.mozSetImageElement;
+  });
+
+  it("previews the next space before the tablist is used", () => {
+    const { previewBox, getByTestId } = setupPreview();
+    expect(previewBox().getAttribute("aria-hidden")).toBe("true");
+    expect(previewBox().style.getPropertyValue("--spaces-preview-anchor")).toBe(
+      "--spaces-tab-widgets"
+    );
+    expect(document.mozSetImageElement).toHaveBeenLastCalledWith(
+      "spaces-preview-item",
+      getByTestId("first-widget")
+    );
+  });
+
+  it("previews the hovered tab, and nothing once the pointer leaves", () => {
+    const { container, tab, previewBox } = setupPreview({
+      spaces: PREVIEW_SPACES.map(space =>
+        space.id === "activity"
+          ? { ...space, content: <li className="card-outer" /> }
+          : space
+      ),
+    });
+    fireEvent.pointerEnter(tab("activity"));
+    expect(previewBox().style.getPropertyValue("--spaces-preview-anchor")).toBe(
+      "--spaces-tab-activity"
+    );
+
+    fireEvent.pointerLeave(container.querySelector('[role="tablist"]'));
+    expect(previewBox()).toBeNull();
+  });
+
+  it("previews nothing for a space with no first item", () => {
+    const { tab, previewBox } = setupPreview();
+    fireEvent.pointerEnter(tab("activity"));
+    expect(previewBox()).toBeNull();
+  });
+
+  it("prefers the space's own preview image to its first item", () => {
+    const src = "chrome://newtab/content/data/content/assets/widgets.png";
+    const { container } = setupPreview({
+      spaces: PREVIEW_SPACES.map(space =>
+        space.id === "widgets" ? { ...space, previewImage: src } : space
+      ),
+    });
+    expect(
+      container.querySelector(".spaces-preview-image").getAttribute("srcset")
+    ).toBe(`${src} 2x`);
+    expect(document.mozSetImageElement).not.toHaveBeenCalled();
+  });
+
+  it("previews nothing for the active tab", () => {
+    const { tab, previewBox } = setupPreview();
+    fireEvent.pointerEnter(tab("stories"));
+    expect(previewBox()).toBeNull();
+  });
+
+  it("stops the default preview after a switch", () => {
+    const { container, tab, previewBox } = setupPreview();
+    fireEvent.click(tab("widgets"));
+    fireEvent.pointerLeave(container.querySelector('[role="tablist"]'));
+    expect(previewBox()).toBeNull();
+  });
+
+  it("holds back a first-item preview until the space is ready", () => {
+    document.mozSetImageElement = jest.fn();
+    const widget = (
+      <div className="widgets-container">
+        <div data-testid="widget" />
+      </div>
+    );
+    const spacesWith = (ready, homeContent) => [
+      { id: "games", label: "Games", content: <div /> },
+      { id: "home", label: "Home", content: homeContent, ready },
+    ];
+    const { container, rerender, getByTestId } = render(
+      <Spaces
+        spaces={spacesWith(false, widget)}
+        preview={true}
+        dispatch={jest.fn()}
+      />
+    );
+    expect(container.querySelector(".spaces-preview")).toBeNull();
+    expect(document.mozSetImageElement).not.toHaveBeenCalled();
+
+    rerender(
+      <Spaces
+        spaces={spacesWith(
+          true,
+          <>
+            <SectionCard data-testid="story" />
+            {widget}
+          </>
+        )}
+        preview={true}
+        dispatch={jest.fn()}
+      />
+    );
+    expect(document.mozSetImageElement).toHaveBeenLastCalledWith(
+      "spaces-preview-item",
+      getByTestId("story")
+    );
+  });
+
+  it("waits for a placeholder story rather than skipping to a widget", async () => {
+    document.mozSetImageElement = jest.fn();
+    const content = storyClass => (
+      <>
+        <SectionCard className={storyClass} data-testid="story" />
+        <div className="widgets-container">
+          <div data-testid="widget" />
+        </div>
+      </>
+    );
+    const spacesWith = storyClass => [
+      { id: "games", label: "Games", content: <div /> },
+      { id: "living", label: "Living", content: content(storyClass) },
+    ];
+    const { container, rerender, getByTestId } = render(
+      <Spaces
+        spaces={spacesWith("ds-card placeholder")}
+        preview={true}
+        dispatch={jest.fn()}
+      />
+    );
+    expect(container.querySelector(".spaces-preview")).toBeNull();
+    expect(document.mozSetImageElement).not.toHaveBeenCalled();
+
+    rerender(
+      <Spaces
+        spaces={spacesWith("ds-card col-1-medium")}
+        preview={true}
+        dispatch={jest.fn()}
+      />
+    );
+    await waitFor(() =>
+      expect(document.mozSetImageElement).toHaveBeenLastCalledWith(
+        "spaces-preview-item",
+        getByTestId("story")
+      )
+    );
+    expect(document.mozSetImageElement).toHaveBeenCalledTimes(1);
+  });
+
+  it("previews the first card that is medium at the current column count", () => {
+    document.mozSetImageElement = jest.fn();
+    const { getByTestId } = render(
+      <Spaces
+        spaces={[
+          { id: "games", label: "Games", content: <div /> },
+          {
+            id: "living",
+            label: "Living",
+            content: (
+              <>
+                <SectionCard
+                  className="ds-card col-1-large col-4-medium"
+                  data-testid="large"
+                />
+                <SectionCard
+                  className="ds-card col-1-medium col-4-large"
+                  data-testid="medium"
+                />
+              </>
+            ),
+          },
+        ]}
+        preview={true}
+        dispatch={jest.fn()}
+      />
+    );
+    expect(document.mozSetImageElement).toHaveBeenLastCalledWith(
+      "spaces-preview-item",
+      getByTestId("medium")
+    );
+  });
+
+  it("skips a sponsored card for the next medium story", () => {
+    document.mozSetImageElement = jest.fn();
+    const { getByTestId } = render(
+      <Spaces
+        spaces={[
+          { id: "games", label: "Games", content: <div /> },
+          {
+            id: "living",
+            label: "Living",
+            content: (
+              <>
+                <SectionCard className="ds-card col-1-medium ds-spoc" />
+                <SectionCard data-testid="organic" />
+              </>
+            ),
+          },
+        ]}
+        preview={true}
+        dispatch={jest.fn()}
+      />
+    );
+    expect(document.mozSetImageElement).toHaveBeenLastCalledWith(
+      "spaces-preview-item",
+      getByTestId("organic")
+    );
+  });
+
+  it("falls back to the first widget when no story card is medium", () => {
+    document.mozSetImageElement = jest.fn();
+    const { getByTestId } = render(
+      <Spaces
+        spaces={[
+          { id: "games", label: "Games", content: <div /> },
+          {
+            id: "living",
+            label: "Living",
+            content: (
+              <>
+                <SectionCard className="ds-card col-1-large" />
+                <div className="widgets-container">
+                  <div data-testid="widget" />
+                </div>
+              </>
+            ),
+          },
+        ]}
+        preview={true}
+        dispatch={jest.fn()}
+      />
+    );
+    expect(document.mozSetImageElement).toHaveBeenLastCalledWith(
+      "spaces-preview-item",
+      getByTestId("widget")
+    );
+  });
+
+  it("shows a configured preview image before the space is ready", () => {
+    const src = "chrome://newtab/content/data/content/assets/home.png";
+    const { container } = render(
+      <Spaces
+        spaces={[
+          { id: "games", label: "Games", content: <div /> },
+          {
+            id: "home",
+            label: "Home",
+            content: <div />,
+            ready: false,
+            previewImage: src,
+          },
+        ]}
+        preview={true}
+        dispatch={jest.fn()}
+      />
+    );
+    expect(
+      container.querySelector(".spaces-preview-image").getAttribute("srcset")
+    ).toBe(`${src} 2x`);
+  });
+
+  it("loads the previewed item's lazy images", () => {
+    document.mozSetImageElement = jest.fn();
+    const { getByTestId } = render(
+      <Spaces
+        spaces={[
+          { id: "stories", content: <div /> },
+          {
+            id: "games",
+            label: "Games",
+            content: (
+              <SectionCard>
+                <img loading="lazy" data-testid="story-image" alt="" />
+              </SectionCard>
+            ),
+          },
+        ]}
+        preview={true}
+        dispatch={jest.fn()}
+      />
+    );
+    expect(getByTestId("story-image").getAttribute("loading")).toBe("eager");
+  });
+
+  it("records a preview_tab switch", () => {
+    const { tab, dispatch } = setupPreview();
+    fireEvent.click(tab("widgets"));
+    expect(switchData(dispatch)).toEqual({
+      space: "widgets",
+      previous_space: "stories",
+      method: "preview_tab",
+    });
+  });
+});
+
+describe("Spaces with peek", () => {
+  // Opens on the middle space, which has a neighbour on each side.
+  function setupPeek() {
+    const dispatch = jest.fn();
+    const utils = render(
+      <Spaces
+        spaces={SPACES}
+        defaultId="widgets"
+        peek={true}
+        dispatch={dispatch}
+      />
+    );
+    const peekBox = side =>
+      utils.container.querySelector(`.spaces-peek-box.${side}`);
+    const peekSides = () =>
+      [...utils.container.querySelectorAll(".spaces-peek-box")].map(el =>
+        el.classList.contains("prev") ? "prev" : "next"
+      );
+    const peeking = side =>
+      [...utils.container.querySelectorAll(`.space.peeking-${side}`)].map(
+        el => el.id
+      );
+    const tab = id => utils.container.querySelector(`#spaces-tab-${id}`);
+    const hoverClass = () =>
+      [...utils.container.querySelector(".spaces-container").classList].find(
+        name => name.startsWith("peek-hover")
+      );
+    return {
+      dispatch,
+      peekBox,
+      peekSides,
+      peeking,
+      tab,
+      hoverClass,
+      ...utils,
+    };
+  }
+
+  it("peeks at each neighbour, on the side it sits", () => {
+    const { peekSides, peeking, tab } = setupPeek();
+    expect(peekSides()).toEqual(["prev", "next"]);
+    expect(peeking("prev")).toEqual(["spaces-panel-stories"]);
+    expect(peeking("next")).toEqual(["spaces-panel-activity"]);
+
+    fireEvent.click(tab("stories"));
+    expect(peekSides()).toEqual(["next"]);
+    expect(peeking("next")).toEqual(["spaces-panel-widgets"]);
+
+    fireEvent.click(tab("activity"));
+    expect(peekSides()).toEqual(["prev"]);
+    expect(peeking("prev")).toEqual(["spaces-panel-widgets"]);
+  });
+
+  it("records a peek switch", () => {
+    const { dispatch, peekBox } = setupPeek();
+    fireEvent.click(peekBox("prev"));
+    expect(switchData(dispatch)).toEqual({
+      space: "stories",
+      previous_space: "widgets",
+      method: "peek",
+    });
+  });
+
+  it("slides a peek in while it or its tab is hovered", () => {
+    const { peekBox, tab, hoverClass } = setupPeek();
+
+    fireEvent.mouseEnter(peekBox("prev"));
+    expect(hoverClass()).toBe("peek-hover-prev");
+    fireEvent.mouseLeave(peekBox("prev"));
+    expect(hoverClass()).toBeUndefined();
+
+    fireEvent.mouseEnter(tab("activity"));
+    expect(hoverClass()).toBe("peek-hover-next");
+    fireEvent.mouseLeave(tab("activity"));
+
+    // The active space's tab has no peek to slide.
+    fireEvent.mouseEnter(tab("widgets"));
+    expect(hoverClass()).toBeUndefined();
+  });
+
+  it("clears the hover slide effect after a switch", () => {
+    const { peekBox, hoverClass } = setupPeek();
+    fireEvent.mouseEnter(peekBox("next"));
+    fireEvent.click(peekBox("next"));
+    expect(hoverClass()).toBeUndefined();
   });
 });

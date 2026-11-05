@@ -1,0 +1,69 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+.travel {
+  @include widget-base-style;
+
+  &.medium-widget {
+    grid-row: span 2;
+  }
+
+  &.large-widget {
+    grid-row: span 4;
+  }
+}
+
+.travel-title-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-end: var(--space-xsmall);
+}
+
+.travel-badge-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-inline-size: 0;
+}
+
+.travel-new-badge {
+  flex: none;
+  background-color: var(--badge-background-color-filled);
+  border-radius: var(--badge-border-radius);
+  text-transform: uppercase;
+
+  --badge-padding-block: 1px;
+  --badge-padding-inline: var(--space-small);
+  --badge-background-color-filled: var(--color-green-40);
+  --badge-text-color: var(--badge-text-color-filled);
+  --badge-border-color: transparent;
+}
+
+@media (forced-colors: active) {
+  .travel-new-badge {
+    --badge-background-color-filled: AccentColor;
+  }
+}
+
+.travel-context-menu-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.travel:hover,
+.travel:focus-within {
+  .travel-context-menu-wrapper {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.travel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+  min-height: 0;
+}

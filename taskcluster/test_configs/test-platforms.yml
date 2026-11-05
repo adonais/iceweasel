@@ -396,6 +396,7 @@ macosx1500-aarch64-vms-shippable/opt:
     build-signing-label: repackage-macosx64-shippable/opt
     test-sets:
         - macosx1500-aarch64-vms-tests
+        - awsy-pageload
 
 macosx1500-aarch64-shippable/opt:
     build-platform: macosx64-shippable/opt
@@ -533,6 +534,7 @@ android-hw-p6-13-0-aarch64-shippable/opt:
     test-sets:
         - android-hw-speedometer-tests
         - android-hw-power-tests
+        - android-hw-doh-tests
 
 android-hw-p6-13-0-aarch64-nightlyasrelease/opt:
     build-platform: android-aarch64-nightlyasrelease/opt

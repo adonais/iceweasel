@@ -7,13 +7,32 @@
 diff --git a/include/parakeet_capi.h b/include/parakeet_capi.h
 --- a/include/parakeet_capi.h
 +++ b/include/parakeet_capi.h
-@@ -42,6 +42,9 @@
+@@ -40,24 +40,10 @@
  //     Added parakeet_capi_stream_drain_events (typed per-event records with
  //     is_eob + timestamps, freed with parakeet_capi_free_events) and an
  //     "events" array in the stream_feed_json / stream_finalize_json documents.
-+//
-+// v6: added parakeet_capi_stream_chunk_samples, the audio one encoder chunk
-+//     spans. Additive.
+-//
+-// v6: added parakeet_capi_transcribe_pcm_logits, exposing the CTC head's
+-//     log-prob matrix (row-major [T, vocab+1], already log-softmaxed) instead
+-//     of decoded text — for external LM/decoder stacks (e.g. pyctcdecode +
+-//     KenLM) that need the raw distribution rather than this library's own
+-//     greedy/beam decode. Freed with the new parakeet_capi_free_logits. The
+-//     original entry points are unchanged.
+-// v7: added speaker diarization (parakeet_capi_diarize_*), speaker-attributed
+-//     ASR (parakeet_capi_transcribe_and_diarize*, parakeet_capi_sas_stream_*)
+-//     for nvidia/Nemotron-3-Diarization. A parakeet_ctx now holds either an
+-//     ASR or a diarization model; parakeet_capi_load detects which. No
+-//     existing signatures changed.
+-//     Additive, same ABI: parakeet_capi_diarize_stream_begin_latency /
+-//     _time / _active and parakeet_capi_sas_stream_begin_latency (the model
+-//     card's 1.04 / 0.64 / 0.32 s streaming modes).
+-// v8: sound-event detection (CED), sound_stream_*, scene_stream_*; additive.
+-//     A CED GGUF loads into a third parakeet_ctx kind (a "tagger"); no
+-//     existing signatures changed.
++// v6-v8: additive upstream APIs for CTC logits, diarization, and sound-event
++// detection. These do not change existing signatures.
++// Firefox-local addition: stream_chunk_samples. This is additive.
++#define PARAKEET_CAPI_ABI_VERSION 8
  int parakeet_capi_abi_version(void);
  
  // Load a GGUF model. Returns an owning context, or NULL on failure.
@@ -32,17 +51,22 @@ diff --git a/include/parakeet_capi.h b/include/parakeet_capi.h
 diff --git a/src/parakeet_capi.cpp b/src/parakeet_capi.cpp
 --- a/src/parakeet_capi.cpp
 +++ b/src/parakeet_capi.cpp
-@@ -31,7 +31,9 @@
+@@ -43,13 +43,8 @@
  //     Added stream_drain_events / free_events (typed per-event records) and
  //     the "events" array in the stream_feed_json / stream_finalize_json
  //     documents.
--#define PARAKEET_CAPI_ABI_VERSION 5
-+// v6: parakeet_capi_stream_chunk_samples, the audio one encoder chunk spans.
-+//     Additive.
-+#define PARAKEET_CAPI_ABI_VERSION 6
+-// v6: transcribe_pcm_logits, exposing the CTC head's log-prob matrix (row-major
+-//     [T, vocab+1], already log-softmaxed) instead of decoded text, freed with
+-//     the new free_logits. Original entry points unchanged.
+-// v7: speaker diarization (diarize_*), speaker-attributed ASR
+-//     (transcribe_and_diarize*, sas_stream_*) and streaming diarization
+-//     (diarize_stream_*). A context holds either an ASR or a diarization model.
+-// v8: sound-event detection (CED), sound_stream_*, scene_stream_*; additive.
++// v6-v8: additive upstream APIs for CTC logits, diarization, and sound-event
++// detection. Firefox-local streaming helpers are additive as well.
+ #define PARAKEET_CAPI_ABI_VERSION 8
  
  // The opaque context: a loaded model plus a buffer for the last error message.
- struct parakeet_ctx {
 @@ -621,6 +623,14 @@
      }
  }

@@ -3959,6 +3959,49 @@ template std::optional<int64_t>
 AssemblerLOONG64::EncodeSimdCompareImmediate<int64_t>(const SimdConstant& rhs,
                                                       Condition cond);
 
+template <uint32_t Scale>
+/* static */ std::optional<int32_t> AssemblerLOONG64::EncodeVldreplImmediate(
+    int64_t offset) {
+  static_assert(Scale <= 3);
+  constexpr int64_t kUnit = INT64_C(1) << Scale;
+  if (offset % kUnit != 0) {
+    return std::nullopt;
+  }
+  const int64_t value = offset / kUnit;
+  return is_intN(value, 12 - Scale)
+             ? std::make_optional(static_cast<int32_t>(value))
+             : std::nullopt;
+}
+template std::optional<int32_t> AssemblerLOONG64::EncodeVldreplImmediate<0>(
+    int64_t offset);
+template std::optional<int32_t> AssemblerLOONG64::EncodeVldreplImmediate<1>(
+    int64_t offset);
+template std::optional<int32_t> AssemblerLOONG64::EncodeVldreplImmediate<2>(
+    int64_t offset);
+template std::optional<int32_t> AssemblerLOONG64::EncodeVldreplImmediate<3>(
+    int64_t offset);
+
+template <uint32_t Scale>
+/* static */ std::optional<int32_t>
+AssemblerLOONG64::EncodeVstelmOffsetImmediate(int64_t offset) {
+  static_assert(Scale <= 3);
+  constexpr int64_t kUnit = INT64_C(1) << Scale;
+  if (offset % kUnit != 0) {
+    return std::nullopt;
+  }
+  const int64_t value = offset / kUnit;
+  return is_intN(value, 8) ? std::make_optional(static_cast<int32_t>(value))
+                           : std::nullopt;
+}
+template std::optional<int32_t>
+AssemblerLOONG64::EncodeVstelmOffsetImmediate<0>(int64_t offset);
+template std::optional<int32_t>
+AssemblerLOONG64::EncodeVstelmOffsetImmediate<1>(int64_t offset);
+template std::optional<int32_t>
+AssemblerLOONG64::EncodeVstelmOffsetImmediate<2>(int64_t offset);
+template std::optional<int32_t>
+AssemblerLOONG64::EncodeVstelmOffsetImmediate<3>(int64_t offset);
+
 /* ========================================================================= */
 
 void AssemblerLOONG64::bind(Label* label, BufferOffset boff) {
@@ -4334,11 +4377,16 @@ uint64_t Assembler::ExtractLoad64Value(Instruction* inst0) {
   InstImm* i2 = (InstImm*)i1->next();
   InstImm* i3 = (InstImm*)i2->next();
 
-  MOZ_ASSERT((i0->extractBitField(31, 25)) == ((uint32_t)op_lu12i_w >> 25));
-  MOZ_ASSERT((i1->extractBitField(31, 22)) == ((uint32_t)op_ori >> 22));
-  MOZ_ASSERT((i2->extractBitField(31, 25)) == ((uint32_t)op_lu32i_d >> 25));
+  const uint32_t rd_code = i0->extractRD();
 
-  if ((i3->extractBitField(31, 22)) == ((uint32_t)op_lu52i_d >> 22)) {
+  MOZ_ASSERT((i0->extractBitField(31, 25)) == ((uint32_t)op_lu12i_w >> 25));
+  MOZ_ASSERT((i1->extractBitField(31, 22)) == ((uint32_t)op_ori >> 22) &&
+             i1->extractRJ() == rd_code && i1->extractRD() == rd_code);
+  MOZ_ASSERT((i2->extractBitField(31, 25)) == ((uint32_t)op_lu32i_d >> 25) &&
+             i2->extractRD() == rd_code);
+
+  if ((i3->extractBitField(31, 22)) == ((uint32_t)op_lu52i_d >> 22) &&
+      i3->extractRJ() == rd_code && i3->extractRD() == rd_code) {
     // Li64
     uint64_t value =
         (uint64_t(i0->extractBitField(Imm20Bits + Imm20Shift - 1, Imm20Shift))
@@ -4365,17 +4413,22 @@ uint64_t Assembler::ExtractLoad64Value(Instruction* inst0) {
 }
 
 void Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value) {
-  // Todo: with ma_liPatchable
+  // Sync with ma_liPatchable()
   InstImm* i0 = (InstImm*)inst0;
   InstImm* i1 = (InstImm*)i0->next();
   InstImm* i2 = (InstImm*)i1->next();
   InstImm* i3 = (InstImm*)i2->next();
 
-  MOZ_ASSERT((i0->extractBitField(31, 25)) == ((uint32_t)op_lu12i_w >> 25));
-  MOZ_ASSERT((i1->extractBitField(31, 22)) == ((uint32_t)op_ori >> 22));
-  MOZ_ASSERT((i2->extractBitField(31, 25)) == ((uint32_t)op_lu32i_d >> 25));
+  const uint32_t rd_code = i0->extractRD();
 
-  if ((i3->extractBitField(31, 22)) == ((uint32_t)op_lu52i_d >> 22)) {
+  MOZ_ASSERT((i0->extractBitField(31, 25)) == ((uint32_t)op_lu12i_w >> 25));
+  MOZ_ASSERT((i1->extractBitField(31, 22)) == ((uint32_t)op_ori >> 22) &&
+             i1->extractRJ() == rd_code && i1->extractRD() == rd_code);
+  MOZ_ASSERT((i2->extractBitField(31, 25)) == ((uint32_t)op_lu32i_d >> 25) &&
+             i2->extractRD() == rd_code);
+
+  if ((i3->extractBitField(31, 22)) == ((uint32_t)op_lu52i_d >> 22) &&
+      i3->extractRJ() == rd_code && i3->extractRD() == rd_code) {
     // Li64
     *i0 = InstImm(op_lu12i_w, (int32_t)((value >> 12) & 0xfffff),
                   Register::FromCode(i0->extractRD()), false);

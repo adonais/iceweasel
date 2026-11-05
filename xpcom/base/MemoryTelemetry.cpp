@@ -394,41 +394,40 @@ void MemoryTelemetry::GatherTotalMemory() {
   mGatheringTotalMemory = true;
 
   nsTArray<ChildProcessInfo> infos;
-  mozilla::ipc::GeckoChildProcessHost::GetAll(
-      [&](mozilla::ipc::GeckoChildProcessHost* aGeckoProcess) {
-        if (!aGeckoProcess->GetChildProcessHandle()) {
-          return;
-        }
+  for (auto& geckoProcess : mozilla::ipc::GeckoChildProcessHost::GetAll()) {
+    if (!geckoProcess->GetChildProcessHandle()) {
+      continue;
+    }
 
-        ChildProcessInfo info{};
-        info.mType = aGeckoProcess->GetProcessType();
+    ChildProcessInfo info{};
+    info.mType = geckoProcess->GetProcessType();
 
-        // NOTE: For now we ignore non-content processes here for compatibility
-        // with the existing probe. We may want to introduce a new probe in the
-        // future which also collects data for non-content processes.
-        if (info.mType != GeckoProcessType_Content) {
-          return;
-        }
+    // NOTE: For now we ignore non-content processes here for compatibility
+    // with the existing probe. We may want to introduce a new probe in the
+    // future which also collects data for non-content processes.
+    if (info.mType != GeckoProcessType_Content) {
+      continue;
+    }
 
 #if defined(XP_WIN)
-        if (!::DuplicateHandle(::GetCurrentProcess(),
-                               aGeckoProcess->GetChildProcessHandle(),
-                               ::GetCurrentProcess(), &info.mHandle, 0, false,
-                               DUPLICATE_SAME_ACCESS)) {
-          return;
-        }
+    if (!::DuplicateHandle(::GetCurrentProcess(),
+                           geckoProcess->GetChildProcessHandle(),
+                           ::GetCurrentProcess(), &info.mHandle, 0, false,
+                           DUPLICATE_SAME_ACCESS)) {
+      continue;
+    }
 #elif defined(XP_MACOSX)
-        info.mHandle = aGeckoProcess->GetChildTask();
-        if (mach_port_mod_refs(mach_task_self(), info.mHandle,
-                               MACH_PORT_RIGHT_SEND, 1) != KERN_SUCCESS) {
-          return;
-        }
+    info.mHandle = geckoProcess->GetChildTask();
+    if (mach_port_mod_refs(mach_task_self(), info.mHandle, MACH_PORT_RIGHT_SEND,
+                           1) != KERN_SUCCESS) {
+      continue;
+    }
 #else
-        info.mHandle = aGeckoProcess->GetChildProcessId();
+    info.mHandle = geckoProcess->GetChildProcessId();
 #endif
 
-        infos.AppendElement(info);
-      });
+    infos.AppendElement(info);
+  }
 
   RefPtr<MemoryTelemetry> self = this;
   mThreadPool->Dispatch(NS_NewRunnableFunction(

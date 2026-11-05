@@ -29,11 +29,15 @@ notes = "This is the upstream code plus the ARM intrinsics workaround from qcms,
 
 [policy.authenticator]
 audit-as-crates-io = false
-notes = "This is a first-party crate which is no longer published through crates.io."
+notes = "This is a first-party crate which is developed in mozilla-central, see dom/webauthn/authenticator."
 
 [policy.autocfg]
 audit-as-crates-io = true
 notes = "This is the upstream code plus a few local fixes, see bug 1685697."
+
+[policy."bindgen:0.73.1"]
+audit-as-crates-io = true
+notes = "Upstream code with a backported fix"
 
 [policy.cc]
 audit-as-crates-io = true
@@ -43,7 +47,7 @@ notes = "This is the upstream code plus a fix for https://github.com/rust-lang/c
 audit-as-crates-io = true
 notes = "This is upstream plus a warning fix from bug 1823866."
 
-[policy."crash-context:0.8.0@git:6744feee58804a78730d176cdcc31bb4f3021107"]
+[policy."crash-context:0.8.0@git:3ab1604f91db05ec3f3a84d779a2871df7d9afd7"]
 audit-as-crates-io = true
 
 [policy.cssparser]
@@ -133,7 +137,7 @@ notes = "Patched version of upstream"
 
 [policy.jxl_simd]
 audit-as-crates-io = true
-notes = "Upstream 0.7.4 with a local Mac/x86_64 workaround patched in (see bug 2043090) and path-sourced via a [patch.crates-io] entry in the root Cargo.toml."
+notes = "Upstream 0.8.0 with a local Mac/x86_64 workaround patched in (see bug 2043090) and path-sourced via a [patch.crates-io] entry in the root Cargo.toml."
 
 [policy."khronos_api:3.1.0@git:71c792dbfe0ec5caeb242fc90937e19098386342"]
 audit-as-crates-io = true
@@ -250,7 +254,7 @@ audit-as-crates-io = false
 [policy.peek-poke-derive]
 audit-as-crates-io = false
 
-[policy."process-backend:0.1.0@git:6744feee58804a78730d176cdcc31bb4f3021107"]
+[policy."process-backend:0.1.0@git:3ab1604f91db05ec3f3a84d779a2871df7d9afd7"]
 audit-as-crates-io = false
 notes = """
 This was originally intended to be a minidump-writer internal crate (and thus
@@ -258,7 +262,7 @@ audited as part of minidump-writer), however an author accidentally published
 it publicly (so it is on crates.io now).
 """
 
-[policy."process-reader:0.1.0@git:6744feee58804a78730d176cdcc31bb4f3021107"]
+[policy."process-reader:0.1.0@git:3ab1604f91db05ec3f3a84d779a2871df7d9afd7"]
 audit-as-crates-io = false
 
 [policy.pulse]

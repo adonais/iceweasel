@@ -38,7 +38,7 @@ nsresult XULTooltipElement::Init() {
                                  dom::NOT_FROM_PARSER);
   NS_ENSURE_SUCCESS(rv, rv);
   description->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
-                       u"tooltip-label"_ns, false);
+                       u"tooltip-label"_ns, false, IsKnownNewAttr::Yes);
   ErrorResult error;
   AppendChild(*description, error);
 
@@ -91,8 +91,10 @@ nsresult XULTooltipElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
                                 getter_Copies(direction), &shouldChange);
     }
     if (shouldChange) {
-      SetAttr(kNameSpaceID_None, nsGkAtoms::label, text, true);
-      SetAttr(kNameSpaceID_None, nsGkAtoms::direction, direction, true);
+      SetAttr(kNameSpaceID_None, nsGkAtoms::label, text, true,
+              IsKnownNewAttr::No);
+      SetAttr(kNameSpaceID_None, nsGkAtoms::direction, direction, true,
+              IsKnownNewAttr::No);
     } else {
       aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
       aVisitor.mEvent->PreventDefault();

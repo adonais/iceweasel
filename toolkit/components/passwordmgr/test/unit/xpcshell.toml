@@ -44,6 +44,13 @@ run-if = [
   "os != 'android'", # The migrator only runs on desktop
 ]
 
+["test_LoginStorageMigrator_nimbus.js"]
+run-if = [
+  # The migrator only runs on desktop, and Normandy is only included where
+  # MOZ_BUILD_APP == 'browser'.
+  "os != 'android' && buildapp == 'browser'",
+]
+
 ["test_OSCrypto_win.js"]
 run-if = [
   "os == 'win'",
@@ -163,6 +170,8 @@ run-if = [
 ["test_storage.js"]
 
 ["test_storage_rust_shutdown.js"]
+
+["test_storage_rust_timestamps.js"]
 
 ["test_telemetry.js"]
 

@@ -4,7 +4,7 @@
 import { ChatConversation } from "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs";
 import { AssistantRoleOpts } from "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs";
 import { MODEL_FEATURES } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
-import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
+import { AuthProvider } from "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs";
 import { buildEngineForFeature } from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
 
 import {
@@ -52,8 +52,8 @@ export async function runChatEvalForModel(
     ],
   });
 
-  const origGetFxAccountToken = openAIEngine.getFxAccountToken;
-  openAIEngine.getFxAccountToken = async () => token;
+  const origGetToken = AuthProvider.getToken;
+  AuthProvider.getToken = async () => token;
   const { engine, parameters } = await buildEngineForFeature(
     MODEL_FEATURES.CHAT
   );
@@ -102,6 +102,6 @@ export async function runChatEvalForModel(
     await cleanup();
   }
 
-  openAIEngine.getFxAccountToken = origGetFxAccountToken;
+  AuthProvider.getToken = origGetToken;
   await SpecialPowers.popPrefEnv();
 }

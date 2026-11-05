@@ -73,6 +73,9 @@ MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING(
                             // doesn't support inputs higher than 8-bit. ONLY
                             // SUPPORTED BY DAV1DDecoder and FFmpegVideoDecoder.
 
+     AssertCanInstantiate,  // Assert that a wrapping decoder can instantiate
+                            // its underlying decoder up front.
+
      SENTINEL  // one past the last valid value
      ));
 
@@ -210,8 +213,6 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
     nsPrintfCString str("CreateDecoderParams @ %p: ", this);
     str.AppendPrintf("mConfig = %s", mConfig.ToString().get());
     str.AppendPrintf(", mImageContainer = %p", mImageContainer);
-    str.AppendPrintf(", mError = %s",
-                     mError ? mError->Description().get() : "null");
     str.AppendPrintf(", mKnowsCompositor = %p", mKnowsCompositor);
     str.AppendPrintf(", mCrashHelper = %p", mCrashHelper);
     str.AppendPrintf(", mCDM = %p", mCDM);
@@ -235,11 +236,10 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
   }
 
   // CreateDecoderParams is a MOZ_STACK_CLASS, it is only used to
-  // simplify the passing of arguments to Create*Decoder.
+  // simplify the passing of arguments to AsyncCreateDecoder.
   // It is safe to use references and raw pointers.
   const TrackInfo& mConfig;
   layers::ImageContainer* mImageContainer = nullptr;
-  MediaResult* mError = nullptr;
   layers::KnowsCompositor* mKnowsCompositor = nullptr;
   GMPCrashHelper* mCrashHelper = nullptr;
   PRemoteCDMActor* mCDM = nullptr;
@@ -259,7 +259,6 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
   void Set(layers::ImageContainer* aImageContainer) {
     mImageContainer = aImageContainer;
   }
-  void Set(MediaResult* aError) { mError = aError; }
   void Set(GMPCrashHelper* aCrashHelper) { mCrashHelper = aCrashHelper; }
   void Set(PRemoteCDMActor* aCDM) { mCDM = aCDM; }
   void Set(UseNullDecoder aUseNullDecoder) {
@@ -293,7 +292,6 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
   void Set(const CreateDecoderParams& aParams) {
     // Set all but mTrackInfo;
     mImageContainer = aParams.mImageContainer;
-    mError = aParams.mError;
     mKnowsCompositor = aParams.mKnowsCompositor;
     mCrashHelper = aParams.mCrashHelper;
     mCDM = aParams.mCDM;
@@ -325,7 +323,6 @@ struct MOZ_STACK_CLASS SupportDecoderParams final {
 
   explicit SupportDecoderParams(const CreateDecoderParams& aParams)
       : mConfig(aParams.mConfig),
-        mError(aParams.mError),
         mKnowsCompositor(aParams.mKnowsCompositor),
         mCDM(aParams.mCDM),
         mUseNullDecoder(aParams.mUseNullDecoder),
@@ -344,7 +341,6 @@ struct MOZ_STACK_CLASS SupportDecoderParams final {
 
   const TrackInfo& mConfig;
   DecoderDoctorDiagnostics* mDiagnostics = nullptr;
-  MediaResult* mError = nullptr;
   RefPtr<layers::KnowsCompositor> mKnowsCompositor;
   PRemoteCDMActor* mCDM = nullptr;
   UseNullDecoder mUseNullDecoder;
@@ -357,7 +353,6 @@ struct MOZ_STACK_CLASS SupportDecoderParams final {
   void Set(DecoderDoctorDiagnostics* aDiagnostics) {
     mDiagnostics = aDiagnostics;
   }
-  void Set(MediaResult* aError) { mError = aError; }
   void Set(PRemoteCDMActor* aCDM) { mCDM = aCDM; }
   void Set(media::UseNullDecoder aUseNullDecoder) {
     mUseNullDecoder = aUseNullDecoder;
@@ -482,40 +477,32 @@ class PlatformDecoderModule {
     return aColorDepth == gfx::ColorDepth::COLOR_8;
   }
 
-  // Creates a Video decoder. The layers backend is passed in so that
-  // decoders can determine whether hardware accelerated decoding can be used.
-  // On Windows the task queue's threads in have MSCOM initialized with
+  // Asynchronously creates an audio or video decoder with the specified
+  // properties. The layers backend is passed in so that video decoders can
+  // determine whether hardware accelerated decoding can be used.
+  // On Windows the task queue's threads have MSCOM initialized with
   // COINIT_MULTITHREADED.
-  // Returns nullptr if the decoder can't be created.
+  // Rejects if the decoder can't be created, which allows fallback PDMs to be
+  // tried, so implementations may need to make additional checks that the
+  // CreateDecoderParams argument is actually supported.
   // It is not safe to store a reference to aParams or aParams.mConfig as the
   // object isn't guaranteed to live after the call.
-  // CreateVideoDecoder may need to make additional checks if the
-  // CreateDecoderParams argument is actually supported and return nullptr if
-  // not to allow for fallback PDMs to be tried.
-  virtual already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-      const CreateDecoderParams& aParams) = 0;
-
-  // Creates an Audio decoder with the specified properties.
-  // Returns nullptr if the decoder can't be created.
-  // On Windows the task queue's threads in have MSCOM initialized with
-  // COINIT_MULTITHREADED.
-  // It is not safe to store a reference to aParams or aParams.mConfig as the
-  // object isn't guaranteed to live after the call.
-  // CreateAudioDecoder may need to make additional checks if the
-  // CreateDecoderParams argument is actually supported and return nullptr if
-  // not to allow for fallback PDMs to be tried.
-  virtual already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
-      const CreateDecoderParams& aParams) = 0;
-
-  // Asychronously create a decoder.
   virtual RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
-      const CreateDecoderParams& aParams);
+      const CreateDecoderParams& aParams) = 0;
+
+ protected:
+  // For AsyncCreateDecoder implementations that create their decoder
+  // synchronously. Resolves with aDecoder if non-null. Otherwise rejects with
+  // aError if it is a failure, or with a generic error for aParams if not.
+  static RefPtr<CreateDecoderPromise> CreateDecoderPromiseFrom(
+      already_AddRefed<MediaDataDecoder> aDecoder,
+      const CreateDecoderParams& aParams, const MediaResult& aError = NS_OK);
 };
 
 DDLoggedTypeDeclName(MediaDataDecoder);
 
 // MediaDataDecoder is the interface exposed by decoders created by the
-// PlatformDecoderModule's Create*Decoder() functions. The type of
+// PlatformDecoderModule's AsyncCreateDecoder() function. The type of
 // media data that the decoder accepts as valid input and produces as
 // output is determined when the MediaDataDecoder is created.
 //
@@ -543,7 +530,7 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
 
   // Initialize the decoder. The decoder should be ready to decode once
   // the promise resolves. The decoder should do any initialization here, rather
-  // than in its constructor or PlatformDecoderModule::Create*Decoder(),
+  // than in its constructor or PlatformDecoderModule::AsyncCreateDecoder(),
   // so that if the MediaFormatReader needs to shutdown during initialization,
   // it can call Shutdown() to cancel this operation. Any initialization
   // that requires blocking the calling thread in this function *must*

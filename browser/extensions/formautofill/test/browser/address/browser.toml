@@ -25,7 +25,6 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1890182
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1890182
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1890182
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1890182
 ]
 
 ["browser_address_doorhanger_display.js"]

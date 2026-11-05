@@ -359,7 +359,7 @@ that can be simplified.
   helper when declaring them.
 
 - You should [use the static preference
-  API](https://firefox-source-docs.mozilla.org/modules/libpref/index.html) for
+  API](/modules/libpref/index.md) for
   working with preferences.
 
 - One-argument constructors, that are not copy or move constructors,

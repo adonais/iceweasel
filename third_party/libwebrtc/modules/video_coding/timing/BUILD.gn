@@ -39,37 +39,28 @@ rtc_library("timing_module") {
   ]
 }
 
-rtc_library("decode_time_percentile_filter_unittest") {
-  testonly = true
-  sources = [ "decode_time_percentile_filter_unittest.cc" ]
-  deps = [
-    ":decode_time_percentile_filter",
-    "../../../test:test_support",
-  ]
-}
+if (rtc_include_tests) {
+  rtc_cc_test("decode_time_percentile_filter_unittest") {
+    sources = [ "decode_time_percentile_filter_unittest.cc" ]
+    deps = [
+      ":decode_time_percentile_filter",
+      "../../../test:test_support",
+    ]
+  }
 
-rtc_library("timing_unittest") {
-  testonly = true
-  sources = [ "timing_unittest.cc" ]
-  deps = [
-    ":timing_module",
-    "../../../api/environment",
-    "../../../api/units:data_size",
-    "../../../api/units:frequency",
-    "../../../api/units:time_delta",
-    "../../../api/units:timestamp",
-    "../../../api/video/timing:video_jitter_timing_interface",
-    "../../../system_wrappers",
-    "../../../test:create_test_environment",
-    "../../../test:test_support",
-  ]
-}
-
-rtc_library("timing_unittests") {
-  testonly = true
-  sources = []
-  deps = [
-    ":decode_time_percentile_filter_unittest",
-    ":timing_unittest",
-  ]
+  rtc_cc_test("timing_unittest") {
+    sources = [ "timing_unittest.cc" ]
+    deps = [
+      ":timing_module",
+      "../../../api/environment",
+      "../../../api/units:data_size",
+      "../../../api/units:frequency",
+      "../../../api/units:time_delta",
+      "../../../api/units:timestamp",
+      "../../../api/video/timing:video_jitter_timing_interface",
+      "../../../system_wrappers",
+      "../../../test:create_test_environment",
+      "../../../test:test_support",
+    ]
+  }
 }

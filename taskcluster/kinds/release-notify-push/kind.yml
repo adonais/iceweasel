@@ -14,7 +14,6 @@ kind-dependencies:
     - push-android
 
 task-defaults:
-    run-on-repo-type: [hg]
     name: notify-release-drivers-push
     description: Sends email to release-drivers telling release was pushed.
     run-on-projects: []

@@ -197,7 +197,7 @@ void WebRenderLayerManager::GetBackendName(nsAString& name) {
   }
 }
 
-uint32_t WebRenderLayerManager::StartFrameTimeRecording(int32_t aBufferSize) {
+uint32_t WebRenderLayerManager::StartFrameTimeRecording(uint32_t aBufferSize) {
   CompositorBridgeChild* renderer = GetCompositorBridgeChild();
   if (renderer) {
     uint32_t startIndex;
@@ -653,6 +653,11 @@ void WebRenderLayerManager::ClearCachedResources() {
 }
 
 void WebRenderLayerManager::WrUpdated() {
+  // The parent released our pipeline's interned items in the old WebRender
+  // instance, so the next display list must start a fresh delta stream.
+  // Display lists built before this are dropped by the id namespace check.
+  mDLBuilder = MakeUnique<wr::DisplayListBuilder>(
+      WrBridge()->GetPipeline(), WrBridge()->GetWebRenderBackend());
   ClearAsyncAnimations();
   mStateManager.mAsyncResourceUpdates.reset();
   mWebRenderCommandBuilder.ClearCachedResources();

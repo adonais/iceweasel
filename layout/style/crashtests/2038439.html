@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<meta charset="utf-8">
+<body>
+<script>
+onload = () => {
+  let host = document.createElement("div");
+  document.body.appendChild(host);
+
+  let sr = host.attachShadow({ mode: "open" });
+  let proxy = sr.adoptedStyleSheets;
+
+  host.remove();
+  sr = null;
+  host = null;
+
+  // Trigger the unlinking of ShadowRoot, but the JS reflector is not yet
+  // collected.
+  SpecialPowers.forceShrinkingGC();
+  SpecialPowers.forceCC();
+
+  let sheet = new CSSStyleSheet();
+  sheet.replaceSync("div { color: red; }");
+  proxy.push(sheet);
+
+  // Force GC and CC
+  SpecialPowers.forceShrinkingGC();
+  SpecialPowers.forceCC();
+
+  sheet.insertRule("p { margin: 0; }", 0);
+
+  document.documentElement.classList.remove("reftest-wait");
+};
+</script>
+</body>
+</html>

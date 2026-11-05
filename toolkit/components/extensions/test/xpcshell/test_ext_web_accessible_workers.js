@@ -3,21 +3,6 @@
 Services.prefs.setBoolPref("dom.serviceWorkers.testing.enabled", true);
 
 add_setup(() => {
-  // This test expects the deprecated legacy behaviors on web_accessible worker scripts
-  // to be disabled.
-  //
-  // TODO(Bug 2074192): remove this part along with removing the emergency rollback pref.
-  const DEPRECATED_WEBACCESSIBLE_WORKERS_PREF =
-    "extensions.web_accessible_workers.deprecated_behavior";
-  if (
-    Services.prefs.getBoolPref(DEPRECATED_WEBACCESSIBLE_WORKERS_PREF, false)
-  ) {
-    info(
-      "WARNING: Force disabling deprecated web_accessible workers behaviors enabled through prefs."
-    );
-    Services.prefs.setBoolPref(DEPRECATED_WEBACCESSIBLE_WORKERS_PREF, false);
-  }
-
   const swm = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
     Ci.nsIServiceWorkerManager
   );

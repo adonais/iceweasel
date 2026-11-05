@@ -76,11 +76,6 @@ YCbCrTextureClientAllocationHelper::YCbCrTextureClientAllocationHelper(
       mYSize(aYSize),
       mCbCrSize(aCbCrSize) {}
 
-YCbCrTextureClientAllocationHelper::YCbCrTextureClientAllocationHelper(
-    const PlanarYCbCrData& aData, TextureFlags aTextureFlags)
-    : YCbCrTextureClientAllocationHelper(aData, aData.YDataSize(),
-                                         aData.CbCrDataSize(), aTextureFlags) {}
-
 bool YCbCrTextureClientAllocationHelper::IsCompatible(
     TextureClient* aTextureClient) {
   MOZ_ASSERT(aTextureClient->GetFormat() == gfx::SurfaceFormat::YUV420);

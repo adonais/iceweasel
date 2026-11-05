@@ -50,8 +50,10 @@ class FrameRecorder {
 
   /**
    * Returns a handle which represents current recording start position.
+   * On first allocation, aBufferSize is clamped to [600, 216000] frames.
+   * Subsequent calls reuse the existing buffer.
    */
-  virtual uint32_t StartFrameTimeRecording(int32_t aBufferSize);
+  virtual uint32_t StartFrameTimeRecording(uint32_t aBufferSize);
 
   /**
    *  Clears, then populates aFrameIntervals with the recorded frame timing

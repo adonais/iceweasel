@@ -525,6 +525,10 @@ class ProfilesDatastoreServiceClass {
 
     await this.closeConnection();
 
+    this.#asyncShutdownBarrier = new lazy.AsyncShutdown.Barrier(
+      "ProfilesDatastoreService: waiting for clients to finish pending writes"
+    );
+
     this.#storeID = null;
 
     this.#initialized = false;

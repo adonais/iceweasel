@@ -830,7 +830,9 @@ export var webrtcUI = {
     if (this.showGlobalIndicator) {
       if (!gIndicatorWindow) {
         gIndicatorWindow = getGlobalIndicator();
-      } else {
+      } else if (gIndicatorWindow.updateIndicatorState) {
+        // Until its script has loaded, the indicator can't be updated, but it
+        // updates itself once loaded.
         try {
           gIndicatorWindow.updateIndicatorState();
         } catch (err) {

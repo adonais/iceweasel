@@ -757,7 +757,7 @@ Changelog
 
 ### Search Telemetry
 
-Some of [the search telemetry](https://firefox-source-docs.mozilla.org/browser/search/telemetry.html) is also relevant to the address bar.
+Some of {doc}`the search telemetry </browser/search/telemetry>` is also relevant to the address bar.
 
 ### contextual.services.topsites.\*
 

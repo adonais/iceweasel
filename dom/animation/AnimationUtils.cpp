@@ -272,6 +272,10 @@ bool TimelineRangeValueToCss(const TimelineRangeValue& aValue,
   if (offset.mRangeName.WasPassed() && !offset.mRangeName.Value().IsVoid()) {
     result.Append(offset.mRangeName.Value());
   }
+  // TimelineRangeOffset.offset is required per spec. However, it is still
+  // behind a pref so it's possible that we don't pass it. If that's the case,
+  // we just ignore it and fall back to "normal" below. This is just a tentative
+  // fallback before we finish CSS Typed OM.
   if (offset.mOffset.WasPassed()) {
     nsAutoCString offsetStr;
     offset.mOffset.Value().Stringify(offsetStr);

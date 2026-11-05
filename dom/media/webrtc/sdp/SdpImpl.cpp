@@ -72,13 +72,13 @@ SdpMediaSection& SdpImpl::GetMediaSection(const size_t level) {
 }
 
 SdpMediaSection& SdpImpl::AddMediaSection(
-    const SdpMediaSection::MediaType mediaType,
+    const SdpMediaSection::MediaTypeInfo mediaType,
     const SdpDirectionAttribute::Direction dir, const uint16_t port,
     const SdpMediaSection::Protocol protocol, const sdp::AddrType addrType,
     const std::string& addr) {
   UniquePtr<SdpMediaSectionImpl> media =
       CreateMediaSection(mMediaSections.size());
-  media->mMediaType = mediaType;
+  media->mMediaTypeInfo = mediaType;
   media->mPort = port;
   media->mPortCount = 0;
   media->mProtocol = protocol;

@@ -64,7 +64,7 @@ def run(command_context, ide, no_interactive, args):
         # Then build the rest of the build dependencies by running the full
         # export target, because we can't do anything better.
         result = subprocess.run(
-            [sys.executable, "mach", "build", "pre-export", "export", "pre-compile"],
+            [sys.executable, "mach", "build", "analysis-prereqs"],
             check=False,
             cwd=command_context.topsrcdir,
         )

@@ -115,208 +115,217 @@ add_task(async function test_import_in_sandboxed_document() {
   await contentPage.close();
 });
 
-add_task(async function test_import_non_web_accessible_non_strict() {
-  // "non_strict" in the function name is referring to this pref. Setting it
-  // to 'false' should allow MV2 extensions to dynamically load content
-  // even if that content isn't in web_accessible_resources (and that's
-  // what the rest of this function tests).
-  Services.prefs.setBoolPref(WEB_ACCESSIBLE_STRICTNESS_PREF, false);
-
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      content_scripts: [
-        {
-          matches: ["http://example.com/dummy"],
-          js: ["main.js"],
-        },
-      ],
-    },
-    files: {
-      "main.js": async function () {
-        try {
-          let mod = await import(browser.runtime.getURL("module1.js"));
-          browser.test.assertEq(mod.bar, 2);
-          browser.test.assertEq(mod.counter(), 0);
-        } catch (e) {
-          browser.test.assertTrue(false, `Threw while importing module: ${e}`);
-        }
-
-        browser.test.sendMessage("done");
+add_task(
+  {
+    // "non_strict" in the function name is referring to this pref. Setting it
+    // to 'false' should allow MV2 extensions to dynamically load content
+    // even if that content isn't in web_accessible_resources (and that's
+    // what the rest of this function tests).
+    pref_set: [[WEB_ACCESSIBLE_STRICTNESS_PREF, false]],
+  },
+  async function test_import_non_web_accessible_non_strict() {
+    let extension = ExtensionTestUtils.loadExtension({
+      manifest: {
+        content_scripts: [
+          {
+            matches: ["http://example.com/dummy"],
+            js: ["main.js"],
+          },
+        ],
       },
-      "module1.js": MODULE1,
-      "module2.js": MODULE2,
-    },
-  });
+      files: {
+        "main.js": async function () {
+          try {
+            let mod = await import(browser.runtime.getURL("module1.js"));
+            browser.test.assertEq(mod.bar, 2);
+            browser.test.assertEq(mod.counter(), 0);
+          } catch (e) {
+            browser.test.assertTrue(
+              false,
+              `Threw while importing module: ${e}`
+            );
+          }
 
-  await extension.startup();
-  let contentPage = await ExtensionTestUtils.loadContentPage(
-    "http://example.com/dummy"
-  );
-
-  await extension.awaitMessage("done");
-  await extension.unload();
-  await contentPage.close();
-  Services.prefs.clearUserPref(WEB_ACCESSIBLE_STRICTNESS_PREF);
-});
-
-add_task(async function test_import_non_web_accessible_strict() {
-  // "strict" in the function name is referring to this pref. Setting it
-  // to "true" should prevent MV2 extensions from dynamically loading content
-  // unless that content is listed in web_accessible_resources (and that's
-  // what the rest of this function tests).
-  Services.prefs.setBoolPref(WEB_ACCESSIBLE_STRICTNESS_PREF, true);
-
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      content_scripts: [
-        {
-          matches: ["http://example.com/dummy"],
-          js: ["main.js"],
+          browser.test.sendMessage("done");
         },
-      ],
-    },
-
-    files: {
-      "main.js": async function () {
-        /* global exportFunction */
-        const url = browser.runtime.getURL("module1.js");
-
-        await browser.test.assertRejects(
-          import(url),
-          /error loading dynamically imported module/,
-          "Cannot import script that is not web-accessible from page context"
-        );
-
-        await browser.test.assertRejects(
-          window.eval(`import("${url}")`),
-          /error loading dynamically imported module/,
-          "Cannot import script that is not web-accessible from page context"
-        );
-
-        let promise = new Promise((resolve, reject) => {
-          exportFunction(resolve, window, { defineAs: "resolve" });
-          exportFunction(reject, window, { defineAs: "reject" });
-        });
-
-        window.setTimeout(`import("${url}").then(resolve, reject)`, 0);
-
-        await browser.test.assertRejects(
-          promise,
-          /error loading dynamically imported module/,
-          "Cannot import script that is not web-accessible from page context"
-        );
-
-        browser.test.sendMessage("done");
+        "module1.js": MODULE1,
+        "module2.js": MODULE2,
       },
-      "module1.js": MODULE1,
-      "module2.js": MODULE2,
-    },
-  });
+    });
 
-  await extension.startup();
-  let contentPage = await ExtensionTestUtils.loadContentPage(
-    "http://example.com/dummy"
-  );
+    await extension.startup();
+    let contentPage = await ExtensionTestUtils.loadContentPage(
+      "http://example.com/dummy"
+    );
 
-  await extension.awaitMessage("done");
+    await extension.awaitMessage("done");
+    await extension.unload();
+    await contentPage.close();
+  }
+);
 
-  // Web page can not import non-web-accessible files.
-  await contentPage.spawn([extension.uuid], async uuid => {
-    let files = ["main.js", "module1.js", "module2.js"];
+add_task(
+  {
+    // "strict" in the function name is referring to this pref. Setting it
+    // to "true" should prevent MV2 extensions from dynamically loading content
+    // unless that content is listed in web_accessible_resources (and that's
+    // what the rest of this function tests).
+    pref_set: [[WEB_ACCESSIBLE_STRICTNESS_PREF, true]],
+  },
+  async function test_import_non_web_accessible_strict() {
+    let extension = ExtensionTestUtils.loadExtension({
+      manifest: {
+        content_scripts: [
+          {
+            matches: ["http://example.com/dummy"],
+            js: ["main.js"],
+          },
+        ],
+      },
 
-    for (let file of files) {
-      let url = `moz-extension://${uuid}/${file}`;
-      await Assert.rejects(
-        content.eval(`import("${url}")`),
-        /error loading dynamically imported module/,
-        "Cannot import script that is not web-accessible"
-      );
-    }
-  });
+      files: {
+        "main.js": async function () {
+          /* global exportFunction */
+          const url = browser.runtime.getURL("module1.js");
 
-  await extension.unload();
-  await contentPage.close();
-  Services.prefs.clearUserPref(WEB_ACCESSIBLE_STRICTNESS_PREF);
-});
+          await browser.test.assertRejects(
+            import(url),
+            /error loading dynamically imported module/,
+            "Cannot import script that is not web-accessible from page context"
+          );
 
-add_task(async function test_import_non_web_accessible_mv3() {
-  // Here we set the prev to the non-strict value, but we still expect
-  // the same as the "strict" test above, because our extension is using
-  // 'manifest_version: 3' which should be strict regardless of the pref value.
-  Services.prefs.setBoolPref(WEB_ACCESSIBLE_STRICTNESS_PREF, false);
+          await browser.test.assertRejects(
+            window.eval(`import("${url}")`),
+            /error loading dynamically imported module/,
+            "Cannot import script that is not web-accessible from page context"
+          );
 
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      manifest_version: 3,
-      content_scripts: [
-        {
-          matches: ["http://example.com/dummy"],
-          js: ["main.js"],
+          let promise = new Promise((resolve, reject) => {
+            exportFunction(resolve, window, { defineAs: "resolve" });
+            exportFunction(reject, window, { defineAs: "reject" });
+          });
+
+          window.setTimeout(`import("${url}").then(resolve, reject)`, 0);
+
+          await browser.test.assertRejects(
+            promise,
+            /error loading dynamically imported module/,
+            "Cannot import script that is not web-accessible from page context"
+          );
+
+          browser.test.sendMessage("done");
         },
-      ],
-    },
-
-    files: {
-      "main.js": async function () {
-        const url = browser.runtime.getURL("module1.js");
-
-        await browser.test.assertRejects(
-          import(url),
-          /error loading dynamically imported module/,
-          "Cannot import script that is not web-accessible from page context"
-        );
-
-        await browser.test.assertRejects(
-          window.eval(`import("${url}")`),
-          /error loading dynamically imported module/,
-          "Cannot import script that is not web-accessible from page context"
-        );
-
-        let promise = new Promise((resolve, reject) => {
-          exportFunction(resolve, window, { defineAs: "resolve" });
-          exportFunction(reject, window, { defineAs: "reject" });
-        });
-
-        window.setTimeout(`import("${url}").then(resolve, reject)`, 0);
-
-        await browser.test.assertRejects(
-          promise,
-          /error loading dynamically imported module/,
-          "Cannot import script that is not web-accessible from page context"
-        );
-
-        browser.test.sendMessage("done");
+        "module1.js": MODULE1,
+        "module2.js": MODULE2,
       },
-      "module1.js": MODULE1,
-      "module2.js": MODULE2,
-    },
-  });
+    });
 
-  await extension.startup();
-  let contentPage = await ExtensionTestUtils.loadContentPage(
-    "http://example.com/dummy"
-  );
+    await extension.startup();
+    let contentPage = await ExtensionTestUtils.loadContentPage(
+      "http://example.com/dummy"
+    );
 
-  await extension.awaitMessage("done");
+    await extension.awaitMessage("done");
 
-  // Web page can not import non-web-accessible files.
-  await contentPage.spawn([extension.uuid], async uuid => {
-    let files = ["main.js", "module1.js", "module2.js"];
+    // Web page can not import non-web-accessible files.
+    await contentPage.spawn([extension.uuid], async uuid => {
+      let files = ["main.js", "module1.js", "module2.js"];
 
-    for (let file of files) {
-      let url = `moz-extension://${uuid}/${file}`;
-      await Assert.rejects(
-        content.eval(`import("${url}")`),
-        /error loading dynamically imported module/,
-        "Cannot import script that is not web-accessible"
-      );
-    }
-  });
+      for (let file of files) {
+        let url = `moz-extension://${uuid}/${file}`;
+        await Assert.rejects(
+          content.eval(`import("${url}")`),
+          /error loading dynamically imported module/,
+          "Cannot import script that is not web-accessible"
+        );
+      }
+    });
 
-  await extension.unload();
-  await contentPage.close();
-  Services.prefs.clearUserPref(WEB_ACCESSIBLE_STRICTNESS_PREF);
-});
+    await extension.unload();
+    await contentPage.close();
+  }
+);
+
+add_task(
+  {
+    // Here we set the pref to the non-strict value, but we still expect
+    // the same as the "strict" test above, because our extension is using
+    // 'manifest_version: 3' which should be strict regardless of the pref value.
+    pref_set: [[WEB_ACCESSIBLE_STRICTNESS_PREF, false]],
+  },
+  async function test_import_non_web_accessible_mv3() {
+    let extension = ExtensionTestUtils.loadExtension({
+      manifest: {
+        manifest_version: 3,
+        content_scripts: [
+          {
+            matches: ["http://example.com/dummy"],
+            js: ["main.js"],
+          },
+        ],
+      },
+
+      files: {
+        "main.js": async function () {
+          const url = browser.runtime.getURL("module1.js");
+
+          await browser.test.assertRejects(
+            import(url),
+            /error loading dynamically imported module/,
+            "Cannot import script that is not web-accessible from page context"
+          );
+
+          await browser.test.assertRejects(
+            window.eval(`import("${url}")`),
+            /error loading dynamically imported module/,
+            "Cannot import script that is not web-accessible from page context"
+          );
+
+          let promise = new Promise((resolve, reject) => {
+            exportFunction(resolve, window, { defineAs: "resolve" });
+            exportFunction(reject, window, { defineAs: "reject" });
+          });
+
+          window.setTimeout(`import("${url}").then(resolve, reject)`, 0);
+
+          await browser.test.assertRejects(
+            promise,
+            /error loading dynamically imported module/,
+            "Cannot import script that is not web-accessible from page context"
+          );
+
+          browser.test.sendMessage("done");
+        },
+        "module1.js": MODULE1,
+        "module2.js": MODULE2,
+      },
+    });
+
+    await extension.startup();
+    let contentPage = await ExtensionTestUtils.loadContentPage(
+      "http://example.com/dummy"
+    );
+
+    await extension.awaitMessage("done");
+
+    // Web page can not import non-web-accessible files.
+    await contentPage.spawn([extension.uuid], async uuid => {
+      let files = ["main.js", "module1.js", "module2.js"];
+
+      for (let file of files) {
+        let url = `moz-extension://${uuid}/${file}`;
+        await Assert.rejects(
+          content.eval(`import("${url}")`),
+          /error loading dynamically imported module/,
+          "Cannot import script that is not web-accessible"
+        );
+      }
+    });
+
+    await extension.unload();
+    await contentPage.close();
+  }
+);
 
 add_task(async function test_import_web_accessible() {
   let extension = ExtensionTestUtils.loadExtension({

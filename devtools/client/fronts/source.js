@@ -55,48 +55,62 @@ class SourceFront extends FrontClassWithSpec(sourceSpec) {
   }
 
   /**
-   * Get a Front for either an ArrayBuffer or LongString
-   * for this SourceFront's source.
+   * Get a source content object from the SourceFront's source (which could be either
+   * an ArrayBuffer (for wasm) or LongString (for others).
    */
   async source() {
     const response = await super.source();
-    return this._onSourceResponse(response);
+    return readSourceResponse(response);
   }
+}
 
-  _onSourceResponse(response) {
-    const { contentType, source } = response;
-    if (source instanceof ArrayBufferFront) {
-      return source.slice(0, source.length).then(function (resp) {
-        if (resp.error) {
-          return resp;
-        }
-        // Keeping str as a string, ArrayBuffer/Uint8Array will not survive
-        // setIn/mergeIn operations.
-        const str = atob(resp.encoded);
-        const newResponse = {
-          source: {
-            binary: str,
-            toString: () => "[wasm]",
-          },
-          contentType,
-        };
-        return newResponse;
-      });
-    }
-
-    return source.substring(0, source.length).then(function (resp) {
+/**
+ * Read the source returned by a source content request into a plain value.
+ *
+ * The source is transfered either as an ArrayBuffer front, for wasm binaries,
+ * or as a long string front for everything else.
+ *
+ * @param {object} response
+ *        `{ source, contentType }`, as returned by the source actor's `source`
+ *        method or by the target actor's `getSourceContentForResource`.
+ * @returns {Promise<object>}
+ *        The same pair, with `source` being a string, or, for wasm, an object
+ *        with a `binary` attribute.
+ */
+function readSourceResponse(response) {
+  const { contentType, source } = response;
+  if (source instanceof ArrayBufferFront) {
+    return source.slice(0, source.length).then(function (resp) {
       if (resp.error) {
         return resp;
       }
-
+      // Keeping str as a string, ArrayBuffer/Uint8Array will not survive
+      // setIn/mergeIn operations.
+      const str = atob(resp.encoded);
       const newResponse = {
-        source: resp,
+        source: {
+          binary: str,
+          toString: () => "[wasm]",
+        },
         contentType,
       };
       return newResponse;
     });
   }
+
+  return source.substring(0, source.length).then(function (resp) {
+    if (resp.error) {
+      return resp;
+    }
+
+    const newResponse = {
+      source: resp,
+      contentType,
+    };
+    return newResponse;
+  });
 }
 
 exports.SourceFront = SourceFront;
+exports.readSourceResponse = readSourceResponse;
 registerFront(SourceFront);

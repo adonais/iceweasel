@@ -68,8 +68,10 @@ add_setup(async function () {
     ],
   });
 
+  UrlbarTestUtils.stubLocale("en-US");
   registerCleanupFunction(() => {
     UrlbarTestUtils.stubNowZonedDateTime(null);
+    UrlbarTestUtils.stubLocale(null);
   });
 });
 

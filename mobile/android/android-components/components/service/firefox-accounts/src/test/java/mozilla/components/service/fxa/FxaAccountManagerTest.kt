@@ -8,6 +8,8 @@ import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlin.coroutines.CoroutineContext
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.fxaclient.FxaConfig
 import mozilla.appservices.fxaclient.FxaEvent
@@ -259,13 +261,94 @@ class FxaAccountManagerTest {
 
         whenever(account.processEvent(any()))
             .thenReturn(FxaState.Authenticating("https://test-oauth.example.com/", FxaRustAuthState.CONNECTED))
-        fxaManager.beginAuthentication(entrypoint = entryPoint)
+        fxaManager.beginAuthentication(service = FxaService.Sync.identifier, entrypoint = entryPoint)
 
         whenever(account.processEvent(any())).thenReturn(FxaState.Connected)
         fxaManager.finishAuthentication(FxaAuthData(AuthType.Signin, "test-code", "test-auth-state"))
 
         verify(accountObserver, times(1)).onAuthenticated(any(), eq(AuthType.Signin))
     }
+
+    @Test
+    fun `OAuth email login in sync decoupled mode does not send scopes through to BeginEmailFlow fxa client event`() =
+        runTest {
+            val fxaManager =
+                TestableFxaAccountManager(
+                    context = testContext,
+                    config = FxaConfig(FxaServer.Release, "dummyId", "http://auth-url/redirect"),
+                    storage = mock(),
+                    capabilities = setOf(DeviceCapability.SEND_TAB),
+                    syncConfig =
+                        SyncConfig(
+                            supportedEngines = setOf(SyncEngine.Tabs),
+                            syncDecouplingEnabled = true,
+                            periodicSyncConfig = null,
+                        ),
+                    coroutineContext = this.coroutineContext,
+                )
+            val account = fxaManager.testableStorageWrapper.account
+            val accountObserver: AccountObserver = mock()
+            fxaManager.register(accountObserver)
+
+            whenever(account.processEvent(any())).thenReturn(FxaState.Disconnected)
+            fxaManager.start()
+
+            val eventCaptor = argumentCaptor<FxaEvent>()
+            whenever(account.processEvent(eventCaptor.capture()))
+                .thenReturn(FxaState.Authenticating("https://test-oauth.example.com/", FxaRustAuthState.CONNECTED))
+
+            // when we call begin auth with scopes and service defined
+            fxaManager.beginAuthentication(
+                service = FxaService.Sync.identifier,
+                entrypoint = entryPoint,
+                authScopes = FxaService.Sync.requiredScopes.map { it.value }.toSet(),
+            )
+
+            val fxaEvent = eventCaptor.value
+            assertIs<FxaEvent.BeginOAuthFlow>(fxaEvent)
+            assertEquals(emptyList(), fxaEvent.scopes)
+        }
+
+    @Test
+    fun `OAuth email login in non-sync-decoupled mode passes requested scopes through to BeginEmailFlow fxa client event`() =
+        runTest {
+            val fxaManager =
+                TestableFxaAccountManager(
+                    context = testContext,
+                    config = FxaConfig(FxaServer.Release, "dummyId", "http://auth-url/redirect"),
+                    storage = mock(),
+                    capabilities = setOf(DeviceCapability.SEND_TAB),
+                    syncConfig =
+                        SyncConfig(
+                            supportedEngines = setOf(SyncEngine.Tabs),
+                            syncDecouplingEnabled = false,
+                            periodicSyncConfig = null,
+                        ),
+                    coroutineContext = this.coroutineContext,
+                )
+            val account = fxaManager.testableStorageWrapper.account
+            val accountObserver: AccountObserver = mock()
+            fxaManager.register(accountObserver)
+
+            whenever(account.processEvent(any())).thenReturn(FxaState.Disconnected)
+            fxaManager.start()
+
+            val eventCaptor = argumentCaptor<FxaEvent>()
+            whenever(account.processEvent(eventCaptor.capture()))
+                .thenReturn(FxaState.Authenticating("https://test-oauth.example.com/", FxaRustAuthState.CONNECTED))
+
+            // when we call begin auth with scopes and service defined
+            val syncScopes = FxaService.Sync.requiredScopes.map { it.value }
+            fxaManager.beginAuthentication(
+                service = FxaService.Sync.identifier,
+                entrypoint = entryPoint,
+                authScopes = syncScopes.toSet(),
+            )
+
+            val fxaEvent = eventCaptor.value
+            assertIs<FxaEvent.BeginOAuthFlow>(fxaEvent)
+            assertEquals(syncScopes, fxaEvent.scopes)
+        }
 
     @Test
     fun `OAuth pairing login`() = runTest {
@@ -290,6 +373,7 @@ class FxaAccountManagerTest {
         fxaManager.beginAuthentication(
             pairingUrl = "http://test-oauth/example.com/pairing",
             entrypoint = entryPoint,
+            service = FxaService.Sync.identifier,
         )
 
         whenever(account.processEvent(any())).thenReturn(FxaState.Connected)
@@ -319,7 +403,7 @@ class FxaAccountManagerTest {
         // Simulate the fxa client moving to the `Disconnected` state after `beginAuthentication()` is called.
         // This signals that the authentication failed at the very start.
         whenever(account.processEvent(any())).thenReturn(FxaState.Disconnected)
-        fxaManager.beginAuthentication(entrypoint = entryPoint)
+        fxaManager.beginAuthentication(service = FxaService.Sync.identifier, entrypoint = entryPoint)
 
         verify(accountObserver, times(1)).onFlowError(AuthFlowError.FailedToBeginAuth)
     }
@@ -344,7 +428,7 @@ class FxaAccountManagerTest {
 
         whenever(account.processEvent(any()))
             .thenReturn(FxaState.Authenticating("https://test-oauth.example.com/", FxaRustAuthState.CONNECTED))
-        fxaManager.beginAuthentication(entrypoint = entryPoint)
+        fxaManager.beginAuthentication(service = FxaService.Sync.identifier, entrypoint = entryPoint)
 
         // Simulate the fxa client moving to the `Disconnected` state after `finishAuthentication()` is called.
         // This signals that the authentication failed at the end.
@@ -420,7 +504,7 @@ class FxaAccountManagerTest {
 
         whenever(account.processEvent(any()))
             .thenReturn(FxaState.Authenticating("https://test-oauth.example.com/", FxaRustAuthState.CONNECTED))
-        fxaManager.beginAuthentication(entrypoint = entryPoint)
+        fxaManager.beginAuthentication(service = FxaService.Sync.identifier, entrypoint = entryPoint)
 
         whenever(account.processEvent(any())).thenReturn(FxaState.Connected)
         fxaManager.finishAuthentication(FxaAuthData(AuthType.Signin, "test-code", "test-auth-state"))
@@ -450,7 +534,7 @@ class FxaAccountManagerTest {
 
         whenever(account.processEvent(any()))
             .thenReturn(FxaState.Authenticating("https://test-oauth.example.com/", FxaRustAuthState.CONNECTED))
-        fxaManager.beginAuthentication(entrypoint = entryPoint)
+        fxaManager.beginAuthentication(service = FxaService.Sync.identifier, entrypoint = entryPoint)
 
         whenever(account.processEvent(any())).thenReturn(FxaState.Connected)
         fxaManager.finishAuthentication(FxaAuthData(AuthType.Signin, "test-code", "test-auth-state"))
@@ -480,7 +564,7 @@ class FxaAccountManagerTest {
         fxaManager.start()
         whenever(account.processEvent(any()))
             .thenReturn(FxaState.Authenticating("https://test-oauth.example.com/", FxaRustAuthState.CONNECTED))
-        fxaManager.beginAuthentication(entrypoint = entryPoint)
+        fxaManager.beginAuthentication(service = FxaService.Sync.identifier, entrypoint = entryPoint)
         whenever(account.processEvent(any())).thenReturn(FxaState.Connected)
         fxaManager.finishAuthentication(FxaAuthData(AuthType.Signin, "test-code", "test-auth-state"))
         org.mockito.Mockito.reset(accountObserver)
@@ -515,7 +599,7 @@ class FxaAccountManagerTest {
         fxaManager.start()
         whenever(account.processEvent(any()))
             .thenReturn(FxaState.Authenticating("https://test-oauth.example.com/", FxaRustAuthState.CONNECTED))
-        fxaManager.beginAuthentication(entrypoint = entryPoint)
+        fxaManager.beginAuthentication(service = FxaService.Sync.identifier, entrypoint = entryPoint)
         whenever(account.processEvent(any())).thenReturn(FxaState.Connected)
         fxaManager.finishAuthentication(FxaAuthData(AuthType.Signin, "test-code", "test-auth-state"))
         // Drive into AuthIssues via a sync auth error.
@@ -550,7 +634,7 @@ class FxaAccountManagerTest {
         fxaManager.start()
         whenever(account.processEvent(any()))
             .thenReturn(FxaState.Authenticating("https://test-oauth.example.com/", FxaRustAuthState.CONNECTED))
-        fxaManager.beginAuthentication(entrypoint = entryPoint)
+        fxaManager.beginAuthentication(service = FxaService.Sync.identifier, entrypoint = entryPoint)
         whenever(account.processEvent(any())).thenReturn(FxaState.Connected)
         fxaManager.finishAuthentication(FxaAuthData(AuthType.Signin, "test-code", "test-auth-state"))
         org.mockito.Mockito.reset(accountObserver)
@@ -581,7 +665,7 @@ class FxaAccountManagerTest {
 
         whenever(account.processEvent(any()))
             .thenReturn(FxaState.Authenticating("https://test-oauth.example.com/", FxaRustAuthState.CONNECTED))
-        fxaManager.beginAuthentication(entrypoint = entryPoint)
+        fxaManager.beginAuthentication(service = FxaService.Sync.identifier, entrypoint = entryPoint)
 
         whenever(account.processEvent(any())).thenReturn(FxaState.Connected)
         fxaManager.finishAuthentication(FxaAuthData(AuthType.Signin, "test-code", "test-auth-state"))
@@ -612,7 +696,7 @@ class FxaAccountManagerTest {
 
         whenever(account.processEvent(any()))
             .thenReturn(FxaState.Authenticating("https://test-oauth.example.com/", FxaRustAuthState.CONNECTED))
-        fxaManager.beginAuthentication(entrypoint = entryPoint)
+        fxaManager.beginAuthentication(service = FxaService.Sync.identifier, entrypoint = entryPoint)
 
         whenever(account.processEvent(any())).thenReturn(FxaState.Connected)
         fxaManager.finishAuthentication(FxaAuthData(AuthType.Signin, "test-code", "test-auth-state"))

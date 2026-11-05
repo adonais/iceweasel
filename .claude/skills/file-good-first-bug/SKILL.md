@@ -3,6 +3,8 @@ name: file-good-first-bug
 description: Use this skill when the user wants to file good-first-bugs in Bugzilla for Firefox. A good-first-bug is a narrow, self-contained, low-risk task scoped so a first-time contributor can land it without deep context. Sources include lint warnings, small typos, dead-code removal, mechanical refactors, docs conversions, or any other small task the user points at. Opens a prefilled `enter_bug.cgi` form per bug in the user's browser for them to submit. Trigger on phrases like "file a good first bug", "open good first bugs for X", "create a good-first-bug from this".
 ---
 
+# Filing good first bugs
+
 ## What is a good first bug
 
 A bug a newcomer can pick up cold and finish in one short patch. The hallmarks:

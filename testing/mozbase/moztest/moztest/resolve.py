@@ -5,6 +5,7 @@
 import fnmatch
 import os
 import pickle
+import re
 import sys
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
@@ -21,6 +22,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 MOCHITEST_CHUNK_BY_DIR = 4
 MOCHITEST_TOTAL_CHUNKS = 5
+
+ROOT_TAGS_RE = re.compile(rb"^tags *:", re.MULTILINE)
 
 
 def WebglSuite(name):
@@ -824,7 +827,6 @@ class TestResolver(MozbuildObject):
         self._geckoview_junit_loaded = False
         self._tests_loaded = False
         self._wpt_loaded = False
-        self.meta_tags = {}
 
     def _reset_state(self):
         self._tests_by_path = defaultdict(list)
@@ -927,19 +929,38 @@ class TestResolver(MozbuildObject):
 
         return tuple(paths)
 
+    @cache
     def _extract_tags_from_file(self, file_path):
+        """Return the root-level ``tags`` of a wptrunner metadata file.
 
-        tags = []
+        Only the few files with an unindented ``tags`` key are handed to
+        wptmanifest, as parsing all of them is too slow for the decision task.
+        """
         try:
-            with open(file_path, encoding="utf-8") as f:
-                for line in f:
-                    if "tags: [" in line:
-                        tags = line.split("[")[1].split("]")[0].split()
-                        break
+            with open(file_path, "rb") as f:
+                content = f.read()
         except OSError:
-            # File doesn't exist or isn't readable
-            pass
-        return tags
+            return ()
+
+        if not ROOT_TAGS_RE.search(content):
+            return ()
+
+        from wptrunner.wptmanifest.node import KeyValueNode, ListNode, ValueNode
+        from wptrunner.wptmanifest.parser import parse
+
+        try:
+            root = parse(content)
+        except Exception:
+            return ()
+        for node in root.children:
+            if not isinstance(node, KeyValueNode) or node.data != "tags":
+                continue
+            for value in node.children:
+                if isinstance(value, ListNode):
+                    return tuple(str(child.data) for child in value.children)
+                if isinstance(value, ValueNode):
+                    return (str(value.data),)
+        return ()
 
     def get_test_tags(self, test_tags, metadata_base, path):
 
@@ -953,12 +974,7 @@ class TestResolver(MozbuildObject):
             all_paths = dir_metadata_paths
 
         for file_path in all_paths:
-            if file_path in self.meta_tags:
-                test_tags.extend(self.meta_tags[file_path])
-            else:
-                tags = self._extract_tags_from_file(file_path)
-                self.meta_tags[file_path] = tags
-                test_tags.extend(tags)
+            test_tags.extend(self._extract_tags_from_file(file_path))
 
         return list(set(test_tags))
 

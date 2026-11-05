@@ -20,7 +20,6 @@ try:
 except ImportError:
     build = None
 
-from browsertime import BrowsertimeAndroid, BrowsertimeDesktop
 from cmdline import DESKTOP_APPS, parse_args
 from logger.logger import RaptorLogger
 from manifest import get_raptor_test_list
@@ -75,9 +74,9 @@ def main(args=sys.argv[1:]):
                 inner_kwargs[key] = outer_kwargs.get(key)
 
         if args.app in DESKTOP_APPS:
-            klass = BrowsertimeDesktop
+            from browsertime.desktop import BrowsertimeDesktop as klass
         else:
-            klass = BrowsertimeAndroid
+            from browsertime.android import BrowsertimeAndroid as klass
 
         return klass(*inner_args, **inner_kwargs)
 

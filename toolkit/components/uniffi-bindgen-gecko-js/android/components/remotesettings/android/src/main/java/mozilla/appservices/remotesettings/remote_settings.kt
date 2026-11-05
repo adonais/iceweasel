@@ -2615,6 +2615,8 @@ data class RemoteSettingsContext (
      */
     var `country`: kotlin.String? = null 
     , 
+    var `distribution`: kotlin.String? = null 
+    , 
     /**
      * Extra attributes to add to the env for JEXL filtering.
      *
@@ -2646,6 +2648,7 @@ public object FfiConverterTypeRemoteSettingsContext: FfiConverterRustBuffer<Remo
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
             FfiConverterOptionalMapStringString.read(buf),
         )
     }
@@ -2659,6 +2662,7 @@ public object FfiConverterTypeRemoteSettingsContext: FfiConverterRustBuffer<Remo
             FfiConverterOptionalString.allocationSize(value.`osVersion`) +
             FfiConverterOptionalString.allocationSize(value.`formFactor`) +
             FfiConverterOptionalString.allocationSize(value.`country`) +
+            FfiConverterOptionalString.allocationSize(value.`distribution`) +
             FfiConverterOptionalMapStringString.allocationSize(value.`customTargettingAttributes`)
     )
 
@@ -2671,6 +2675,7 @@ public object FfiConverterTypeRemoteSettingsContext: FfiConverterRustBuffer<Remo
             FfiConverterOptionalString.write(value.`osVersion`, buf)
             FfiConverterOptionalString.write(value.`formFactor`, buf)
             FfiConverterOptionalString.write(value.`country`, buf)
+            FfiConverterOptionalString.write(value.`distribution`, buf)
             FfiConverterOptionalMapStringString.write(value.`customTargettingAttributes`, buf)
     }
 }

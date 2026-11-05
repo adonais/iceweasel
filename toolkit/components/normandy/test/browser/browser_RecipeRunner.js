@@ -16,8 +16,8 @@ const { BaseAction } = ChromeUtils.importESModule(
 const { RecipeRunner } = ChromeUtils.importESModule(
   "resource://normandy/lib/RecipeRunner.sys.mjs"
 );
-const { ClientEnvironment } = ChromeUtils.importESModule(
-  "resource://normandy/lib/ClientEnvironment.sys.mjs"
+const { ClientEnvironmentBase } = ChromeUtils.importESModule(
+  "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs"
 );
 const { CleanupManager } = ChromeUtils.importESModule(
   "resource://normandy/lib/CleanupManager.sys.mjs"
@@ -44,14 +44,12 @@ add_task(async function getFilterContext() {
     "locale",
     "plugins",
     "recipe",
-    "request_time",
     "searchEngine",
     "syncDesktopDevices",
     "syncMobileDevices",
     "syncSetup",
     "syncTotalDevices",
     "telemetry",
-    "userId",
     "version",
   ];
   for (const key of expectedNormandyKeys) {
@@ -70,9 +68,9 @@ add_task(async function getFilterContext() {
     "environment.recipe is the recipe passed to getFilterContext"
   );
   is(
-    ClientEnvironment.recipe,
+    ClientEnvironmentBase.recipe,
     undefined,
-    "ClientEnvironment has not been mutated"
+    "ClientEnvironmentBase has not been mutated"
   );
   delete recipe.unrelated;
   Assert.deepEqual(
@@ -85,11 +83,19 @@ add_task(async function getFilterContext() {
   await SpecialPowers.pushPrefEnv({
     set: [["app.normandy.user_id", "some id"]],
   });
-  is(context.env.userId, "some id", "User id is read from prefs when accessed");
+  is(
+    context.env.legacyRandomizationId,
+    "some id",
+    "legacyRandomizationId is read from prefs when accessed"
+  );
   await SpecialPowers.pushPrefEnv({
     set: [["app.normandy.user_id", "real id"]],
   });
-  is(context.env.userId, "some id", "userId was cached");
+  is(
+    context.env.legacyRandomizationId,
+    "some id",
+    "legacyRandomizationId was cached"
+  );
 });
 
 decorate_task(
@@ -203,51 +209,6 @@ decorate_task(
 );
 
 decorate_task(
-  withMockNormandyApi(),
-  withStub(ClientEnvironment, "getClientClassification"),
-  async function testClientClassificationCache({
-    getClientClassificationStub,
-  }) {
-    getClientClassificationStub.returns(Promise.resolve(false));
-
-    await SpecialPowers.pushPrefEnv({
-      set: [["app.normandy.api_url", "https://example.com/selfsupport-dummy"]],
-    });
-
-    // When the experiment pref is false, eagerly call getClientClassification.
-    await SpecialPowers.pushPrefEnv({
-      set: [["app.normandy.experiments.lazy_classify", false]],
-    });
-    ok(
-      !getClientClassificationStub.called,
-      "getClientClassification hasn't been called"
-    );
-    await RecipeRunner.run();
-    ok(
-      getClientClassificationStub.called,
-      "getClientClassification was called eagerly"
-    );
-
-    // When the experiment pref is true, do not eagerly call getClientClassification.
-    await SpecialPowers.pushPrefEnv({
-      set: [["app.normandy.experiments.lazy_classify", true]],
-    });
-    getClientClassificationStub.reset();
-    ok(
-      !getClientClassificationStub.called,
-
-      "getClientClassification hasn't been called"
-    );
-    await RecipeRunner.run();
-    ok(
-      !getClientClassificationStub.called,
-
-      "getClientClassification was not called eagerly"
-    );
-  }
-);
-
-decorate_task(
   withStub(ActionsManager.prototype, "finalize"),
   NormandyTestUtils.withMockRecipeCollection([]),
   async function testRunEvents() {
@@ -267,6 +228,7 @@ decorate_task(
 decorate_task(
   withPrefEnv({
     set: [
+      ["app.normandy.api_url", "https://example.com/selfsupport-dummy"],
       ["app.normandy.dev_mode", false],
       ["app.normandy.first_run", false],
     ],
@@ -286,7 +248,10 @@ decorate_task(
 // test init() in dev mode
 decorate_task(
   withPrefEnv({
-    set: [["app.normandy.dev_mode", true]],
+    set: [
+      ["app.normandy.api_url", "https://example.com/selfsupport-dummy"],
+      ["app.normandy.dev_mode", true],
+    ],
   }),
   withStub(RecipeRunner, "run"),
   withStub(RecipeRunner, "registerTimer"),
@@ -310,6 +275,7 @@ decorate_task(
 decorate_task(
   withPrefEnv({
     set: [
+      ["app.normandy.api_url", "https://example.com/selfsupport-dummy"],
       ["app.normandy.dev_mode", false],
       ["app.normandy.first_run", true],
     ],
@@ -345,6 +311,7 @@ decorate_task(
 decorate_task(
   withPrefEnv({
     set: [
+      ["app.normandy.api_url", "https://example.com/selfsupport-dummy"],
       ["app.normandy.dev_mode", false],
       ["app.normandy.first_run", false],
       ["app.normandy.enabled", true],
@@ -576,15 +543,11 @@ decorate_task(async function testAutomaticCapabilities() {
 
   ok(
     capabilities.has("jexl.context.env.country"),
-    "context variables from Normandy's client context should be included"
+    "context variables from the client context should be included"
   );
   ok(
     capabilities.has("jexl.context.env.version"),
-    "context variables from the superclass context should be included"
-  );
-  ok(
-    !capabilities.has("jexl.context.env.getClientClassification"),
-    "non-getter functions should not be included"
+    "context variables from ClientEnvironmentBase should be included"
   );
   ok(
     !capabilities.has("jexl.context.env.prototype"),

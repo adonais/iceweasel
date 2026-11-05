@@ -14,14 +14,10 @@ CRITICAL_PLATFORMS = ("windows11-64-24h2-shippable",)
 
 
 class Speedometer3Support(BasePythonSupport):
-    no_nova = None
     profiling = False
 
     def setup_test(self, test, args):
         super().setup_test(test, args)
-
-        if args.extra_prefs.get("browser.nova.enabled", True) is False:
-            self.no_nova = True
 
         for profile_type, profile_enabled in [
             ("etw_profile", args.etw_profile),
@@ -179,9 +175,6 @@ class Speedometer3Support(BasePythonSupport):
             suite["shouldAlert"] = False
             for subtest in suite.get("subtests", []):
                 subtest["shouldAlert"] = False
-
-        if self.no_nova:
-            suite["extraOptions"].append("no-nova")
 
     def modify_command(self, cmd, test):
         """Modify the browsertime command for speedometer 3.

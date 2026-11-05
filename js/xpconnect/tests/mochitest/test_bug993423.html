@@ -20,7 +20,12 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=993423
       SimpleTest.finish();
   }
 
-  function go() {
+  async function go() {
+    // Enable SVG <use> inline event handlers, since they're kinda the point of
+    // this test.
+    await SpecialPowers.pushPrefEnv({
+      set: [["svg.use-element.block-inline-event-handlers", false]],
+    });
     document.querySelector('use').setAttributeNS('http://www.w3.org/1999/xlink',
                                                  'href', location.href + '#a');
   }

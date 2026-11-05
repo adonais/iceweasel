@@ -19,7 +19,6 @@
   border-radius: var(--border-radius-xlarge, var(--border-radius-large));
   border-width: var(--border-width);
   border-style: solid;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-color: var(--confirm-border-color);
   box-shadow: var(--box-shadow-level-3);
   overflow: hidden;
@@ -59,7 +58,6 @@ moz-button.close-button::part(button) {
   --button-min-height: var(--size-item-medium);
 
   box-shadow: var(--box-shadow-level-3);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border: 1px solid var(--confirm-border-color);
 }
 
@@ -101,7 +99,6 @@ moz-button.close-button::part(button) {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   height: 10px;
   top: 0;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background: linear-gradient(to bottom, var(--background-color-box), light-dark(rgba(255, 255, 255, 0.8), rgba(35, 34, 43, 0.8)), transparent);
 }
 
@@ -109,7 +106,6 @@ moz-button.close-button::part(button) {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   height: 16px;
   bottom: 0;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background: linear-gradient(to top, var(--background-color-box), light-dark(rgba(255, 255, 255, 0.8), rgba(35, 34, 43, 0.8)), transparent);
 }
 

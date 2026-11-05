@@ -181,3 +181,71 @@ ipprotection:
         description: >
           Whether a previous auth JWT was present, i.e. this was a renewal
           rather than a first enrollment.
+
+ipprotection.inclusions:
+  count:
+    type: quantity
+    unit: sites
+    lifetime: application
+    description: >
+      The number of site inclusions the user has set.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2082551
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2082551
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - rking@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+
+  rule_applied:
+    type: counter
+    description: >
+      Incremented when a site inclusion decides whether a top-level page load is
+      proxied.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2082551
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2082551
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - rking@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+
+ipprotection.exclusions:
+  count:
+    type: quantity
+    unit: sites
+    lifetime: application
+    description: >
+      The number of site exclusions the user has set.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2082551
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2082551
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - rking@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+
+  rule_applied:
+    type: counter
+    description: >
+      Incremented when a site exclusion decides whether a top-level page load is
+      proxied.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2082551
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2082551
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - rking@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never

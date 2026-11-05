@@ -38,3 +38,10 @@ pref(ui.useOverlayScrollbars,0) == chrome://reftest/content/css-scrollbars/scrol
 # The two ends must be distinguishable for the == above to mean anything: swap
 # the inset and the opposite corner is spared instead.
 pref(ui.useOverlayScrollbars,0) != chrome://reftest/content/css-scrollbars/scrollbar-inset-radii-inline-notref.html chrome://reftest/content/css-scrollbars/scrollbar-inset-radii-inline.html
+# The resizer must be positioned with the scrollbar inset, not at the corner.
+pref(ui.useOverlayScrollbars,0) != chrome://reftest/content/css-scrollbars/scrollbar-inset-resizer.html chrome://reftest/content/css-scrollbars/scrollbar-inset-resizer-notref.html
+# Zoomed-in content must be painted under transparent non-overlay viewport
+# scrollbars.
+# useDrawSnapshot doesn't deal with pinch-zoom.
+# Android test times out and android never uses overlay scrollbars anyway.
+pref(ui.useOverlayScrollbars,0) fails-if(useDrawSnapshot) skip-if(Android) == viewport-transparent-scrollbar-zoomed.html viewport-transparent-scrollbar-zoomed-ref.html

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg"
+  xmlns:html="http://www.w3.org/1999/xhtml">
+  <a href="#">
+    <text x="30" y="30">example</text>
+  </a>
+  <foreignObject x="0" y="0" width="50" height="50">
+    <!-- MaybeEditingStateChanged checks for mContentEditableCount > 0 -->
+    <html:div contenteditable=""></html:div>
+  </foreignObject>
+  <html:script><![CDATA[
+    const host = document.querySelector("div");
+    // shadow root allows for focused element while design mode is enabled.
+    const shadow = host.attachShadow({mode: "open"});
+    const focusable = document.createElementNS("http://www.w3.org/1999/xhtml", "p");
+    focusable.tabIndex = 0;
+    shadow.append(focusable);
+    focusable.focus();
+    let blurred = false;
+    let isAppending = false;
+    focusable.onblur = () => {
+      blurred = isAppending ? 'duringAppend' : 'notDuringAppend';
+    };
+    document.designMode = "on";
+    // make focused element no longer focusable due to style
+    focusable.setAttribute("style","visibility:hidden");
+    focusable.getBoundingClientRect(); // force reflow
+    // blur should not happen here
+    isAppending = true;
+    shadow.append("hello");
+    isAppending = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      parent.postMessage(blurred);
+    }));
+  ]]></html:script>
+</svg>

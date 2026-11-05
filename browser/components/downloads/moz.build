@@ -5,8 +5,6 @@
 with Files("*"):
     BUG_COMPONENT = ("Firefox", "Downloads Panel")
 
-BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
-
 JAR_MANIFESTS += ["jar.mn"]
 
 MOZ_SRC_FILES += [
@@ -26,3 +24,5 @@ with Files("**"):
     BUG_COMPONENT = ("Firefox", "Downloads Panel")
 
 XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
+BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
+MOCHITEST_CHROME_MANIFESTS += ["test/chrome/chrome.toml"]

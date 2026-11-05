@@ -196,7 +196,8 @@ void nsMathMLmencloseFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   if (IsToDraw(MencloseNotation::LongDiv)) {
-    mMathMLChar[mLongDivCharIndex].Display(aBuilder, this, aLists, 1);
+    mMathMLChar[mLongDivCharIndex].Display(aBuilder, this, aLists, 1,
+                                           /* aIsArtifact */ true);
 
     nsRect rect;
     mMathMLChar[mLongDivCharIndex].GetRect(rect);

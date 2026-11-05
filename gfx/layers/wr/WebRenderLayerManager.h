@@ -163,7 +163,7 @@ class WebRenderLayerManager final : public WindowRenderer {
   void WrUpdated();
   nsIWidget* GetWidget() { return mWidget; }
 
-  uint32_t StartFrameTimeRecording(int32_t aBufferSize) override;
+  uint32_t StartFrameTimeRecording(uint32_t aBufferSize) override;
   void StopFrameTimeRecording(uint32_t aStartIndex,
                               nsTArray<float>& aFrameIntervals) override;
 

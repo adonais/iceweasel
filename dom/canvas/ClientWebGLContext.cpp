@@ -26,6 +26,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/dom/BufferSourceBinding.h"
+#include "mozilla/dom/CanvasRenderingContextHelper.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/GeneratePlaceholderCanvasData.h"
 #include "mozilla/dom/ToJSValue.h"
@@ -394,6 +395,7 @@ void ClientWebGLContext::Event_webglcontextrestored() const {
       this);  // TODO: Make context loss non-mutable.
   if (!mutThis->CreateHostContext(requestSize)) {
     mLossStatus = webgl::LossStatus::LostForever;
+    mutThis->MaybeThrowContextCreationError();
     return;
   }
 
@@ -428,6 +430,15 @@ void ClientWebGLContext::ThrowEvent_WebGLContextCreationError(
   event->SetTrusted(true);
 
   target->DispatchEvent(*event);
+}
+
+NS_IMETHODIMP
+ClientWebGLContext::MaybeThrowContextCreationError() {
+  if (!mDeferContextCreationError.empty()) {
+    std::string error = std::move(mDeferContextCreationError);
+    ThrowEvent_WebGLContextCreationError(error);
+  }
+  return NS_OK;
 }
 
 // -------------------------------------------------------------------------
@@ -812,6 +823,7 @@ ClientWebGLContext::SetDimensions(const int32_t signedWidth,
                                   const int32_t signedHeight) {
   const FuncScope funcScope(*this, "<SetDimensions>");
   MOZ_ASSERT(mInitialOptions);
+  MOZ_ASSERT(mDeferContextCreationError.empty());
 
   if (mLossStatus != webgl::LossStatus::Ready) {
     // Attempted resize of a lost context.
@@ -864,6 +876,8 @@ void ClientWebGLContext::ResetBitmap() {
 }
 
 bool ClientWebGLContext::CreateHostContext(const uvec2& requestedSize) {
+  MOZ_ASSERT(mDeferContextCreationError.empty());
+
   const auto pNotLost = MakeRefPtr<webgl::NotLostData>(*this);
   auto& notLost = *pNotLost;
 
@@ -942,7 +956,7 @@ bool ClientWebGLContext::CreateHostContext(const uvec2& requestedSize) {
     notLost.info.error = str;
   }
   if (!notLost.info.error->empty()) {
-    ThrowEvent_WebGLContextCreationError(notLost.info.error);
+    mDeferContextCreationError = notLost.info.error;
     return false;
   }
   mNotLost = pNotLost;
@@ -1051,16 +1065,12 @@ void ClientWebGLContext::OnMemoryPressure() {
 }
 
 NS_IMETHODIMP
-ClientWebGLContext::SetContextOptions(JSContext* cx,
-                                      JS::Handle<JS::Value> options,
-                                      ErrorResult& aRvForDictionaryInit) {
-  if (mInitialOptions && options.isNullOrUndefined()) return NS_OK;
-
-  dom::WebGLContextAttributes attributes;
-  if (!attributes.Init(cx, options)) {
-    aRvForDictionaryInit.Throw(NS_ERROR_UNEXPECTED);
+ClientWebGLContext::SetContextOptions(
+    const dom::CanvasRenderingContextOptions& aOptions) {
+  if (!aOptions.is<dom::WebGLContextAttributes>()) {
     return NS_ERROR_UNEXPECTED;
   }
+  const auto& attributes = aOptions.as<dom::WebGLContextAttributes>();
 
   WebGLContextOptions newOpts;
 

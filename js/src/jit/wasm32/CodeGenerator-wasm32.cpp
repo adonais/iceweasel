@@ -169,6 +169,9 @@ void CodeGenerator::visitWasmPermuteSimd128(LWasmPermuteSimd128* ins) {
 void CodeGenerator::visitWasmReplaceLaneSimd128(LWasmReplaceLaneSimd128* ins) {
   MOZ_CRASH();
 }
+void CodeGenerator::visitWasmMoveLaneSimd128(LWasmMoveLaneSimd128* ins) {
+  MOZ_CRASH();
+}
 void CodeGenerator::visitWasmReplaceInt64LaneSimd128(
     LWasmReplaceInt64LaneSimd128* ins) {
   MOZ_CRASH();

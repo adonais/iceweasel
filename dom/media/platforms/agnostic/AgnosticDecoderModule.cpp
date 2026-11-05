@@ -85,11 +85,12 @@ media::DecodeSupportSet AgnosticDecoderModule::Supports(
   return media::DecodeSupportSet{};
 }
 
-already_AddRefed<MediaDataDecoder> AgnosticDecoderModule::CreateVideoDecoder(
-    const CreateDecoderParams& aParams) {
-  if (Supports(SupportDecoderParams(aParams), nullptr /* diagnostic */)
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+AgnosticDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
+  if (!aParams.IsVideo() ||
+      Supports(SupportDecoderParams(aParams), nullptr /* diagnostic */)
           .isEmpty()) {
-    return nullptr;
+    return CreateDecoderPromiseFrom(nullptr, aParams);
   }
   RefPtr<MediaDataDecoder> m;
 
@@ -109,12 +110,7 @@ already_AddRefed<MediaDataDecoder> AgnosticDecoderModule::CreateVideoDecoder(
     }
   }
 
-  return m.forget();
-}
-
-already_AddRefed<MediaDataDecoder> AgnosticDecoderModule::CreateAudioDecoder(
-    const CreateDecoderParams& aParams) {
-  return nullptr;
+  return CreateDecoderPromiseFrom(m.forget(), aParams);
 }
 
 /* static */

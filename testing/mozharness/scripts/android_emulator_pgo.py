@@ -67,6 +67,8 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
     Mozharness script to generate an android PGO profile using the emulator
     """
 
+    python_constraints = "requirements-android-pgo.txt"
+
     config_options = copy.deepcopy(testing_config_options)
 
     def __init__(self, require_config_file=False):

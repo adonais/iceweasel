@@ -39,6 +39,8 @@ nimbus_targeting_environment:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2057060
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2069093
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2069104
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2074891
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2030810
     data_reviews: &targeting_context_data_reviews
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1928107
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1937207
@@ -56,6 +58,8 @@ nimbus_targeting_environment:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2057060
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2069093
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2069104
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2074891
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2030810
     notification_emails: &targeting_context_notification_emails
       - beth@mozilla.com
       - project-nimbus@mozilla.com
@@ -130,6 +134,7 @@ nimbus_targeting_environment:
     labels:
       - "activeExperiments"
       - "activeRollouts"
+      - "activeWebPushSubscriptionCount"
       - "addonsInfo"
       - "addressesSaved"
       - "allowedNotificationOrigins"
@@ -143,6 +148,7 @@ nimbus_targeting_environment:
       - "doesAppNeedPin"
       - "enrollmentsMap"
       - "firefoxVersion"
+      - "forgetButtonAreaType"
       - "hasActiveEnterprisePolicies"
       - "hasPinnedTabs"
       - "homePageSettings"
@@ -157,9 +163,11 @@ nimbus_targeting_environment:
       - "locale"
       - "memoryMB"
       - "os"
+      - "previousSessionEnd"
       - "primaryResolution"
       - "profileAgeCreated"
       - "profileGroupProfileCount"
+      - "profileLastUse"
       - "region"
       - "totalBookmarksCount"
       - "userMonthlyActivity"
@@ -292,6 +300,24 @@ nimbus_targeting_context:
       type: array
       items:
         type: string
+
+  active_web_push_subscription_count:
+    bugs: *targeting_context_bugs
+    data_reviews: *targeting_context_data_reviews
+    expires: *targeting_context_expiry
+    notification_emails: *targeting_context_notification_emails
+    send_in_pings: *targeting_context_pings
+    description: >
+      The number of unexpired web push subscriptions, excluding system
+      subscriptions such as the one held by Firefox Accounts.
+
+      Until the push service starts, which is usually the case for the
+      targeting context recorded during startup, this is the count saved the
+      last time it was evaluated while push was running.
+    data_sensitivity:
+      - interaction
+    type: quantity
+    unit: subscriptions
 
   addons_info:
     bugs: *targeting_context_bugs
@@ -494,6 +520,19 @@ nimbus_targeting_context:
     type: quantity
     unit: major version
 
+  forget_button_area_type:
+    bugs: *targeting_context_bugs
+    data_reviews: *targeting_context_data_reviews
+    expires: *targeting_context_expiry
+    notification_emails: *targeting_context_notification_emails
+    send_in_pings: *targeting_context_pings
+    description: >
+      Where the Forget button is placed (e.g. "toolbar" or "panel"), or "none"
+      if it is not placed.
+    data_sensitivity:
+      - interaction
+    type: string
+
   has_active_enterprise_policies:
     bugs: *targeting_context_bugs
     data_reviews: *targeting_context_data_reviews
@@ -690,6 +729,19 @@ nimbus_targeting_context:
         windowsVersion:
           type: number
 
+  previous_session_end:
+    bugs: *targeting_context_bugs
+    data_reviews: *targeting_context_data_reviews
+    expires: *targeting_context_expiry
+    notification_emails: *targeting_context_notification_emails
+    send_in_pings: *targeting_context_pings
+    description: >
+      Timestamp of the previously closed session.
+    data_sensitivity:
+      - interaction
+    type: quantity
+    unit: milliseconds since UNIX epoch
+
   primary_resolution:
     bugs: *targeting_context_bugs
     data_reviews: *targeting_context_data_reviews
@@ -733,6 +785,22 @@ nimbus_targeting_context:
       - interaction
     type: quantity
     unit: profiles
+
+  profile_last_use:
+    bugs: *targeting_context_bugs
+    data_reviews: *targeting_context_data_reviews
+    expires: *targeting_context_expiry
+    notification_emails: *targeting_context_notification_emails
+    send_in_pings: *targeting_context_pings
+    description: >
+      The UNIX timestamp of when the profile was last used before the current
+      session, or zero if it could not be determined. This is the more recent
+      of the previous session's lock file time and the prefs.js modification
+      time.
+    data_sensitivity:
+      - interaction
+    type: quantity
+    unit: milliseconds since UNIX epoch
 
   region:
     bugs: *targeting_context_bugs
@@ -1334,6 +1402,40 @@ nimbus_events:
 
     data_sensitivity:
       - technical
+    notification_emails:
+      - beth@mozilla.com
+      - project-nimbus@mozilla.com
+    expires: never
+
+  rollouts_opt_out:
+    type: event
+    description: >
+      Emitted when a user opts out of rollouts (remote improvements).
+
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081293
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081293
+
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - beth@mozilla.com
+      - project-nimbus@mozilla.com
+    expires: never
+
+  studies_opt_out:
+    type: event
+    description: >
+      Emitted when a user opts out of studies (experiments).
+
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081293
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081293
+
+    data_sensitivity:
+      - interaction
     notification_emails:
       - beth@mozilla.com
       - project-nimbus@mozilla.com

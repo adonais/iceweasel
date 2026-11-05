@@ -6,6 +6,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+#include <limits.h>
+
 #include "keyhi.h"
 #include "pkcs11t.h"
 #include "pk11func.h"
@@ -1197,6 +1199,8 @@ PK11_HPKE_Seal(HpkeContext *cx, const SECItem *aad, const SECItem *pt,
     PORT_Memcpy(ivOut, cx->baseNonce->data, cx->baseNonce->len);
 
     tagLen = cx->aeadParams->tagLen;
+    CHECK_FAIL_ERR(pt->len > INT_MAX - tagLen || (aad && aad->len > INT_MAX),
+                   SEC_ERROR_INPUT_LEN);
     maxOut = pt->len + tagLen;
     fixedBits = (cx->baseNonce->len - 8) * 8;
     ct = SECITEM_AllocItem(NULL, NULL, maxOut);
@@ -1269,6 +1273,8 @@ PK11_HPKE_Open(HpkeContext *cx, const SECItem *aad,
     }
     tagLen = cx->aeadParams->tagLen;
     CHECK_FAIL_ERR((ct->len < tagLen), SEC_ERROR_INVALID_ARGS);
+    CHECK_FAIL_ERR(ct->len > INT_MAX || (aad && aad->len > INT_MAX),
+                   SEC_ERROR_INPUT_LEN);
 
     pt = SECITEM_AllocItem(NULL, NULL, ct->len);
     CHECK_FAIL(!pt);

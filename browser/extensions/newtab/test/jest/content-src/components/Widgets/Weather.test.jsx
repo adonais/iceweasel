@@ -1282,4 +1282,73 @@ describe("<Weather> (Widgets/Weather)", () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  describe("impression telemetry", () => {
+    let originalIntersectionObserver;
+    let observerInstances;
+
+    beforeEach(() => {
+      observerInstances = [];
+      originalIntersectionObserver = global.IntersectionObserver;
+      global.IntersectionObserver = class MockIntersectionObserver {
+        constructor(callback) {
+          this.callback = callback;
+          this.observed = [];
+          observerInstances.push(this);
+        }
+        observe(el) {
+          this.observed.push(el);
+        }
+        unobserve() {}
+        disconnect() {}
+      };
+    });
+
+    afterEach(() => {
+      global.IntersectionObserver = originalIntersectionObserver;
+    });
+
+    it("fires WIDGETS_IMPRESSION once when the widget renders after weather data loads", () => {
+      const dispatch = jest.fn();
+      const store = createStore(combineReducers(reducers), {
+        ...mockState,
+        Weather: { ...mockState.Weather, initialized: false },
+      });
+      const { container } = render(
+        <Provider store={store}>
+          <Weather dispatch={dispatch} size="medium" />
+        </Provider>
+      );
+
+      act(() => {
+        store.dispatch({
+          type: at.WEATHER_UPDATE,
+          data: {
+            suggestions: mockState.Weather.suggestions,
+            hourlyForecasts: mockState.Weather.hourlyForecasts,
+            lastUpdated: Date.now(),
+            locationData: mockState.Weather.locationData,
+          },
+        });
+      });
+
+      const target = container.querySelector(".weather-widget");
+      const observer = observerInstances.find(o => o.observed.includes(target));
+      expect(observer).toBeDefined();
+
+      act(() => {
+        observer.callback([{ isIntersecting: true, target }], observer);
+        observer.callback([{ isIntersecting: true, target }], observer);
+      });
+
+      const impressions = dispatch.mock.calls.filter(
+        ([action]) => action.type === at.WIDGETS_IMPRESSION
+      );
+      expect(impressions).toHaveLength(1);
+      expect(impressions[0][0].data).toEqual({
+        widget_name: "weather",
+        widget_size: "medium",
+      });
+    });
+  });
 });

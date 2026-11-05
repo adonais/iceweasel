@@ -1,5 +1,4 @@
 [DEFAULT]
-dupe-manifest = true
 support-files = [
   "tree_shared.js",
   "popup_shared.js",
@@ -10,7 +9,6 @@ support-files = [
 ]
 prefs = [
   "app.support.baseURL='https://support.mozilla.org/'",
-  "browser.nova.enabled=false",
 ]
 
 ["test_contextmenu_menugroup.xhtml"]
@@ -26,7 +24,6 @@ skip-if = [
 
 ["test_menubar.xhtml"]
 skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1933983
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
 ]
 
@@ -37,6 +34,11 @@ skip-if = [
 ["test_moz_box_button.html"]
 
 ["test_moz_box_group.html"]
+support-files = [
+  "../../../../accessible/tests/mochitest/common.js",
+  "../../../../accessible/tests/mochitest/name.js",
+  "../../../../accessible/tests/mochitest/role.js",
+]
 
 ["test_moz_box_item.html"]
 

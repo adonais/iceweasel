@@ -5,7 +5,7 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Bindings (WebIDL)")
 
-TEST_DIRS += ["test"]
+TEST_DIRS += ["gtest", "test"]
 
 XPIDL_SOURCES += ["nsIScriptError.idl"]
 
@@ -34,6 +34,9 @@ EXPORTS.mozilla.dom += [
     "DOMJSClass.h",
     "DOMJSProxyHandler.h",
     "DOMString.h",
+    "ECMACollectionIterator.h",
+    "ECMACollectionMixin.h",
+    "ECMACollections.h",
     "Errors.msg",
     "Exceptions.h",
     "IterableIterator.h",
@@ -222,3 +225,7 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
 # Old versions of GCC issue false-positive warnings about buffer overflow.
 if CONFIG["CC_TYPE"] == "gcc" and 10 <= int(CONFIG["CC_VERSION"].split(".")[0]) < 12:
     CXXFLAGS += ["-Wno-stringop-overflow"]
+
+SOURCE_HEADERS += [
+    "nsScriptError.h",
+]

@@ -64,8 +64,4 @@ class nsNSSCertificateDB final : public nsIX509CertDB
    0x4783,                                    \
    {0xb3, 0x2c, 0x80, 0x12, 0x46, 0x93, 0xd8, 0x71}}
 
-SECStatus ChangeCertTrustWithPossibleAuthentication(
-    const mozilla::UniqueCERTCertificate& cert, CERTCertTrust& trust,
-    void* ctx);
-
 #endif  // nsNSSCertificateDB_h

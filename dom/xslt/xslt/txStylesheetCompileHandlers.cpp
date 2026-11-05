@@ -4,6 +4,7 @@
 
 #include "txStylesheetCompileHandlers.h"
 
+#include <memory>
 #include <utility>
 
 #include "mozilla/FloatingPoint.h"
@@ -435,8 +436,8 @@ static nsresult txFnStartLREStylesheet(int32_t aNamespaceID, nsAtom* aLocalName,
   double prio = UnspecifiedNaN<double>();
 
   UniquePtr<txPattern> match(new txRootPattern());
-  UniquePtr<txTemplateItem> templ(
-      new txTemplateItem(std::move(match), nullExpr, nullExpr, prio));
+  auto templ = std::make_unique<txTemplateItem>(std::move(match), nullExpr,
+                                                nullExpr, prio);
   aState.openInstructionContainer(templ.get());
   aState.addToplevelItem(templ.release());
 
@@ -547,7 +548,7 @@ static nsresult txFnStartDecimalFormat(int32_t aNamespaceID, nsAtom* aLocalName,
                     name);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  UniquePtr<txDecimalFormat> format(new txDecimalFormat);
+  auto format = std::make_unique<txDecimalFormat>();
   rv = getCharAttr(aAttributes, aAttrCount, nsGkAtoms::decimalSeparator, false,
                    aState, format->mDecimalSeparator);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -614,7 +615,7 @@ static nsresult txFnStartImport(int32_t aNamespaceID, nsAtom* aLocalName,
                                 nsAtom* aPrefix, txStylesheetAttr* aAttributes,
                                 int32_t aAttrCount,
                                 txStylesheetCompilerState& aState) {
-  UniquePtr<txImportItem> import(new txImportItem);
+  auto import = std::make_unique<txImportItem>();
   import->mFrame = MakeUnique<txStylesheet::ImportFrame>();
   txStylesheet::ImportFrame* frame = import->mFrame.get();
   aState.addToplevelItem(import.release());
@@ -731,7 +732,7 @@ static nsresult txFnStartOutput(int32_t aNamespaceID, nsAtom* aLocalName,
                                 txStylesheetCompilerState& aState) {
   nsresult rv = NS_OK;
 
-  UniquePtr<txOutputItem> item(new txOutputItem);
+  auto item = std::make_unique<txOutputItem>();
 
   txExpandedName methodExpName;
   rv = getQNameAttr(aAttributes, aAttrCount, nsGkAtoms::method, false, aState,
@@ -791,7 +792,7 @@ static nsresult txFnStartOutput(int32_t aNamespaceID, nsAtom* aLocalName,
   if (attr) {
     nsWhitespaceTokenizer tokens(attr->mValue);
     while (tokens.hasMoreTokens()) {
-      UniquePtr<txExpandedName> qname(new txExpandedName());
+      auto qname = std::make_unique<txExpandedName>();
       rv = qname->init(tokens.nextToken(), aState.mElementContext->mMappings,
                        false);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -834,7 +835,7 @@ static nsresult txFnStartStripSpace(int32_t aNamespaceID, nsAtom* aLocalName,
 
   bool strip = aLocalName == nsGkAtoms::stripSpace;
 
-  UniquePtr<txStripSpaceItem> stripItem(new txStripSpaceItem);
+  auto stripItem = std::make_unique<txStripSpaceItem>();
   nsWhitespaceTokenizer tokenizer(attr->mValue);
   while (tokenizer.hasMoreTokens()) {
     const nsAString& name = tokenizer.nextToken();
@@ -915,8 +916,8 @@ static nsresult txFnStartTemplate(int32_t aNamespaceID, nsAtom* aLocalName,
                       aState, match);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  UniquePtr<txTemplateItem> templ(
-      new txTemplateItem(std::move(match), name, mode, prio));
+  UniquePtr<txTemplateItem> templ =
+      std::make_unique<txTemplateItem>(std::move(match), name, mode, prio);
   aState.openInstructionContainer(templ.get());
   aState.addToplevelItem(templ.release());
 
@@ -950,8 +951,8 @@ static nsresult txFnStartTopVariable(int32_t aNamespaceID, nsAtom* aLocalName,
                    select);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  UniquePtr<txVariableItem> var(new txVariableItem(
-      name, std::move(select), aLocalName == nsGkAtoms::param));
+  auto var = std::make_unique<txVariableItem>(name, std::move(select),
+                                              aLocalName == nsGkAtoms::param);
   aState.openInstructionContainer(var.get());
   aState.pushPtr(var.get(), aState.eVariableItem);
 
@@ -1133,8 +1134,8 @@ static nsresult txFnStartApplyTemplates(int32_t aNamespaceID,
     select = MakeUnique<LocationStep>(nt.release(), LocationStep::CHILD_AXIS);
   }
 
-  UniquePtr<txPushNewContext> pushcontext(
-      new txPushNewContext(std::move(select)));
+  UniquePtr<txPushNewContext> pushcontext =
+      std::make_unique<txPushNewContext>(std::move(select));
   aState.pushSorter(pushcontext.get());
   pushInstruction(aState, std::move(pushcontext));
 

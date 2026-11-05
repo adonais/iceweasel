@@ -138,14 +138,6 @@ describe("theme-picker-shown", () => {
       await notifyThemePickerShown(el, () => false);
       expect(shownCalls).toHaveLength(0);
     });
-
-    it("skips an element without shown(), as on older hosts", async () => {
-      const el = makeUpgradedPicker("compact");
-      document.body.append(el);
-      el.shown = undefined;
-      await expect(notifyThemePickerShown(el)).resolves.toBeUndefined();
-      expect(shownCalls).toHaveLength(0);
-    });
   });
 
   describe("notifyThemePickersOnTransition", () => {

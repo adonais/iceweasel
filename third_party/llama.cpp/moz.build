@@ -185,3 +185,7 @@ FINAL_LIBRARY = 'mozinference'
 # #ifndef ANDROID guard is kept: this directory only enters DIRS when a llama
 # backend is built, which does not happen on Android.
 LICENSED_UNDER += ["mit"]
+
+SOURCE_HEADERS += [
+	"moz-overrides.h",
+]

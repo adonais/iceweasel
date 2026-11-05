@@ -2,9 +2,6 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 // Tests for the browser language section
-// Listed in both browser.toml (legacy groupbox UI) and browser-srd.toml
-// (Settings Redesign setting-group UI); each helper branches on
-// SRD_PREF_VALUE so the same test logic exercises both UIs.
 
 AddonTestUtils.initMochitest(this);
 
@@ -55,16 +52,6 @@ add_task(async function testLanguageChangeShowsRestartConfirmation() {
 
   await changeLocale(doc, "fr");
   await waitForRestartMessage(doc);
-
-  if (!SRD_PREF_VALUE) {
-    let button = doc
-      .getElementById("confirmBrowserLanguage")
-      .querySelector("button");
-    ok(
-      button.getAttribute("locales").startsWith("fr"),
-      "Legacy restart button encodes the new locale"
-    );
-  }
 
   await addon.uninstall();
   BrowserTestUtils.removeTab(gBrowser.selectedTab);

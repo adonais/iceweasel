@@ -67,14 +67,6 @@ async function captureAndSaveScreenshot(targetFront, window, args = {}) {
  * @param {object} args: See args param in captureAndSaveScreenshot
  */
 async function captureScreenshot(targetFront, args) {
-  // @backward-compat { version 87 } The screenshot-content actor was introduced in 87,
-  // so we can always use it once 87 reaches release.
-  const supportsContentScreenshot = targetFront.hasActor("screenshotContent");
-  if (!supportsContentScreenshot) {
-    const screenshotFront = await targetFront.getFront("screenshot");
-    return screenshotFront.capture(args);
-  }
-
   if (args.delay > 0) {
     await new Promise(res => setTimeout(res, args.delay * 1000));
   }

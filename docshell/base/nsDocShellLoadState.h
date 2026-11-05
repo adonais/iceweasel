@@ -157,6 +157,15 @@ class nsDocShellLoadState final {
 
   void SetNotifiedBeforeUnloadListeners(bool aNotifiedBeforeUnloadListeners);
 
+  // If true, the old document already fired pageswap for this navigation
+  // before the navigation had to start again as a new load. Do not fire it
+  // again.
+  bool PageSwapFired() const { return mPageSwapFired; }
+
+  void SetPageSwapFired(bool aPageSwapFired) {
+    mPageSwapFired = aPageSwapFired;
+  }
+
   bool ForceAllowDataURI() const;
 
   void SetForceAllowDataURI(bool aForceAllowDataURI);
@@ -596,6 +605,8 @@ class nsDocShellLoadState final {
   // If this attribute is true, any potential unload listeners have been
   // notified if applicable.
   bool mNotifiedBeforeUnloadListeners;
+
+  bool mPageSwapFired = false;
 
   // Principal we're inheriting. If null, this means the principal should be
   // inherited from the current document. If set to NullPrincipal, the channel

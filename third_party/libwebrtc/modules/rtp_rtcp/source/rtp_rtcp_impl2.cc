@@ -28,7 +28,6 @@
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "api/video/video_bitrate_allocation.h"
 #include "modules/include/module_fec_types.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -769,11 +768,6 @@ void ModuleRtpRtcpImpl2::set_rtt_ms(int64_t rtt_ms) {
 int64_t ModuleRtpRtcpImpl2::rtt_ms() const {
   MutexLock lock(&mutex_rtt_);
   return rtt_ms_;
-}
-
-void ModuleRtpRtcpImpl2::SetVideoBitrateAllocation(
-    const VideoBitrateAllocation& bitrate) {
-  rtcp_sender_.SetVideoBitrateAllocation(bitrate);
 }
 
 RTPSender* ModuleRtpRtcpImpl2::RtpSender() {

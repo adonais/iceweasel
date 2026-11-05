@@ -1,0 +1,342 @@
+<!-- Any copyright is dedicated to the Public Domain.
+- http://creativecommons.org/publicdomain/zero/1.0/ -->
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Test DOM-backed maplike/setlike against ECMAScript Map/Set</title>
+    <script src="/tests/SimpleTest/SimpleTest.js"></script>
+    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+  </head>
+  <body>
+    <script class="testbody" type="application/javascript">
+    /* global TestInterfaceMaplike, TestInterfaceSetlike */
+
+    // Each program below is run twice: once against a real Set/Map and once
+    // against the [DOMBackedStorage] setlike/maplike interface. Every
+    // observable result is appended to a trace, and the two traces must be
+    // identical -- SpiderMonkey is the oracle for what the ECMA-262 iterator
+    // semantics are, so any divergence is a bug in ECMACollections.
+    SimpleTest.waitForExplicitFinish();
+
+    function record(trace, label, value) {
+      trace.push(`${label}=${JSON.stringify(value)}`);
+    }
+
+    function recordIteratorResult(trace, label, result) {
+      record(trace, label, {done: result.done, value: result.value});
+    }
+
+    function snapshot(trace, c, isMap) {
+      record(trace, "size", c.size);
+      record(trace, "keys", [...c.keys()]);
+      record(trace, "values", [...c.values()]);
+      record(trace, "entries", [...c.entries()]);
+      const visited = [];
+      c.forEach((v, k, self) => {
+        visited.push([k, v, self === c]);
+      });
+      record(trace, "forEach", visited);
+      if (isMap) {
+        record(trace, "get-a", c.get("a") ?? null);
+      }
+    }
+
+    // Drains an iterator, running mutate() after each step so that the
+    // collection changes underneath a suspended iterator.
+    function drainWhileMutating(trace, it, mutate) {
+      const seen = [];
+      for (let step = 0; step < 50; ++step) {
+        const { value, done } = it.next();
+        if (done) {
+          break;
+        }
+        seen.push(value);
+        mutate(step, seen.length);
+      }
+      record(trace, "drained", seen);
+    }
+
+    const setPrograms = {
+      "add, delete and re-add": (trace, s) => {
+        record(trace, "add-a", s.add("a") === s);
+        record(trace, "add-b", s.add("b") === s);
+        record(trace, "add-a-again", s.add("a") === s);
+        record(trace, "has-a", s.has("a"));
+        record(trace, "delete-a", s.delete("a"));
+        record(trace, "delete-a-again", s.delete("a"));
+        s.add("c");
+        // Re-adding a deleted key puts it at the end of the iteration order.
+        s.add("a");
+        snapshot(trace, s, false);
+      },
+
+      "delete an entry the iterator has not reached": (trace, s) => {
+        for (const k of ["a", "b", "c", "d"]) {
+          s.add(k);
+        }
+        drainWhileMutating(trace, s.keys(), (step) => {
+          if (step === 0) {
+            s.delete("c");
+          }
+        });
+        snapshot(trace, s, false);
+      },
+
+      "delete already visited entries": (trace, s) => {
+        for (const k of ["a", "b", "c", "d"]) {
+          s.add(k);
+        }
+        drainWhileMutating(trace, s.keys(), (step, count) => {
+          if (count > 1) {
+            s.delete(["a", "b", "c", "d"][count - 2]);
+          }
+        });
+        snapshot(trace, s, false);
+      },
+
+      "add during iteration is visited": (trace, s) => {
+        s.add("a");
+        s.add("b");
+        drainWhileMutating(trace, s.keys(), (step) => {
+          if (step === 0) {
+            s.add("c");
+          }
+        });
+        snapshot(trace, s, false);
+      },
+
+      "delete and re-add during iteration": (trace, s) => {
+        for (const k of ["a", "b", "c"]) {
+          s.add(k);
+        }
+        drainWhileMutating(trace, s.keys(), (step) => {
+          if (step === 0) {
+            s.delete("b");
+            s.add("b");
+          }
+        });
+        snapshot(trace, s, false);
+      },
+
+      "clear during iteration ends it": (trace, s) => {
+        for (const k of ["a", "b", "c"]) {
+          s.add(k);
+        }
+        drainWhileMutating(trace, s.keys(), (step) => {
+          if (step === 0) {
+            s.clear();
+          }
+        });
+        snapshot(trace, s, false);
+      },
+
+      "add after clear during iteration": (trace, s) => {
+        for (const k of ["a", "b", "c"]) {
+          s.add(k);
+        }
+        drainWhileMutating(trace, s.keys(), (step) => {
+          if (step === 0) {
+            s.clear();
+            s.add("d");
+          }
+        });
+        snapshot(trace, s, false);
+      },
+
+      "two independent iterators": (trace, s) => {
+        for (const k of ["a", "b", "c", "d"]) {
+          s.add(k);
+        }
+        const first = s.keys();
+        const second = s.keys();
+        record(trace, "first-1", first.next().value);
+        record(trace, "second-1", second.next().value);
+        s.delete("b");
+        s.delete("c");
+        record(trace, "first-rest", [...first]);
+        record(trace, "second-rest", [...second]);
+        snapshot(trace, s, false);
+      },
+
+      // The point of dropping the compaction guard: a suspended iterator must
+      // not change what a long add/delete cycle observes.
+      "many add and delete cycles with a live iterator": (trace, s) => {
+        s.add("keep");
+        const live = s.keys();
+        for (let i = 0; i < 200; ++i) {
+          s.add(`tmp${i}`);
+          s.delete(`tmp${i}`);
+        }
+        record(trace, "live-rest", [...live]);
+        snapshot(trace, s, false);
+      },
+
+      "forEach observes mutations": (trace, s) => {
+        for (const k of ["a", "b", "c"]) {
+          s.add(k);
+        }
+        const visited = [];
+        s.forEach((v) => {
+          visited.push(v);
+          if (v === "a") {
+            s.delete("b");
+            s.add("d");
+          }
+        });
+        record(trace, "forEach-visited", visited);
+        snapshot(trace, s, false);
+      },
+
+      "exhausted iterator stays exhausted": (trace, s) => {
+        s.add("a");
+        const iterator = s.values();
+        recordIteratorResult(trace, "first", iterator.next());
+        recordIteratorResult(trace, "done", iterator.next());
+        s.add("b");
+        recordIteratorResult(trace, "after-add", iterator.next());
+      },
+    };
+
+    const mapPrograms = {
+      "set, update, delete and re-add": (trace, m) => {
+        record(trace, "set-a", m.set("a", 1) === m);
+        record(trace, "set-b", m.set("b", 2) === m);
+        // Updating an existing key keeps its position.
+        record(trace, "set-a-again", m.set("a", 3) === m);
+        record(trace, "get-a", m.get("a"));
+        record(trace, "get-missing", m.get("zz") ?? null);
+        record(trace, "has-b", m.has("b"));
+        record(trace, "delete-b", m.delete("b"));
+        record(trace, "delete-b-again", m.delete("b"));
+        m.set("c", 4);
+        m.set("b", 5);
+        snapshot(trace, m, true);
+      },
+
+      "delete an entry the iterator has not reached": (trace, m) => {
+        ["a", "b", "c", "d"].forEach((k, i) => m.set(k, i));
+        drainWhileMutating(trace, m.entries(), (step) => {
+          if (step === 0) {
+            m.delete("c");
+          }
+        });
+        snapshot(trace, m, true);
+      },
+
+      "add during iteration is visited": (trace, m) => {
+        m.set("a", 1);
+        m.set("b", 2);
+        drainWhileMutating(trace, m.keys(), (step) => {
+          if (step === 0) {
+            m.set("c", 3);
+          }
+        });
+        snapshot(trace, m, true);
+      },
+
+      "delete and re-add during iteration": (trace, m) => {
+        ["a", "b", "c"].forEach((k, i) => m.set(k, i));
+        drainWhileMutating(trace, m.entries(), (step) => {
+          if (step === 0) {
+            m.delete("b");
+            m.set("b", 99);
+          }
+        });
+        snapshot(trace, m, true);
+      },
+
+      "clear during iteration ends it": (trace, m) => {
+        ["a", "b", "c"].forEach((k, i) => m.set(k, i));
+        drainWhileMutating(trace, m.values(), (step) => {
+          if (step === 0) {
+            m.clear();
+          }
+        });
+        snapshot(trace, m, true);
+      },
+
+      "two independent iterators": (trace, m) => {
+        ["a", "b", "c", "d"].forEach((k, i) => m.set(k, i));
+        const first = m.keys();
+        const second = m.values();
+        record(trace, "first-1", first.next().value);
+        record(trace, "second-1", second.next().value);
+        m.delete("b");
+        m.delete("c");
+        record(trace, "first-rest", [...first]);
+        record(trace, "second-rest", [...second]);
+        snapshot(trace, m, true);
+      },
+
+      "many set and delete cycles with a live iterator": (trace, m) => {
+        m.set("keep", 0);
+        const live = m.keys();
+        for (let i = 0; i < 200; ++i) {
+          m.set(`tmp${i}`, i);
+          m.delete(`tmp${i}`);
+        }
+        record(trace, "live-rest", [...live]);
+        snapshot(trace, m, true);
+      },
+
+      "forEach observes mutations": (trace, m) => {
+        ["a", "b", "c"].forEach((k, i) => m.set(k, i));
+        const visited = [];
+        m.forEach((v, k) => {
+          visited.push([k, v]);
+          if (k === "a") {
+            m.delete("b");
+            m.set("d", 42);
+          }
+        });
+        record(trace, "forEach-visited", visited);
+        snapshot(trace, m, true);
+      },
+
+      "exhausted iterator stays exhausted": (trace, m) => {
+        m.set("a", 1);
+        const iterator = m.entries();
+        recordIteratorResult(trace, "first", iterator.next());
+        recordIteratorResult(trace, "done", iterator.next());
+        m.set("b", 2);
+        recordIteratorResult(trace, "after-set", iterator.next());
+      },
+    };
+
+    function runPrograms(programs, makeOracle, makeSubject, kind) {
+      for (const [name, program] of Object.entries(programs)) {
+        const oracleTrace = [];
+        const subjectTrace = [];
+        program(oracleTrace, makeOracle());
+        program(subjectTrace, makeSubject());
+        is(subjectTrace.join("\n"), oracleTrace.join("\n"),
+           `${kind}: ${name} matches ECMAScript semantics`);
+      }
+    }
+
+    SpecialPowers.pushPrefEnv({set: [["dom.expose_test_interfaces", true]]}, function() {
+      runPrograms(setPrograms, () => new Set(),
+                  () => new TestInterfaceSetlike(), "setlike");
+      runPrograms(mapPrograms, () => new Map(),
+                  () => new TestInterfaceMaplike(), "maplike");
+
+      const setIterator = new TestInterfaceSetlike().values();
+      const setIteratorPrototype = Object.getPrototypeOf(new Set().values());
+      is(Object.getPrototypeOf(Object.getPrototypeOf(setIterator)),
+         setIteratorPrototype,
+         "setlike iterator prototype inherits from %SetIteratorPrototype%");
+      is(Object.prototype.toString.call(setIterator), "[object Set Iterator]",
+         "setlike iterator has the built-in toStringTag");
+
+      const mapIterator = new TestInterfaceMaplike().entries();
+      const mapIteratorPrototype = Object.getPrototypeOf(new Map().entries());
+      is(Object.getPrototypeOf(Object.getPrototypeOf(mapIterator)),
+         mapIteratorPrototype,
+         "maplike iterator prototype inherits from %MapIteratorPrototype%");
+      is(Object.prototype.toString.call(mapIterator), "[object Map Iterator]",
+         "maplike iterator has the built-in toStringTag");
+      SimpleTest.finish();
+    });
+    </script>
+  </body>
+</html>

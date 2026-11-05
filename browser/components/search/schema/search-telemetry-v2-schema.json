@@ -269,6 +269,15 @@
         "string": "The query param name to examine."
       }
     },
+    "ignoredQueryParamNames": {
+      "type": "array",
+      "title": "Ignored query param names",
+      "description": "Query param names to ignore when matching the URL of a clicked link to a component on the SERP. Useful for params whose value changes between page load and click, e.g. a click-time token.",
+      "items": {
+        "type": "string",
+        "description": "The query param name to ignore."
+      }
+    },
     "nonAdsLinkRegexps": {
       "type": "array",
       "title": "Non-ads link matching regular expressions",
@@ -434,6 +443,11 @@
         }
       },
       "required": ["keys", "pageTypes"]
+    },
+    "requireDocumentLoadForAdClick": {
+      "type": "boolean",
+      "title": "Require document load for ad click",
+      "description": "If true, only document loads (top-level or subframe) to an ad server are counted as ad clicks. Use this when the provider sends non-document requests, such as tracking pixels on hover, to the same endpoint used for ad click navigations."
     },
     "requireTopLevelImpressionOrigin": {
       "type": "boolean",

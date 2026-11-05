@@ -313,8 +313,6 @@ class DMABufSurfaceYUV final : public DMABufSurface {
       const VADRMPRIMESurfaceDescriptor& aVaDesc, int aWidth, int aHeight);
   static void ReleaseVADRMPRIMESurfaceDescriptor(
       VADRMPRIMESurfaceDescriptor& aDesc);
-  // Create a NV12/P010 DMABuf surface and copy aSourceSurface YUV plane
-  // textures to it. Source textures need to be created by caller.
   static already_AddRefed<DMABufSurfaceYUV> CreateYUVSurface(
       mozilla::gl::GLContext* aGLContext, BufferSurface* aSourceSurface);
 

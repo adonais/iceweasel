@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Test the format and plane copy of a VideoFrame made from a video element</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+<script src="videoFrameFormatChecks.js"></script>
+<script type="application/javascript">
+
+// A captured canvas delivers its only frame at play(), so register first.
+async function frameFromVideo(video) {
+  document.body.appendChild(video);
+  const presented = new Promise(resolve =>
+    video.requestVideoFrameCallback(resolve)
+  );
+  await video.play();
+  await presented;
+  const frame = new VideoFrame(video, { timestamp: 0 });
+  video.pause();
+  video.remove();
+  return frame;
+}
+
+async function checkFrameFromVideo(video, label) {
+  const frame = await frameFromVideo(video);
+  const format = frame.format;
+  info(`${label}: format ${format}`);
+  is(frame.codedWidth, WIDTH, `${label}: coded width`);
+  is(frame.codedHeight, HEIGHT, `${label}: coded height`);
+  await checkFormatMatchesPlanes(frame, label);
+  frame.close();
+  return format;
+}
+
+add_task(async function testFrameFromDecodedVideo() {
+  const video = document.createElement("video");
+  video.src = "quadrants-vp9.webm";
+  video.muted = true;
+  video.loop = true;
+  const format = await checkFrameFromVideo(video, "decoded video");
+  isnot(format, null, "decoded video: format is known");
+});
+
+// A captured canvas is an RGB surface on every platform.
+add_task(async function testFrameFromCapturedCanvas() {
+  const canvas = document.createElement("canvas");
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  document.body.appendChild(canvas);
+  const stream = canvas.captureStream();
+  const ctx = canvas.getContext("2d");
+  for (const q of QUADRANTS) {
+    ctx.fillStyle = `rgb(${q.rgb.join(",")})`;
+    ctx.fillRect(q.x, q.y, WIDTH / 2, HEIGHT / 2);
+  }
+  const video = document.createElement("video");
+  video.srcObject = stream;
+  video.muted = true;
+  const format = await checkFrameFromVideo(video, "captured canvas");
+  ok(
+    ["BGRA", "BGRX", "RGBA", "RGBX"].includes(format),
+    `captured canvas: RGB format ${format}`
+  );
+  stream.getTracks().forEach(track => track.stop());
+  canvas.remove();
+});
+
+</script>
+</head>
+<body>
+</body>
+</html>

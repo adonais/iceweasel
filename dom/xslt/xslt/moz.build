@@ -61,3 +61,30 @@ LOCAL_INCLUDES += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "txBufferingHandler.h",
+    "txExecutionState.h",
+    "txInstructions.h",
+    "txKey.h",
+    "txMozillaTextOutput.h",
+    "txMozillaXMLOutput.h",
+    "txNodeSorter.h",
+    "txOutputFormat.h",
+    "txPatternOptimizer.h",
+    "txPatternParser.h",
+    "txRtfHandler.h",
+    "txStylesheet.h",
+    "txStylesheetCompileHandlers.h",
+    "txStylesheetCompiler.h",
+    "txTextHandler.h",
+    "txToplevelItems.h",
+    "txUnknownHandler.h",
+    "txVariableMap.h",
+    "txXMLEventHandler.h",
+    "txXPathResultComparator.h",
+    "txXSLTFunctions.h",
+    "txXSLTNumber.h",
+    "txXSLTPatterns.h",
+    "txXSLTProcessor.h",
+]

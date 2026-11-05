@@ -1,11 +1,10 @@
 [DEFAULT]
-dupe-manifest = true
 prefs = [
   "extensions.formautofill.addresses.available='on'",
   "signon.management.page.os-auth.enabled=true",
   "browser.backup.archive.enabled=false",
   "browser.backup.restore.enabled=false",
-  "browser.settings-redesign.enabled=false",
+  "extensions.getAddons.langpacks.url=https://mochi.test:8000/langpacks",
 ]
 support-files = [
   "head.js",
@@ -14,38 +13,46 @@ support-files = [
 ]
 tags = "os_integration"
 
+["browser_DefaultBrowserHelper.js"]
+
 ["browser_about_settings.js"]
 
-["browser_accessibility_pane_xul.js"]
+["browser_accessibility_pane.js"]
+
+["browser_accessibility_zoom.js"]
+
+["browser_addressBarNavigation.js"]
 
 ["browser_advanced_update.js"]
 run-if = ["updater"]
 
-["browser_appearance_pane_xul.js"]
+["browser_appearance_pane.js"]
 
 ["browser_backup_visibility.js"]
 
 ["browser_backup_warning_banner.js"]
 
-["browser_bug731866.js"]
-
-["browser_bug795764_cachedisabled.js"]
+["browser_browserIcon.js"]
+run-if = [
+  "os == 'win'",
+]
+skip-if = [
+  "msix", # The custom browser icon feature is currently unsupported on packaged (MSIX) builds.
+]
 
 ["browser_bug1018066_resetScrollPosition.js"]
 
 ["browser_bug1020245_openPreferences_to_paneContent.js"]
 
-["browser_bug1184989_prevent_scrolling_when_preferences_flipped.js"]
-support-files = [
-  "browser_bug1184989_prevent_scrolling_when_preferences_flipped.xhtml",
-]
+["browser_build_font_options_test.js"]
 
-["browser_colors_dialog_xul.js"]
+["browser_checkspelling.js"]
 
-["browser_ensure_prefs_bindings_initted.js"]
+["browser_colors_dialog.js"]
 
 ["browser_extension_controlled.js"]
 skip-if = [
+  "true", # Bug 2084686 this will require significant changes to work with SRD UI
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Linux: bug 1613530
   "os == 'win' && ccov",                                                                    # Windows: bug 1437051
 ]
@@ -55,25 +62,51 @@ skip-if = [
 ["browser_keyboardfocus.js"]
 run-if = ["os == 'mac'"]
 
+["browser_legacy_pane_mappings.js"]
+
 ["browser_no_id_collision_between_categories_and_mainPane.js"]
 
 ["browser_open_migration_wizard.js"]
 
+["browser_privacy_trustPanelBreachAlerts.js"]
+
 ["browser_sessionRestoreNewTab.js"]
 
+["browser_setting_pane_focus_restoration.js"]
+
+["browser_setting_pane_missing_group.js"]
+
+["browser_setting_pane_scroll_restoration.js"]
+
+["browser_setting_pane_sub_pane.js"]
+
+["browser_setting_pane_sub_pane_search.js"]
+
 ["browser_spotlight.js"]
+
+["browser_srd_telemetry_bucket_migration.js"]
+
+["browser_sub_pane_navigation_selection.js"]
 
 ["browser_subdialogs.js"]
 support-files = ["subdialog.xhtml", "subdialog2.xhtml"]
 
 ["browser_tabs_browsing_highlightToSearch.js"]
 
+["browser_tabs_browsing_pane.js"]
+
 ["browser_tabs_open_external_next_to_active_tab.js"]
 
 ["browser_tls_key_logging_warning.js"]
 
+["browser_updates_managed_by_os.js"]
+
 ["browser_windows_launch_on_login.js"]
-run-if = ["os == 'win' && !msix"]
+run-if = [
+  "os == 'win' && !msix",
+]
 
 ["browser_windows_launch_on_login_msix.js"]
-run-if = ["os == 'win' && msix"]
+run-if = [
+  "os == 'win' && msix",
+]

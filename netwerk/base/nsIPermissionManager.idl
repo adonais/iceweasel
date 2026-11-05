@@ -68,7 +68,9 @@ interface nsIPermissionManager : nsISupports
    * specified expiration time.
    *
    * EXPIRE_POLICY is a special expiration status. It is set when the permission
-   * is set by reading an enterprise policy. These permissions cannot be overridden.
+   * is set by reading an enterprise policy. These permissions cannot be
+   * overridden, and removeFromPrincipal ignores them. The policy engine removes
+   * them by calling addFromPrincipal with UNKNOWN_ACTION and EXPIRE_POLICY.
    */
   const uint32_t EXPIRE_NEVER = 0;
   const uint32_t EXPIRE_SESSION = 1;

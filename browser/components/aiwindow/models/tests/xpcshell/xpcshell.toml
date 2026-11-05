@@ -31,6 +31,8 @@ firefox-appdir = "browser"
 
 ["test_Message.js"]
 
+["test_PromptLoader_BrowserContext.js"]
+
 ["test_PromptOptimizer.js"]
 
 ["test_SearchBrowsingHistory.js"]
@@ -52,8 +54,6 @@ firefox-appdir = "browser"
 ["test_Tools_AddMemory.js"]
 
 ["test_Tools_GetOpenTabs.js"]
-
-["test_Tools_GetPageContent.js"]
 
 ["test_Tools_GetTabList.js"]
 

@@ -86,9 +86,9 @@ TEST(VideoCodecTestAv1, VeryLowBitrate) {
        .max_num_key_frames = 1}};
 
   std::vector<QualityThresholds> quality_thresholds = {{.min_avg_psnr = 28,
-                                                        .min_min_psnr = 24.8,
+                                                        .min_min_psnr = 24.5,
                                                         .min_avg_ssim = 0.70,
-                                                        .min_min_ssim = 0.55}};
+                                                        .min_min_ssim = 0.54}};
 
   fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }

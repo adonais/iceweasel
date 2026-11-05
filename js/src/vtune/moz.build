@@ -29,3 +29,13 @@ if CONFIG["CC_TYPE"] == "gcc":
 LICENSED_UNDER += [
     "vtune",
 ]
+
+SOURCE_HEADERS += [
+    "disable_warnings.h",
+    "ittnotify.h",
+    "ittnotify_config.h",
+    "ittnotify_static.h",
+    "ittnotify_types.h",
+    "jitprofiling.h",
+    "VTuneWrapper.h",
+]

@@ -5,3 +5,6 @@
 ./mozlog
 ./mozprofile
 ./mozdevice
+./mozversion
+./mozsystemmonitor
+./mozterm

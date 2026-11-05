@@ -22,6 +22,9 @@ if CONFIG["HOST_OS_ARCH"] != "WINNT":
         "nsinstall.c",
         "pathsub.c",
     ]
+    SOURCE_HEADERS += [
+        "pathsub.h",
+    ]
     HostProgram("nsinstall_real")
 
 PYTHON_UNITTEST_MANIFESTS += [
@@ -114,3 +117,9 @@ if CONFIG["COMPILE_ENVIRONMENT"] and CONFIG["CBINDGEN"]:
         entry_point="generate_metadata",
         inputs=["!/.cargo/config.toml"],
     )
+
+SOURCE_HEADERS += [
+    "gcc-stl-wrapper.template.h",
+    "gcc_hidden.h",
+    "msvc-stl-wrapper.template.h",
+]

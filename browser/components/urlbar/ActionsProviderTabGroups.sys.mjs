@@ -3,13 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { ActionsProvider } from "moz-src:///browser/components/urlbar/ActionsProvider.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 /**
  * @import {ActionsResult} from "moz-src:///browser/components/urlbar/ActionsProvider.sys.mjs"
  */
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
@@ -28,7 +28,12 @@ class ProviderTabGroups extends ActionsProvider {
     return "ActionsProviderTabGroups";
   }
 
-  isActive(queryContext) {
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} _controller
+   * @returns {boolean}
+   */
+  isActive(queryContext, _controller) {
     return (
       (queryContext.sapName == "urlbar" ||
         queryContext.sapName == "smartbar") &&
@@ -41,7 +46,12 @@ class ProviderTabGroups extends ActionsProvider {
     );
   }
 
-  async queryActions(queryContext) {
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} _controller
+   * @returns {Promise<ActionsResult[]>}
+   */
+  async queryActions(queryContext, _controller) {
     // We need a non-private window here to call gBrowser.getAllTabGroups()
     // on, and it's OK if it's not on the current workspace.
     let window = lazy.BrowserWindowTracker.getTopWindow({

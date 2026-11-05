@@ -259,6 +259,93 @@ add_task(async function () {
   await BrowserTestUtils.closeWindow(win);
 });
 
+add_task(async function countCanonized() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.autoFill", false],
+      ["browser.urlbar.canonizedURLCount", 0],
+      ["browser.urlbar.ctrlCanonizesURLs", true],
+      ["dom.security.https_first_schemeless", false],
+    ],
+  });
+
+  const newWindow = await BrowserTestUtils.openNewBrowserWindow();
+  const privateWindow = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+
+  const testcases = [
+    {
+      description: "Should record for canonization",
+      win: newWindow,
+      input: "example",
+      modifiers: CANONIZE_MODIFIERS,
+      expectedURL: "https://www.example.com/",
+      expectedCount: 1,
+    },
+    {
+      description: "Should count up the pref for canonization",
+      win: newWindow,
+      input: "example",
+      modifiers: CANONIZE_MODIFIERS,
+      expectedURL: "https://www.example.com/",
+      expectedCount: 2,
+    },
+    {
+      description: "Should not record for non-canonization",
+      win: newWindow,
+      input: "example.com",
+      modifiers: {},
+      expectedURL: "http://example.com/",
+      expectedCount: 2,
+    },
+    {
+      description: "Should not record for the private window",
+      win: privateWindow,
+      input: "example",
+      modifiers: CANONIZE_MODIFIERS,
+      expectedURL: "https://www.example.com/",
+      expectedCount: 2,
+    },
+    {
+      description: "Should keep counting after loads that were not counted",
+      win: newWindow,
+      input: "example",
+      modifiers: CANONIZE_MODIFIERS,
+      expectedURL: "https://www.example.com/",
+      expectedCount: 3,
+    },
+  ];
+
+  for (let {
+    description,
+    win,
+    input,
+    modifiers,
+    expectedURL,
+    expectedCount,
+  } of testcases) {
+    win.focus();
+    const onLoad = BrowserTestUtils.waitForDocLoadAndStopIt(
+      expectedURL,
+      win.gBrowser.selectedBrowser
+    );
+    await UrlbarTestUtils.inputIntoURLBar(win, input);
+    EventUtils.synthesizeKey("KEY_Enter", modifiers, win);
+    await onLoad;
+
+    Assert.equal(
+      Services.prefs.getIntPref("browser.urlbar.canonizedURLCount"),
+      expectedCount,
+      description
+    );
+  }
+
+  await BrowserTestUtils.closeWindow(newWindow);
+  await BrowserTestUtils.closeWindow(privateWindow);
+  await SpecialPowers.popPrefEnv();
+});
+
 function simulatePastingToUrlbar(text, win) {
   win.gURLBar.focus();
 

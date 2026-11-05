@@ -139,7 +139,7 @@ add_task(async function test_grouped_chips_single_chip() {
     );
     Assert.ok(!info.hasGroupedChips, "A single chip should not be grouped");
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     await BrowserTestUtils.closeWindow(win);
     restoreSignIn();
     mockEngineManager.cleanupMocks();
@@ -163,7 +163,7 @@ add_task(async function test_grouped_chips_two_chips() {
     );
     Assert.ok(!info.hasGroupedChips, "Two chips should not be grouped");
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     await BrowserTestUtils.closeWindow(win);
     restoreSignIn();
     mockEngineManager.cleanupMocks();
@@ -190,7 +190,7 @@ add_task(async function test_grouped_chips_three_chips_group() {
       "Grouped chips should not render individual ai-website-chip elements"
     );
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     await BrowserTestUtils.closeWindow(win);
     restoreSignIn();
     mockEngineManager.cleanupMocks();
@@ -295,7 +295,7 @@ add_task(async function test_tab_group_chip_renders_as_single_chip() {
       "The group color resolves"
     );
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     await BrowserTestUtils.closeWindow(win);
     restoreSignIn();
     mockEngineManager.cleanupMocks();
@@ -372,7 +372,58 @@ add_task(async function test_tab_group_and_tab_chips_group_together() {
       "The stacked icon paints the group color"
     );
   } finally {
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
+    await BrowserTestUtils.closeWindow(win);
+    restoreSignIn();
+    mockEngineManager.cleanupMocks();
+  }
+});
+
+add_task(async function test_tab_group_chip_click_opens_group() {
+  const restoreSignIn = skipSignIn();
+  const mockEngineManager = new MockEngineManager();
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+  const tabs = CHIPS.slice(0, 2).map(chip =>
+    BrowserTestUtils.addTab(win.gBrowser, chip.url)
+  );
+  const group = win.gBrowser.addTabGroup(tabs, {
+    label: TRIP_PLANNING_GROUP.label,
+    color: TRIP_PLANNING_GROUP.color,
+  });
+  group.collapsed = true;
+
+  try {
+    await sendMessageWithMentions(browser, mockEngineManager, [
+      { ...TRIP_PLANNING_GROUP, groupId: group.id },
+    ]);
+    await getBubbleChipInfo(browser);
+
+    const aiChatBrowser = await getAIChatBrowser(browser);
+    await spawnBounded(
+      aiChatBrowser,
+      [],
+      async () => {
+        const contentEl = content.document.querySelector("ai-chat-content");
+        const container = [
+          ...contentEl.shadowRoot.querySelectorAll(
+            ".chat-bubble-user website-chip-container"
+          ),
+        ].at(-1);
+        const chip = container.shadowRoot.querySelector("ai-website-chip");
+        await chip.updateComplete;
+        chip.shadowRoot.querySelector("button.chip").click();
+      },
+      "click group chip"
+    );
+
+    await TestUtils.waitForCondition(
+      () => win.gBrowser.selectedTab == tabs[0],
+      "Clicking the chip selects the group's first tab"
+    );
+    Assert.ok(!group.collapsed, "Clicking the chip expands the group");
+  } finally {
+    await mockEngineManager.rejectAllRequests();
     await BrowserTestUtils.closeWindow(win);
     restoreSignIn();
     mockEngineManager.cleanupMocks();
@@ -533,6 +584,60 @@ add_task(async function test_grouped_chips_open_dispatches_open_link() {
     Assert.ok(
       !panelList.hasAttribute("open"),
       "Selecting an item should close the panel"
+    );
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+  }
+});
+
+add_task(async function test_grouped_chips_tab_group_row_opens_group() {
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    GROUPED_CHIPS_PAGE
+  );
+  const browser = tab.linkedBrowser;
+  const contentWin = browser.contentWindow;
+  const contentDoc = browser.contentDocument;
+
+  try {
+    await contentWin.customElements.whenDefined("ai-grouped-chip-container");
+    const grouped = contentDoc.createElement("ai-grouped-chip-container");
+    grouped.chips = [TRIP_PLANNING_GROUP, ...CHIPS.slice(0, 2)];
+    contentDoc.body.appendChild(grouped);
+    await grouped.updateComplete;
+
+    const trigger = grouped.shadowRoot.querySelector("#grouped-chips-trigger");
+    const panel = grouped.shadowRoot.querySelector("smartwindow-panel-list");
+    const panelList = BrowserTestUtils.querySelectorDeep(
+      grouped.shadowRoot,
+      "panel-list"
+    );
+
+    const shownPromise = BrowserTestUtils.waitForEvent(
+      panelList,
+      "shown",
+      false,
+      null,
+      true
+    );
+    trigger.click();
+    await shownPromise;
+    await grouped.updateComplete;
+
+    const openTabGroupPromise = BrowserTestUtils.waitForEvent(
+      contentDoc,
+      "AIChatContent:OpenTabGroup",
+      false,
+      null,
+      true
+    );
+    panel.shadowRoot.querySelector("panel-item").click();
+
+    const openTabGroupEvent = await openTabGroupPromise;
+    Assert.equal(
+      openTabGroupEvent.detail.groupId,
+      TRIP_PLANNING_GROUP.groupId,
+      "Selecting a tab group row should request its tab group"
     );
   } finally {
     BrowserTestUtils.removeTab(tab);

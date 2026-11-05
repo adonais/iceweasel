@@ -140,7 +140,6 @@
   position: relative;
   align-items: center;
   gap: var(--space-small, 8px);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-radius: var(--chip-border-radius);
   box-sizing: border-box;
   cursor: pointer;
@@ -226,7 +225,6 @@ button.chip {
   --background-color-box: var(--context-chip-background-color);
 
   padding: var(--space-small);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border: var(--context-chip-border-width) solid var(--context-chip-border-color);
   background-color: var(--background-color-box);
 
@@ -236,7 +234,6 @@ button.chip {
 
   &:active,
   &:focus-visible {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border: var(--context-chip-border-width) solid var(--context-chip-active-border-color);
     outline: none;
   }
@@ -244,7 +241,6 @@ button.chip {
 
 /* context chips inside the chat bubble */
 :host([type="context-chip"]) .chip:not([data-removable]) {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-end-end-radius: var(--chip-border-radius-end-end);
 
   &:hover {
@@ -319,7 +315,6 @@ button.chip {
   padding: 0;
 
   &:hover {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-color: var(--context-chip-remove-hover-background-color);
   }
 }

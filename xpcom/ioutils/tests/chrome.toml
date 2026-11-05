@@ -14,6 +14,8 @@ support-files = [
 
 ["test_ioutils_dir_iteration.html"]
 
+["test_ioutils_encrypt.html"]
+
 ["test_ioutils_getfile.html"]
 
 ["test_ioutils_mac_xattr.html"]

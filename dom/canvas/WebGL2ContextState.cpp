@@ -5,7 +5,6 @@
 #include "GLContext.h"
 #include "WebGL2Context.h"
 #include "WebGLBuffer.h"
-#include "WebGLContextUtils.h"
 #include "WebGLFramebuffer.h"
 #include "WebGLSampler.h"
 #include "WebGLTransformFeedback.h"

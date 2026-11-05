@@ -37,6 +37,9 @@ ChromeUtils.defineESModuleGetters(
  *        HttpActivity object associated with this request. See NetworkObserver
  *        more information.
  * @param {object} options
+ * @param {boolean} options.collectSecurityInfo
+ *        Whether the security information of the request should be parsed and
+ *        reported to the owner.
  * @param {Map} options.decodedCertificateCache
  *        A Map of certificate fingerprints to decoded certificates, to avoid
  *        repeatedly decoding previously-seen certificates.
@@ -68,6 +71,12 @@ export class NetworkResponseListener {
    * @type {Map}
    */
   #decodedCertificateCache;
+  /**
+   * See constructor argument of the same name.
+   *
+   * @type {boolean}
+   */
+  #collectSecurityInfo;
   /**
    * See constructor argument of the same name.
    *
@@ -135,6 +144,13 @@ export class NetworkResponseListener {
    */
   #request = null;
   /**
+   * Cache information for the response, read from the channel cache entry
+   * in onStartRequest.
+   *
+   * @type {object | null}
+   */
+  #responseCache = null;
+  /**
    * The maximum size (in bytes) to store the response body.
    *
    * @type {number}
@@ -176,6 +192,7 @@ export class NetworkResponseListener {
 
   constructor(httpActivity, options) {
     const {
+      collectSecurityInfo,
       decodedCertificateCache,
       decodeResponseBody,
       fromServiceWorker,
@@ -183,6 +200,7 @@ export class NetworkResponseListener {
     } = options;
 
     this.#httpActivity = httpActivity;
+    this.#collectSecurityInfo = collectSecurityInfo;
     this.#decodedCertificateCache = decodedCertificateCache;
     this.#decodeResponseBody = decodeResponseBody;
     this.#fromServiceWorker = fromServiceWorker;
@@ -351,6 +369,9 @@ export class NetworkResponseListener {
 
     this.#request = request;
     this.#onSecurityInfo = this.#getSecurityInfo();
+    if (this.#httpActivity.responseStatus == 304) {
+      this.#responseCache = lazy.getResponseCacheObject(request);
+    }
     // We need to track the offset for the onDataAvailable calls where
     // we pass the data from our pipe to the converter.
     this.#offset = 0;
@@ -432,7 +453,10 @@ export class NetworkResponseListener {
     // status) are not available in the content process and can't be even touched safely,
     // because their C++ getters trigger assertions. This function is called in content
     // process for synthesized responses from service workers, in the parent otherwise.
-    if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
+    if (
+      !this.#collectSecurityInfo ||
+      Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
+    ) {
       return;
     }
 
@@ -448,21 +472,6 @@ export class NetworkResponseListener {
       this.#decodedCertificateCache
     );
     this.#httpActivity.owner.addSecurityInfo(info);
-  }
-
-  /**
-   * Fetches cache information from CacheEntry
-   *
-   * @private
-   */
-  async #getCacheInformation() {
-    // TODO: This method is async and #httpActivity is nullified in the #destroy
-    // method of this class. Backup httpActivity to avoid errors here.
-    const httpActivity = this.#httpActivity;
-    const cacheEntry = await lazy.getResponseCacheObject(this.#request);
-    httpActivity.owner.addResponseCache({
-      responseCache: cacheEntry,
-    });
   }
 
   /**
@@ -516,12 +525,11 @@ export class NetworkResponseListener {
     this.setAsyncListener(this.#sink.inputStream, null);
 
     if (this.#httpActivity.responseStatus == 304) {
-      this.#getCacheInformation().then(() => {
-        this.#getResponseContentComplete();
+      this.#httpActivity.owner.addResponseCache({
+        responseCache: this.#responseCache,
       });
-    } else {
-      this.#getResponseContentComplete();
     }
+    this.#getResponseContentComplete();
 
     // Clear the data stored locally on this instance.
     this.#receivedEncodedChunks = [];
@@ -683,13 +691,14 @@ export class NetworkResponseListener {
 
   #destroy() {
     this.#wrappedNotificationCallbacks = null;
-    this.#httpActivity = null;
-    this.#sink = null;
-    this.#inputStream = null;
     this.#converter = null;
+    this.#httpActivity = null;
+    this.#inputStream = null;
     this.#request = null;
-    this.#uconv = null;
+    this.#responseCache = null;
     this.#sentStartEvents = false;
+    this.#sink = null;
+    this.#uconv = null;
   }
 
   /**

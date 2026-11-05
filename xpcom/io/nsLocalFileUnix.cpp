@@ -42,6 +42,7 @@
 #include "nsIFile.h"
 #include "nsSimpleEnumerator.h"
 #include "nsString.h"
+#include "nsSystemInfo.h"
 #include "private/pprio.h"
 #include "prlink.h"
 
@@ -934,8 +935,12 @@ nsresult nsLocalFile::CopyDirectoryTo(nsIFile* aNewParent) {
   if (NS_FAILED(rv = GetPermissions(&oldPerms))) {
     return rv;
   }
+  // Create the directory writable so its children can be copied into it, and
+  // apply the source permissions, minus the umask like mkdir does, once they
+  // have been copied.
+  uint32_t createPerms = oldPerms | S_IRWXU;
   if (!dirCheck) {
-    if (NS_FAILED(rv = aNewParent->Create(DIRECTORY_TYPE, oldPerms))) {
+    if (NS_FAILED(rv = aNewParent->Create(DIRECTORY_TYPE, createPerms))) {
       return rv;
     }
   } else {  // dir exists lets try to use leaf
@@ -952,7 +957,7 @@ nsresult nsLocalFile::CopyDirectoryTo(nsIFile* aNewParent) {
     if (dirCheck) {
       return NS_ERROR_FILE_ALREADY_EXISTS;  // dest exists
     }
-    if (NS_FAILED(rv = aNewParent->Create(DIRECTORY_TYPE, oldPerms))) {
+    if (NS_FAILED(rv = aNewParent->Create(DIRECTORY_TYPE, createPerms))) {
       return rv;
     }
   }
@@ -1006,6 +1011,9 @@ nsresult nsLocalFile::CopyDirectoryTo(nsIFile* aNewParent) {
         continue;
       }
     }
+  }
+  if (createPerms != oldPerms) {
+    return aNewParent->SetPermissions(oldPerms & ~nsSystemInfo::gUserUmask);
   }
   return NS_OK;
 }

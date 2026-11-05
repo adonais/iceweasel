@@ -802,12 +802,6 @@ SECMOD_PubCipherFlagstoInternal(unsigned long publicFlags)
     return publicFlags;
 }
 
-unsigned long
-SECMOD_InternaltoPubCipherFlags(unsigned long internalFlags)
-{
-    return internalFlags;
-}
-
 /* Funtion reports true if module of modType is installed/configured */
 PRBool
 SECMOD_IsModulePresent(unsigned long int pubCipherEnableFlags)

@@ -37,28 +37,33 @@ task-defaults:
             - 'third_party/rust/icu_properties_data'
             - 'third_party/rust/utf8_iter'
 
-# For Linux platforms target "*-musl" so that the binary will be statically linked.
-
 linux64-nimbus-fml:
     treeherder:
         symbol: TL(enf)
-        platform: linux64/opt
     run:
-        arguments: ['x86_64-unknown-linux-musl']
-    attributes:
-        build_platform: linux64-nimbus-fml
+        arguments: ['x86_64-unknown-linux-gnu']
     fetches:
         toolchain:
-            - linux64-rust-static
+            - linux64-clang-toolchain
+            - linux64-rust-toolchain
+            - sysroot-x86_64-linux-gnu
+
+linux64-aarch64-nimbus-fml:
+    treeherder:
+        symbol: TLA64(enf)
+    run:
+        arguments: ['aarch64-unknown-linux-gnu']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-toolchain
+            - sysroot-aarch64-linux-gnu
 
 macosx64-nimbus-fml:
     treeherder:
         symbol: TM(enf)
-        platform: macosx64/opt
     run:
         arguments: ['x86_64-apple-darwin']
-    attributes:
-        build_platform: macosx64-nimbus-fml
     fetches:
         toolchain:
             - linux64-clang-toolchain
@@ -68,39 +73,19 @@ macosx64-nimbus-fml:
 macosx64-aarch64-nimbus-fml:
     treeherder:
         symbol: TMA64(enf)
-        platform: macosx64-aarch64/opt
     run:
         arguments: ['aarch64-apple-darwin']
-    attributes:
-        build_platform: macosx64-aarch64-nimbus-fml
     fetches:
         toolchain:
             - linux64-clang-toolchain
             - linux64-rust-macos
             - macosx64-sdk-toolchain
 
-win32-nimbus-fml:
-    treeherder:
-        symbol: TW32(enf)
-        platform: win32/opt
-    run:
-        arguments: ['i686-pc-windows-msvc']
-    attributes:
-        build_platform: win32-nimbus-fml
-    fetches:
-        toolchain:
-            - linux64-clang-toolchain
-            - linux64-rust-windows
-            - vs-toolchain
-
 win64-aarch64-nimbus-fml:
     treeherder:
         symbol: TWA64(enf)
-        platform: windows2012-aarch64/opt
     run:
         arguments: ['aarch64-pc-windows-msvc']
-    attributes:
-        build_platform: win64-aarch64-nimbus-fml
     fetches:
         toolchain:
             - linux64-clang-toolchain
@@ -110,11 +95,8 @@ win64-aarch64-nimbus-fml:
 win64-nimbus-fml:
     treeherder:
         symbol: TW64(enf)
-        platform: win64/opt
     run:
         arguments: ['x86_64-pc-windows-msvc']
-    attributes:
-        build_platform: win64-nimbus-fml
     fetches:
         toolchain:
             - linux64-clang-toolchain

@@ -291,6 +291,8 @@ def run_info_extras(logger, default_prefs=None, **kwargs):
           "sessionHistoryInParent": True,
           "swgl": bool_pref("gfx.webrender.software"),
           "useDrawSnapshot": bool_pref("reftest.use-draw-snapshot"),
+          "nativePrinter": any(key == "remote.print.printer_name" and value
+                               for key, value in extra_prefs + default_prefs),
           "privateBrowsing": bool_pref("browser.privatebrowsing.autostart"),
           "remoteAsyncMouseEvents": bool_pref("remote.events.async.mouse.enabled"),
           "remoteAsyncTouchEvents": bool_pref("remote.events.async.touch.enabled"),
@@ -860,6 +862,29 @@ class ProfileCreator:
         if self.debug_test:
             prefs["devtools.console.stdout.content"] = True
 
+        prefs.update(self._get_address_space_override_prefs())
+
+        return prefs
+
+    def _get_address_space_override_prefs(self):
+        """Classify the `http(s)-local` and `http(s)-public` servers in the
+        appropriate IP address spaces for Local Network Access tests.
+
+        See https://github.com/web-platform-tests/rfcs/blob/master/rfcs/address_space_overrides.md
+        """
+        address_space_ports = {
+            "private": ["http-local", "https-local"],
+            "public": ["http-public", "https-public"],
+        }
+        prefs = {}
+        for address_space, port_names in address_space_ports.items():
+            overrides = ",".join(
+                f"127.0.0.1:{port}"
+                for port_name in port_names
+                for port in self.config.ports.get(port_name, [])
+            )
+            if overrides:
+                prefs[f"network.lna.address_space.{address_space}.override"] = overrides
         return prefs
 
     def _setup_ssl(self, profile):

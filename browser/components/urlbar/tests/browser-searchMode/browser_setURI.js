@@ -14,16 +14,9 @@
 // active or be exited as appropriate.
 add_task(async function setURI() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.scotchBonnet.enableOverride", false],
-      // Tests get no default Top Sites, and doSetURITest opens the view on an
-      // empty string, which would otherwise leave it closed with no results.
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "https://example.com/",
-      ],
-    ],
+    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
   });
+  UrlbarTestUtils.registerZeroPrefixProvider();
   for (let test of [
     // initialURL, searchString, url, expectSearchMode
 

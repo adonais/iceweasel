@@ -68,6 +68,38 @@ A type of `accordion` can be provided to moz-card component to generate an accor
 ```
 
 
+### Using an accordion as a tree item
+
+When accordion cards are the items of a tree, set the `treeItem` property.
+The card then removes the `article` semantics, which would otherwise sit
+between the tree and its items, stops labelling the article with the heading,
+and gives the summary the `treeitem` role. The heading is always rendered as a
+`span`, ignoring `headingLevel`, so heading navigation doesn't jump into the
+tree. The expanded state comes from the card's `details` element, so there is no
+`aria-expanded` to keep in sync. `treeItem` is ignored unless the `type` is `accordion`.
+
+Each card sits in its own container, so the browser can't count sibling cards
+by itself. Set `aria-level`, `aria-posinset` and `aria-setsize` on the card and
+it moves them onto the summary.
+
+The card does not create the tree. The surrounding `role="tree"` element, and a
+`role="group"` around any nested items, still have to be provided by the code
+using the card.
+
+```html
+<div role="tree">
+    <moz-card type="accordion" heading="Parent" treeItem
+        aria-level="1" aria-posinset="1" aria-setsize="1">
+        <div role="group">
+            <moz-card type="accordion" heading="Child" treeItem
+                aria-level="2" aria-posinset="1" aria-setsize="1">
+                The content of the child
+            </moz-card>
+        </div>
+    </moz-card>
+</div>
+```
+
 ### Fluent usage
 
 Generally the `heading` property of `moz-card` will be provided via [Fluent attributes](https://mozilla-l10n.github.io/localizer-documentation/tools/fluent/basic_syntax.html#attributes). To get this working you will need to format your Fluent message like this:

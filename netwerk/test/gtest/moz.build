@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 UNIFIED_SOURCES += [
+    "TestAuthModuleInitAsync.cpp",
     "TestBase64Stream.cpp",
     "TestBind.cpp",
     "TestBufferedInputStream.cpp",
@@ -18,7 +19,7 @@ UNIFIED_SOURCES += [
     "TestHostRecordQueue.cpp",
     "TestHttp2WebTransport.cpp",
     "TestHttp3ConnectUDPStream.cpp",
-    "TestHttpAtom.cpp",
+    "TestHttp3WebTransportSession.cpp",
     "TestHttpAuthUtils.cpp",
     "TestHttpChannel.cpp",
     "TestHttpResponseHead.cpp",
@@ -62,6 +63,8 @@ SOURCES += [
     "TestCacheEntryWriterHang.cpp",
     "TestHappyEyeballsConnectionAttempt.cpp",
     "TestHappyEyeballsNetAddrArray.cpp",
+    "TestHttpAtom.cpp",
+    "TestSOCKSProxyLookup.cpp",
 ]
 
 if CONFIG["OS_TARGET"] == "WINNT":
@@ -110,3 +113,7 @@ include("/ipc/chromium/chromium-config.mozbuild")
 FINAL_LIBRARY = "xul-gtest"
 
 LOCAL_INCLUDES += ["!/xpcom", "/xpcom/components"]
+
+SOURCE_HEADERS += [
+    "TestCommon.h",
+]

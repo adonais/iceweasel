@@ -124,6 +124,15 @@ AsyncStatementJSHelper::Resolve(nsIXPConnectWrappedNative* aWrapper,
 
 NS_IMPL_ISUPPORTS0(AsyncStatementParamsHolder);
 
+AsyncStatementParamsHolder::AsyncStatementParamsHolder(
+    AsyncStatementParams* aParams)
+    : mParams(aParams) {}
+
+AsyncStatementParams* AsyncStatementParamsHolder::Get() const {
+  MOZ_ASSERT(mParams);
+  return mParams;
+}
+
 AsyncStatementParamsHolder::~AsyncStatementParamsHolder() {
   MOZ_ASSERT(NS_IsMainThread());
   // We are considered dead at this point, so any wrappers for row or params

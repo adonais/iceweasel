@@ -15,11 +15,15 @@
 
 /**
  * Load `markup` as part of a PDF test task, export it and return the text
- * content items (including marked content) for its first page.
+ * content items (including marked content) for its first page. If `testFont`
+ * is true, the document uses pdfTest.ttf. See PDF_TEST_FONT_STYLE.
  */
-async function getPdfArtifactItems(ctx, markup) {
-  await loadPdfTestDoc(ctx, markup);
+async function getPdfArtifactItems(ctx, markup, { testFont = false } = {}) {
+  await loadPdfTestDoc(ctx, testFont ? PDF_TEST_FONT_STYLE + markup : markup);
   const pdf = await exportPdf(ctx);
+  if (testFont) {
+    await assertPdfUsesTestFont(pdf);
+  }
   const page = await pdf.getPage(1);
   return (await page.getTextContent({ includeMarkedContent: true })).items;
 }
@@ -86,4 +90,26 @@ addPdfTabTask(async function testHeaderFooter(ctx) {
   const items = await getPdfArtifactItems(ctx, `<h1>content</h1>`);
   assertArtifactContains(items, HEADER_TEXT);
   assertArtifactContains(items, FOOTER_TEXT);
+});
+
+// Use pdfTest.ttf so that the square root sign is drawn with the same glyph
+// regardless of which math fonts are installed.
+addPdfTabTask(async function testMsqrt(ctx) {
+  const items = await getPdfArtifactItems(
+    ctx,
+    `<math><msqrt><mn>4</mn></msqrt></math>`,
+    { testFont: true }
+  );
+  assertArtifactContains(items, "√");
+});
+
+// Use pdfTest.ttf so that the longdiv sign is drawn with the same glyph
+// regardless of which math fonts are installed.
+addPdfTabTask(async function testMencloseLongdiv(ctx) {
+  const items = await getPdfArtifactItems(
+    ctx,
+    `<math><menclose notation="longdiv"><mn>4</mn></menclose></math>`,
+    { testFont: true }
+  );
+  assertArtifactContains(items, ")");
 });

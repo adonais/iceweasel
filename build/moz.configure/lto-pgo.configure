@@ -182,6 +182,11 @@ def pgo_flags(
 
         gen_cflags = [prefix + "-fprofile-generate"]
 
+        if compiler.type == "clang-cl":
+            use_ldflags += ["-mllvm:-enable-ext-tsp-block-placement=1"]
+        else:
+            use_ldflags += ["-Wl,-mllvm,-enable-ext-tsp-block-placement=1"]
+
         if pgo_temporal:
             gen_cflags += ["-mllvm", "-pgo-temporal-instrumentation"]
 

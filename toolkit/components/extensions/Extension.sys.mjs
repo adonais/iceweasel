@@ -2157,6 +2157,20 @@ export class ExtensionData {
         });
       }
 
+      if (manifest.builtin_widget && !isPrivileged) {
+        if (this.temporarilyInstalled) {
+          this.manifestError(
+            `Using 'builtin_widget' requires a privileged add-on. ` +
+              PRIVILEGED_ADDONS_DEVDOCS_MESSAGE
+          );
+        } else {
+          this.manifestWarning(
+            `Ignoring 'builtin_widget': requires a privileged add-on.`
+          );
+        }
+        manifest.builtin_widget = null;
+      }
+
       if (manifest.experiment_apis) {
         if (this.canUseAPIExperiment()) {
           let parentModules = {};

@@ -401,6 +401,8 @@ CSPDirective CSP_ContentTypeToDirective(nsContentPolicyType aType) {
     case nsIContentPolicy::TYPE_DOCUMENT:
     // CSP can not block csp reports
     case nsIContentPolicy::TYPE_CSP_REPORT:
+    // Speculation-Rules header fetches are not subject to CSP.
+    case nsIContentPolicy::TYPE_INTERNAL_SPECULATION_RULES:
       return nsIContentSecurityPolicy::NO_DIRECTIVE;
 
     case nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD:

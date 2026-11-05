@@ -29,3 +29,7 @@ if CONFIG["CC_TYPE"] == "clang":
     CXXFLAGS += ["-Wno-inconsistent-missing-override"]
 
 FINAL_LIBRARY = "xul-gtest"
+
+SOURCE_HEADERS += [
+    "DevTools.h",
+]

@@ -94,7 +94,6 @@ config = {
                 "--setpref=webgl.force-enabled=true",
                 "--quiet",
                 "--log-errorsummary=%(error_summary_file)s",
-                "--log-testsummary=%(test_summary_file)s",
                 "--use-test-media-devices",
                 "--screenshot-on-fail",
                 "--cleanup-crashes",
@@ -102,6 +101,7 @@ config = {
                 "--sandbox-read-whitelist=%(abs_work_dir)s",
             ],
             "run_filename": "runtests.py",
+            "test_summary": True,
             "testsdir": "mochitest",
         },
         "reftest": {
@@ -123,10 +123,10 @@ config = {
                 "--self-test",
                 "--symbols-path=%(symbols_path)s",
                 "--log-errorsummary=%(error_summary_file)s",
-                "--log-testsummary=%(test_summary_file)s",
                 "--utility-path=tests/bin",
             ],
             "run_filename": "runxpcshelltests.py",
+            "test_summary": True,
             "testsdir": "xpcshell",
         },
         "gtest": {

@@ -129,14 +129,14 @@ class AppLinksFeatureTest {
         store.dispatch(TabListAction.AddTabAction(tab))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any())
+        verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any(), any())
 
         val intent: Intent = mock()
-        val appIntent = AppIntentState(intentUrl, intent, null, null)
+        val appIntent = AppIntentState(intentUrl, intent, null, null, webUrlWithAppLink)
         store.dispatch(ContentAction.UpdateAppIntentAction(tab.id, appIntent))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(feature).handleAppIntent(any(), any(), any(), any(), any())
+        verify(feature).handleAppIntent(any(), any(), any(), any(), any(), eq(webUrlWithAppLink))
 
         val tabWithConsumedAppIntent = store.state.findTab(tab.id)!!
         assertNull(tabWithConsumedAppIntent.content.appIntent)
@@ -148,17 +148,17 @@ class AppLinksFeatureTest {
         store.dispatch(TabListAction.AddTabAction(tab))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any())
+        verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any(), any())
 
         feature.stop()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val intent: Intent = mock()
-        val appIntent = AppIntentState(intentUrl, intent, null, null)
+        val appIntent = AppIntentState(intentUrl, intent, null, null, null)
         store.dispatch(ContentAction.UpdateAppIntentAction(tab.id, appIntent))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any())
+        verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any(), any())
     }
 
     @Test
@@ -181,7 +181,7 @@ class AppLinksFeatureTest {
                 }
 
         val tab = createTab(webUrl)
-        feature.handleAppIntent(tab, intentUrl, mock(), null, null)
+        feature.handleAppIntent(tab, intentUrl, mock(), null, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
         verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
@@ -208,7 +208,7 @@ class AppLinksFeatureTest {
                 }
 
         val tab = createTab(webUrl)
-        feature.handleAppIntent(tab, intentUrl, mock(), null, null)
+        feature.handleAppIntent(tab, intentUrl, mock(), null, null, null)
 
         verify(mockDialog, never()).showNow(eq(mockFragmentManager), anyString())
     }
@@ -247,7 +247,7 @@ class AppLinksFeatureTest {
         doReturn(componentName).`when`(appIntent).component
         doReturn("com.zxing.app").`when`(componentName).packageName
 
-        feature.handleAppIntent(tab, intentUrl, appIntent, null, null)
+        feature.handleAppIntent(tab, intentUrl, appIntent, null, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
         verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
@@ -287,7 +287,7 @@ class AppLinksFeatureTest {
         doReturn(componentName).`when`(appIntent).component
         doReturn("com.zxing.app").`when`(componentName).packageName
 
-        feature.handleAppIntent(tab, intentUrl, appIntent, null, null)
+        feature.handleAppIntent(tab, intentUrl, appIntent, null, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
         verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
@@ -313,7 +313,7 @@ class AppLinksFeatureTest {
                 }
 
         val tab = createTab(webUrl, private = true)
-        feature.handleAppIntent(tab, intentUrl, mock(), null, null)
+        feature.handleAppIntent(tab, intentUrl, mock(), null, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
         verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
@@ -340,7 +340,7 @@ class AppLinksFeatureTest {
                 }
 
         val tab = createTab(webUrl, private = true)
-        feature.handleAppIntent(tab, intentUrl, mock(), null, null)
+        feature.handleAppIntent(tab, intentUrl, mock(), null, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
         verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
@@ -349,13 +349,13 @@ class AppLinksFeatureTest {
     @Test
     fun `redirect dialog is only added once`() {
         val tab = createTab(webUrl, private = true)
-        feature.handleAppIntent(tab, intentUrl, mock(), null, null)
+        feature.handleAppIntent(tab, intentUrl, mock(), null, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
 
         doReturn(mockDialog).`when`(feature).getOrCreateDialog(false, false, "", null)
         doReturn(mockDialog).`when`(mockFragmentManager).findFragmentByTag(RedirectDialogFragment.FRAGMENT_TAG)
-        feature.handleAppIntent(tab, intentUrl, mock(), null, null)
+        feature.handleAppIntent(tab, intentUrl, mock(), null, null, null)
         verify(mockDialog, times(1)).showNow(mockFragmentManager, RedirectDialogFragment.FRAGMENT_TAG)
     }
 
@@ -432,7 +432,7 @@ class AppLinksFeatureTest {
 
         val appIntent: Intent = mock()
 
-        feature.handleAppIntent(tab, walletUrl, appIntent, null, null)
+        feature.handleAppIntent(tab, walletUrl, appIntent, null, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
         verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
@@ -466,7 +466,7 @@ class AppLinksFeatureTest {
                 data = "mdoc-openid4vp://present".toUri()
             }
 
-        feature.handleAppIntent(tab, nonWalletUrl, appIntent, null, null)
+        feature.handleAppIntent(tab, nonWalletUrl, appIntent, null, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
         verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
@@ -699,5 +699,57 @@ class AppLinksFeatureTest {
         )
 
         assertNull(capturedData?.firefoxUrl)
+    }
+
+    @Test
+    fun `GIVEN the app intent came from a page WHEN the prompt is shown THEN the source URL is that page`() {
+        val dialogData = captureDialogData {
+            handleAppIntent(
+                sessionState = createTab(webUrlWithAppLink),
+                url = intentUrl,
+                appIntent = mock(),
+                fallbackUrl = null,
+                appName = null,
+                sourceUrl = webUrl,
+            )
+        }
+
+        assertEquals(webUrl, dialogData?.sourceUrl)
+    }
+
+    @Test
+    fun `GIVEN the app intent did not come from a page WHEN the prompt is shown THEN the source URL is the app link`() {
+        val dialogData = captureDialogData {
+            handleAppIntent(
+                sessionState = createTab(webUrlWithAppLink),
+                url = intentUrl,
+                appIntent = mock(),
+                fallbackUrl = null,
+                appName = null,
+                sourceUrl = null,
+            )
+        }
+
+        assertEquals(intentUrl, dialogData?.sourceUrl)
+    }
+
+    private fun captureDialogData(block: AppLinksFeature.() -> Unit): RedirectDialogData? {
+        var capturedData: RedirectDialogData? = null
+
+        AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                dialog = { data ->
+                    capturedData = data
+                    mockDialog
+                },
+                useCases = mockUseCases,
+                loadUrlUseCase = mockLoadUrlUseCase,
+                mainDispatcher = testDispatcher,
+            )
+            .block()
+
+        return capturedData
     }
 }

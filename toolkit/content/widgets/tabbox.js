@@ -319,6 +319,9 @@
         () => this.updateSplitterAriaAttributes(),
         0
       );
+      // Only toolkit tabs implement this; tabbrowser uses the linkedPanel
+      // setter instead.
+      this.tabbox?.tabs?.updatePanelLabels?.();
     }
 
     disconnectedCallback() {
@@ -484,7 +487,7 @@
     }
 
     /**
-     * nsIDOMXULRelatedElement
+     * Get the tab associated with the given panel.
      */
     getRelatedElement(aTabPanelElm) {
       if (!aTabPanelElm) {
@@ -641,9 +644,6 @@
     }
   }
 
-  MozXULElement.implementCustomInterface(MozTabpanels, [
-    Ci.nsIDOMXULRelatedElement,
-  ]);
   customElements.define("tabpanels", MozTabpanels);
 
   MozElements.MozTab = class MozTab extends MozElements.BaseText {
@@ -826,6 +826,26 @@
 
     set linkedPanel(val) {
       this.setAttribute("linkedpanel", val);
+      // The panel might not be in the document yet; e.g. tabbrowser sets
+      // linkedPanel before inserting the panel. In that case, the panel must be
+      // inserted before the current task completes.
+      if (val && !this.#labelLinkedPanel()) {
+        queueMicrotask(() => this.#labelLinkedPanel());
+      }
+    }
+
+    /**
+     * Label the linked panel with this tab for accessibility.
+     *
+     * @returns {boolean} Whether the linked panel was found.
+     */
+    #labelLinkedPanel() {
+      let panel = this.ownerDocument.getElementById(this.linkedPanel);
+      if (!panel) {
+        return false;
+      }
+      panel.ariaLabelledByElements = [this];
+      return true;
     }
 
     get linkedPanel() {
@@ -1066,7 +1086,7 @@
     }
 
     /**
-     * nsIDOMXULRelatedElement
+     * Get the panel associated with the given tab.
      */
     getRelatedElement(aTabElm) {
       if (!aTabElm) {
@@ -1284,12 +1304,13 @@
 
   MozXULElement.implementCustomInterface(TabsBase, [
     Ci.nsIDOMXULSelectControlElement,
-    Ci.nsIDOMXULRelatedElement,
   ]);
 
   MozElements.TabsBase = TabsBase;
 
   class MozTabs extends TabsBase {
+    #panelLabelsObserver = new MutationObserver(() => this.updatePanelLabels());
+
     connectedCallback() {
       if (this.delayConnectedCallback()) {
         return;
@@ -1306,6 +1327,38 @@
       this.insertBefore(end, null);
 
       this.baseConnect();
+      this.updatePanelLabels();
+    }
+
+    disconnectedCallback() {
+      this.#panelLabelsObserver.disconnect();
+    }
+
+    /**
+     * Label each panel with its associated tab for accessibility. This is
+     * needed for panels which are associated by index or by a linkedpanel
+     * attribute specified in markup, rather than via the linkedPanel setter.
+     * It is called again whenever tabs or panels are added or removed.
+     */
+    updatePanelLabels() {
+      if (!this.isConnectedAndReady) {
+        return;
+      }
+      // The tabpanels might have changed since the last call, so start observing
+      // afresh.
+      this.#panelLabelsObserver.disconnect();
+      this.#panelLabelsObserver.observe(this, { childList: true });
+      let tabpanels = this.tabbox?.tabpanels;
+      if (!tabpanels) {
+        return;
+      }
+      this.#panelLabelsObserver.observe(tabpanels, { childList: true });
+      for (let tab of this.allTabs) {
+        let panel = this.getRelatedElement(tab);
+        if (panel && panel.ariaLabelledByElements?.[0] != tab) {
+          panel.ariaLabelledByElements = [tab];
+        }
+      }
     }
 
     // Accessor for tabs.  This element has spacers as the first and

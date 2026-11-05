@@ -338,7 +338,7 @@ async function cleanupFormReviewTest(context) {
   _setRemoteClientForTesting({
     get: async () => MOCK_RS_RECORDS,
   });
-  context.mockEngineManager.rejectAllRequests();
+  await context.mockEngineManager.rejectAllRequests();
   context.mockEngineManager.cleanupMocks();
 
   try {

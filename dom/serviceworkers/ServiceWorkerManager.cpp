@@ -1209,7 +1209,7 @@ ServiceWorkerManager::SendPushSubscriptionChangeEvent(
 
   ServiceWorkerInfo* info = GetActiveWorkerInfoForScope(attrs, aScope);
   if (!info) {
-    return NS_ERROR_FAILURE;
+    return NS_ERROR_NOT_AVAILABLE;
   }
   return info->WorkerPrivate()->SendPushSubscriptionChangeEvent(
       aOldSubscription);

@@ -208,6 +208,9 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     return *tags[tagIndex].type;
   }
 
+  // Gets the type of the item at `index` in the index space for `kind`.
+  CoreExternType getExternType(DefinitionKind kind, uint32_t index) const;
+
   BuiltinModuleFuncId knownFuncImport(uint32_t funcIndex) const {
     if (knownFuncImports.empty()) {
       return BuiltinModuleFuncId::None;
@@ -493,6 +496,8 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
     }
     return mozilla::Nothing();
   }
+
+  [[nodiscard]] bool buildModuleType(SharedCoreModuleType* result) const;
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };

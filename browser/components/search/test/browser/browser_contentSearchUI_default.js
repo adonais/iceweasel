@@ -56,10 +56,12 @@ async function ensureIcon(tab, expectedIcon) {
       let computedStyle = content.window.getComputedStyle(
         content.document.body
       );
-      await ContentTaskUtils.waitForCondition(
-        () => computedStyle.getPropertyValue("--newtab-search-icon") != "null",
-        "Search Icon not set."
-      );
+      await ContentTaskUtils.waitForCondition(() => {
+        let value = computedStyle.getPropertyValue("--newtab-search-icon");
+        return icon.startsWith("blob:")
+          ? value.startsWith("url(blob:")
+          : value == `url(${icon})`;
+      }, "Search icon not updated");
 
       if (icon.startsWith("blob:")) {
         // We don't check the data here as `browser_contentSearch.js` performs

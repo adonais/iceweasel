@@ -18,6 +18,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
+  WindowsInstallsInfo:
+    "resource://gre/modules/components-utils/WindowsInstallsInfo.sys.mjs",
 });
 XPCOMUtils.defineLazyServiceGetters(lazy, {
   AlertsService: ["@mozilla.org/alerts-service;1", Ci.nsIAlertsService],
@@ -204,6 +206,93 @@ async function runWithRegistryLocked(aMutexGuardedFunction) {
   }
 }
 
+// Keep in sync with the `system.win_package_family_name` filter in
+// TelemetryEnvironment.
+const kMozillaPackageFamilyNamePrefixes = ["Mozilla.", "MozillaCorporation."];
+
+function getSysinfoProperty(name, defaultValue) {
+  try {
+    return Services.sysinfo.getProperty(name);
+  } catch (e) {
+    return defaultValue;
+  }
+}
+
+/**
+ * Collects how this installation was installed, for the default-agent ping.
+ *
+ * @param {object} [options]
+ * @param {nsIFile} [options.installTelemetryFile]
+ *   Overrides `installation_telemetry.json` in the installation directory.
+ * @param {nsIFile} [options.distributionIniFile]
+ *   Overrides `distribution.ini` in the distribution directory.
+ * @returns {Promise<object>}
+ *   `hasWinPackageId`, `winPackageFamilyName`, `installerType`,
+ *   `installerFromMsi`, `installerSilent` and `distributionId`. Strings are
+ *   empty when unknown.
+ */
+export async function getInstallInfo({
+  installTelemetryFile,
+  distributionIniFile,
+} = {}) {
+  let info = {
+    hasWinPackageId: getSysinfoProperty("hasWinPackageId", false),
+    winPackageFamilyName: "",
+    installerType: "",
+    installerFromMsi: false,
+    installerSilent: false,
+    distributionId: "",
+  };
+
+  if (info.hasWinPackageId) {
+    let packageFamilyName = getSysinfoProperty("winPackageFamilyName", "");
+    if (
+      kMozillaPackageFamilyNamePrefixes.some(p =>
+        packageFamilyName.startsWith(p)
+      )
+    ) {
+      info.winPackageFamilyName = packageFamilyName;
+    }
+    info.installerType = "msix";
+  } else {
+    try {
+      let data =
+        (await lazy.WindowsInstallsInfo.readInstallationTelemetry(
+          installTelemetryFile
+        )) ?? {};
+      if (data.installer_type == "stub" || data.installer_type == "full") {
+        info.installerType = data.installer_type;
+      }
+      if (info.installerType == "full") {
+        info.installerFromMsi = data.from_msi === true;
+        info.installerSilent = data.silent === true;
+      }
+    } catch (e) {
+      lazy.log.error(`Reading installation telemetry failed: ${e}`);
+    }
+  }
+
+  // The browser gets `distribution.id` from this file through
+  // DistributionCustomizer, which background tasks don't run.
+  try {
+    let file = distributionIniFile;
+    if (!file) {
+      file = Services.dirsvc.get("XREAppDist", Ci.nsIFile);
+      file.append("distribution.ini");
+    }
+    if (file.exists()) {
+      let ini = Cc["@mozilla.org/xpcom/ini-parser-factory;1"]
+        .getService(Ci.nsIINIParserFactory)
+        .createINIParser(file);
+      info.distributionId = ini.getString("Global", "id");
+    }
+  } catch (e) {
+    lazy.log.error(`Reading distribution ID failed: ${e}`);
+  }
+
+  return info;
+}
+
 const kSecondsPerDay = 24 /*hours*/ * 60 /*minutes*/ * 60; /*seconds*/
 
 const kTaskExpirationSeconds = 90 /*days*/ * kSecondsPerDay;
@@ -282,6 +371,12 @@ export async function doTask(defaultAgent, force) {
     });
   }
 
+  let installInfo = await getInstallInfo();
+  lazy.log.debug(`Install info: ${JSON.stringify(installInfo)}`);
+  if (installInfo.distributionId) {
+    Services.fog.updateDistribution(installInfo.distributionId);
+  }
+
   defaultAgent.sendPing(
     browser,
     previousBrowser,
@@ -289,7 +384,12 @@ export async function doTask(defaultAgent, force) {
     notificationTelemetry.shown,
     notificationTelemetry.action,
     daysSinceLastAppLaunch,
-    isTaskbarPinned
+    isTaskbarPinned,
+    installInfo.hasWinPackageId,
+    installInfo.winPackageFamilyName,
+    installInfo.installerType,
+    installInfo.installerFromMsi,
+    installInfo.installerSilent
   );
 }
 

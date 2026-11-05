@@ -276,6 +276,8 @@ std::shared_ptr<ShaderTranslateTask> ShaderD3D::compile(const gl::Context *conte
 
     const std::string &source = mState.getSource();
 
+    options->removeInactiveVariables = true;
+
 #if !defined(ANGLE_ENABLE_WINDOWS_UWP)
     if (gl::DebugAnnotationsActive(context))
     {
@@ -286,8 +288,7 @@ std::shared_ptr<ShaderTranslateTask> ShaderD3D::compile(const gl::Context *conte
     }
 #endif
 
-    const bool isHardened = context->isWebGL() || context->isHardenedContext();
-    if (isHardened)
+    if (context->isHardenedContext())
     {
         options->clampIndirectArrayBounds = true;
     }

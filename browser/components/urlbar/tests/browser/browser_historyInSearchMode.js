@@ -56,3 +56,67 @@ add_task(async function test_history_in_searchmode() {
 
   BrowserTestUtils.removeTab(tab);
 });
+
+add_task(async function test_no_history_in_local_searchmode() {
+  registerCleanupFunction(async function () {
+    await PlacesUtils.history.clear();
+    await PlacesUtils.bookmarks.eraseEverything();
+  });
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+
+  await PlacesTestUtils.addVisits(["https://screen-history.example.com/"]);
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "https://screen-bookmark.example.com/",
+    title: "screen bookmark",
+  });
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "",
+  });
+  await UrlbarTestUtils.activateSearchModeSwitcherItem(
+    window,
+    'panel-item[data-restrict="*"]'
+  );
+  await UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
+    entry: "searchbutton",
+  });
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus,
+    value: "screen",
+    fireInputEvent: true,
+  });
+
+  let results = [];
+  for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
+    results.push(await UrlbarTestUtils.getDetailsOfResultAt(window, i));
+  }
+  let urls = results.map(result => result.url);
+  Assert.ok(
+    urls.includes("https://screen-bookmark.example.com/"),
+    "Bookmark result is shown in bookmarks search mode"
+  );
+  Assert.ok(
+    !urls.includes("https://screen-history.example.com/"),
+    "History result is not shown in bookmarks search mode"
+  );
+  // Autofill only autofills bookmarks here, but always reports its results as
+  // coming from history, so skip it.
+  Assert.ok(
+    results.every(
+      result =>
+        result.result.autofill ||
+        result.source != UrlbarShared.RESULT_SOURCE.HISTORY
+    ),
+    "No results are from history in bookmarks search mode"
+  );
+
+  await UrlbarTestUtils.exitSearchMode(window);
+  await UrlbarTestUtils.promisePopupClose(window);
+  BrowserTestUtils.removeTab(tab);
+});

@@ -386,33 +386,42 @@ class AudioDestinationNode::MediaSharedKeysListener final
     // TODO (Bug 1962876): implement Setvolume/Mute/Unmute for Web Audio.
   }
 
-  void SuspendForInterrupt() override {
+  void SuspendForInterrupt(AudioSessionInterruptKind aKind) override {
     MOZ_ASSERT(NS_IsMainThread());
     AudioContext* ctx = mDestination.Context();
-    const bool willSuspend = ctx &&
-                             ctx->State() == AudioContextState::Running &&
+    const bool willSuspend = ctx && ctx->IsRunningOrResuming() &&
                              StaticPrefs::media_audioFocus_webaudio_enabled();
     MEDIA_CONTROL_LOG(
-        "MediaSharedKeysListener {} SuspendForInterrupt in BC {}, suspend={}",
-        fmt::ptr(this), mBrowsingContextId, willSuspend);
+        "MediaSharedKeysListener {} SuspendForInterrupt {} in BC {}, "
+        "suspend={}",
+        fmt::ptr(this), EnumValueToString(aKind), mBrowsingContextId,
+        willSuspend);
     if (willSuspend) {
       // TODO(bug 2039104): drive the spec "interrupted" AudioContextState here
       // instead of reusing the page-facing "suspended" state.
       ctx->SuspendFromMediaControl();
       mSuspendedByInterrupt = true;
     }
+    if (aKind == AudioSessionInterruptKind::Permanent) {
+      // A permanent interruption hands its suspend to the page.
+      if (ctx && mSuspendedByInterrupt) {
+        ctx->TransferSuspendToContent();
+      }
+      mSuspendedByInterrupt = false;
+    }
   }
 
   void ResumeFromInterrupt() override {
     MOZ_ASSERT(NS_IsMainThread());
     AudioContext* ctx = mDestination.Context();
-    const bool willResume = mSuspendedByInterrupt && ctx &&
-                            ctx->State() == AudioContextState::Suspended;
+    // The state can still read "running" while the interruption's suspend is
+    // pending, so it does not tell whether this interruption owns a suspend.
+    const bool resumed =
+        mSuspendedByInterrupt && ctx && ctx->ResumeFromMediaControl();
     MEDIA_CONTROL_LOG(
         "MediaSharedKeysListener {} ResumeFromInterrupt in BC {}, resume={}",
-        fmt::ptr(this), mBrowsingContextId, willResume);
-    if (willResume) {
-      ctx->ResumeFromMediaControl();
+        fmt::ptr(this), mBrowsingContextId, resumed);
+    if (resumed) {
       glean::media_audio_focus::resume_decision.Get("web_audio"_ns).Add(1);
     }
     mSuspendedByInterrupt = false;
@@ -616,7 +625,8 @@ void AudioDestinationNode::FireOfflineCompletionEvent() {
 void AudioDestinationNode::ResolvePromise(AudioBuffer* aRenderedBuffer) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mIsOffline);
-  mOfflineRenderingPromise->MaybeResolve(aRenderedBuffer);
+  RefPtr<Promise> promise = mOfflineRenderingPromise.forget();
+  promise->MaybeResolve(aRenderedBuffer);
 }
 
 uint32_t AudioDestinationNode::MaxChannelCount() const {

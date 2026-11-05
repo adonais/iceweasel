@@ -1257,7 +1257,7 @@ void DocAccessibleParent::Destroy() {
   }
 }
 
-void DocAccessibleParent::ActorDestroy(ActorDestroyReason aWhy) {
+void DocAccessibleParent::ActorDestroy(ActorDestroyReason /*aWhy*/) {
   MOZ_ASSERT(CheckDocTree());
   if (!mShutdown) {
     ACQUIRE_ANDROID_LOCK

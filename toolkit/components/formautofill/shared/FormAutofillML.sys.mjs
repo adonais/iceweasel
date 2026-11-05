@@ -10,9 +10,10 @@ import {
 import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
 import { MLEngineParent } from "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs";
+import { ModelHub } from "chrome://global/content/ml/ModelHub.sys.mjs";
 
 // Every engine's `timeoutMS` comes from
-// `extensions.formautofill.useml.timeoutMS` and is applied in `#ensureEngines`,
+// `extensions.formautofill.useml.timeoutMS` and is applied in `#getEngines`,
 // so it is read fresh on each engine creation rather than baked in here.
 
 // Default classifier: a single `text-classification` model that maps a field's
@@ -53,6 +54,7 @@ const FormFill_Encoder_Config = {
   engineId: FEATURES["formfill-encoder"].engineId,
   backend: "best-onnx",
   numThreads: 2,
+  modelToUseId: "mozilla/form-autofill-embed", // used only by isModelInstalled
 };
 
 // Head engine: custom `moz-formfill-head` pipeline, scores windowed features.
@@ -62,39 +64,13 @@ const FormFill_Head_Config = {
   engineId: FEATURES["formfill-head"].engineId,
   backend: "best-onnx",
   numThreads: 2,
+  modelToUseId: "mozilla/form-autofill-head", // used only by isModelInstalled
 };
 
-/**
- * Split a form-autofill context string into the current, previous, and next
- * field strings.
- *
- * Tokens prefixed with `bb` belong to the previous field and have the prefix
- * removed. Tokens prefixed with `aa` belong to the next field and have the
- * prefix removed. All remaining tokens belong to the current field.
- *
- * @param {string} mlData Context string containing tokens from the current
- *   field plus neighboring fields.
- * @returns {[string, string, string]} A tuple containing the current, previous,
- *   and next field strings, in that order.
- */
-export function splitContext(mlData) {
-  const cur = [];
-  const prev = [];
-  const next = [];
-  for (const w of mlData.split(/\s+/)) {
-    if (!w) {
-      continue;
-    }
-    if (w.length > 2 && w.startsWith("bb")) {
-      prev.push(w.slice(2));
-    } else if (w.length > 2 && w.startsWith("aa")) {
-      next.push(w.slice(2));
-    } else {
-      cur.push(w);
-    }
-  }
-  return [cur.join(" "), prev.join(" "), next.join(" ")];
-}
+// For the single classifier, these prefixes are used on words for the
+// previous and next elements.
+const ADJACENT_BEFORE_PREFIX = "bb";
+const ADJACENT_AFTER_PREFIX = "aa";
 
 export class FormAutofillML {
   // featureId -> engine, covering whichever classifier is active.
@@ -133,7 +109,7 @@ export class FormAutofillML {
   /**
    * Publish the version for `configs` -- the classifier about to run.
    *
-   * This must happen on every #ensureEngines() call, not only when engines are
+   * This must happen on every #getEngines() call, not only when engines are
    * created. `extensions.formautofill.useml.twoHead` is Nimbus-controlled and
    * live (defineLazyPreferenceGetter), so a profile can run the two-engine
    * classifier and later the single-engine one. #engines is keyed by featureId,
@@ -151,12 +127,84 @@ export class FormAutofillML {
       .join("/");
   }
 
+  /**
+   * Return true if the model(s) for the given configuration is installed.
+   *
+   * @param {object[]} configs Engine configurations for the active classifier.
+   */
+  async isModelInstalled(configs) {
+    const modelHub = new ModelHub({
+      allowDenyList: await MLEngineParent.getAllowDenyList(),
+    });
+
+    for (let config of configs) {
+      let modelId = config.modelToUseId || config.modelId;
+      if (!modelId) {
+        return false;
+      }
+
+      const version =
+        FormAutofill.mlModelVersion ||
+        (
+          await MLEngineParent.getInferenceOptions(
+            config.featureId,
+            config.taskName
+          )
+        ).modelRevision;
+
+      if (!(await modelHub.isModelInstalled(modelId, version))) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  combineAdjacentTokens(fieldDetails) {
+    for (let fieldDetail of fieldDetails) {
+      if (!fieldDetail.mlData) {
+        continue;
+      }
+
+      let words = fieldDetail.mlData[0].split(" ");
+
+      if (fieldDetail.mlData[1]) {
+        words = words.concat(
+          fieldDetail.mlData[1]
+            .split(" ")
+            .map(text => ADJACENT_BEFORE_PREFIX + text)
+        );
+      }
+      if (fieldDetail.mlData[2]) {
+        words = words.concat(
+          fieldDetail.mlData[2]
+            .split(" ")
+            .map(text => ADJACENT_AFTER_PREFIX + text)
+        );
+      }
+
+      fieldDetail.mlDataCombined = words.join(" ");
+    }
+  }
+
+  /**
+   * Main entry point for detecting fields. The field names are assigned for
+   * each of the given field details by this process. The reason "ml" is
+   * assigned to any detected field; other fields are unmodified.
+   *
+   * If the model is not ready yet, this starts the initialization/download of
+   * the model, but returns false early so that a fallback mechanism may be
+   * used.
+   *
+   * @param {object[]} fieldDetails array of field details
+   * @returns {boolean} true if successful
+   */
   async detectFields(fieldDetails) {
     if (FormAutofillUtils.enableMLAutofillTwoHead) {
-      await this.#detectFieldsTwoHead(fieldDetails);
-      return;
+      return await this.#detectFieldsTwoHead(fieldDetails);
     }
-    await this.#detectFieldsSingle(fieldDetails);
+
+    return await this.#detectFieldsSingle(fieldDetails);
   }
 
   /**
@@ -170,7 +218,7 @@ export class FormAutofillML {
    * @returns {Promise<object[]|null>} The ready engines, in the same order as
    *   `configs`, or null when inference should be skipped this time.
    */
-  async #ensureEngines(configs) {
+  async #getEngines(configs) {
     const cached = configs.map(config => this.#engines.get(config.featureId));
     if (
       cached.every(
@@ -193,18 +241,6 @@ export class FormAutofillML {
       const initPromises = configs.map(config =>
         createEngine(withModelRevision({ ...config, timeoutMS }))
       );
-
-      // If the ML engines have never been used before, they likely haven't been
-      // downloaded, so initialize them but don't try to get the result.
-      if (!FormAutofillUtils.isMLUsedAlready) {
-        Promise.all(initPromises)
-          .then(engines => {
-            remember(engines);
-            FormAutofillUtils.setMLUsedAlready();
-          })
-          .catch(() => {});
-        return null;
-      }
 
       remember(await Promise.all(initPromises));
     } catch (ex) {
@@ -232,77 +268,107 @@ export class FormAutofillML {
     return configs.map(config => this.#engines.get(config.featureId));
   }
 
+  async #ensureEngines(configs) {
+    let modelIsInstalled = await this.isModelInstalled(configs);
+
+    const enginesPromise = this.#getEngines(configs);
+
+    // If the model is not installed, we create it above but return
+    // without waiting since it could take a while to be ready.
+    if (!modelIsInstalled) {
+      return null;
+    }
+
+    return await enginesPromise;
+  }
+
   /**
    * Apply the model's predictions to `fields`, positionally.
    *
-   * Fields already labeled by the heuristics keep their assignment; the ML model
-   * only fills in the ones still missing a fieldName. Predictions for the field
-   * types the model is not trusted with are dropped like the "other" sentinel,
-   * since the regexp heuristics have already had their say on those.
+   * If ML identifies a field, it overrides the existing value assigned by
+   * heuristics, if any. The preference behind 'useHeuristicsForOther'
+   * controls whether the model overrides the heuristics when it does not
+   * identify a field. Predictions for the field types the model is not
+   * trusted with are dropped like the "other" sentinel, since the regexp
+   * heuristics have already had their say on those.
    *
    * @param {object[]} fields The field details that were classified.
    * @param {object[]} results One `{ label }` per entry in `fields`.
    */
-  #applyResults(fields, results) {
+  applyResults(fields, results) {
     for (let r = 0; r < results.length; r++) {
       const fd = fields[r];
-      if (fd.fieldName) {
-        continue;
-      }
-
       const fieldName = results[r].label;
-      if (
-        fieldName &&
-        fieldName != "other" &&
-        !FormAutofillUtils.mlIgnoreFieldTypes.includes(fieldName)
-      ) {
+      if (fieldName && fieldName != "other") {
+        if (!FormAutofillUtils.mlIgnoreFieldTypes.includes(fieldName)) {
+          fd.fieldName = fieldName;
+          fd.reason = "ml";
+        }
+      } else if (!FormAutofillUtils.useHeuristicsForOther) {
         fd.fieldName = fieldName;
+        fd.reason = "ml";
       }
-
-      fd.reason = "ml";
     }
   }
 
+  /**
+   * Detect fields for the single model. See detectFields for details
+   * of its usage.
+   *
+   * @param {object[]} fieldDetails array of field details
+   * @returns {boolean} true if sucessful or if there are no fields to identify
+   */
   async #detectFieldsSingle(fieldDetails) {
     const engines = await this.#ensureEngines([FormFill_Config]);
     if (!engines) {
-      return;
+      return false;
     }
+
+    this.combineAdjacentTokens(fieldDetails);
 
     // Only fields that have tokens and don't already have a field name assigned
     // need identifying. One input string per field, classified in one batch.
-    const mlFields = fieldDetails.filter(fd => !fd.fieldName && fd.mlData);
+    const mlFields = fieldDetails.filter(fd => FormAutofillUtils.canUseML(fd));
 
     if (!mlFields.length) {
-      return; // No fields to identify.
+      return true; // Success, but no fields to identify.
     }
 
     const results = await engines[0].run({
-      args: [mlFields.map(fd => fd.mlData)],
+      args: [mlFields.map(fd => fd.mlDataCombined)],
       options: { pooling: "mean", normalize: true },
     });
 
-    this.#applyResults(mlFields, results);
+    this.applyResults(mlFields, results);
+    return true;
   }
 
+  /**
+   * Detect fields for the two-head model. See detectFields for details
+   * of its usage.
+   *
+   * @param {object[]} fieldDetails array of field details
+   * @returns {boolean} true if sucessful or if there are no fields to identify
+   */
   async #detectFieldsTwoHead(fieldDetails) {
     const engines = await this.#ensureEngines([
       FormFill_Encoder_Config,
       FormFill_Head_Config,
     ]);
     if (!engines) {
-      return;
+      return false;
     }
+
     const [encoderEngine, headEngine] = engines;
 
     // Consider every field that has ML tokens. We still only assign a fieldName
     // to fields that don't already have one (see the result loop below), but the
     // neighbor context for each field comes from its OWN baked aa/bb data, so we
     // don't depend on which other fields are present or their ordering.
-    const mlFields = fieldDetails.filter(fd => fd.mlData);
+    const mlFields = fieldDetails.filter(fd => FormAutofillUtils.canUseML(fd));
 
     if (!mlFields.length) {
-      return; // No fields to identify.
+      return true; // Success, but no fields to identify.
     }
 
     // Step 1: split each field's mlData into its three sections (current /
@@ -319,7 +385,7 @@ export class FormAutofillML {
     //   - An absent previous/next section is the empty string "", which the
     //     encoder turns into a fixed non-zero [CLS][SEP] embedding (NOT a zero
     //     vector), so the difference features become `cur - emptyEmb`.
-    const sections = mlFields.map(fd => splitContext(fd.mlData));
+    const sections = mlFields.map(fd => fd.mlData);
     const uniqueStrings = [...new Set([""].concat(...sections))];
     let embeddings = await encoderEngine.run({
       args: [uniqueStrings],
@@ -359,6 +425,8 @@ export class FormAutofillML {
     // `.output`.
     const scores = await headEngine.run({ args: [rows] });
 
-    this.#applyResults(mlFields, scores?.output ?? scores);
+    this.applyResults(mlFields, scores?.output ?? scores);
+
+    return true;
   }
 }

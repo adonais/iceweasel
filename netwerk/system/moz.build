@@ -22,3 +22,8 @@ SOURCES += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "LinkServiceCommon.h",
+    "NetworkLinkServiceDefines.h",
+]

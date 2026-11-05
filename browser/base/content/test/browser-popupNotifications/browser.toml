@@ -37,8 +37,6 @@ skip-if = [
 ["browser_popupNotification_accesskey.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
 ]
 

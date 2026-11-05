@@ -29,7 +29,7 @@
 //! main reason visibility is a separate pass.
 //!
 
-use api::DebugFlags;
+use api::{ColorF, DebugFlags};
 use api::units::*;
 use crate::clip::ClipStore;
 use crate::composite::CompositeState;
@@ -39,23 +39,28 @@ use crate::renderer::GpuBufferBuilder;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::clip::{snap_local_clip_rect, ClipChainInstance, ClipTree, ClipNodeId};
 use crate::composite::CompositorSurfaceKind;
-use crate::frame_builder::FrameBuilderConfig;
+use crate::frame_builder::{FrameBuilderConfig, FrameBuildingContext};
 use crate::picture::ClusterFlags;
 use crate::picture_composite_mode::PictureCompositeMode;
 use crate::surface::SurfaceInfo;
-use crate::tile_cache::TileCacheInstance;
-use crate::picture::{PictureScratch, RasterConfig};
+use crate::tile_cache::{SliceId, TileCacheInstance};
+use crate::internal_types::FastHashMap;
+use crate::picture::{PictureInstance, PictureScratch, RasterConfig};
+use crate::picture_graph::PictureGraph;
+use smallvec::SmallVec;
+use std::ops;
 use crate::surface::SurfaceIndex;
 use crate::tile_cache::SubSliceIndex;
 use crate::prim_store::{ClipTaskIndex, PictureIndex, PrimitiveKind};
 use crate::prim_store::{PrimitiveStore, PrimitiveInstance, PrimitiveInstanceIndex};
 use crate::prim_store::storage;
 use crate::prim_store::text_run::TextRunScratch;
-use crate::render_backend::{DataStores, ScratchBuffer};
+use crate::render_backend::{DataStores, DlStores, ScratchBuffer};
+use crate::command_buffer::{CommandBufferList, OpenBackdropCapture};
 use crate::render_task_graph::RenderTaskGraphBuilder;
 use crate::resource_cache::ResourceCache;
-use crate::util::MaxRect;
-use crate::scene::SceneProperties;
+use crate::util::{MaxRect, Recycler};
+use crate::scene::{BackdropChain, SceneProperties};
 use crate::scene_debug::SceneDebugOverride;
 use crate::space::{SpaceMapper, SpaceSnapper};
 
@@ -74,6 +79,7 @@ pub struct FrameVisibilityState<'a> {
     pub resource_cache: &'a mut ResourceCache,
     pub frame_gpu_data: &'a mut GpuBufferBuilder,
     pub data_stores: &'a DataStores,
+    pub dl_stores: &'a DlStores,
     pub clip_tree: &'a ClipTree,
     pub composite_state: &'a mut CompositeState,
     pub rg_builder: &'a mut RenderTaskGraphBuilder,
@@ -204,9 +210,9 @@ impl KindScratchHandle {
 ///
 /// Distinct from `PrimitiveInstanceIndex`, which identifies the scene-relative
 /// primitive instance a draw was produced from. Draws are pushed as the
-/// visibility pass finds them, so the two are unrelated numbers; cross between
-/// them with `PrimitiveFrameScratch::draw_index_for_instance` (instance to draw,
-/// fallible) or `PrimitiveDrawHeader::prim_instance_index` (draw to instance).
+/// visibility pass finds them, so the two are unrelated numbers. Go from a draw
+/// to its instance with `PrimitiveDrawHeader::prim_instance_index`; the prepare
+/// pass reaches draws through each picture's draw list.
 pub type PrimitiveDrawIndex = storage::Index<PrimitiveDrawHeader>;
 
 /// Information stored for a visible primitive about the visible
@@ -218,6 +224,9 @@ pub struct PrimitiveDrawHeader {
     /// only way to get from a draw to its instance: consumers reached via the
     /// command stream hold a `PrimitiveDrawIndex`, which is unrelated to it.
     pub prim_instance_index: PrimitiveInstanceIndex,
+
+    /// The spatial node of the cluster the primitive was drawn from.
+    pub spatial_node_index: SpatialNodeIndex,
 
     /// The clip chain instance that was built for this primitive.
     pub clip_chain: ClipChainInstance,
@@ -259,6 +268,7 @@ impl PrimitiveDrawHeader {
     pub fn new() -> Self {
         PrimitiveDrawHeader {
             prim_instance_index: PrimitiveInstanceIndex::INVALID,
+            spatial_node_index: SpatialNodeIndex::INVALID,
             state: DrawState::Unset,
             clip_chain: ClipChainInstance::empty(),
             clip_task_index: ClipTaskIndex::INVALID,
@@ -280,6 +290,277 @@ impl PrimitiveDrawHeader {
     }
 }
 
+/// The part of a backdrop root that a backdrop-filter samples, found each frame
+/// before visibility runs.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct BackdropCaptureRegion {
+    /// The outermost picture of the backdrop-filter chain, which
+    /// `BackdropRender` refers to.
+    pub chain_pic_index: PictureIndex,
+    /// The picture holding the `BackdropCapture` primitive. Its surface is the
+    /// one the backdrop is captured into.
+    pub capture_pic_index: PictureIndex,
+    /// The backdrop root: the picture the backdrop-filter chain was added to.
+    pub root_pic_index: PictureIndex,
+    /// The surface the backdrop root's content is drawn into. `region` is in
+    /// its picture space.
+    pub root_surface_index: SurfaceIndex,
+    /// The `BackdropCapture` primitive. Primitives painted before the
+    /// backdrop-filter element have lower instance indices.
+    pub capture_instance_index: PrimitiveInstanceIndex,
+    /// The area of the root surface the filter chain reads to produce its
+    /// output: the capture's rect, grown by whatever the chain's filters sample
+    /// outside of their output (drop shadow offsets and blur).
+    pub region: PictureRect,
+    /// The color a picture cache slice clears its tiles to, if the backdrop
+    /// root is the slice itself. Part of what is painted behind the element,
+    /// but not drawn by any primitive.
+    pub root_background_color: Option<ColorF>,
+}
+
+/// The index of a backdrop-filter capture in `BackdropCaptures`.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct BackdropCaptureIndex(pub u32);
+
+/// A range of captures in `BackdropCaptures`.
+#[derive(Debug, Copy, Clone, Default)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct BackdropCaptureRange {
+    start: u32,
+    end: u32,
+}
+
+impl BackdropCaptureRange {
+    pub fn is_empty(&self) -> bool {
+        self.start == self.end
+    }
+}
+
+/// The backdrop captures a picture takes part in.
+#[derive(Clone, Default)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+struct PictureBackdropCaptures {
+    /// The capture whose backdrop-filter chain this picture is the outermost
+    /// picture of.
+    chain: Option<BackdropCaptureIndex>,
+    /// The capture whose surface this picture is.
+    capture: Option<BackdropCaptureIndex>,
+    /// The captures this picture is the backdrop root of.
+    rooted: BackdropCaptureRange,
+}
+
+/// The capture region of every backdrop-filter chain reachable this frame,
+/// found before the visibility pass, and the pictures that take part in each.
+#[derive(Default)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct BackdropCaptures {
+    /// Grouped by backdrop root.
+    regions: Vec<BackdropCaptureRegion>,
+    /// Indexed by `PictureIndex`. Empty when there are no captures this frame.
+    pictures: Vec<PictureBackdropCaptures>,
+}
+
+impl ops::Index<BackdropCaptureIndex> for BackdropCaptures {
+    type Output = BackdropCaptureRegion;
+
+    fn index(&self, index: BackdropCaptureIndex) -> &BackdropCaptureRegion {
+        &self.regions[index.0 as usize]
+    }
+}
+
+impl BackdropCaptures {
+    /// Group the captures by backdrop root and index them by picture, for a
+    /// scene with `picture_count` pictures.
+    fn index_pictures(&mut self, picture_count: usize) {
+        self.pictures.clear();
+        if self.regions.is_empty() {
+            return;
+        }
+        self.regions.sort_by_key(|capture| capture.root_pic_index.0);
+        self.pictures.resize(picture_count, PictureBackdropCaptures::default());
+
+        for (position, capture) in self.regions.iter().enumerate() {
+            let index = BackdropCaptureIndex(position as u32);
+
+            let chain = &mut self.pictures[capture.chain_pic_index.0 as usize].chain;
+            // Captures are looked up by their chain.
+            assert!(chain.is_none(), "bug: backdrop-filter chain with more than one capture");
+            *chain = Some(index);
+
+            self.pictures[capture.capture_pic_index.0 as usize].capture = Some(index);
+
+            let rooted = &mut self.pictures[capture.root_pic_index.0 as usize].rooted;
+            if rooted.is_empty() {
+                *rooted = BackdropCaptureRange { start: index.0, end: index.0 };
+            }
+            rooted.end += 1;
+        }
+    }
+
+    /// The capture whose backdrop-filter chain is `pic_index`.
+    pub fn for_chain(&self, pic_index: PictureIndex) -> Option<&BackdropCaptureRegion> {
+        let index = self.pictures.get(pic_index.0 as usize)?.chain?;
+        Some(&self[index])
+    }
+
+    /// The capture whose surface is `pic_index`.
+    pub fn index_for_picture(&self, pic_index: PictureIndex) -> Option<BackdropCaptureIndex> {
+        self.pictures.get(pic_index.0 as usize)?.capture
+    }
+
+    /// The capture whose surface is `pic_index`.
+    pub fn for_picture(&self, pic_index: PictureIndex) -> Option<&BackdropCaptureRegion> {
+        self.index_for_picture(pic_index).map(|index| &self[index])
+    }
+
+    /// The captures `pic_index` is the backdrop root of, in increasing order.
+    pub fn rooted_at(&self, pic_index: PictureIndex) -> impl Iterator<Item = BackdropCaptureIndex> {
+        let rooted = self.pictures.get(pic_index.0 as usize).map_or(BackdropCaptureRange::default(), |captures| captures.rooted);
+        (rooted.start .. rooted.end).map(BackdropCaptureIndex)
+    }
+
+    /// Start drawing into the capture at `index`.
+    pub fn open(&self, index: BackdropCaptureIndex, cmd_buffers: &mut CommandBufferList) -> OpenBackdropCapture {
+        let capture = &self[index];
+        OpenBackdropCapture {
+            index,
+            region: capture.region,
+            capture_instance_index: capture.capture_instance_index,
+            cmd_buffer_index: cmd_buffers.create_cmd_buffer(),
+            dependencies: Vec::new(),
+            drawn_into: false,
+        }
+    }
+
+    pub fn recycle(&mut self, recycler: &mut Recycler) {
+        recycler.recycle_vec(&mut self.regions);
+    }
+}
+
+/// Find the capture region of every backdrop-filter chain reachable this frame.
+/// Runs after surfaces are assigned and bounding rects propagated.
+pub fn build_backdrop_capture_regions(
+    backdrop_chains: &[BackdropChain],
+    pictures: &[PictureInstance],
+    picture_graph: &PictureGraph,
+    surfaces: &[SurfaceInfo],
+    prim_instances: &[PrimitiveInstance],
+    tile_caches: &FastHashMap<SliceId, Box<TileCacheInstance>>,
+    frame_context: &FrameBuildingContext,
+    captures: &mut BackdropCaptures,
+) {
+    captures.regions.clear();
+
+    'chains: for chain_info in backdrop_chains {
+        let chain_pic_index = chain_info.output_pic_index;
+        let Some(root_pic_index) = picture_graph.parent(chain_pic_index) else {
+            continue;
+        };
+        let Some(root_surface_index) = picture_graph.surface_index(root_pic_index) else {
+            continue;
+        };
+
+        // Each picture of the chain holds a single primitive: the next picture
+        // in, or the capture primitive for the innermost one.
+        let mut chain: SmallVec<[PictureIndex; 4]> = SmallVec::new();
+        let mut pic_index = chain_pic_index;
+        loop {
+            // A picture not drawn this frame, e.g. culled by an animated
+            // opacity, keeps the raster config of the last frame it was.
+            let pic = &pictures[pic_index.0 as usize];
+            if picture_graph.surface_index(pic_index).is_none() || pic.raster_config.is_none() {
+                continue 'chains;
+            }
+            chain.push(pic_index);
+
+            match pic.prim_list.child_pictures.first() {
+                Some(&child_pic_index) => pic_index = child_pic_index,
+                None => break,
+            }
+        }
+
+        let capture_instance_index = chain_info.capture_instance_index;
+        debug_assert!(matches!(
+            prim_instances[capture_instance_index.0 as usize].kind,
+            PrimitiveKind::BackdropCapture { .. }
+        ));
+
+        let capture_pic_index = pic_index;
+        let capture_surface = &surfaces[pictures[capture_pic_index.0 as usize]
+            .raster_config
+            .as_ref()
+            .unwrap()
+            .surface_index
+            .0];
+        let root_surface = &surfaces[root_surface_index.0];
+
+        // The draws of the primitives behind the element are reused for the
+        // capture surface, which `assign_surface` makes rasterize like the
+        // root's for that.
+        assert!(
+            capture_surface.surface_spatial_node_index == root_surface.surface_spatial_node_index &&
+                capture_surface.raster_spatial_node_index == root_surface.raster_spatial_node_index &&
+                capture_surface.device_pixel_scale == root_surface.device_pixel_scale,
+            "bug: backdrop capture doesn't rasterize like its root",
+        );
+
+        let root_slice = match pictures[root_pic_index.0 as usize].raster_config {
+            Some(RasterConfig { composite_mode: PictureCompositeMode::TileCache { slice_id }, .. }) => Some(slice_id),
+            _ => None,
+        };
+
+        // Walk from the chain's output inwards: each picture's filter has to
+        // be given the source it samples to produce what the picture outside
+        // it needs. The clipped rect is only accumulated by the visibility
+        // pass, so start from the conservative unclipped one. A picture cache
+        // slice only renders what is on screen, so for a backdrop root that is
+        // one, only the on-screen part of the output is needed.
+        let mut region = capture_surface.unclipped_local_rect;
+        if root_slice.is_some() {
+            let map_pic_to_device: SpaceMapper<PicturePixel, DevicePixel> = SpaceMapper::new_with_target(
+                frame_context.spatial_tree.root_reference_frame_index(),
+                root_surface.surface_spatial_node_index,
+                frame_context.global_screen_device_rect,
+                frame_context.spatial_tree,
+            );
+            if let Some(screen_rect) = map_pic_to_device.unmap(&map_pic_to_device.bounds) {
+                region = region.intersection(&screen_rect).unwrap_or_else(PictureRect::zero);
+            }
+        }
+        for pic_index in &chain {
+            let raster_config = pictures[pic_index.0 as usize].raster_config.as_ref().unwrap();
+            let surface = &surfaces[raster_config.surface_index.0];
+
+            region = raster_config.composite_mode
+                .get_required_source_rect(surface, region.cast_unit())
+                .cast_unit();
+
+            // An SVG filter graph never samples more than the surface's own
+            // rect (see `get_surface_rects`).
+            if let PictureCompositeMode::SVGFEGraph(..) = raster_config.composite_mode {
+                region = region
+                    .intersection(&surface.unclipped_local_rect)
+                    .unwrap_or_else(PictureRect::zero);
+            }
+        }
+
+        captures.regions.push(BackdropCaptureRegion {
+            chain_pic_index,
+            capture_pic_index,
+            root_pic_index,
+            root_surface_index,
+            capture_instance_index,
+            region,
+            root_background_color: root_slice.and_then(|slice_id| tile_caches[&slice_id].background_color),
+        });
+    }
+
+    captures.index_pictures(pictures.len());
+}
+
 pub fn update_prim_visibility(
     pic_index: PictureIndex,
     parent_surface_index: Option<SurfaceIndex>,
@@ -294,6 +575,7 @@ pub fn update_prim_visibility(
     }
     frame_state.visited_pictures[pic_index.0 as usize] = true;
     let pic = &store.pictures[pic_index.0 as usize];
+    let draws_start = frame_state.scratch.primitive.frame.begin_picture_draws();
 
     let (surface_index, pop_surface) = match pic.raster_config {
         Some(RasterConfig { surface_index, composite_mode: PictureCompositeMode::TileCache { .. }, .. }) => {
@@ -321,9 +603,14 @@ pub fn update_prim_visibility(
                 );
             }
 
-            let surface_local_rect = frame_state.surfaces[raster_config.surface_index.0]
-                .unclipped_local_rect
-                .cast_unit();
+            // Include the inflation of the composite mode (e.g. drop-shadow), so the
+            // sub-slice chosen for the surface's content matches the one the picture
+            // itself is later assigned to, based on its inflated coverage.
+            let surface = &frame_state.surfaces[raster_config.surface_index.0];
+            let surface_local_rect = raster_config.composite_mode.get_coverage(
+                surface,
+                Some(surface.unclipped_local_rect.cast_unit()),
+            );
 
             // Let the picture cache know that we are pushing an off-screen
             // surface, so it can treat dependencies of surface atomically.
@@ -391,6 +678,9 @@ pub fn update_prim_visibility(
     // clip chain.
     let mut snapper = SpaceSnapper::new(surface, frame_context.spatial_tree);
     let mut clip_snapper = snapper.clone();
+    // Only the prims' own rects were translated by the shadow offset, not the
+    // clip chain they share with the shadowed content.
+    snapper.set_shadow_offset(pic.prim_list.shadow_offset);
 
     for cluster in &pic.prim_list.clusters {
         tracy_rs::profile_scope!("cluster");
@@ -436,8 +726,8 @@ pub fn update_prim_visibility(
             // `PrimitiveInstance::snap_policy`.
             let prim_instance = &frame_state.prim_instances[prim_instance_index];
 
-            let policy = prim_instance.snap_policy(frame_state.data_stores);
-            let unsnapped_pattern_rect = frame_state.data_stores.prim_rect(prim_instance);
+            let policy = prim_instance.snap_policy(frame_state.data_stores, frame_state.dl_stores);
+            let unsnapped_pattern_rect = frame_state.data_stores.prim_rect(prim_instance, frame_state.dl_stores);
             let snapped_pattern_rect =
                 snapper.snap_rect_rounded(&unsnapped_pattern_rect, policy.rect);
 
@@ -445,13 +735,14 @@ pub fn update_prim_visibility(
             // primitive is known to be drawn, so culled primitives cost nothing.
             let mut draw = PrimitiveDrawHeader::new();
             draw.prim_instance_index = PrimitiveInstanceIndex(prim_instance_index as u32);
+            draw.spatial_node_index = cluster.spatial_node_index;
             draw.snapped_pattern_rect = snapped_pattern_rect;
 
             // Snap the prim's own local clip rect against this cluster's
             // spatial node, the same target `snapper` used for the prim rect
             // above.
             let snapped_local_clip_rect = snap_local_clip_rect(
-                frame_state.data_stores.local_clip_rect(prim_instance),
+                frame_state.data_stores.local_clip_rect(prim_instance, frame_state.dl_stores),
                 &snapper,
                 policy.local_clip(),
             );
@@ -595,6 +886,7 @@ pub fn update_prim_visibility(
                         local_coverage_rect,
                         frame_context,
                         frame_state.data_stores,
+                        frame_state.dl_stores,
                         frame_state.clip_store,
                         &store.pictures,
                         frame_state.resource_cache,
@@ -617,6 +909,8 @@ pub fn update_prim_visibility(
             frame_state.scratch.primitive.frame.draw_mut(draw_index).state = new_state;
         }
     }
+
+    frame_state.scratch.primitive.frame.end_picture_draws(pic_index, draws_start);
 
     if let Some(snapshot) = &pic.snapshot {
         if snapshot.detached {

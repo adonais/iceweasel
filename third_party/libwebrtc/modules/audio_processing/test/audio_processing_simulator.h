@@ -135,7 +135,6 @@ struct SimulationSettings {
   std::optional<int> frame_for_sending_capture_output_used_true;
   bool report_performance = false;
   std::optional<std::string> performance_report_output_filename;
-  bool report_bitexactness = false;
   bool use_verbose_logging = false;
   bool use_quiet_output = false;
   bool discard_all_settings_in_aecdump = true;
@@ -188,8 +187,6 @@ class AudioProcessingSimulator {
   // Analyzes the data in the input and reports the resulting statistics.
   virtual void Analyze() = 0;
 
-  // Reports whether the processed recording was bitexact.
-  bool OutputWasBitexact() { return bitexact_output_; }
 
   size_t get_num_process_stream_calls() { return num_process_stream_calls_; }
   size_t get_num_reverse_process_stream_calls() {
@@ -228,7 +225,6 @@ class AudioProcessingSimulator {
   std::unique_ptr<ChannelBufferWavReader> reverse_buffer_reader_;
   Int16Frame rev_frame_;
   Int16Frame fwd_frame_;
-  bool bitexact_output_ = true;
   std::optional<int> aec_dump_applied_input_level_ = 0;
 
  protected:

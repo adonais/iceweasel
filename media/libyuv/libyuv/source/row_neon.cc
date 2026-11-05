@@ -1834,6 +1834,26 @@ void ARGBExtractAlphaRow_NEON(const uint8_t* src_argb,
   );
 }
 
+void ARGBCopyYToAlphaRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "1:          \n"
+      "vld4.8      {d0, d1, d2, d3}, [%1]        \n"  // load 8 ARGB
+      "pld         [%0, #448]                    \n"
+      "vld1.8      {d3}, [%0]!                   \n"  // replace A with 8 Y
+      "pld         [%1, #448]                    \n"
+      "vst4.8      {d0, d1, d2, d3}, [%1]!       \n"
+      "vld4.8      {d4, d5, d6, d7}, [%1]        \n"  // load 8 ARGB
+      "vld1.8      {d7}, [%0]!                   \n"  // replace A with 8 Y
+      "vst4.8      {d4, d5, d6, d7}, [%1]!       \n"
+      "subs        %2, %2, #16                   \n"
+      "bgt         1b                            \n"
+      : "+r"(src),   // %0
+        "+r"(dst),   // %1
+        "+r"(width)  // %2
+      :
+      : "cc", "memory", "q0", "q1", "q2", "q3");
+}
+
 // 8x1 pixels.
 void ARGBToUV444MatrixRow_NEON(const uint8_t* src_argb,
                                uint8_t* dst_u,

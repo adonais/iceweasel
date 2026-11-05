@@ -5,6 +5,7 @@
 package mozilla.components.compose.menu.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -17,23 +18,40 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import mozilla.components.compose.base.badge.BADGE_SIZE_SMALL
 import mozilla.components.compose.base.badge.BadgedIcon
 import mozilla.components.compose.base.badge.StatusBadge
-import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.base.modifier.debouncedClickable
 import mozilla.components.compose.base.text.value
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.information
 import mozilla.components.compose.menu.R
 import mozilla.components.compose.menu.data.MenuItemBadge
 import mozilla.components.compose.menu.data.MenuItemSummary
+import mozilla.components.compose.menu.data.MenuItemTitle
+import mozilla.components.compose.menu.store.MenuEvent
+import mozilla.components.compose.menu.ui.MenuItemState.DISABLED
 
+/**
+ * The badge of a menu list item.
+ *
+ * @param badge The [MenuItemBadge] to show, if any.
+ * @param hideFromAccessibility Whether screen readers should skip the badge, for when its text is already announced in
+ *   another way.
+ */
 @Composable
-internal fun MenuListItemBadge(badge: MenuItemBadge?) {
+internal fun MenuListItemBadge(
+    badge: MenuItemBadge?,
+    hideFromAccessibility: Boolean = false,
+) {
     if (badge != null) {
         Text(
             text = badge.text.value,
@@ -47,7 +65,8 @@ internal fun MenuListItemBadge(badge: MenuItemBadge?) {
                     .padding(
                         horizontal = AcornTheme.layout.space.static200,
                         vertical = AcornTheme.layout.space.static100,
-                    ),
+                    )
+                    .then(if (hideFromAccessibility) Modifier.clearAndSetSemantics {} else Modifier),
         )
     }
 }
@@ -67,18 +86,18 @@ internal fun MenuListItemNewIndicator(
 
 @Composable
 internal fun RowScope.MenuListItemText(
-    title: Text,
+    title: MenuItemTitle,
     state: MenuItemState,
     summary: MenuItemSummary?,
 ) {
     Column(modifier = Modifier.weight(1f)) {
         Text(
-            text = title.value,
+            text = title.text.value,
             style = AcornTheme.typography.subtitle1.copy(hyphens = Hyphens.Auto),
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Start,
             overflow = TextOverflow.Ellipsis,
-            maxLines = 2,
+            maxLines = title.maxLines,
             softWrap = true,
             color = state.contentColor,
         )
@@ -115,5 +134,34 @@ internal fun MenuListItemIcon(
         )
     } else {
         Spacer(Modifier.size(AcornTheme.layout.size.static300))
+    }
+}
+
+@Composable
+internal fun Modifier.menuItemClickableBehavior(
+    state: MenuItemState,
+    role: Role,
+    onClickEvent: MenuEvent?,
+    onLongClickEvent: MenuEvent?,
+    onInteraction: (MenuEvent) -> Unit,
+): Modifier {
+    val haptic = LocalHapticFeedback.current
+    return if (onLongClickEvent != null) {
+        this.combinedClickable(
+            enabled = state != DISABLED,
+            onClick = { onClickEvent?.let { onInteraction(it) } },
+            onLongClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onInteraction(onLongClickEvent)
+            },
+            role = role,
+        )
+    } else if (onClickEvent != null && state != DISABLED) {
+        this.debouncedClickable(
+            onClick = { onInteraction(onClickEvent) },
+            role = role,
+        )
+    } else {
+        this
     }
 }

@@ -75,3 +75,13 @@ FINAL_LIBRARY = "xul"
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Security: CAPS")
+
+SOURCE_HEADERS += [
+    "ContentPrincipalJSONHandler.h",
+    "DomainPolicy.h",
+    "ExpandedPrincipalJSONHandler.h",
+    "NullPrincipalJSONHandler.h",
+    "PrincipalJSONHandler.h",
+    "SharedJSONHandler.h",
+    "SubsumedPrincipalJSONHandler.h",
+]

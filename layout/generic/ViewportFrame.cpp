@@ -149,7 +149,7 @@ static void BuildDisplayListForTopLayerFrame(nsDisplayListBuilder* aBuilder,
   nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
       aBuilder, aFrame, visible, dirty);
 
-  nsDisplayList list(aBuilder);
+  nsDisplayList list;
   aFrame->BuildDisplayListForStackingContext(aBuilder, &list);
   aList->AppendToTop(&list);
 }
@@ -219,7 +219,7 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForContentTopLayer(
     return nullptr;
   }
 
-  nsDisplayList topLayerList(aBuilder);
+  nsDisplayList topLayerList;
   auto* doc = PresContext()->Document();
 
   nsTArray<dom::Element*> topLayer = doc->GetTopLayer();
@@ -286,7 +286,7 @@ ViewportFrame::BuildDisplayListForViewTransitionsAndNACTopLayer(
     return nullptr;
   }
 
-  nsDisplayList topLayerList(aBuilder);
+  nsDisplayList topLayerList;
   auto* doc = PresContext()->Document();
   if (dom::ViewTransition* vt = doc->GetActiveViewTransition()) {
     if (dom::Element* root = vt->GetSnapshotContainingBlock()) {

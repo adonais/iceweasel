@@ -7,6 +7,7 @@ package mozilla.components.feature.awesomebar.provider
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.runTest
+import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.storage.DocumentType
 import mozilla.components.concept.storage.HistoryMetadata
 import mozilla.components.concept.storage.HistoryMetadataKey
@@ -55,6 +56,23 @@ class CombinedHistorySuggestionProviderTest {
 
             assertTrue(provider.onInputChanged("").isEmpty())
             assertTrue(provider.onInputChanged("  ").isEmpty())
+        }
+
+    @Test
+    fun `GIVEN only storage backed history results WHEN user changes input THEN suggestions are flagged as HISTORY`() =
+        runTest {
+            val storage: HistoryMetadataStorage = mock()
+            doReturn(emptyList<HistoryMetadata>()).`when`(storage).queryHistoryMetadata(eq("moz"), anyInt())
+            val history: HistoryStorage = mock()
+            doReturn(listOf(SearchResult("id", "http://www.mozilla.com/firefox/", 10)))
+                .`when`(history)
+                .getSuggestions(eq("moz"), anyInt())
+            val provider = CombinedHistorySuggestionProvider(history, storage, mock())
+
+            val result = provider.onInputChanged("moz")
+
+            assertEquals(1, result.size)
+            assertTrue(result[0].flags.contains(AwesomeBar.Suggestion.Flag.HISTORY))
         }
 
     @Test

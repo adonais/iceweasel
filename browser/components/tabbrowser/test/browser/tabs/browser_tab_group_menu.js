@@ -13,6 +13,16 @@ const { TabStateFlusher } = ChromeUtils.importESModule(
   "moz-src:///browser/components/sessionstore/TabStateFlusher.sys.mjs"
 );
 
+const SAVE_HINT_SHOWN_COUNT_PREF = "browser.tabs.groups.saveHintShownCount";
+const ALTERNATE_MENU_PREF = "browser.tabs.groups.alternateMenu";
+const SAVE_HINT_MESSAGE_ID = "confirmation-hint-tab-group-saved";
+
+add_setup(() => {
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(SAVE_HINT_SHOWN_COUNT_PREF);
+  });
+});
+
 function readClipboardText() {
   let xferable = Cc["@mozilla.org/widget/transferable;1"].createInstance(
     Ci.nsITransferable
@@ -435,6 +445,307 @@ add_task(async function test_saveAndCloseGroup() {
   BrowserTestUtils.removeTab(tab);
   tabGroupSavedTrigger.uninit();
 });
+
+/**
+ * Tests that saving and closing a group via the tab group menu's
+ * "Save and close group" button shows the "Tab group saved" confirmation
+ * hint, anchored to the List All Tabs button when the alternate menu is
+ * disabled.
+ */
+add_task(async function test_saveAndCloseGroup_showsConfirmationHint() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [SAVE_HINT_SHOWN_COUNT_PREF, 0],
+      [ALTERNATE_MENU_PREF, false],
+    ],
+  });
+  let showSpy = sinon.spy(window.ConfirmationHint, "show");
+  let panel = window.ConfirmationHint._panel;
+
+  let tab = await addTab("about:mozilla");
+  let { tabgroupEditor, group } = await createTabGroupAndOpenEditPanel(
+    [tab],
+    "test_saveAndCloseGroup_showsConfirmationHint"
+  );
+  let tabgroupPanel = tabgroupEditor.panel;
+  await TabStateFlusher.flush(tab.linkedBrowser);
+  let saveAndCloseGroupButton = tabgroupPanel.querySelector(
+    "#tabGroupEditor_saveAndCloseGroup"
+  );
+
+  let removed = BrowserTestUtils.waitForEvent(group, "TabGroupRemoved");
+  let shown = BrowserTestUtils.waitForPopupEvent(panel, "shown");
+  saveAndCloseGroupButton.click();
+  await removed;
+  await shown;
+  Assert.ok(
+    BrowserTestUtils.isVisible(panel),
+    "Confirmation hint panel is visible"
+  );
+
+  Assert.ok(
+    showSpy.calledOnceWith(
+      sinon.match.same(document.getElementById("alltabs-button")),
+      SAVE_HINT_MESSAGE_ID
+    ),
+    "Confirmation hint was shown once, anchored to the List All Tabs button"
+  );
+  Assert.equal(
+    Services.prefs.getIntPref(SAVE_HINT_SHOWN_COUNT_PREF),
+    1,
+    "Shown-count pref was incremented"
+  );
+
+  let hidden = BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+  panel.hidePopup();
+  await hidden;
+  SessionStore.forgetSavedTabGroup(group.id);
+  showSpy.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Tests that saving and closing a group still shows the confirmation hint
+ * when the tab being closed is the currently selected tab, which forces a
+ * tab switch as part of the close.
+ */
+add_task(
+  async function test_saveAndCloseSelectedTabGroup_showsConfirmationHint() {
+    await SpecialPowers.pushPrefEnv({ set: [[SAVE_HINT_SHOWN_COUNT_PREF, 0]] });
+    let panel = window.ConfirmationHint._panel;
+
+    let tab = await addTab("about:mozilla");
+    let group = gBrowser.addTabGroup([tab], {
+      color: "cyan",
+      label: "test_saveAndCloseSelectedTabGroup_showsConfirmationHint",
+    });
+    await TabStateFlusher.flush(tab.linkedBrowser);
+    await BrowserTestUtils.switchTab(gBrowser, tab);
+
+    let shown = BrowserTestUtils.waitForPopupEvent(panel, "shown");
+    await TabGroupTestUtils.saveAndCloseTabGroup(group);
+    await shown;
+    Assert.ok(
+      BrowserTestUtils.isVisible(panel),
+      "Confirmation hint panel is visible"
+    );
+
+    let hidden = BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+    panel.hidePopup();
+    await hidden;
+    SessionStore.forgetSavedTabGroup(group.id);
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+/**
+ * Tests that middle-clicking a tab group's label saves and closes the group
+ * and shows the "Tab group saved" confirmation hint, same as using the
+ * "Save and close group" button.
+ */
+add_task(async function test_middleClickGroupLabel_showsConfirmationHint() {
+  await SpecialPowers.pushPrefEnv({ set: [[SAVE_HINT_SHOWN_COUNT_PREF, 0]] });
+  let showSpy = sinon.spy(window.ConfirmationHint, "show");
+  let panel = window.ConfirmationHint._panel;
+
+  let tab = await addTab("about:mozilla");
+  let group = gBrowser.addTabGroup([tab], {
+    color: "cyan",
+    label: "test_middleClickGroupLabel_showsConfirmationHint",
+  });
+  await TabStateFlusher.flush(tab.linkedBrowser);
+
+  let removed = BrowserTestUtils.waitForEvent(group, "TabGroupRemoved");
+  let shown = BrowserTestUtils.waitForPopupEvent(panel, "shown");
+  EventUtils.synthesizeMouseAtCenter(
+    group.querySelector(".tab-group-label"),
+    { button: 1 },
+    window
+  );
+  await removed;
+  await shown;
+  Assert.ok(
+    BrowserTestUtils.isVisible(panel),
+    "Confirmation hint panel is visible"
+  );
+
+  Assert.ok(
+    showSpy.calledOnceWith(sinon.match.any, SAVE_HINT_MESSAGE_ID),
+    "Confirmation hint was shown once after middle-clicking the group label"
+  );
+
+  let hidden = BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+  panel.hidePopup();
+  await hidden;
+  SessionStore.forgetSavedTabGroup(group.id);
+  showSpy.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Tests that an implicit save (e.g. via `save()` alone, as happens when a
+ * window with tab groups is closed) does not show the confirmation hint,
+ * since that isn't an explicit user action to save and close a group.
+ */
+add_task(async function test_implicitSave_doesNotShowConfirmationHint() {
+  await SpecialPowers.pushPrefEnv({ set: [[SAVE_HINT_SHOWN_COUNT_PREF, 0]] });
+  let showSpy = sinon.spy(window.ConfirmationHint, "show");
+
+  let tab = await addTab("about:mozilla");
+  let group = gBrowser.addTabGroup([tab], {
+    color: "cyan",
+    label: "test_implicitSave_doesNotShowConfirmationHint",
+  });
+  await TabStateFlusher.flush(tab.linkedBrowser);
+  let saved = BrowserTestUtils.waitForEvent(group, "TabGroupSaved");
+  group.save();
+  await saved;
+
+  Assert.ok(
+    showSpy.notCalled,
+    "Confirmation hint was not shown for an implicit save"
+  );
+
+  SessionStore.forgetSavedTabGroup(group.id);
+  await TabGroupTestUtils.removeTabGroup(group);
+  showSpy.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Tests that the confirmation hint only appears the first
+ * MAX_SAVE_HINT_SHOWN_COUNT (3) times a group is saved and closed.
+ */
+add_task(async function test_saveAndCloseGroup_confirmationHintCappedAtThree() {
+  await SpecialPowers.pushPrefEnv({ set: [[SAVE_HINT_SHOWN_COUNT_PREF, 0]] });
+  let showSpy = sinon.spy(window.ConfirmationHint, "show");
+
+  for (let i = 1; i <= 4; i++) {
+    let tab = await addTab("about:mozilla");
+    let group = gBrowser.addTabGroup([tab], {
+      color: "cyan",
+      label: `test_saveAndCloseGroup_confirmationHintCappedAtThree_${i}`,
+    });
+    await TabGroupTestUtils.saveAndCloseTabGroup(group);
+    SessionStore.forgetSavedTabGroup(group.id);
+  }
+
+  Assert.equal(
+    showSpy.callCount,
+    3,
+    "Confirmation hint was only shown the first 3 times"
+  );
+  Assert.equal(
+    Services.prefs.getIntPref(SAVE_HINT_SHOWN_COUNT_PREF),
+    3,
+    "Shown-count pref stops incrementing once it reaches the cap"
+  );
+
+  // Close the last confirmation hint so it doesn't bleed into the next test
+  let panel = window.ConfirmationHint._panel;
+  if (panel.state != "closed") {
+    let hidden = BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+    panel.hidePopup();
+    await hidden;
+  }
+
+  showSpy.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Saves and closes a freshly created group, and asserts that the
+ * confirmation hint is shown, visible, and anchored to `expectedAnchorId`.
+ *
+ * @param {string} expectedAnchorId
+ */
+async function assertSaveAndCloseHintAnchor(expectedAnchorId) {
+  let showSpy = sinon.spy(window.ConfirmationHint, "show");
+  let panel = window.ConfirmationHint._panel;
+
+  let tab = await addTab("about:mozilla");
+  let group = gBrowser.addTabGroup([tab], {
+    color: "cyan",
+    label: `assertSaveAndCloseHintAnchor_${expectedAnchorId}`,
+  });
+  let shown = BrowserTestUtils.waitForPopupEvent(panel, "shown");
+  await TabGroupTestUtils.saveAndCloseTabGroup(group);
+  await shown;
+  Assert.ok(
+    BrowserTestUtils.isVisible(panel),
+    "Confirmation hint panel is visible"
+  );
+  Assert.ok(
+    showSpy.calledOnceWith(
+      sinon.match.same(document.getElementById(expectedAnchorId)),
+      SAVE_HINT_MESSAGE_ID
+    ),
+    `Confirmation hint anchors to #${expectedAnchorId}`
+  );
+
+  let hidden = BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+  panel.hidePopup();
+  await hidden;
+  SessionStore.forgetSavedTabGroup(group.id);
+  showSpy.restore();
+}
+
+/**
+ * Tests that the confirmation hint falls back to the application menu
+ * button when the alternate menu is enabled but its Tab Groups button
+ * is unused.
+ */
+add_task(
+  async function test_saveAndCloseGroup_confirmationHintFallsBackWhenTabGroupsButtonUnused() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [SAVE_HINT_SHOWN_COUNT_PREF, 0],
+        [ALTERNATE_MENU_PREF, true],
+      ],
+    });
+    CustomizableUI.createWidget({
+      id: "tab-groups-button",
+      type: "view",
+      viewId: "toolbar-tabGroupsListView",
+      l10nId: "toolbar-button-tab-groups",
+    });
+
+    await assertSaveAndCloseHintAnchor("PanelUI-menu-button");
+
+    CustomizableUI.destroyWidget("tab-groups-button");
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+/**
+ * Tests that the confirmation hint anchors to the Tab Groups button when
+ * the alternate menu is enabled and the button is on a toolbar.
+ */
+add_task(
+  async function test_saveAndCloseGroup_confirmationHintAnchorsToTabGroupsButton() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [SAVE_HINT_SHOWN_COUNT_PREF, 0],
+        [ALTERNATE_MENU_PREF, true],
+      ],
+    });
+    CustomizableUI.createWidget({
+      id: "tab-groups-button",
+      type: "view",
+      viewId: "toolbar-tabGroupsListView",
+      l10nId: "toolbar-button-tab-groups",
+    });
+    CustomizableUI.addWidgetToArea(
+      "tab-groups-button",
+      CustomizableUI.AREA_NAVBAR
+    );
+
+    await assertSaveAndCloseHintAnchor("tab-groups-button");
+
+    CustomizableUI.destroyWidget("tab-groups-button");
+    await SpecialPowers.popPrefEnv();
+  }
+);
 
 /**
  * Tests that "Copy all links in group" copies the URLs of all tabs in the

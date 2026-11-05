@@ -1,0 +1,139 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Adding a new metric? We have docs for that!
+# https://firefox-source-docs.mozilla.org/toolkit/components/glean/user/new_definitions_file.html
+
+---
+$schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
+$tags:
+  - 'Toolkit :: Form Manager'
+
+autocomplete:
+  record_interaction:
+    type: event
+    description: >
+      Recorded when the user clicks or activates the secondary action of a
+      saved record in the autocomplete dropdown.
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/2077190
+    data_reviews:
+      - https://bugzil.la/2077190
+    notification_emails:
+      - passwords-dev@mozilla.org
+      - autofill@lists.mozilla.org
+      - issozi@mozilla.com
+    expires: never
+    extra_keys:
+      record_type:
+        description: >
+          The type of saved record the action applies to: "formhistory",
+          "address", "payment" or "password".
+        type: string
+      interaction_type:
+        description: >
+          The secondary action that was activated: "delete" or "edit".
+        type: string
+
+  record_dialog_interaction:
+    type: event
+    description: >
+      Recorded when the user responds to the confirmation dialog shown before
+      a saved record is removed from the autocomplete dropdown. Intended to
+      capture whether or not the user confirms the removal.
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/2077190
+    data_reviews:
+      - https://bugzil.la/2077190
+    notification_emails:
+      - passwords-dev@mozilla.org
+      - autofill@lists.mozilla.org
+      - issozi@mozilla.com
+    expires: never
+    extra_keys:
+      record_type:
+        description: >
+          The type of saved record the dialog is about: "address", "payment"
+          or "password".
+        type: string
+      interaction_type:
+        description: >
+          How the user responded to the dialog: "confirm" or "cancel".
+        type: string
+      update_type:
+        description: >
+          The change the dialog asked to confirm. Only "delete" is supported
+          right now.
+        type: string
+
+  dropdown_shown:
+    type: event
+    description: >
+      Recorded when the autocomplete dropdown opens on a field.
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/2081366
+    data_reviews:
+      - https://bugzil.la/2081366
+    notification_emails:
+      - passwords-dev@mozilla.org
+      - autofill@lists.mozilla.org
+      - issozi@mozilla.com
+    expires: never
+    extra_keys:
+      record_type:
+        description: >
+          The type of saved record shown in the dropdown: "formhistory",
+          "address", "payment" or "password".
+        type: string
+      flow_id:
+        description: >
+          An id generated when the dropdown opened, letting this event be
+          correlated with the matching dropdown_closed event (and any
+          interactions in between), to measure things like how often a
+          shown dropdown leads to a removal.
+        type: string
+
+  dropdown_closed:
+    type: event
+    description: >
+      Recorded when the autocomplete dropdown closes.
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/2081366
+    data_reviews:
+      - https://bugzil.la/2081366
+    notification_emails:
+      - passwords-dev@mozilla.org
+      - autofill@lists.mozilla.org
+      - issozi@mozilla.com
+    expires: never
+    extra_keys:
+      record_type:
+        description: >
+          The type of saved record shown in the dropdown: "formhistory",
+          "address", "payment" or "password".
+        type: string
+      close_reason:
+        description: >
+          Why the dropdown closed: "selected" (the user picked a suggestion),
+          "dismissed" (clicked elsewhere or pressed Escape without picking
+          anything), "typed_through" (kept typing until no results remained)
+          or "left_page" (navigated away or closed the tab while the dropdown
+          was open). "left_page" is best-effort on desktop: the native
+          nsFormFillController closes the dropdown through the same path as
+          "dismissed" before this code gets a chance to see the navigation,
+          so most desktop page-leaves are reported as "dismissed" instead.
+        type: string
+      flow_id:
+        description: >
+          An id generated when the dropdown opened, shared with the matching
+          dropdown_shown event so the two can be correlated.
+        type: string

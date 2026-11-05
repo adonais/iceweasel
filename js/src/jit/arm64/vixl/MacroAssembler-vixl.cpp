@@ -1257,11 +1257,22 @@ js::wasm::FaultingCodeRange MacroAssembler::LoadStoreMacro(
     Register temp = temps.AcquireSameSizeAs(addr.base());
     VIXL_ASSERT(!temp.Is(rt));
     VIXL_ASSERT(!temp.Is(addr.base()));
-    Mov(temp, offset);
+    // Prefer adding the high bits of the offset to the base and encoding the
+    // low bits in the access, which avoids materializing the whole offset.
+    int64_t high = offset & ~int64_t(0xfff);
+    int64_t low = offset - high;
+    MemOperand mem(addr.base(), temp);
+    if ((IsImmAddSub(high) || IsImmAddSub(-high)) &&
+        (IsImmLSScaled(low, access_size) || IsImmLSUnscaled(low))) {
+      Add(temp, addr.base(), Operand(high));
+      mem = MemOperand(temp, low);
+    } else {
+      Mov(temp, offset);
+    }
     {
       js::jit::AutoForbidPoolsAndNops afp(this, 1);
       fcr = js::wasm::FaultingCodeRange(currentOffset());
-      LoadStore(rt, MemOperand(addr.base(), temp), op);
+      LoadStore(rt, mem, op);
     }
     if (!recycle0.Is(NoReg)) {
       temps.Exclude(recycle0, recycle1);

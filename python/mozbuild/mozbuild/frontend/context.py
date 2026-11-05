@@ -1451,7 +1451,11 @@ VARIABLES = {
     "SOURCES": (
         ContextDerivedTypedListWithItems(
             Path,
-            StrictOrderingOnAppendListWithFlagsFactory({"no_pgo": bool, "flags": List}),
+            StrictOrderingOnAppendListWithFlagsFactory({
+                "no_pgo": bool,
+                "flags": List,
+                "object_deps": List,
+            }),
         ),
         list,
         """Source code files.

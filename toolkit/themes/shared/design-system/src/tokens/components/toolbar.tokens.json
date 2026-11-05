@@ -37,7 +37,16 @@
             "light": "rgba(0, 0, 0, 0.05)",
             "dark": "{color.black.alpha.30}",
             "nativeTheme": "light-dark(rgba(0, 0, 0, 0.05), {color.black.alpha.30})",
-            "prefersContrast": "Field"
+            "prefersContrast": "Field",
+            "nova": {
+              "comment": "Figma references toolbar.background.color, which Windows overrides for Mica",
+              "value": {
+                "nativeTheme": "light-dark(rgba(0, 0, 0, 0.05), {color.black.alpha.30})",
+                "light": "{color.white.alpha.40}",
+                "dark": "{color.black.alpha.20}",
+                "prefersContrast": "Field"
+              }
+            }
           }
         },
         "focus": {

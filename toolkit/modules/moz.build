@@ -200,6 +200,7 @@ EXTRA_JS_MODULES += [
     "PrivateBrowsingUtils.sys.mjs",
     "ProcessType.sys.mjs",
     "ProfileAge.sys.mjs",
+    "ProfileKekPassword.sys.mjs",
     "Region.sys.mjs",
     "RemotePageAccessManager.sys.mjs",
     "ResetProfile.sys.mjs",

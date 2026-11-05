@@ -125,7 +125,7 @@ async function readNotificationStore() {
  * @returns {NormalizedNotification}
  */
 function normalizeDiskEntry(entry, origin) {
-  const out = { origin };
+  const out = /** @type {NormalizedNotification} */ ({ origin });
   for (const key of DISK_PASSTHROUGH_FIELDS) {
     if (entry[key] !== undefined) {
       out[key] = entry[key];
@@ -400,7 +400,12 @@ export class WebNotificationsFeed {
     }
   }
 
-  /** Dismisses every notification, or every one for a single origin. */
+  /**
+   * Dismisses every notification, or every one for a single origin.
+   *
+   * @param {object} [options]
+   * @param {string} [options.origin]
+   */
   _dismissAll({ origin } = {}) {
     const targets = [];
     for (const id of Object.keys(this._notifications)) {

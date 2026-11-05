@@ -95,3 +95,22 @@ async function openSupportFile(file) {
     },
   };
 }
+
+/**
+ * @param {string} location - The location the load must reach first.
+ * @param {object} options - Passed to `getHeadlessExtractor`.
+ * @returns {Promise<any>}
+ */
+async function readAtDeadline(location, options) {
+  const { PageExtractorParent } = ChromeUtils.importESModule(
+    "resource://gre/actors/PageExtractorParent.sys.mjs"
+  );
+  const reached = TestUtils.topicObserved(
+    "page-extractor-headless-location",
+    (_subject, data) => data === location
+  );
+  const read = PageExtractorParent.getHeadlessExtractor(options);
+  await Promise.race([reached, read]);
+  PageExtractorParent.expireHeadlessLoadsForTesting();
+  return read;
+}

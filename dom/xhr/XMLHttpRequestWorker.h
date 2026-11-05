@@ -41,7 +41,7 @@ class XMLHttpRequestWorker final : public SupportsWeakPtr,
     // responseType is json
     nsString mResponseJSON;
 
-    ResponseData() : mResponseResult(NS_OK) {}
+    ResponseData();
   };
 
   struct StateData {

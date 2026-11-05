@@ -308,7 +308,23 @@ ai-tasks-alert-history-error-network = { -smart-window-brand-name } couldn’t c
 
 ai-tasks-alert-history-error-timeout = The page took too long to respond. This task will try again at its next scheduled time.
 
-ai-tasks-alert-history-error-rate-limit = { -smart-window-brand-name } has reached its check limit for today. This task will try again at its next scheduled time.
+ai-tasks-alert-history-error-budget = { -smart-window-brand-name } has reached its daily check limit. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-rate-limit = { -smart-window-brand-name } has reached its request limit for now. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-too-large = There was too much page content to compare in one check. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-capacity = { -smart-window-brand-name } is at capacity. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-upstream-rate-limit = { -smart-window-brand-name } is temporarily handling too many requests. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-connection-blocked = { -smart-window-brand-name } temporarily blocked requests from your connection. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-request-blocked = { -smart-window-brand-name } blocked this request for security reasons. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-request = { -smart-window-brand-name } couldn’t process this request. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-service-budget = { -smart-window-brand-name } has reached its usage limit. This task will try again at its next scheduled time.
 
 ai-tasks-alert-history-error-auth = This page asked us to sign in, so there was nothing to compare. Open the page, sign in, and the next check should work.
 
@@ -324,11 +340,11 @@ ai-tasks-alert-history-error-prompt-load = { -smart-window-brand-name } couldn�
 
 ai-tasks-alert-history-error-unknown = Something went wrong on our side and this check didn’t run. Nothing was compared.
 
-## AI Tab - A page generated from the content of the user's tabs
+## Smart Page - A page generated from the content of the user's tabs
 
-# The feature name. It stays here rather than in brandings.ftl until the AI Tab
-# strings are exposed to localization.
--ai-tab-brand-name = AI Tab
+# The feature name. It stays here rather than in brandings.ftl until the Smart
+# Page strings are exposed to localization.
+-smart-page-brand-name = Smart Page
 
 # Title given to a generated page when the model returns no title of its own and
 # the user did not say what the page should focus on.
@@ -343,27 +359,27 @@ aitab-page-error-description = Some other supplementary string.
 
 # Page context menu entry that builds a generated page from the current page.
 main-context-menu-create-aitab =
-    .label = Create { -ai-tab-brand-name }
-    .accesskey = A
+    .label = Create { -smart-page-brand-name }
+    .accesskey = C
 
 # Tab context menu entry that builds a generated page from the tabs the menu
 # was opened on.
 tab-context-create-aitab =
-    .label = Create { -ai-tab-brand-name }
+    .label = Create { -smart-page-brand-name }
 
 # Tab group menu entry that builds a generated page from the group's tabs.
 tab-group-editor-action-create-aitab =
-    .label = Create { -ai-tab-brand-name }
+    .label = Create { -smart-page-brand-name }
 
-# Chat message that starts the conversation created by a "Create AI Tab" menu
+# Chat message that starts the conversation created by a "Create Smart Page" menu
 # entry, written in the user's voice. The URLs of the chosen tabs are appended
 # on the lines below it.
 # Variables:
 #   $tabCount (Number) - How many tabs the page is built from.
 ai-tab-create-page-prompt =
     { $tabCount ->
-        [one] Create an { -ai-tab-brand-name } from this tab:
-       *[other] Create an { -ai-tab-brand-name } from these tabs:
+        [one] Create a { -smart-page-brand-name } from this tab:
+       *[other] Create a { -smart-page-brand-name } from these tabs:
     }
 
 # A rating cell in a generated table, for example "4.5 / 5". Both numbers
@@ -465,7 +481,7 @@ ai-smart-form-fill-error-description = Something went wrong. To try again, selec
 ai-smart-form-fill-try-again =
     .label = Try again
 
-## AI Tab generated pages
+## Smart Page generated pages
 
 # Shown above the title of a generated page that was created today.
 aitab-created-today = Created today
@@ -488,14 +504,40 @@ aitab-page-delete =
     .aria-label = Delete page
     .title = Delete page
 
-aitab-page-delete-dialog-title = Delete this { -ai-tab-brand-name }?
-aitab-page-delete-dialog-message = This generated page will be removed. The sources it was built from aren’t affected.
+aitab-page-delete-dialog-title = Delete this { -smart-page-brand-name }?
+aitab-page-delete-dialog-message = This page will be permanently deleted. The sources used to create it won’t be affected.
 
 aitab-page-delete-dialog-cancel =
     .label = Cancel
 
 aitab-page-delete-dialog-confirm =
     .label = Delete
+
+# Credit at the bottom of a generated page.
+aitab-page-footer-brand = { -smart-window-brand-name }
+
+smartwindow-aitab-creating = Creating your { -smart-page-brand-name }
+smartwindow-aitab-updating = Updating your { -smart-page-brand-name }
+smartwindow-aitab-creating-an-aitab-failed = Tried to create { -smart-page-brand-name }, but couldn’t
+smartwindow-aitab-updating-an-aitab-failed =  Tried to update { -smart-page-brand-name }, but couldn’t
+
+# "Open here" opens aitab url in the current tab
+smartwindow-aitab-open-current =
+    .label = Open here
+# "Open in new tab" opens a new browser tab with the AITab url in it
+smartwindow-aitab-open-new =
+    .label = Open in new tab
+
+smartwindow-aitab-created-an-aitab = Created { -smart-page-brand-name }
+smartwindow-aitab-updated-an-aitab = Updated { -smart-page-brand-name }
+smartwindow-aitab-empty-chat-message = Want to make changes to your { -smart-page-brand-name }? Ask in the chat to add or remove content.
+
+# Variables:
+#   $tags (Number) - Number of sources used to create the AITab
+smart-window-aitab-sources-count = { $tags ->
+    [one] { $tags } source
+   *[other] { $tags } sources
+}
 
 ## "Pick up where you left off" cards for resuming browsing or chat journeys.
 ## A "journey" is a past browsing or chat session the user was in the middle
@@ -546,12 +588,3 @@ aiwindow-resume-section-empty-no-suggestions-description = When there’s someth
 aiwindow-resume-section-empty-all-dismissed-heading = All caught up
 aiwindow-resume-section-empty-all-dismissed-description = That’s all the suggestions for now. Check back later for more.
 aiwindow-resume-section-hide = Hide for now
-
-smartwindow-aitab-creating = Creating a page…
-# "Open here" opens aitab url in the current tab
-smartwindow-aitab-open-current =
-    .label = Open here
-# "Open in new tab" opens a new browser tab with the AITab url in it
-smartwindow-aitab-open-new =
-    .label = Open in new tab
-smartwindow-aitab-created-an-aitab = Created a Smart Page

@@ -4,6 +4,11 @@
 
 /* Bug 1869845 - Styles in this file are still experimental!  */
 
+:root {
+  background-color: transparent;
+  color: var(--sidebar-text-color);
+}
+
 /* Use the system font like the other sidebar panels, so rem-based spacing
  * matches theirs (overriding common.css). Content size is kept via `body`. */
 :root:not(.system-font-size) {
@@ -12,8 +17,6 @@
 
 body {
   overflow: hidden;
-  background-color: var(--toolbar-background-color);
-  color: var(--toolbar-text-color);
   font-size: var(--font-size-root);
 }
 

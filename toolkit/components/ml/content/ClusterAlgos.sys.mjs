@@ -15,10 +15,10 @@ const JUST_BELOW_1 = 0.99999;
  * task based on values from a confusion matrix.
  *
  * @param {object} confusionMatrix - An object containing the counts of classification outcomes.
- * @param {int[]} confusionMatrix.truePositives - Array of true positive counts.
- * @param {int[]} confusionMatrix.trueNegatives - Array of true negative counts.
- * @param {int[]} confusionMatrix.falsePositives - Array of false positive counts.
- * @param {int[]} confusionMatrix.falseNegatives - Array of false negative counts.
+ * @param {number} confusionMatrix.truePositives - Count of true positives.
+ * @param {number} confusionMatrix.trueNegatives - Count of true negatives.
+ * @param {number} confusionMatrix.falsePositives - Count of false positives.
+ * @param {number} confusionMatrix.falseNegatives - Count of false negatives.
  * @returns {{accuracy: number, kappa: number}} An object containing accuracy and kappa values.
  */
 export function getAccuracyStats({
@@ -546,7 +546,7 @@ function arePointsEqual(point1, point2) {
  * Computes a non-adjusted Rand score from a list of items, each with a label (true cluster id)
  * and cluster (predicted cluster id)
  *
- * @param {[object]} combinedItems
+ * @param {object[]} combinedItems
  * @param {string} clusterKey Key for predicted cluster in items
  * @param {string} labelKey Key for labeled (true) cluster in items
  * @returns {number}

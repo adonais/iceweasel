@@ -53,9 +53,10 @@ struct ParamTraits<mozilla::dom::quota::ClientUsageArray> {
 
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::quota::FullOriginMetadata,
                                   mSuffix, mGroup, mOrigin, mStorageOrigin,
-                                  mIsPrivate, mPersistenceType, mLastAccessTime,
-                                  mLastMaintenanceDate, mAccessed, mPersisted,
-                                  mClientUsages, mOriginUsage, mQuotaVersion);
+                                  mIsPrivate, mIsEncrypted, mPersistenceType,
+                                  mLastAccessTime, mLastMaintenanceDate,
+                                  mAccessed, mPersisted, mClientUsages,
+                                  mOriginUsage, mQuotaVersion);
 
 DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
     mozilla::dom::quota::OriginUsageMetadata,

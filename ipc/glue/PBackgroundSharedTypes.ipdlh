@@ -120,5 +120,10 @@ namespace ipc {
   uint8_t[] value;
 };
 
+struct WebTransportHeader {
+  nsCString name;
+  nsCString value;
+};
+
 } // namespace ipc
 } // namespace mozilla

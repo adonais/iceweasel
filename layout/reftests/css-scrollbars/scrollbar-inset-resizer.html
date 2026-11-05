@@ -1,0 +1,24 @@
+<!DOCTYPE HTML>
+<title>Resizer positioned with scrollbar inset</title>
+<style>
+.test {
+  width: 200px;
+  height: 150px;
+  border: 1px solid black;
+  border-radius: 20px;
+  overflow: auto;
+  resize: both;
+  scrollbar-color: red blue;
+  -moz-scrollbar-inset-inline: 0 6px;
+  -moz-scrollbar-inset-block: 0 6px;
+}
+
+.content {
+  width: 400px;
+  height: 300px;
+}
+</style>
+
+<div class="test">
+  <div class="content"></div>
+</div>

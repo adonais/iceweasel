@@ -308,6 +308,7 @@ class RefTest:
         self.outputHandler = None
         self.testDumpFile = os.path.join(tempfile.gettempdir(), "reftests.json")
         self.currentManifest = "No test started"
+        self.currentManifestID = None
         self.gtkTheme = self.getGtkTheme()
 
         self.run_by_manifest = True
@@ -966,10 +967,10 @@ class RefTest:
             os.path.join(profile.profile, "minidumps"),
             options.symbolsPath,
             test=self.lastTestSeen,
+            group=self.currentManifestID,
         )
 
         if crashed:
-            # log suite_end to wrap up, this is usually done with in in-browser harness
             if not self.outputHandler.results:
                 # TODO: while .results is a defaultdict(int), it is proxied via log_actions as data, not type
                 self.outputHandler.results = {
@@ -987,7 +988,11 @@ class RefTest:
                     "Skip": 0,
                     "Slow": 0,
                 }
-            self.log.suite_end(extra={"results": self.outputHandler.results})
+            # When running by manifest, runSerialTests logs suite_end after the
+            # last manifest. Logging it here would end the suite early.
+            if not self.run_by_manifest:
+                # log suite_end to wrap up, this is usually done with in in-browser harness
+                self.log.suite_end(extra={"results": self.outputHandler.results})
 
         if not status and crashed:
             status = 1
@@ -1114,6 +1119,8 @@ class RefTest:
             self.log.group_start(name=manifest_id)
             self.log.info(f"Running tests in {manifest}")
             self.currentManifest = manifest
+            self.currentManifestID = manifest_id
+            self.lastTestSeen = manifest
             status = run(tests=tests)
             overall = overall or status
             self.log.group_end(name=manifest_id)

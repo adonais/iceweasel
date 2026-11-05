@@ -6,10 +6,8 @@
 
 @media not (prefers-contrast) {
   :root {
+    color-scheme: dark;
     --background-color-canvas: #a4000f;
-    --text-color: white;
-    --button-text-color-primary: black;
-    --button-background-color: transparent;
     --button-background-color-hover: #5a0002;
     --button-background-color-active: #3e0200;
     --button-background-color-primary: white;

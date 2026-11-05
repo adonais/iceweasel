@@ -97,7 +97,9 @@ static_assert(sizeof(ProfileBufferEntry) == 9, "bad ProfileBufferEntry size");
 // Contains all the information about JIT frames that is needed to stream stack
 // frames for JitReturnAddr entries in the profiler buffer.
 // Every return address (void*) is mapped to one or more JITFrameKeys, and
-// every JITFrameKey is mapped to a JSON string for that frame.
+// every JITFrameKey is mapped to a JSON string for that frame. The memory of
+// collected JIT code can be reused for new code, so the frames for an address
+// also depend on the position of the sample in the buffer.
 // mRangeStart and mRangeEnd describe the range in the buffer for which this
 // mapping is valid. Only JitReturnAddr entries within that buffer range can be
 // processed using this JITFrameInfoForBufferRange object.
@@ -114,6 +116,9 @@ struct JITFrameInfoForBufferRange final {
     uint32_t mDepth;
     uint32_t mLine;
     uint32_t mColumn;
+    // Distinguishes frames of different code at the same address. See
+    // JITFramesUntilSamplePos.
+    uint64_t mLastSamplePos;
   };
   struct JITFrameKeyHasher {
     using Lookup = JITFrameKey;
@@ -124,6 +129,7 @@ struct JITFrameInfoForBufferRange final {
       hash = mozilla::AddToHash(hash, aLookup.mDepth);
       hash = mozilla::AddToHash(hash, aLookup.mLine);
       hash = mozilla::AddToHash(hash, aLookup.mColumn);
+      hash = mozilla::AddToHash(hash, aLookup.mLastSamplePos);
       return hash;
     }
 
@@ -136,8 +142,17 @@ struct JITFrameInfoForBufferRange final {
     }
   };
 
+  // The frames for an address in the samples up to and including the sample at
+  // mLastSamplePos, as returned by JS::ProfiledFrameRange::lastSamplePosition.
+  struct JITFramesUntilSamplePos {
+    uint64_t mLastSamplePos;
+    mozilla::Vector<JITFrameKey> mFrameKeys;
+  };
+
+  // Every address is mapped to a list of frames for consecutive groups of
+  // samples, sorted by mLastSamplePos.
   using JITAddressToJITFramesMap =
-      mozilla::HashMap<void*, mozilla::Vector<JITFrameKey>>;
+      mozilla::HashMap<void*, mozilla::Vector<JITFramesUntilSamplePos>>;
   JITAddressToJITFramesMap mJITAddressToJITFramesMap;
   using JITFrameToFrameJSONMap =
       mozilla::HashMap<JITFrameKey, nsCString, JITFrameKeyHasher>;
@@ -166,11 +181,12 @@ class JITFrameInfo final {
   // The caller of AddInfoForRange supplies a function in aJITAddressProvider.
   // This function will be called once, synchronously, with an
   // aJITAddressConsumer argument, which is a function that needs to be called
-  // for every address. That function can be called multiple times for the same
-  // address.
+  // for every address, together with the buffer position of the sample that
+  // contains it. That function can be called multiple times for the same
+  // address. It must be called in order of increasing sample position.
   void AddInfoForRange(
       uint64_t aRangeStart, uint64_t aRangeEnd, JSContext* aCx,
-      const std::function<void(const std::function<void(void*)>&)>&
+      const std::function<void(const std::function<void(void*, uint64_t)>&)>&
           aJITAddressProvider,
       const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap =
           nullptr);
@@ -231,9 +247,9 @@ class UniqueStacks final : public mozilla::FailureLatch {
                                 aCategoryPair}) {}
 
     FrameKey(void* aJITAddress, uint32_t aJITDepth, uint32_t aRangeIndex,
-             uint32_t aLine, uint32_t aColumn)
+             uint32_t aLine, uint32_t aColumn, uint64_t aLastSamplePos)
         : mData(JITFrameData{aJITAddress, aJITDepth, aRangeIndex, aLine,
-                             aColumn}) {}
+                             aColumn, aLastSamplePos}) {}
 
     FrameKey(const FrameKey& aToCopy) = default;
 
@@ -277,6 +293,7 @@ class UniqueStacks final : public mozilla::FailureLatch {
       uint32_t mRangeIndex;
       uint32_t mLine;
       uint32_t mColumn;
+      uint64_t mLastSamplePos;
     };
     mozilla::Variant<NormalFrameData, JITFrameData> mData;
   };
@@ -314,6 +331,7 @@ class UniqueStacks final : public mozilla::FailureLatch {
         hash = mozilla::AddToHash(hash, data.mRangeIndex);
         hash = mozilla::AddToHash(hash, data.mLine);
         hash = mozilla::AddToHash(hash, data.mColumn);
+        hash = mozilla::AddToHash(hash, data.mLastSamplePos);
       }
       return hash;
     }
@@ -384,10 +402,12 @@ class UniqueStacks final : public mozilla::FailureLatch {
   // table has entries for the returned frame keys. The JSON for these frames
   // is taken from mJITInfoRanges.
   // aBufferPosition is needed in order to look up the correct JIT frame info
-  // object in mJITInfoRanges.
+  // object in mJITInfoRanges. aSamplePosition is the buffer position of the
+  // sample's ThreadId entry, which identifies the code at aJITAddress.
   [[nodiscard]] mozilla::Maybe<mozilla::Vector<UniqueStacks::FrameKey>>
   LookupFramesForJITAddressFromBufferPos(void* aJITAddress,
-                                         uint64_t aBufferPosition);
+                                         uint64_t aBufferPosition,
+                                         uint64_t aSamplePosition);
 
   [[nodiscard]] mozilla::Maybe<uint32_t> GetOrAddFrameIndex(
       const FrameKey& aFrame);

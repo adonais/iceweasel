@@ -27,14 +27,22 @@ CSSMathInvert::CSSMathInvert(
 
 // static
 RefPtr<CSSMathInvert> CSSMathInvert::Create(
+    nsCOMPtr<nsISupports> aParent, UniquePtr<StyleNumericType> aNumericType,
+    RefPtr<CSSNumericValue> aValue) {
+  return MakeRefPtr<CSSMathInvert>(std::move(aParent),
+                                   WrapMovingNotNull(std::move(aNumericType)),
+                                   std::move(aValue));
+}
+
+// static
+RefPtr<CSSMathInvert> CSSMathInvert::Create(
     nsCOMPtr<nsISupports> aParent, const StyleMathInvert& aMathInvert) {
   RefPtr<CSSNumericValue> value =
       CSSNumericValue::Create(aParent, *aMathInvert.value);
 
-  return MakeRefPtr<CSSMathInvert>(
-      std::move(aParent),
-      WrapMovingNotNull(MakeUnique<StyleNumericType>(aMathInvert.numeric_type)),
-      std::move(value));
+  return Create(std::move(aParent),
+                MakeUnique<StyleNumericType>(aMathInvert.numeric_type),
+                std::move(value));
 }
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathInvert, CSSMathValue)

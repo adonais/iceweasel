@@ -234,6 +234,24 @@ testRule({
         "Consider using a size design token instead of using a pixel value. This may be fixable by running the same command again with --fix.",
     },
     {
+      code: ".a { width: 40px; }",
+      fixed: ".a { width: var(--size-image-xsmall); }",
+      message: messages.rejected(
+        "40px",
+        ["size", "icon-size"],
+        "var(--size-image-xsmall)"
+      ),
+      description:
+        "A pixel value that a component token shares with the size scale is fixed to the scale token.",
+    },
+    {
+      code: ".a { width: 2px; }",
+      unfixable: true,
+      message: messages.rejected("2px", ["size", "icon-size"]),
+      description:
+        "A pixel value that only a component token has is not fixed to that token.",
+    },
+    {
       code: ".a { height: 0.75rem; }",
       fixed: ".a { height: var(--size-item-xsmall); }",
       message: messages.rejected(

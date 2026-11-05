@@ -75,6 +75,20 @@ void HTMLAreaElement::UnbindFromTree(UnbindContext& aContext) {
   Link::UnbindFromTree();
 }
 
+bool HTMLAreaElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
+                                     const nsAString& aValue,
+                                     nsIPrincipal* aMaybeScriptedPrincipal,
+                                     nsAttrValue& aResult) {
+  if (aNamespaceID == kNameSpaceID_None) {
+    if (aAttribute == nsGkAtoms::referrerpolicy) {
+      return ParseReferrerAttribute(aValue, aResult);
+    }
+  }
+
+  return nsGenericHTMLElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
+                                              aMaybeScriptedPrincipal, aResult);
+}
+
 void HTMLAreaElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                    const nsAttrValue* aValue,
                                    const nsAttrValue* aOldValue,

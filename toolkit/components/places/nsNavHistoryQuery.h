@@ -11,6 +11,16 @@
 #ifndef nsNavHistoryQuery_h_
 #define nsNavHistoryQuery_h_
 
+#include "ErrorList.h"
+#include "nsCOMPtr.h"
+#include "nsINavHistoryService.h"
+#include "nsIURI.h"
+#include "nsString.h"
+#include "nsTArray.h"
+
+#include <cstdint>
+#include <utility>
+
 // nsNavHistoryQuery
 //
 //    This class encapsulates the parameters for basic history queries for

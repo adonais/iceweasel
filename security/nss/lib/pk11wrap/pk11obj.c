@@ -2256,48 +2256,6 @@ PK11_MatchItem(PK11SlotInfo *slot, CK_OBJECT_HANDLE searchID,
 }
 
 /*
- * count the number of objects that match the template.
- */
-int
-PK11_NumberObjectsFor(PK11SlotInfo *slot, CK_ATTRIBUTE *findTemplate,
-                      int templCount)
-{
-    CK_OBJECT_HANDLE objID[PK11_SEARCH_CHUNKSIZE];
-    int object_count = 0;
-    CK_ULONG returned_count = 0;
-    CK_RV crv = CKR_SESSION_HANDLE_INVALID;
-
-    PK11_EnterSlotMonitor(slot);
-    if (slot->session != CK_INVALID_HANDLE) {
-        crv = PK11_GETTAB(slot)->C_FindObjectsInit(slot->session,
-                                                   findTemplate, templCount);
-    }
-    if (crv != CKR_OK) {
-        PK11_ExitSlotMonitor(slot);
-        PORT_SetError(PK11_MapError(crv));
-        return object_count;
-    }
-
-    /*
-     * collect all the Matching Objects
-     */
-    do {
-        crv = PK11_GETTAB(slot)->C_FindObjects(slot->session, objID,
-                                               PK11_SEARCH_CHUNKSIZE,
-                                               &returned_count);
-        if (crv != CKR_OK) {
-            PORT_SetError(PK11_MapError(crv));
-            break;
-        }
-        object_count += returned_count;
-    } while (returned_count == PK11_SEARCH_CHUNKSIZE);
-
-    PK11_GETTAB(slot)->C_FindObjectsFinal(slot->session);
-    PK11_ExitSlotMonitor(slot);
-    return object_count;
-}
-
-/*
  * Traverse all the objects in a given slot.
  */
 SECStatus

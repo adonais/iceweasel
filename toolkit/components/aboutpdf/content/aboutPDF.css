@@ -300,7 +300,6 @@ body.view-features #main-view {
   width: 100%;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-width: 700px;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   --promo-image-size: 100px;
 }
 

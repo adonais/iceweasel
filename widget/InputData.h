@@ -294,7 +294,6 @@ class MouseInput : public InputData {
       MOUSE_WIDGET_ENTER,
       MOUSE_WIDGET_EXIT,
       MOUSE_HITTEST,
-      MOUSE_EXPLORE_BY_TOUCH,
       MOUSE_CONTEXTMENU
   ));
 

@@ -34,3 +34,7 @@ if CONFIG["OS_TARGET"] == "Linux" or CONFIG["OS_TARGET"] == "Android":
     OS_LIBS += [
         "m",
     ]
+
+SOURCE_HEADERS += [
+	"sqlite3ext.h",
+]

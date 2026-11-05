@@ -141,15 +141,14 @@ support-files = [
 ["browser_net_block-pattern.js"]
 
 ["browser_net_block-serviceworker.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1980084
-]
 
 ["browser_net_block.js"]
 
 ["browser_net_brotli.js"]
 
 ["browser_net_cache_details.js"]
+
+["browser_net_cache_details_revalidated.js"]
 
 ["browser_net_cache_svg_size.js"]
 

@@ -223,6 +223,8 @@ scheme = "http"
 
 ["test_peerConnection_disabledVideoPreNegotiation.html"]
 
+["test_peerConnection_earlyMediaNoCodecs.html"]
+
 ["test_peerConnection_earlyMediaReoffer.html"]
 
 ["test_peerConnection_encodingsNegotiation.html"]
@@ -251,7 +253,6 @@ scheme = "http"
 skip-if = [
   "os == 'android'", # websockets don't work on android (bug 1266217)
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # no ipv6 support on OS X testers (bug 1710706)
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # no ipv6 support on OS X testers (bug 1710706)
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # no ipv6 support on OS X testers (bug 1710706)
   "os == 'win'", # no ipv6 support on windows testers (bug 1710706)
 ]
@@ -386,6 +387,8 @@ skip-if = [
 
 
 ["test_peerConnection_sender_and_receiver_stats.html"]
+
+["test_peerConnection_setCodecPreferencesOfferSdp.html"]
 
 ["test_peerConnection_setLocalAnswerInHaveLocalOffer.html"]
 

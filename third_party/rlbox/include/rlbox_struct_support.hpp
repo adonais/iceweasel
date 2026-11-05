@@ -202,7 +202,7 @@ struct markerStruct
     inline Sbx_##libId##_##T<T_Sbx> get_raw_sandbox_value(                     \
       rlbox_sandbox<T_Sbx>& sandbox) const noexcept                            \
     {                                                                          \
-      Sbx_##libId##_##T<T_Sbx> lhs;                                            \
+      Sbx_##libId##_##T<T_Sbx> lhs{};                                          \
       const auto& rhs = get_raw_value_ref();                                   \
       constexpr auto Direction = detail::adjust_type_direction::TO_SANDBOX;    \
       constexpr auto Context = detail::adjust_type_context::SANDBOX;           \

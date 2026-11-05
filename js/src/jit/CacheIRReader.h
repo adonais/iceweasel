@@ -43,15 +43,15 @@ class MOZ_RAII CacheIRReader {
   mozilla::Maybe<CacheOp> lastOp_;
 #endif
 
-  CacheIRReader(const CacheIRReader&) = delete;
-  CacheIRReader& operator=(const CacheIRReader&) = delete;
-
  public:
   CacheIRReader(const uint8_t* start, const uint8_t* end)
       : buffer_(start, end) {}
   explicit CacheIRReader(const CacheIRWriter& writer)
       : CacheIRReader(writer.codeStart(), writer.codeEnd()) {}
   explicit CacheIRReader(const CacheIRStubInfo* stubInfo);
+
+  CacheIRReader(const CacheIRReader&) = delete;
+  CacheIRReader& operator=(const CacheIRReader&) = delete;
 
   bool more() const { return buffer_.more(); }
 

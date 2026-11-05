@@ -1,0 +1,89 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>AudioData with ArrayBuffers from another compartment</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<script>
+document.domain = "example.com";
+
+const DATA = [1, 2, 3, 4, 5, 6, 7, 8];
+
+function createBuffer(win) {
+  const buffer = new win.ArrayBuffer(DATA.length);
+  new win.Uint8Array(buffer).set(DATA);
+  return buffer;
+}
+
+function createAudioData(audioDataCtor, data, numberOfFrames, transfer) {
+  return new audioDataCtor({
+    format: "u8",
+    sampleRate: 48000,
+    numberOfFrames,
+    numberOfChannels: 1,
+    timestamp: 0,
+    data,
+    transfer,
+  });
+}
+
+function checkAudioData(audioData, expected, desc) {
+  is(audioData.numberOfFrames, expected.length, `${desc}: numberOfFrames`);
+  const out = new Uint8Array(expected.length);
+  audioData.copyTo(out, { planeIndex: 0 });
+  isDeeply(Array.from(out), expected, `${desc}: data`);
+}
+
+function runTests(audioDataCtor, bufferWin, desc) {
+  {
+    const buffer = createBuffer(bufferWin);
+    const audioData = createAudioData(audioDataCtor, buffer, DATA.length, [
+      buffer,
+    ]);
+    ok(buffer.detached, `${desc}, ArrayBuffer data: buffer is detached`);
+    checkAudioData(audioData, DATA, `${desc}, ArrayBuffer data`);
+  }
+
+  {
+    const buffer = createBuffer(bufferWin);
+    const view = new bufferWin.Uint8Array(buffer, 2, 4);
+    const audioData = createAudioData(audioDataCtor, view, 4, [buffer]);
+    ok(buffer.detached, `${desc}, ArrayBufferView data: buffer is detached`);
+    checkAudioData(audioData, DATA.slice(2, 6), `${desc}, ArrayBufferView data`);
+  }
+
+  {
+    const buffer = createBuffer(bufferWin);
+    const audioData = createAudioData(
+      audioDataCtor,
+      new Uint8Array(DATA),
+      DATA.length,
+      [buffer]
+    );
+    ok(buffer.detached, `${desc}, transfer only: buffer is detached`);
+    checkAudioData(audioData, DATA, `${desc}, transfer only`);
+  }
+}
+
+add_task(async function test_cross_compartment_transfer() {
+  const iframe = document.createElement("iframe");
+  iframe.src =
+    "https://test1.example.com/tests/dom/media/webcodecs/test/file_crossCompartment_frame.html";
+  const loaded = new Promise(resolve => (iframe.onload = resolve));
+  document.body.appendChild(iframe);
+  await loaded;
+
+  const win = iframe.contentWindow;
+  ok(
+    !(createBuffer(win) instanceof ArrayBuffer),
+    "Buffer should come from the iframe's global"
+  );
+
+  runTests(AudioData, win, "iframe buffer");
+  runTests(win.AudioData, window, "iframe constructor");
+});
+</script>
+</body>
+</html>

@@ -375,6 +375,55 @@ add_task(function test_computeInterestVectorClickModel() {
   Assert.equal(result[SPECIAL_FEATURE_CLICK], 2, "Should include raw click");
 });
 
+add_task(
+  function test_transformLocationTopicsToInterestVectorUsesModelFeatureNames() {
+    const model = FeatureModel.fromJSON(jsonModelData);
+    Assert.deepEqual(
+      model.transformLocationTopicsToInterestVector({
+        parenting: 1,
+        news_reader: 2,
+      }),
+      { news_reader: 2, parenting: 1, clicks: 2 },
+      "Location values use the model feature names"
+    );
+  }
+);
+
+add_task(function test_locationTimeZoneRequiresCoarseValue() {
+  const model = FeatureModel.fromJSON({
+    ...jsonModelData,
+    interest_vector: {
+      ...jsonModelData.interest_vector,
+      timeZoneOffset: {
+        features: {},
+        thresholds: [15, 18.1, 19.1],
+        diff_p: 1,
+        diff_q: 0,
+      },
+    },
+  });
+  for (const value of [undefined, null, NaN, Infinity, -1, 1.5, 4]) {
+    Assert.equal(
+      model.transformLocationTopicsToInterestVector(
+        { timeZoneOffset: 2 },
+        { timeZoneOffset: value }
+      ),
+      null,
+      `Invalid coarse timezone ${value} cannot produce a location vector`
+    );
+  }
+  for (const value of [0, 3]) {
+    Assert.equal(
+      model.transformLocationTopicsToInterestVector(
+        { timeZoneOffset: 2 },
+        { timeZoneOffset: value }
+      ).timeZoneOffset,
+      value,
+      "Preserves measured timezone, including zero, without thresholding again"
+    );
+  }
+});
+
 add_task(function test_computeThresholds() {
   const modelData = { ...jsonModelData, rescale: true };
   const model = FeatureModel.fromJSON(modelData);

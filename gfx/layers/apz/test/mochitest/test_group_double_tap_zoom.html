@@ -21,6 +21,11 @@ var logging_and_doubletap_prefs = [
   ["apz.test.logging_enabled", true],
 ];
 
+var meta_viewport_and_doubletap_prefs = [
+  ...doubletap_prefs,
+  ["dom.meta-viewport.enabled", true],
+];
+
 var subtests = [
   {"file": "helper_doubletap_zoom.html", "prefs": doubletap_prefs},
   {"file": "helper_doubletap_zoom_img.html", "prefs": doubletap_prefs},
@@ -30,6 +35,7 @@ var subtests = [
   {"file": "helper_doubletap_zoom_fixedpos.html", "prefs": logging_and_doubletap_prefs},
   {"file": "helper_doubletap_zoom_tallwide.html", "prefs": doubletap_prefs},
   {"file": "helper_doubletap_zoom_textarea.html", "prefs": doubletap_prefs},
+  {"file": "helper_doubletap_zoom_out_dynamic_toolbar.html", "prefs": meta_viewport_and_doubletap_prefs},
 ];
 
 if (getPlatform() == "mac") {

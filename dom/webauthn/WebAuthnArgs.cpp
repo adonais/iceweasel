@@ -19,6 +19,18 @@ WebAuthnRegisterArgs::GetOrigin(nsAString& aOrigin) {
 }
 
 NS_IMETHODIMP
+WebAuthnRegisterArgs::GetTopOrigin(nsACString& aTopOrigin) {
+  aTopOrigin = mTopOrigin;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+WebAuthnRegisterArgs::GetIsCrossOrigin(bool* aIsCrossOrigin) {
+  *aIsCrossOrigin = mIsCrossOrigin;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 WebAuthnRegisterArgs::GetChallenge(nsTArray<uint8_t>& aChallenge) {
   aChallenge.Assign(mInfo.Challenge());
   return NS_OK;
@@ -267,7 +279,8 @@ WebAuthnSignArgs::CloneWithSelectedCredential(
   cred.id().Assign(aCredentialId);
   info.AllowList().AppendElement(std::move(cred));
   RefPtr<WebAuthnSignArgs> result =
-      new WebAuthnSignArgs(mOrigin, mClientDataJSON, mPrivateBrowsing, info);
+      new WebAuthnSignArgs(mOrigin, mTopOrigin, mIsCrossOrigin, mClientDataJSON,
+                           mPrivateBrowsing, info);
   result.forget(aResult);
   return NS_OK;
 }
@@ -275,6 +288,18 @@ WebAuthnSignArgs::CloneWithSelectedCredential(
 NS_IMETHODIMP
 WebAuthnSignArgs::GetOrigin(nsAString& aOrigin) {
   aOrigin = NS_ConvertUTF8toUTF16(mOrigin);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+WebAuthnSignArgs::GetTopOrigin(nsACString& aTopOrigin) {
+  aTopOrigin = mTopOrigin;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+WebAuthnSignArgs::GetIsCrossOrigin(bool* aIsCrossOrigin) {
+  *aIsCrossOrigin = mIsCrossOrigin;
   return NS_OK;
 }
 

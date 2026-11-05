@@ -177,13 +177,6 @@ void OffscreenCanvas::GetContext(
     JSContext* aCx, const OffscreenRenderingContextId& aContextId,
     JS::Handle<JS::Value> aContextOptions,
     Nullable<OwningOffscreenRenderingContext>& aResult, ErrorResult& aRv) {
-  if (mNeutered) {
-    aResult.SetNull();
-    aRv.ThrowInvalidStateError(
-        "Cannot create context for detached OffscreenCanvas.");
-    return;
-  }
-
   CanvasContextType contextType;
   switch (aContextId) {
     case OffscreenRenderingContextId::_2d:
@@ -206,6 +199,25 @@ void OffscreenCanvas::GetContext(
       aResult.SetNull();
       aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
       return;
+  }
+
+  CanvasRenderingContextOptions options;
+  if (!options.Init(aCx, contextType, aContextOptions, aRv)) {
+    aResult.SetNull();
+    return;
+  }
+
+  if (mNeutered) {
+    aResult.SetNull();
+    aRv.ThrowInvalidStateError(
+        "Cannot create context for detached OffscreenCanvas.");
+    return;
+  }
+
+  if (mCurrentContext && mCurrentContextType != contextType) {
+    // Avoid creating a worker ref if the context type doesn't match.
+    aResult.SetNull();
+    return;
   }
 
   // If we are on a worker, we need to give our OffscreenCanvasDisplayHelper
@@ -234,9 +246,8 @@ void OffscreenCanvas::GetContext(
     }
   }
 
-  RefPtr<nsISupports> result = CanvasRenderingContextHelper::GetOrCreateContext(
-      aCx, contextType, aContextOptions, aRv);
-  if (!result) {
+  if (!CanvasRenderingContextHelper::GetOrCreateContext(contextType, options,
+                                                        aRv)) {
     aResult.SetNull();
     return;
   }

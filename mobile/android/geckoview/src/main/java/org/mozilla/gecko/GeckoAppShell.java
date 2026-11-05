@@ -1463,48 +1463,6 @@ public class GeckoAppShell {
   }
 
   @WrapForJNI(calledFrom = "any")
-  public static int getAudioOutputFramesPerBuffer() {
-    if (BuildConfig.DEBUG_BUILD && isIsolatedProcess()) {
-      // AudioManager.getProperty won't return on isolated process
-      throw new UnsupportedOperationException(
-          "getAudioOutputFramesPerBuffer is not supported in isolated processes");
-    }
-    final int DEFAULT = 512;
-
-    final AudioManager am =
-        (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
-    if (am == null) {
-      return DEFAULT;
-    }
-    final String prop = am.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER);
-    if (prop == null) {
-      return DEFAULT;
-    }
-    return Integer.parseInt(prop);
-  }
-
-  @WrapForJNI(calledFrom = "any")
-  public static int getAudioOutputSampleRate() {
-    if (BuildConfig.DEBUG_BUILD && isIsolatedProcess()) {
-      // AudioManager.getProperty won't return on isolated process
-      throw new UnsupportedOperationException(
-          "getAudioOutputSampleRate is not supported in isolated processes");
-    }
-    final int DEFAULT = 44100;
-
-    final AudioManager am =
-        (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
-    if (am == null) {
-      return DEFAULT;
-    }
-    final String prop = am.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
-    if (prop == null) {
-      return DEFAULT;
-    }
-    return Integer.parseInt(prop);
-  }
-
-  @WrapForJNI(calledFrom = "any")
   public static void setCommunicationAudioModeOn(final boolean on) {
     final AudioManager am =
         (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);

@@ -154,7 +154,9 @@
 #ifndef ANDROID
 #  include "mozilla/hwinference/HWInferenceParent.h"
 #  include "mozilla/hwinference/HWInferenceProcess.h"
-#  include "mozilla/hwinference/PSpeechRecognitionChild.h"
+#  ifdef MOZ_WEBSPEECH
+#    include "mozilla/hwinference/PSpeechRecognitionChild.h"
+#  endif
 #endif  // !ANDROID
 #include "mozilla/intl/L10nRegistry.h"
 #include "mozilla/intl/LocaleService.h"
@@ -173,6 +175,7 @@
 #include "mozilla/ipc/UtilityProcessManager.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageBridgeParent.h"
+#include "mozilla/layers/LayerTreeLog.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
 #include "mozilla/layers/PAPZParent.h"
 #include "mozilla/loader/ScriptCacheActors.h"
@@ -212,6 +215,7 @@
 #include "nsHyphenationManager.h"
 #include "nsIAppShell.h"
 #include "nsIAppWindow.h"
+#include "nsIArray.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIBidiKeyboard.h"
 #include "nsIBrowserDOMWindow.h"
@@ -2004,7 +2008,7 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
           ("destroying Subprocess in ActorDestroy: ContentParent id=%p "
            "mSubprocess id=%p handle %" PRIuPTR,
-           this, mSubprocess,
+           this, mSubprocess.get(),
            mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
   // FIXME (bug 1520997): does this really need an additional dispatch?
   if (GetCurrentSerialEventTarget()) {
@@ -2014,10 +2018,9 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
               ContentParent::GetLog(), LogLevel::Debug,
               ("destroyed Subprocess in ActorDestroy: Subprocess id=%p handle "
                "%" PRIuPTR,
-               subprocess,
+               subprocess.get(),
                subprocess ? (uintptr_t)subprocess->GetChildProcessHandle()
                           : -1));
-          subprocess->Destroy();
         }));
   }
   mSubprocess = nullptr;
@@ -2610,7 +2613,7 @@ ContentParent::ContentParent(const RemoteType& aRemoteType)
 
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
           ("CreateSubprocess: ContentParent id=%p mSubprocess id=%p childID=%d",
-           this, mSubprocess, mSubprocess->GetChildID()));
+           this, mSubprocess.get(), mSubprocess->GetChildID()));
 }
 
 ContentParent::~ContentParent() {
@@ -2646,9 +2649,9 @@ ContentParent::~ContentParent() {
         ("DestroySubprocess: ContentParent id=%p childID=%" PRIu64
          " mSubprocess id=%p handle "
          "%" PRIuPTR,
-         this, (uint64_t)this->ChildID(), mSubprocess,
+         this, (uint64_t)this->ChildID(), mSubprocess.get(),
          mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
-    mSubprocess->Destroy();
+    mSubprocess = nullptr;
   }
 }
 
@@ -3135,6 +3138,8 @@ void ContentParent::OnCompositorUnexpectedShutdown() {
 }
 
 void ContentParent::OnCompositorDeviceReset() {
+  LAYERTREE_LOG("Device reset, reinitializing rendering for content {}",
+                ChildID());
   (void)SendReinitRenderingForDeviceReset();
 }
 
@@ -4472,7 +4477,7 @@ void ContentParent::KillHard(const char* aReason) {
         ("KillHard Subprocess(%s): ContentParent id=%p mSubprocess id=%p "
          "handle "
          "%" PRIuPTR,
-         aReason, this, mSubprocess,
+         aReason, this, mSubprocess.get(),
          mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
     mSubprocess->SetAlreadyDead();
   }
@@ -4612,16 +4617,6 @@ mozilla::ipc::IPCResult ContentParent::RecvInitStreamFilter(
             aResolver(mozilla::ipc::Endpoint<PStreamFilterChild>());
           });
 
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult ContentParent::RecvAddSecurityState(
-    const MaybeDiscarded<WindowContext>& aContext, uint32_t aStateFlags) {
-  if (aContext.IsNullOrDiscarded()) {
-    return IPC_OK();
-  }
-
-  aContext.get()->AddSecurityState(aStateFlags);
   return IPC_OK();
 }
 
@@ -5207,6 +5202,7 @@ mozilla::ipc::IPCResult ContentParent::RecvAcquireHWInferenceProcess() {
   return IPC_OK();
 }
 
+#  ifdef MOZ_WEBSPEECH
 mozilla::ipc::IPCResult ContentParent::RecvCreateSpeechRecognition(
     Endpoint<hwinference::PSpeechRecognitionParent>&& aEndpoint) {
   if (!mHWInferenceConnections) {
@@ -5226,6 +5222,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateSpeechRecognition(
       ->StartContentSpeechRecognition(std::move(aEndpoint), mChildID);
   return IPC_OK();
 }
+#  endif  // MOZ_WEBSPEECH
 
 mozilla::ipc::IPCResult ContentParent::RecvReleaseHWInferenceConnection() {
   if (mHWInferenceConnections == 0) {
@@ -5891,8 +5888,10 @@ mozilla::ipc::IPCResult ContentParent::RecvStoreAndBroadcastBlobURLRegistration(
     return IPC_FAIL(this, "Blob deserialization failed.");
   }
 
-  BlobURLProtocolHandler::AddDataEntryParent(aURI, aPrincipal, aPartitionKey,
-                                             blobImpl, ChildID());
+  if (NS_FAILED(BlobURLProtocolHandler::AddDataEntryParent(
+          aURI, aPrincipal, aPartitionKey, blobImpl, ChildID()))) {
+    return IPC_FAIL(this, "Conflicting Blob URL principal");
+  }
   BroadcastBlobURLRegistration(aURI, blobImpl, aPrincipal, aPartitionKey, this);
 
   return IPC_OK();
@@ -6961,6 +6960,10 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateBrowsingContext(
     if (!opener) {
       return IPC_FAIL(this, "Opener doesn't exist in parent process");
     }
+  }
+
+  if (opener && !opener->Group()->IsKnownForChildID(ChildID())) {
+    return IPC_FAIL(this, "Should be subscribed to the opener's group");
   }
 
   RefPtr<BrowsingContext> child = BrowsingContext::Get(aInit.mId);

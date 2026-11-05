@@ -23,6 +23,7 @@
 #include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/CompositorThread.h"
+#include "mozilla/layers/LayerTreeLog.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
 #include "mozilla/layers/RemoteContentController.h"
 #include "mozilla/layers/WebRenderBridgeParent.h"
@@ -36,6 +37,8 @@ namespace mozilla::layers {
 void EraseLayerState(LayersId aId);
 
 void ContentCompositorBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
+  LAYERTREE_LOG("Compositor bridge for content {} destroyed, reason {}",
+                GetContentId(), fmt::enums::format_as(aWhy));
   mCanSend = false;
 
   // We must keep this object alive untill the code handling message
@@ -67,6 +70,10 @@ ContentCompositorBridgeParent::AllocPAPZCTreeManagerParent(
         // chance yet to unmap our layers id, and we could get here without a
         // parent compositor. In this case return an empty APZCTM.
         if (!state.mParent) {
+          LAYERTREE_LOG(
+              "Layer tree {:x} for content {} has no parent compositor, "
+              "using a dummy APZ tree manager",
+              aLayersId, GetContentId());
           // Note: we immediately call ClearTree since otherwise the APZCTM will
           // retain a reference to itself, through the checkerboard observer.
           LayersId dummyId{0};
@@ -104,6 +111,8 @@ already_AddRefed<PAPZParent> ContentCompositorBridgeParent::AllocPAPZParent(
         CompositorBridgeParent::LayerTreeState& state =
             CompositorBridgeParent::EnsureLayerTreeStateUnderLock(aLayersId,
                                                                   aProofOfLock);
+        LAYERTREE_LOG("APZ controller created for layer tree {:x}, content {}",
+                      aLayersId, GetContentId());
         MOZ_ASSERT(!state.mController);
         state.mController = controller;
       });
@@ -156,6 +165,8 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
         nsPrintfCString("Created child without a matching parent? root %p",
                         root.get())
             .get());
+    LAYERTREE_LOG("Layer tree {:x} for content {} has no parent compositor",
+                  layersId, GetContentId());
     nsCString error("NO_PARENT");
     return WebRenderBridgeParent::CreateDestroyed(aPipelineId,
                                                   std::move(error));
@@ -176,6 +187,8 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
         state.mWrBridge = parent;
       });
 
+  LAYERTREE_LOG("Layer tree {:x} for content {} connected to root {:x}",
+                layersId, GetContentId(), cbp->RootLayerTreeId());
   return parent.forget();
 }
 

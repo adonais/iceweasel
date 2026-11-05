@@ -5020,7 +5020,9 @@ var ConfirmationHint = {
     // IP Protection strings are still in preview (see Bug 2011776).
     // Only insert the preview file if we're showing a hint for IP Protection.
     if (
-      messageId === "confirmation-hint-ipprotection-navigated-to-excluded-site"
+      messageId ===
+        "confirmation-hint-ipprotection-navigated-to-excluded-site" ||
+      messageId === "confirmation-hint-ipprotection-navigated-to-included-site"
     ) {
       MozXULElement.insertFTLIfNeeded("browser/ipProtection.ftl");
     }

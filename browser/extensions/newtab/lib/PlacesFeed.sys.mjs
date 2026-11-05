@@ -7,6 +7,7 @@
 import {
   actionCreators as ac,
   actionTypes as at,
+  actionUtils as au,
 } from "resource://newtab/common/Actions.mjs";
 
 const lazy = {};
@@ -244,6 +245,11 @@ export class PlacesFeed {
           data: {
             browser,
             dwell_label: action.data.dwell_label,
+            // Carried through so TelemetryFeed can match this up with the
+            // click event that knows which story was opened. Scoped by the
+            // sending newtab, since the id only counts up within one document.
+            dwell_id: action.data.dwell_id,
+            port_id: au.getPortIdOfSender(action),
           },
         });
     }

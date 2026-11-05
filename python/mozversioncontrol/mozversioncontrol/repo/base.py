@@ -147,6 +147,11 @@ class Repository(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def is_shallow(self) -> bool:
+        """Whether this repo is a shallow clone."""
+
+    @property
+    @abc.abstractmethod
     def is_cinnabar_repo(self) -> bool:
         """True if the repo is a git cinnabar repo"""
 
@@ -476,6 +481,11 @@ class Repository(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def configure(self, state_dir: Path, update_only: bool = False):
+    def configure(
+        self,
+        state_dir: Path,
+        update_only: bool = False,
+        no_system_changes: bool = False,
+    ):
         """Perform initial VCS setup, applying sensible defaults for configuration."""
         pass

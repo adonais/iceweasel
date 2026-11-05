@@ -189,8 +189,12 @@ void JitRuntime::generateInterpreterEntryTrampoline(MacroAssembler& masm) {
   // If BLI is disabled, we don't need an offset.
   if (IsBaselineInterpreterEnabled()) {
     uint32_t offset = startTrampolineCode(masm);
-    if (!vmInterpreterEntryOffset_) {
-      vmInterpreterEntryOffset_ = offset;
+    if (!masm.oom()) {
+      // The offset is shared by all per-script trampolines.
+      if (!vmInterpreterEntryOffset_) {
+        vmInterpreterEntryOffset_ = offset;
+      }
+      MOZ_RELEASE_ASSERT(vmInterpreterEntryOffset_ == offset);
     }
   }
 

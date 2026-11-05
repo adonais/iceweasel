@@ -35,10 +35,6 @@
           "nativeTheme": "{toolbar.background.color}",
           "forcedColors": "SelectedItem"
         }
-      },
-      "pinned": {
-        "override": true,
-        "value": "unset"
       }
     },
     "width": {

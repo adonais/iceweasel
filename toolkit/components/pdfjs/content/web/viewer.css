@@ -863,13 +863,25 @@
   transform-origin: 0 0;
 
   &[data-main-rotation="90"] .norotate {
-    transform: rotate(270deg) translateX(-100%);
+    transform: rotate(270deg);
+
+    &.popupAnnotation {
+      transform: rotate(270deg) translateX(-100%);
+    }
   }
   &[data-main-rotation="180"] .norotate {
-    transform: rotate(180deg) translate(-100%, -100%);
+    transform: rotate(180deg);
+
+    &.popupAnnotation {
+      transform: rotate(180deg) translate(-100%, -100%);
+    }
   }
   &[data-main-rotation="270"] .norotate {
-    transform: rotate(90deg) translateY(-100%);
+    transform: rotate(90deg);
+
+    &.popupAnnotation {
+      transform: rotate(90deg) translateY(-100%);
+    }
   }
 
   &.disabled {
@@ -6451,6 +6463,9 @@ button.hasPopupMenu {
   border: var(--page-border);
   background-clip: content-box;
   background-color: var(--page-bg-color, rgb(255 255 255));
+  &:has(> .canvasWrapper > canvas[role="presentation"]) {
+    background-color: transparent;
+  }
 }
 
 .pdfViewer .dummyPage {
@@ -7048,7 +7063,7 @@ button.hasPopupMenu {
       --toolbarbutton-background-color-active
     );
     --dropdown-btn-bg-color: var(--button-background-color);
-    --dropdown-btn-border: 1px solid var(--button-border-color);
+    --dropdown-btn-border: 1px solid var(--border-color-interactive);
     --separator-color: var(--border-color-deemphasized);
     --field-color: var(--text-color);
     --field-bg-color: var(--background-color-box);
@@ -7868,8 +7883,8 @@ dialog :link {
   .menuContainer {
     height: auto;
     max-height: calc(
-      var(--viewer-container-height) - var(--toolbar-height) -
-        var(--doorhanger-height)
+      var(--viewer-container-height) + var(--pfn-bar-height, 0px) -
+        var(--toolbar-height) - var(--doorhanger-height)
     );
     display: flex;
     flex-direction: column;
@@ -7977,7 +7992,9 @@ dialog :link {
   z-index: 30000;
   cursor: default;
   min-height: 26px;
-  max-height: calc(var(--viewer-container-height) - 40px);
+  max-height: calc(
+    var(--viewer-container-height) + var(--pfn-bar-height, 0px) - 40px
+  );
 
   #secondaryToolbarButtonContainer {
 
@@ -8055,6 +8072,21 @@ dialog :link {
 
     #documentProperties::before {
       mask-image: var(--secondaryToolbarButton-documentProperties-icon);
+    }
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      > [role="radiogroup"] {
+        display: contents;
+      }
+
+      .toolbarButton.labeled {
+        flex: 0 1 var(--menuitem-height);
+        min-height: min-content;
+
+        > span {
+          min-height: var(--size-item-medium);
+          align-content: center;
+        }
+      }
     }
   }
 }
@@ -8361,7 +8393,6 @@ dialog :link {
   }
   @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
     overflow: hidden;
-    border: var(--button-border);
     border-radius: var(--button-border-radius);
     background-color: var(--button-background-color);
     color: var(--button-text-color);
@@ -8403,6 +8434,11 @@ dialog :link {
 
       &:focus-visible {
         outline: none;
+      }
+
+      html[data-toolbar-density="compact"] & {
+        min-height: var(--button-min-height-small);
+        padding-block: var(--button-padding-block-small);
       }
     }
 
@@ -8537,7 +8573,7 @@ dialog :link {
     display: none !important;
   }
   #outerContainer .visibleMediumView:not(.hidden, [hidden]) {
-    display: inline-block !important;
+    display: contents !important;
   }
 }
 

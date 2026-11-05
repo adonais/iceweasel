@@ -31,8 +31,6 @@ class nsDeviceContextSpecWin : public nsIDeviceContextSpec {
     return NS_OK;
   }
   RefPtr<mozilla::gfx::PrintEndDocumentPromise> EndDocument() override;
-  NS_IMETHOD BeginPage(const IntSize& aSizeInPoints) override { return NS_OK; }
-  NS_IMETHOD EndPage() override { return NS_OK; }
 
   NS_IMETHOD Init(nsIPrintSettings* aPS, bool aIsPrintPreview) override;
 

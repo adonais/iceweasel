@@ -49,6 +49,45 @@ function isUsableDirectory(aDirectory) {
   );
 }
 
+let gDownloadSavePickerQueues = new WeakMap();
+
+// Run download save pickers one at a time per macOS window, including the
+// directory lookup and update. Race the task against window closure and signal
+// cancellation so the task can ignore late directory lookups and picker callbacks.
+async function runDownloadSavePicker(parentWindow, task) {
+  let controller = new AbortController();
+  if (AppConstants.platform != "macosx") {
+    return task(controller.signal);
+  }
+
+  let previous = gDownloadSavePickerQueues.get(parentWindow);
+  let { promise, resolve } = Promise.withResolvers();
+  gDownloadSavePickerQueues.set(parentWindow, promise);
+  try {
+    await previous;
+    if (parentWindow.closed) {
+      return null;
+    }
+
+    let { promise: closed, resolve: cancel } = Promise.withResolvers();
+    let onWindowClosed = () => {
+      controller.abort();
+      cancel(null);
+    };
+    parentWindow.addEventListener("unload", onWindowClosed, { once: true });
+    try {
+      return await Promise.race([task(controller.signal), closed]);
+    } finally {
+      parentWindow.removeEventListener("unload", onWindowClosed);
+    }
+  } finally {
+    resolve();
+    if (gDownloadSavePickerQueues.get(parentWindow) == promise) {
+      gDownloadSavePickerQueues.delete(parentWindow);
+    }
+  }
+}
+
 // Web progress listener so we can detect errors while mLauncher is
 // streaming the data to a temporary file.
 function nsUnknownContentTypeDialogProgressListener(aHelperAppDialog) {
@@ -353,77 +392,73 @@ export class nsUnknownContentTypeDialog {
 
       picker.appendFilters(nsIFilePicker.filterAll);
 
-      // Default to lastDir if it is valid, otherwise use the user's default
-      // downloads directory.  getPreferredDownloadsDirectory should always
-      // return a valid directory path, so we can safely default to it.
-      let preferredDir = await Downloads.getPreferredDownloadsDirectory();
-      picker.displayDirectory = new FileUtils.File(preferredDir);
-
-      gDownloadLastDir.getFileAsync(aLauncher.source).then(lastDir => {
+      result = await runDownloadSavePicker(parent, async signal => {
+        let [preferredDir, lastDir] = await Promise.all([
+          Downloads.getPreferredDownloadsDirectory(),
+          gDownloadLastDir.getFileAsync(aLauncher.source),
+        ]);
+        // The parent may have closed while the directory lookup was pending.
+        if (signal.aborted) {
+          return null;
+        }
+        picker.displayDirectory = new FileUtils.File(preferredDir);
         if (lastDir && isUsableDirectory(lastDir)) {
           picker.displayDirectory = lastDir;
         }
 
-        picker.open(returnValue => {
-          if (returnValue == nsIFilePicker.returnCancel) {
-            // null result means user cancelled.
-            aLauncher.saveDestinationAvailable(null);
-            return;
-          }
+        let returnValue = await new Promise(resolve => picker.open(resolve));
+        if (signal.aborted || returnValue === nsIFilePicker.returnCancel) {
+          return null;
+        }
 
-          // Be sure to save the directory the user chose through the Save As...
-          // dialog  as the new browser.download.dir since the old one
-          // didn't exist.
-          result = picker.file;
-
-          if (result) {
-            let allowOverwrite = false;
-            try {
-              // If we're overwriting, avoid renaming our file, and assume
-              // overwriting it does the right thing.
-              if (
-                result.exists() &&
-                this.getFinalLeafName(result.leafName, "", true) ==
-                  result.leafName
-              ) {
-                allowOverwrite = true;
-              }
-            } catch (ex) {
-              // As it turns out, the failure to remove the file, for example due to
-              // permission error, will be handled below eventually somehow.
-            }
-
-            var newDir = result.parent.QueryInterface(Ci.nsIFile);
-
-            // Do not store the last save directory as a pref inside the private browsing mode
-            gDownloadLastDir.setFile(aLauncher.source, newDir);
-
-            try {
-              result = this.validateLeafName(
-                newDir,
-                result.leafName,
-                null,
-                allowOverwrite,
-                true
-              );
-            } catch (ex) {
-              // When the chosen download directory is write-protected,
-              // display an informative error message.
-              // In all cases, download will be stopped.
-
-              if (ex.result == Cr.NS_ERROR_FILE_ACCESS_DENIED) {
-                this.displayBadPermissionAlert();
-                aLauncher.saveDestinationAvailable(null);
-                return;
-              }
-            }
-          }
-          // Iceweasel downloadUpchek patch
-          Services.prefs.setBoolPref("userChromeJS.downloadPlus.shown", true);
-          // Don't pop up the downloads panel redundantly.
-          aLauncher.saveDestinationAvailable(result, true);
-        });
+        let file = picker.file;
+        if (file) {
+          // Do not store the last save directory as a pref inside the private browsing mode
+          gDownloadLastDir.setFile(aLauncher.source, file.parent);
+        }
+        return file;
       });
+
+      if (result) {
+        let allowOverwrite = false;
+        try {
+          // If we're overwriting, avoid renaming our file, and assume
+          // overwriting it does the right thing.
+          if (
+            result.exists() &&
+            this.getFinalLeafName(result.leafName, "", true) == result.leafName
+          ) {
+            allowOverwrite = true;
+          }
+        } catch (ex) {
+          // As it turns out, the failure to remove the file, for example due to
+          // permission error, will be handled below eventually somehow.
+        }
+
+        let newDir = result.parent.QueryInterface(Ci.nsIFile);
+        try {
+          result = this.validateLeafName(
+            newDir,
+            result.leafName,
+            null,
+            allowOverwrite,
+            true
+          );
+        } catch (ex) {
+          // When the chosen download directory is write-protected,
+          // display an informative error message.
+          // In all cases, download will be stopped.
+
+          if (ex.result == Cr.NS_ERROR_FILE_ACCESS_DENIED) {
+            this.displayBadPermissionAlert();
+            result = null;
+          }
+        }
+      }
+      // Iceweasel downloadUpchek patch
+      Services.prefs.setBoolPref("userChromeJS.downloadPlus.shown", true);
+      // Don't pop up the downloads panel redundantly.
+      aLauncher.saveDestinationAvailable(result, !!result);
     })().catch(console.error);
   }
 

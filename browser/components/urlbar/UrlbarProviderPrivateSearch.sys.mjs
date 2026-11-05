@@ -11,10 +11,9 @@ import {
   UrlbarProvider,
   UrlbarUtils,
 } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarSearchUtils:

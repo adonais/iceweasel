@@ -59,13 +59,14 @@ void XULButtonAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
 role XULButtonAccessible::NativeRole() const {
   // Buttons can be checked; they simply appear pressed in rather than checked.
   // In this case, we must expose them as toggle buttons.
-  nsCOMPtr<nsIDOMXULButtonElement> xulButtonElement = Elm()->AsXULButton();
-  if (xulButtonElement) {
-    nsAutoString type;
-    xulButtonElement->GetType(type);
-    if (type.EqualsLiteral("checkbox") || type.EqualsLiteral("radio")) {
-      return roles::TOGGLE_BUTTON;
-    }
+  // We check the type attribute directly rather than using AsXULButton(), since
+  // that calls into JS. That can run microtasks, which can re-enter name
+  // computation and cause it to fail.
+  static dom::Element::AttrValuesArray strings[] = {nsGkAtoms::checkbox,
+                                                    nsGkAtoms::radio, nullptr};
+  if (Elm()->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::type, strings,
+                             eCaseMatters) >= 0) {
+    return roles::TOGGLE_BUTTON;
   }
   return roles::PUSHBUTTON;
 }
@@ -96,6 +97,19 @@ uint64_t XULButtonAccessible::NativeState() const {
   return state;
 }
 
+ENameValueFlag XULButtonAccessible::NativeName(nsString& aName) const {
+  // If the label is visible, the name comes from the subtree so that content
+  // such as ::before or ::after is included, unless there is an associated
+  // <label control>.
+  if (HasVisibleLabel()) {
+    NameFromAssociatedXULLabel(mDoc, mContent, aName);
+    return aName.IsEmpty() ? eNameFromSubtree : eNameOK;
+  }
+  // Otherwise (e.g. the label is hidden by CSS), fall back to the label
+  // attribute.
+  return AccessibleWrap::NativeName(aName);
+}
+
 bool XULButtonAccessible::AttributeChangesState(nsAtom* aAttribute) {
   if (aAttribute == nsGkAtoms::checked) {
     return true;
@@ -108,9 +122,11 @@ void XULButtonAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                               AttrModType aModType,
                                               const nsAttrValue* aOldValue,
                                               uint64_t aOldState) {
+  // If the label is visible, the name change event will be fired when the
+  // label's text changes.
   AccessibleWrap::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType,
                                       aOldValue, aOldState);
-  if (aAttribute == nsGkAtoms::label) {
+  if (aAttribute == nsGkAtoms::label && !HasVisibleLabel()) {
     mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, this);
   }
 }
@@ -136,19 +152,47 @@ bool XULButtonAccessible::AreItemsOperable() const {
 }
 
 bool XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const {
-  // In general XUL buttons should not have accessible children. However:
-  return
+  if (
       //   menu buttons can have popup accessibles (@type="menu" or
       //   columnpicker).
-      aEl->IsXULElement(nsGkAtoms::menupopup) ||
-      // A XUL button can be labelled by a direct child text node, so we need to
-      // allow that as a child so it will be picked up when computing name from
-      // subtree.
-      (aEl->IsText() && aEl->GetParent() == mContent);
+      aEl->IsXULElement(nsGkAtoms::menupopup)) {
+    return true;
+  }
+  if (aEl->IsXULElement(nsGkAtoms::label)) {
+    // The label is exposed so that the name can be computed from the subtree,
+    // including any generated content. However, an empty label renders a zero
+    // width space, which shouldn't be used as the name.
+    return aEl->HasChildren() ||
+           !aEl->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::value,
+                                          nsGkAtoms::_empty, eCaseMatters);
+  }
+  if (!aEl->IsText()) {
+    return false;
+  }
+  // A XUL button can be labelled by a direct child text node or by ::before or
+  // ::after content, so we need to allow that as a child so it will be picked
+  // up when computing name from subtree.
+  nsIContent* parent = aEl->GetParent();
+  if (parent == mContent) {
+    return true;
+  }
+  return parent &&
+         (parent->IsGeneratedContentContainerForBefore() ||
+          parent->IsGeneratedContentContainerForAfter()) &&
+         parent->GetParent() == mContent;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // XULButtonAccessible protected
+
+bool XULButtonAccessible::HasVisibleLabel() const {
+  for (LocalAccessible* child : mChildren) {
+    if (child->IsXULLabel()) {
+      return true;
+    }
+  }
+  return false;
+}
 
 bool XULButtonAccessible::ContainsMenu() const {
   return mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
@@ -404,18 +448,6 @@ bool XULToolbarButtonAccessible::IsSeparator(LocalAccessible* aAccessible) {
   return content && content->IsAnyOfXULElements(nsGkAtoms::toolbarseparator,
                                                 nsGkAtoms::toolbarspacer,
                                                 nsGkAtoms::toolbarspring);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// XULToolbarButtonAccessible: Widgets
-
-bool XULToolbarButtonAccessible::IsAcceptableChild(nsIContent* aEl) const {
-  return XULButtonAccessible::IsAcceptableChild(aEl) ||
-         // In addition to the children allowed by buttons, toolbarbuttons can
-         // have labels as children, but only if the label attribute is not
-         // present.
-         (aEl->IsXULElement(nsGkAtoms::label) &&
-          !mContent->AsElement()->HasAttr(nsGkAtoms::label));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -10,57 +10,101 @@
 #include "libwebrtcglue/FrameTransformer.h"
 
 namespace webrtc {
-std::ostream& operator<<(std::ostream& aStream,
-                         const webrtc::Call::Stats& aObj) {
+inline std::ostream& operator<<(std::ostream& aStream,
+                                const webrtc::Call::Stats& aObj) {
   aStream << aObj.ToString(0);
   return aStream;
 }
 }  // namespace webrtc
 
 namespace mozilla {
-class MockConduit : public MediaSessionConduit {
+// Mocks MediaSessionConduit's methods on top of the conduit class given, so
+// that the mocks of a derived conduit class can extend it.
+template <typename Conduit>
+class MockConduitBase : public Conduit {
  public:
-  MockConduit() = default;
+  using Type = MediaSessionConduit::Type;
+  using PacketType = MediaSessionConduit::PacketType;
 
-  MOCK_CONST_METHOD0(type, Type());
-  MOCK_CONST_METHOD0(ActiveSendPayloadType, Maybe<int>());
-  MOCK_CONST_METHOD0(ActiveRecvPayloadType, Maybe<int>());
-  MOCK_METHOD1(SetTransportActive, void(bool));
-  MOCK_METHOD0(SenderRtpSendEvent, MediaEventSourceExc<MediaPacket>&());
-  MOCK_METHOD0(SenderRtcpSendEvent, MediaEventSourceExc<MediaPacket>&());
-  MOCK_METHOD0(ReceiverRtcpSendEvent, MediaEventSourceExc<MediaPacket>&());
-  MOCK_METHOD1(
-      ConnectReceiverRtpEvent,
-      void(MediaEventSourceExc<webrtc::RtpPacketReceived, webrtc::RTPHeader>&));
-  MOCK_METHOD1(ConnectReceiverRtcpEvent,
-               void(MediaEventSourceExc<webrtc::CopyOnWriteBuffer>&));
-  MOCK_METHOD1(ConnectSenderRtcpEvent,
-               void(MediaEventSourceExc<webrtc::CopyOnWriteBuffer>&));
-  MOCK_CONST_METHOD0(LastRtcpReceived, Maybe<DOMHighResTimeStamp>());
-  MOCK_CONST_METHOD1(RtpSendBaseSeqFor, Maybe<uint16_t>(uint32_t));
-  MOCK_CONST_METHOD0(GetNow, DOMHighResTimeStamp());
-  MOCK_CONST_METHOD0(GetTimestampMaker, dom::RTCStatsTimestampMaker&());
-  MOCK_CONST_METHOD0(GetLocalSSRCs, Ssrcs());
-  MOCK_CONST_METHOD0(GetRemoteSSRC, Maybe<Ssrc>());
-  MOCK_METHOD1(UnsetRemoteSSRC, void(Ssrc));
-  MOCK_METHOD0(DisableSsrcChanges, void());
-  MOCK_CONST_METHOD1(HasCodecPluginID, bool(uint64_t));
-  MOCK_METHOD0(RtcpByeEvent, MediaEventSource<void>&());
-  MOCK_METHOD0(RtcpTimeoutEvent, MediaEventSource<void>&());
-  MOCK_METHOD0(RtpPacketEvent, MediaEventSource<void>&());
-  MOCK_METHOD3(SendRtp,
-               bool(const uint8_t*, size_t, const webrtc::PacketOptions&));
-  MOCK_METHOD2(SendSenderRtcp, bool(const uint8_t*, size_t));
-  MOCK_METHOD2(SendReceiverRtcp, bool(const uint8_t*, size_t));
-  MOCK_METHOD2(DeliverPacket, void(webrtc::CopyOnWriteBuffer, PacketType));
-  MOCK_METHOD0(Shutdown, RefPtr<GenericPromise>());
-  MOCK_CONST_METHOD0(IsShutdown, bool());
-  MOCK_METHOD0(AsAudioSessionConduit, Maybe<RefPtr<AudioSessionConduit>>());
-  MOCK_METHOD0(AsVideoSessionConduit, Maybe<RefPtr<VideoSessionConduit>>());
-  MOCK_CONST_METHOD0(GetCallStats, Maybe<webrtc::Call::Stats>());
-  MOCK_METHOD1(SetJitterBufferTarget, void(DOMHighResTimeStamp));
-  MOCK_CONST_METHOD0(GetUpstreamRtpSources,
-                     const std::vector<webrtc::RtpSource>&());
+  MOCK_METHOD(Type, type, (), (const, override));
+  MOCK_METHOD(Maybe<int>, ActiveSendPayloadType, (), (const, override));
+  MOCK_METHOD(Maybe<int>, ActiveRecvPayloadType, (), (const, override));
+  MOCK_METHOD(void, SetTransportActive, (bool), (override));
+  MOCK_METHOD(MediaEventSourceExc<MediaPacket>&, SenderRtpSendEvent, (),
+              (override));
+  MOCK_METHOD(MediaEventSourceExc<MediaPacket>&, SenderRtcpSendEvent, (),
+              (override));
+  MOCK_METHOD(MediaEventSourceExc<MediaPacket>&, ReceiverRtcpSendEvent, (),
+              (override));
+  MOCK_METHOD(
+      void, ConnectReceiverRtpEvent,
+      ((MediaEventSourceExc<webrtc::RtpPacketReceived, webrtc::RTPHeader>&)),
+      (override));
+  MOCK_METHOD(void, ConnectReceiverRtcpEvent,
+              (MediaEventSourceExc<webrtc::CopyOnWriteBuffer>&), (override));
+  MOCK_METHOD(void, ConnectSenderRtcpEvent,
+              (MediaEventSourceExc<webrtc::CopyOnWriteBuffer>&), (override));
+  MOCK_METHOD(Maybe<DOMHighResTimeStamp>, LastRtcpReceived, (), (const));
+  MOCK_METHOD(Maybe<uint16_t>, RtpSendBaseSeqFor, (uint32_t),
+              (const, override));
+  MOCK_METHOD(DOMHighResTimeStamp, GetNow, (), (const));
+  MOCK_METHOD(dom::RTCStatsTimestampMaker&, GetTimestampMaker, (),
+              (const, override));
+  MOCK_METHOD(Ssrcs, GetLocalSSRCs, (), (const, override));
+  MOCK_METHOD(Maybe<Ssrc>, GetRemoteSSRC, (), (const, override));
+  MOCK_METHOD(void, UnsetRemoteSSRC, (Ssrc), (override));
+  MOCK_METHOD(void, DisableSsrcChanges, (), (override));
+  MOCK_METHOD(bool, HasCodecPluginID, (uint64_t), (const, override));
+  MOCK_METHOD(MediaEventSource<void>&, RtcpByeEvent, (), (override));
+  MOCK_METHOD(MediaEventSource<void>&, RtcpTimeoutEvent, (), (override));
+  MOCK_METHOD(MediaEventSource<void>&, RtpPacketEvent, (), (override));
+  MOCK_METHOD(bool, SendRtp,
+              (const uint8_t*, size_t, const webrtc::PacketOptions&),
+              (override));
+  MOCK_METHOD(bool, SendSenderRtcp, (const uint8_t*, size_t), (override));
+  MOCK_METHOD(bool, SendReceiverRtcp, (const uint8_t*, size_t), (override));
+  MOCK_METHOD(void, DeliverPacket, (webrtc::CopyOnWriteBuffer, PacketType),
+              (override));
+  MOCK_METHOD(RefPtr<GenericPromise>, Shutdown, (), (override));
+  MOCK_METHOD(bool, IsShutdown, (), (const, override));
+  MOCK_METHOD(Maybe<RefPtr<AudioSessionConduit>>, AsAudioSessionConduit, (),
+              (override));
+  MOCK_METHOD(Maybe<RefPtr<VideoSessionConduit>>, AsVideoSessionConduit, (),
+              (override));
+  MOCK_METHOD(Maybe<webrtc::Call::Stats>, GetCallStats, (), (const, override));
+  MOCK_METHOD(void, SetJitterBufferTarget, (DOMHighResTimeStamp), (override));
+  MOCK_METHOD(const std::vector<webrtc::RtpSource>&, GetUpstreamRtpSources, (),
+              (const, override));
+};
+
+class MockConduit : public MockConduitBase<MediaSessionConduit> {};
+
+class MockVideoConduit : public MockConduitBase<VideoSessionConduit> {
+ public:
+  MOCK_METHOD(void, InitControl, (VideoConduitControlInterface*), (override));
+  MOCK_METHOD(MediaConduitErrorCode, AttachRenderer,
+              (RefPtr<mozilla::VideoRenderer>), (override));
+  MOCK_METHOD(void, DetachRenderer, (), (override));
+  MOCK_METHOD(void, SetTrackSource, (webrtc::VideoTrackSourceInterface*),
+              (override));
+  MOCK_METHOD(bool, LockScaling, (), (const, override));
+  MOCK_METHOD(Maybe<webrtc::VideoReceiveStreamInterface::Stats>,
+              GetReceiverStats, (), (const, override));
+  MOCK_METHOD(Maybe<webrtc::VideoSendStream::Stats>, GetSenderStats, (),
+              (const, override));
+  MOCK_METHOD(void, CollectTelemetryData, (), (override));
+  MOCK_METHOD(bool, AddFrameHistory,
+              (dom::Sequence<dom::RTCVideoFrameHistoryInternal>*),
+              (const, override));
+  MOCK_METHOD(Maybe<Ssrc>, GetAssociatedLocalRtxSSRC, (Ssrc),
+              (const, override));
+  MOCK_METHOD(Maybe<Ssrc>, GetAssociatedRemoteRtxSSRC, (), (const, override));
+  MOCK_METHOD(Maybe<gfx::IntSize>, GetLastResolution, (), (const, override));
+  MOCK_METHOD(AbstractCanonical<Maybe<gfx::IntSize>>*, CanonicalReceivingSize,
+              (), (override));
+  MOCK_METHOD(void, RequestKeyFrame, (FrameTransformerProxy*), (override));
+  MOCK_METHOD(void, GenerateKeyFrame,
+              (const Maybe<std::string>&, FrameTransformerProxy*), (override));
 };
 }  // namespace mozilla
 

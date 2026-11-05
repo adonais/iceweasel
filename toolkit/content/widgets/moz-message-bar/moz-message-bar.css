@@ -52,7 +52,7 @@
   gap: var(--message-bar-text-content-gap);
   flex-wrap: wrap;
   word-break: break-word;
-  padding-block: calc(var(--message-bar-icon-container-padding) - var(--message-bar-icon-container-padding-offset));
+  padding-block: var(--message-bar-icon-container-padding);
 }
 
 /* MozMessageBar icon style */
@@ -62,13 +62,13 @@
   display: flex;
   justify-content: center;
   align-items: var(--message-bar-icon-container-align-items);
-  border: var(--message-bar-icon-container-border);
+  border-inline-end: var(--message-bar-icon-container-border);
   border-start-start-radius: var(--message-bar-icon-container-border-radius-start-start);
   border-start-end-radius: var(--message-bar-icon-container-border-radius-start-end);
   border-end-start-radius: var(--message-bar-icon-container-border-radius-end-start);
   border-end-end-radius: var(--message-bar-icon-container-border-radius-end-end);
   background-color: var(--message-bar-icon-background-color);
-  padding: calc(var(--message-bar-icon-container-padding) - var(--message-bar-icon-container-padding-offset));
+  padding: var(--message-bar-icon-container-padding);
   padding-block-start: var(--message-bar-icon-container-padding-block-start);
   margin-block-start: calc(var(--message-bar-icon-container-margin-block-start) + var(--message-bar-icon-container-margin-block-start-offset));
 }

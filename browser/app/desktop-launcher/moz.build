@@ -49,3 +49,11 @@ DEFINES["FIREFOX_ICO"] = '"%s/%s/%s.ico"' % (
 )
 
 RCINCLUDE = "desktop-launcher.rc"
+
+SOURCE_HEADERS += [
+    "data_sink.h",
+    "download_firefox.h",
+    "file_sink.h",
+    "find_firefox.h",
+    "tempfile_name.h",
+]

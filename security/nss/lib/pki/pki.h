@@ -45,23 +45,11 @@ nssCertificate_Destroy(NSSCertificate *c);
 NSS_EXTERN NSSDER *
 nssCertificate_GetEncoding(NSSCertificate *c);
 
-NSS_EXTERN NSSDER *
-nssCertificate_GetIssuer(NSSCertificate *c);
-
-NSS_EXTERN NSSDER *
-nssCertificate_GetSerialNumber(NSSCertificate *c);
-
-NSS_EXTERN NSSDER *
-nssCertificate_GetSubject(NSSCertificate *c);
-
 /* Returns a copy, Caller must free using nss_ZFreeIf */
 NSS_EXTERN NSSUTF8 *
 nssCertificate_GetNickname(
     NSSCertificate *c,
     NSSToken *tokenOpt);
-
-NSS_EXTERN NSSASCII7 *
-nssCertificate_GetEmailAddress(NSSCertificate *c);
 
 NSS_EXTERN PRBool
 nssCertificate_IssuerAndSerialEqual(

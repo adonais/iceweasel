@@ -110,11 +110,13 @@ class JitcodeGlobalEntry : public JitCodeRange {
   // is kept alive because it is still referenced from the profiler buffer.
   JitCode* jitcode_;
   JS::Zone* zone_;
-  // If this entry is referenced from the profiler buffer, this is the
-  // position where the most recent sample that references it starts.
-  // Otherwise set to kNoSampleInBuffer.
+  // If this entry is referenced from the profiler buffer, these are the
+  // positions where the first and the most recent sample that reference it
+  // start. "First" means the first since the entry last expired. Otherwise both
+  // are kNoSampleInBuffer.
   static const uint64_t kNoSampleInBuffer = UINT64_MAX;
-  uint64_t samplePositionInBuffer_ = kNoSampleInBuffer;
+  uint64_t firstSamplePositionInBuffer_ = kNoSampleInBuffer;
+  uint64_t lastSamplePositionInBuffer_ = kNoSampleInBuffer;
 
  public:
   enum class Kind : uint8_t {
@@ -144,15 +146,28 @@ class JitcodeGlobalEntry : public JitCodeRange {
     void operator()(JitcodeGlobalEntry* entry);
   };
 
-  void setSamplePositionInBuffer(uint64_t bufferWritePos) {
-    samplePositionInBuffer_ = bufferWritePos;
-  }
-  void setAsExpired() { samplePositionInBuffer_ = kNoSampleInBuffer; }
-  bool isSampled(uint64_t bufferRangeStart) {
-    if (samplePositionInBuffer_ == kNoSampleInBuffer) {
-      return false;
+  void recordSampleAtPosition(uint64_t bufferWritePos) {
+    if (firstSamplePositionInBuffer_ == kNoSampleInBuffer) {
+      firstSamplePositionInBuffer_ = bufferWritePos;
     }
-    return bufferRangeStart <= samplePositionInBuffer_;
+    lastSamplePositionInBuffer_ = bufferWritePos;
+  }
+  void setAsExpired() {
+    firstSamplePositionInBuffer_ = kNoSampleInBuffer;
+    lastSamplePositionInBuffer_ = kNoSampleInBuffer;
+  }
+  bool hasSampleInBuffer() const {
+    return lastSamplePositionInBuffer_ != kNoSampleInBuffer;
+  }
+  uint64_t firstSamplePositionInBuffer() const {
+    return firstSamplePositionInBuffer_;
+  }
+  uint64_t lastSamplePositionInBuffer() const {
+    return lastSamplePositionInBuffer_;
+  }
+  bool isSampled(uint64_t bufferRangeStart) {
+    return hasSampleInBuffer() &&
+           bufferRangeStart <= lastSamplePositionInBuffer_;
   }
   bool isReferencedByProfiler(const mozilla::Maybe<uint64_t>& rangeStart) {
     return rangeStart && isSampled(*rangeStart);
@@ -552,6 +567,12 @@ class JitcodeGlobalTable {
   LifoAlloc alloc_;
   EntryTree tree_;
 
+  // Entries in the Vector above that addEntry removed from the AVL tree
+  // because new code was placed at an overlapping address. They are kept until
+  // no sample in the profiler buffer references them, so that the samples
+  // taken before the new code existed still resolve to them.
+  Vector<JitcodeGlobalEntry*, 0, SystemAllocPolicy> displacedEntries_;
+
  public:
   JitcodeGlobalTable()
       : alloc_(LIFO_CHUNK_SIZE, js::BackgroundMallocArena), tree_(&alloc_) {}
@@ -565,6 +586,15 @@ class JitcodeGlobalTable {
 
   const JitcodeGlobalEntry* lookupForSampler(void* ptr,
                                              uint64_t samplePosInBuffer);
+
+  // Look up the entry for the code that contained |ptr| when the sample at
+  // |samplePosInBuffer| was taken. This can be an entry that is no longer in
+  // the AVL tree. The same entry is returned for all sample positions up to
+  // and including *lastSamplePos. *lastSamplePos is UINT64_MAX if the returned
+  // entry is the one in the AVL tree, or if no entry was found.
+  JitcodeGlobalEntry* lookupForSamplePosition(void* ptr,
+                                              uint64_t samplePosInBuffer,
+                                              uint64_t* lastSamplePos);
 
   [[nodiscard]] bool addEntry(UniqueJitcodeGlobalEntry entry);
 

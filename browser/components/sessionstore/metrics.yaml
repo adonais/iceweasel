@@ -420,6 +420,75 @@ session_restore:
     expires: never
     telemetry_mirror: FX_SESSION_RESTORE_FILE_SIZE_BYTES
 
+  write_attempts:
+    type: counter
+    description: >
+      Counts attempts to write the session file. Attempts that are not
+      counted in write_outcome never completed.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076715
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076715
+    notification_emails:
+      - session-restore-telemetry-alerts@mozilla.com
+    expires: never
+
+  write_outcome:
+    type: labeled_counter
+    description: >
+      Counts completed attempts to write the session file, by outcome.
+      "failed" means the session file was not written.
+      "session_written_backup_failed" means the session file was written but
+      a later step, such as taking or pruning upgrade backups, failed.
+    labels:
+      - "success"
+      - "failed"
+      - "session_written_backup_failed"
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076715
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076715
+    notification_emails:
+      - session-restore-telemetry-alerts@mozilla.com
+    expires: never
+
+  write_failure:
+    type: event
+    description: >
+      Recorded when a session file write fails. To avoid recording the same
+      failure every write interval, it is only recorded when the failing
+      step or cause differs from that of the previous write, or when the
+      final write at shutdown fails. write_outcome counts every failure.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076715
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076715
+    notification_emails:
+      - session-restore-telemetry-alerts@mozilla.com
+    expires: never
+    extra_keys:
+      step:
+        description: >
+          The first step of the write that failed, one of "make_backups_dir",
+          "move_clean", "migrate_legacy_clean", "write_clean",
+          "write_recovery", "stat", "copy_upgrade_backup", "list_backups",
+          "remove_old_backup" or "unknown"
+        type: string
+      cause:
+        description: >
+          The nsresult name reported by IOUtils, such as
+          "NS_ERROR_FILE_NO_DEVICE_SPACE", or else the name of the
+          DOMException or JS error the step failed with
+        type: string
+      session_written:
+        description: >
+          Whether the session file itself was written before the failure
+        type: boolean
+      is_final_write:
+        description: >
+          Whether this was the final write at shutdown
+        type: boolean
+
   corrupt_file:
     type: labeled_counter
     description: >
@@ -751,6 +820,68 @@ session_restore:
           Saved state's window features in a comma-separated list. See
           `existing_features` for definitions.
         type: string
+    data_sensitivity:
+      - interaction
+
+  restore_page_outcome:
+    type: event
+    description: >
+      Recorded once per load of about:sessionrestore or about:welcomeback,
+      reporting what the user did with the session the page offered to
+      restore, along with why the page was shown and how much of the session
+      was offered and selected.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066299
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066299
+    notification_emails:
+      - session-restore-telemetry-alerts@mozilla.com
+    expires: never
+    extra_keys:
+      outcome:
+        description: >
+          What became of the page, one of:
+          - "restore_all": the session was restored with every window and tab
+            selected
+          - "restore_subset": the session was restored with some windows or
+            tabs deselected
+          - "start_new_session": the user chose to start a new session rather
+            than restore, or asked to restore with nothing selected
+          - "no_data": the page had no session data to offer
+          - "abandoned": the page was closed or navigated away from without
+            any of the above
+          - "shutdown": the browser quit with the page still open; the page is
+            restored with the session, so a later impression follows
+        type: string
+      show_reason:
+        description: >
+          Why the page was shown, one of "old_session", "many_crashes",
+          "many_crashes_old_session" or "safe_mode" (see
+          session_restore.startup_session_decision's interstitial_reason) or
+          "profile_refresh" (about:welcomeback, shown after refreshing the
+          profile). Unset if unknown, which includes about:sessionrestore shown
+          because the previous session crashed with only about:welcomeback
+          open.
+        type: string
+      windows_offered:
+        description: Number of windows the page offered to restore.
+        type: quantity
+      windows_selected:
+        description: >
+          Number of windows with at least one tab selected at the time of the
+          outcome.
+        type: quantity
+      tabs_offered:
+        description: Number of tabs the page offered to restore.
+        type: quantity
+      tabs_selected:
+        description: Number of tabs selected at the time of the outcome.
+        type: quantity
+      single_tabs_restored:
+        description: >
+          Number of times the user restored an individual tab from the list
+          before the outcome.
+        type: quantity
     data_sensitivity:
       - interaction
 

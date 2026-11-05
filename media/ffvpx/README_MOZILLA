@@ -214,6 +214,16 @@ Finally, apply the patches:
   graphics when `limit_queues` is unset, so unused compute queues do not
   dominate `vkCreateDevice` time (bug 2068764). Transfer and video families
   are unchanged. Drop this patch if it is ever fixed upstream.
+- vulkan-export-layout-wait.patch to wait the frame timeline at
+  `VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT` in `switch_layout()` before the
+  export layout transition (bug 2083415 / FFmpeg `dc54ec7a0d`). Waiting at
+  `VK_PIPELINE_STAGE_2_NONE` raced the decode write
+  (`SYNC-HAZARD-WRITE-AFTER-WRITE`). Drop this patch when ffvpx picks up
+  that upstream commit.
+- no-nv-optical-flow.patch to drop `VK_NV_optical_flow` from the optional
+  device extensions. ffvpx only decodes, so it does not need that queue.
+  The extension arrived with the bug 2067742 Vulkan update, which regressed
+  RDD CPU use on YouTube (bug 2082667).
 - dma-buf-sync-file.patch to define `DMA_BUF_IOCTL_EXPORT_SYNC_FILE` and
   `DMA_BUF_IOCTL_IMPORT_SYNC_FILE` in `hwcontext_vulkan.c`. The Linux sysroot
   has no `linux/dma-buf.h`. The sync-file ioctls are Linux 5.16 uapi.

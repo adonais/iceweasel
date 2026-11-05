@@ -113,7 +113,8 @@
   }
 }
 
-.open-protocol-handler-icon {
+.open-protocol-handler-icon,
+.register-protocol-handler-icon {
   list-style-image: url(chrome://global/skin/icons/open-in-new.svg);
 
   &:-moz-locale-dir(rtl) {

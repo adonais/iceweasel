@@ -52,6 +52,7 @@ class ViewportUtils {
   static nsPoint VisualToLayout(const nsPoint& aPt, PresShell* aContext);
   static nsRect VisualToLayout(const nsRect& aRect, PresShell* aContext);
   static nsPoint LayoutToVisual(const nsPoint& aPt, PresShell* aContext);
+  static nsRect LayoutToVisual(const nsRect& aRect, PresShell* aContext);
 
   /*
    * These functions convert the point/rect from layout to visual space

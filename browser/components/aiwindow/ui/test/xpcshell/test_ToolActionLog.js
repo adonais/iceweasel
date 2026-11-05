@@ -18,9 +18,83 @@ const {
   GET_USER_MEMORIES,
   GET_NAVIGATION_INFO,
   SEARCH_THE_WEB,
+  GENERATE_AITAB,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
+
+add_task(function test_aitab_pending_creation_without_modify_slug() {
+  const cfg = getActionLogConfigForTool(GENERATE_AITAB, { pending: true }, {});
+
+  Assert.equal(cfg.label.l10nId, "smartwindow-aitab-creating");
+  Assert.equal(cfg.pendingLabel.l10nId, "smartwindow-aitab-creating");
+});
+
+add_task(function test_aitab_pending_creation_with_empty_modify_slug() {
+  const cfg = getActionLogConfigForTool(
+    GENERATE_AITAB,
+    { pending: true },
+    { modify_slug: "" }
+  );
+
+  Assert.equal(cfg.label.l10nId, "smartwindow-aitab-creating");
+  Assert.equal(cfg.pendingLabel.l10nId, "smartwindow-aitab-creating");
+});
+
+add_task(function test_aitab_pending_creation_with_blank_modify_slug() {
+  const cfg = getActionLogConfigForTool(
+    GENERATE_AITAB,
+    { pending: true },
+    { modify_slug: "   " }
+  );
+
+  Assert.equal(cfg.label.l10nId, "smartwindow-aitab-creating");
+  Assert.equal(cfg.pendingLabel.l10nId, "smartwindow-aitab-creating");
+});
+
+add_task(function test_aitab_pending_creation_with_non_string_modify_slug() {
+  const cfg = getActionLogConfigForTool(
+    GENERATE_AITAB,
+    { pending: true },
+    { modify_slug: 42 }
+  );
+
+  Assert.equal(cfg.label.l10nId, "smartwindow-aitab-creating");
+  Assert.equal(cfg.pendingLabel.l10nId, "smartwindow-aitab-creating");
+});
+
+add_task(function test_aitab_pending_update_with_existing_page() {
+  const cfg = getActionLogConfigForTool(
+    GENERATE_AITAB,
+    { pending: true },
+    { modify_slug: "existing-page" }
+  );
+
+  Assert.equal(cfg.label.l10nId, "smartwindow-aitab-updating");
+  Assert.equal(cfg.pendingLabel.l10nId, "smartwindow-aitab-updating");
+});
+
+add_task(function test_aitab_completed_creation_labels() {
+  const cfg = getActionLogConfigForTool(
+    GENERATE_AITAB,
+    { page: { slug: "new-page" } },
+    {}
+  );
+
+  Assert.equal(cfg.label.l10nId, "smartwindow-aitab-created-an-aitab");
+  Assert.equal(cfg.pendingLabel.l10nId, "smartwindow-aitab-creating");
+});
+
+add_task(function test_aitab_completed_update_labels() {
+  const cfg = getActionLogConfigForTool(
+    GENERATE_AITAB,
+    { page: { slug: "existing-page" } },
+    { modify_slug: "existing-page" }
+  );
+
+  Assert.equal(cfg.label.l10nId, "smartwindow-aitab-updated-an-aitab");
+  Assert.equal(cfg.pendingLabel.l10nId, "smartwindow-aitab-updating");
+});
 
 add_task(function test_getActionLogConfigForTool_visible_tools() {
   Assert.withSoftAssertions(function (soft) {

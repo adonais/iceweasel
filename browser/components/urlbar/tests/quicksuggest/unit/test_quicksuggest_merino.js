@@ -187,6 +187,48 @@ add_task(async function onlineAvailableAndEnabled() {
   await resetRemoteSettingsData();
 });
 
+// Merino should not be fetched when the search string is shorter than two
+// characters.
+add_task(async function searchStringLengthThreshold() {
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
+  await QuickSuggestTestUtils.setRemoteSettingsRecords([]);
+  MerinoTestUtils.server.reset();
+  merinoClient().resetSession();
+
+  for (let searchString of ["", " ", "x", " x", "x "]) {
+    info(`Doing query: ${searchString}`);
+    await check_results({
+      context: createContext(searchString, {
+        providers: [UrlbarProviderQuickSuggest.name],
+        isPrivate: false,
+      }),
+      matches: [],
+    });
+    MerinoTestUtils.server.checkAndClearRequests([]);
+  }
+
+  await check_results({
+    context: createContext("xx", {
+      providers: [UrlbarProviderQuickSuggest.name],
+      isPrivate: false,
+    }),
+    matches: [EXPECTED_MERINO_URLBAR_RESULT],
+  });
+  MerinoTestUtils.server.checkAndClearRequests([
+    {
+      params: {
+        [MerinoTestUtils.SEARCH_PARAMS.QUERY]: "xx",
+        [MerinoTestUtils.SEARCH_PARAMS.SEQUENCE_NUMBER]: 0,
+      },
+    },
+  ]);
+
+  MerinoTestUtils.server.reset();
+  merinoClient().resetSession();
+  await resetRemoteSettingsData();
+});
+
 // When the Merino suggestion has a higher score than the remote settings
 // suggestion, the Merino suggestion should be used.
 add_task(async function higherScore() {
@@ -389,7 +431,7 @@ add_task(async function timestamps() {
       getSearchSource() {
         return "dummy-search-source";
       },
-      window: {
+      browserWindow: {
         location: {
           href: AppConstants.BROWSER_CHROME_URL,
         },

@@ -244,7 +244,7 @@ This is useful when you want to profile an existing task using custom profiler s
 
 ## Triggering Simpleperf Profiles in CI
 
-[Simpleperf is an android profiling tool](https://firefox-source-docs.mozilla.org/performance/profiling_with_simpleperf.html#profiling-on-android-with-simpleperf) which can profile all threads on an android device and also works for non-fenix apps.
+[Simpleperf is an android profiling tool](/performance/profiling_with_simpleperf.md#profiling-on-android-with-simpleperf) which can profile all threads on an android device and also works for non-fenix apps.
 At the moment, we only support generating Simpleperf profiles for video applink startup tests via the Treeherder UI.
 
 To trigger a CI run, go to one of those jobs, and click the `Generate Performance Profile` button.

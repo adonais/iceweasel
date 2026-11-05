@@ -316,6 +316,11 @@ add_task(async function test_clear_history_cancelled() {
     () => sidebarHistory.clear_history_cancelled.testGetValue() === 1,
     "clear_history_cancelled recorded"
   );
+  Assert.deepEqual(
+    Glean.browserSanitizer.dialogClosed.testGetValue()?.at(-1)?.extra,
+    { entry_point: "sidebar_history", outcome: "cancelled" },
+    "The dialog reports the history sidebar as its entry point."
+  );
   await SimpleTest.promiseFocus();
 });
 

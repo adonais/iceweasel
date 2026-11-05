@@ -19,18 +19,10 @@ add_setup(async function () {
   // inadvertently return any history results due to bug 1658646.
   await PlacesUtils.history.clear();
 
-  // Add a top site so we're guaranteed the view has at least one result to
-  // show initially with an empty search.  Otherwise the view won't even open.
+  UrlbarTestUtils.registerZeroPrefixProvider();
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "http://example.com/",
-      ],
-      ["browser.urlbar.scotchBonnet.enableOverride", false],
-    ],
+    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
   });
-  await updateTopSites(sites => sites.length);
 });
 
 // Basic test for entering search mode with no results.

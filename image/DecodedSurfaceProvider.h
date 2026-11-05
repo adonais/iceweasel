@@ -9,6 +9,7 @@
 #ifndef mozilla_image_DecodedSurfaceProvider_h
 #define mozilla_image_DecodedSurfaceProvider_h
 
+#include "Decoder.h"
 #include "IDecodingTask.h"
 #include "ISurfaceProvider.h"
 #include "SurfaceCache.h"

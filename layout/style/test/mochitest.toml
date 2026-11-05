@@ -435,14 +435,8 @@ skip-if = [
 support-files = ["flexbox_layout_testcases.js"]
 
 ["test_flexbox_order.html"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug && xorigin", # Bug 1932914
-]
 
 ["test_flexbox_order_abspos.html"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug && xorigin", # Bug 1932914
-]
 
 ["test_flexbox_order_table.html"]
 
@@ -726,7 +720,6 @@ fail-if = [
 ["test_transitions_replacement_on_busy_frame_omta.html"]
 skip-if = [
   "os == 'android' && arch == 'x86_64' && debug", # Bug 1905949
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1905949
 ]
 
 ["test_transitions_replacement_with_setKeyframes.html"]

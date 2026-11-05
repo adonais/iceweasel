@@ -126,4 +126,12 @@ bool EarlyHintRegistrar::LinkParentChannel(dom::ContentParentId aCpId,
   return found;
 }
 
+bool EarlyHintRegistrar::MatchesRequest(uint64_t aEarlyHintPreloaderId,
+                                        nsIURI* aURI, nsILoadInfo* aLoadInfo) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  RefPtr<EarlyHintPreloader> ehp = mEarlyHint.Get(aEarlyHintPreloaderId);
+  return ehp && ehp->MatchesRequest(aURI, aLoadInfo);
+}
+
 }  // namespace mozilla::net

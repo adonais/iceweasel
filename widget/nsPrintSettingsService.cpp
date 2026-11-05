@@ -914,7 +914,9 @@ nsPrintSettingsService::InitPrintSettingsFromPrefs(nsIPrintSettings* aPS,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (prtName.IsEmpty()) {
-    NS_WARNING("Caller should supply a printer name.");
+    // The name is deliberately empty when the caller doesn't want printer
+    // specific prefs to be used.
+    NS_WARNING_ASSERTION(!aUsePNP, "Caller should supply a printer name.");
     return NS_OK;
   }
 

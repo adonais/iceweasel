@@ -45,6 +45,97 @@ add_task(async function test_web_audio_interrupt_suspend_resume() {
   await tab.close();
 });
 
+// A gain that arrives before the interruption's suspend has taken effect still
+// resumes Web Audio once that suspend completes.
+add_task(async function test_web_audio_quick_interrupt_is_resumed() {
+  const tab = await createLoadedTabWrapper(WEB_AUDIO_URL, { needCheck: false });
+  const browser = tab.linkedBrowser;
+  const controller = browser.browsingContext.mediaController;
+
+  await startWebAudio(browser);
+  is(await audioContextState(browser), "running", "Web Audio is running");
+  Services.fog.testResetFOG();
+
+  // The gain reaches the page before the suspend completes, so the state may
+  // never read "suspended" and waitForAudioContextState() would return at once.
+  // Wait instead for the statechange that leaves the context running.
+  const resumed = await listenForAudioContextState(browser, "running");
+
+  info("a transient interruption ends right after it starts");
+  controller.pause("system-transient");
+  controller.resume();
+  await resumed();
+  is(await audioContextState(browser), "running", "Web Audio runs again");
+  await Services.fog.testFlushAllChildren();
+  is(
+    Glean.mediaAudioFocus.resumeDecision.web_audio.testGetValue(),
+    1,
+    "the resume is counted"
+  );
+
+  await tab.close();
+});
+
+// An interruption that arrives while a page resume() is still taking effect
+// suspends Web Audio, and the gain resumes it.
+add_task(async function test_web_audio_resuming_is_suspended_by_interrupt() {
+  const tab = await createLoadedTabWrapper(WEB_AUDIO_URL, { needCheck: false });
+  const browser = tab.linkedBrowser;
+  const controller = browser.browsingContext.mediaController;
+
+  await startWebAudio(browser);
+  await SpecialPowers.spawn(browser, [], async () => {
+    await content.ac.suspend();
+  });
+
+  // The state may never leave "suspended", so waitForAudioContextState() would
+  // return at once. Wait instead for the statechange that leaves the context
+  // suspended. The interruption has to reach the page before the graph applies
+  // the resume, which takes longer than the IPC round trip.
+  const suspended = await listenForAudioContextState(browser, "suspended");
+  info("the page resumes Web Audio, and an interruption arrives right after");
+  await SpecialPowers.spawn(browser, [], () => {
+    content.ac.resume();
+  });
+  controller.pause("system-transient");
+  await suspended();
+  is(await audioContextState(browser), "suspended", "Web Audio is suspended");
+
+  info("the gain resumes the Web Audio the interruption suspended");
+  controller.resume();
+  await waitForAudioContextState(browser, "running");
+
+  await tab.close();
+});
+
+// An interruption that arrives while the window is suspended still suspends Web
+// Audio, so resuming the window does not restart it before the gain.
+add_task(async function test_web_audio_in_suspended_window_is_interrupted() {
+  const tab = await createLoadedTabWrapper(WEB_AUDIO_URL, { needCheck: false });
+  const browser = tab.linkedBrowser;
+  const controller = browser.browsingContext.mediaController;
+
+  await startWebAudio(browser);
+  await SpecialPowers.spawn(browser, [], () =>
+    content.windowUtils.suspendTimeouts()
+  );
+
+  info("an interruption arrives while the window is suspended");
+  controller.pause("system-transient");
+  // A window suspend does not change the state, so it still reads "running"
+  // until the interruption suspends the context.
+  await waitForAudioContextState(browser, "suspended");
+  await SpecialPowers.spawn(browser, [], () =>
+    content.windowUtils.resumeTimeouts()
+  );
+
+  info("the gain resumes the Web Audio the interruption suspended");
+  controller.resume();
+  await waitForAudioContextState(browser, "running");
+
+  await tab.close();
+});
+
 // If the page suspends its own AudioContext while interrupted, it has taken
 // over the suspended state; a later interruption end must not auto-resume it.
 add_task(async function test_page_suspend_during_interrupt_is_not_resumed() {
@@ -62,6 +153,7 @@ add_task(async function test_page_suspend_during_interrupt_is_not_resumed() {
   });
 
   info("a resume must leave the page-owned suspend untouched");
+  Services.fog.testResetFOG();
   controller.resume();
   // Once the page has suspended, the context stays suspended until the page
   // itself resumes, so this state is stable: a read returns "suspended" whether
@@ -70,6 +162,12 @@ add_task(async function test_page_suspend_during_interrupt_is_not_resumed() {
     await audioContextState(browser),
     "suspended",
     "page-owned suspend is not auto-resumed"
+  );
+  await Services.fog.testFlushAllChildren();
+  is(
+    Glean.mediaAudioFocus.resumeDecision.web_audio.testGetValue() ?? 0,
+    0,
+    "the skipped resume is not counted"
   );
 
   info("only the page can resume its own AudioContext");
@@ -244,6 +342,22 @@ function startWebAudio(browser) {
 
 function audioContextState(browser) {
   return SpecialPowers.spawn(browser, [], () => content.ac.state);
+}
+
+// Starts listening for a statechange that leaves the context in `expected`,
+// and returns a function that waits for it.
+async function listenForAudioContextState(browser, expected) {
+  await SpecialPowers.spawn(browser, [expected], expected => {
+    content.stateReached = new content.Promise(resolve => {
+      content.ac.addEventListener("statechange", function listener() {
+        if (content.ac.state == expected) {
+          content.ac.removeEventListener("statechange", listener);
+          resolve();
+        }
+      });
+    });
+  });
+  return () => SpecialPowers.spawn(browser, [], () => content.stateReached);
 }
 
 function waitForAudioContextState(browser, expected) {

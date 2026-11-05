@@ -210,36 +210,6 @@ nssCertificate_GetEncoding(NSSCertificate *c)
     }
 }
 
-NSS_IMPLEMENT NSSDER *
-nssCertificate_GetIssuer(NSSCertificate *c)
-{
-    if (c->issuer.size > 0 && c->issuer.data) {
-        return &c->issuer;
-    } else {
-        return (NSSDER *)NULL;
-    }
-}
-
-NSS_IMPLEMENT NSSDER *
-nssCertificate_GetSerialNumber(NSSCertificate *c)
-{
-    if (c->serial.size > 0 && c->serial.data) {
-        return &c->serial;
-    } else {
-        return (NSSDER *)NULL;
-    }
-}
-
-NSS_IMPLEMENT NSSDER *
-nssCertificate_GetSubject(NSSCertificate *c)
-{
-    if (c->subject.size > 0 && c->subject.data) {
-        return &c->subject;
-    } else {
-        return (NSSDER *)NULL;
-    }
-}
-
 /* Returns a copy, Caller must free using nss_ZFreeIf */
 NSS_IMPLEMENT NSSUTF8 *
 nssCertificate_GetNickname(
@@ -249,71 +219,12 @@ nssCertificate_GetNickname(
     return nssPKIObject_GetNicknameForToken(&c->object, tokenOpt);
 }
 
-NSS_IMPLEMENT NSSASCII7 *
-nssCertificate_GetEmailAddress(NSSCertificate *c)
-{
-    return c->email;
-}
-
 NSS_IMPLEMENT PRStatus
 NSSCertificate_DeleteStoredObject(
     NSSCertificate *c,
     NSSCallback *uhh)
 {
     return nssPKIObject_DeleteStoredObject(&c->object, uhh, PR_TRUE);
-}
-
-NSS_IMPLEMENT PRStatus
-NSSCertificate_Validate(
-    NSSCertificate *c,
-    NSSTime *timeOpt, /* NULL for "now" */
-    NSSUsage *usage,
-    NSSPolicies *policiesOpt /* NULL for none */
-)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT void ** /* void *[] */
-NSSCertificate_ValidateCompletely(
-    NSSCertificate *c,
-    NSSTime *timeOpt, /* NULL for "now" */
-    NSSUsage *usage,
-    NSSPolicies *policiesOpt, /* NULL for none */
-    void **rvOpt,             /* NULL for allocate */
-    PRUint32 rvLimit,         /* zero for no limit */
-    NSSArena *arenaOpt        /* NULL for heap */
-)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT PRStatus
-NSSCertificate_ValidateAndDiscoverUsagesAndPolicies(
-    NSSCertificate *c,
-    NSSTime **notBeforeOutOpt,
-    NSSTime **notAfterOutOpt,
-    void *allowedUsages,
-    void *disallowedUsages,
-    void *allowedPolicies,
-    void *disallowedPolicies,
-    /* more args.. work on this fgmr */
-    NSSArena *arenaOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT NSSDER *
-NSSCertificate_Encode(
-    NSSCertificate *c,
-    NSSDER *rvOpt,
-    NSSArena *arenaOpt)
-{
-    /* Item, DER, BER are all typedefs now... */
-    return nssItem_Duplicate((NSSItem *)&c->encoding, arenaOpt, rvOpt);
 }
 
 NSS_IMPLEMENT nssDecodedCert *
@@ -578,90 +489,6 @@ NSS_IMPLEMENT NSSTrustDomain *
 NSSCertificate_GetTrustDomain(NSSCertificate *c)
 {
     return nssCertificate_GetTrustDomain(c);
-}
-
-NSS_IMPLEMENT NSSToken *
-NSSCertificate_GetToken(
-    NSSCertificate *c,
-    PRStatus *statusOpt)
-{
-    return (NSSToken *)NULL;
-}
-
-NSS_IMPLEMENT NSSSlot *
-NSSCertificate_GetSlot(
-    NSSCertificate *c,
-    PRStatus *statusOpt)
-{
-    return (NSSSlot *)NULL;
-}
-
-NSS_IMPLEMENT NSSModule *
-NSSCertificate_GetModule(
-    NSSCertificate *c,
-    PRStatus *statusOpt)
-{
-    return (NSSModule *)NULL;
-}
-
-NSS_IMPLEMENT NSSItem *
-NSSCertificate_Encrypt(
-    NSSCertificate *c,
-    NSSAlgorithmAndParameters *apOpt,
-    NSSItem *data,
-    NSSTime *timeOpt,
-    NSSUsage *usage,
-    NSSPolicies *policiesOpt,
-    NSSCallback *uhh,
-    NSSItem *rvOpt,
-    NSSArena *arenaOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT PRStatus
-NSSCertificate_Verify(
-    NSSCertificate *c,
-    NSSAlgorithmAndParameters *apOpt,
-    NSSItem *data,
-    NSSItem *signature,
-    NSSTime *timeOpt,
-    NSSUsage *usage,
-    NSSPolicies *policiesOpt,
-    NSSCallback *uhh)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT NSSItem *
-NSSCertificate_VerifyRecover(
-    NSSCertificate *c,
-    NSSAlgorithmAndParameters *apOpt,
-    NSSItem *signature,
-    NSSTime *timeOpt,
-    NSSUsage *usage,
-    NSSPolicies *policiesOpt,
-    NSSCallback *uhh,
-    NSSItem *rvOpt,
-    NSSArena *arenaOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCryptoContext *
-NSSCertificate_CreateCryptoContext(
-    NSSCertificate *c,
-    NSSAlgorithmAndParameters *apOpt,
-    NSSTime *timeOpt,
-    NSSUsage *usage,
-    NSSPolicies *policiesOpt,
-    NSSCallback *uhh)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
 }
 
 NSS_IMPLEMENT PRBool
@@ -1051,14 +878,6 @@ nssCRL_Destroy(NSSCRL *crl)
         (void)nssPKIObject_Destroy(&crl->object);
     }
     return PR_SUCCESS;
-}
-
-NSS_IMPLEMENT PRStatus
-nssCRL_DeleteStoredObject(
-    NSSCRL *crl,
-    NSSCallback *uhh)
-{
-    return nssPKIObject_DeleteStoredObject(&crl->object, uhh, PR_TRUE);
 }
 
 NSS_IMPLEMENT NSSDER *

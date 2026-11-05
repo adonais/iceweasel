@@ -109,13 +109,13 @@ class Decoder {
   bool formatSimdVdVjVkFa(const char* mnemonic, uint32_t word) const;
   bool formatSimdVdImm13(const char* mnemonic, uint32_t word) const;
   bool formatSimdVdRjImm(const char* mnemonic, uint32_t word, uint32_t bits,
-                         bool sign) const;
+                         bool sign, uint32_t shift = 0) const;
   bool formatSimdVdVjImm(const char* mnemonic, uint32_t word, uint32_t bits,
                          bool sign) const;
   bool formatSimdRdVjImm(const char* mnemonic, uint32_t word, uint32_t bits,
                          bool sign) const;
   bool formatSimdVdRjImm8Idx(const char* mnemonic, uint32_t word,
-                             uint32_t lane_bits) const;
+                             uint32_t lane_bits, uint32_t shift = 0) const;
   bool formatSimdCmpCond(const char* mnemonic, uint32_t word,
                          bool isDouble) const;
 
@@ -511,16 +511,18 @@ bool Decoder::formatSimdVdImm13(const char* mnemonic, uint32_t word) const {
 }
 
 bool Decoder::formatSimdVdRjImm(const char* mnemonic, uint32_t word,
-                                uint32_t bits, bool sign) const {
+                                uint32_t bits, bool sign,
+                                uint32_t shift) const {
   if (sign) {
     FormatTo(output_, "%-12s %s, %s, %" PRId32, mnemonic,
              vpu(Extract(word, FDShift, FDBits)),
              cpu(Extract(word, RJShift, RJBits)),
-             SignExtend(Extract(word, 10, bits), bits));
+             SignExtend(Extract(word, 10, bits), bits) * (INT32_C(1) << shift));
   } else {
     FormatTo(output_, "%-12s %s, %s, 0x%" PRIx32, mnemonic,
              vpu(Extract(word, FDShift, FDBits)),
-             cpu(Extract(word, RJShift, RJBits)), Extract(word, 10, bits));
+             cpu(Extract(word, RJShift, RJBits)),
+             Extract(word, 10, bits) << shift);
   }
   return true;
 }
@@ -556,10 +558,11 @@ bool Decoder::formatSimdRdVjImm(const char* mnemonic, uint32_t word,
 }
 
 bool Decoder::formatSimdVdRjImm8Idx(const char* mnemonic, uint32_t word,
-                                    uint32_t lane_bits) const {
-  FormatTo(output_, "%-12s %s, %s, 0x%" PRIx32 ", 0x%" PRIx32, mnemonic,
+                                    uint32_t lane_bits, uint32_t shift) const {
+  FormatTo(output_, "%-12s %s, %s, %" PRId32 ", 0x%" PRIx32, mnemonic,
            vpu(Extract(word, FDShift, FDBits)),
-           cpu(Extract(word, RJShift, RJBits)), Extract(word, 10, 8),
+           cpu(Extract(word, RJShift, RJBits)),
+           SignExtend(Extract(word, 10, 8), 8) * (INT32_C(1) << shift),
            Extract(word, 18, lane_bits));
   return true;
 }
@@ -625,9 +628,9 @@ bool Decoder::decodeOp11(const Instruction* instruction) const {
       return formatRdRjMsbWLsbW(
           Extract(word, 15, 1) ? "bstrpick.w" : "bstrins.w", word);
     case op_vldrepl_h:
-      return formatSimdVdRjImm("vldrepl.h", word, 11, false);
+      return formatSimdVdRjImm("vldrepl.h", word, 11, true, 1);
     case op_vstelm_h:
-      return formatSimdVdRjImm8Idx("vstelm.h", word, 3);
+      return formatSimdVdRjImm8Idx("vstelm.h", word, 3, 1);
     default:
       return false;
   }
@@ -673,9 +676,9 @@ bool Decoder::decodeOp12(const Instruction* instruction) const {
     case op_vshuf_b:
       return formatSimdVdVjVkFa("vshuf.b", word);
     case op_vldrepl_w:
-      return formatSimdVdRjImm("vldrepl.w", word, 10, false);
+      return formatSimdVdRjImm("vldrepl.w", word, 10, true, 2);
     case op_vstelm_w:
-      return formatSimdVdRjImm8Idx("vstelm.w", word, 2);
+      return formatSimdVdRjImm8Idx("vstelm.w", word, 2, 2);
     default:
       return false;
   }
@@ -685,9 +688,9 @@ bool Decoder::decodeOp13(const Instruction* instruction) const {
   uint32_t word = instruction->encode();
   switch (word & OpcodeMask(13)) {
     case op_vldrepl_d:
-      return formatSimdVdRjImm("vldrepl.d", word, 9, false);
+      return formatSimdVdRjImm("vldrepl.d", word, 9, true, 3);
     case op_vstelm_d:
-      return formatSimdVdRjImm8Idx("vstelm.d", word, 1);
+      return formatSimdVdRjImm8Idx("vstelm.d", word, 1, 3);
     default:
       return false;
   }
@@ -797,9 +800,9 @@ bool Decoder::decodeOp10(const Instruction* instruction) const {
     case op_vst:
       return formatSimdVdRjImm("vst", word, 12, true);
     case op_vldrepl_b:
-      return formatSimdVdRjImm("vldrepl.b", word, 12, false);
+      return formatSimdVdRjImm("vldrepl.b", word, 12, true, 0);
     case op_vstelm_b:
-      return formatSimdVdRjImm8Idx("vstelm.b", word, 4);
+      return formatSimdVdRjImm8Idx("vstelm.b", word, 4, 0);
     default:
       return false;
   }

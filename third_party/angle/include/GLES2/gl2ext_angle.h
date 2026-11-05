@@ -82,15 +82,6 @@ GL_APICALL void GL_APIENTRY glProvokingVertexANGLE(GLenum provokeMode);
 #define GL_RENDERABILITY_VALIDATION_ANGLE 0x9EA0
 #endif /* GL_ANGLE_renderability_validation */
 
-#ifndef GL_CHROMIUM_framebuffer_mixed_samples
-#define GL_CHROMIUM_frambuffer_mixed_samples 1
-#define GL_COVERAGE_MODULATION_CHROMIUM 0x9332
-typedef void (GL_APIENTRYP PFNGLCOVERAGEMODULATIONCHROMIUMPROC) (GLenum components);
-#ifdef GL_GLEXT_PROTOTYPES
-GL_APICALL void GL_APIENTRY glCoverageModulationCHROMIUM(GLenum components);
-#endif
-#endif /* GL_CHROMIUM_framebuffer_mixed_samples */
-
 #ifndef GL_CHROMIUM_bind_generates_resource
 #define GL_CHROMIUM_bind_generates_resource 1
 #define GL_BIND_GENERATES_RESOURCE_CHROMIUM 0x9244
@@ -714,5 +705,16 @@ GL_APICALL void GL_APIENTRY glGetPointervANGLE (GLenum pname, void **params);
 typedef void *GLeglDisplayANGLE;
 typedef void *GLeglContextANGLE;
 #endif /* GL_ANGLE_explicit_context */
+
+#ifndef GL_ANGLE_trim_memory
+#define GL_ANGLE_trim_memory 1
+#define GL_MEMORY_TRIM_LOW_ANGLE         0x0960
+#define GL_MEMORY_TRIM_MEDIUM_ANGLE      0x0961
+#define GL_MEMORY_TRIM_HIGH_ANGLE        0x0962
+typedef void(GL_APIENTRYP PFNGLTRIMMEMORYANGLEPROC)(GLenum trimLevel);
+#ifdef GL_GLEXT_PROTOTYPES
+GL_APICALL void GL_APIENTRY glTrimMemoryANGLE(GLenum trimLevel);
+#endif
+#endif /* GL_ANGLE_trim_memory */
 
 #endif  // INCLUDE_GLES2_GL2EXT_ANGLE_H_

@@ -490,7 +490,7 @@ class BackupTest(MarionetteTestCase):
               Ci.nsIX509CertDB
             );
 
-            if (certDb.findCertByDBKey(certDbKey)) {
+            if (await certDb.asyncFindCertByDBKey(certDbKey)) {
               throw new Error("Should not have this certificate yet!");
             }
 
@@ -523,7 +523,7 @@ class BackupTest(MarionetteTestCase):
             let certDb = Cc["@mozilla.org/security/x509certdb;1"].getService(
               Ci.nsIX509CertDB
             );
-            return certDb.findCertByDBKey(certDbKey) != null;
+            return (await certDb.asyncFindCertByDBKey(certDbKey)) != null;
           })().then(outerResolve);
         """,
             script_args=[self._cert_db_key],

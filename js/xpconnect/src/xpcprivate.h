@@ -629,6 +629,10 @@ class MOZ_STACK_CLASS XPCCallContext final {
 
   virtual ~XPCCallContext();
 
+  // no copy ctor or assignment allowed
+  XPCCallContext(const XPCCallContext& r) = delete;
+  XPCCallContext& operator=(const XPCCallContext& r) = delete;
+
   inline bool IsValid() const;
 
   inline XPCJSContext* GetContext() const;
@@ -672,11 +676,6 @@ class MOZ_STACK_CLASS XPCCallContext final {
   void SystemIsBeingShutDown();
 
   operator JSContext*() const { return GetJSContext(); }
-
- private:
-  // no copy ctor or assignment allowed
-  XPCCallContext(const XPCCallContext& r) = delete;
-  XPCCallContext& operator=(const XPCCallContext& r) = delete;
 
  private:
   // posible values for mState
@@ -827,6 +826,8 @@ class XPCWrappedNativeScope final
                         JS::HandleObject aFirstGlobal);
   virtual ~XPCWrappedNativeScope();
 
+  XPCWrappedNativeScope() = delete;
+
   mozilla::UniquePtr<JSObject2JSObjectMap> mWaiverWrapperMap;
 
   JS::Compartment* Compartment() const { return mCompartment; }
@@ -844,9 +845,6 @@ class XPCWrappedNativeScope final
   JS::Heap<JSObject*> mIDProto;
   JS::Heap<JSObject*> mIIDProto;
   JS::Heap<JSObject*> mCIDProto;
-
- protected:
-  XPCWrappedNativeScope() = delete;
 
  private:
   mozilla::UniquePtr<Native2WrappedNativeMap> mWrappedNativeMap;
@@ -1014,20 +1012,20 @@ class XPCNativeInterface final {
 
   void Trace(JSTracer* trc);
 
+  XPCNativeInterface() = delete;
+  XPCNativeInterface(const XPCNativeInterface& r) = delete;
+  XPCNativeInterface& operator=(const XPCNativeInterface& r) = delete;
+
  protected:
   static already_AddRefed<XPCNativeInterface> NewInstance(
       JSContext* cx, IID2NativeInterfaceMap* aMap,
       const nsXPTInterfaceInfo* aInfo);
 
-  XPCNativeInterface() = delete;
   XPCNativeInterface(const nsXPTInterfaceInfo* aInfo, jsid aName)
       : mInfo(aInfo), mName(aName), mMemberCount(0) {}
   ~XPCNativeInterface();
 
   void* operator new(size_t, void* p) noexcept(true) { return p; }
-
-  XPCNativeInterface(const XPCNativeInterface& r) = delete;
-  XPCNativeInterface& operator=(const XPCNativeInterface& r) = delete;
 
   static void DestroyInstance(XPCNativeInterface* inst);
 
@@ -1212,11 +1210,11 @@ class XPCWrappedNativeProto final {
 
   ~XPCWrappedNativeProto();
 
- protected:
   // disable copy ctor and assignment
   XPCWrappedNativeProto(const XPCWrappedNativeProto& r) = delete;
   XPCWrappedNativeProto& operator=(const XPCWrappedNativeProto& r) = delete;
 
+ protected:
   // hide ctor
   XPCWrappedNativeProto(XPCWrappedNativeScope* Scope, nsIClassInfo* ClassInfo,
                         RefPtr<XPCNativeSet>&& Set);
@@ -1268,6 +1266,9 @@ class XPCWrappedNativeTearOff final {
   }
   ~XPCWrappedNativeTearOff();
 
+  XPCWrappedNativeTearOff(const XPCWrappedNativeTearOff& r) = delete;
+  XPCWrappedNativeTearOff& operator=(const XPCWrappedNativeTearOff& r) = delete;
+
   // NOP. This is just here to make the AutoMarkingPtr code compile.
   inline void TraceJS(JSTracer* trc) {}
   inline void AutoTrace(JSTracer* trc) {}
@@ -1283,10 +1284,6 @@ class XPCWrappedNativeTearOff final {
   }
 
   XPCWrappedNativeTearOff* GetNextTearOff() { return mNextTearOff.get(); }
-
- private:
-  XPCWrappedNativeTearOff(const XPCWrappedNativeTearOff& r) = delete;
-  XPCWrappedNativeTearOff& operator=(const XPCWrappedNativeTearOff& r) = delete;
 
  private:
   XPCNativeInterface* mInterface;
@@ -1476,10 +1473,10 @@ class XPCWrappedNative final : public nsIXPConnectWrappedNative {
   void Suspect(nsCycleCollectionNoteRootCallback& cb);
   void NoteTearoffs(nsCycleCollectionTraversalCallback& cb);
 
-  // Make ctor and dtor protected (rather than private) to placate nsCOMPtr.
- protected:
   XPCWrappedNative() = delete;
 
+  // Make ctor and dtor protected (rather than private) to placate nsCOMPtr.
+ protected:
   // This ctor is used if this object will have a proto.
   XPCWrappedNative(nsCOMPtr<nsISupports>&& aIdentity,
                    XPCWrappedNativeProto* aProto);
@@ -1632,9 +1629,9 @@ class nsXPCWrappedJS final : protected nsAutoXPTCStub,
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
   virtual ~nsXPCWrappedJS();
+  nsXPCWrappedJS() = delete;
 
  protected:
-  nsXPCWrappedJS() = delete;
   nsXPCWrappedJS(JSContext* cx, JSObject* aJSObj,
                  const nsXPTInterfaceInfo* aInfo, nsXPCWrappedJS* root,
                  nsresult* rv);
@@ -1792,6 +1789,8 @@ class XPCConvert {
                                      mozilla::dom::Exception** exception,
                                      JSContext* cx, JS::Value* jsExceptionPtr);
 
+  XPCConvert() = delete;
+
  private:
   /**
    * Convert a native array into a JS::Value.
@@ -1828,8 +1827,6 @@ class XPCConvert {
                              const nsXPTType& aEltType, const nsIID* aIID,
                              nsresult* pErr,
                              const ArrayAllocFixupLen& aAllocFixupLen);
-
-  XPCConvert() = delete;
 };
 
 /***************************************************************************/
@@ -1929,15 +1926,15 @@ class MOZ_RAII AutoScriptEvaluate {
    */
   ~AutoScriptEvaluate();
 
+  // No copying or assignment allowed
+  AutoScriptEvaluate(const AutoScriptEvaluate&) = delete;
+  AutoScriptEvaluate& operator=(const AutoScriptEvaluate&) = delete;
+
  private:
   JSContext* mJSContext;
   mozilla::Maybe<JS::AutoSaveExceptionState> mState;
   bool mEvaluated;
   mozilla::Maybe<JSAutoRealm> mAutoRealm;
-
-  // No copying or assignment allowed
-  AutoScriptEvaluate(const AutoScriptEvaluate&) = delete;
-  AutoScriptEvaluate& operator=(const AutoScriptEvaluate&) = delete;
 };
 
 /***************************************************************************/
@@ -2528,9 +2525,6 @@ class CompartmentOriginInfo {
 // information needed to select the right security policy for cross-compartment
 // wrappers.
 class CompartmentPrivate {
-  CompartmentPrivate() = delete;
-  CompartmentPrivate(const CompartmentPrivate&) = delete;
-
  public:
   CompartmentPrivate(JS::Compartment* c,
                      mozilla::UniquePtr<XPCWrappedNativeScope> scope,
@@ -2538,6 +2532,9 @@ class CompartmentPrivate {
                      const mozilla::SiteIdentifier& site);
 
   ~CompartmentPrivate();
+
+  CompartmentPrivate() = delete;
+  CompartmentPrivate(const CompartmentPrivate&) = delete;
 
   static CompartmentPrivate* Get(JS::Compartment* compartment) {
     MOZ_ASSERT(compartment);
@@ -2636,13 +2633,13 @@ inline void CrashIfNotInAutomation() { MOZ_RELEASE_ASSERT(IsInAutomation()); }
 // Window) and its associated scripts and objects; a compartment may contain
 // several same-origin realms.
 class RealmPrivate {
-  RealmPrivate() = delete;
-  RealmPrivate(const RealmPrivate&) = delete;
-
  public:
   enum LocationHint { LocationHintRegular, LocationHintAddon };
 
   explicit RealmPrivate(JS::Realm* realm);
+
+  RealmPrivate() = delete;
+  RealmPrivate(const RealmPrivate&) = delete;
 
   // Creates the RealmPrivate and CompartmentPrivate (if needed) for a new
   // global.

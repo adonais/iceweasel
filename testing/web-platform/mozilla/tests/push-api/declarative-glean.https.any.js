@@ -14,6 +14,7 @@ promise_setup(async (t) => {
   await trySettingPermission("granted");
   registration = await prepareActiveServiceWorker("push-sw.js");
   subscription = await registration.pushManager.subscribe();
+  add_completion_callback(() => subscription.unsubscribe());
 });
 
 let enableDWPPref;

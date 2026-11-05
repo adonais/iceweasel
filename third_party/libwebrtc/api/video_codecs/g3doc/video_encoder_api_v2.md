@@ -40,6 +40,7 @@ The general outline of the `VideoEncoderFactoryInterface` is described here:
 class VideoEncoderFactoryInterface {
  public:
   enum class RateControlMode { kCqp, kCbr };
+  enum class CbrSetting { kBufferSizes, kMaxIntraBitrateFactor };
 
   struct Capabilities {
     struct PredictionConstraints {
@@ -59,7 +60,7 @@ class VideoEncoderFactoryInterface {
       int max_spatial_layers;
       std::vector<Rational> scaling_factors;
 
-      std::vector<FrameType> supported_frame_types;
+      std::set<FrameType> supported_frame_types;
     } prediction_constraints;
 
     struct InputConstraints {
@@ -73,7 +74,8 @@ class VideoEncoderFactoryInterface {
 
     struct BitrateControl {
       std::pair<int, int> qp_range;
-      std::vector<RateControlMode> rc_modes;
+      std::set<RateControlMode> rc_modes;
+      std::set<CbrSetting> supported_cbr_settings;
     } rate_control;
 
     struct Performance {
@@ -87,6 +89,7 @@ class VideoEncoderFactoryInterface {
     struct Cbr {
       TimeDelta max_buffer_size;
       TimeDelta target_buffer_size;
+      double max_intra_bitrate_factor;
     };
 
     Resolution max_encode_dimensions;
@@ -130,12 +133,27 @@ Represents settings that are fixed for the entire lifetime of the encoder.
   and know that only sizes equal to or lower than those will be used.
 - **`encoding_format`**: The encoded output format (`EncodingFormat`).
 - **`rc_mode`**: The rate control mode to be used when encoding.
-  - \*\* `Cqp` \*\*: Constant QP mode.
-  - **`Cbr`**: Constant bitrate mode.
-    - **`max_buffer_size`**: The max buffer size, specified as a `TimeDelta`
-      duration.
-    - **`target_buffer_size`**: What the target buffer size should be, specified
-      as a `TimeDelta` duration.
+  - **`Cqp`**: Constant QP mode.
+  - **`Cbr`**: Constant bitrate mode. The encoder picks the QP needed to meet
+    the per frame bit budget implied by the target bitrate and frame duration
+    given in `FrameEncodeSettings`. Individual frames will be larger or smaller
+    than that budget, and these settings say how much of that variation the
+    caller can absorb, expressed as the transmission delay it adds when the
+    stream is sent over a channel with a capacity equal to the target bitrate.
+    Note that an encoder is not required to honor all of these settings, see
+    [Bitrate Control](#bitrate-control), and that settings which are out of
+    range are rejected, i.e. `CreateEncoder` returns nullptr.
+    - **`max_buffer_size`**: The largest transmission delay the encoder may
+      cause. The encoder is expected to stay within this bound even at the cost
+      of quality. Must be finite and greater than zero.
+    - **`target_buffer_size`**: The transmission delay the encoder should
+      operate at, leaving the difference up to `max_buffer_size` as headroom for
+      bursts, such as intra frames or sudden changes in the content. Must be
+      greater than zero and at most `max_buffer_size`.
+    - **`max_intra_bitrate_factor`**: How much data an intra frame may use,
+      expressed as a multiple of the bit budget of a frame on the same temporal
+      layer. This controls the trade off between the quality of intra frames and
+      the delay they add. Must be finite and at least 1.0.
 - **`max_number_of_threads`**: The maximum number of threads that the encoder
   instance may spawn.
 
@@ -270,7 +288,8 @@ struct EncodingFormat {
 ```cpp
 struct BitrateControl {
   std::pair<int, int> qp_range;
-  std::vector<RateControlMode> rc_modes;
+  std::set<RateControlMode> rc_modes;
+  std::set<CbrSetting> supported_cbr_settings;
 };
 ```
 
@@ -282,6 +301,11 @@ struct BitrateControl {
   - **`RateControlMode::kCqp` (Constant QP)**: The encoder MUST allow setting
     the QP on a per-frame basis in this mode. By setting per-frame QP we can
     implement external rate control.
+- **`supported_cbr_settings`**: The settings in `StaticEncoderSettings::Cbr`
+  that the encoder honors. `kBufferSizes` covers `max_buffer_size` and
+  `target_buffer_size`, which are only meaningful together. Settings not listed
+  here are ignored by the encoder, which uses an implementation defined behavior
+  instead. Only meaningful if `rc_modes` contains `RateControlMode::kCbr`.
 
 ### Performance
 

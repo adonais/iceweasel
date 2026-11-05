@@ -49,3 +49,9 @@ with Files("**"):
 
 BROWSER_CHROME_MANIFESTS += ["test/browser.toml"]
 MOCHITEST_MANIFESTS += ["test/mochitest.toml"]
+
+SOURCE_HEADERS += [
+    "BasicCardPayment.h",
+    "PaymentActionResponse.h",
+    "PaymentRequestUtils.h",
+]

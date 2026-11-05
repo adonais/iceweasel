@@ -18,13 +18,7 @@ These tests can be run on CI when pushing to TRY. Not all tests are enabled at t
 These tests are located in `tests/node/`, and can be run with the following command:
 
 ```sh
-cd devtools/client/webconsole/test/node && npm install && npm test
-```
-
-or using yarn with
-
-```sh
-cd devtools/client/webconsole/test/node && yarn && yarn test
+cd devtools/client/webconsole/test/node && npm ci && npm test
 ```
 
 ---

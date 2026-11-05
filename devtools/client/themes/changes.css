@@ -102,6 +102,7 @@
   fill: currentColor;
   padding-block: 4px;
   padding-inline: 25px 5px;
+  user-select: none;
 }
 
 .changes__copy-all-changes-button:dir(rtl) {
@@ -140,6 +141,7 @@
   position: absolute;
   right: 5px;
   top: 2px;
+  user-select: none;
 }
 
 .changes__copy-rule-button:active {

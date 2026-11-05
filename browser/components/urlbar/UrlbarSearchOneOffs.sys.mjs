@@ -237,14 +237,15 @@ export class UrlbarSearchOneOffs extends SearchOneOffs {
         // setSearchMode.
         searchMode.isPreview = false;
 
-        let newTab = this.input.window.gBrowser.addTrustedTab("about:newtab");
+        let newTab =
+          this.input.browserWindow.gBrowser.addTrustedTab("about:newtab");
         this.input.setSearchMode(searchMode, newTab.linkedBrowser);
         if (userTypedSearchString) {
           // Set the search string for the new tab.
           newTab.linkedBrowser.userTypedValue = this.input.value;
         }
         if (!params?.inBackground) {
-          this.input.window.gBrowser.selectedTab = newTab;
+          this.input.browserWindow.gBrowser.selectedTab = newTab;
           newTab.documentGlobal.gURLBar.startQuery(startQueryParams);
         }
         break;

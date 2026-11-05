@@ -37,8 +37,6 @@ GLenum WebGL2Context::ClientWaitSync(WebGLSync& sync, GLbitfield flags,
   const FuncScope funcScope(*this, "clientWaitSync");
   if (IsContextLost()) return LOCAL_GL_WAIT_FAILED;
 
-  if (!ValidateObject("sync", sync)) return LOCAL_GL_WAIT_FAILED;
-
   if (flags != 0 && flags != LOCAL_GL_SYNC_FLUSH_COMMANDS_BIT) {
     ErrorInvalidValue("`flags` must be SYNC_FLUSH_COMMANDS_BIT or 0.");
     return LOCAL_GL_WAIT_FAILED;

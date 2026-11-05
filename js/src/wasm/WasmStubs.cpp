@@ -2844,15 +2844,28 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
   // Otherwise, the return value is the TrapData::resumePC we must jump to.
   // We must restore register state before jumping, which will clobber
   // ReturnReg, so store ReturnReg in the above-reserved stack slot which we
-  // use to jump to via ret.
+  // use to jump to below.
   masm.storePtr(ReturnReg, Address(masm.getStackPointer(), offsetOfReturnWord));
   masm.PopRegsInMask(RegsToPreserve);
 
-#ifdef JS_CODEGEN_ARM64
-  WasmPop(masm, lr);
-  masm.abiret();
-#else
+  // TrapData::resumePC is now at the top of the stack. We use an architecture
+  // specific mechanism to jump to the resume point while preserving the
+  // assumption that registers in the surrounding code are not clobbered:
+  // - On arm: ret() pops the target directly into PC.
+  // - On arm64, riscv64, mips64 and loong64: the link-register is clobbered to
+  // perform an indirect jump to the resume point.
+  // - On x86 and x64: the indirect jump directly uses the address on the stack.
+  // The resume point is responsible for cleaning up the stack slot.
+#if defined(JS_CODEGEN_ARM)
   masm.ret();
+#elif defined(JS_USE_LINK_REGISTER)
+  WasmPop(masm, LinkRegister);
+#  ifdef JS_CODEGEN_ARM64
+  masm.syncStackPtr();
+#  endif
+  masm.jump(LinkRegister);
+#else
+  masm.jump(Address(masm.getStackPointer(), 0));
 #endif
 
   return FinishOffsets(masm, offsets);

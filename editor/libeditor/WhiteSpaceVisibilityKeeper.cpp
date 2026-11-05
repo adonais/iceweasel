@@ -2206,6 +2206,11 @@ WhiteSpaceVisibilityKeeper::InsertTextOrInsertOrUpdateCompositionString(
                 pointToInsert.GetContainer())
                 ? pointToInsert.GetContainerOrContainerParentElement()
                 : &aEditingHost;
+        // If we're replacing text, the insertion point needs to be in a Text
+        // after removing unnecessary line break.
+        const bool expectPointToInsertInText =
+            pointToInsert.GetContainer()->IsText() &&
+            insertTextData.ReplaceLength();
         {
           AutoTrackDOMPoint trackCurrentPoint(aHTMLEditor.RangeUpdaterRef(),
                                               &pointToInsert);
@@ -2218,7 +2223,9 @@ WhiteSpaceVisibilityKeeper::InsertTextOrInsertOrUpdateCompositionString(
             return deleteLineBreakResultOrError.propagateErr();
           }
         }
-        if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
+        if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc()) ||
+            NS_WARN_IF(expectPointToInsertInText &&
+                       !pointToInsert.GetContainer()->IsText())) {
           return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
         }
       }

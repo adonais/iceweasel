@@ -10,6 +10,7 @@
 /* globals require, __dirname, global, Buffer, process, setTimeout */
 
 var {
+  ADB: TRRADB,
   NodeHTTP2Server: TRRNodeHttp2Server,
   NodeServer: TRRNodeServer,
   NodeHTTPServer: TRRNodeHttpServer,
@@ -1172,10 +1173,7 @@ class TRRProxyCode {
     this.setupProxy();
     global.endServerPort = endServerPort;
 
-    await global.proxy.listen(0);
-
-    let serverPort = global.proxy.address().port;
-    return serverPort;
+    return ADB.listenAndForwardPort(global.proxy, 0); // eslint-disable-line no-undef
   }
 
   static closeProxy() {
@@ -1248,6 +1246,7 @@ class TRRProxy {
     info("TRRProxy start!");
     this.processId = await TRRNodeServer.fork();
     info("processid=" + this.processId);
+    await this.execute(TRRADB);
     await this.execute(TRRProxyCode);
     this.port = await this.execute(`TRRProxyCode.startServer(${port})`);
     Assert.notEqual(this.port, null);

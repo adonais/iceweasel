@@ -136,6 +136,13 @@ LOCAL_INCLUDES += [
     "/dom/base",
 ]
 
+SOURCE_HEADERS += [
+    "HalInternal.h",
+    "HalLog.h",
+    "HalWakeLockInternal.h",
+    "WindowIdentifier.h",
+]
+
 CFLAGS += CONFIG["GLIB_CFLAGS"]
 CFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
 CXXFLAGS += CONFIG["GLIB_CFLAGS"]

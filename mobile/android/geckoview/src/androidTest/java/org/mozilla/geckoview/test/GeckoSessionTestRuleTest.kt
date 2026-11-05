@@ -16,6 +16,7 @@ import org.hamcrest.Matchers.nullValue
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assume.assumeThat
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.GeckoResult
@@ -276,6 +277,31 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         )
 
         assertThat("Callback count should be correct", counter, equalTo(2))
+    }
+
+    private interface OverloadedDelegate {
+        fun onDelegate(): Int
+
+        fun onDelegate(foo: String): Int
+    }
+
+    @Test
+    fun waitUntilCalled_anyOverload() {
+        lateinit var delegate: OverloadedDelegate
+
+        sessionRule.addExternalDelegateUntilTestEnd(
+            OverloadedDelegate::class,
+            { newDelegate -> delegate = newDelegate },
+            {},
+            object : OverloadedDelegate {
+                override fun onDelegate(): Int = 24
+
+                @AssertCalled(count = 1) override fun onDelegate(foo: String): Int = 42
+            },
+        )
+
+        delegate.onDelegate("foo")
+        sessionRule.waitUntilCalled(OverloadedDelegate::class, "onDelegate")
     }
 
     @Test
@@ -1233,11 +1259,9 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         assertThat("New session has same settings", newSession.settings, equalTo(settings))
     }
 
+    @Ignore("Bug 1673953")
     @Test
     fun createOpenSession_canInterleaveOtherCalls() {
-        // TODO: Bug 1673953
-        assumeThat(sessionRule.env.isFission, equalTo(false))
-
         mainSession.loadTestPath(HELLO_HTML_PATH)
 
         val newSession = sessionRule.createOpenSession()
@@ -1331,11 +1355,9 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         sessionRule.waitForPageStops(2)
     }
 
+    @Ignore("Bug 1673953")
     @Test
     fun waitForPageStops_acrossSessionCreation() {
-        // TODO: Bug 1673953
-        assumeThat(sessionRule.env.isFission, equalTo(false))
-
         mainSession.loadTestPath(HELLO_HTML_PATH)
         val session = sessionRule.createOpenSession()
         mainSession.reload()

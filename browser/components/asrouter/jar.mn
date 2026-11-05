@@ -43,3 +43,5 @@ browser.jar:
   content/browser/asrouter/assets/kit-checkmark-flipped.svg              (content/assets/kit-checkmark-flipped.svg)
   content/browser/asrouter/assets/kit-peek-bottom.svg                    (content/assets/kit-peek-bottom.svg)
   content/browser/asrouter/assets/kit-peek.svg                           (content/assets/kit-peek.svg)
+  content/browser/asrouter/assets/windows-guidance.gif                   (content/assets/windows-guidance.gif)
+  content/browser/asrouter/assets/windows-guidance-static.svg            (content/assets/windows-guidance-static.svg)

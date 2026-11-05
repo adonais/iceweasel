@@ -29,6 +29,17 @@ export default class BreachAlert extends MozLitElement {
 
   async _handleCta(_event) {
     Glean.trustpanel.breachAlertDiscoveredMonitor.record();
+
+    // Dispatched before the tab switch, which closes the Trust Panel by moving
+    // focus away from it, so that the close is attributed to this action
+    // instead of being counted as abandonment.
+    this.dispatchEvent(
+      new CustomEvent("breachAlertMonitorOpened", {
+        bubbles: true,
+        composed: true,
+      })
+    );
+
     this.documentGlobal.switchToTabHavingURI(
       "https://monitor.mozilla.org/?utm_medium=referral&utm_source=firefox-desktop&utm_campaign=privacy-panel&utm_content=sign-up-global",
       true

@@ -1666,6 +1666,40 @@ TEST_F(PortTest, TestIceRoleConflict) {
   EXPECT_TRUE(role_conflict());
 }
 
+// Verifies that a port without an ICE role, i.e. one that has not been taken
+// over by an ICE agent, drops incoming STUN binding requests from unknown
+// addresses. Handling such a request used to hit a DCHECK in
+// MaybeIceRoleConflict.
+TEST_F(PortTest, BindingRequestDroppedWithoutIceRole) {
+  auto lport = CreateUdpPort(kLocalAddr1);
+  lport->SetIceRole(ICEROLE_CONTROLLED);
+  auto rport = CreateUdpPort(kLocalAddr2);
+  int unknown_address_count = 0;
+  rport->SubscribeUnknownAddress(
+      this, [&](PortInterface*, const SocketAddress&, ProtocolType, IceMessage*,
+                const std::string&, bool) { ++unknown_address_count; });
+  lport->PrepareAddress();
+  rport->PrepareAddress();
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+  ASSERT_FALSE(lport->Candidates().empty());
+  ASSERT_FALSE(rport->Candidates().empty());
+
+  Connection* lconn =
+      lport->CreateConnection(rport->Candidates()[0], Port::ORIGIN_MESSAGE);
+  ASSERT_NE(lconn, nullptr);
+  lconn->Ping();
+  time_controller_.AdvanceTime(TimeDelta::Millis(100));
+  EXPECT_EQ(unknown_address_count, 0);
+
+  // Once the port has an ICE role, the binding request is signaled.
+  rport->SetIceRole(ICEROLE_CONTROLLING);
+  lconn->Ping();
+  EXPECT_THAT(
+      WaitUntil([&] { return unknown_address_count; }, Eq(1),
+                {.timeout = kDefaultTimeout, .clock = &time_controller_}),
+      IsRtcOk());
+}
+
 TEST_F(PortTest, TestTcpNoDelay) {
   auto port1 = CreateTcpPort(kLocalAddr1);
   port1->SetIceRole(ICEROLE_CONTROLLING);

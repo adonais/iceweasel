@@ -1,0 +1,261 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>moz-widget-header tests</title>
+    <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+    <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+    <script src="chrome://global/content/customElements.js"></script>
+    <link
+      rel="stylesheet"
+      href="chrome://mochikit/content/tests/SimpleTest/test.css"
+    />
+    <link
+      rel="stylesheet"
+      href="chrome://global/skin/design-system/tokens-brand.css"
+    />
+    <link rel="localization" href="toolkit/global/mozButton.ftl" />
+    <script
+      type="module"
+      src="chrome://browser/content/widgets/moz-widget.mjs"
+    ></script>
+  </head>
+
+  <body>
+    <p id="display"></p>
+    <div id="content"></div>
+    <pre id="test"></pre>
+    <script>
+      function createHeader(props = {}) {
+        const header = document.createElement("moz-widget-header");
+        Object.assign(header, props);
+        document.getElementById("content").append(header);
+        return header;
+      }
+
+      add_task(async function test_heading_text() {
+        const header = createHeader({ title: "Test heading" });
+        await header.updateComplete;
+
+        is(
+          header.shadowRoot.querySelector("#heading").textContent.trim(),
+          "Test heading",
+          "heading text"
+        );
+        header.remove();
+      });
+
+      add_task(async function test_title_attribute() {
+        const header = createHeader();
+        header.setAttribute("title", "Test heading");
+        await header.updateComplete;
+
+        is(header.title, "Test heading", "title property");
+        ok(!header.hasAttribute("title"), "title taken off the host");
+        header.remove();
+      });
+
+      function createMenuWidget(headerAttrs = {}, menuId = "test-menu") {
+        const widget = document.createElement("moz-widget");
+        widget.setAttribute("size", "small");
+        const header = document.createElement("moz-widget-header");
+        header.slot = "header";
+        for (const [name, value] of Object.entries(headerAttrs)) {
+          header.setAttribute(name, value);
+        }
+        const menu = document.createElement("panel-list");
+        if (menuId) {
+          menu.id = menuId;
+        }
+        menu.slot = "menu";
+        menu.append(document.createElement("panel-item"));
+        header.append(menu);
+        widget.append(header);
+        document.getElementById("content").append(widget);
+        return { widget, header, menu };
+      }
+
+      async function getMenuButton(widget, header) {
+        await header.updateComplete;
+        const menuButton = header.shadowRoot.querySelector("#menu-button");
+        ok(menuButton, "menu button on first render");
+        await widget.updateComplete;
+        await menuButton.updateComplete;
+        return menuButton;
+      }
+
+      add_task(async function test_menu_button_opens_slotted_menu() {
+        const { widget, header, menu } = createMenuWidget({
+          "menu-label": "Test options",
+        });
+        const menuButton = await getMenuButton(widget, header);
+        is(
+          menuButton.buttonEl.getAttribute("aria-label"),
+          "Test options",
+          "menu button name"
+        );
+        ok(
+          header.dataset.l10nAttrs.split(",").includes("menu-label"),
+          "fluent may set menu-label"
+        );
+
+        const shown = new Promise(resolve =>
+          menu.addEventListener("shown", resolve, { once: true })
+        );
+        synthesizeMouseAtCenter(menuButton, {});
+        await shown;
+        ok(menu.matches(":popover-open"), "menu in the top layer");
+        menu.hide();
+        widget.remove();
+      });
+
+      add_task(async function test_menu_without_id() {
+        const { widget, header, menu } = createMenuWidget({}, null);
+        const menuButton = await getMenuButton(widget, header);
+        ok(menu.id, "generated menu id");
+
+        const shown = new Promise(resolve =>
+          menu.addEventListener("shown", resolve, { once: true })
+        );
+        synthesizeMouseAtCenter(menuButton, {});
+        await shown;
+        ok(menu.matches(":popover-open"), "menu opened");
+        menu.hide();
+        widget.remove();
+      });
+
+      add_task(async function test_menu_button_default_label() {
+        const { widget, header } = createMenuWidget();
+        const menuButton = await getMenuButton(widget, header);
+        await document.l10n.translateElements([menuButton]);
+        await menuButton.updateComplete;
+        is(
+          menuButton.buttonEl.getAttribute("aria-label"),
+          "More Options",
+          "default menu button name"
+        );
+        widget.remove();
+      });
+
+      add_task(async function test_small_widget_hides_badge_and_trailing() {
+        const { widget, header, menu } = createMenuWidget({
+          title: "Weather",
+        });
+        const back = document.createElement("moz-button");
+        back.slot = "leading";
+        back.size = "small";
+        back.iconSrc = "chrome://global/skin/icons/arrow-left.svg";
+        const badge = document.createElement("moz-badge");
+        badge.slot = "leading";
+        badge.setAttribute("label", "New");
+        const units = document.createElement("moz-button");
+        units.slot = "trailing";
+        units.size = "small";
+        units.label = "Units";
+        units.iconSrc = "chrome://global/skin/icons/arrow-down-12.svg";
+        units.iconPosition = "end";
+        header.append(back, badge, units);
+        const menuButton = await getMenuButton(widget, header);
+        await Promise.all([back.updateComplete, units.updateComplete]);
+        const menuButtonInHeader = () =>
+          menuButton.getBoundingClientRect().right <=
+          header.getBoundingClientRect().right;
+
+        ok(back.checkVisibility(), "back button shown");
+        ok(!badge.checkVisibility(), "badge hidden");
+        ok(!units.checkVisibility(), "trailing hidden");
+        ok(menuButtonInHeader(), "menu button inside the header");
+
+        header.title = null;
+        await header.updateComplete;
+        ok(!units.checkVisibility(), "trailing hidden without a heading");
+        ok(
+          menuButtonInHeader(),
+          "menu button inside the header without a heading"
+        );
+
+        widget.size = "medium";
+        await widget.updateComplete;
+        ok(badge.checkVisibility(), "badge shown when medium");
+        ok(units.checkVisibility(), "trailing shown when medium");
+
+        widget.size = "small";
+        const menuSlot = header.shadowRoot.querySelector('slot[name="menu"]');
+        const slotChanged = new Promise(resolve =>
+          menuSlot.addEventListener("slotchange", resolve, { once: true })
+        );
+        menu.remove();
+        await slotChanged;
+        await Promise.all([widget.updateComplete, header.updateComplete]);
+        ok(units.checkVisibility(), "trailing shown without a menu");
+        widget.remove();
+      });
+
+      function createWidgetMenu(header) {
+        const widget = document.createElement("moz-widget");
+        const menu = document.createElement("panel-list");
+        menu.slot = "menu";
+        menu.append(document.createElement("panel-item"));
+        if (header) {
+          header.slot = "header";
+          widget.append(header);
+        }
+        widget.append(menu);
+        document.getElementById("content").append(widget);
+        return { widget, menu };
+      }
+
+      function openMenu(menu, menuButton) {
+        const shown = new Promise(resolve =>
+          menu.addEventListener("shown", resolve, { once: true })
+        );
+        synthesizeMouseAtCenter(menuButton, {});
+        return shown;
+      }
+
+      add_task(async function test_header_opens_widget_menu() {
+        const header = document.createElement("moz-widget-header");
+        const { widget, menu } = createWidgetMenu(header);
+        const menuButton = await getMenuButton(widget, header);
+        ok(
+          !widget.shadowRoot.querySelector("#menu-button"),
+          "no widget menu button"
+        );
+
+        await openMenu(menu, menuButton);
+        ok(menu.matches(":popover-open"), "menu opened");
+        menu.hide();
+        widget.remove();
+      });
+
+      add_task(async function test_widget_menu_without_header() {
+        await SpecialPowers.pushPrefEnv({
+          set: [["ui.prefersReducedMotion", 1]],
+        });
+        const { widget, menu } = createWidgetMenu();
+        await widget.updateComplete;
+        const menuButton = widget.shadowRoot.querySelector("#menu-button");
+        await menuButton.updateComplete;
+        const shown = () => menuButton.checkVisibility({ opacityProperty: true });
+
+        ok(!shown(), "menu button hidden");
+        menuButton.focus();
+        ok(shown(), "menu button shown with focus");
+        menuButton.blur();
+
+        const menuShown = new Promise(resolve =>
+          menu.addEventListener("shown", resolve, { once: true })
+        );
+        menu.show(null, menuButton);
+        await menuShown;
+        ok(shown(), "menu button shown with the menu open");
+        menu.hide();
+
+        await openMenu(menu, menuButton);
+        ok(menu.matches(":popover-open"), "menu opened");
+        menu.hide();
+        widget.remove();
+      });
+    </script>
+  </body>
+</html>

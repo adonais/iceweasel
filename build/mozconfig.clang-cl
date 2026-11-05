@@ -1,4 +1,6 @@
-export ENABLE_CLANG_PLUGIN=1
+if [ -z "$DISABLE_CLANG_PLUGIN" ]; then
+    export ENABLE_CLANG_PLUGIN=1
+fi
 
 if [ -n "$UPLOAD_PATH" ]; then
     case "$(uname -s)" in

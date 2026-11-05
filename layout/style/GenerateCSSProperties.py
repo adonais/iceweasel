@@ -363,6 +363,12 @@ def cpp_flags(prop):
         result.append("SerializedByServo")
     if prop.type() == "longhand" and prop.logical:
         result.append("IsLogical")
+    if prop.type() == "longhand" and prop.vector:
+        assert prop.vector.separator in ("Comma", "Space"), prop.name
+        if prop.vector.separator == "Comma":
+            result.append("IsCommaSeparated")
+        else:
+            result.append("IsSpaceSeparated")
     return result
 
 

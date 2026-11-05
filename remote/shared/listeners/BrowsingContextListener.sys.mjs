@@ -50,7 +50,7 @@ export class BrowsingContextListener {
 
     // A map that temporarily holds attached top-level browsing contexts until
     // their embedder element is set, which is required to successfully
-    // retrieve a unique id for the content browser by the TabManager.
+    // retrieve a unique id for the content browser by the NavigableManager.
     this.#topContextsToAttach = new Map();
 
     this.#listening = false;

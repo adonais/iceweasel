@@ -64,7 +64,7 @@ described by number 1 below.
    types of Search Engines.
 
 3. The `SearchService` creates new instances of the various
-   [SearchEngine Subclasses](https://firefox-source-docs.mozilla.org/toolkit/search/SearchEngines.html).
+   {doc}`SearchEngine Subclasses </toolkit/search/SearchEngines>`.
 
 4. The `SearchService` returns the engines to the caller that requested it.
    E.g. the `SearchService` passes the default Search Engine back to

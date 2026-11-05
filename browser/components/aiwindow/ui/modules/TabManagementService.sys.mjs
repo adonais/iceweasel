@@ -10,6 +10,10 @@ import {
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 import { isAllowedURLProtocol } from "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs";
 
+/**
+ * @import { TabGroupColor } from "chrome://browser/content/tabbrowser/tabgroup.mjs"
+ */
+
 const lazy = {};
 
 ChromeUtils.defineLazyGetter(lazy, "console", () =>
@@ -570,7 +574,7 @@ export class TabManagementService {
    * @typedef {object} TabGroupInfo
    * @property {string} id - ID of the tab group
    * @property {string} label - Label of the tab group
-   * @property {string} color - Color code of the tab group
+   * @property {TabGroupColor} color - Color code of the tab group
    * @property {number} tabCount - Number of visible tabs
    * @property {Array<{url: string, title: string, lastAccessed: number}>} tabs
    *   The visible tabs, with sanitized titles

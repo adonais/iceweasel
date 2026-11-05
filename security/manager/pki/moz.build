@@ -34,3 +34,8 @@ if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     CXXFLAGS += [
         "-Wno-unused-parameter",
     ]
+
+SOURCE_HEADERS += [
+    "nsNSSDialogHelper.h",
+    "nsNSSDialogs.h",
+]

@@ -397,7 +397,7 @@ export var UrlbarUtils = {
    *
    * @param {SearchEngine|nsIURI|URL|string} urlOrEngine
    *   The entity to initiate a speculative connection for.
-   * @param {window} window
+   * @param {BrowserWindow} window
    *   The window from where the connection is initialized.
    */
   setupSpeculativeConnection(urlOrEngine, window) {
@@ -526,6 +526,44 @@ export var UrlbarUtils = {
           preferredURIDisplaySpec: info.preferredURI?.displaySpec ?? null,
         }
       : null;
+  },
+
+  /**
+   * Retrieves clipboard data as text.
+   *
+   * @param {number} threshold
+   *   The approximate byte size past which the clipboard is left unread. The
+   *   count is platform-dependent; see `nsIClipboard.getDataIfSmallerThan`.
+   * @param {Window} win
+   *   The window reading the clipboard.
+   * @returns {Promise<?string>}
+   *   The text, or null if it exceeds the threshold or can't be read.
+   */
+  async getClipboardTextIfSmallerThan(threshold, win) {
+    let transferable = Cc["@mozilla.org/widget/transferable;1"].createInstance(
+      Ci.nsITransferable
+    );
+    transferable.init(win.docShell.QueryInterface(Ci.nsILoadContext));
+    transferable.addDataFlavor("text/plain");
+
+    try {
+      if (
+        !(await Services.clipboard.getDataIfSmallerThan(
+          transferable,
+          threshold,
+          Services.clipboard.kGlobalClipboard,
+          win.browsingContext.currentWindowContext
+        ))
+      ) {
+        return null;
+      }
+
+      let data = {};
+      transferable.getTransferData("text/plain", data);
+      return data.value.QueryInterface(Ci.nsISupportsString).data;
+    } catch (e) {
+      return null;
+    }
   },
 
   /**
@@ -1292,7 +1330,7 @@ export var UrlbarUtils = {
    * Returns window.gURLBar for regular browser windows, or the smartbar
    * for AI windows in immersive view.
    *
-   * @param {Window} window
+   * @param {BrowserWindow} window
    *   The window to get the URL bar for.
    * @returns {UrlbarInput | SmartbarInput }
    *   The URL bar element that should be focused.
@@ -2160,12 +2198,9 @@ export class UrlbarProvider {
    *
    * @param {UrlbarResult} _result
    *   The result being selected.
-   * @param {Element} [_element]
-   *   The selected element. Undefined in the message path.
-   *   New providers should not use this parameter!
    * @abstract
    */
-  onBeforeSelection(_result, _element) {}
+  onBeforeSelection(_result) {}
 
   /**
    * Called when a result from the provider is selected. "Selected" refers to

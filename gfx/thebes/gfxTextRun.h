@@ -257,6 +257,21 @@ class gfxTextRun : public gfxShapedText {
     virtual uint32_t GetAppUnitsPerDevUnit() const = 0;
 
     virtual nscoord LetterSpacing() const = 0;
+
+    /**
+     * Get the source text that the given range of the textrun was shaped
+     * from, so that glyphs produced via OpenType substitution (ligatures,
+     * math styling, etc.) can be mapped back to their original characters,
+     * e.g. for a PDF ToUnicode/ActualText mapping. aText must be empty, and
+     * is filled with exactly aRange.Length() UTF-16 code units, one for each
+     * textrun character.
+     * Returns false if the source text can't or shouldn't be provided, e.g.
+     * because providing it could leak sensitive text (as for masked password
+     * fields).
+     */
+    virtual bool GetSourceText(Range aRange, nsAString& aText) const {
+      return false;
+    }
   };
 
   struct MOZ_STACK_CLASS DrawParams {
@@ -888,7 +903,7 @@ class gfxTextRun : public gfxShapedText {
 
   // **** drawing helper ****
   void DrawGlyphs(gfxFont* aFont, Range aRange, mozilla::gfx::Point* aPt,
-                  const PropertyProvider* aProvider, Range aSpacingRange,
+                  const PropertyProvider* aProvider, Range aProviderRange,
                   TextRunDrawParams& aParams, imgDrawingParams& aImgParams,
                   mozilla::gfx::ShapedTextFlags aOrientation) const;
 

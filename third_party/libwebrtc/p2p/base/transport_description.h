@@ -94,9 +94,11 @@ struct IceParameters {
   RTCError Validate() const;
 };
 
-constexpr auto* ICE_OPTION_TRICKLE = "trickle";
-constexpr auto* ICE_OPTION_RENOMINATION = "renomination";
-constexpr auto* ICE_OPTION_GOOG_SPED_V1 = "googspedv1";
+inline constexpr absl::string_view ICE_OPTION_TRICKLE = "trickle";
+inline constexpr absl::string_view ICE_OPTION_RENOMINATION = "renomination";
+inline constexpr absl::string_view ICE_OPTION_GOOG_SPED_V1 = "googspedv1";
+// STUN Protocol for Embedding DTLS.
+inline constexpr absl::string_view ICE_OPTION_SPED = "sped";
 
 std::optional<ConnectionRole> StringToConnectionRole(
     absl::string_view role_str);

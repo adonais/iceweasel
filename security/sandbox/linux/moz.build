@@ -110,6 +110,20 @@ SOURCES += [
     "/third_party/abseil-cpp/absl/strings/numbers.cc",
 ]
 
+SOURCE_HEADERS += [
+    "LinuxSched.h",
+    "SandboxBrokerClient.h",
+    "SandboxChrootProto.h",
+    "SandboxFilter.h",
+    "SandboxFilterUtil.h",
+    "SandboxInternal.h",
+    "SandboxLogging.h",
+    "SandboxOpenedFiles.h",
+    "SandboxProfilerChild.h",
+    "SandboxProfilerParent.h",
+    "SandboxReporterClient.h",
+]
+
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     SOURCES["/third_party/abseil-cpp/absl/strings/numbers.cc"].flags += ["-Wno-comma"]
     SOURCES[

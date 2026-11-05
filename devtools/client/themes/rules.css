@@ -1099,21 +1099,69 @@
   );
 }
 
-[data-function-expression] .css-explainers-function-name,
-[data-length-expression] {
-  text-decoration: 1px solid underline;
-  text-underline-offset: 2px;
+@property --gradient-underline-thickness {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 1px;
 }
 
-:is([data-function-expression], [data-length-expression]).tooltip-anchor {
-  text-decoration: underline;
-  text-decoration-color: var(--theme-highlight-blue);
-  text-decoration-style: dotted;
-  text-decoration-skip-ink: none;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 2px;
+[data-function-expression],
+[data-length-expression] {
+  /* borrowed from Nova tab border colors */
+  --color-violet-20: oklch(83% 0.17 290);
+  --color-violet-30: oklch(76% 0.2 290);
+  --color-orange-20: oklch(86% 0.14 50);
+  --color-orange-30: oklch(79% 0.17 50);
 
-  .css-explainers-function-name {
-    text-decoration: none;
+  --gradient-color-accent: linear-gradient(
+    96deg,
+    light-dark(var(--color-violet-30), var(--color-violet-20)) 20.68%,
+    light-dark(var(--color-orange-30), var(--color-orange-20)) 79.34%
+  );
+  --gradient-underline-offset: 1px;
+
+  @media not (prefers-reduced-motion) {
+    background-size: 0% var(--gradient-underline-thickness);
+    transition: background-size 0.1s;
+  }
+
+  &:not(.tooltip-anchor) .css-explainers-function-name,
+  &:not(.tooltip-anchor)[data-length-expression] {
+    background-image: var(--gradient-color-accent);
+    background-repeat: no-repeat;
+    background-position-y: bottom;
+    background-size: 100% var(--gradient-underline-thickness);
+    padding-block-end: var(--gradient-underline-offset);
+    margin-block-end: calc(var(--gradient-underline-offset) * -1);
+
+    :root[forced-colors-active] & {
+      text-decoration: underline;
+      text-decoration-color: AccentColor;
+      text-decoration-style: dotted;
+      text-decoration-skip-ink: none;
+      text-decoration-thickness: var(--gradient-underline-thickness);
+      text-underline-offset: var(--gradient-underline-offset);
+    }
+  }
+
+  &.tooltip-anchor {
+    --gradient-underline-offset: 2px;
+    --gradient-underline-thickness: 2px;
+
+    background-image: var(--gradient-color-accent);
+    background-repeat: no-repeat;
+    background-position-y: bottom;
+    background-size: 100% var(--gradient-underline-thickness);
+    padding-block-end: var(--gradient-underline-offset);
+    margin-block-end: calc(var(--gradient-underline-offset) * -1);
+
+    :root[forced-colors-active] & {
+      text-decoration: underline;
+      text-decoration-color: AccentColor;
+      text-decoration-style: dotted;
+      text-decoration-skip-ink: none;
+      text-decoration-thickness: var(--gradient-underline-thickness);
+      text-underline-offset: var(--gradient-underline-offset);
+    }
   }
 }

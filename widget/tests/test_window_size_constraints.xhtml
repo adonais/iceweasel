@@ -1,0 +1,158 @@
+<?xml version="1.0"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<?xml-stylesheet href="chrome://mochikit/content/tests/SimpleTest/test.css" type="text/css"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Tests that size constraints are inner sizes and respected properly</title>
+    <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  </head>
+  <body>
+    <script><![CDATA[
+      const { TestUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/TestUtils.sys.mjs"
+      );
+
+      async function waitForStableWindowSize(win) {
+        let lastSize;
+        let stableSamples = 0;
+        await TestUtils.waitForCondition(() => {
+          const size = [
+            win.innerWidth,
+            win.innerHeight,
+            win.outerWidth,
+            win.outerHeight,
+          ].join(",");
+          stableSamples = size == lastSize ? stableSamples + 1 : 0;
+          lastSize = size;
+          return stableSamples >= 3;
+        }, "The window size should stabilize");
+      }
+
+      function is_approx(float1, float2, error, desc) {
+        ok(
+          Math.abs(float1 - float2) < error,
+          desc + ": " + float1 + " and " + float2 + " should be within " + error
+        );
+      }
+
+      async function checkSize(win, width, height) {
+        is_approx(win.innerWidth, width, 1, "The allocated client should retain its width");
+        is_approx(win.innerHeight, height, 1, "The allocated client should retain its height");
+      }
+
+      async function openWindow(width = 400, height = 200, onePixelClient = false) {
+        const expectedWidth = Math.min(400, Math.max(200, width));
+        const expectedHeight = Math.min(
+          300,
+          Math.max(onePixelClient ? 1 : 100, height)
+        );
+        const url = new URL("window_size_constraints.xhtml", window.location.href);
+        if (onePixelClient) {
+          url.hash = "one-pixel-client";
+        }
+        const win = window.browsingContext.topChromeWindow.openDialog(
+          url.href,
+          "_blank",
+          `chrome,titlebar,resizable,width=${width},height=${height}`
+        );
+        SimpleTest.registerCleanupFunction(() => win.close());
+        await SimpleTest.promiseFocus(win);
+        await checkSize(win, expectedWidth, expectedHeight);
+        return win;
+      }
+
+      add_task(async function test_window_size_constraints() {
+        const win = await openWindow();
+        win.close();
+      });
+
+      add_task(async function test_initial_size_above_maximum() {
+        const win = await openWindow(600);
+        win.close();
+      });
+
+      add_task(async function test_initial_height_above_maximum() {
+        const win = await openWindow(400, 400);
+        win.close();
+      });
+
+      add_task(async function test_initial_size_below_minimum() {
+        const win = await openWindow(100, 50);
+        win.close();
+      });
+
+      add_task(async function test_one_pixel_client_bounds() {
+        if (!navigator.platform.includes("Linux")) {
+          return;
+        }
+        const win = await openWindow(400, 200, true);
+        function resizeTo(width, height) {
+          return new Promise(resolve => {
+            win.addEventListener("resize", resolve, { once: true });
+            win.resizeTo(width, height);
+          });
+        }
+        try {
+          const horizontalMargin = win.outerWidth - win.innerWidth;
+          const verticalMargin = win.outerHeight - win.innerHeight;
+          const clientOffsetX = win.mozInnerScreenX - win.screenX;
+          const clientOffsetY = win.mozInnerScreenY - win.screenY;
+          await resizeTo(1, 1);
+          await checkSize(win, 200, 1);
+          is_approx(
+            win.outerHeight - win.innerHeight,
+            verticalMargin,
+            1,
+            "A one-pixel client should retain its vertical decoration margin"
+          );
+          is_approx(
+            win.mozInnerScreenX - win.screenX,
+            clientOffsetX,
+            1,
+            "A one-pixel client should retain its horizontal decoration offset"
+          );
+          is_approx(
+            win.mozInnerScreenY - win.screenY,
+            clientOffsetY,
+            1,
+            "A one-pixel client should retain its vertical decoration offset"
+          );
+
+          win.document.documentElement.toggleAttribute("customtitlebar", true);
+          await waitForStableWindowSize(win);
+          if (
+            Math.abs(win.innerWidth - 200) >= 1 ||
+            Math.abs(win.innerHeight - 1) >= 1
+          ) {
+            await resizeTo(1, 1);
+          }
+          await checkSize(win, 200, 1);
+          win.document.documentElement.toggleAttribute("customtitlebar", false);
+          await waitForStableWindowSize(win);
+          is_approx(
+            win.outerHeight - win.innerHeight,
+            verticalMargin,
+            1,
+            "A one-pixel client should restore its vertical decoration margin"
+          );
+          is_approx(
+            win.mozInnerScreenY - win.screenY,
+            clientOffsetY,
+            1,
+            "A one-pixel client should restore its vertical decoration offset"
+          );
+          await checkSize(win, 200, 1);
+
+          await resizeTo(400 + horizontalMargin, 200 + verticalMargin);
+          await checkSize(win, 400, 200);
+          await resizeTo(300 + horizontalMargin, 150 + verticalMargin);
+          await checkSize(win, 300, 150);
+        } finally {
+          win.close();
+        }
+      });
+    ]]></script>
+  </body>
+</html>

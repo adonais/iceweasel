@@ -57,15 +57,17 @@ static already_AddRefed<TextureClient> CreateYCbCrTextureClientWithBackend(
   clientData.mCbSkip = 0;
   clientData.mCrSkip = 0;
   clientData.mCrSkip = 0;
+  const auto sizes = clientData.GetPlaneSizes();
+  MOZ_ASSERT(sizes && sizes->mY == ySize && sizes->mCbCr == size);
 
   // Create YCbCrTexture for basic backend.
   if (aLayersBackend == LayersBackend::LAYERS_BASIC) {
     return TextureClient::CreateForYCbCr(
-        nullptr, clientData.mPictureRect, clientData.YDataSize(),
-        clientData.mYStride, clientData.CbCrDataSize(), clientData.mCbCrStride,
-        StereoMode::MONO, gfx::ColorDepth::COLOR_8, gfx::YUVColorSpace::BT601,
-        gfx::ColorRange::LIMITED, gfx::TransferFunction::BT709,
-        clientData.mChromaSubsampling, TextureFlags::DEALLOCATE_CLIENT);
+        nullptr, clientData.mPictureRect, ySize, clientData.mYStride, size,
+        clientData.mCbCrStride, StereoMode::MONO, gfx::ColorDepth::COLOR_8,
+        gfx::YUVColorSpace::BT601, gfx::ColorRange::LIMITED,
+        gfx::TransferFunction::BT709, clientData.mChromaSubsampling,
+        TextureFlags::DEALLOCATE_CLIENT);
   }
 
   if (data) {

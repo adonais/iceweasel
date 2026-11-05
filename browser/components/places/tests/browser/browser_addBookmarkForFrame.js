@@ -130,7 +130,6 @@ add_task(async function test_move_bookmark_whilst_add_bookmark_open() {
         "editBMPanel_folderTree"
       );
       folderTree.selectItems([PlacesUtils.bookmarks.menuGuid]);
-      folderTree.blur();
 
       EventUtils.synthesizeKey("VK_RETURN", {}, dialogWin);
     }

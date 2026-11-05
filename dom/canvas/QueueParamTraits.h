@@ -3,20 +3,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef QUEUEPARAMTRAITS_H_
-#  define QUEUEPARAMTRAITS_H_ 1
+#define QUEUEPARAMTRAITS_H_
 
-#  include <tuple>
+#include <tuple>
 
-#  include "WebGLTypes.h"
-#  include "ipc/EnumSerializer.h"
-#  include "mozilla/Assertions.h"
-#  include "mozilla/IntegerRange.h"
-#  include "mozilla/Logging.h"
-#  include "mozilla/TimeStamp.h"
-#  include "mozilla/gfx/2D.h"
-#  include "mozilla/ipc/ProtocolUtils.h"
-#  include "nsExceptionHandler.h"
-#  include "nsString.h"
+#include "WebGLTypes.h"
+#include "ipc/EnumSerializer.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/IntegerRange.h"
+#include "mozilla/Logging.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/ipc/ProtocolUtils.h"
+#include "nsExceptionHandler.h"
+#include "nsString.h"
 
 namespace mozilla::webgl {
 

@@ -47,6 +47,7 @@ public final class GeckoProcessManager {
 
   private boolean mIsolatedProcess = false;
   private boolean mAppZygote = false;
+  private volatile boolean mIsolatedGmp = false;
 
   public static GeckoProcessManager getInstance() {
     return INSTANCE;
@@ -795,6 +796,17 @@ public final class GeckoProcessManager {
   /** true if app Zygote preloading is enabled. */
   public boolean isAppZygoteEnabled() {
     return mAppZygote;
+  }
+
+  /** Sets whether the GMP plugin service runs on isolated process. */
+  @WrapForJNI(calledFrom = "any")
+  private static void setIsolatedGmpEnabled(final boolean enabled) {
+    INSTANCE.mIsolatedGmp = enabled;
+  }
+
+  /** true if the GMP plugin service runs on isolated process. */
+  public boolean isIsolatedGmpEnabled() {
+    return mIsolatedGmp;
   }
 
   public void crashChild(@NonNull final Selector selector) {

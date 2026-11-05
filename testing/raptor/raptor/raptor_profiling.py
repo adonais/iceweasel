@@ -16,10 +16,67 @@ from pathlib import Path
 
 import mozfile
 from logger.logger import RaptorLogger
+from mozgeckoprofiler import source_path_mapping_args
 
 here = os.path.dirname(os.path.realpath(__file__))
 LOG = RaptorLogger(component="raptor-profiling")
 import tempfile
+
+
+def _profile_archive_path(test_config, profile_info, suffix=None):
+    """Build the in-archive path of a profile.
+
+    suffix states the archived profile's own compression, e.g. ".json" for a
+    profile that was symbolicated into plain JSON. When it is None the
+    extension of the collected profile is kept as-is.
+    """
+    test_type = test_config.get("type", "pageload")
+    test_run_type = (
+        "{}-{}".format(test_type, profile_info["type"])
+        if test_type == "pageload"
+        else test_type
+    )
+    folder_name = f"{test_config['name']}-{test_run_type}"
+    iteration = Path(profile_info["path"]).name.split("-")[-1]
+    if suffix is not None:
+        iteration = iteration.split(".", 1)[0] + suffix
+    if test_type == "pageload" and profile_info["type"] == "cold":
+        iteration_type = "browser-cycle"
+    elif profile_info["type"] == "warm":
+        iteration_type = "page-cycle"
+    else:
+        iteration_type = "iteration"
+    profile_name = "-".join([iteration_type, iteration])
+    return os.path.join(folder_name, profile_name)
+
+
+def _profile_archive_paths(test_config, profiles, suffixes=None):
+    if suffixes is None:
+        suffixes = [None] * len(profiles)
+    archive_paths = [
+        _profile_archive_path(test_config, profile_info, suffix)
+        for profile_info, suffix in zip(profiles, suffixes)
+    ]
+    has_collisions = len(set(archive_paths)) != len(archive_paths)
+    used_archive_paths = set()
+    resolved_archive_paths = []
+
+    for profile_info, base_archive_path in zip(profiles, archive_paths):
+        path_in_zip = base_archive_path
+        if has_collisions:
+            folder_name, profile_name = os.path.split(base_archive_path)
+            alias = Path(profile_info["path"]).parent.parent.name
+            path_in_zip = os.path.join(folder_name, alias, profile_name)
+            dedup_index = 2
+            while path_in_zip in used_archive_paths:
+                path_in_zip = os.path.join(
+                    folder_name, f"{alias}-{dedup_index}", profile_name
+                )
+                dedup_index += 1
+        used_archive_paths.add(path_in_zip)
+        resolved_archive_paths.append(path_in_zip)
+
+    return resolved_archive_paths
 
 
 class RaptorProfiling:
@@ -27,10 +84,19 @@ class RaptorProfiling:
     Superclass for handling profling for Firefox and Chrome applications.
     """
 
-    def __init__(self, upload_dir, raptor_config, test_config):
+    def __init__(
+        self, upload_dir, raptor_config, test_config, source_path_mappings=None
+    ):
+        """
+        source_path_mappings is a list of dicts with "urlPrefix" and "localPath"
+        keys, mapping URL prefixes to the local directories they were served
+        from. The JS sources found there, and their source maps, are embedded
+        into the profile.
+        """
         self.upload_dir = upload_dir
         self.raptor_config = raptor_config
         self.test_config = test_config
+        self.source_path_mappings = source_path_mappings
         self.profile = None
         # Create a temporary directory into which the tests can put
         # their profiles. These files will be assembled into one big
@@ -55,13 +121,14 @@ class RaptorProfiling:
 
             For benchmark/scenario tests, we return those specific types,
             but for pageloads we return cold or warm depending on the --cold
-            flag.
+            flag or the test's cold setting.
             """
             if self.test_config.get("type", "pageload") not in (
                 "benchmark",
                 "scenario",
             ):
-                return "cold" if self.raptor_config.get("cold", False) else "warm"
+                cold = self.raptor_config.get("cold") or self.test_config.get("cold")
+                return "cold" if cold else "warm"
             else:
                 return self.test_config.get("type", "benchmark")
 
@@ -284,21 +351,23 @@ class RaptorProfiling:
                 },
             ]
 
-            for config in profile_configs:
-                output_profile_path = (
-                    self.upload_dir
-                    / f"profile_{test_name}_{config['suffix']}.jslb.gz"  # .jslb.gz should be more space-efficient than .json.gz
-                )
-                _edit_profile(
-                    output_profile=output_profile_path,
-                    name=f"{test_name.capitalize()} {browser_cycles} {config['name_suffix']}",
-                    labels=config.get("labels", False),
-                    compact=config.get("compact", False),
-                )
-                LOG.info(
-                    f"Created {output_profile_path.name} ({output_profile_path.stat().st_size} bytes)"
-                )
-                profiles.append(output_profile_path)
+            with source_path_mapping_args(self.source_path_mappings) as mapping_args:
+                for config in profile_configs:
+                    output_profile_path = (
+                        self.upload_dir
+                        / f"profile_{test_name}_{config['suffix']}.jslb.gz"  # .jslb.gz should be more space-efficient than .json.gz
+                    )
+                    _edit_profile(
+                        output_profile=output_profile_path,
+                        name=f"{test_name.capitalize()} {browser_cycles} {config['name_suffix']}",
+                        labels=config.get("labels", False),
+                        compact=config.get("compact", False),
+                        profiler_edit_args=list(mapping_args),
+                    )
+                    LOG.info(
+                        f"Created {output_profile_path.name} ({output_profile_path.stat().st_size} bytes)"
+                    )
+                    profiles.append(output_profile_path)
 
             self.profile.unlink(missing_ok=True)
             self.profile = None

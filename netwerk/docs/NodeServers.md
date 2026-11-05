@@ -665,7 +665,15 @@ rather than served can hold that side itself:
 ```javascript
 await server.startWithNoResponseUdpPort();
 let port = server.port(); // TCP served, UDP never answers
+
+// A server that needs a different start step passes it in:
+await proxy.startWithNoResponseUdpPort(() => proxy.startWithoutProxyFilter());
 ```
+
+To put two servers on one port number, use `startOnSharedPort(start, claim, stop)`.
+It runs `start()`, then `claim()` on the port that `start()` got, and on failure
+runs `stop()` and retries. `create_masque_proxy_server()` in `head_http3.js` uses it
+to start an HTTP/2 proxy on the MASQUE proxy's port.
 
 ### Scope Issues in Handlers
 

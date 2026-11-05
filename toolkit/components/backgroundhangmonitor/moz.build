@@ -64,3 +64,7 @@ LOCAL_INCLUDES += [
 FINAL_LIBRARY = "xul"
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "ThreadStackHelper.h",
+]

@@ -1144,16 +1144,15 @@ LookupResult RasterImage::RequestDecodeForSizeInternal(
 static bool LaunchDecodingTask(IDecodingTask* aTask, RasterImage* aImage,
                                uint32_t aFlags, bool aHaveSourceData) {
   if (aHaveSourceData) {
-    nsCString uri(aImage->GetURIString());
-
     // If we have all the data, we can sync decode if requested.
     if (aFlags & imgIContainer::FLAG_SYNC_DECODE) {
-      DecodePool::Singleton()->SyncRunIfPossible(aTask, uri);
+      DecodePool::Singleton()->SyncRunIfPossible(aTask, aImage->GetURI());
       return true;
     }
 
     if (aFlags & imgIContainer::FLAG_SYNC_DECODE_IF_FAST) {
-      return DecodePool::Singleton()->SyncRunIfPreferred(aTask, uri);
+      return DecodePool::Singleton()->SyncRunIfPreferred(aTask,
+                                                         aImage->GetURI());
     }
   }
 

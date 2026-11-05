@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #placesList {
-  width: 200px;
-  max-width: 400px;
+  width: var(--size-layout-small);
+  max-width: var(--size-layout-large);
 }
 
 /* Menus */

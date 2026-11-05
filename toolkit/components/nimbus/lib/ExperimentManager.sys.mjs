@@ -5,7 +5,8 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
-  ClientEnvironment: "resource://normandy/lib/ClientEnvironment.sys.mjs",
+  ClientEnvironmentBase:
+    "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   ExperimentStore: "resource://nimbus/lib/ExperimentStore.sys.mjs",
@@ -501,7 +502,7 @@ export class ExperimentManager {
   async getUserId(bucketConfig) {
     let id;
     if (bucketConfig.randomizationUnit === "normandy_id") {
-      id = lazy.ClientEnvironment.userId;
+      id = lazy.ClientEnvironmentBase.legacyRandomizationId;
     } else if (bucketConfig.randomizationUnit === "group_id") {
       id = await lazy.ClientID.getProfileGroupID();
     } else {
@@ -1454,7 +1455,11 @@ export class ExperimentManager {
    * @param {string} userId
    * @returns {Promise<Branch>}
    */
-  async chooseBranch(slug, branches, userId = lazy.ClientEnvironment.userId) {
+  async chooseBranch(
+    slug,
+    branches,
+    userId = lazy.ClientEnvironmentBase.legacyRandomizationId
+  ) {
     const ratios = branches.map(({ ratio = 1 }) => ratio);
 
     // It's important that the input be:

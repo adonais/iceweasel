@@ -154,7 +154,7 @@ add_task(async function test_pbm_pref_uses_different_feature_than_non_pbm() {
     TEST_BLOCKED_3RD_PARTY_DOMAIN,
     "Non-PBM: example.org loads (trackers is PBM-only)"
   );
-  await assertImageBlocked(
+  await assertScriptBlocked(
     browser,
     TEST_ANNOTATED_3RD_PARTY_DOMAIN,
     "Non-PBM: example.com blocked by fingerprinters"
@@ -170,7 +170,7 @@ add_task(async function test_pbm_pref_uses_different_feature_than_non_pbm() {
     TEST_BLOCKED_3RD_PARTY_DOMAIN,
     "PBM: example.org blocked by trackers (pbmode-only)"
   );
-  await assertImageLoaded(
+  await assertScriptLoaded(
     pbmBrowser,
     TEST_ANNOTATED_3RD_PARTY_DOMAIN,
     "PBM: example.com loads (fingerprinters is non-PBM-only)"
@@ -208,7 +208,7 @@ add_task(async function test_engines_pref_phase_separation() {
     TEST_BLOCKED_3RD_PARTY_DOMAIN,
     "example.org blocked (trackers in protection.engines)"
   );
-  await assertImageLoaded(
+  await assertScriptLoaded(
     browser,
     TEST_ANNOTATED_3RD_PARTY_DOMAIN,
     "example.com not blocked (fingerprinters only in annotation)"
@@ -268,7 +268,7 @@ add_task(async function test_multiple_features_in_engines_pref() {
     TEST_BLOCKED_3RD_PARTY_DOMAIN,
     "example.org blocked by trackers feature"
   );
-  await assertImageBlocked(
+  await assertScriptBlocked(
     browser,
     TEST_ANNOTATED_3RD_PARTY_DOMAIN,
     "example.com blocked by fingerprinters feature"
@@ -297,13 +297,13 @@ async function runAttribution({ listName, feature, expectedState, phase }) {
   await syncAndWaitForLists(client, records);
 
   if (phase === "annotate") {
-    await assertImageLoaded(
+    await assertScriptLoaded(
       browser,
       TEST_ANNOTATED_3RD_PARTY_DOMAIN,
       `example.com not blocked via annotation-only feature ${feature}`
     );
   } else {
-    await assertImageBlocked(
+    await assertScriptBlocked(
       browser,
       TEST_ANNOTATED_3RD_PARTY_DOMAIN,
       `example.com blocked via feature ${feature}`
@@ -412,7 +412,7 @@ async function runAttributionReplaceOrAllow({
     action,
   });
 
-  await assertImageLoaded(
+  await assertScriptLoaded(
     browser,
     TEST_ANNOTATED_3RD_PARTY_DOMAIN,
     `example.com should load (intercept=${action}) via ${feature}`
@@ -517,7 +517,7 @@ add_task(async function test_multi_engine_aggregation_annotate() {
   let browser = tab.linkedBrowser;
   await syncAndWaitForLists(client, records);
 
-  await assertImageLoaded(
+  await assertScriptLoaded(
     browser,
     TEST_ANNOTATED_3RD_PARTY_DOMAIN,
     "example.com loads (annotation phase only)"

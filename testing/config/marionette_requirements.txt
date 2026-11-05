@@ -1,3 +1,4 @@
+-c requirements-marionette.txt
 -r mozbase_requirements.txt
 
 ../tools/wptserve

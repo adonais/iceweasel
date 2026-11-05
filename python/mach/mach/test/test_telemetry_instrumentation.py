@@ -8,9 +8,12 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, PropertyMock, patch
 
 from mach_initialize import _finalize_telemetry_glean
+from mozboot.mozconfig import MozconfigFindException
+from mozbuild.base import MozbuildObject
+from mozbuild.mozconfig import MozconfigLoadException
 
 from mach.telemetry import MACH_METRICS_PATH, report_invocation_metrics
 from mach.telemetry_interface import GleanTelemetry
@@ -149,6 +152,25 @@ class TestMachTelemetryInstrumentation(unittest.TestCase):
             metrics_available_during_submit,
             "All metrics should be accessible during ping submission",
         )
+
+    def test_report_invocation_metrics_mozconfig_error(self):
+        for error in (
+            MozconfigFindException("Missing mozconfig"),
+            MozconfigLoadException("mozconfig", "Bad exit code"),
+        ):
+            with self.subTest(error=type(error).__name__):
+                telemetry = Mock()
+                metrics = telemetry.metrics.return_value
+                instance = Mock()
+                type(instance).topobjdir = PropertyMock(side_effect=error)
+
+                with patch.object(
+                    MozbuildObject, "from_environment", return_value=instance
+                ):
+                    report_invocation_metrics(telemetry, "build")
+
+                metrics.mach.command.set.assert_called_once_with("build")
+                metrics.mach.argv.set.assert_not_called()
 
 
 if __name__ == "__main__":

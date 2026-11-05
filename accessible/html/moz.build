@@ -52,3 +52,14 @@ else:
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "HTMLCanvasAccessible.h",
+    "HTMLElementAccessibles.h",
+    "HTMLFormControlAccessible.h",
+    "HTMLImageMapAccessible.h",
+    "HTMLLinkAccessible.h",
+    "HTMLListAccessible.h",
+    "HTMLSelectAccessible.h",
+    "HTMLTableAccessible.h",
+]

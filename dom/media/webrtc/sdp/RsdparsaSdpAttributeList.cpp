@@ -465,19 +465,22 @@ void RsdparsaSdpAttributeList::LoadFmtp(RustAttributeList* attributeList) {
       fmtpParameters =
           MakeUnique<SdpFmtpAttributeList::RtxParameters>(rtxParameters);
     } else if (codecName == "AV1") {
-      SdpFmtpAttributeList::Av1Parameters av1Parameters;
+      using Av1Parameters = SdpFmtpAttributeList::Av1Parameters;
+      Av1Parameters av1Parameters;
+      const auto& rustAv1 = rustFmtpParameters.av1;
 
-      av1Parameters.profile = rustFmtpParameters.av1.has_profile
-                                  ? Some(rustFmtpParameters.av1.profile)
-                                  : Nothing();
-      av1Parameters.levelIdx = rustFmtpParameters.av1.has_level_idx
-                                   ? Some(rustFmtpParameters.av1.level_idx)
-                                   : Nothing();
-      av1Parameters.tier = rustFmtpParameters.av1.has_tier
-                               ? Some(rustFmtpParameters.av1.tier)
-                               : Nothing();
-      fmtpParameters =
-          MakeUnique<SdpFmtpAttributeList::Av1Parameters>(av1Parameters);
+      if (rustAv1.has_profile &&
+          rustAv1.profile <= Av1Parameters::kMaxProfile) {
+        av1Parameters.profile = Some(rustAv1.profile);
+      }
+      if (rustAv1.has_level_idx &&
+          rustAv1.level_idx <= Av1Parameters::kMaxLevelIdx) {
+        av1Parameters.levelIdx = Some(rustAv1.level_idx);
+      }
+      if (rustAv1.has_tier && rustAv1.tier <= Av1Parameters::kMaxTier) {
+        av1Parameters.tier = Some(rustAv1.tier);
+      }
+      fmtpParameters = MakeUnique<Av1Parameters>(av1Parameters);
 
     } else {
       // The parameter set is unknown so skip it

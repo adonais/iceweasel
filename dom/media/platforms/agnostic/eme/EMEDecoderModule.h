@@ -23,18 +23,6 @@ class EMEDecoderModule : public PlatformDecoderModule {
   RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override;
 
-  // Decode thread.
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-      const CreateDecoderParams& aParams) override {
-    MOZ_CRASH("Not used");
-  }
-
-  // Decode thread.
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
-      const CreateDecoderParams& aParams) override {
-    MOZ_CRASH("Not used");
-  }
-
   media::DecodeSupportSet SupportsMimeType(
       const nsACString& aMimeType,
       DecoderDoctorDiagnostics* aDiagnostics) const override;

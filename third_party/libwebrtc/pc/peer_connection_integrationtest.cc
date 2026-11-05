@@ -51,6 +51,7 @@
 #include "api/test/mock_async_dns_resolver.h"
 #include "api/test/mock_encoder_selector.h"
 #include "api/test/rtc_error_matchers.h"
+#include "api/transport/bitrate_settings.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "api/uma_metrics.h"
 #include "api/units/data_rate.h"
@@ -3539,6 +3540,38 @@ TEST_P(PeerConnectionIntegrationTest, OnIceCandidateErrorWithEmptyAddress) {
   EXPECT_EQ(caller()->error_event().address, "");
 }
 
+TEST_P(PeerConnectionIntegrationTest,
+       OnIceCandidateErrorWithEmptyAddressForTurns) {
+  PeerConnectionInterface::IceServer ice_server;
+  ice_server.urls.push_back("turns:127.0.0.1:3478?transport=tcp");
+  ice_server.username = "test";
+  ice_server.password = "test";
+
+  PeerConnectionInterface::RTCConfiguration caller_config;
+  caller_config.servers.push_back(ice_server);
+  caller_config.type = PeerConnectionInterface::kRelay;
+  caller_config.continual_gathering_policy = PeerConnection::GATHER_CONTINUALLY;
+
+  PeerConnectionInterface::RTCConfiguration callee_config;
+  callee_config.servers.push_back(ice_server);
+  callee_config.type = PeerConnectionInterface::kRelay;
+  callee_config.continual_gathering_policy = PeerConnection::GATHER_CONTINUALLY;
+
+  ASSERT_TRUE(
+      CreatePeerConnectionWrappersWithConfig(caller_config, callee_config));
+
+  // Do normal offer/answer and wait for ICE to complete.
+  ConnectFakeSignaling();
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
+  EXPECT_THAT(
+      WaitUntil([&] { return caller()->error_event().error_code; }, Eq(701)),
+      IsRtcOk());
+  EXPECT_EQ(caller()->error_event().address, "");
+}
+
 // TODO(https://crbug.com/webrtc/14947): Investigate why this is flaking and
 // find a way to re-enable the test.
 TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
@@ -3643,6 +3676,10 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   config.sdp_semantics = SdpSemantics::kUnifiedPlan;
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
+  BitrateSettings bitrate;
+  bitrate.start_bitrate_bps = 1'000'000;
+  caller()->pc()->SetBitrate(bitrate);
+  callee()->pc()->SetBitrate(bitrate);
   caller()->pc()->AddTransceiver(MediaType::AUDIO);
 
   caller()->CreateAndSetAndSignalOffer();

@@ -1,0 +1,30 @@
+[DEFAULT]
+alert_threshold = 2.0
+apps = "firefox, fenix"
+browser_cycles = 3
+cold = true
+custom_data = true
+gecko_profile_interval = 1
+# The Socket Thread is where TRR requests and connections are handled.
+gecko_profile_threads = "GeckoMain,Compositor,Renderer,Socket Thread"
+lower_is_better = true
+owner = "Network Team"
+page_cycles = 1
+page_timeout = 120000
+# Firefox preference, ignored on other apps.
+preferences = [
+    "network.connectivity-service.enabled=true",
+]
+support_class = "doh_busy_site.py"
+test_script = "doh_busy_site.js"
+test_url = "None"
+type = "pageload"
+unit = "ms"
+# doh_busy_site.py serves the page and the DoH resolver locally, so mitmproxy playback is off.
+use_live_sites = true
+
+# Each subtest replays the request timeline recorded from the named site
+# (see utils/doh_busy_sites.json).
+
+["busydoh"]
+browsertime_args = "--browsertime.site=detroitnews"

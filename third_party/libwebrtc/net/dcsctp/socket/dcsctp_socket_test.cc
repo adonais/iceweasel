@@ -2368,6 +2368,31 @@ TEST(DcSctpSocketTest, SendMessagesAfterHandover) {
   EXPECT_THAT(msg->payload(), ElementsAre(1, 2, 3));
 }
 
+TEST(DcSctpSocketTest, RetransmitsOutstandingDataDirectlyAfterHandover) {
+  static constexpr DcSctpOptions kOptions = {
+      .enable_handover_with_outstanding_data = true};
+  auto a = std::make_unique<SocketUnderTest>("A", kOptions);
+  SocketUnderTest z("Z", kOptions);
+
+  ConnectSockets(*a, z);
+
+  // Send a message, but never deliver it to Z, so that it stays outstanding
+  // (unacknowledged) on A when the socket is handed over.
+  a->socket.Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), kSendOptions);
+  EXPECT_THAT(a->cb.ConsumeSentPacket(),
+              HasChunks(ElementsAre(IsChunkType(DataChunk::kType))));
+
+  Timestamp handover_time = a->cb.Now();
+  a = HandoverSocket(std::move(a));
+
+  // The restored socket must retransmit the outstanding data immediately. If it
+  // doesn't, the connection would stall until the T3-RTX timer expires, one RTO
+  // (a second, by default) later.
+  EXPECT_THAT(a->cb.ConsumeSentPacket(),
+              HasChunks(ElementsAre(IsChunkType(DataChunk::kType))));
+  EXPECT_EQ(a->cb.Now(), handover_time);
+}
+
 TEST(DcSctpSocketTest, CanDetectDcsctpImplementation) {
   SocketUnderTest a("A");
   SocketUnderTest z("Z");

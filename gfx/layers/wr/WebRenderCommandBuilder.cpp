@@ -19,6 +19,8 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/SVGGeometryFrame.h"
 #include "mozilla/SVGImageFrame.h"
+#include "mozilla/SVGTextFrame.h"
+#include "mozilla/SVGUtils.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/UniquePtr.h"
@@ -1106,10 +1108,12 @@ enum class ItemActivity : uint8_t {
   /// Could be active if it has no layerization cost.
   /// Typically active if first of an item group.
   Could = 1,
+  /// Should be active for animation unless affected by a complex mask.
+  ShouldForAnimation = 2,
   /// Should be active unless something external makes that less useful.
-  Should = 2,
+  Should = 3,
   /// Must be active regardless of external factors.
-  Must = 3,
+  Must = 4,
 };
 
 ItemActivity CombineActivity(ItemActivity a, ItemActivity b) {
@@ -1126,14 +1130,14 @@ static ItemActivity IsItemProbablyActive(
     const mozilla::layers::StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder, bool aSiblingActive,
-    bool aUniformlyScaled);
+    const Matrix& aTransform);
 
 static ItemActivity HasActiveChildren(
     const nsDisplayList& aList, mozilla::wr::DisplayListBuilder& aBuilder,
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const mozilla::layers::StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
-    nsDisplayListBuilder* aDisplayListBuilder, bool aUniformlyScaled) {
+    nsDisplayListBuilder* aDisplayListBuilder, const Matrix& aTransform) {
   ItemActivity activity = ItemActivity::No;
   for (nsDisplayItem* item : aList) {
     // Here we only want to know if a child must be active, so we don't specify
@@ -1145,7 +1149,7 @@ static ItemActivity HasActiveChildren(
     // make them active more aggressively.
     auto childActivity =
         IsItemProbablyActive(item, aBuilder, aResources, aSc, aManager,
-                             aDisplayListBuilder, false, aUniformlyScaled);
+                             aDisplayListBuilder, false, aTransform);
     activity = CombineActivity(activity, childActivity);
     if (activity == ItemActivity::Must) {
       return activity;
@@ -1204,7 +1208,7 @@ static ItemActivity IsItemProbablyActive(
     const mozilla::layers::StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder, bool aHasActivePrecedingSibling,
-    bool aUniformlyScaled) {
+    const Matrix& aTransform) {
   switch (aItem->GetType()) {
     case DisplayItemType::TYPE_TRANSFORM: {
       nsDisplayTransform* transformItem =
@@ -1218,10 +1222,10 @@ static ItemActivity IsItemProbablyActive(
 
       auto activity = HasActiveChildren(*transformItem->GetChildren(), aBuilder,
                                         aResources, aSc, aManager,
-                                        aDisplayListBuilder, aUniformlyScaled);
+                                        aDisplayListBuilder, t2d * aTransform);
 
       if (transformItem->MayBeAnimated(aDisplayListBuilder)) {
-        activity = CombineActivity(activity, ItemActivity::Should);
+        activity = CombineActivity(activity, ItemActivity::ShouldForAnimation);
       }
 
       return activity;
@@ -1233,16 +1237,16 @@ static ItemActivity IsItemProbablyActive(
       }
       return HasActiveChildren(*opacityItem->GetChildren(), aBuilder,
                                aResources, aSc, aManager, aDisplayListBuilder,
-                               aUniformlyScaled);
+                               aTransform);
     }
     case DisplayItemType::TYPE_FOREIGN_OBJECT: {
       return ItemActivity::Must;
     }
     case DisplayItemType::TYPE_SVG_GEOMETRY: {
       auto* svgItem = static_cast<DisplaySVGGeometry*>(aItem);
-      if (StaticPrefs::gfx_webrender_svg_shapes() && aUniformlyScaled &&
+      if (StaticPrefs::gfx_webrender_svg_shapes() &&
           svgItem->ShouldBeActive(aBuilder, aResources, aSc, aManager,
-                                  aDisplayListBuilder)) {
+                                  aDisplayListBuilder, aTransform)) {
         return AssessBounds(aSc, aDisplayListBuilder, aItem,
                             aHasActivePrecedingSibling);
       }
@@ -1251,11 +1255,23 @@ static ItemActivity IsItemProbablyActive(
     }
     case DisplayItemType::TYPE_SVG_IMAGE: {
       auto* svgItem = static_cast<DisplaySVGImage*>(aItem);
-      if (StaticPrefs::gfx_webrender_svg_images() && aUniformlyScaled &&
+      if (StaticPrefs::gfx_webrender_svg_images() &&
           svgItem->ShouldBeActive(aBuilder, aResources, aSc, aManager,
                                   aDisplayListBuilder)) {
         return AssessBounds(aSc, aDisplayListBuilder, aItem,
                             aHasActivePrecedingSibling);
+      }
+
+      return ItemActivity::No;
+    }
+    case DisplayItemType::TYPE_SVG_TEXT: {
+      auto* textItem = static_cast<DisplaySVGText*>(aItem);
+      if (StaticPrefs::gfx_webrender_svg_text() &&
+          textItem->ShouldBeActive(aBuilder, aResources, aSc, aManager,
+                                   aDisplayListBuilder)) {
+        // Text is expensive to rasterize on the CPU, so it is worth a layer
+        // split whatever its size.
+        return ItemActivity::Should;
       }
 
       return ItemActivity::No;
@@ -1268,18 +1284,22 @@ static ItemActivity IsItemProbablyActive(
       }
 
       return HasActiveChildren(*aItem->GetChildren(), aBuilder, aResources, aSc,
-                               aManager, aDisplayListBuilder, aUniformlyScaled);
+                               aManager, aDisplayListBuilder, aTransform);
     }
     case DisplayItemType::TYPE_MASK: {
       if (aItem->GetChildren()) {
         auto activity =
             HasActiveChildren(*aItem->GetChildren(), aBuilder, aResources, aSc,
-                              aManager, aDisplayListBuilder, aUniformlyScaled);
-        // The mask is painted and uploaded as an image either way, so a child
-        // that merely could be active is not worth the extra layers. A child
-        // that should be active is: any change inside an inactive masked group
-        // rasterizes the masked content and the mask again on the CPU, while
-        // the mask image of an active group is cached.
+                              aManager, aDisplayListBuilder, aTransform);
+        // A clip that WebRender can express natively costs nothing, so the
+        // children decide.
+        if (StaticPrefs::gfx_webrender_svg_mask_propagates_activity() &&
+            SVGUtils::DetermineMaskUsage(aItem->Frame(), false)
+                .IsSimpleClipShape()) {
+          return activity;
+        }
+        // Only split the masked group for native content or required activity,
+        // not for animated transforms over blob content.
         if (activity < ItemActivity::Should) {
           return ItemActivity::No;
         }
@@ -1293,7 +1313,7 @@ static ItemActivity IsItemProbablyActive(
       if (aItem->GetChildren()) {
         return HasActiveChildren(*aItem->GetChildren(), aBuilder, aResources,
                                  aSc, aManager, aDisplayListBuilder,
-                                 aUniformlyScaled);
+                                 aTransform);
       }
       return ItemActivity::No;
     }
@@ -1334,6 +1354,34 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
   // making it active won't add extra layers.
   bool isFirst = true;
 
+  // Items in the middle of the list normally need to be at least
+  // ShouldForAnimation to be worth splitting the blob. When most of the list
+  // could be active, the blob would be split many times anyway, so every item
+  // that could be active is made active instead, which yields no blob at all
+  // in the best case.
+  bool lowerMiddleThreshold =
+      StaticPrefs::gfx_webrender_blob_relaxed_active_threshold();
+  uint32_t mostlyActivePercent =
+      StaticPrefs::gfx_webrender_svg_activity_mostly_active_percent();
+  if (!lowerMiddleThreshold && mostlyActivePercent > 0) {
+    uint32_t total = 0;
+    uint32_t couldBeActive = 0;
+    for (nsDisplayItem* item : *aList) {
+      if (item->GetType() == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO ||
+          item->IsInvisible()) {
+        continue;
+      }
+      total++;
+      if (IsItemProbablyActive(item, aBuilder, aResources, aSc, manager,
+                               mDisplayListBuilder, false,
+                               Matrix()) >= ItemActivity::Could) {
+        couldBeActive++;
+      }
+    }
+    lowerMiddleThreshold =
+        total > 0 && couldBeActive * 100 >= total * mostlyActivePercent;
+  }
+
   for (auto it = aList->begin(); it != aList->end(); ++it) {
     nsDisplayItem* item = *it;
     MOZ_ASSERT(item);
@@ -1359,19 +1407,12 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
     ++next;
     bool isLast = next == aList->end();
 
-    // WebRender's anti-aliasing approximation is not very good under
-    // non-uniform scales.
-    bool uniformlyScaled =
-        fabs(aGroup->mScale.xScale - aGroup->mScale.yScale) < 0.1;
-
-    auto activity = IsItemProbablyActive(
-        item, aBuilder, aResources, aSc, manager, mDisplayListBuilder,
-        encounteredActiveItem, uniformlyScaled);
-    auto threshold =
-        isFirst || isLast ||
-                StaticPrefs::gfx_webrender_blob_relaxed_active_threshold()
-            ? ItemActivity::Could
-            : ItemActivity::Should;
+    auto activity = IsItemProbablyActive(item, aBuilder, aResources, aSc,
+                                         manager, mDisplayListBuilder,
+                                         encounteredActiveItem, Matrix());
+    auto threshold = isFirst || isLast || lowerMiddleThreshold
+                         ? ItemActivity::Could
+                         : ItemActivity::ShouldForAnimation;
 
     if (activity >= threshold) {
       encounteredActiveItem = true;
@@ -2443,7 +2484,7 @@ bool WebRenderCommandBuilder::PushImageProvider(
     image::ImgDrawResult aDrawResult, mozilla::wr::DisplayListBuilder& aBuilder,
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const LayoutDeviceRect& aRect, const LayoutDeviceRect& aClip,
-    bool aRasterizedForRect) {
+    bool aRasterizedForRect, float aOpacity) {
   Maybe<wr::ImageKey> key =
       CreateImageProviderKey(aItem, aProvider, aDrawResult, aResources);
   if (!key) {
@@ -2456,7 +2497,7 @@ bool WebRenderCommandBuilder::PushImageProvider(
   auto r = wr::ToLayoutRect(aRect);
   auto c = wr::ToLayoutRect(aClip);
   aBuilder.PushImage(r, c, !aItem->BackfaceIsHidden(), antialiased, rendering,
-                     key.value(), true, wr::ColorF{1.0f, 1.0f, 1.0f, 1.0f},
+                     key.value(), true, wr::ColorF{1.0f, 1.0f, 1.0f, aOpacity},
                      false, false, aRasterizedForRect);
 
   return true;

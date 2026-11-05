@@ -84,7 +84,7 @@ class SHMBufSurfaceRGBA final : public SHMBufSurface {
   SHMBufSurfaceRGBA();
 
  private:
-  ~SHMBufSurfaceRGBA() override {}
+  ~SHMBufSurfaceRGBA() override = default;
 
   bool UploadTexture(int aPlane, bool aNeedInit) override;
 
@@ -109,7 +109,7 @@ class SHMBufSurfaceYUV final : public SHMBufSurface {
   SHMBufSurfaceYUV();
 
  private:
-  ~SHMBufSurfaceYUV() override {}
+  ~SHMBufSurfaceYUV() override = default;
 
   bool UploadTexture(int aPlane, bool aNeedInit) override;
 

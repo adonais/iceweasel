@@ -36,7 +36,7 @@ XULLabelAccessible::XULLabelAccessible(nsIContent* aContent,
   mType = eXULLabelType;
 }
 
-void XULLabelAccessible::DispatchClickEvent(uint32_t aActionIndex) const {
+void XULLabelAccessible::DispatchClickEvent(uint32_t /*aActionIndex*/) const {
   // Bug 1578140: For labels inside buttons, The base implementation of
   // DispatchClickEvent doesn't fire a command event on the button.
   RefPtr<nsXULElement> el = nsXULElement::FromNodeOrNull(mContent);

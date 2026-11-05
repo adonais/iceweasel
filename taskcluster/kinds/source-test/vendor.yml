@@ -57,11 +57,14 @@ node:
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
     run:
-        clone-with: hg
         cwd: '{checkout}'
         command: >-
             ./mach vendor node --ignore-modified &&
-            test -z "$(hg status third_party/node)"
+            ./mach python -c
+            'import sys; from mozversioncontrol import get_repository_object;
+            changed = [f for f in get_repository_object(".").get_changed_files("ADM", mode="all")
+            if f.startswith("third_party/node/")];
+            print("\n".join(changed)); sys.exit(1 if changed else 0)'
     fetches:
         toolchain:
             - linux64-node

@@ -72,6 +72,11 @@
         <panel-item auto-accesskey="">correct</panel-item>
         <panel-item auto-accesskey="">🦊 Fox</panel-item>
       </panel-list>
+      <panel-list id="auto-disabled-keyed">
+        <panel-item accesskey="p" disabled="">Paste</panel-item>
+        <panel-item>Manage</panel-item>
+        <panel-item auto-accesskey="">Run</panel-item>
+      </panel-list>
       <panel-list id="auto-others-unkeyed">
         <panel-item>Manage</panel-item>
         <panel-item auto-accesskey="">Move</panel-item>
@@ -218,6 +223,16 @@ check-for-updates = Check for Updates
           items.map(item => item.label.accessKey),
           ["c", "F"],
           "Each item gets its label's first typeable letter"
+        );
+      });
+
+      add_task(async function testAutoAccessKeysDisabledItem() {
+        await openAndCollectErrors("auto-disabled-keyed");
+        is(
+          document.querySelector("#auto-disabled-keyed [auto-accesskey]").label
+            .accessKey,
+          "R",
+          "A disabled item with an accesskey counts as another item with an accesskey"
         );
       });
 

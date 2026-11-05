@@ -39,44 +39,28 @@ bool MFMediaEngineDecoderModule::SupportsConfig(const TrackInfo& aConfig) {
   return !module->Supports(SupportDecoderParams(aConfig), nullptr).isEmpty();
 }
 
-already_AddRefed<MediaDataDecoder>
-MFMediaEngineDecoderModule::CreateVideoDecoder(
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+MFMediaEngineDecoderModule::AsyncCreateDecoder(
     const CreateDecoderParams& aParams) {
-  if (!aParams.mMediaEngineId ||
+  if ((!aParams.IsVideo() && !aParams.IsAudio()) || !aParams.mMediaEngineId ||
       !StaticPrefs::media_wmf_media_engine_enabled()) {
-    return nullptr;
+    return CreateDecoderPromiseFrom(nullptr, aParams);
   }
+  const bool isVideo = aParams.IsVideo();
   RefPtr<MFMediaEngineParent> mediaEngine =
       MFMediaEngineParent::GetMediaEngineById(*aParams.mMediaEngineId);
   if (!mediaEngine) {
-    LOG("Can't find media engine {} for video decoder",
-        *aParams.mMediaEngineId);
-    return nullptr;
+    LOG("Can't find media engine {} for {} decoder", *aParams.mMediaEngineId,
+        isVideo ? "video" : "audio");
+    return CreateDecoderPromiseFrom(nullptr, aParams);
   }
-  LOG("MFMediaEngineDecoderModule, CreateVideoDecoder");
+  LOG("MFMediaEngineDecoderModule, AsyncCreateDecoder ({})",
+      isVideo ? "video" : "audio");
   RefPtr<MediaDataDecoder> decoder = mediaEngine->GetMediaEngineStream(
-      TrackInfo::TrackType::kVideoTrack, aParams);
-  return decoder.forget();
-}
-
-already_AddRefed<MediaDataDecoder>
-MFMediaEngineDecoderModule::CreateAudioDecoder(
-    const CreateDecoderParams& aParams) {
-  if (!aParams.mMediaEngineId ||
-      !StaticPrefs::media_wmf_media_engine_enabled()) {
-    return nullptr;
-  }
-  RefPtr<MFMediaEngineParent> mediaEngine =
-      MFMediaEngineParent::GetMediaEngineById(*aParams.mMediaEngineId);
-  if (!mediaEngine) {
-    LOG("Can't find media engine {} for audio decoder",
-        *aParams.mMediaEngineId);
-    return nullptr;
-  }
-  LOG("MFMediaEngineDecoderModule, CreateAudioDecoder");
-  RefPtr<MediaDataDecoder> decoder = mediaEngine->GetMediaEngineStream(
-      TrackInfo::TrackType::kAudioTrack, aParams);
-  return decoder.forget();
+      isVideo ? TrackInfo::TrackType::kVideoTrack
+              : TrackInfo::TrackType::kAudioTrack,
+      aParams);
+  return CreateDecoderPromiseFrom(decoder.forget(), aParams);
 }
 
 media::DecodeSupportSet MFMediaEngineDecoderModule::SupportsMimeType(

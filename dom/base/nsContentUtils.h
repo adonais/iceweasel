@@ -49,6 +49,7 @@
 #include "nsINode.h"
 #include "nsIScriptError.h"
 #include "nsIThread.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nsLiteralString.h"
 #include "nsMargin.h"
 #include "nsPIDOMWindow.h"
@@ -133,6 +134,7 @@ class PropertyDescriptor;
 }  // namespace JS
 
 namespace mozilla {
+class CycleCollectedJSContext;
 class Dispatcher;
 class EditorBase;
 class ErrorResult;
@@ -2007,6 +2009,8 @@ class nsContentUtils {
   // setHTML().
   static const int32_t kParseFragmentNoSanitization = -2;
 
+  enum class SanitizerMode { Safe, Unsafe };
+
   /**
    * Invoke the fragment parsing algorithm (innerHTML) using the HTML parser.
    *
@@ -2034,7 +2038,7 @@ class nsContentUtils {
    * @param aSanitizer the Sanitizer API configuration to apply while parsing
    * (the spec's "parser sanitizer configuration"), or nullptr not to sanitize
    * while parsing.
-   * @param aSanitizerSafe safely sanitize, i.e.
+   * @param aSanitizerMode whether to safely sanitize, i.e.
    * "remove javascript navigation URLs".
    * @return NS_ERROR_DOM_INVALID_STATE_ERR if a re-entrant attempt to parse
    *         fragments is made, NS_ERROR_OUT_OF_MEMORY if aSourceBuffer is too
@@ -2047,7 +2051,7 @@ class nsContentUtils {
       mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
           aCustomElementRegistry,
       mozilla::dom::Sanitizer* aSanitizer = nullptr,
-      bool aSanitizerSafe = false);
+      SanitizerMode aSanitizerMode = SanitizerMode::Unsafe);
 
   /**
    * Invoke the fragment parsing algorithm (innerHTML) using the XML parser.
@@ -2088,7 +2092,7 @@ class nsContentUtils {
    * @param aSanitizer the Sanitizer API configuration to apply while parsing
    * (the spec's "parser sanitizer configuration"), or nullptr not to sanitize
    * while parsing.
-   * @param aSanitizerSafe safely sanitize, i.e.
+   * @param aSanitizerMode whether to safely sanitize, i.e.
    * "remove javascript navigation URLs".
    * @return NS_ERROR_DOM_INVALID_STATE_ERR if a re-entrant attempt to parse
    *         fragments is made, NS_ERROR_OUT_OF_MEMORY if aSourceBuffer is too
@@ -2098,7 +2102,7 @@ class nsContentUtils {
       const nsAString& aSourceBuffer, Document* aTargetDocument,
       bool aScriptingEnabledForNoscriptParsing,
       mozilla::dom::Sanitizer* aSanitizer = nullptr,
-      bool aSanitizerSafe = false);
+      SanitizerMode aSanitizerMode = SanitizerMode::Unsafe);
 
   /**
    * Converts HTML source to plain text by parsing the source and using the
@@ -4011,6 +4015,7 @@ nsContentUtils::InternalContentPolicyTypeToExternal(nsContentPolicyType aType) {
       return ExtContentPolicy::TYPE_FETCH;
 
     case nsIContentPolicy::TYPE_INTERNAL_EXTERNAL_RESOURCE:
+    case nsIContentPolicy::TYPE_INTERNAL_SPECULATION_RULES:
       return ExtContentPolicy::TYPE_OTHER;
 
     case nsIContentPolicy::TYPE_INTERNAL_JSON_PRELOAD:
@@ -4076,6 +4081,20 @@ class MOZ_STACK_CLASS nsAutoScriptBlockerSuppressNodeRemoved
   }
 };
 
+// Like nsAutoMicroTask, but doesn't perform a checkpoint for a document
+// without an inner window (e.g. an SVG image): such documents can't run
+// script, so a checkpoint from them would only run other documents'
+// microtasks.
+class MOZ_STACK_CLASS nsAutoMicroTaskForDocument {
+ public:
+  explicit nsAutoMicroTaskForDocument(const mozilla::dom::Document* aDocument);
+  MOZ_CAN_RUN_SCRIPT ~nsAutoMicroTaskForDocument();
+
+ private:
+  // Null when the checkpoint is skipped.
+  mozilla::CycleCollectedJSContext* const mContext;
+};
+
 namespace mozilla::dom {
 
 class TreeOrderComparator {
@@ -4093,14 +4112,23 @@ class TreeOrderComparator {
 #define NS_INTERFACE_MAP_ENTRY_TEAROFF(_interface, _allocator) \
   NS_INTERFACE_MAP_ENTRY_TEAROFF_AMBIGUOUS(_interface, _interface, _allocator)
 
-#define NS_INTERFACE_MAP_ENTRY_TEAROFF_AMBIGUOUS(_interface, _implClass, \
-                                                 _allocator)             \
-  if (aIID.Equals(NS_GET_IID(_interface))) {                             \
-    foundInterface = static_cast<_implClass*>(_allocator);               \
-    if (!foundInterface) {                                               \
-      *aInstancePtr = nullptr;                                           \
-      return NS_ERROR_OUT_OF_MEMORY;                                     \
-    }                                                                    \
+#define NS_INTERFACE_MAP_ENTRY_TEAROFF_AMBIGUOUS(_interface, _implClass,      \
+                                                 _allocator)                  \
+  if (aIID.Equals(NS_GET_IID(_interface))) {                                  \
+    static_assert(                                                          \
+        /* Check the interface correctly defines HasWeakReferenceTearoff */ \
+        /* This is needed for do_GetWeakReference static checks          */ \
+        /* (see do_GetWeakReference and GetCheckedWeakReference)         */ \
+        !std::is_same_v<_interface, nsISupportsWeakReference> ||            \
+            mozilla::detail::ProvidesWeakReferenceTearoff<                  \
+                std::remove_pointer_t<decltype(this)>>,                     \
+        "declare `static constexpr bool kHasWeakReferenceTearoff = true;` " \
+        "in the class that tears off nsISupportsWeakReference"); \
+    foundInterface = static_cast<_implClass*>(_allocator);                    \
+    if (!foundInterface) {                                                    \
+      *aInstancePtr = nullptr;                                                \
+      return NS_ERROR_OUT_OF_MEMORY;                                          \
+    }                                                                         \
   } else
 
 /*

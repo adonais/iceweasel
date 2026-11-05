@@ -48,7 +48,6 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
   if (mVariationFont) {
     CGFontRef baseFont = aUnscaledFont->GetFont();
     if (!baseFont) {
-      mIsValid = false;
       return;
     }
 
@@ -125,7 +124,6 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
   } else {
     mCGFont = aUnscaledFont->GetFont();
     if (!mCGFont) {
-      mIsValid = false;
       return;
     }
     ::CFRetain(mCGFont);
@@ -249,8 +247,6 @@ void gfxMacFont::InitMetricsByGlyphMeasurement(CFDataRef aCmap,
 }
 
 void gfxMacFont::InitMetrics() {
-  mIsValid = false;
-
   uint32_t upem = 0;
 
   // try to get unitsPerEm from sfnt head table, to avoid calling CGFont

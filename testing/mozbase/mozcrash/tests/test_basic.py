@@ -61,5 +61,32 @@ def test_minidump_files_are_cleaned_up_or_preserved_in_original_location(
     assert len(minidump_files_in_dir) == (2 if keep is True else 0)
 
 
+@pytest.mark.parametrize("group", [None, "manifestA"])
+def test_log_crashes_group(tmpdir, stackwalk, minidump_files, group):
+    """Test that log_crashes only adds a group to the crash action when given one."""
+    import mozcrash
+    from mozlog.structuredlog import StructuredLogger
+
+    logger = StructuredLogger("test_log_crashes_group")
+    crashes = []
+    logger.add_handler(
+        lambda data: crashes.append(data) if data["action"] == "crash" else None
+    )
+
+    assert 1 == mozcrash.log_crashes(
+        logger,
+        str(tmpdir),
+        "symbols_path",
+        test="test_foo",
+        stackwalk_binary=str(stackwalk),
+        group=group,
+    )
+    assert len(crashes) == 1
+    assert crashes[0]["test"] == "test_foo"
+    assert crashes[0].get("group") == group
+    if group is None:
+        assert "group" not in crashes[0]
+
+
 if __name__ == "__main__":
     mozunit.main()

@@ -696,7 +696,7 @@ export const UrlbarShared = {
   /**
    * Whether a SAP is one of SEARCHBAR_SAPS.
    *
-   * @param {string} sapName
+   * @param {UrlbarSapName} sapName
    *   The SAP name to check.
    * @returns {boolean}
    *   Whether the SAP is dedicated to search-engine queries.
@@ -710,7 +710,7 @@ export const UrlbarShared = {
    * disambiguates input in a bar that also takes an address, so a search bar
    * searches whatever the pref says.
    *
-   * @param {string} sapName
+   * @param {UrlbarSapName} sapName
    *   The SAP name to check.
    * @returns {boolean}
    *   Whether a keyword search is enabled.
@@ -723,7 +723,7 @@ export const UrlbarShared = {
    * Whether a string that is a URL may be navigated to. The toolbar search bar
    * only searches; the address bar and New Tab's bar both navigate.
    *
-   * @param {string} sapName
+   * @param {UrlbarSapName} sapName
    *   The SAP name to check.
    * @returns {boolean}
    *   Whether navigation is enabled.
@@ -737,7 +737,7 @@ export const UrlbarShared = {
    * mode, as it would be outside of search mode, rather than searched for. This
    * holds where the unified search button is always available.
    *
-   * @param {string} sapName
+   * @param {UrlbarSapName} sapName
    *   The SAP name to check.
    * @returns {boolean}
    *   Whether navigation is enabled in an engine search mode.
@@ -1319,8 +1319,6 @@ export const UrlbarShared = {
             return "tab_to_search";
           case "UrlbarProviderUnitConversion":
             return "unit";
-          case "UrlbarProviderQuickSuggestContextualOptIn":
-            return "fxsuggest_data_sharing_opt_in";
           case "UrlbarProviderAddonsShortcutMoved":
             return "addons_shortcut_moved";
           case "UrlbarProviderGlobalActions":
@@ -1681,25 +1679,25 @@ export const UrlbarShared = {
       if (Math.abs(daysAgo) <= 1) {
         // "yesterday", "today", or "tomorrow"
         dateFormatType = this.DATE_FORMAT_TYPE.YESTERDAY_TODAY_TOMORROW;
-        formattedDate = new Intl.RelativeTimeFormat(undefined, {
+        formattedDate = new Intl.RelativeTimeFormat(this.locale(), {
           numeric: "auto",
         }).format(-daysAgo, "day");
       } else if (0 < daysAgo && daysAgo <= 6) {
         // <= 6 days ago: "{n} days ago"
         dateFormatType = this.DATE_FORMAT_TYPE.DAYS_WEEKS_MONTHS_AGO;
-        formattedDate = new Intl.RelativeTimeFormat(undefined, {
+        formattedDate = new Intl.RelativeTimeFormat(this.locale(), {
           numeric: "always",
         }).format(-daysAgo, "day");
       } else if (0 < weeksAgo && (weeksAgo <= 4 || monthsAgo == 0)) {
         // <= 4 weeks ago or same month: "{n} weeks ago"
         dateFormatType = this.DATE_FORMAT_TYPE.DAYS_WEEKS_MONTHS_AGO;
-        formattedDate = new Intl.RelativeTimeFormat(undefined, {
+        formattedDate = new Intl.RelativeTimeFormat(this.locale(), {
           numeric: "always",
         }).format(-weeksAgo, "week");
       } else if (0 < monthsAgo && monthsAgo <= 11) {
         // <= 11 months ago: "{n} months ago"
         dateFormatType = this.DATE_FORMAT_TYPE.DAYS_WEEKS_MONTHS_AGO;
-        formattedDate = new Intl.RelativeTimeFormat(undefined, {
+        formattedDate = new Intl.RelativeTimeFormat(this.locale(), {
           numeric: "always",
         }).format(-monthsAgo, "month");
       }
@@ -1727,7 +1725,7 @@ export const UrlbarShared = {
           opts.year = "numeric";
         }
       }
-      formattedDate = new Intl.DateTimeFormat(undefined, opts).format(date);
+      formattedDate = new Intl.DateTimeFormat(this.locale(), opts).format(date);
       dateFormatType = this.DATE_FORMAT_TYPE.ABSOLUTE;
       isRelative = false;
     }
@@ -1735,7 +1733,7 @@ export const UrlbarShared = {
     // Now format the time.
     let formattedTime;
     if (isFuture) {
-      formattedTime = new Intl.DateTimeFormat(undefined, {
+      formattedTime = new Intl.DateTimeFormat(this.locale(), {
         hour: "numeric",
         minute: "numeric",
         timeZoneName: includeTimeZone ? "short" : undefined,
@@ -1794,7 +1792,7 @@ export const UrlbarShared = {
    *   in the previous calendar month, this value will be 1, and so on.
    */
   parseDate(date) {
-    let zonedNow = this._zonedDateTimeISO();
+    let zonedNow = this.zonedDateTimeISO();
     let zonedDate = date.toTemporalInstant().toZonedDateTimeISO(zonedNow);
     let isFuture = Temporal.ZonedDateTime.compare(zonedNow, zonedDate) < 0;
 
@@ -1833,8 +1831,15 @@ export const UrlbarShared = {
 
   // Thin wrapper around `zonedDateTimeISO` so that tests can easily set a mock
   // "now" date and time. See `UrlbarTestUtils.stubNowZonedDateTime()`.
-  _zonedDateTimeISO() {
+  zonedDateTimeISO() {
     return Temporal.Now.zonedDateTimeISO();
+  },
+
+  // Thin wrapper around the locale passed to `Intl` formatters so that tests can
+  // force a locale that doesn't depend on the OS regional settings. `undefined`
+  // means the default locale. See `UrlbarTestUtils.stubLocale()`.
+  locale() {
+    return undefined;
   },
 
   // Thin wrapper around `getWeekInfo` so that tests can easily set a mock first

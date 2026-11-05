@@ -19,7 +19,7 @@ const lazy = XPCOMUtils.declareLazy({
   SmartTabGroupingManager:
     "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
   SpeechRecognitionFeature:
-    "resource://gre/modules/SpeechRecognitionFeature.sys.mjs",
+    "moz-src:///dom/media/webspeech/recognition/SpeechRecognitionFeature.sys.mjs",
   TranslationsFeature:
     "chrome://global/content/translations/TranslationsFeature.sys.mjs",
 });

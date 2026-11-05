@@ -213,6 +213,17 @@ UNIFIED_SOURCES += [
     "RLBoxSandboxPool.cpp",
 ]
 
+SOURCE_HEADERS += [
+    "KeyedUUIDMapper.h",
+    "LogCommandLineHandler.h",
+    "LogModulePrefWatcher.h",
+    "nsConsoleMessage.h",
+    "nsConsoleService.h",
+    "nsSecurityConsoleMessage.h",
+    "nsUUIDGenerator.h",
+    "nsVersionComparatorImpl.h",
+]
+
 if CONFIG["OS_TARGET"] in ("Linux", "Android"):
     UNIFIED_SOURCES += [
         "MemoryMapping.cpp",
@@ -286,6 +297,10 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     SOURCES += [
         "nsCrashOnException.cpp",
+    ]
+
+    SOURCE_HEADERS += [
+        "nsCrashOnException.h",
     ]
 
 if CONFIG["COMPILE_ENVIRONMENT"]:

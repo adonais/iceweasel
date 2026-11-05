@@ -325,6 +325,24 @@ StylePrefersContrast Gecko_MediaFeatures_PrefersContrast(
   if (aDocument->ShouldResistFingerprinting(RFPTarget::CSSPrefersContrast)) {
     return StylePrefersContrast::NoPreference;
   }
+
+  // Check for DevTools override first
+  if (dom::BrowsingContext* bc = aDocument->GetBrowsingContext()) {
+    auto* top = bc->Top();
+    switch (top->GetPrefersContrastOverride()) {
+      case dom::PrefersContrastOverride::No_preference:
+        return StylePrefersContrast::NoPreference;
+      case dom::PrefersContrastOverride::More:
+        return StylePrefersContrast::More;
+      case dom::PrefersContrastOverride::Less:
+        return StylePrefersContrast::Less;
+      case dom::PrefersContrastOverride::Custom:
+        return StylePrefersContrast::Custom;
+      case dom::PrefersContrastOverride::None:
+        break;
+    }
+  }
+
   const auto& prefs = PreferenceSheet::PrefsFor(*aDocument);
   if (!prefs.mUseAccessibilityTheme && prefs.mUseDocumentColors) {
     return StylePrefersContrast::NoPreference;

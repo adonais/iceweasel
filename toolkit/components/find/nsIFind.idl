@@ -12,6 +12,7 @@ interface nsIFind : nsISupports
   attribute boolean findBackwards;
   attribute boolean caseSensitive;
   attribute boolean entireWord;
+  attribute boolean segmenterWordBoundaries;
   attribute boolean matchDiacritics;
 
   /**

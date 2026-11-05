@@ -28,7 +28,21 @@ from mozharness.mozilla.testing.errors import WptHarnessErrorList
 from mozharness.mozilla.testing.testbase import TestingMixin, testing_config_options
 
 
+def _is_harness_or_mozilla_entry(name):
+    # Keep the manifests, the harness (tests/tools, resources, common) and
+    # web-platform/mozilla/; skip the other upstream tests and their metadata.
+    # Files under four path components deep (e.g. meta/MANIFEST.json) are kept.
+    parts = name.split("/")
+    if len(parts) < 4 or parts[0] != "web-platform":
+        return True
+    if parts[1] == "meta":
+        return False
+    return parts[1] != "tests" or parts[2] in ("tools", "resources", "common")
+
+
 class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
+    python_constraints = "requirements-marionette.txt"
+
     config_options = (
         [
             [
@@ -108,6 +122,16 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
                     "dest": "headless_height",
                     "default": "1200",
                     "help": "Specify headless virtual screen height (default: 1200).",
+                },
+            ],
+            [
+                ["--skip-upstream-tests-extraction"],
+                {
+                    "action": "store_true",
+                    "dest": "skip_upstream_tests_extraction",
+                    "default": False,
+                    "help": "Only extract the harness and the /_mozilla/ tests from the "
+                    "web-platform tests archive, for jobs that run no upstream tests.",
                 },
             ],
             [
@@ -259,7 +283,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
                 "run-tests",
             ],
             require_config_file=require_config_file,
-            config={"require_test_zip": True},
+            config={"require_test_zip": True, "test_summary": True},
         )
 
         # Surely this should be in the superclass
@@ -375,7 +399,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
 
         mozinfo.find_and_update_from_json(dirs["abs_test_install_dir"])
 
-        raw_log_file, error_summary_file, test_summary_file = self.get_indexed_logs(
+        raw_log_file, error_summary_file = self.get_indexed_logs(
             dirs["abs_blob_upload_dir"], "wpt"
         )
 
@@ -384,7 +408,6 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             "--log-wptreport=%s"
             % os.path.join(dirs["abs_blob_upload_dir"], "wptreport.json"),
             "--log-errorsummary=%s" % error_summary_file,
-            "--log-testsummary=%s" % test_summary_file,
             "--symbols-path=%s" % self.symbols_path,
             "--stackwalk-binary=%s" % self.query_minidump_stackwalk(),
             "--stackfix-dir=%s" % os.path.join(dirs["abs_test_install_dir"], "bin"),
@@ -404,16 +427,41 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             # repeat should repeat the original test, so +1 for first run
             cmd.append("--repeat=%s" % (self.repeat + 1))
 
+        # Only the default testharness jobs: the tag-scoped ones run a
+        # different test selection that hasn't been measured, and the VM pools
+        # have much less memory per guest. The exception is the WebGPU CTS jobs
+        # on the Intel workers, which run one test at a time and leave them
+        # mostly idle.
+        is_parallel_capable_mac = (
+            sys.platform.startswith("darwin")
+            and list(test_types) == ["testharness"]
+            and (
+                (
+                    mozinfo.info.get("arch") == "aarch64"
+                    and not mozinfo.info.get("macos_vm")
+                    and not c["tag"]
+                )
+                or (
+                    mozinfo.info.get("arch") == "x86_64"
+                    and any(tag in ("webgpu", "webgpu-long") for tag in c["tag"])
+                    and not c["backlog"]
+                )
+            )
+        )
         if (
             self.is_android
             or mozinfo.info["tsan"]
             or "wdspec" in test_types
-            or not c["disable_fission"]
+            or (not c["disable_fission"] and not is_parallel_capable_mac)
             # reftest on osx needs to be 1 process
-            or "reftest" in test_types
-            and sys.platform.startswith("darwin")
+            or ("reftest" in test_types and sys.platform.startswith("darwin"))
         ):
             processes = 1
+        elif is_parallel_capable_mac:
+            # Verified by experiment on the 10-core/16GB Apple M4 workers
+            # (Mac16,10) in 2026-09 (bug 2050488) and for WebGPU on the macOS
+            # 14.70 Intel workers in 2026-10 (bug 2078310).
+            processes = 3
         else:
             processes = 2
         cmd.append("--processes=%s" % processes)
@@ -550,6 +598,16 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
 
         return cmd
 
+    def download_unpack(
+        self, url, extract_to=".", extract_dirs="*", verbose=False, member_filter=None
+    ):
+        if (
+            self.config.get("skip_upstream_tests_extraction")
+            and "web-platform" in (url.split("/")[-1])
+        ):
+            member_filter = _is_harness_or_mozilla_entry
+        super().download_unpack(url, extract_to, extract_dirs, verbose, member_filter)
+
     def download_and_extract(self):
         super().download_and_extract(
             extract_dirs=[
@@ -673,6 +731,9 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             log_compact=True,
             error_list=BaseErrorList + WptHarnessErrorList,
             allow_crashes=True,
+            test_summary_file=self.query_test_summary_file(
+                dirs["abs_blob_upload_dir"], self.config
+            ),
         )
 
         env = {"MINIDUMP_SAVE_PATH": dirs["abs_blob_upload_dir"]}
@@ -782,24 +843,26 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
                 if self.per_test_coverage:
                     self.set_coverage_env(final_env, is_baseline_test)
 
-                return_code = self.run_command(
-                    cmd,
-                    cwd=dirs["abs_work_dir"],
-                    output_timeout=1000,
-                    output_parser=parser,
-                    env=final_env,
-                )
-
-                self.append_test_summary(dirs["abs_blob_upload_dir"])
-
-                if self.per_test_coverage:
-                    self.add_per_test_coverage_report(
-                        final_env, suite, per_test_args[-1]
+                try:
+                    return_code = self.run_command(
+                        cmd,
+                        cwd=dirs["abs_work_dir"],
+                        output_timeout=1000,
+                        output_parser=parser,
+                        env=final_env,
                     )
 
-                tbpl_status, log_level, summary = parser.evaluate_parser(
-                    return_code, previous_summary=summary
-                )
+                    if self.per_test_coverage:
+                        self.add_per_test_coverage_report(
+                            final_env, suite, per_test_args[-1]
+                        )
+
+                    tbpl_status, log_level, summary = parser.evaluate_parser(
+                        return_code, previous_summary=summary
+                    )
+                finally:
+                    parser.finish()
+
                 self.record_status(tbpl_status, level=log_level)
 
                 if len(per_test_args) > 0:

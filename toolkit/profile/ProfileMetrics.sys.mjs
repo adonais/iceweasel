@@ -188,19 +188,24 @@ export let ProfileMetrics = {
     return { isSameInstall, installExists };
   },
 
+  _parseInstallTimestamp(bytes, isUTF16LE) {
+    let text;
+    if (isUTF16LE) {
+      text = new TextDecoder("utf-16le").decode(bytes);
+    } else {
+      text = new TextDecoder().decode(bytes);
+    }
+    let data = JSON.parse(text);
+    if (data.install_timestamp != null) {
+      return Number(data.install_timestamp);
+    }
+    return null;
+  },
+
   async _readInstallTimestamp(path, isUTF16LE) {
     try {
       let bytes = await IOUtils.read(path);
-      let text;
-      if (isUTF16LE) {
-        text = new TextDecoder("utf-16le").decode(bytes);
-      } else {
-        text = new TextDecoder().decode(bytes);
-      }
-      let data = JSON.parse(text);
-      if (data.install_timestamp != null) {
-        return Number(data.install_timestamp);
-      }
+      return this._parseInstallTimestamp(bytes, isUTF16LE);
     } catch (e) {}
     return null;
   },
@@ -229,8 +234,20 @@ export let ProfileMetrics = {
       }
     }
 
-    let updatePath = PathUtils.join(greDir.path, "update_telemetry.json");
-    let updateMSec = await this._readInstallTimestamp(updatePath, false);
+    let updateMSec = null;
+    if (Services.appinfo.OS == "Darwin") {
+      try {
+        let appPath = greDir.parent.parent.path;
+        let bytes = await IOUtils.getMacXAttr(
+          appPath,
+          "org.mozilla.update-telemetry"
+        );
+        updateMSec = this._parseInstallTimestamp(bytes, false);
+      } catch (e) {}
+    } else {
+      let updatePath = PathUtils.join(greDir.path, "update_telemetry.json");
+      updateMSec = await this._readInstallTimestamp(updatePath, false);
+    }
     if (updateMSec != null) {
       Glean.profiles.daysSinceUpdate.set(
         Math.floor((nowMSec - updateMSec) / MS_PER_DAY)

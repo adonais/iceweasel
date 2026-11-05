@@ -290,6 +290,9 @@ struct EmbedderColorSchemes {
   /* DevTools override for forced-colors */                                    \
   FIELD(ForcedColorsOverride, dom::ForcedColorsOverride,                       \
         {.mTopOnly = true, .mCanSet = CanSet::Unrestricted})                   \
+  /* DevTools override for prefers-contrast */                                 \
+  FIELD(PrefersContrastOverride, dom::PrefersContrastOverride,                 \
+        {.mTopOnly = true, .mCanSet = CanSet::Unrestricted})                   \
   /* DevTools multiplier for animations playback rate */                       \
   FIELD(AnimationsPlayBackRateMultiplier, double,                              \
         {.mTopOnly = true, .mCanSet = CanSet::Unrestricted, .mDefault = [] {   \
@@ -1179,13 +1182,20 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return GetPrefersReducedMotionOverride();
   }
 
+  dom::PrefersContrastOverride PrefersContrastOverride() const {
+    return GetPrefersContrastOverride();
+  }
+
   double AnimationsPlayBackRateMultiplier() const {
     return Top()->GetAnimationsPlayBackRateMultiplier();
   }
 
   bool IsInBFCache() const;
   bool IsEnteringBFCache() const { return mIsEnteringBFCache; }
-  void DeactivateDocuments();
+  // aForUnload means that the old document unloads instead of entering BFCache.
+  void DeactivateDocuments(const SessionHistoryInfo* aPageSwapTargetInfo,
+                           NavigationType aNavigationType,
+                           bool aForUnload = false);
 
   MOZ_CAN_RUN_SCRIPT
   void ReactivateDocuments(
@@ -1394,11 +1404,12 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void DidSet(FieldIndex<IDX_PrefersReducedMotionOverride>,
               dom::PrefersReducedMotionOverride aOldValue);
 
+  void DidSet(FieldIndex<IDX_PrefersContrastOverride>,
+              dom::PrefersContrastOverride aOldValue);
+
   void DidSet(FieldIndex<IDX_AnimationsPlayBackRateMultiplier>,
               double aOldValue);
 
-  template <typename Callback>
-  void WalkPresContexts(Callback&&);
   void PresContextAffectingFieldChanged();
 
   void DidSet(FieldIndex<IDX_LanguageOverride>, nsCString&& aOldValue);

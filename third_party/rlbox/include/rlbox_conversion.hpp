@@ -35,14 +35,18 @@ inline constexpr void convert_type_fundamental(T_To& to,
                                  detail::remove_cv_ref_t<T_From>>);
     to = from;
   }
+  else if_constexpr_named(cond4, std::is_same_v<T_To, bool>)
+  {
+    to = (from != 0);
+  }
   else if_constexpr_named(
-    cond4, is_floating_point_v<T_To> || is_floating_point_v<T_From>)
+    cond5, is_floating_point_v<T_To> || is_floating_point_v<T_From>)
   {
     static_assert(is_floating_point_v<T_To> && is_floating_point_v<T_From>);
     // language coerces different float types
     to = from;
   }
-  else if_constexpr_named(cond5, is_integral_v<T_To> || is_integral_v<T_From>)
+  else if_constexpr_named(cond6, is_integral_v<T_To> || is_integral_v<T_From>)
   {
     static_assert(is_integral_v<T_To> && is_integral_v<T_From>);
 
@@ -52,40 +56,43 @@ inline constexpr void convert_type_fundamental(T_To& to,
     // Some branches don't use the param
     RLBOX_UNUSED(err_msg);
 
+    T_From fromCopy = from;
+
     if constexpr (is_signed_v<T_To> == is_signed_v<T_From> &&
                   sizeof(T_To) >= sizeof(T_From)) {
       // Eg: int64_t from int32_t, uint64_t from uint32_t
     } else if constexpr (is_unsigned_v<T_To> && is_unsigned_v<T_From>) {
       // Eg: uint32_t from uint64_t
-      dynamic_check(from <= numeric_limits<T_To>::max(), err_msg);
+      dynamic_check(fromCopy <= numeric_limits<T_To>::max(), err_msg);
     } else if constexpr (is_signed_v<T_To> && is_signed_v<T_From>) {
       // Eg: int32_t from int64_t
-      dynamic_check(from >= numeric_limits<T_To>::min(), err_msg);
-      dynamic_check(from <= numeric_limits<T_To>::max(), err_msg);
+      dynamic_check(fromCopy >= numeric_limits<T_To>::min(), err_msg);
+      dynamic_check(fromCopy <= numeric_limits<T_To>::max(), err_msg);
     } else if constexpr (is_unsigned_v<T_To> && is_signed_v<T_From>) {
       if constexpr (sizeof(T_To) < sizeof(T_From)) {
         // Eg: uint32_t from int64_t
-        dynamic_check(from >= 0, err_msg);
+        dynamic_check(fromCopy >= 0, err_msg);
         auto to_max = numeric_limits<T_To>::max();
-        dynamic_check(from <= static_cast<T_From>(to_max), err_msg);
+        dynamic_check(fromCopy <= static_cast<T_From>(to_max), err_msg);
       } else {
         // Eg: uint32_t from int32_t, uint64_t from int32_t
-        dynamic_check(from >= 0, err_msg);
+        dynamic_check(fromCopy >= 0, err_msg);
       }
     } else if constexpr (is_signed_v<T_To> && is_unsigned_v<T_From>) {
       if constexpr (sizeof(T_To) <= sizeof(T_From)) {
         // Eg: int32_t from uint32_t, int32_t from uint64_t
         auto to_max = numeric_limits<T_To>::max();
-        dynamic_check(from <= static_cast<T_From>(to_max), err_msg);
+        dynamic_check(fromCopy <= static_cast<T_From>(to_max), err_msg);
       } else {
         // Eg: int64_t from uint32_t
       }
     }
-    to = static_cast<T_To>(from);
+    to = static_cast<T_To>(fromCopy);
   }
   else
   {
-    constexpr auto unknownCase = !(cond1 || cond2 || cond3 || cond4 || cond5);
+    constexpr auto unknownCase =
+      !(cond1 || cond2 || cond3 || cond4 || cond5 || cond6);
     rlbox_detail_static_fail_because(
       unknownCase, "Unexpected case for convert_type_fundamental");
   }

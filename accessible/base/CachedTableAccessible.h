@@ -45,12 +45,7 @@ class CachedTableCellAccessible final : public TableCellAccessible {
 
  private:
   CachedTableCellAccessible(uint64_t aAccID, Accessible* aAcc, uint32_t aRowIdx,
-                            uint32_t aColIdx, uint32_t aPrevColHeaderCellIdx)
-      : mAccID(aAccID),
-        mAcc(aAcc),
-        mRowIdx(aRowIdx),
-        mColIdx(aColIdx),
-        mPrevColHeaderCellIdx(aPrevColHeaderCellIdx) {}
+                            uint32_t aColIdx, uint32_t aPrevColHeaderCellIdx);
 
   // Get the Accessible for this table cell given its ancestor table Accessible,
   // verifying that the Accessible is valid.

@@ -71,10 +71,8 @@ add_task(async function test_credit_card_captured_after_form_removal() {
 
   const storedCreditCards = await getCreditCards();
   let actualCreditCard = storedCreditCards[0];
-  actualCreditCard["cc-number"] = await OSKeyStore.decrypt(
-    actualCreditCard["cc-number-encrypted"],
-    "testing"
-  );
+  actualCreditCard["cc-number"] =
+    await decryptCreditCardNumber(actualCreditCard);
 
   for (let key in CC_VALUES) {
     let expected = CC_VALUES[key];

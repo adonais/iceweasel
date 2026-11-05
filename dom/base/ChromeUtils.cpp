@@ -1969,21 +1969,20 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
       /* aUtilityInfo = */ nsTArray<UtilityInfo>());
 
   // First handle non-ContentParent processes.
-  mozilla::ipc::GeckoChildProcessHost::GetAll(
-      [&requests](mozilla::ipc::GeckoChildProcessHost* aGeckoProcess) {
-        base::ProcessId childPid = aGeckoProcess->GetChildProcessId();
-        if (childPid == 0) {
-          // Something went wrong with this process, it may be dead already,
-          // fail gracefully.
-          return;
-        }
-        mozilla::ProcType type = mozilla::ProcType::Unknown;
+  for (auto& geckoProcess : mozilla::ipc::GeckoChildProcessHost::GetAll()) {
+    base::ProcessId childPid = geckoProcess->GetChildProcessId();
+    if (childPid == 0) {
+      // Something went wrong with this process, it may be dead already,
+      // fail gracefully.
+      continue;
+    }
+    mozilla::ProcType type = mozilla::ProcType::Unknown;
 
-        switch (aGeckoProcess->GetProcessType()) {
-          case GeckoProcessType::GeckoProcessType_Content: {
-            // These processes are handled separately.
-            return;
-          }
+    switch (geckoProcess->GetProcessType()) {
+      case GeckoProcessType::GeckoProcessType_Content: {
+        // These processes are handled separately.
+        continue;
+      }
 
 #define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name, proc_typename, \
                            process_bin_type, procinfo_typename,               \
@@ -2002,39 +2001,39 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
 #endif  // MOZ_ENABLE_FORKSERVER
 #undef SKIP_PROCESS_TYPE_CONTENT
 #undef GECKO_PROCESS_TYPE
-          default:
-            // Leave the default Unknown value in |type|.
-            break;
-        }
+      default:
+        // Leave the default Unknown value in |type|.
+        break;
+    }
 
-        // Attach utility actor information to the process.
-        nsTArray<UtilityInfo> utilityActors;
-        if (aGeckoProcess->GetProcessType() ==
-            GeckoProcessType::GeckoProcessType_Utility) {
-          RefPtr<mozilla::ipc::UtilityProcessManager> upm =
-              mozilla::ipc::UtilityProcessManager::GetSingleton();
-          if (!utilityActors.AppendElements(upm->GetActors(aGeckoProcess),
-                                            fallible)) {
-            NS_WARNING("Error adding actors");
-            return;
-          }
-        }
+    // Attach utility actor information to the process.
+    nsTArray<UtilityInfo> utilityActors;
+    if (geckoProcess->GetProcessType() ==
+        GeckoProcessType::GeckoProcessType_Utility) {
+      RefPtr<mozilla::ipc::UtilityProcessManager> upm =
+          mozilla::ipc::UtilityProcessManager::GetSingleton();
+      if (!utilityActors.AppendElements(upm->GetActors(geckoProcess),
+                                        fallible)) {
+        NS_WARNING("Error adding actors");
+        continue;
+      }
+    }
 
-        requests.EmplaceBack(
-            /* aPid = */ childPid,
-            /* aProcessType = */ type,
-            /* aOrigin = */ ""_ns,
-            /* aWindowInfo = */ nsTArray<WindowInfo>(),  // Without a
-                                                         // ContentProcess, no
-                                                         // DOM windows.
-            /* aUtilityInfo = */ std::move(utilityActors),
-            /* aChild = */ 0  // Without a ContentProcess, no ChildId.
+    requests.EmplaceBack(
+        /* aPid = */ childPid,
+        /* aProcessType = */ type,
+        /* aOrigin = */ ""_ns,
+        /* aWindowInfo = */ nsTArray<WindowInfo>(),  // Without a
+                                                     // ContentProcess, no
+                                                     // DOM windows.
+        /* aUtilityInfo = */ std::move(utilityActors),
+        /* aChild = */ 0  // Without a ContentProcess, no ChildId.
 #ifdef XP_MACOSX
-            ,
-            /* aChildTask = */ aGeckoProcess->GetChildTask()
+        ,
+        /* aChildTask = */ geckoProcess->GetChildTask()
 #endif  // XP_MACOSX
-        );
-      });
+    );
+  }
 
   // Now handle ContentParents.
   for (const auto* contentParent : contentParents) {

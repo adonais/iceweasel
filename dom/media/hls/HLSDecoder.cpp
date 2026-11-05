@@ -343,7 +343,6 @@ already_AddRefed<MediaDecoderStateMachineBase> HLSDecoder::CreateStateMachine(
 
   MediaFormatReaderInit init;
   init.mVideoFrameContainer = GetVideoFrameContainer();
-  init.mKnowsCompositor = GetCompositor();
   init.mCrashHelper = GetOwner()->CreateGMPCrashHelper();
   init.mFrameStats = mFrameStats;
   init.mMediaDecoderOwnerID = mOwner;

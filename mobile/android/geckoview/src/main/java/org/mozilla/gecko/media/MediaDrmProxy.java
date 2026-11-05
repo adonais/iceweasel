@@ -4,9 +4,7 @@
 
 package org.mozilla.gecko.media;
 
-import android.media.MediaCrypto;
 import android.util.Log;
-import java.util.ArrayList;
 import java.util.UUID;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
@@ -14,8 +12,6 @@ import org.mozilla.gecko.mozglue.JNIObject;
 public final class MediaDrmProxy {
   private static final String LOGTAG = "GeckoMediaDrmProxy";
   private static final boolean DEBUG = false;
-
-  public static final ArrayList<MediaDrmProxy> sProxyList = new ArrayList<MediaDrmProxy>();
 
   // A flag to avoid using the native object that has been destroyed.
   private boolean mDestroyed;
@@ -165,7 +161,6 @@ public final class MediaDrmProxy {
           RemoteManager.getInstance().createRemoteMediaDrmBridge(keySystem, mDrmStubId);
       mImpl = new RemoteMediaDrmBridge(remoteBridge);
       mImpl.setCallbacks(new MediaDrmProxyCallbacks(this, nativeCallbacks));
-      sProxyList.add(this);
     } catch (final Exception e) {
       Log.e(LOGTAG, "Constructing MediaDrmProxy ... error", e);
     }
@@ -220,19 +215,6 @@ public final class MediaDrmProxy {
     }
   }
 
-  // Get corresponding MediaCrypto object by a generated UUID for MediaCodec.
-  // Will be called on MediaFormatReader's TaskQueue.
-  @WrapForJNI
-  public static MediaCrypto getMediaCrypto(final String stubId) {
-    for (final MediaDrmProxy proxy : sProxyList) {
-      if (proxy.getStubId().equals(stubId)) {
-        return proxy.getMediaCryptoFromBridge();
-      }
-    }
-    if (DEBUG) Log.d(LOGTAG, " NULL crypto ");
-    return null;
-  }
-
   @WrapForJNI // Called when natvie object is destroyed.
   private void destroy() {
     if (DEBUG) Log.d(LOGTAG, "destroy!! Native object is destroyed.");
@@ -245,11 +227,6 @@ public final class MediaDrmProxy {
 
   private void release() {
     if (DEBUG) Log.d(LOGTAG, "release");
-    sProxyList.remove(this);
     mImpl.release();
-  }
-
-  private MediaCrypto getMediaCryptoFromBridge() {
-    return mImpl != null ? mImpl.getMediaCrypto() : null;
   }
 }

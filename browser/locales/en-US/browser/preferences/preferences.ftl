@@ -195,9 +195,6 @@ always-check-default =
 startup-restore-windows-and-tabs =
     .label = Open previous windows and tabs
     .accesskey = s
-startup-windows-launch-on-login-profile-disabled =
-    .message = Enable this preference by checking “{ profile-manager-use-selected.label }” in the “Choose User Profile” window.
-
 windows-launch-on-login =
     .label = Open { -brand-short-name } automatically when your computer starts up
     .accesskey = O
@@ -2055,6 +2052,72 @@ permissions-data-section =
 pane-permissions-data-title2 = Permissions and data
   .title = Permissions and data
 
+notifications-section-header =
+    .heading = Notifications
+
+notifications-entry-card-header =
+    .label = Notifications
+    .description = Choose which websites can send notifications, and how those alerts show up.
+
+# Variables:
+#   $count (number) - Number of websites with a stored notification decision,
+#                     always one or more. The zero case is a separate message,
+#                     notifications-entry-manage-button-empty.
+notifications-entry-manage-button =
+    .label = Manage notification settings
+    .description =
+        { $count ->
+            [one] { $count } website
+           *[other] { $count } websites
+        }
+
+# Replaces notifications-entry-manage-button when no website has a stored
+# notification decision. It deliberately carries no description: the empty
+# state is stated on the Notifications page rather than on this row.
+notifications-entry-manage-button-empty =
+    .label = Manage website notification settings
+
+notifications-website-card-header =
+    .label = Website notifications
+    .description = Choose how websites can send notifications.
+
+notifications-filter =
+    .placeholder = Search websites
+
+# Heading of the website column in the list of websites and their notification
+# state, shown when the list has rows.
+notifications-list-header =
+    .label = Website
+# Heading of the state column in the list of websites and their notification
+# state, shown when the list has rows.
+notifications-list-header-state = Allow notifications
+# Heading of the list of websites when it has no rows, because no website has a
+# stored notification decision or a search matches no website.
+notifications-list-header-empty =
+    .label = Websites
+
+# Read-only state shown on each row of the website notifications list, in the
+# column headed "Allow notifications". "Always" is used where notifications can
+# also be delivered while Firefox is closed.
+notifications-state-always = Always
+# Read-only state shown on each row of the website notifications list, in the
+# column headed "Allow notifications". "Allow" is used where notifications
+# cannot be delivered while Firefox is closed.
+notifications-state-allow = Allow
+# Read-only state shown on each row of the website notifications list, in the
+# column headed "Allow notifications", for websites blocked from sending
+# notifications.
+notifications-state-never = Never
+
+# Shown as a row under the list header when no website has a stored
+# notification decision.
+notifications-empty-message =
+    .label = No website notifications added.
+
+# Shown as a row under the list header when a search matches no website.
+notifications-no-results-message =
+    .label = No website notifications match your search.
+
 permissions-header3 =
     .label = Permissions
     .description = Manage what websites can access, control, or trigger.
@@ -2110,6 +2173,17 @@ permissions-addon-install-warning3 =
 permissions-addon-exceptions2 =
     .label = Choose which websites can install extensions
     .accesskey = E
+
+# App links are links that a website can ask to open for you, like email
+# (mailto:) links.
+permissions-allow-app-links =
+    .label = Allow sites to ask to open app links.
+    .accesskey = A
+
+# Opens the list of sites that are blocked from asking to open app links.
+permissions-app-links-manage-button =
+    .label = Manage blocked sites
+    .accesskey = M
 
 ## Privacy Section - Data Collection
 

@@ -788,11 +788,15 @@ using SharedImmutableScriptDataTable =
 
 struct MemberInitializers {
 #ifdef ENABLE_DECORATORS
-  static constexpr size_t NumBits = 30;
+  static constexpr size_t NumBits = 29;
 #else
-  static constexpr size_t NumBits = 31;
+  static constexpr size_t NumBits = 30;
 #endif
   static constexpr uint32_t MaxInitializers = BitMask(NumBits);
+
+  // Classes with more all-zero fields than this fall back to the
+  // `.initializers` array.
+  static constexpr size_t MaxInlinedZeroFields = 8;
 
 #ifdef DEBUG
   bool valid = false;
@@ -804,6 +808,8 @@ struct MemberInitializers {
   bool hasDecorators : 1;
 #endif
 
+  bool hasInlinedZeroFields : 1;
+
   // This struct will eventually have a vector of constant values for optimizing
   // field initializers.
   uint32_t numMemberInitializers : NumBits;
@@ -812,7 +818,8 @@ struct MemberInitializers {
 #ifdef ENABLE_DECORATORS
                      bool hasDecorators,
 #endif
-                     uint32_t numMemberInitializers)
+                     uint32_t numMemberInitializers,
+                     bool hasInlinedZeroFields = false)
       :
 #ifdef DEBUG
         valid(true),
@@ -821,15 +828,16 @@ struct MemberInitializers {
 #ifdef ENABLE_DECORATORS
         hasDecorators(hasDecorators),
 #endif
+        hasInlinedZeroFields(hasInlinedZeroFields),
         numMemberInitializers(numMemberInitializers) {
 #ifdef ENABLE_DECORATORS
     MOZ_ASSERT(
         this->numMemberInitializers == numMemberInitializers,
-        "numMemberInitializers should easily fit in the 30-bit bitfield");
+        "numMemberInitializers should easily fit in the 29-bit bitfield");
 #else
     MOZ_ASSERT(
         this->numMemberInitializers == numMemberInitializers,
-        "numMemberInitializers should easily fit in the 31-bit bitfield");
+        "numMemberInitializers should easily fit in the 30-bit bitfield");
 #endif
   }
 
@@ -849,22 +857,25 @@ struct MemberInitializers {
 
   uint32_t serialize() const {
 #ifdef ENABLE_DECORATORS
-    auto serialised = (hasPrivateBrand << (NumBits + 1)) |
-                      hasDecorators << NumBits | numMemberInitializers;
+    auto serialised = (hasPrivateBrand << (NumBits + 2)) |
+                      (hasDecorators << (NumBits + 1)) |
+                      (hasInlinedZeroFields << NumBits) | numMemberInitializers;
     return serialised;
 #else
-    return (hasPrivateBrand << NumBits) | numMemberInitializers;
+    return (hasPrivateBrand << (NumBits + 1)) |
+           (hasInlinedZeroFields << NumBits) | numMemberInitializers;
 #endif
   }
 
   static MemberInitializers deserialize(uint32_t bits) {
 #ifdef ENABLE_DECORATORS
-    return MemberInitializers((bits & Bit(NumBits + 1)) != 0,
-                              (bits & Bit(NumBits)) != 0,
-                              bits & BitMask(NumBits));
+    return MemberInitializers(
+        (bits & Bit(NumBits + 2)) != 0, (bits & Bit(NumBits + 1)) != 0,
+        bits & BitMask(NumBits), (bits & Bit(NumBits)) != 0);
 #else
-    return MemberInitializers((bits & Bit(NumBits)) != 0,
-                              bits & BitMask(NumBits));
+    return MemberInitializers((bits & Bit(NumBits + 1)) != 0,
+                              bits & BitMask(NumBits),
+                              (bits & Bit(NumBits)) != 0);
 #endif
   }
 
@@ -878,6 +889,7 @@ struct MemberInitializers {
 #ifdef ENABLE_DECORATORS
         hasDecorators(false),
 #endif
+        hasInlinedZeroFields(false),
         numMemberInitializers(0) {
   }
 };

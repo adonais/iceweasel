@@ -1222,20 +1222,6 @@ def mozillabuild_bin_paths(mozillabuild, shell, host_is_windows):
     return paths
 
 
-@depends(mozillabuild_bin_paths)
-@imports("os")
-def prefer_mozillabuild_path(mozillabuild_bin_paths):
-    return mozillabuild_bin_paths + os.environ["PATH"].split(os.pathsep)
-
-
-# milestone.is_nightly corresponds to cases NIGHTLY_BUILD is set.
-
-
-@depends(milestone)
-def enabled_in_nightly(milestone):
-    return milestone.is_nightly
-
-
 # Check if we need the 32-bit Linux SSE2 error dialog
 # ===================================================
 option(

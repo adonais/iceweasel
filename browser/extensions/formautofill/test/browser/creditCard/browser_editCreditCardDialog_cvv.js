@@ -13,6 +13,8 @@ function getSecurityCodeField(win) {
 add_setup(async function () {
   // The feature is gated on rollout as well as on the user's own choice. Roll
   // it out for the whole file so each task can toggle CVV_PREF on its own.
+  // The security code is supported only while the Rust store serves.
+  await switchCreditCardStore({ rust: true });
   await SpecialPowers.pushPrefEnv({
     set: [["extensions.formautofill.creditCards.cvv.supported", "on"]],
   });
@@ -39,6 +41,22 @@ add_task(async function test_securityCodeAbsentWhenPrefDisabled() {
   });
 
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_securityCodeAbsentWhileJsonStoreServes() {
+  await switchCreditCardStore({ rust: false });
+  await SpecialPowers.pushPrefEnv({ set: [[CVV_PREF, true]] });
+
+  await testDialog(EDIT_CREDIT_CARD_DIALOG_URL, win => {
+    ok(
+      !getSecurityCodeField(win),
+      "The security code field is taken out of the form"
+    );
+    win.document.querySelector("#cancel").click();
+  });
+
+  await SpecialPowers.popPrefEnv();
+  await switchCreditCardStore({ rust: true });
 });
 
 add_task(async function test_securityCodeShownWhenPrefEnabled() {
@@ -82,5 +100,34 @@ add_task(async function test_savedSecurityCodeIsShown() {
     { record }
   );
 
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_savingWithCaptureOffKeepsSecurityCode() {
+  await SpecialPowers.pushPrefEnv({ set: [[CVV_PREF, true]] });
+  await setStorage(Object.assign({}, TEST_CREDIT_CARD_1, { "cc-csc": "123" }));
+  await SpecialPowers.pushPrefEnv({ set: [[CVV_PREF, false]] });
+  let [card] = await getCreditCards();
+  ok(!("cc-csc" in card), "The stored security code is not read back");
+
+  await testDialog(
+    EDIT_CREDIT_CARD_DIALOG_URL,
+    win => {
+      ok(!getSecurityCodeField(win), "The form has no security code field");
+      EventUtils.synthesizeKey("VK_TAB", {}, win);
+      EventUtils.synthesizeKey("VK_TAB", {}, win);
+      EventUtils.synthesizeKey("VK_RIGHT", {}, win);
+      EventUtils.synthesizeKey("test", {}, win);
+      win.document.querySelector("#save").click();
+    },
+    { record: card }
+  );
+
+  await SpecialPowers.popPrefEnv();
+  [card] = await getCreditCards();
+  is(card["cc-name"], TEST_CREDIT_CARD_1["cc-name"] + "test", "The edit saved");
+  is(card["cc-csc"], "123", "and the security code the form lacked is kept");
+
+  await removeAllRecords();
   await SpecialPowers.popPrefEnv();
 });

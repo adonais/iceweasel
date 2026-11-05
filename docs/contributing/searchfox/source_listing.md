@@ -37,7 +37,7 @@ See the {ref}`Blame strip <searchfox-blame-strip>` documentation.
 
 ## Code coverage
 
-The light-blue line next to the blame strip shows the [code coverage](https://firefox-source-docs.mozilla.org/tools/code-coverage/index.html) information.
+The light-blue line next to the blame strip shows the {doc}`code coverage </tools/code-coverage/index>` information.
 
 Hovering a pointer over the blame strip shows the coverage information, in the same popup as the blame, which shows how many times the line is hit in the automation.
 

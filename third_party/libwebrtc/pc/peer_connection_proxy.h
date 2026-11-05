@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "api/adaptation/resource.h"
 #include "api/data_channel_event_observer_interface.h"
 #include "api/data_channel_interface.h"
@@ -166,6 +167,12 @@ PROXY_METHOD2(void,
               AddIceCandidate,
               std::unique_ptr<IceCandidate>,
               std::function<void(RTCError)>)
+PROXY_METHOD2(void,
+              AddIceCandidate,
+              std::unique_ptr<IceCandidate>,
+              absl::AnyInvocable<void(
+                  RTCError,
+                  absl::AnyInvocable<void() &&>) &&>)
 PROXY_METHOD1(bool, RemoveIceCandidate, const IceCandidate*)
 PROXY_METHOD1(RTCError, SetBitrate, const BitrateSettings&)
 PROXY_METHOD1(void,

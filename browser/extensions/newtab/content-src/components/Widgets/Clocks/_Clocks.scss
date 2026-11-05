@@ -226,6 +226,11 @@
     flex: 1 1 0;
     min-block-size: 0;
     gap: 0;
+
+    // Focused only programmatically on open (tabindex -1), never by Tab.
+    &:focus {
+      outline: none;
+    }
   }
 
   .clocks-edit-item {
@@ -239,7 +244,7 @@
     // room for the future drag handle per the Figma layout.
     padding-inline-start: var(--space-xlarge);
     padding-inline-end: calc(var(--space-medium) * 4);
-    border-radius: var(--button-border-radius);
+    border-radius: var(--border-radius-small);
     transition: background-color 180ms ease;
 
     // Tall enough for a nicknamed row, so plain and nicknamed rows match.
@@ -248,7 +253,6 @@
 
   .clocks-edit-item:hover,
   .clocks-edit-item:focus-within {
-    // stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens, stylelint-plugin-mozilla/use-design-tokens
     background-color: var(--button-background-color-menu-hover, #E7E1F8);
   }
 
@@ -307,7 +311,7 @@
 
   .clocks-edit-item-button:hover::part(button),
   .clocks-edit-item-button:focus-visible::part(button) {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens, stylelint-plugin-mozilla/use-design-tokens */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-color: rgb(255 255 255 / 90%);
   }
 
@@ -755,7 +759,6 @@
     }
 
     &[data-clock-count='3'] .clocks-time {
-      // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list
       font-size: calc(var(--font-size-heading-large) - 3px);
     }
 

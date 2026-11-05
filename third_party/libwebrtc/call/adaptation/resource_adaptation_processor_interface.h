@@ -12,7 +12,6 @@
 #define CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_INTERFACE_H_
 
 #include <map>
-#include <vector>
 
 #include "api/adaptation/resource.h"
 #include "api/scoped_refptr.h"
@@ -51,7 +50,6 @@ class ResourceAdaptationProcessorInterface {
   // multi-stream aware, stream-specific resouces will get added and removed
   // over time.
   virtual void AddResource(scoped_refptr<Resource> resource) = 0;
-  virtual std::vector<scoped_refptr<Resource>> GetResources() const = 0;
   virtual void RemoveResource(scoped_refptr<Resource> resource) = 0;
 };
 

@@ -124,6 +124,7 @@ redirects:
     layout/layout: layout
     gfx/gfx: gfx
     intl/l10n/l10n: l10n
+    l10n/glossary.html: glossary/index.html
     ipc/ipc: ipc
     modules/libpref/libpref: modules/libpref
     python/mach: mach
@@ -241,6 +242,7 @@ js_source_paths:
     # Limited to URILoadingHelper.sys.mjs: the rest of the directory holds
     # modules which do not currently run cleanly for jsdoc.
     - browser/modules/URILoadingHelper.sys.mjs
+    - browser/components/miniwindow
     - js/xpconnect/loader
     - remote/marionette
     - testing/mochitest/BrowserTestUtils

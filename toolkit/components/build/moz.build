@@ -22,3 +22,7 @@ FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [
     "../url-classifier",
 ]
+
+SOURCE_HEADERS += [
+    "nsToolkitCompsModule.h",
+]

@@ -18,23 +18,24 @@ uint64_t ClampToZero(int64_t aValue, const nsACString& aContext) {
   return aValue < 0 ? 0 : static_cast<uint64_t>(aValue);
 }
 
+bool ThrottleCounter(uint32_t& aCounter) {
+  // To not flood the product maintenance diagnostics, this predicate qualifies
+  // an error by returning true only when counter and 1 + counter bits are like
+  // 0111... and 1000..., i.e. when counter is one less than a power of two.
+  const bool result = 0u == (aCounter & (1u + aCounter));
+  ++aCounter;
+  return result;
+}
+
 bool ShouldReportDiagnostic(const nsACString& aContext) {
   static StaticDataMutex<nsTHashMap<nsCStringHashKey, uint32_t>> sCounters(
       "ShouldReportDiagnostic::sCounters");
 
   auto counters = sCounters.Lock();
-  uint32_t& counter = counters->LookupOrInsert(aContext, 0u);
-
-  // To not flood the product maintenance diagnostics, this predicate
-  // qualifies an error by returning true only when counter and 1 + counter
-  // bits are like 0111... and 1000..., i.e. when counter is one less than a
-  // power of two.
   // Each distinct context gets its own counter, so a chronically-firing
   // context can't suppress the first occurrences of a different, rarer one.
-  // This is a copy paste from LSSnapshot::SetItem.
-  const bool result = 0u == (counter & (1u + counter));
-  ++counter;
-  return result;
+  uint32_t& counter = counters->LookupOrInsert(aContext, 0u);
+  return ThrottleCounter(counter);
 }
 
 bool IsOnIOThread() {

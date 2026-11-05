@@ -134,29 +134,12 @@ moz-button.history-menu-button {
   --chat-favicon-size: calc(var(--panel-item-icon-size) * 0.6);
   --chat-favicon-inline-inset: calc(var(--panel-item-padding) + var(--panel-item-icon-size) + 1px - var(--chat-favicon-size));
   --chat-favicon-block-inset: calc(var(--panel-item-padding) - 1px);
-  --panel-padding-block: var(--space-small);
+  --panel-padding-block: var(--panel-menuitem-margin-inline);
   min-width: var(--size-layout-small);
   max-width: var(--size-layout-medium);
   /* Force the popover onto its own layer so the displayed cursor tracks the
      painted rows (works around the top-layer popover cursor mismatch). */
   transform: translate(0);
-}
-
-/* The chat-list submenu (recent chats + View all chats) uses 16px block
-   padding per design; the plain action menus keep 8px. The separator's inline
-   margin matches so the line aligns with the rows. */
-/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
-.history-menu:has([data-l10n-id="aiwindow-history-menu-view-all-chats"]) {
-  --panel-padding-block: var(--space-large);
-  --panel-separator-padding: var(--panel-separator-padding-block) var(--space-large);
-}
-
-/* Its rows inset 16px inline to match, instead of the default 8px. */
-/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
-.history-menu:has([data-l10n-id="aiwindow-history-menu-view-all-chats"]) panel-item::part(button) {
-  margin-inline: var(--space-large);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  max-width: calc(100% - 2 * var(--space-large));
 }
 
 .history-menu panel-item::part(button) {
@@ -208,7 +191,7 @@ moz-button.history-menu-button {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding-inline: var(--space-large);
+  padding-inline: var(--panel-menuitem-margin-inline);
 }
 
 .history-menu .history-menu-back {
@@ -221,7 +204,7 @@ moz-button.history-menu-button {
 
 .history-menu .history-menu-header-title {
   grid-column: 2;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
 }
 
 /* Nova: the back arrow uses the Smart Window accent-desaturated icon fill (per
@@ -264,7 +247,6 @@ moz-button.history-menu-button {
     margin-inline: var(--space-small);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     max-width: calc(100% - 2 * var(--space-small));
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-radius: var(--panel-menuitem-border-radius);
   }
 }
@@ -272,24 +254,27 @@ moz-button.history-menu-button {
 /* Nova theme; non-nova uses panel-list's application-menu defaults. */
 @media -moz-pref("browser.nova.enabled") {
   .history-menu {
-    --panel-list-border-radius: var(--border-radius-large);
     --panel-list-box-shadow: var(--box-shadow-level-3);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    --panel-item-button-border-radius: var(--smartwindow-panel-item-border-radius);
 
     @media not (forced-colors) {
       --panel-list-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
-      --panel-list-text-color: light-dark(var(--color-violet-90), var(--color-gray-0));
-      --button-background-color-hover: var(--smartwindow-panel-item-background-color-hover);
-      --button-background-color-active: var(--smartwindow-panel-item-background-color-active);
+      --panel-list-text-color: light-dark(var(--color-violet-desaturated-90), var(--color-gray-0));
+      --panel-separator-color: light-dark(var(--color-gray-20), var(--color-gray-50));
+      --button-background-color-menu-hover: var(--smartwindow-panel-item-background-color-hover);
+      --button-background-color-menu-active: var(--smartwindow-panel-item-background-color-active);
+      --button-text-color-menu-hover: var(--panel-list-text-color);
+      --button-text-color-menu-active: var(--panel-list-text-color);
+      /* Level-3 elevation spelled out, since ai-window-shared.css tints the
+         shared box-shadow colors violet for the whole document. */
+      --panel-list-box-shadow:
+        0 0.375px 1.5px light-dark(rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.06)), 0 3px 12px light-dark(rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.12));
     }
   }
 
   .history-menu panel-item::part(button) {
+    border-radius: var(--panel-menuitem-border-radius);
+    margin-inline: var(--panel-menuitem-margin-inline);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    border-radius: var(--panel-item-button-border-radius);
-    margin-inline: var(--space-small);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    max-width: calc(100% - 2 * var(--space-small));
+    max-width: calc(100% - 2 * var(--panel-menuitem-margin-inline));
   }
 }

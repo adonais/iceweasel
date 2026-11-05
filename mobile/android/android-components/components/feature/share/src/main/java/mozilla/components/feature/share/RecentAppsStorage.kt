@@ -23,7 +23,7 @@ class RecentAppsStorage(context: Context) {
      * database. This allows newly installed apps to catch up and appear in the most recent section faster. We do not
      * need to handle overflow as it's not reasonably expected to reach Double.MAX_VALUE for users
      */
-    fun updateRecentApp(selectedActivityName: String) {
+    suspend fun updateRecentApp(selectedActivityName: String) {
         recentAppsDao.value.updateRecentAppAndDecayRest(selectedActivityName)
     }
 
@@ -32,7 +32,7 @@ class RecentAppsStorage(context: Context) {
      *
      * @param activityName - name of the activity of the app
      */
-    fun deleteRecentApp(activityName: String) {
+    suspend fun deleteRecentApp(activityName: String) {
         recentAppsDao.value.deleteRecentApp(activityName)
     }
 
@@ -41,7 +41,7 @@ class RecentAppsStorage(context: Context) {
      *
      * @param limit - size of list
      */
-    fun getRecentAppsUpTo(limit: Int): List<RecentApp> {
+    suspend fun getRecentAppsUpTo(limit: Int): List<RecentApp> {
         return recentAppsDao.value.getRecentAppsUpTo(limit)
     }
 
@@ -49,7 +49,7 @@ class RecentAppsStorage(context: Context) {
      * If there are apps that could resolve our share and are not added in our database, we add them with a 0 count, so
      * they can be updated later when a user uses that app
      */
-    fun updateDatabaseWithNewApps(activityNames: List<String>) {
+    suspend fun updateDatabaseWithNewApps(activityNames: List<String>) {
         recentAppsDao.value.insertRecentApps(
             activityNames.map { activityName ->
                 RecentAppEntity(activityName)

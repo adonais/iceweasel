@@ -10,8 +10,8 @@ const webrtc::AudioSendStream::Config& MockAudioSendStream::GetConfig() const {
   return *mCallWrapper->GetMockCall()->mAudioSendConfig;
 }
 
-void MockAudioSendStream::Reconfigure(const Config& config,
-                                      webrtc::SetParametersCallback callback) {
+void MockAudioSendStream::Reconfigure(
+    const Config& config, webrtc::SetParametersCallback /*callback*/) {
   mCallWrapper->GetMockCall()->mAudioSendConfig = mozilla::Some(config);
 }
 
@@ -29,12 +29,13 @@ void MockVideoSendStream::ReconfigureVideoEncoder(
 }
 
 void MockVideoSendStream::ReconfigureVideoEncoder(
-    webrtc::VideoEncoderConfig config, webrtc::SetParametersCallback callback) {
+    webrtc::VideoEncoderConfig config,
+    webrtc::SetParametersCallback /*callback*/) {
   ReconfigureVideoEncoder(std::move(config));
 }
 
 void MockVideoSendStream::SetSource(
-    webrtc::VideoSourceInterface<webrtc::VideoFrame>* source,
+    webrtc::VideoSourceInterface<webrtc::VideoFrame>* /*source*/,
     const webrtc::DegradationPreference& degradation_preference) {
   mCallWrapper->GetMockCall()->mConfiguredDegradationPreference =
       degradation_preference;

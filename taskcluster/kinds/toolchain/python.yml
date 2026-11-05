@@ -4,8 +4,6 @@
 ---
 task-defaults:
     description: "python repack"
-    attributes:
-        local-toolchain: true
     worker-type: b-linux-docker-amd
     worker:
         max-run-time: 7200

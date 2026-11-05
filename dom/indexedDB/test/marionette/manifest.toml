@@ -6,3 +6,7 @@ tags = "inc-origin-init os_integration"
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
 
 ["test_IDB_encryption_PBM.py"]
+
+["test_IDB_encryption_lockstore.py"]
+
+["test_IDB_encryption_persistence.py"]

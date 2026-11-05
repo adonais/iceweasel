@@ -3,6 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
+  --smart-page-empty-chat-message-font-color: light-dark(var(--color-violet-desaturated-50), var(--color-violet-desaturated-30));
+
+  @media (forced-colors) or (prefers-contrast) {
+    --smart-page-empty-chat-message-font-color: var(--text-color-deemphasized);
+  }
+}
+
+:host {
   height: 100vh;
   display: grid;
   grid-template-columns: 1fr;
@@ -92,6 +100,29 @@
   height: 100%;
 }
 
+.smartpage-chat-message {
+  grid-area: browser;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-large);
+  text-align: center;
+
+  img {
+    inline-size: var(--size-item-large);
+    block-size: var(--size-item-large);
+  }
+
+  p {
+    margin: 0;
+    max-inline-size: 270px;
+    color: var(--smart-page-empty-chat-message-font-color);
+    font-size: var(--font-size-root);
+    font-weight: 400;
+    line-height: 20px;
+  }
+}
+
 #smartbar-wrapper {
   grid-area: smartbar;
   height: var(--smartbar-height, auto);
@@ -152,11 +183,12 @@
   accent-color: var(--smartwindow-assistant-accent-color-focus);
 }
 
-:host([mode="fullpage"]) #ai-window-smartbar {
+/* Keep the input from moving when the suggestions list opens. */
+#ai-window-smartbar[suggestions-position="bottom"] {
   top: 0;
 }
 
-:host([mode="sidebar"]) #ai-window-smartbar {
+#ai-window-smartbar[suggestions-position="top"] {
   bottom: 0;
 }
 

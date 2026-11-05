@@ -10,10 +10,9 @@ import {
   UrlbarMuxer,
   UrlbarUtils,
 } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
@@ -22,11 +21,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
+  logger: () => lazy.UrlbarShared.getLogger({ prefix: "MuxerUnifiedComplete" }),
 });
-
-ChromeUtils.defineLazyGetter(lazy, "logger", () =>
-  lazy.UrlbarShared.getLogger({ prefix: "MuxerUnifiedComplete" })
-);
 
 const SEMANTIC_HISTORY_PROVIDER_NAME = "UrlbarProviderSemanticHistorySearch";
 
@@ -129,6 +125,8 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       // suggestions.  Also includes the heuristic query string if the heuristic
       // is a search result.  All strings in the set are lowercased.
       suggestions: new Set(),
+      // non-heuristic search query added by UrlbarProviderHeuristicFallback.
+      heuristicFallbackSearchQuery: null,
       canAddTabToSearch: true,
       hasUnitConversionResult: false,
       maxHeuristicResultSpan: 0,
@@ -820,6 +818,11 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         // We assume that there will be at most one.
         return true;
       }
+      if (result.payload.suggestionObject?.suggestionType == "temporal") {
+        // Temporal search suggestions are shown as several rows in the zero
+        // prefix view.
+        return true;
+      }
 
       if (state.quickSuggestResult && state.quickSuggestResult != result) {
         // A Suggest result was already added.
@@ -917,10 +920,13 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     // UrlbarProviderHeuristicFallback may add non-heuristic results in some cases,
     // but those should be retained only if the heuristic result comes from it.
+    // The heuristic may not be known yet during the first pass, so don't
+    // discard in that case.
     if (
       !result.heuristic &&
       result.providerName == "UrlbarProviderHeuristicFallback" &&
-      state.context.heuristicResult?.providerName !=
+      state.context.heuristicResult &&
+      state.context.heuristicResult.providerName !=
         "UrlbarProviderHeuristicFallback"
     ) {
       return false;
@@ -1218,6 +1224,20 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       );
     }
 
+    // The search result UrlbarProviderHeuristicFallback adds alongside a visit
+    // heuristic may be inserted after suggestions are added, so note its query
+    // now to dedupe suggestions against it once the heuristic is known.
+    if (
+      result.providerName == "UrlbarProviderHeuristicFallback" &&
+      !result.heuristic &&
+      result.type == lazy.UrlbarShared.RESULT_TYPE.SEARCH &&
+      result.payload.query
+    ) {
+      state.heuristicFallbackSearchQuery = result.payload.query
+        .trim()
+        .toLocaleLowerCase();
+    }
+
     // Keep track of the total span of global suggestedIndex results so we can
     // make room for them at the end of the sort. Tab-to-search results are an
     // exception: There can be multiple TTS results but only one will be shown,
@@ -1333,7 +1353,9 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     if (
       result.providerName == lazy.UrlbarProviderQuickSuggest.name &&
-      result.payload.suggestionObject?.suggestionType != "important_dates"
+      !["important_dates", "temporal"].includes(
+        result.payload.suggestionObject?.suggestionType
+      )
     ) {
       state.quickSuggestResult ??= result;
     }
@@ -1376,6 +1398,11 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         if (query) {
           state.suggestions.add(query);
         }
+      } else if (
+        result.providerName == "UrlbarProviderHeuristicFallback" &&
+        state.heuristicFallbackSearchQuery
+      ) {
+        state.suggestions.add(state.heuristicFallbackSearchQuery);
       }
     }
 

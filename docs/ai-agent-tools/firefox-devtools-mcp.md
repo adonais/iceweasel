@@ -157,7 +157,7 @@ path: it isn't necessary to configure it.
 
 **Network & Console:**
 `list_network_requests`, `get_network_request`, `list_console_messages`,
-`clear_console`
+`clear_console_messages`
 
 **Screenshots:**
 `screenshot_page`, `screenshot_by_uid`
@@ -169,10 +169,11 @@ path: it isn't necessary to configure it.
 `get_firefox_info`, `get_firefox_output`, `restart_firefox`
 
 **Script Evaluation:**
-`evaluate_script` (content), `evaluate_chrome_script` (privileged)
+`evaluate_script` (content), `evaluate_privileged_script` (privileged)
 
-**Chrome Context (privileged code):**
-`list_chrome_contexts`, `select_chrome_context`, `evaluate_chrome_script`
+**Privileged Contexts (chrome/XUL code):**
+`list_privileged_contexts`, `select_privileged_context`,
+`evaluate_privileged_script`
 
 ## Working with MOZ_LOG
 
@@ -194,7 +195,7 @@ For a useful list of available MOZ_LOG modules and their descriptions, see
 `toolkit/content/aboutLogging/aboutLogging.mjs` in the Firefox repository, or search
 searchfox.org with something like this [searchfox query](https://searchfox.org/firefox-main/search?q=LazyLogModule.*%5C%28%22&path=&case=false&regexp=true).
 
-## Chrome Context Access
+## Privileged Context Access
 
 For debugging privileged Firefox code (chrome/XUL), enable system access:
 
@@ -202,8 +203,8 @@ For debugging privileged Firefox code (chrome/XUL), enable system access:
 restart_firefox(env=["MOZ_REMOTE_ALLOW_SYSTEM_ACCESS=1"])
 ```
 
-Then use `list_chrome_contexts`, `select_chrome_context`, and
-`evaluate_chrome_script` to access `gBrowser`, `Components`, and other
+Then use `list_privileged_contexts`, `select_privileged_context`, and
+`evaluate_privileged_script` to access `gBrowser`, `Components`, and other
 privileged APIs.
 
 At the moment, the MCP relies on WebDriver Classic (Marionette) for Chrome

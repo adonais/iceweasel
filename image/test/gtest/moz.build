@@ -43,6 +43,7 @@ TEST_HARNESS_FILES.gtest += [
     "corrupt-with-bad-ico-bpp.ico",
     "corrupt.jpg",
     "corrupt.jxl",
+    "downscaled-lossy.webp",
     "downscaled.avif",
     "downscaled.bmp",
     "downscaled.gif",
@@ -159,3 +160,7 @@ LOCAL_INCLUDES += [
 LOCAL_INCLUDES += CONFIG["SKIA_INCLUDES"]
 
 FINAL_LIBRARY = "xul-gtest"
+
+SOURCE_HEADERS += [
+    "Common.h",
+]

@@ -23,7 +23,6 @@ browser {
 
 #header {
   align-items: center;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--sidebar-background-color);
   color: var(--sidebar-text-color);
   border-bottom: 1px solid var(--border-color);
@@ -79,48 +78,11 @@ browser {
   position: relative;
   z-index: 1;
   /* The close button is ordered early in the DOM (for keyboard focus order) but
-     should stay visually last in the default single-row header. In
-     "hide-launcher" mode the grid layout below positions it explicitly. */
+     should stay visually last in the default single-row header. */
   order: 1;
 
-  @media not -moz-pref("sidebar.revamp") {
+  @media (not -moz-pref("sidebar.revamp")) or -moz-pref("sidebar.visibility", "hide-launcher") {
     display: none;
-  }
-}
-
-/* In horizontal-tabs "hide-launcher" mode there is no launcher to switch
-   sidebar panels with, so the chatbot panel gains a panel switcher. It shares a
-   first row with the (single) close button, while the chatbot's own provider
-   switcher and options menu move to a second row. */
-@media -moz-pref("sidebar.visibility", "hide-launcher") {
-  #header {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    grid-template-areas:
-      "switcher switcher close"
-      "provider perm     more";
-    column-gap: var(--space-xsmall);
-    row-gap: var(--space-xsmall);
-  }
-
-  sidebar-panel-switcher {
-    grid-area: switcher;
-  }
-
-  #header-close {
-    grid-area: close;
-  }
-
-  #provider {
-    grid-area: provider;
-  }
-
-  #permissions-indicator {
-    grid-area: perm;
-  }
-
-  #header-more {
-    grid-area: more;
   }
 }
 
@@ -324,7 +286,6 @@ browser {
   .badge {
     --badge-background-color-new: var(--color-green-40);
 
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background: var(--badge-background-color-new);
     border-radius: var(--border-radius-small);
     color: var(--button-text-color-primary-hover);
@@ -342,28 +303,6 @@ browser {
   }
 
   @media (not -moz-pref("browser.ml.chat.page")) or -moz-pref("browser.ml.chat.provider", "") {
-    display: none;
-  }
-}
-
-/* During chatbot onboarding the overlay normally hides the panel header. In
-   horizontal-tabs "hide-launcher" mode the header holds the only controls for
-   switching or closing the panel (there is no launcher), so keep the switcher
-   and close button visible above the overlay. The provider switcher and options
-   menu stay hidden until a provider is chosen. */
-@media -moz-pref("sidebar.visibility", "hide-launcher") {
-  #multi-stage-message-root + #header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-areas: "switcher close";
-    position: relative;
-    z-index: 3;
-    background-color: var(--background-color-overlay);
-  }
-
-  #multi-stage-message-root + #header > #provider,
-  #multi-stage-message-root + #header > #permissions-indicator,
-  #multi-stage-message-root + #header > #header-more {
     display: none;
   }
 }

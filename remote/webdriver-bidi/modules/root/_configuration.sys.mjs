@@ -714,14 +714,7 @@ class _ConfigurationModule extends RootBiDiModule {
           lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
         );
 
-        const internalId =
-          lazy.UserContextManager.getInternalIdById(userContextId);
-
-        if (internalId === null) {
-          throw new lazy.error.NoSuchUserContextError(
-            `User context with id: ${userContextId} doesn't exist`
-          );
-        }
+        const internalId = this._getUserContextInternalId(userContextId);
 
         userContexts.add(internalId);
 

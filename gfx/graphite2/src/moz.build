@@ -32,3 +32,7 @@ if not CONFIG['MOZ_WASM_SANDBOXING_GRAPHITE']:
     AllowCompilerWarnings()
 
     FINAL_LIBRARY = 'xul'
+
+SOURCE_HEADERS += [
+	"MozGrMalloc.h",
+]

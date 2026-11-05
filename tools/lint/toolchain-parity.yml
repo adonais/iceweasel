@@ -1,0 +1,14 @@
+---
+toolchain-parity:
+    description: Ensure local-toolchain/local-fetch tasks cover all platforms
+    include:
+        - 'taskcluster/kinds/toolchain'
+        - 'taskcluster/kinds/fetch'
+    extensions:
+        - yml
+    support-files:
+        - 'tools/lint/toolchain-parity/**'
+        - 'build/moz.configure/bootstrap.configure'
+        - 'python/mozbuild/mozbuild/configure/constants.py'
+    type: global
+    payload: toolchain-parity:lint

@@ -28,6 +28,7 @@ scale(*) == border-image-crash.yaml border-image-crash-ref.yaml
 scale(*) == border-image-empty.yaml border-image-empty-ref.yaml
 platform(linux,mac) fuzzy(32,700) == border-image-fill.yaml border-image-fill-ref.png
 platform(linux,mac) fuzzy(2,25360) == border-image-fill-2.yaml border-image-fill-2-ref.png
+== border-image-fill-zero-width.yaml border-image-fill-zero-width-ref.yaml
 fuzzy-if(platform(swgl),1,8) == border-no-bogus-line.yaml border-no-bogus-line-ref.png
 platform(linux,mac) fuzzy(1,130) == dotted-corner-small-radius.yaml dotted-corner-small-radius.png
 fuzzy-if(platform(swgl),1,20) == overlapping.yaml overlapping.png
@@ -53,3 +54,7 @@ fuzzy(1,40) == border-overlap-split.yaml border-overlap-split.png
 # Content meeting a border in layout meets it on screen under a fractional
 # scale, and the border stays one device pixel wide (bug 2074176).
 == border-content-snap-scale.yaml border-content-snap-scale-ref.yaml
+
+# A rounded border under a static downscale that isn't a power of two is
+# rasterized at its exact scale, so it matches the same border drawn at scale 1.
+== border-radius-static-downscale.yaml border-radius-static-downscale-ref.yaml

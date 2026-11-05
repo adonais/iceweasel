@@ -24,11 +24,13 @@
 #include "mozilla/dom/NavigationTransition.h"
 #include "mozilla/dom/NavigationUtils.h"
 #include "mozilla/dom/PContent.h"
+#include "mozilla/dom/PageSwapEvent.h"
 #include "mozilla/dom/PermissionsPolicy.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
+#include "mozilla/dom/ViewTransition.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "nsContentUtils.h"
@@ -319,7 +321,7 @@ NavigationActivation* Navigation::GetActivation() const { return mActivation; }
 template <typename I>
 bool SupportsInterface(nsISupports* aSupports) {
   nsCOMPtr<I> ptr = do_QueryInterface(aSupports);
-  return ptr;
+  return ptr != nullptr;
 }
 
 static bool IsNonBlankAboutPage(Document* aDocument) {
@@ -1793,7 +1795,10 @@ bool Navigation::InnerFireNavigateEvent(
       HasUAVisualTransition(ToMaybeRef(GetAssociatedDocument()));
 
   // Step 16
-  init.mSourceElement = aSourceElement;
+  if (aSourceElement &&
+      aSourceElement->NodePrincipal()->Equals(document->NodePrincipal())) {
+    init.mSourceElement = aSourceElement;
+  }
 
   // Step 17
   RefPtr<AbortController> abortController = new AbortController(globalObject);
@@ -2224,6 +2229,67 @@ Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
 
   // 5. Return apiMethodTracker.
   return methodTracker;
+}
+
+// https://html.spec.whatwg.org/#fire-the-pageswap-event
+void Navigation::FirePageSwapEvent(const SessionHistoryInfo* aTargetSHInfo,
+                                   NavigationType aType,
+                                   bool aCanHaveActivation,
+                                   ViewTransition* aViewTransition) {
+  // PageSwapEvent is only exposed when cross-document view transitions are
+  // enabled, so there is nothing observable to dispatch otherwise.
+  if (!StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
+    return;
+  }
+
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
+  nsPIDOMWindowInner* inner = global ? global->GetAsInnerWindow() : nullptr;
+  if (!inner) {
+    return;
+  }
+
+  // Steps 3-4. The callers check the step 4 conditions and pass the result as
+  // aCanHaveActivation.
+  RefPtr<NavigationActivation> activation;
+  if (aCanHaveActivation) {
+    // Step 4.1: Determine destinationEntry based on the navigation type.
+    RefPtr<NavigationHistoryEntry> oldEntry = GetCurrentEntry();
+    RefPtr<NavigationHistoryEntry> newEntry;
+    switch (aType) {
+      case NavigationType::Reload:
+        newEntry = oldEntry;
+        break;
+      case NavigationType::Traverse:
+        newEntry = aTargetSHInfo ? FindNavigationHistoryEntry(*aTargetSHInfo)
+                                 : nullptr;
+        break;
+      case NavigationType::Push:
+      case NavigationType::Replace:
+        if (aTargetSHInfo) {
+          newEntry =
+              MakeRefPtr<NavigationHistoryEntry>(global, aTargetSHInfo, -1);
+        }
+        break;
+    }
+    // Step 4.2: Create the activation. The entry of an activation can not be
+    // null. A traversal target is not in the entry list if script changed the
+    // session history before the traversal completed, so then fire pageswap
+    // without an activation.
+    if (newEntry) {
+      activation =
+          MakeRefPtr<NavigationActivation>(global, newEntry, oldEntry, aType);
+    }
+  }
+
+  // Step 5: Fire the event.
+  RefPtr<nsGlobalWindowInner> window = nsGlobalWindowInner::Cast(inner);
+  PageSwapEventInit init;
+  init.mActivation = activation;
+  init.mViewTransition = aViewTransition;
+  RefPtr<PageSwapEvent> event =
+      PageSwapEvent::Constructor(window, u"pageswap"_ns, init);
+  event->SetTrusted(true);
+  window->DispatchEvent(*event);
 }
 
 // https://html.spec.whatwg.org/#update-document-for-history-step-application

@@ -31,3 +31,21 @@ FINAL_LIBRARY = 'xul'
 
 # We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
+
+SOURCE_HEADERS += [
+	"bit_reader_inl_utils.h",
+	"bit_reader_utils.h",
+	"bit_writer_utils.h",
+	"color_cache_utils.h",
+	"endian_inl_utils.h",
+	"filters_utils.h",
+	"huffman_encode_utils.h",
+	"huffman_utils.h",
+	"palette.h",
+	"quant_levels_dec_utils.h",
+	"quant_levels_utils.h",
+	"random_utils.h",
+	"rescaler_utils.h",
+	"thread_utils.h",
+	"utils.h",
+]

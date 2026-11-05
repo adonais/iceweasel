@@ -7,6 +7,10 @@ const { EnterprisePolicyTesting } = ChromeUtils.importESModule(
   "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
 );
 
+const { MiniWindowManager } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/miniwindow/MiniWindowManager.sys.mjs"
+);
+
 const ENGINE_TEST_URL =
   "http://mochi.test:8888/browser/browser/components/search/test/browser/opensearch.html";
 const EXPECTED_URL =
@@ -315,4 +319,35 @@ add_task(async function test_contextualsearch_open_search_set_as_default() {
 
   await enterAndAssertContextualSearch("foo", "Foo");
   await SearchService.removeEngine(foo);
+});
+
+// Test mini windows specifically to make sure we don't rely on BrowserWindow-
+// Tracker to resolve the browser window (which ignores mini windows).
+add_task(async function test_contextualsearch_open_search_in_mini_window() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.mini-window.enabled", true]],
+  });
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    ENGINE_TEST_URL
+  );
+
+  let miniWindow = await MiniWindowManager.popTab(tab);
+  let win = miniWindow.miniWin; // MiniWindow::miniWin is a thing.
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window: win,
+    value: "kittens",
+  });
+  let { result } = await UrlbarTestUtils.waitForAutocompleteResultAt(win, 1);
+  Assert.equal(
+    result.payload.actionsResults[0].l10nArgs.engine,
+    "engine1",
+    "Open search engine is offered in mini window"
+  );
+
+  miniWindow.close();
+  await BrowserTestUtils.domWindowClosed(win);
+  await SpecialPowers.popPrefEnv();
 });

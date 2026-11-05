@@ -1385,7 +1385,7 @@ def run_rusttests(command_context, **kwargs):
     return command_context._mach_context.commands.dispatch(
         "build",
         command_context._mach_context,
-        what=["pre-export", "export", "recurse_rusttests"],
+        what=["rust-prereqs", "rusttests"],
     )
 
 

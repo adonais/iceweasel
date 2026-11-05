@@ -373,15 +373,15 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
 
   if (mIsServiceWorker) {
     info.mSourceInfo = Some(clientInfo);
-  } else if (policyContainerArgs.isSome() &&
-             policyContainerArgs->csp().isSome()) {
-    info.mCSP = CSPInfoToCSP(*policyContainerArgs->csp(), nullptr);
-    mozilla::Result<UniquePtr<OffThreadCSPContext>, nsresult> ctx =
-        OffThreadCSPContext::CreateFromCSP(info.mCSP);
-    if (ctx.isErr()) {
-      return ctx.unwrapErr();
+  } else if (policyContainerArgs.isSome()) {
+    RefPtr<PolicyContainer> policyContainer;
+    PolicyContainer::FromArgs(*policyContainerArgs, nullptr,
+                              getter_AddRefs(policyContainer));
+
+    nsresult rv = info.SetPolicyContainerOnMainThread(policyContainer);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
-    info.mCSPContext = ctx.unwrap();
   }
 
   // Extract IP address space from clientInfo for all worker types
@@ -391,8 +391,8 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
         static_cast<uint16_t>(policyContainerArgs->ipAddressSpace());
   }
 
-  nsresult rv = info.SetPrincipalsAndCSPOnMainThread(
-      info.mPrincipal, info.mPartitionedPrincipal, info.mLoadGroup, info.mCSP);
+  nsresult rv = info.SetPrincipalsOnMainThread(
+      info.mPrincipal, info.mPartitionedPrincipal, info.mLoadGroup);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

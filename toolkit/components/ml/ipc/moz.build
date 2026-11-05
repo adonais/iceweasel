@@ -23,7 +23,7 @@ UNIFIED_SOURCES += [
     "ModelFileUtils.cpp",
 ]
 
-IPDL_SOURCES = [
+PREPROCESSED_IPDL_SOURCES = [
     "PHWInference.ipdl",
 ]
 

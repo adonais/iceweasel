@@ -2195,6 +2195,59 @@ async function runTest73() {
   await compareFiles(test, ref, {
     waitForMessageDuringPrintPreview: true,
   });
+  requestAnimationFrame(() => setTimeout(runTest74));
+}
+
+// Test that CSS random() functions still resolve to the same values
+// in the print preview's static clone document (Bug 2072088).
+async function runTest74() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["layout.css.random.enabled", true]],
+  });
+
+  const iframeElement = document.getElementsByTagName("iframe")[0];
+  await new Promise(resolve => {
+    const onLoad = event => {
+      if (event.target == iframeElement.contentDocument) {
+        iframeElement.removeEventListener("load", onLoad, true);
+        resolve();
+      }
+    };
+    iframeElement.addEventListener("load", onLoad, true);
+    iframeElement.setAttribute("src", "printpreview_random.html");
+  });
+
+  const read = (window) => ({
+    elementScoped: window.getComputedStyle(window.document.querySelector('.element-scoped')).left,
+    dashedIdent: window.getComputedStyle(window.document.querySelector('.dashed-ident')).left,
+    auto: window.getComputedStyle(window.document.querySelector('.auto')).left,
+  });
+
+  const originalOuter = read(iframeElement.contentWindow);
+  const originalInner = read(iframeElement.contentWindow.iframe.contentWindow);
+
+  // Ensure random() has correctly resolved on the original documents.
+  isnot(originalOuter.elementScoped, "0px", "outer element-scoped resolved");
+  isnot(originalOuter.dashedIdent, "0px", "outer dashed-ident resolved");
+  isnot(originalOuter.auto, "0px", "outer auto resolved");
+  isnot(originalInner.elementScoped, "0px", "inner element-scoped resolved");
+  isnot(originalInner.dashedIdent, "0px", "inner dashed-ident resolved");
+  isnot(originalInner.auto, "0px", "inner auto resolved");
+
+  await printpreview();
+  const clonedOuter = read(gPrintPreviewWindow);
+  const clonedInner = read(gPrintPreviewWindow.iframe.contentWindow);
+  exitprintpreview();
+
+  // Validate that random() values are the same in the print preview.
+  is(clonedOuter.elementScoped, originalOuter.elementScoped, "outer element-scoped matches");
+  is(clonedOuter.dashedIdent, originalOuter.dashedIdent, "outer dashed-ident matches");
+  is(clonedOuter.auto, originalOuter.auto, "outer auto matches");
+  is(clonedInner.elementScoped, originalInner.elementScoped, "inner element-scoped matches");
+  is(clonedInner.dashedIdent, originalInner.dashedIdent, "inner dashed-ident matches");
+  is(clonedInner.auto, originalInner.auto, "inner auto matches");
+
+  await SpecialPowers.popPrefEnv();
   finish();
 }
 

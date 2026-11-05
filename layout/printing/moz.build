@@ -29,3 +29,11 @@ LOCAL_INCLUDES += [
     "/gfx/2d/",
     "/netwerk/base/",
 ]
+
+SOURCE_HEADERS += [
+    "nsPagePrintTimer.h",
+    "nsPrintData.h",
+    "nsPrintJob.h",
+    "nsPrintObject.h",
+    "PrintTranslator.h",
+]

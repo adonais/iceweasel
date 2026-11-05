@@ -4,6 +4,10 @@
 
 const lazy = XPCOMUtils.declareLazy({
   TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
+  closeTabByDblclick: {
+    pref: "browser.tabs.closeTabByDblclick",
+    default: false,
+  },
 });
 
 export class MozTabbrowserTab extends MozElements.MozTab {
@@ -55,6 +59,13 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     this._hover = false;
     this._selectedOnFirstMouseDown = false;
     this._noteIconHover = false;
+
+    /**
+     * Set by Tabbrowser whenever the tabs are renumbered.
+     *
+     * @type {number}
+     */
+    this._index;
 
     /**
      * Describes how the tab ended up in this mute state. May be any of:
@@ -151,12 +162,14 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     }
 
     this.textContent = "";
-    this.appendChild(this.constructor.fragment);
+    this.appendChild(
+      /** @type {typeof MozTabbrowserTab} */ (this.constructor).fragment
+    );
     this.initializeAttributeInheritance();
     this.setAttribute("context", "tabContextMenu");
     this._initialized = true;
 
-    if (!("_lastAccessed" in this)) {
+    if (!Object.hasOwn(this, "_lastAccessed")) {
       this.updateLastAccessed();
     }
 
@@ -167,7 +180,7 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     // Tabs in the tab strip default to being at the top level (level 1)
     // Tabs in tab groups are one level down (level 2); this tab will
     // update its value when it moves in and out of tab groups.
-    this.setAttribute("aria-level", 1);
+    this.setAttribute("aria-level", "1");
   }
 
   /**
@@ -570,13 +583,8 @@ export class MozTabbrowserTab extends MozElements.MozTab {
 
   on_mousedown(event) {
     let eventMaySelectTab = true;
-    let tabContainer = this.container;
 
-    if (
-      tabContainer._closeTabByDblclick &&
-      event.button == 0 &&
-      event.detail == 1
-    ) {
+    if (lazy.closeTabByDblclick && event.button == 0 && event.detail == 1) {
       this._selectedOnFirstMouseDown = this.selected;
     }
 
@@ -748,9 +756,8 @@ export class MozTabbrowserTab extends MozElements.MozTab {
       event.stopPropagation();
     }
 
-    let tabContainer = this.container;
     if (
-      tabContainer._closeTabByDblclick &&
+      lazy.closeTabByDblclick &&
       this._selectedOnFirstMouseDown &&
       this.selected &&
       !event.target.classList.contains("tab-icon-overlay")
@@ -1026,7 +1033,7 @@ export class MozTabbrowserTab extends MozElements.MozTab {
           detail: this,
         })
       );
-      this.setAttribute("aria-level", 2);
+      this.setAttribute("aria-level", "2");
     }
   }
 
@@ -1044,7 +1051,7 @@ export class MozTabbrowserTab extends MozElements.MozTab {
       );
       // Tab could have moved to be ungrouped (level 1)
       // or to a different group (level 2).
-      this.setAttribute("aria-level", this.group ? 2 : 1);
+      this.setAttribute("aria-level", this.group ? "2" : "1");
       // `posinset` and `setsize` only need to be set explicitly
       // on grouped tabs so that a11y tools can tell users that a
       // given tab is "2 of 7" in the group, for example.
@@ -1055,13 +1062,13 @@ export class MozTabbrowserTab extends MozElements.MozTab {
 
   #updateOnTabSplit() {
     if (this.splitview) {
-      this.setAttribute("aria-level", 2);
+      this.setAttribute("aria-level", "2");
     }
   }
 
   #updateOnTabUnsplit() {
     if (!this.splitview) {
-      this.setAttribute("aria-level", 1);
+      this.setAttribute("aria-level", "1");
       // `posinset` and `setsize` only need to be set explicitly
       // on split view tabs so that a11y tools can tell users that a
       // given tab is "1 of 2" in the split view, for example.

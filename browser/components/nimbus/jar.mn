@@ -1,0 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+browser.jar:
+% content nimbus %content/nimbus/ contentaccessible=yes
+  content/nimbus/about-studies/about-studies.html (content/about-studies/about-studies.html)
+  content/nimbus/about-studies/about-studies.css (content/about-studies/about-studies.css)
+  content/nimbus/about-studies/about-studies.js (content/about-studies/about-studies.js)

@@ -12,8 +12,12 @@ const { AITab } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/aitab/AITab.sys.mjs"
 );
 const { loadAssets, buildSurface } = AITab;
+const { FEATURE_MAJOR_VERSIONS, MODEL_FEATURES } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+);
 
 const COMPONENTS_PREF = "browser.smartwindow.aitab.components";
+const AITAB_MAJOR = FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.AITAB];
 
 // A minimal override catalog: a Page container plus a custom "Note" component
 // the packaged catalog doesn't have. Includes just the $defs its Page.children
@@ -117,4 +121,53 @@ add_task(async function test_reverts_to_packaged_when_unset() {
     env.names.includes("RankedTable"),
     "reverts to the packaged catalog once the pref is cleared"
   );
+});
+
+add_task(async function test_override_version_must_match_build_major() {
+  // An override that declares a version is held to the same pairing rule as
+  // the packaged catalog: its major must match the build's aitab major.
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        COMPONENTS_PREF,
+        JSON.stringify({
+          ...OVERRIDE_CATALOG,
+          version: `${AITAB_MAJOR + 1}.0`,
+        }),
+      ],
+    ],
+  });
+  await Assert.rejects(
+    loadAssets(),
+    err => err.clientReason === "catalogVersionMismatch",
+    "an override catalog from another major is rejected"
+  );
+  await SpecialPowers.popPrefEnv();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        COMPONENTS_PREF,
+        JSON.stringify({ ...OVERRIDE_CATALOG, version: `${AITAB_MAJOR}.3` }),
+      ],
+    ],
+  });
+  const { env } = await loadAssets();
+  Assert.equal(
+    env.catalog.version,
+    `${AITAB_MAJOR}.3`,
+    "an override catalog at the build's major (any minor) is accepted"
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_override_without_version_is_accepted() {
+  // Dev iteration: a pref catalog with no version is taken as-is (the earlier
+  // tasks rely on this), unlike the packaged catalog which must declare one.
+  await SpecialPowers.pushPrefEnv({
+    set: [[COMPONENTS_PREF, JSON.stringify(OVERRIDE_CATALOG)]],
+  });
+  const { env } = await loadAssets();
+  Assert.equal(env.catalog.version, undefined, "no version on the override");
+  await SpecialPowers.popPrefEnv();
 });

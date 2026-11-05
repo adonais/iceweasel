@@ -33,7 +33,7 @@ add_task(async function testHiddenWhenLabsDisabled() {
     "Experimental Features section not added to the DOM"
   );
 
-  const expectedPane = SRD_PREF_VALUE ? "paneSync" : "paneGeneral";
+  let expectedPane = "paneSync";
   is(
     doc.getElementById("categories").currentView,
     expectedPane,

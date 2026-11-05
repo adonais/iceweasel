@@ -7,8 +7,10 @@
 #include <proofofpossessioncookieinfo.h>
 
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Preferences.h"
 #include "nsHttpChannel.h"
 #include "nsIURI.h"
+#include "xpcpublic.h"
 
 namespace mozilla {
 namespace net {
@@ -16,12 +18,42 @@ namespace net {
 static StaticRefPtr<IProofOfPossessionCookieInfoManager> sPopCookieManager;
 static bool sPopCookieManagerAvailable = true;
 
-void AddWindowsSSO(nsHttpChannel* channel) {
+struct SSOCredential {
+  nsString mName;
+  nsString mData;
+};
+
+// In automation, network.http.windows-sso.credentials-for-testing can supply
+// credentials as "name=data|name=data" instead of asking Windows.
+static bool GetTestingCredentials(nsTArray<SSOCredential>& aCredentials) {
+  if (!xpc::IsInAutomation()) {
+    return false;
+  }
+  nsAutoCString pref;
+  if (NS_FAILED(Preferences::GetCString(
+          "network.http.windows-sso.credentials-for-testing", pref)) ||
+      pref.IsEmpty()) {
+    return false;
+  }
+  for (const nsACString& entry : pref.Split('|')) {
+    int32_t equals = entry.FindChar('=');
+    if (equals <= 0) {
+      continue;
+    }
+    aCredentials.AppendElement(
+        SSOCredential{NS_ConvertUTF8toUTF16(Substring(entry, 0, equals)),
+                      NS_ConvertUTF8toUTF16(Substring(entry, equals + 1))});
+  }
+  return true;
+}
+
+static bool GetWindowsCredentials(nsIURI* aURI,
+                                  nsTArray<SSOCredential>& aCredentials) {
   if (!sPopCookieManagerAvailable) {
     MOZ_LOG(gHttpLog, mozilla::LogLevel::Debug,
             ("HttpWinUtils::AddWindowsSSO: sPopCookieManager is not available "
              "from the beginning"));
-    return;
+    return false;
   }
   HRESULT hr;
   if (!sPopCookieManager) {
@@ -42,7 +74,7 @@ void AddWindowsSSO(nsHttpChannel* channel) {
       MOZ_LOG(
           gHttpLog, mozilla::LogLevel::Debug,
           ("HttpWinUtils::AddWindowsSSO: sPopCookieManager is not available"));
-      return;
+      return false;
     }
 
     RunOnShutdown([&] {
@@ -55,17 +87,35 @@ void AddWindowsSSO(nsHttpChannel* channel) {
   DWORD cookieCount = 0;
   ProofOfPossessionCookieInfo* cookieInfo = nullptr;
 
-  nsCOMPtr<nsIURI> uri;
-  channel->GetURI(getter_AddRefs(uri));
-
   nsAutoCString urispec;
-  uri->GetSpec(urispec);
+  aURI->GetSpec(urispec);
 
   hr = sPopCookieManager->GetCookieInfoForUri(
       NS_ConvertUTF8toUTF16(urispec).get(), &cookieCount, &cookieInfo);
   if (FAILED(hr)) {
     MOZ_LOG(gHttpLog, mozilla::LogLevel::Debug,
             ("HttpWinUtils::AddWindowsSSO: GetCookieInfoForUri failed"));
+    return false;
+  }
+
+  for (DWORD i = 0; i < cookieCount; i++) {
+    SSOCredential* credential = aCredentials.AppendElement();
+    credential->mName.Assign(cookieInfo[i].name);
+    credential->mData.Assign(cookieInfo[i].data);
+  }
+  if (cookieInfo) {
+    FreeProofOfPossessionCookieInfoArray(cookieInfo, cookieCount);
+  }
+  return true;
+}
+
+void AddWindowsSSO(nsHttpChannel* channel) {
+  nsCOMPtr<nsIURI> uri;
+  channel->GetURI(getter_AddRefs(uri));
+
+  nsTArray<SSOCredential> credentials;
+  if (!GetTestingCredentials(credentials) &&
+      !GetWindowsCredentials(uri, credentials)) {
     return;
   }
 
@@ -78,23 +128,23 @@ void AddWindowsSSO(nsHttpChannel* channel) {
 
   nsAutoString allCookies;
 
-  for (DWORD i = 0; i < cookieCount; i++) {
-    nsAutoString cookieData;
-    cookieData.Assign(cookieInfo[i].data);
+  for (const SSOCredential& credential : credentials) {
+    nsAutoString cookieData(credential.mData);
     // Strip old Set-Cookie info for WinInet
     int32_t semicolon = cookieData.FindChar(';');
     if (semicolon >= 0) {
       cookieData.SetLength(semicolon);
     }
-    if (StringBeginsWith(nsDependentString(cookieInfo[i].name), u"x-ms-"_ns)) {
-      channel->SetRequestHeader(NS_ConvertUTF16toUTF8(cookieInfo[i].name),
+    const nsString& name = credential.mName;
+    if (StringBeginsWith(name, u"x-ms-"_ns)) {
+      channel->SetRequestHeader(NS_ConvertUTF16toUTF8(name),
                                 NS_ConvertUTF16toUTF8(cookieData),
                                 true /* merge */);
     } else if (addCookies) {
       if (!allCookies.IsEmpty()) {
         allCookies.AppendLiteral("; ");
       }
-      allCookies.Append(cookieInfo[i].name);
+      allCookies.Append(name);
       allCookies.AppendLiteral("=");
       allCookies.Append(cookieData);
     }
@@ -111,9 +161,6 @@ void AddWindowsSSO(nsHttpChannel* channel) {
     }
     cookieHeader.Append(NS_ConvertUTF16toUTF8(allCookies));
     channel->SetRequestHeader(nsHttp::Cookie.val(), cookieHeader, false);
-  }
-  if (cookieInfo) {
-    FreeProofOfPossessionCookieInfoArray(cookieInfo, cookieCount);
   }
 }
 

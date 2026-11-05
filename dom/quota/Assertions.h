@@ -25,6 +25,14 @@ void AssertNotNegative(T aValue, const nsACString& context = EmptyCString());
 uint64_t ClampToZero(int64_t aValue,
                      const nsACString& context = EmptyCString());
 
+// Helper used to throttle telemetry events, using exponential backoff, to avoid
+// flooding.
+// Pass a counter, representing how many times the event occured already, and
+// returns whether the telemetry event shall be emitted or not.
+// Will be true on the 1st, 2nd, 4th, 8th... occurence
+// The counter is always incremented.
+bool ThrottleCounter(uint32_t& aCounter);
+
 // Implementation detail of AssertNotNegative and ReportUsageDriftIfAny, not
 // meant to be called directly. Throttles how often a given context is
 // reported (to the browser console/telemetry) using exponential backoff, to

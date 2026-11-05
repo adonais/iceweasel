@@ -1,0 +1,43 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+plugins {
+    id 'com.android.library'
+    alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.kotlin.compose)
+}
+
+android {
+    buildFeatures {
+        compose = true
+    }
+
+    namespace = 'mozilla.components.compose.draggable'
+}
+
+dependencies {
+    implementation project(':components:compose-base')
+
+    implementation platform(libs.androidx.compose.bom)
+    implementation libs.androidx.annotation
+    implementation libs.kotlinx.coroutines.core
+    api libs.androidx.compose.foundation
+    api libs.androidx.compose.ui
+
+    testImplementation project(':components:support-test')
+
+    testRuntimeOnly libs.androidx.compose.ui.test.manifest
+    testImplementation libs.androidx.compose.ui.test
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit4
+    testImplementation libs.kotlin.test
+    testImplementation libs.kotlinx.coroutines.test
+    testRuntimeOnly libs.robolectric
+    testRuntimeOnly libs.androidx.test.runner
+    testImplementation libs.kotlin.reflect
+}
+
+apply from: '../../../common-config.gradle'
+apply from: '../../../publish.gradle'
+ext.configurePublish(config.componentsGroupId, project.name, project.ext.description)

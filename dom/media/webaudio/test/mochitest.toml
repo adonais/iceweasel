@@ -254,6 +254,8 @@ run-if = [
 
 ["test_offlineDestinationChannelCountMore.html"]
 
+["test_offlineRendering_promise_release.html"]
+
 ["test_oscillatorNode.html"]
 
 ["test_oscillatorNode2.html"]

@@ -8,7 +8,6 @@ import android.content.Context
 import androidx.annotation.VisibleForTesting
 import androidx.paging.DataSource
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
 import mozilla.components.concept.engine.DataCleanable
 import mozilla.components.concept.engine.Engine
@@ -37,6 +36,7 @@ import mozilla.components.feature.sitepermissions.db.toSitePermissionsEntity
 /** A storage implementation to save [SitePermissions] on disk. */
 class OnDiskSitePermissionsStorage(
     context: Context,
+    private val coroutineScope: CoroutineScope,
     private val dataCleanable: DataCleanable? = null,
 ) : SitePermissionsStorage {
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -44,7 +44,6 @@ class OnDiskSitePermissionsStorage(
         SitePermissionsDatabase.get(context)
     }
 
-    private val coroutineScope = CoroutineScope(Main)
     private val database by lazy { databaseInitializer() }
 
     /**

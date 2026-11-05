@@ -29,7 +29,7 @@ ParseSframeRtpPacketOrError(const RtpPacketReceived& packet) {
         "RTP payload too short for Sframe descriptor");
   }
 
-  const std::bitset<8> bits(packet.payload()[0]);
+  const std::bitset<SframeDescriptor::kNumBits> bits(packet.payload()[0]);
   SframeDescriptor descriptor;
   descriptor.start = bits[SframeDescriptor::kSBit];
   descriptor.end = bits[SframeDescriptor::kEBit];

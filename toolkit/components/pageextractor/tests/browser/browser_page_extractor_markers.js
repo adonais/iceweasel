@@ -422,6 +422,209 @@ add_task(async function test_page_extractor_headless_load_navigate_failure() {
 });
 
 /**
+ * A headless load that lands on an error page, here because the server
+ * refuses the connection, has no PageExtractor actor to read it with. The
+ * outer headless-extractor phase records the same error name as the
+ * headless-navigate phase that hit it, rather than a bare "Error".
+ */
+add_task(async function test_page_extractor_headless_error_page_failure() {
+  Services.fog.testResetFOG();
+  const { PageExtractorParent } = ChromeUtils.importESModule(
+    "resource://gre/actors/PageExtractorParent.sys.mjs"
+  );
+
+  const { url, cleanup } = MLTestUtils.serveStalledPage();
+  await cleanup();
+
+  await Assert.rejects(
+    PageExtractorParent.getHeadlessExtractor({
+      urlString: url,
+      callback: () =>
+        ok(false, "The callback must not run for a page that never loaded."),
+    }),
+    error =>
+      error.name === "NotSupportedError" &&
+      /could not run on that page/.test(error.message),
+    "The refused connection is reported with the actor lookup's error name."
+  );
+
+  const navigateEvent = findPhaseEvent("headless-navigate", "parent");
+  is(navigateEvent.extra.status, "error", "The navigate phase failed.");
+  is(
+    navigateEvent.extra.error_name,
+    "NotSupportedError",
+    "The navigate phase recorded the actor lookup's error name."
+  );
+
+  const headlessEvent = findPhaseEvent(
+    "headless-extractor",
+    "parent",
+    navigateEvent.extra.flow_id
+  );
+  is(headlessEvent.extra.status, "error", "The outer phase failed.");
+  is(
+    headlessEvent.extra.error_name,
+    "NotSupportedError",
+    "The outer phase recorded the same error name, not a bare Error."
+  );
+});
+
+/**
+ * A headless page that commits but never finishes loading times out while
+ * the parent waits for it to be ready. Tearing down the hidden browser
+ * aborts that wait, which is recorded as "document-unloaded" rather than as
+ * a second error beside the timeout that caused it.
+ */
+add_task(async function test_page_extractor_headless_teardown_unloads_wait() {
+  Services.fog.testResetFOG();
+  const { HttpServer } = ChromeUtils.importESModule(
+    "resource://testing-common/httpd.sys.mjs"
+  );
+
+  const server = new HttpServer();
+  let heldResponse;
+  server.registerPathHandler("/partial.html", (_request, response) => {
+    response.processAsync();
+    response.setHeader("Content-Type", "text/html; charset=utf-8");
+    response.write("<!DOCTYPE html><p>The rest never arrives.</p>");
+    heldResponse = response;
+  });
+  server.start(-1);
+  const { primaryHost, primaryPort } = server.identity;
+  // eslint-disable-next-line sdl/no-insecure-url
+  const url = `http://${primaryHost}:${primaryPort}/partial.html`;
+
+  try {
+    await Assert.rejects(
+      readAtDeadline(url, {
+        urlString: url,
+        callback: () =>
+          ok(false, "The callback must not run for a page that never loaded."),
+      }),
+      error => error.name === "TimeoutError",
+      "The read times out waiting for the page to finish loading."
+    );
+
+    const navigateEvent = findPhaseEvent("headless-navigate", "parent");
+    is(
+      navigateEvent.extra.status,
+      "success",
+      "The navigation committed, so the timeout hit the page-ready wait."
+    );
+
+    const waitEvent = await TestUtils.waitForCondition(
+      () =>
+        Glean.pageExtractor.phase
+          .testGetValue("page-extractor")
+          ?.find(
+            e =>
+              e.extra.phase === "wait-for-ready" &&
+              e.extra.process === "parent" &&
+              e.extra.flow_id === navigateEvent.extra.flow_id
+          ),
+      "Waiting for the aborted page-ready wait to be recorded."
+    );
+    is(
+      waitEvent.extra.status,
+      "document-unloaded",
+      "The aborted wait is a handled outcome, not an error."
+    );
+    Assert.strictEqual(
+      waitEvent.extra.error_name,
+      undefined,
+      "No error name is recorded for the aborted wait."
+    );
+
+    const headlessEvent = findPhaseEvent(
+      "headless-extractor",
+      "parent",
+      navigateEvent.extra.flow_id
+    );
+    is(
+      headlessEvent.extra.error_name,
+      "TimeoutError",
+      "The timeout is still reported once, on the outer phase."
+    );
+  } finally {
+    heldResponse?.finish();
+    await new Promise(resolve => server.stop(resolve));
+  }
+});
+
+/**
+ * A page with no text is read without error, but there is nothing to use,
+ * so both get-text events record "empty" rather than "success".
+ */
+add_task(async function test_page_extractor_empty_page_is_empty() {
+  Services.fog.testResetFOG();
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`<div></div>`;
+
+  let extraction;
+  try {
+    extraction = await getPageExtractor().getText();
+    await Services.fog.testFlushAllChildren();
+  } finally {
+    await cleanup();
+  }
+  is(extraction.text, "", "The page has no text to extract.");
+
+  const parentEvent = findPhaseEvent("get-text", "parent");
+  is(parentEvent.extra.status, "empty", "The parent records an empty read.");
+  is(parentEvent.extra.text_length, "0", "No text was returned.");
+  const contentEvent = findPhaseEvent(
+    "get-text",
+    "content",
+    parentEvent.extra.flow_id
+  );
+  is(contentEvent.extra.status, "empty", "The content records an empty read.");
+});
+
+/**
+ * Reader mode declines some pages outright, such as a data: URL. The read
+ * falls back to the page as it is, so reader-parse records "not-readerable"
+ * and get-text still succeeds.
+ */
+add_task(
+  async function test_page_extractor_reader_declined_is_not_readerable() {
+    Services.fog.testResetFOG();
+    const tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "data:text/html,<p>Reader mode declines data: URLs.</p>"
+    );
+
+    let extraction;
+    try {
+      extraction = await tab.linkedBrowser.browsingContext.currentWindowGlobal
+        .getActor("PageExtractor")
+        .getText({ removeBoilerplate: true, _forceRemoveBoilerplate: true });
+      await Services.fog.testFlushAllChildren();
+    } finally {
+      BrowserTestUtils.removeTab(tab);
+    }
+    is(
+      extraction.text,
+      "Reader mode declines data: URLs.",
+      "The page is read without reader mode."
+    );
+
+    const readerEvent = findPhaseEvent("reader-parse", "content");
+    is(
+      readerEvent.extra.status,
+      "not-readerable",
+      "Reader mode declining the page is recorded as such."
+    );
+    const getTextEvent = findPhaseEvent(
+      "get-text",
+      "content",
+      readerEvent.extra.flow_id
+    );
+    is(getTextEvent.extra.status, "success", "The read still succeeds.");
+    is(getTextEvent.extra.strategy, "dom", "The read fell back to the DOM.");
+  }
+);
+
+/**
  * getText() has no try/catch of its own: its outer PageExtractorEvent.trace()
  * wrapper marks the get-text event as an error if any inner phase
  * (youtube-extract, reader-parse, reader-output-parse, dom-extract) throws.

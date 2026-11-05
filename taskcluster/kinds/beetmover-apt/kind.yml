@@ -19,7 +19,6 @@ only-for-build-platforms:
     - linux64-aarch64-devedition/opt
 
 task-defaults:
-    run-on-repo-type: [hg]
     from-deps:
         group-by: product
         unique-kinds: false

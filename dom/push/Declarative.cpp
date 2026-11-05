@@ -5,10 +5,13 @@
 #include "Declarative.h"
 
 #include "js/JSON.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/dom_push_rust_generated.h"
 #include "mozilla/dom/notification/NotificationUtils.h"
 #include "mozilla/glean/DomPushMetrics.h"
+#include "mozilla/image/FetchDecodedImage.h"
 #include "nsNetUtil.h"
+#include "nsURLHelper.h"
 
 namespace mozilla::dom {
 
@@ -23,7 +26,11 @@ class DWPNotificationCallbacks final : public NotificationCallbacksCommon {
                            IPCNotification aNotification)
       : NotificationCallbacksCommon(aScope, aPrincipal, aNotification) {}
 
+  RefPtr<DeclarativePushPromise> Promise() { return mPromise.Ensure(__func__); }
+
   NS_IMETHODIMP OnAlertShow() override {
+    MOZ_ASSERT(!mPromise.IsEmpty());
+    mPromise.Resolve(Ok(), __func__);
     MOZ_TRY(NotificationCallbacksCommon::OnAlertShow());
     PersistNotification();
     return NS_OK;
@@ -35,18 +42,25 @@ class DWPNotificationCallbacks final : public NotificationCallbacksCommon {
   }
 
   NS_IMETHODIMP OnAlertClosed() override {
+    if (!mPromise.IsEmpty()) {
+      mPromise.Resolve(Ok(), __func__);
+    }
     MOZ_TRY(NotificationCallbacksCommon::OnAlertClosed());
     UnpersistNotification();
     return NS_OK;
   }
 
   NS_IMETHODIMP OnAlertFinished() override {
+    if (!mPromise.IsEmpty()) {
+      mPromise.Reject(NS_ERROR_FAILURE, __func__);
+    }
     MOZ_TRY(NotificationCallbacksCommon::OnAlertFinished());
     UnpersistNotification();
     return NS_OK;
   }
 
  private:
+  MozPromiseHolder<DeclarativePushPromise> mPromise;
   virtual ~DWPNotificationCallbacks() = default;
 };
 
@@ -128,46 +142,109 @@ GetNotificationOptionsForDeclarativePush(DeclarativePushData&& aPush) {
   return std::move(options);
 }
 
-bool ParseDeclarativePushAndShowNotification(Span<const uint8_t> aData,
-                                             nsIPrincipal* aPrincipal,
-                                             const nsACString& aScope) {
+static RefPtr<DeclarativePushPromise> ShowNotification(
+    const nsAString& aScope, const IPCNotificationOptions& aOptions,
+    nsIPrincipal& aPrincipal, imgIContainer* aIcon) {
+  auto result =
+      notification::CreateAlertForNotification(aOptions, aPrincipal, aIcon);
+  if (result.isErr()) {
+    return DeclarativePushPromise::CreateAndReject(result.unwrapErr(),
+                                                   __func__);
+  }
+  nsCOMPtr<nsIAlertNotification> notification = result.unwrap();
+  nsAutoString id;
+  nsresult rv = notification->GetId(id);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return DeclarativePushPromise::CreateAndReject(rv, __func__);
+  }
+  RefPtr<DWPNotificationCallbacks> dwpCallbacks = new DWPNotificationCallbacks(
+      aScope, &aPrincipal, IPCNotification(id, aOptions));
+  RefPtr promise = dwpCallbacks->Promise();
+  rv = notification::ShowAlertWithCleanup(notification, dwpCallbacks);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return DeclarativePushPromise::CreateAndReject(rv, __func__);
+  }
+  return promise;
+}
+
+static RefPtr<DeclarativePushPromise> FetchIconAndShowNotification(
+    const nsAString& aScope, IPCNotificationOptions&& aOptions,
+    nsIPrincipal& aPrincipal) {
+  nsIURI* iconURI = aOptions.icon();
+  if (!iconURI) {
+    return ShowNotification(aScope, aOptions, aPrincipal, nullptr);
+  }
+  nsAutoCString iconURL;
+  nsresult rv = iconURI->GetSpec(iconURL);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return DeclarativePushPromise::CreateAndReject(rv, __func__);
+  }
+  URLParams urlParams;
+  urlParams.Set("url"_ns, iconURL);
+  nsAutoCString principalJSON;
+  rv = BasePrincipal::Cast(aPrincipal).ToJSON(principalJSON);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return DeclarativePushPromise::CreateAndReject(rv, __func__);
+  }
+  urlParams.Set("principal"_ns, principalJSON);
+  // Fetch icon image through moz-remote-image protocol to avoid
+  // decoding the image in the parent process.
+  nsAutoCString remoteImageURL("moz-remote-image://?"_ns);
+  nsAutoCString paramsString;
+  urlParams.Serialize(paramsString, true);
+  remoteImageURL.Append(paramsString);
+  nsCOMPtr<nsIURI> remoteImageURI;
+  rv = NS_NewURI(getter_AddRefs(remoteImageURI), remoteImageURL);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return DeclarativePushPromise::CreateAndReject(rv, __func__);
+  }
+  return image::FetchDecodedImage(remoteImageURI, gfx::IntSize(),
+                                  nsContentUtils::GetSystemPrincipal())
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [scope = nsString(aScope), options = std::move(aOptions),
+           principal = RefPtr(&aPrincipal)](
+              image::FetchDecodedImagePromise::ResolveOrRejectValue&& aResult) {
+            nsCOMPtr<imgIContainer> icon;
+            if (aResult.IsResolve()) {
+              icon = std::move(aResult.ResolveValue());
+            }
+            return ShowNotification(scope, options, *principal, icon);
+          });
+}
+
+RefPtr<DeclarativePushPromise> ParseDeclarativePushAndShowNotification(
+    Span<const uint8_t> aData, nsIPrincipal* aPrincipal,
+    const nsACString& aScope) {
   DeclarativePushData declarativePush;
   if (!parse_declarative_push(aData.Elements(), aData.Length(), &aScope,
                               &declarativePush)) {
-    return false;
+    // Not a declarative push message.
+    return nullptr;
   }
+  RecordTelemetry(declarativePush);
   Result options =
       GetNotificationOptionsForDeclarativePush(std::move(declarativePush));
   if (NS_WARN_IF(options.isErr())) {
-    return false;
+    return DeclarativePushPromise::CreateAndReject(options.unwrapErr(),
+                                                   __func__);
   }
-  RecordTelemetry(declarativePush);
   RefPtr permissionPromise = notification::EnsureValidNotificationPermission(
       aPrincipal, aPrincipal, aPrincipal->GetIsOriginPotentiallyTrustworthy());
-  permissionPromise->Then(
+  return permissionPromise->Then(
       GetCurrentSerialEventTarget(), __func__,
       [options = options.unwrap(), scope = NS_ConvertUTF8toUTF16(aScope),
        principal = RefPtr(aPrincipal)](
           const notification::NotificationPermissionPromise::
-              ResolveOrRejectValue& aResult) {
+              ResolveOrRejectValue& aResult) mutable {
         if (aResult.IsReject()) {
           // Don't have permission
-          return;
+          return DeclarativePushPromise::CreateAndReject(aResult.RejectValue(),
+                                                         __func__);
         }
-        auto result = notification::CreateAlertForNotification(
-            options, *principal, Nothing());
-        if (result.isErr()) {
-          return;
-        }
-        nsCOMPtr<nsIAlertNotification> notification = result.unwrap();
-        nsAutoString id;
-        notification->GetId(id);
-        RefPtr<DWPNotificationCallbacks> dwpCallbacks =
-            new DWPNotificationCallbacks(scope, principal,
-                                         IPCNotification(id, options));
-        notification::ShowAlertWithCleanup(notification, dwpCallbacks);
+        return FetchIconAndShowNotification(scope, std::move(options),
+                                            *principal);
       });
-  return true;
 }
 
 }  // namespace mozilla::dom

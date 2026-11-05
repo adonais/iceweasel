@@ -25,6 +25,7 @@ from taskgraph.util.taskcluster import (
 from taskgraph.util.yaml import load_yaml
 
 from gecko_taskgraph import GECKO, TEST_CONFIGS
+from gecko_taskgraph.optimize.perf_batching import PERF_CADENCE_STRATEGIES
 from gecko_taskgraph.util.attributes import (
     match_run_on_hg_branches,
     match_run_on_projects,
@@ -473,6 +474,28 @@ def target_tasks_default(full_task_graph, parameters, graph_config):
     ]
 
 
+def filter_shippable_tests_on_non_backstop(task, parameters):
+    """Remove tests running against shippable builds on non-backstop pushes."""
+    if task.kind not in TEST_KINDS:
+        return True
+
+    if parameters["backstop"]:
+        return True
+
+    build_type = task.attributes.get("build_type")
+
+    if not build_type or build_type != "opt" or filter_out_shippable(task):
+        return True
+
+    return False
+
+
+def is_perf_cadence_task(task):
+    """Whether the task is a performance task optimized through one of the
+    perf-cadence-* strategies."""
+    return any(name in PERF_CADENCE_STRATEGIES for name in (task.optimization or {}))
+
+
 @register_target_task("autoland_tasks")
 def target_tasks_autoland(full_task_graph, parameters, graph_config):
     """In addition to doing the filtering by project that the 'default'
@@ -481,22 +504,30 @@ def target_tasks_autoland(full_task_graph, parameters, graph_config):
     filtered_for_project = target_tasks_default(
         full_task_graph, parameters, graph_config
     )
+    return [
+        l
+        for l in filtered_for_project
+        if filter_shippable_tests_on_non_backstop(full_task_graph[l], parameters)
+    ]
 
-    def filter(task):
-        if task.kind not in TEST_KINDS:
-            return True
 
-        if parameters["backstop"]:
-            return True
-
-        build_type = task.attributes.get("build_type")
-
-        if not build_type or build_type != "opt" or filter_out_shippable(task):
-            return True
-
-        return False
-
-    return [l for l in filtered_for_project if filter(full_task_graph[l])]
+@register_target_task("autoland_perf_shadow_scheduler_tasks")
+def target_tasks_autoland_perf_shadow_scheduler(
+    full_task_graph, parameters, graph_config
+):
+    """Same as 'autoland_tasks', except that performance tasks are targeted on
+    every push instead of only on backstop pushes. Used by the perf shadow
+    schedulers so the cadence strategies they evaluate get to judge every
+    push-based performance task."""
+    filtered_for_project = target_tasks_default(
+        full_task_graph, parameters, graph_config
+    )
+    return [
+        l
+        for l in filtered_for_project
+        if is_perf_cadence_task(full_task_graph[l])
+        or filter_shippable_tests_on_non_backstop(full_task_graph[l], parameters)
+    ]
 
 
 @register_target_task("mozilla_central_tasks")
@@ -861,8 +892,6 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                 return True
         elif accept_raptor_android_build(platform):
             if "browsertime" in try_name and "cstm-car-m" in try_name:
-                if "-nofis" not in try_name:
-                    return False
                 if "hw-s24" in platform and "speedometer3" not in try_name:
                     return False
                 if "jetstream3" in try_name:
@@ -877,8 +906,8 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                     and "ebay-kleinanzeigen-search" not in try_name
                 ):
                     return False
-                # Bug 1960921 Disable ebay-kleinanzeigen-search-nofis on custom-car
-                if "ebay-kleinanzeigen-search-nofis" in try_name:
+                # Bug 1960921 Disable ebay-kleinanzeigen-search on custom-car
+                if "ebay-kleinanzeigen-search" in try_name:
                     return False
                 return True
         return False
@@ -930,6 +959,11 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             # Bug 1961145 - Disable bing-search for test-windows11-64-24h2-shippable
             if "windows11" in platform and "bing-search" in try_name:
                 return False
+            # Bug 2074111 - Already running on macosx1500
+            if "macosx1470" in platform and (
+                "jetstream3" in try_name or "speedometer3" in try_name
+            ):
+                return False
             if "browsertime" in try_name:
                 if "chrome" in try_name or "custom-car" in try_name:
                     # Bug 2049065: linux2404 chrome/custom-car tp6 and
@@ -964,16 +998,10 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
         elif accept_raptor_android_build(platform):
             if "hw-s24" in platform and "speedometer3" not in try_name:
                 return False
-            if "chrome-m" in try_name and "-nofis" not in try_name:
-                return False
             # Bug 1929960 - Enable all chrome-m tp6m tests on a55 only
             if "chrome-m" in try_name and "tp6m" in try_name and "hw-a55" in platform:
                 # Bug 1954923 - Disable ebay-kleinanzeigen
-                if (
-                    "ebay-kleinanzeigen" in try_name
-                    and "search" not in try_name
-                    and "nofis" in try_name
-                ):
+                if "ebay-kleinanzeigen" in try_name and "search" not in try_name:
                     return False
                 return True
             if "chrome-m" in try_name and (
@@ -1050,10 +1078,18 @@ def make_desktop_nightly_filter(platforms, graph_config):
     """Returns a filter that gets all nightly tasks on the given platform."""
 
     def filter(task, parameters):
-        # _filter_by_release_project is used instead of filter_for_project
-        # because it fakes things a bit for Try, and allows tasks that
-        # otherwise wouldn't run there to be run
-        filter_for_target_project = _filter_by_release_project(parameters, graph_config)
+        # On Try, _filter_by_release_project fakes things a bit, and allows
+        # tasks that otherwise wouldn't run there to be run. Elsewhere,
+        # including project branches such as Pine, use the project's own
+        # run-on-projects.
+        if parameters["project"] == "try":
+            filter_for_target_project = _filter_by_release_project(
+                parameters, graph_config
+            )
+        else:
+            filter_for_target_project = functools.partial(
+                filter_for_project, parameters=parameters
+            )
 
         return all([
             filter_on_platforms(task, platforms),
@@ -1098,8 +1134,6 @@ def target_tasks_speedometer_tests(full_task_graph, parameters, graph_config):
                 and "speedometer3" in try_name
                 and "chrome-m" in try_name
             ):
-                if "-nofis" not in try_name:
-                    return False
                 return True
 
     return [l for l, t in full_task_graph.tasks.items() if filter(t)]
@@ -1480,7 +1514,7 @@ def target_tasks_codereview(full_task_graph, parameters, graph_config):
 
     def filter(task):
         # Ending tasks
-        if task.kind in ["code-review"]:
+        if task.label == "code-review-issues":
             return True
 
         # Analyzer tasks
@@ -1497,6 +1531,10 @@ def target_tasks_codereview_build_test(full_task_graph, parameters, graph_config
     """Select all build and test tasks that should run as part of code review pushes."""
 
     def filter(task):
+        # Ending tasks
+        if task.label == "code-review-build-test-issues":
+            return True
+
         if task.attributes.get("code-review-build-test") is True:
             return True
 
@@ -2031,7 +2069,11 @@ def target_firefox_pull_requests(full_task_graph, parameters, graph_config):
     labels = []
     for label, task in full_task_graph.tasks.items():
         # Always add the code review analysis & ending tasks
-        if task.attributes.get("code-review") or task.kind == "code-review":
+        if (
+            task.attributes.get("code-review")
+            or task.attributes.get("code-review-build-test")
+            or task.kind == "code-review"
+        ):
             labels.append(label)
 
         elif not standard_filter(task, parameters):

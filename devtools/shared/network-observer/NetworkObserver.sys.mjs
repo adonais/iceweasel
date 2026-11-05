@@ -117,6 +117,13 @@ const HTTP_DOWNLOAD_ACTIVITIES = [
  */
 export class NetworkObserver {
   /**
+   * Whether the consumer supports listening and handling auth prompts.
+   *
+   * @type {boolean}
+   */
+  #authPromptListenerEnabled = false;
+
+  /**
    * Map of URL patterns to RegExp
    *
    * @type {Map}
@@ -124,12 +131,53 @@ export class NetworkObserver {
   #blockedURLs = new Map();
 
   /**
-   * Map of URL to local file path in order to redirect URL
-   * to local file overrides.
+   * The maximum size (in bytes) of the individual request and response bodies to be stored.
    *
-   * This will replace the content of some request with the content of local files.
+   * @type {number}
    */
-  #overrides = new Map();
+  #bodyLimit = 0;
+
+  /**
+   * Whether security information should be collected for requests.
+   *
+   * @type {boolean}
+   */
+  #collectSecurityInfo = true;
+
+  /**
+   * Used by NetworkHelper.parseSecurityInfo to skip decoding known certificates.
+   *
+   * @type {Map}
+   */
+  #decodedCertificateCache = new Map();
+
+  /**
+   * Whether response bodies should be decoded or not.
+   *
+   * @type {boolean}
+   */
+  #decodeResponseBodies = true;
+
+  /**
+   * See constructor argument of the same name.
+   *
+   * @type {Function}
+   */
+  #ignoreChannelFunction;
+
+  /**
+   * Used to store channels intercepted for service-worker requests.
+   *
+   * @type {WeakSet}
+   */
+  #interceptedChannels = new WeakSet();
+
+  /**
+   * Explicit flag to check if this observer was already destroyed.
+   *
+   * @type {boolean}
+   */
+  #isDestroyed = false;
 
   /**
    * Dictionary of all origins (string) mapped to a local folder, defined
@@ -142,53 +190,27 @@ export class NetworkObserver {
   #localModeMappings = {};
 
   /**
-   * Used by NetworkHelper.parseSecurityInfo to skip decoding known certificates.
-   *
-   * @type {Map}
-   */
-  #decodedCertificateCache = new Map();
-  /**
-   * Whether the consumer supports listening and handling auth prompts.
-   *
-   * @type {boolean}
-   */
-  #authPromptListenerEnabled = false;
-  /**
-   * See constructor argument of the same name.
-   *
-   * @type {Function}
-   */
-  #ignoreChannelFunction;
-  /**
-   * Used to store channels intercepted for service-worker requests.
-   *
-   * @type {WeakSet}
-   */
-  #interceptedChannels = new WeakSet();
-  /**
-   * Explicit flag to check if this observer was already destroyed.
-   *
-   * @type {boolean}
-   */
-  #isDestroyed = false;
-  /**
    * See constructor argument of the same name.
    *
    * @type {Function}
    */
   #onNetworkEvent;
+
   /**
    * Object that holds the activity objects for ongoing requests.
    *
    * @type {ChannelMap}
    */
   #openRequests = new lazy.ChannelMap();
+
   /**
-   * The maximum size (in bytes) of the individual request and response bodies to be stored.
+   * Map of URL to local file path in order to redirect URL
+   * to local file overrides.
    *
-   * @type {number}
+   * This will replace the content of some request with the content of local files.
    */
-  #bodyLimit = 0;
+  #overrides = new Map();
+
   /**
    * Network response bodies are piped through a buffer of the given size
    * (in bytes).
@@ -198,24 +220,21 @@ export class NetworkObserver {
   #responsePipeSegmentSize = Services.prefs.getIntPref(
     "network.buffer.cache.size"
   );
+
   /**
    * Whether to save the bodies of network requests and responses.
    *
    * @type {boolean}
    */
   #saveRequestAndResponseBodies = true;
-  /**
-   * Whether response bodies should be decoded or not.
-   *
-   * @type {boolean}
-   */
-  #decodeResponseBodies = true;
+
   /**
    * Throttling configuration, see constructor of NetworkThrottleManager
    *
    * @type {object}
    */
   #throttleData = null;
+
   /**
    * NetworkThrottleManager instance, created when a valid throttleData is set.
    *
@@ -225,6 +244,7 @@ export class NetworkObserver {
 
   constructor(options = {}) {
     const {
+      collectSecurityInfo,
       decodeResponseBodies,
       ignoreChannelFunction,
       onNetworkEvent,
@@ -249,6 +269,10 @@ export class NetworkObserver {
     // Set decodeResponseBodies if provided, otherwise default to "true".
     if (typeof decodeResponseBodies === "boolean") {
       this.#decodeResponseBodies = decodeResponseBodies;
+    }
+
+    if (typeof collectSecurityInfo === "boolean") {
+      this.#collectSecurityInfo = collectSecurityInfo;
     }
 
     // Set the provided bodyLimit if any, otherwise use the default "0".
@@ -1283,6 +1307,7 @@ export class NetworkObserver {
     // Add listener for the response body.
     const newListener = new lazy.NetworkResponseListener(httpActivity, {
       decodedCertificateCache: this.#decodedCertificateCache,
+      collectSecurityInfo: this.#collectSecurityInfo,
       decodeResponseBody: this.#decodeResponseBodies,
       fromServiceWorker: httpActivity.fromServiceWorker,
       responseBodyLimit: this.#bodyLimit,

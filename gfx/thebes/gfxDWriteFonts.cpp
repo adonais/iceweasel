@@ -485,6 +485,7 @@ void gfxDWriteFont::ComputeMetrics(AntialiasOption anAAOption) {
     }
   }
 
+  mIsValid = true;
 #if 0
     printf("Font: %p (%s) size: %f\n", this,
            NS_ConvertUTF16toUTF8(GetName()).get(), mStyle.size);

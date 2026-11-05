@@ -27,6 +27,9 @@
 #include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIAppStartup.h"
+#include "nsIAppShell.h"
+#include "nsExceptionHandler.h"
+#include "mozilla/TimeStamp.h"
 #include "nsIObserverService.h"
 #include "nsISupportsPrimitives.h"
 #include "nsObjCExceptions.h"
@@ -72,6 +75,63 @@ enum class LaunchStatus {
 };
 
 static LaunchStatus sLaunchStatus = LaunchStatus::Initial;
+
+#ifdef EARLY_BETA_OR_EARLIER
+static mozilla::TimeStamp sStartupRunLoopStart;
+static uint32_t sStartupRunLoopWakes = 0;
+static double sStartupRunLoopLastWakeMs = 0;
+
+static nsCString& StartupRunLoopEvents() {
+  static mozilla::NeverDestroyed<nsCString> sEvents;
+  return *sEvents;
+}
+
+static double StartupRunLoopMs() {
+  return (mozilla::TimeStamp::Now() - sStartupRunLoopStart).ToMilliseconds();
+}
+
+static void RecordStartupRunLoopAnnotation() {
+  nsAutoCString value(StartupRunLoopEvents());
+  value.AppendPrintf(" wakes=%u lastwake=%.0f", sStartupRunLoopWakes,
+                     sStartupRunLoopLastWakeMs);
+  CrashReporter::RecordAnnotationNSCString(
+      CrashReporter::Annotation::MacStartupRunLoop, value);
+}
+
+static uint32_t EventloopNestingLevel() {
+  uint32_t nesting = 0;
+  if (nsCOMPtr<nsIAppShell> appShell =
+          do_GetService("@mozilla.org/widget/appshell/mac;1")) {
+    appShell->GetEventloopNestingLevel(&nesting);
+  }
+  return nesting;
+}
+
+// Adds an event to the MacStartupRunLoop crash annotation while
+// InitializeMacApp() spins its run loop.
+static void LogStartupRunLoopEvent(const char* aFormat, ...)
+    MOZ_FORMAT_PRINTF(1, 2);
+static void LogStartupRunLoopEvent(const char* aFormat, ...) {
+  if (sLaunchStatus != LaunchStatus::CollectingURLs) {
+    return;
+  }
+  nsCString& events = StartupRunLoopEvents();
+  if (events.Length() < 1024) {
+    if (!events.IsEmpty()) {
+      events.Append(' ');
+    }
+    va_list args;
+    va_start(args, aFormat);
+    events.AppendVprintf(aFormat, args);
+    va_end(args);
+  }
+  RecordStartupRunLoopAnnotation();
+}
+
+#  define LOG_STARTUP_RUN_LOOP_EVENT(...) LogStartupRunLoopEvent(__VA_ARGS__)
+#else
+#  define LOG_STARTUP_RUN_LOOP_EVENT(...)
+#endif
 
 static nsTArray<nsCString>& StartupURLs() {
   static mozilla::NeverDestroyed<nsTArray<nsCString>> sStartupURLs;
@@ -161,9 +221,13 @@ void InitializeMacApp() {
           CFRunLoopObserverInvalidate(aObserver);
           CFRelease(aObserver);
 
+          LOG_STARTUP_RUN_LOOP_EVENT("obs:n%u,r%d", EventloopNestingLevel(),
+                                     [NSApp isRunning] ? 1 : 0);
+
           // Stop the inner run loop. We'll call `run` again when the main event
           // loop should start.
           [NSApp stop:NSApp];
+          LOG_STARTUP_RUN_LOOP_EVENT("stop:r%d", [NSApp isRunning] ? 1 : 0);
 
           // Send a bogus event so that the internal "app stopped" flag is
           // processed. Since we aren't calling this from a responder, we need
@@ -184,7 +248,29 @@ void InitializeMacApp() {
         nullptr);
     CFRunLoopAddObserver(CFRunLoopGetCurrent(), observer,
                          kCFRunLoopCommonModes);
+#ifdef EARLY_BETA_OR_EARLIER
+    sStartupRunLoopStart = mozilla::TimeStamp::Now();
+    CFRunLoopObserverRef wakeObserver = CFRunLoopObserverCreate(
+        kCFAllocatorDefault, kCFRunLoopAfterWaiting, /* repeats = */ true,
+        /* order = */ 0,
+        [](CFRunLoopObserverRef, CFRunLoopActivity, void*) {
+          ++sStartupRunLoopWakes;
+          sStartupRunLoopLastWakeMs = StartupRunLoopMs();
+          RecordStartupRunLoopAnnotation();
+        },
+        nullptr);
+    CFRunLoopAddObserver(CFRunLoopGetCurrent(), wakeObserver,
+                         kCFRunLoopCommonModes);
+#endif
+    LOG_STARTUP_RUN_LOOP_EVENT("run");
     [NSApp run];
+#ifdef EARLY_BETA_OR_EARLIER
+    CFRunLoopObserverInvalidate(wakeObserver);
+    CFRelease(wakeObserver);
+    CrashReporter::UnrecordAnnotation(
+        CrashReporter::Annotation::MacStartupRunLoop);
+    StartupRunLoopEvents().Truncate();
+#endif
   }
   sLaunchStatus = LaunchStatus::CollectedURLs;
 }
@@ -243,6 +329,7 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 // miniaturized, so we can't skip nsCocoaNativeReOpen() if 'flag' is 'true'.
 - (BOOL)applicationShouldHandleReopen:(NSApplication*)theApp
                     hasVisibleWindows:(BOOL)flag {
+  LOG_STARTUP_RUN_LOOP_EVENT("reopen");
   nsCOMPtr<nsINativeAppSupport> nas = NS_GetNativeAppSupport();
   NS_ENSURE_TRUE(nas, NO);
 
@@ -317,7 +404,14 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
+#ifdef EARLY_BETA_OR_EARLIER
+- (void)applicationDidFinishLaunching:(NSNotification*)notification {
+  LOG_STARTUP_RUN_LOOP_EVENT("didfinish");
+}
+#endif
+
 - (void)applicationWillFinishLaunching:(NSNotification*)notification {
+  LOG_STARTUP_RUN_LOOP_EVENT("willfinish");
   // We provide our own full screen menu item, so we don't want the OS providing
   // one as well.
   [[NSUserDefaults standardUserDefaults]
@@ -329,6 +423,7 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 // (from the browser or from the OS) can result in an unclean shutdown.
 - (NSApplicationTerminateReply)applicationShouldTerminate:
     (NSApplication*)sender {
+  LOG_STARTUP_RUN_LOOP_EVENT("term");
   nsCOMPtr<nsIObserverService> obsServ =
       do_GetService("@mozilla.org/observer-service;1");
   if (!obsServ) return NSTerminateNow;
@@ -387,10 +482,25 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 }
 
 - (BOOL)openURLs:(NSArray<NSURL*>*)urls {
+  LOG_STARTUP_RUN_LOOP_EVENT("urls");
   nsTArray<const char*> args([urls count] * 2 + 2);
   // Placeholder for unused program name.
   args.AppendElement(nullptr);
   bool bufferedURLs = false;
+  bool shouldOpenInBackground = false;
+#ifdef MOZ_BUILD_APP_IS_BROWSER
+  NSAppleEventDescriptor* event =
+      NSAppleEventManager.sharedAppleEventManager.currentAppleEvent;
+  if (event.eventClass == kInternetEventClass && event.eventID == kAEGetURL) {
+    if (@available(macOS 15.0, *)) {
+      constexpr AEKeyword kActivationExpected = 'aapd';
+      shouldOpenInBackground =
+          ![event paramDescriptorForKeyword:kActivationExpected].booleanValue;
+    } else {
+      shouldOpenInBackground = !NSApp.isActive;
+    }
+  }
+#endif
 
   for (NSURL* url in urls) {
     if (!url || !url.scheme ||
@@ -405,7 +515,7 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
       continue;
     }
 
-    args.AppendElement("-url");
+    args.AppendElement(shouldOpenInBackground ? "-url-background" : "-url");
     args.AppendElement(urlString);
   }
 

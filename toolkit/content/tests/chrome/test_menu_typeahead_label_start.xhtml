@@ -1,0 +1,201 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin" type="text/css"?>
+<?xml-stylesheet href="chrome://mochikit/content/tests/SimpleTest/test.css" type="text/css"?>
+
+<window title="Menu Typeahead Label Start Test"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+
+  <label id="anchor" value="anchor"/>
+  <menupopup id="popup" nonnative="">
+    <menuitem label="🦊 Work"/>
+    <menuitem label="(Default)"/>
+    <menuitem label="日本語"/>
+    <menuitem label="Personal"/>
+    <menuitem label="Pinned"/>
+  </menupopup>
+  <menupopup id="otherPopup" nonnative="">
+    <menuitem label="Alpha" accesskey="x"/>
+    <menuitem label="Kilo (disabled)" disabled=""/>
+    <menuitem label="Kilo"/>
+    <menugroup>
+      <menugroup>
+        <menuitem label="🦊 Nested"/>
+      </menugroup>
+    </menugroup>
+  </menupopup>
+  <menulist id="menulist">
+    <menupopup nonnative="">
+      <menuitem label="Other" selected="true"/>
+      <menuitem label="(none)"/>
+      <menuitem label="Nothing"/>
+    </menupopup>
+  </menulist>
+
+<script class="testbody" type="application/javascript">
+<![CDATA[
+const { BrowserTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/BrowserTestUtils.sys.mjs"
+);
+
+const popup = document.getElementById("popup");
+
+const otherPopup = document.getElementById("otherPopup");
+
+async function openMenu(menu) {
+  let shown = BrowserTestUtils.waitForEvent(menu, "popupshown");
+  menu.openPopup(document.getElementById("anchor"), "after_start");
+  await shown;
+}
+
+async function closeMenu(menu) {
+  let hidden = BrowserTestUtils.waitForEvent(menu, "popuphidden");
+  menu.hidePopup();
+  await hidden;
+}
+
+async function typeInOpenMenu(key, menu) {
+  let active = BrowserTestUtils.waitForEvent(menu, "DOMMenuItemActive");
+  sendString(key);
+  return (await active).target.label;
+}
+
+async function pressKeyInMenu(key, menu = popup) {
+  await openMenu(menu);
+  let command = BrowserTestUtils.waitForEvent(menu, "command");
+  let hidden = BrowserTestUtils.waitForEvent(menu, "popuphidden");
+  sendString(key);
+  let { target } = await command;
+  await hidden;
+  return target.label;
+}
+
+add_task(async function testSkipsLeadingEmoji() {
+  is(
+    await pressKeyInMenu("w"),
+    "🦊 Work",
+    "A letter selects an item whose label starts with an emoji"
+  );
+});
+
+add_task(async function testSkipsLeadingPunctuation() {
+  is(
+    await pressKeyInMenu("d"),
+    "(Default)",
+    "A letter selects an item whose label starts with punctuation"
+  );
+});
+
+add_task(async function testLiteralStartStillMatches() {
+  is(
+    await pressKeyInMenu("("),
+    "(Default)",
+    "The literal first character of the label still matches"
+  );
+  is(
+    await pressKeyInMenu("日"),
+    "日本語",
+    "A character typed through an IME still matches the literal label start"
+  );
+});
+
+add_task(async function testSeveralMatchesCycle() {
+  await openMenu(popup);
+  let commands = 0;
+  let countCommand = () => commands++;
+  popup.addEventListener("command", countCommand);
+  is(
+    await typeInOpenMenu("p", popup),
+    "Personal",
+    "The first match is highlighted"
+  );
+  is(
+    await typeInOpenMenu("p", popup),
+    "Pinned",
+    "The next match is highlighted"
+  );
+  is(await typeInOpenMenu("p", popup), "Personal", "Matching wraps around");
+  is(commands, 0, "An ambiguous key activates nothing");
+  popup.removeEventListener("command", countCommand);
+  await closeMenu(popup);
+});
+
+add_task(async function testAccessKey() {
+  is(
+    await pressKeyInMenu("x", otherPopup),
+    "Alpha",
+    "An accesskey selects its item"
+  );
+});
+
+add_task(async function testItemInNestedMenugroup() {
+  is(
+    await pressKeyInMenu("n", otherPopup),
+    "🦊 Nested",
+    "A letter selects an item inside a nested menugroup"
+  );
+});
+
+add_task(async function testDisabledItemSkipped() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.skipNavigatingDisabledMenuItem", 1]],
+  });
+  is(
+    await pressKeyInMenu("k", otherPopup),
+    "Kilo",
+    "A disabled item doesn't match where navigation skips disabled items"
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function testDisabledItemNotSkipped() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.skipNavigatingDisabledMenuItem", 0]],
+  });
+  await openMenu(otherPopup);
+  let commands = 0;
+  let countCommand = () => commands++;
+  otherPopup.addEventListener("command", countCommand);
+  is(
+    await typeInOpenMenu("k", otherPopup),
+    "Kilo (disabled)",
+    "A disabled item matches where navigation reaches disabled items"
+  );
+  is(
+    await typeInOpenMenu("k", otherPopup),
+    "Kilo",
+    "The next match is highlighted"
+  );
+  is(commands, 0, "An ambiguous key activates nothing");
+  otherPopup.removeEventListener("command", countCommand);
+  await closeMenu(otherPopup);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function testMenulistMatchesLiteralStart() {
+  let menulist = document.getElementById("menulist");
+  let menulistPopup = menulist.menupopup;
+  let shown = BrowserTestUtils.waitForEvent(menulistPopup, "popupshown");
+  menulist.open = true;
+  await shown;
+  is(
+    await typeInOpenMenu("n", menulistPopup),
+    "Nothing",
+    "A menulist doesn't skip a label's leading punctuation"
+  );
+  let hidden = BrowserTestUtils.waitForEvent(menulistPopup, "popuphidden");
+  menulist.open = false;
+  await hidden;
+});
+]]>
+</script>
+
+<body xmlns="http://www.w3.org/1999/xhtml">
+<p id="display"/>
+<div id="content" style="display: none"/>
+<pre id="test"/>
+</body>
+
+</window>

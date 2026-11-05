@@ -1,0 +1,9 @@
+-c requirements-common.txt
+
+certifi==2026.10.19
+hpack==4.0.0
+hyperframe==6.0.0
+psutil==7.0.0
+requests==2.32.3
+aiohttp==3.12.15
+async-timeout==5.0.1; python_version < '3.11'

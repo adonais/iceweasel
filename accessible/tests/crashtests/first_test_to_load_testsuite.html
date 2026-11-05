@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<head>
+<title>Instantiate accessibility for the accessibility crashtests</title>
+<script>
+  async function init() {
+    // Instantiate accessibility in the parent process so that all cache domains
+    // are enabled in all processes. The reference is stashed on the reftest
+    // window to keep accessibility alive for later tests.
+    // last_test_to_unload_testsuite.html releases it.
+    await SpecialPowers.spawnChrome([], () => {
+      browsingContext.topChromeWindow.wrappedJSObject.gA11yCrashtestService =
+        Cc["@mozilla.org/accessibilityService;1"].getService(
+          Ci.nsIAccessibilityService
+        );
+    });
+    document.documentElement.removeAttribute("class");
+  }
+</script>
+</head>
+<body onload="init();"></body>
+</html>

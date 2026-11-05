@@ -5,8 +5,6 @@
 task-defaults:
     max-run-time: 3600
     suite: raptor
-    variants:
-        - geckoview-no-fission
     run-on-projects: []
     tier:
         by-app:
@@ -163,15 +161,9 @@ browsertime-tp6m:
         by-app:
             geckoview: []
             fenix:
-                by-variant:
-                    geckoview-no-fission:
-                        by-test-platform:
-                            android-hw-a55.*shippable.*: [trunk-only]
-                            default: []
-                    default:
-                        by-test-platform:
-                            android-hw-a55.*shippable.*: [trunk-only]
-                            default: [mozilla-central]
+                by-test-platform:
+                    android-hw-a55.*shippable.*: [trunk-only]
+                    default: [mozilla-central]
             default: []
 
 browsertime-tp6m-essential:
@@ -468,25 +460,15 @@ browsertime-benchmark-speedometer3-mobile:
     run-on-projects:
         by-app:
             fenix:
-                by-variant:
-                    # Bug 2037229 - clean up this config once no-fission is fully removed
-                    geckoview-no-fission:
-                        by-test-platform:
-                            android-hw-a55.*shippable.*: [trunk-only]
-                            android-hw-p6.*shippable.*: [mozilla-central]
-                            android-hw-s24.*shippable.*: [mozilla-central]
-                            android-em-14-arm64.*shippable.*: [autoland]
-                            default: []
-                    default:
-                        by-test-platform:
-                            android-hw-a55.*nightlyasrelease.*: [trunk-only]
-                            android-hw-p6.*nightlyasrelease.*: [mozilla-central]
-                            android-hw-s24.*nightlyasrelease.*: [mozilla-central]
-                            android-hw-a55.*shippable.*: [trunk-only]
-                            android-hw-p6.*shippable.*: [mozilla-central]
-                            android-hw-s24.*shippable.*: [mozilla-central]
-                            android-em-14-arm64.*shippable.*: [autoland]
-                            default: []
+                by-test-platform:
+                    android-hw-a55.*nightlyasrelease.*: [trunk-only]
+                    android-hw-p6.*nightlyasrelease.*: [mozilla-central]
+                    android-hw-s24.*nightlyasrelease.*: [mozilla-central]
+                    android-hw-a55.*shippable.*: [trunk-only]
+                    android-hw-p6.*shippable.*: [mozilla-central]
+                    android-hw-s24.*shippable.*: [mozilla-central]
+                    android-em-14-arm64.*shippable.*: [autoland]
+                    default: []
             geckoview: []
             chrome-m:
                 by-test-platform:
@@ -619,6 +601,24 @@ browsertime-trr-performance-m:
                     default: []
     tier: 3
     treeherder-symbol: Btime(trrperfm)
+
+browsertime-doh-busy-site-m:
+    raptor:
+        apps: [fenix]
+        run-visual-metrics: false
+        subtests:
+            - busydoh
+    description: Raptor (browsertime) DoH lookup timings while replaying recorded news-site request timelines, mobile
+    limit-platforms:
+        - .*shippable.*
+    max-run-time: 900
+    mozharness:
+        extra-options:
+            - --browsertime-no-ffwindowrecorder
+            - --extra-profiler-run
+    run-on-projects: []
+    tier: 3
+    treeherder-symbol: Btime(dohbusym)
 
 browsertime-hev3-connection-m:
     raptor:

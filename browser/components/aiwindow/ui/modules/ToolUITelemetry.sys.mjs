@@ -43,6 +43,24 @@ export const ToolUITelemetry = {
   },
 
   /**
+   * Records telemetry when a user clicks "Select all" or "Deselect all" on a
+   * browser action prompt
+   *
+   * @param {object} data - Telemetry data
+   * @param {string} data.location - The location/mode of the AI Window
+   * @param {string} data.chat_id - The conversation ID
+   * @param {number} data.message_seq - The conversation message count
+   * @param {string} data.action - The browser action being prompted for
+   * @param {string} data.prompt_type - The type of prompt being shown
+   * @param {"browser_action" | "resume"} data.entrypoint - What opened the prompt
+   * @param {"select_all" | "deselect_all"} data.toggle - The button clicked
+   * @param {number} data.candidates - Number of tabs shown on the prompt
+   */
+  recordBrowserActionPromptToggleAll(data) {
+    Glean.smartWindow.browserActionPromptToggleAll.record(data);
+  },
+
+  /**
    * Records telemetry when a user undoes a browser action
    *
    * @param {object} data - Telemetry data

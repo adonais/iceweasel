@@ -31,7 +31,8 @@ LOCAL_INCLUDES += [
 
 USE_LIBS += [
     "angle_common_gn",
-    "angle_translator_headers_gn"
+    "angle_translator_headers_gn",
+    "cl_includes_gn"
 ]
 
 if not CONFIG["MOZ_DEBUG"]:

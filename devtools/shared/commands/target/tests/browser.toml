@@ -49,8 +49,6 @@ support-files = [
 
 ["browser_target_command_service_workers_navigation_stopped.js"]
 skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929449
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && ccov", # Bug 1767781
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov", # Bug 1767781
 ]
 

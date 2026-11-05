@@ -10,7 +10,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
-    run-on-repo-type: [hg]
     name: update-verify-config
     run-on-projects: []  # to make sure this never runs as part of CI
     shipping-phase: promote
@@ -26,7 +25,6 @@ task-defaults:
               path: /builds/worker/checkouts/gecko/update-verify.cfg
               type: file
     run:
-        clone-with: hg
         sparse-profile: mach
     extra:
         app-name: browser

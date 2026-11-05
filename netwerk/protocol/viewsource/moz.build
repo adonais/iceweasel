@@ -25,3 +25,7 @@ LOCAL_INCLUDES += [
 ]
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "nsViewSourceChannel.h",
+]

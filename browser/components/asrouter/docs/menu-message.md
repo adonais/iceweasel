@@ -87,6 +87,6 @@ Previewing the layout options and configurations can be done through `./mach sto
 
 ## Related Docs
 
-- [Targeting attributes](https://firefox-source-docs.mozilla.org/toolkit/components/messaging-system/docs/targeting-attributes.html)
-- [Triggers](https://firefox-source-docs.mozilla.org/toolkit/components/messaging-system/docs/TriggerActionSchemas/index.html)
-- [Special Message Actions](https://firefox-source-docs.mozilla.org/toolkit/components/messaging-system/docs/SpecialMessageActionSchemas/index.html)
+- {doc}`Targeting attributes </browser/components/asrouter/docs/targeting-attributes>`
+- {doc}`Triggers </toolkit/components/messaging-system/docs/TriggerActionSchemas/index>`
+- {doc}`Special Message Actions </toolkit/components/messaging-system/docs/SpecialMessageActionSchemas/index>`

@@ -140,7 +140,6 @@ that will still be played:
 | Situation                             | Carried  |
 |---------------------------------------|----------|
 | Stream kept running across the seek   | `W - P`  |
-| Backend restarted, queue discarded    | nothing  |
 | Position query failed, no `P`         | nothing  |
 | `P` reported above `W`                | nothing  |
 | Backend drained since the resume      | nothing  |

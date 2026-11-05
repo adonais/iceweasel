@@ -1570,7 +1570,7 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlinePolymorphicTypes(
     if (!types.hasData()) {
       return false;
     }
-    if (!candidates.append(TypeFrequency(types, successCount))) {
+    if (!candidates.emplaceBack(types, successCount)) {
       return abort(AbortReason::Alloc);
     }
   }

@@ -78,6 +78,12 @@ class RtpPacketToSend : public RtpPacket {
   }
   bool allow_retransmission() const { return allow_retransmission_; }
 
+  // Indicates if packet sending is allowed. If false, sending should be
+  // skipped (e.g. flushed packets on keyframe).
+  // TODO(bugs.webrtc.org/564720400): Either remove or make permanent.
+  void set_allow_sending(bool allow_sending) { allow_sending_ = allow_sending; }
+  bool allow_sending() const { return allow_sending_; }
+
   // An application can attach arbitrary data to an RTP packet using
   // `additional_data`. The additional data does not affect WebRTC processing.
   scoped_refptr<RefCountedBase> additional_data() const {
@@ -116,6 +122,12 @@ class RtpPacketToSend : public RtpPacket {
     is_first_packet_of_frame_ = is_first_packet;
   }
   bool is_first_packet_of_frame() const { return is_first_packet_of_frame_; }
+
+  // Indicates if packet is the last packet of a video frame.
+  void set_last_packet_of_frame(bool is_last_packet) {
+    is_last_packet_of_frame_ = is_last_packet;
+  }
+  bool is_last_packet_of_frame() const { return is_last_packet_of_frame_; }
 
   // Indicates if packet contains payload for a video key-frame.
   void set_is_key_frame(bool is_key_frame) { is_key_frame_ = is_key_frame; }
@@ -162,10 +174,12 @@ class RtpPacketToSend : public RtpPacket {
   std::optional<uint16_t> retransmitted_sequence_number_;
   scoped_refptr<RefCountedBase> additional_data_;
   bool is_first_packet_of_frame_ = false;
+  bool is_last_packet_of_frame_ = false;
   bool is_key_frame_ = false;
   bool fec_protect_packet_ = false;
   bool is_red_ = false;
   bool send_as_ect1_ = false;
+  bool allow_sending_ = true;
   std::optional<TimeDelta> time_in_send_queue_;
 };
 

@@ -117,6 +117,8 @@ $break-point-widest: $wrapper-max-width-widest + $base-gutter * 2 + $scrollbar-w
 $break-point-sections-variant: 1310px + $base-gutter * 2 + $scrollbar-width; // 1374px
 $break-point-weather: $wrapper-max-width-weather + $base-gutter * 2 + $scrollbar-width; // 1506px
 $break-point-ultra-wide: $wrapper-max-width-ultra-wide + $base-gutter * 2 + $scrollbar-width; // 1698px
+// Viewport height above which the search sticks to the top of the page.
+$break-point-sticky-search: 700px;
 
 // Used for @include debug-breakpoints in mixins.scss
 $debug-breakpoints: (

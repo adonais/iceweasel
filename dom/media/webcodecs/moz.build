@@ -67,3 +67,7 @@ if CONFIG["MOZ_WAYLAND"]:
     CFLAGS += CONFIG["MOZ_WAYLAND_CFLAGS"]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "ImageDecoderReadRequest.h",
+]

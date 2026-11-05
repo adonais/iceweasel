@@ -14,10 +14,10 @@ add_task(async () => {
   timesFile.append("times.json");
   let times = await IOUtils.readJSON(timesFile.path);
 
-  // Allow 5ms tolerance.
+  // Allow 20ms tolerance for coarse clock resolution (especially for Windows).
   Assert.greaterOrEqual(
     times.created,
-    start - 5,
+    start - 20,
     "Profile should have been created after the test startup began"
   );
   Assert.lessOrEqual(

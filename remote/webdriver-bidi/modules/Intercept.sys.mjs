@@ -7,6 +7,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   getSeenNodesForBrowsingContext:
     "chrome://remote/content/shared/webdriver/Session.sys.mjs",
+  getWebDriverSessionByInternalSessionId:
+    "chrome://remote/content/shared/webdriver/Session.sys.mjs",
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
 });
 
@@ -19,8 +21,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
  *     - {Map<BrowsingContext, Array<string>>} seenNodeIds
  *         DOM nodes that need to be added to the navigable seen nodes map.
  *
- * @param {string} sessionId
- *     Id of the WebDriver session
+ * @param {string} internalSessionId
+ *     Id of the MessageHandler network of the WebDriver session
  * @param {object} payload
  *     Payload of the response for the command and event that might contain
  *     a `_extraData` field.
@@ -28,15 +30,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * @returns {object}
  *     The payload with the extra data removed if it was present.
  */
-export function processExtraData(sessionId, payload) {
+export function processExtraData(internalSessionId, payload) {
   // Process extra data if present and delete it from the payload
   if ("_extraData" in payload) {
     const { seenNodeIds } = payload._extraData;
+    const session =
+      lazy.getWebDriverSessionByInternalSessionId(internalSessionId);
 
     // Updates the seen nodes for the current session and browsing context.
     seenNodeIds?.forEach((nodeIds, browsingContext) => {
       const seenNodes = lazy.getSeenNodesForBrowsingContext(
-        sessionId,
+        session,
         browsingContext
       );
 

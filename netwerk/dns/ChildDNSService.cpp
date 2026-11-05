@@ -73,7 +73,7 @@ void ChildDNSService::GetDNSRecordHashKey(
     nsIDNSService::DNSFlags aFlags, uintptr_t aListenerAddr,
     nsACString& aHashKey) {
   aHashKey.Assign(aHost);
-  aHashKey.Assign(aTrrServer);
+  aHashKey.Append(aTrrServer);
   aHashKey.AppendInt(aPort);
   aHashKey.AppendInt(aType);
 
@@ -253,15 +253,6 @@ ChildDNSService::CancelAsyncResolveNative(
     const OriginAttributes& aOriginAttributes) {
   return CancelAsyncResolveInternal(aHostname, aType, aFlags, aInfo, aListener,
                                     aReason, aOriginAttributes);
-}
-
-NS_IMETHODIMP
-ChildDNSService::Resolve(const nsACString& hostname,
-                         nsIDNSService::DNSFlags flags,
-                         JS::Handle<JS::Value> aOriginAttributes,
-                         JSContext* aCx, uint8_t aArgc, nsIDNSRecord** result) {
-  // not planning to ever support this, since sync IPDL is evil.
-  return NS_ERROR_NOT_AVAILABLE;
 }
 
 NS_IMETHODIMP

@@ -64,6 +64,9 @@ elif CONFIG['TARGET_CPU'] == 'arm':
         SOURCES += sorted([
             "!%s.S" % f if f.endswith('.asm') else f for f in arm_asm_files
         ])
+        SOURCES['!libvpx/vpx_dsp/arm/idct4x4_add_neon.asm.S'].object_deps += [
+            '!libvpx/vpx_dsp/arm/idct_neon.asm.S',
+        ]
     else:
         SOURCES += sorted(arm_asm_files)
 

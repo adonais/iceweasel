@@ -162,18 +162,6 @@ void GetWakeLockInfo(const nsAString& aTopic,
   }
 }
 
-bool EnableAlarm() {
-  MOZ_CRASH("Alarms can't be programmed from sandboxed contexts.  Yet.");
-}
-
-void DisableAlarm() {
-  MOZ_CRASH("Alarms can't be programmed from sandboxed contexts.  Yet.");
-}
-
-bool SetAlarm(int32_t aSeconds, int32_t aNanoseconds) {
-  MOZ_CRASH("Alarms can't be programmed from sandboxed contexts.  Yet.");
-}
-
 void SetProcessPriority(int aPid, ProcessPriority aPriority) {
   MOZ_CRASH("Only the main process may set processes' priorities.");
 }

@@ -66,7 +66,7 @@ Local debugging involves logging telemetry to console and/or using Glean's ergon
 The simplest way to understand the telemetry you'll generate is to turn on logging. In `about:config` set `browser.newtabpage.activity-stream.telemetry` to `true` and `messaging-system.log` to `debug`.
 
 You can now play around with the message you care about using
-[ASRouter devtools](https://firefox-source-docs.mozilla.org/browser/components/asrouter/docs/debugging-docs.html) with the logs generating in the browser console.
+{doc}`ASRouter devtools </browser/components/asrouter/docs/debugging-docs>` with the logs generating in the browser console.
 
 To monitor events using `about:glean` you can use the following mach command. This will turn on telemetry logging and open `about:glean`.
 ```MOZ_LOG="glean_core::upload:3" ./mach run --setpref browser.newtabpage.activity-stream.telemetry=true about:glean```
@@ -82,7 +82,7 @@ To monitor events using `about:glean` you can use the following mach command. Th
   and package those into pings which are the payloads sent to our servers.
 * You can see current [FxMS Glean metrics and pings](https://dictionary.telemetry.mozilla.org/apps/firefox_desktop/pings/messaging-system)
   in the desktop section of the Glean Dictionary. The layer embedding Glean into
-  Firefox Desktop is called [Firefox on Glean (FOG)](https://firefox-source-docs.mozilla.org/toolkit/components/glean/index.html).
+  Firefox Desktop is called {doc}`Firefox on Glean (FOG) </toolkit/components/glean/index>`.
 * Documentation will be automatically generated and hosted on the Glean
   Dictionary, so write long rich-text Descriptions and augment them off-train
   with Glean Annotations.

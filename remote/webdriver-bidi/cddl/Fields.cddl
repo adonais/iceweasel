@@ -26,6 +26,16 @@ session.CapabilityRequestFirefoxOptions = {
   ? "profile": text,
 }
 
+session.CapabilityResponseExtension = (
+  ? "moz:buildID": text,
+  ? "moz:headless": bool,
+  ? "moz:platformVersion": text,
+  ? "moz:processID": js-uint,
+  ? "moz:profile": text,
+  ? "moz:shutdownTimeout": js-uint,
+  ? "moz:userContext": browser.UserContext,
+)
+
 webExtension.InstallParametersExtension = (
   ? "moz:allowPrivateBrowsing": bool .default false,
   ? "moz:permanent": bool .default false,

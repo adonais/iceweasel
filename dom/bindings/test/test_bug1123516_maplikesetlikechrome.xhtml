@@ -41,14 +41,16 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1123516
            var setlike = Cu.evalInSandbox("var m = new TestInterfaceSetlikeNode(); m.add(document.documentElement); m;", sandbox);
            is(TestInterfaceSetlikeNode.prototype.has.call(setlike, win.document.documentElement), true,
               "Cross-compartment unwrapping/comparison has works");
-           // TODO: Should throw until iterators are handled by Xrays, Bug 1023984
-           try {
-             TestInterfaceSetlikeNode.prototype.keys.call(setlike);
-             ok(false, "Calling iterators via xrays should fail");
-             /* eslint-disable-next-line no-shadow */
-           } catch(e) {
-             ok(true, "Calling iterators via xrays should fail");
-           }
+           // The iterators are WebIDL objects, so they work through Xrays like
+           // those of iterable interfaces. Iterating them with for-of still
+           // fails until Bug 1023984, as their [Symbol.iterator] is not visible.
+           let keys = TestInterfaceSetlikeNode.prototype.keys.call(setlike);
+           let first = keys.next();
+           is(first.value, win.document.documentElement,
+              "Cross-compartment iterator yields the entry");
+           ok(!first.done, "Cross-compartment iterator is not done after the entry");
+           ok(keys.next().done, "Cross-compartment iterator finishes");
+           is([...setlike].length, 1, "Cross-compartment spread works");
 
            setlike.forEach((v) => { is(v, win.document.documentElement, "Cross-compartment forEach works"); });
            TestInterfaceSetlikeNode.prototype.forEach.call(setlike,

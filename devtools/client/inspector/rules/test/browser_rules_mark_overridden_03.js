@@ -10,9 +10,11 @@ const TEST_URI = `
   <style type='text/css'>
   #testid {
     background-color: blue;
+    color: gold;
   }
   .testclass {
     background-color: green !important;
+    color: tomato !IMPORTANT;
   }
   </style>
   <div id='testid' class='testclass'>Styled Node</div>
@@ -23,11 +25,43 @@ add_task(async function () {
   const { inspector, view } = await openRuleView();
   await selectNode("#testid", inspector);
 
-  const idProp = getTextProperty(view, 1, { "background-color": "blue" });
-  ok(idProp.overridden, "Not-important rule should be overridden.");
-
-  const classProp = getTextProperty(view, 2, { "background-color": "green" });
-  ok(!classProp.overridden, "Important rule should not be overridden.");
-
-  ok(idProp.overridden, "ID property should be overridden.");
+  await checkRuleViewContent(view, [
+    {
+      selector: `element`,
+      selectorEditable: false,
+      declarations: [],
+    },
+    {
+      selector: `#testid`,
+      declarations: [
+        {
+          name: "background-color",
+          value: "blue",
+          // Not-important declaration is overriden
+          overridden: true,
+        },
+        {
+          name: "color",
+          value: "gold",
+          // Not-important declaration is overriden by uppercase !IMPORTANT
+          overridden: true,
+        },
+      ],
+    },
+    {
+      selector: `.testclass`,
+      declarations: [
+        {
+          name: "background-color",
+          value: "green !important",
+          overridden: false,
+        },
+        {
+          name: "color",
+          value: "tomato !important",
+          overridden: false,
+        },
+      ],
+    },
+  ]);
 });

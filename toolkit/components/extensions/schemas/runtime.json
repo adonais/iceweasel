@@ -149,6 +149,11 @@
             "optional": true,
             "description": "The $(ref:tabs.Tab) which opened the connection, if any. This property will <strong>only</strong> be present when the connection was opened from a tab (including content scripts), and <strong>only</strong> if the receiver is an extension, not an app."
           },
+          "windowId": {
+            "type": "integer",
+            "optional": true,
+            "description": "The window ID of the document that opened the connection."
+          },
           "frameId": {
             "type": "integer",
             "optional": true,
@@ -193,8 +198,8 @@
         "id": "PlatformArch",
         "type": "string",
         "enum": [
-          "aarch64",
           "arm",
+          "arm64",
           "ppc64",
           "riscv64",
           "s390x",

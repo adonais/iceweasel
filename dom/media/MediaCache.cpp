@@ -342,7 +342,8 @@ class MediaCache {
   // aMaxSearchBlockIndex are considered. If aForStream is non-null,
   // then aForStream and aForStreamBlock indicate what media data will
   // be placed; FindReusableBlock will favour returning free blocks
-  // near other blocks for that point in the stream.
+  // near other blocks for that point in the stream. If it returns an
+  // allocated block, aForStream and aForStreamBlock do not affect the result.
   int32_t FindReusableBlock(AutoLock&, TimeStamp aNow,
                             MediaCacheStream* aForStream,
                             int32_t aForStreamBlock,
@@ -1345,48 +1346,58 @@ int32_t MediaCache::TrimCacheIfNeeded(AutoLock& aLock, const TimeStamp& aNow) {
       break;
     }
 
-    // Don't evict |destinationBlockIndex| if it is within [cur, end) otherwise
-    // a new channel will be opened to download this block again which is bad.
-    bool inCurrentCachedRange = false;
-    for (BlockOwner& owner : mIndex[destinationBlockIndex].mOwners) {
-      MediaCacheStream* stream = owner.mStream;
-      int64_t end = OffsetToBlockIndexUnchecked(
-          stream->GetCachedDataEndInternal(aLock, stream->mStreamOffset));
-      int64_t cur = OffsetToBlockIndexUnchecked(stream->mStreamOffset);
-      if (cur <= owner.mStreamBlock && owner.mStreamBlock < end) {
-        inCurrentCachedRange = true;
+    if (!IsBlockFree(destinationBlockIndex)) {
+      // FindReusableBlock chose this allocated block independently of the
+      // overflow block, so if it is rejected, every later iteration would
+      // select and reject it again. This relies on a rejection not modifying
+      // any state.
+
+      // Don't evict |destinationBlockIndex| if it is within [cur, end)
+      // otherwise a new channel will be opened to download this block again
+      // which is bad.
+      bool inCurrentCachedRange = false;
+      for (BlockOwner& owner : mIndex[destinationBlockIndex].mOwners) {
+        MediaCacheStream* stream = owner.mStream;
+        int64_t end = OffsetToBlockIndexUnchecked(
+            stream->GetCachedDataEndInternal(aLock, stream->mStreamOffset));
+        int64_t cur = OffsetToBlockIndexUnchecked(stream->mStreamOffset);
+        if (cur <= owner.mStreamBlock && owner.mStreamBlock < end) {
+          inCurrentCachedRange = true;
+          break;
+        }
+      }
+      if (inCurrentCachedRange) {
+        LOG("Could not trim cache block {} (destination {} is in a current "
+            "cached range)",
+            blockIndex, destinationBlockIndex);
+        break;
+      }
+
+      // Reuse blocks in the main part of the cache that are less useful than
+      // the least useful overflow blocks
+      const TimeDuration destinationPredictedUse =
+          PredictNextUse(aLock, aNow, destinationBlockIndex);
+      if (destinationPredictedUse <= latestPredictedUseForOverflow) {
+        LOG("Could not trim cache block {} (destination {}, "
+            "predicted next use {}, latest predicted use for overflow {})",
+            blockIndex, destinationBlockIndex,
+            destinationPredictedUse.ToSeconds(),
+            latestPredictedUseForOverflow.ToSeconds());
         break;
       }
     }
-    if (inCurrentCachedRange) {
-      continue;
-    }
 
-    if (IsBlockFree(destinationBlockIndex) ||
-        PredictNextUse(aLock, aNow, destinationBlockIndex) >
-            latestPredictedUseForOverflow) {
-      // Reuse blocks in the main part of the cache that are less useful than
-      // the least useful overflow blocks
+    nsresult rv = mBlockCache->MoveBlock(blockIndex, destinationBlockIndex);
 
-      nsresult rv = mBlockCache->MoveBlock(blockIndex, destinationBlockIndex);
-
-      if (NS_SUCCEEDED(rv)) {
-        // We successfully copied the file data.
-        LOG("Swapping blocks {} and {} (trimming cache)", blockIndex,
-            destinationBlockIndex);
-        // Swapping the block metadata here lets us maintain the
-        // correct positions in the linked lists
-        SwapBlocks(aLock, blockIndex, destinationBlockIndex);
-        // Free the overflowing block even if the copy failed.
-        LOG("Released block {} (trimming cache)", blockIndex);
-        FreeBlock(aLock, blockIndex);
-      }
-    } else {
-      LOG("Could not trim cache block {} (destination {}, "
-          "predicted next use {}, latest predicted use for overflow {}",
-          blockIndex, destinationBlockIndex,
-          PredictNextUse(aLock, aNow, destinationBlockIndex).ToSeconds(),
-          latestPredictedUseForOverflow.ToSeconds());
+    if (NS_SUCCEEDED(rv)) {
+      // We successfully copied the file data.
+      LOG("Swapping blocks {} and {} (trimming cache)", blockIndex,
+          destinationBlockIndex);
+      // Swapping the block metadata here lets us maintain the
+      // correct positions in the linked lists
+      SwapBlocks(aLock, blockIndex, destinationBlockIndex);
+      LOG("Released block {} (trimming cache)", blockIndex);
+      FreeBlock(aLock, blockIndex);
     }
   }
   // Try chopping back the array of cache entries and the cache file.

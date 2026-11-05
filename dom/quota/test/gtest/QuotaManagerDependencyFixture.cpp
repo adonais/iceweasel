@@ -444,37 +444,35 @@ QuotaManagerDependencyFixture::GetOriginStateMetadata(
 Maybe<OriginStateMetadata>
 QuotaManagerDependencyFixture::LoadDirectoryMetadataHeader(
     const OriginMetadata& aOriginMetadata) {
-  auto result =
-      PerformOnIOThread([aOriginMetadata]() -> Maybe<OriginStateMetadata> {
-        QuotaManager* quotaManager = QuotaManager::Get();
-        MOZ_RELEASE_ASSERT(quotaManager);
+  auto result = PerformOnIOThread([aOriginMetadata]()
+                                      -> Maybe<OriginStateMetadata> {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    MOZ_RELEASE_ASSERT(quotaManager);
 
-        auto directoryRes = quotaManager->GetOriginDirectory(aOriginMetadata);
-        MOZ_RELEASE_ASSERT(directoryRes.isOk());
+    auto directoryRes = quotaManager->GetOriginDirectory(aOriginMetadata);
+    MOZ_RELEASE_ASSERT(directoryRes.isOk());
 
-        auto directory = directoryRes.unwrap();
+    auto directory = directoryRes.unwrap();
 
-        bool exists;
-        nsresult rv = directory->Exists(&exists);
-        MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
+    bool exists;
+    nsresult rv = directory->Exists(&exists);
+    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
 
-        if (!exists) {
-          return Nothing();
-        }
+    if (!exists) {
+      return Nothing();
+    }
 
-        auto streamResult = GetBinaryInputStream(
-            *directory, nsLiteralString(METADATA_V2_FILE_NAME));
-        MOZ_RELEASE_ASSERT(streamResult.isOk());
-        const auto& stream = streamResult.unwrap();
+    auto streamResult = GetBinaryInputStream(
+        *directory, nsLiteralString(METADATA_V2_FILE_NAME));
+    MOZ_RELEASE_ASSERT(streamResult.isOk());
+    const auto& stream = streamResult.unwrap();
 
-        auto originStateMetadataRes =
-            quota::ReadDirectoryMetadataHeader(*stream);
-        MOZ_RELEASE_ASSERT(originStateMetadataRes.isOk());
+    FullOriginMetadata fullOriginMetadata;
+    MOZ_RELEASE_ASSERT(
+        quota::ReadDirectoryMetadataHeader(*stream, fullOriginMetadata).isOk());
 
-        auto originStateMetadata = originStateMetadataRes.unwrap();
-
-        return Some(originStateMetadata);
-      });
+    return Some(OriginStateMetadata(fullOriginMetadata));
+  });
 
   return result;
 }

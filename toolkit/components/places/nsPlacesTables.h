@@ -29,17 +29,18 @@
       ", recalc_alt_frecency INTEGER NOT NULL DEFAULT 0" \
       ")")
 
-#define CREATE_MOZ_HISTORYVISITS            \
-  nsLiteralCString(                         \
-      "CREATE TABLE moz_historyvisits ("    \
-      "  id INTEGER PRIMARY KEY"            \
-      ", from_visit INTEGER"                \
-      ", place_id INTEGER"                  \
-      ", visit_date INTEGER"                \
-      ", visit_type INTEGER"                \
-      ", session INTEGER"                   \
-      ", source INTEGER DEFAULT 0 NOT NULL" \
-      ", triggeringPlaceId INTEGER"         \
+#define CREATE_MOZ_HISTORYVISITS                   \
+  nsLiteralCString(                                \
+      "CREATE TABLE moz_historyvisits ("           \
+      "  id INTEGER PRIMARY KEY"                   \
+      ", from_visit INTEGER"                       \
+      ", place_id INTEGER"                         \
+      ", visit_date INTEGER"                       \
+      ", visit_type INTEGER"                       \
+      ", session INTEGER"                          \
+      ", source INTEGER DEFAULT 0 NOT NULL"        \
+      ", triggeringPlaceId INTEGER"                \
+      ", userContextId INTEGER NOT NULL DEFAULT 0" \
       ")")
 
 // These two tables were designed to store data with json in mind

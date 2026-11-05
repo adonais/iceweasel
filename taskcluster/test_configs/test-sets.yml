@@ -127,6 +127,7 @@ browsertime:
     - browsertime-webcodecs
     - browsertime-trr-performance
     - browsertime-hev3-connection
+    - browsertime-doh-busy-site
 
 browsertime-clang:
     - browsertime-tp6
@@ -161,6 +162,13 @@ awsy:
     - awsy-base
     - awsy-dmd
     - awsy-base-dmd
+    - awsy-tp6
+
+# Pageload AWSY tests for the macOS tart VMs. The base tests stay on hardware
+# for now, as their results were less stable on the VMs (Bug 2045799).
+awsy-pageload:
+    - awsy
+    - awsy-dmd
     - awsy-tp6
 
 ccov-code-coverage-tests:
@@ -651,6 +659,7 @@ android-hw-browsertime:
     - browsertime-youtube-playback-power-mobile
     - browsertime-trr-performance-m
     - browsertime-hev3-connection-m
+    - browsertime-doh-busy-site-m
 
 android-hw-browsertime-profiling:
     - browsertime-tp6m-profiling
@@ -658,6 +667,9 @@ android-hw-browsertime-profiling:
 android-hw-speedometer-tests:
     - browsertime-benchmark-speedometer2-mobile
     - browsertime-benchmark-speedometer3-mobile
+
+android-hw-doh-tests:
+    - browsertime-doh-busy-site-m
 
 android-em-arm64-benchmark-tests:
     - browsertime-benchmark-speedometer3-mobile

@@ -865,3 +865,51 @@ add_task(async function testFirstStartupTimestamps() {
     FirstStartup.resetForTesting();
   }
 });
+
+add_task(async function test_updateRecipesForFeatures() {
+  const { sandbox, loader, cleanup } = await NimbusTestUtils.setupTest({
+    init: false,
+  });
+  sandbox.spy(loader, "updateRecipes");
+
+  await ExperimentAPI.updateRecipesForFeatures("test-trigger", ["foo", "bar"]);
+
+  Assert.equal(loader.updateRecipes.callCount, 2);
+  Assert.ok(
+    loader.updateRecipes.calledWithExactly("enabled", { forceSync: false })
+  );
+  Assert.ok(
+    loader.updateRecipes.calledWithExactly("test-trigger", {
+      onlyFeatureIds: sinon.match.set.deepEquals(new Set(["foo", "bar"])),
+    })
+  );
+
+  await cleanup();
+});
+
+add_task(
+  async function test_updateRecipesForFeatures_studiesAndRolloutsDisabled() {
+    const prefs = [
+      "app.shield.optoutstudies.enabled",
+      "nimbus.rollouts.enabled",
+    ];
+    const originalValues = prefs.map(pref =>
+      Services.prefs.getBoolPref(pref, false)
+    );
+    prefs.forEach(pref => Services.prefs.setBoolPref(pref, false));
+
+    const { sandbox, loader, cleanup } = await NimbusTestUtils.setupTest({
+      init: false,
+    });
+    sandbox.spy(loader, "updateRecipes");
+
+    await ExperimentAPI.updateRecipesForFeatures("test-trigger", ["foo"]);
+
+    Assert.ok(!loader.updateRecipes.calledWith("test-trigger"));
+
+    await cleanup();
+    prefs.forEach((pref, i) =>
+      Services.prefs.setBoolPref(pref, originalValues[i])
+    );
+  }
+);

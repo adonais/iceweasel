@@ -267,6 +267,64 @@ This is more content. {testToReplace2}
   );
 });
 
+add_task(function test_renderPrompt_optional_sections() {
+  const prompt = "URL: {url}\n{#slug}Slug: {slug}{/slug}\nTitle: {title}";
+
+  Assert.equal(
+    renderPrompt(prompt, { url: "u", slug: "my-page", title: "t" }),
+    "URL: u\nSlug: my-page\nTitle: t",
+    "A section with a value keeps its content and line"
+  );
+  Assert.equal(
+    renderPrompt(prompt, { url: "u", slug: "", title: "t" }),
+    "URL: u\nTitle: t",
+    "A standalone section with an empty value removes its whole line"
+  );
+  Assert.equal(
+    renderPrompt(prompt, { url: "u", title: "t" }),
+    "URL: u\nTitle: t",
+    "A standalone section with a missing value removes its whole line"
+  );
+  Assert.equal(
+    renderPrompt("Title: {title}{#slug} ({slug}){/slug}.", { title: "t" }),
+    "Title: t.",
+    "An inline section is removed without touching the rest of the line"
+  );
+  Assert.equal(
+    renderPrompt("Title: {title}{#slug} ({slug}){/slug}.", {
+      title: "t",
+      slug: "s",
+    }),
+    "Title: t (s).",
+    "An inline section with a value keeps its content"
+  );
+  Assert.equal(
+    renderPrompt("A\n  {#slug}Slug: {slug}{/slug}\nB", { slug: "s" }),
+    "A\n  Slug: s\nB",
+    "A kept standalone section keeps its indentation"
+  );
+  Assert.equal(
+    renderPrompt("A\n{#slug}Slug: {slug}{/slug}", {}),
+    "A\n",
+    "A standalone section on the last line is removed"
+  );
+  Assert.equal(
+    renderPrompt('{ "path": "/x" } {#a}{a}{/b}', { a: "1" }),
+    '{ "path": "/x" } {#a}1{/b}',
+    "Braces that do not form a matched section are left alone"
+  );
+  Assert.equal(
+    renderPrompt("{#slug}A{/slug} x\nB\n{#slug}C{/slug}\nD", {}),
+    " x\nB\nD",
+    "A section followed by text ends at its own closing tag, not a later one"
+  );
+  Assert.equal(
+    renderPrompt("A\n{#slug}one\ntwo{/slug}\nB", {}),
+    "A\nB",
+    "A standalone section spanning several lines removes all of them"
+  );
+});
+
 add_task(function test_is429Error() {
   Assert.equal(openAIEngine.is429Error(null), false, "null is not a 429 error");
   Assert.equal(

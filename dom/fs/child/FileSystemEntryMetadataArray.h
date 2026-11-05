@@ -16,7 +16,7 @@ class FileSystemEntryMetadataArray : public nsTArray<FileSystemEntryMetadata> {
   NS_INLINE_DECL_REFCOUNTING(FileSystemEntryMetadataArray);
 
  private:
-  ~FileSystemEntryMetadataArray() = default;
+  ~FileSystemEntryMetadataArray();
 };
 
 }  // namespace mozilla::dom::fs

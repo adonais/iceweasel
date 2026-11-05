@@ -20,9 +20,11 @@
  */
 
 /**
- * pdfjsVersion = 6.5.10
- * pdfjsBuild = 17bb2442f
+ * pdfjsVersion = 6.5.273
+ * pdfjsBuild = 5d143c409
  */
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
 
 ;// ./src/scripting_api/constants.js
 const Border = Object.freeze({
@@ -185,11 +187,21 @@ const VIEWER_VERSION = 21.00720099;
 const FORMS_VERSION = 21.00720099;
 const USERACTIVATION_CALLBACKID = 0;
 const USERACTIVATION_MAXTIME_VALIDITY = 5000;
-function serializeError(error) {
-  const value = `${error.toString()}\n${error.stack}`;
+function serializeError(error, prefix = "") {
+  let message;
+  try {
+    message = String(error);
+  } catch {
+    message = "Unknown error";
+  }
+  let stack;
+  try {
+    stack = error?.stack;
+  } catch {}
+  const value = typeof stack === "string" ? `${message}\n${stack}` : message;
   return {
     command: "error",
-    value
+    value: `${prefix}${value}`
   };
 }
 const makeArr = () => [];
@@ -274,6 +286,28 @@ class PDFObject {
 ;// ./src/scripting_api/color.js
 
 
+function isValidSpace(cColorSpace) {
+  return typeof cColorSpace === "string" && (cColorSpace === "T" || cColorSpace === "G" || cColorSpace === "RGB" || cColorSpace === "CMYK");
+}
+function isValidColor(colorArray) {
+  if (!Array.isArray(colorArray) || colorArray.length === 0) {
+    return false;
+  }
+  const space = colorArray[0];
+  if (!isValidSpace(space)) {
+    return false;
+  }
+  const expectedLength = {
+    T: 1,
+    G: 2,
+    RGB: 4,
+    CMYK: 5
+  }[space];
+  return colorArray.length === expectedLength && colorArray.slice(1).every(c => typeof c === "number" && c >= 0 && c <= 1);
+}
+function getCorrectColor(colorArray) {
+  return isValidColor(colorArray) ? colorArray : ["G", 0];
+}
 class Color extends PDFObject {
   transparent = ["T"];
   black = ["G", 0];
@@ -290,54 +324,14 @@ class Color extends PDFObject {
   constructor() {
     super({});
   }
-  static _isValidSpace(cColorSpace) {
-    return typeof cColorSpace === "string" && (cColorSpace === "T" || cColorSpace === "G" || cColorSpace === "RGB" || cColorSpace === "CMYK");
-  }
-  static _isValidColor(colorArray) {
-    if (!Array.isArray(colorArray) || colorArray.length === 0) {
-      return false;
-    }
-    const space = colorArray[0];
-    if (!Color._isValidSpace(space)) {
-      return false;
-    }
-    switch (space) {
-      case "T":
-        if (colorArray.length !== 1) {
-          return false;
-        }
-        break;
-      case "G":
-        if (colorArray.length !== 2) {
-          return false;
-        }
-        break;
-      case "RGB":
-        if (colorArray.length !== 4) {
-          return false;
-        }
-        break;
-      case "CMYK":
-        if (colorArray.length !== 5) {
-          return false;
-        }
-        break;
-      default:
-        return false;
-    }
-    return colorArray.slice(1).every(c => typeof c === "number" && c >= 0 && c <= 1);
-  }
-  static _getCorrectColor(colorArray) {
-    return Color._isValidColor(colorArray) ? colorArray : ["G", 0];
-  }
   convert(colorArray, cColorSpace) {
-    if (!Color._isValidSpace(cColorSpace)) {
+    if (!isValidSpace(cColorSpace)) {
       return this.black;
     }
     if (cColorSpace === "T") {
       return ["T"];
     }
-    colorArray = Color._getCorrectColor(colorArray);
+    colorArray = getCorrectColor(colorArray);
     if (colorArray[0] === cColorSpace) {
       return colorArray;
     }
@@ -347,8 +341,8 @@ class Color extends PDFObject {
     return ColorConverters[`${colorArray[0]}_${cColorSpace}`](colorArray.slice(1));
   }
   equal(colorArray1, colorArray2) {
-    colorArray1 = Color._getCorrectColor(colorArray1);
-    colorArray2 = Color._getCorrectColor(colorArray2);
+    colorArray1 = getCorrectColor(colorArray1);
+    colorArray2 = getCorrectColor(colorArray2);
     if (colorArray1[0] === "T" || colorArray2[0] === "T") {
       return colorArray1[0] === "T" && colorArray2[0] === "T";
     }
@@ -450,17 +444,14 @@ class Field extends PDFObject {
     if (!indices.every(i => Number.isInteger(i) && i >= 0 && i < this.numItems)) {
       return;
     }
-    indices.sort();
+    indices.sort((a, b) => a - b);
     if (this.multipleSelection) {
       this._currentValueIndices = indices;
-      this._value = [];
-      indices.forEach(i => {
-        this._value.push(this._items[i].displayValue);
-      });
+      this._value = indices.map(i => this._items[i].exportValue);
     } else if (indices.length > 0) {
-      indices = indices.splice(1, indices.length - 1);
+      indices = [indices[0]];
       this._currentValueIndices = indices[0];
-      this._value = this._items[this._currentValueIndices];
+      this._value = this._items[indices[0]].exportValue;
     }
     this._send({
       id: this._id,
@@ -471,7 +462,7 @@ class Field extends PDFObject {
     return this._fillColor;
   }
   set fillColor(color) {
-    if (Color._isValidColor(color)) {
+    if (isValidColor(color)) {
       this._fillColor = color;
     }
   }
@@ -503,7 +494,7 @@ class Field extends PDFObject {
     return this._strokeColor;
   }
   set strokeColor(color) {
-    if (Color._isValidColor(color)) {
+    if (isValidColor(color)) {
       this._strokeColor = color;
     }
   }
@@ -537,7 +528,7 @@ class Field extends PDFObject {
     return this._textColor;
   }
   set textColor(color) {
-    if (Color._isValidColor(color)) {
+    if (isValidColor(color)) {
       this._textColor = color;
     }
   }
@@ -809,6 +800,16 @@ class Field extends PDFObject {
   _isButton() {
     return false;
   }
+  _getPageActions() {
+    const pageActions = [];
+    for (const eventName of ["PageOpen", "PageClose"]) {
+      const scripts = this._actions.get(eventName);
+      if (scripts) {
+        pageActions.push([this._page, eventName, scripts]);
+      }
+    }
+    return pageActions;
+  }
   _reset() {
     this.value = this.defaultValue;
   }
@@ -822,9 +823,7 @@ class Field extends PDFObject {
       try {
         this._globalEval(action);
       } catch (error) {
-        const serializedError = serializeError(error);
-        serializedError.value = `Error when executing "${eventName}" for field "${this._id}"\n${serializedError.value}`;
-        this._send(serializedError);
+        this._document.obj._send(serializeError(error, `Error when executing "${eventName}" for field "${this._id}"\n`));
       }
     }
     return true;
@@ -836,11 +835,13 @@ class RadioButtonField extends Field {
     this.exportValues = [this.exportValues];
     this._radioIds = [this._id];
     this._radioActions = [this._actions];
+    this._radioPages = [this._page];
     for (const radioData of otherButtons) {
       this.exportValues.push(radioData.exportValues);
       this._radioIds.push(radioData.id);
       this._radioActions.push(createMap(radioData.actions));
-      if (this._value === radioData.exportValues) {
+      this._radioPages.push(radioData.page || 0);
+      if (data.value === radioData.exportValues) {
         this._id = radioData.id;
       }
     }
@@ -872,21 +873,40 @@ class RadioButtonField extends Field {
     }
   }
   checkThisBox(nWidget, bCheckIt = true) {
-    if (nWidget < 0 || nWidget >= this._radioIds.length || !bCheckIt) {
+    const index = this._getWidgetIndex(nWidget);
+    if (index === -1 || !bCheckIt) {
       return;
     }
-    this._id = this._radioIds[nWidget];
-    this._value = this.exportValues[nWidget];
+    this._id = this._radioIds[index];
+    this._value = this.exportValues[index];
     this._send({
       id: this._id,
       value: this._value
     });
   }
   isBoxChecked(nWidget) {
-    return nWidget >= 0 && nWidget < this._radioIds.length && this._id === this._radioIds[nWidget];
+    const index = this._getWidgetIndex(nWidget);
+    return index !== -1 && this._id === this._radioIds[index] && this._value === this.exportValues[index];
   }
   isDefaultChecked(nWidget) {
-    return nWidget >= 0 && nWidget < this.exportValues.length && this.defaultValue === this.exportValues[nWidget];
+    const index = this._getWidgetIndex(nWidget);
+    return index !== -1 && this.defaultValue === this.exportValues[index];
+  }
+  _getWidgetIndex(nWidget) {
+    const index = Number(nWidget);
+    return Number.isInteger(index) && index >= 0 && index < this._radioIds.length && `${index}` === `${nWidget}` ? index : -1;
+  }
+  _getPageActions() {
+    const pageActions = [];
+    for (let i = 0, ii = this._radioIds.length; i < ii; i++) {
+      for (const eventName of ["PageOpen", "PageClose"]) {
+        const scripts = this._radioActions[i].get(eventName);
+        if (scripts) {
+          pageActions.push([this._radioPages[i], eventName, scripts]);
+        }
+      }
+    }
+    return pageActions;
   }
   _getExportValue(state) {
     const i = this._radioIds.indexOf(this._id);
@@ -906,7 +926,7 @@ class CheckboxField extends RadioButtonField {
     return this._value;
   }
   set value(value) {
-    if (!value || value === "Off") {
+    if (!value || value === "Off" || this._hasBeenInitialized && !this.exportValues.includes(value)) {
       this._value = "Off";
     } else {
       super.value = value;
@@ -915,18 +935,13 @@ class CheckboxField extends RadioButtonField {
   _getExportValue(state) {
     return state ? super._getExportValue(state) : "Off";
   }
-  isBoxChecked(nWidget) {
-    return this._value === "Off" ? false : super.isBoxChecked(nWidget);
-  }
-  isDefaultChecked(nWidget) {
-    return this.defaultValue === "Off" ? this._value === "Off" : super.isDefaultChecked(nWidget);
-  }
   checkThisBox(nWidget, bCheckIt = true) {
-    if (nWidget < 0 || nWidget >= this._radioIds.length) {
+    const index = this._getWidgetIndex(nWidget);
+    if (index === -1) {
       return;
     }
-    this._id = this._radioIds[nWidget];
-    this._value = bCheckIt ? this.exportValues[nWidget] : "Off";
+    this._id = this._radioIds[index];
+    this._value = bCheckIt ? this.exportValues[index] : "Off";
     this._send({
       id: this._id,
       value: this._value
@@ -934,7 +949,275 @@ class CheckboxField extends RadioButtonField {
   }
 }
 
+;// ./src/scripting_api/event.js
+
+class Event {
+  constructor(data) {
+    this.change = data.change || "";
+    this.changeEx = data.changeEx || null;
+    this.commitKey = data.commitKey || 0;
+    this.fieldFull = data.fieldFull || false;
+    this.keyDown = data.keyDown || false;
+    this.modifier = data.modifier || false;
+    this.name = data.name;
+    this.rc = true;
+    this.richChange = data.richChange || [];
+    this.richChangeEx = data.richChangeEx || [];
+    this.richValue = data.richValue || [];
+    this.selEnd = data.selEnd ?? -1;
+    this.selStart = data.selStart ?? -1;
+    this.shift = data.shift || false;
+    this.source = data.source || null;
+    this.target = data.target || null;
+    this.targetName = "";
+    this.type = "Field";
+    this.value = data.value || "";
+    this.willCommit = data.willCommit || false;
+  }
+}
+function mergeChange(event) {
+  let value = event.value;
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    value = value.toString();
+  }
+  const prefix = event.selStart >= 0 ? value.substring(0, event.selStart) : "";
+  const postfix = event.selEnd >= 0 && event.selEnd <= value.length ? value.substring(event.selEnd) : "";
+  return `${prefix}${event.change}${postfix}`;
+}
+class EventDispatcher {
+  constructor(document, calculationOrder, objects, externalCall) {
+    this._document = document;
+    this._calculationOrder = calculationOrder;
+    this._objects = objects;
+    this._externalCall = externalCall;
+    this._document.obj._eventDispatcher = this;
+    this._isCalculating = false;
+  }
+  userActivation() {
+    this._document.obj._userActivation = true;
+    this._externalCall("setTimeout", [(/* inlined export .USERACTIVATION_CALLBACKID */0), (/* inlined export .USERACTIVATION_MAXTIME_VALIDITY */5000)]);
+  }
+  dispatch(baseEvent) {
+    const id = baseEvent.id;
+    if (!(id in this._objects)) {
+      let event;
+      if (id === "doc" || id === "page") {
+        event = globalThis.event = new Event(baseEvent);
+        event.source = event.target = this._document.wrapped;
+        event.name = baseEvent.name;
+      }
+      if (id === "doc") {
+        const eventName = event.name;
+        if (eventName === "Open") {
+          this.userActivation();
+          this._document.obj._initActions();
+          this.formatAll();
+        }
+        if (!["DidPrint", "DidSave", "WillPrint", "WillSave"].includes(eventName)) {
+          this.userActivation();
+        }
+        this._document.obj._dispatchDocEvent(event.name);
+      } else if (id === "page") {
+        this.userActivation();
+        this._document.obj._dispatchPageEvent(event.name, baseEvent.actions, baseEvent.pageNumber);
+      } else if (id === "app" && baseEvent.name === "ResetForm") {
+        this.userActivation();
+        for (const fieldId of baseEvent.ids) {
+          const obj = this._objects[fieldId];
+          obj?.obj._reset();
+        }
+      }
+      return;
+    }
+    const name = baseEvent.name;
+    const source = this._objects[id];
+    const event = globalThis.event = new Event(baseEvent);
+    let savedChange;
+    this.userActivation();
+    if (source.obj._isButton()) {
+      source.obj._id = id;
+      event.value = source.obj._getExportValue(event.value);
+      if (name === "Action") {
+        source.obj._value = event.value;
+      }
+    }
+    switch (name) {
+      case "Keystroke":
+        savedChange = {
+          value: event.value,
+          changeEx: event.changeEx,
+          change: event.change,
+          selStart: event.selStart,
+          selEnd: event.selEnd
+        };
+        break;
+      case "Blur":
+      case "Focus":
+        Object.defineProperty(event, "value", {
+          configurable: false,
+          writable: false,
+          enumerable: true,
+          value: event.value
+        });
+        break;
+      case "Validate":
+        this.runValidation(source, event);
+        return;
+      case "Action":
+        this.runActions(source, source, event, name);
+        this.runCalculate(source, event);
+        return;
+    }
+    this.runActions(source, source, event, name);
+    if (name !== "Keystroke") {
+      return;
+    }
+    if (event.rc) {
+      if (event.willCommit) {
+        this.runValidation(source, event);
+      } else {
+        if (source.obj._isChoice) {
+          source.obj.value = savedChange.changeEx;
+          source.obj._send({
+            id: source.obj._id,
+            siblings: source.obj._siblings,
+            value: source.obj.value
+          });
+          return;
+        }
+        const value = source.obj.value = mergeChange(event);
+        let selStart, selEnd;
+        if (event.selStart !== savedChange.selStart || event.selEnd !== savedChange.selEnd) {
+          selStart = event.selStart;
+          selEnd = event.selEnd;
+        } else {
+          selEnd = selStart = savedChange.selStart + event.change.length;
+        }
+        source.obj._send({
+          id: source.obj._id,
+          siblings: source.obj._siblings,
+          value,
+          selRange: [selStart, selEnd]
+        });
+      }
+    } else if (!event.willCommit) {
+      source.obj._send({
+        id: source.obj._id,
+        siblings: source.obj._siblings,
+        value: savedChange.value,
+        selRange: [savedChange.selStart, savedChange.selEnd]
+      });
+    } else {
+      source.obj._send({
+        id: source.obj._id,
+        siblings: source.obj._siblings,
+        value: "",
+        formattedValue: null,
+        selRange: [0, 0]
+      });
+    }
+  }
+  formatAll() {
+    const event = globalThis.event = new Event({});
+    for (const source of Object.values(this._objects)) {
+      event.value = source.obj._getValue();
+      this.runActions(source, source, event, "Format");
+    }
+  }
+  runValidation(source, event) {
+    const didValidateRun = this.runActions(source, source, event, "Validate");
+    if (event.rc) {
+      source.obj.value = event.value;
+      this.runCalculate(source, event);
+      const savedValue = event.value = source.obj._getValue();
+      const formattedValue = this.runActions(source, source, event, "Format") ? event.value?.toString?.() : null;
+      source.obj._send({
+        id: source.obj._id,
+        siblings: source.obj._siblings,
+        value: savedValue,
+        formattedValue
+      });
+      event.value = savedValue;
+    } else if (didValidateRun) {
+      source.obj._send({
+        id: source.obj._id,
+        siblings: source.obj._siblings,
+        value: "",
+        formattedValue: null,
+        selRange: [0, 0],
+        focus: true
+      });
+    }
+  }
+  runActions(source, target, event, eventName) {
+    event.source = source.wrapped;
+    event.target = target.wrapped;
+    event.name = eventName;
+    event.targetName = target.obj.name;
+    event.rc = true;
+    return target.obj._runActions(event);
+  }
+  calculateNow() {
+    if (!this._calculationOrder || this._isCalculating || !this._document.obj.calculate) {
+      return;
+    }
+    this._isCalculating = true;
+    const first = this._calculationOrder[0];
+    const source = this._objects[first];
+    globalThis.event = new Event({});
+    this.runCalculate(source, globalThis.event);
+    this._isCalculating = false;
+  }
+  runCalculate(source, event) {
+    if (!this._calculationOrder || !this._document.obj.calculate) {
+      return;
+    }
+    for (const targetId of this._calculationOrder) {
+      if (!(targetId in this._objects)) {
+        continue;
+      }
+      if (!this._document.obj.calculate) {
+        break;
+      }
+      event.value = null;
+      const target = this._objects[targetId];
+      let savedValue = target.obj._getValue();
+      this.runActions(source, target, event, "Calculate");
+      if (!event.rc) {
+        continue;
+      }
+      if (event.value !== null) {
+        target.obj.value = event.value;
+      } else {
+        event.value = target.obj._getValue();
+      }
+      this.runActions(target, target, event, "Validate");
+      if (!event.rc) {
+        if (target.obj._getValue() !== savedValue) {
+          target.wrapped.value = savedValue;
+        }
+        continue;
+      }
+      if (event.value === null) {
+        event.value = target.obj._getValue();
+      }
+      savedValue = target.obj._getValue();
+      const formattedValue = this.runActions(target, target, event, "Format") ? event.value?.toString?.() : null;
+      target.obj._send({
+        id: target.obj._id,
+        siblings: target.obj._siblings,
+        value: savedValue,
+        formattedValue
+      });
+    }
+  }
+}
+
 ;// ./src/scripting_api/aform.js
+
 
 
 
@@ -952,7 +1235,7 @@ class AForm {
   _parseDate(cFormat, cDate) {
     let date = null;
     try {
-      date = this._util._scand(cFormat, cDate, false);
+      date = this._util.scand(cFormat, cDate);
     } catch {}
     if (date) {
       return date;
@@ -961,7 +1244,7 @@ class AForm {
     return isNaN(date) ? null : new Date(date);
   }
   AFMergeChange(event = globalThis.event) {
-    return event.willCommit ? event.value.toString() : this._app._eventDispatcher.mergeChange(event);
+    return event.willCommit ? event.value.toString() : mergeChange(event);
   }
   AFParseDateEx(cString, cOrder) {
     return this._parseDate(cOrder, cString);
@@ -1370,273 +1653,6 @@ class AForm {
   }
 }
 
-;// ./src/scripting_api/event.js
-
-class Event {
-  constructor(data) {
-    this.change = data.change || "";
-    this.changeEx = data.changeEx || null;
-    this.commitKey = data.commitKey || 0;
-    this.fieldFull = data.fieldFull || false;
-    this.keyDown = data.keyDown || false;
-    this.modifier = data.modifier || false;
-    this.name = data.name;
-    this.rc = true;
-    this.richChange = data.richChange || [];
-    this.richChangeEx = data.richChangeEx || [];
-    this.richValue = data.richValue || [];
-    this.selEnd = data.selEnd ?? -1;
-    this.selStart = data.selStart ?? -1;
-    this.shift = data.shift || false;
-    this.source = data.source || null;
-    this.target = data.target || null;
-    this.targetName = "";
-    this.type = "Field";
-    this.value = data.value || "";
-    this.willCommit = data.willCommit || false;
-  }
-}
-class EventDispatcher {
-  constructor(document, calculationOrder, objects, externalCall) {
-    this._document = document;
-    this._calculationOrder = calculationOrder;
-    this._objects = objects;
-    this._externalCall = externalCall;
-    this._document.obj._eventDispatcher = this;
-    this._isCalculating = false;
-  }
-  mergeChange(event) {
-    let value = event.value;
-    if (Array.isArray(value)) {
-      return value;
-    }
-    if (typeof value !== "string") {
-      value = value.toString();
-    }
-    const prefix = event.selStart >= 0 ? value.substring(0, event.selStart) : "";
-    const postfix = event.selEnd >= 0 && event.selEnd <= value.length ? value.substring(event.selEnd) : "";
-    return `${prefix}${event.change}${postfix}`;
-  }
-  userActivation() {
-    this._document.obj._userActivation = true;
-    this._externalCall("setTimeout", [(/* inlined export .USERACTIVATION_CALLBACKID */0), (/* inlined export .USERACTIVATION_MAXTIME_VALIDITY */5000)]);
-  }
-  dispatch(baseEvent) {
-    const id = baseEvent.id;
-    if (!(id in this._objects)) {
-      let event;
-      if (id === "doc" || id === "page") {
-        event = globalThis.event = new Event(baseEvent);
-        event.source = event.target = this._document.wrapped;
-        event.name = baseEvent.name;
-      }
-      if (id === "doc") {
-        const eventName = event.name;
-        if (eventName === "Open") {
-          this.userActivation();
-          this._document.obj._initActions();
-          this.formatAll();
-        }
-        if (!["DidPrint", "DidSave", "WillPrint", "WillSave"].includes(eventName)) {
-          this.userActivation();
-        }
-        this._document.obj._dispatchDocEvent(event.name);
-      } else if (id === "page") {
-        this.userActivation();
-        this._document.obj._dispatchPageEvent(event.name, baseEvent.actions, baseEvent.pageNumber);
-      } else if (id === "app" && baseEvent.name === "ResetForm") {
-        this.userActivation();
-        for (const fieldId of baseEvent.ids) {
-          const obj = this._objects[fieldId];
-          obj?.obj._reset();
-        }
-      }
-      return;
-    }
-    const name = baseEvent.name;
-    const source = this._objects[id];
-    const event = globalThis.event = new Event(baseEvent);
-    let savedChange;
-    this.userActivation();
-    if (source.obj._isButton()) {
-      source.obj._id = id;
-      event.value = source.obj._getExportValue(event.value);
-      if (name === "Action") {
-        source.obj._value = event.value;
-      }
-    }
-    switch (name) {
-      case "Keystroke":
-        savedChange = {
-          value: event.value,
-          changeEx: event.changeEx,
-          change: event.change,
-          selStart: event.selStart,
-          selEnd: event.selEnd
-        };
-        break;
-      case "Blur":
-      case "Focus":
-        Object.defineProperty(event, "value", {
-          configurable: false,
-          writable: false,
-          enumerable: true,
-          value: event.value
-        });
-        break;
-      case "Validate":
-        this.runValidation(source, event);
-        return;
-      case "Action":
-        this.runActions(source, source, event, name);
-        this.runCalculate(source, event);
-        return;
-    }
-    this.runActions(source, source, event, name);
-    if (name !== "Keystroke") {
-      return;
-    }
-    if (event.rc) {
-      if (event.willCommit) {
-        this.runValidation(source, event);
-      } else {
-        if (source.obj._isChoice) {
-          source.obj.value = savedChange.changeEx;
-          source.obj._send({
-            id: source.obj._id,
-            siblings: source.obj._siblings,
-            value: source.obj.value
-          });
-          return;
-        }
-        const value = source.obj.value = this.mergeChange(event);
-        let selStart, selEnd;
-        if (event.selStart !== savedChange.selStart || event.selEnd !== savedChange.selEnd) {
-          selStart = event.selStart;
-          selEnd = event.selEnd;
-        } else {
-          selEnd = selStart = savedChange.selStart + event.change.length;
-        }
-        source.obj._send({
-          id: source.obj._id,
-          siblings: source.obj._siblings,
-          value,
-          selRange: [selStart, selEnd]
-        });
-      }
-    } else if (!event.willCommit) {
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
-        value: savedChange.value,
-        selRange: [savedChange.selStart, savedChange.selEnd]
-      });
-    } else {
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
-        value: "",
-        formattedValue: null,
-        selRange: [0, 0]
-      });
-    }
-  }
-  formatAll() {
-    const event = globalThis.event = new Event({});
-    for (const source of Object.values(this._objects)) {
-      event.value = source.obj._getValue();
-      this.runActions(source, source, event, "Format");
-    }
-  }
-  runValidation(source, event) {
-    const didValidateRun = this.runActions(source, source, event, "Validate");
-    if (event.rc) {
-      source.obj.value = event.value;
-      this.runCalculate(source, event);
-      const savedValue = event.value = source.obj._getValue();
-      const formattedValue = this.runActions(source, source, event, "Format") ? event.value?.toString?.() : null;
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
-        value: savedValue,
-        formattedValue
-      });
-      event.value = savedValue;
-    } else if (didValidateRun) {
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
-        value: "",
-        formattedValue: null,
-        selRange: [0, 0],
-        focus: true
-      });
-    }
-  }
-  runActions(source, target, event, eventName) {
-    event.source = source.wrapped;
-    event.target = target.wrapped;
-    event.name = eventName;
-    event.targetName = target.obj.name;
-    event.rc = true;
-    return target.obj._runActions(event);
-  }
-  calculateNow() {
-    if (!this._calculationOrder || this._isCalculating || !this._document.obj.calculate) {
-      return;
-    }
-    this._isCalculating = true;
-    const first = this._calculationOrder[0];
-    const source = this._objects[first];
-    globalThis.event = new Event({});
-    this.runCalculate(source, globalThis.event);
-    this._isCalculating = false;
-  }
-  runCalculate(source, event) {
-    if (!this._calculationOrder || !this._document.obj.calculate) {
-      return;
-    }
-    for (const targetId of this._calculationOrder) {
-      if (!(targetId in this._objects)) {
-        continue;
-      }
-      if (!this._document.obj.calculate) {
-        break;
-      }
-      event.value = null;
-      const target = this._objects[targetId];
-      let savedValue = target.obj._getValue();
-      this.runActions(source, target, event, "Calculate");
-      if (!event.rc) {
-        continue;
-      }
-      if (event.value !== null) {
-        target.obj.value = event.value;
-      } else {
-        event.value = target.obj._getValue();
-      }
-      this.runActions(target, target, event, "Validate");
-      if (!event.rc) {
-        if (target.obj._getValue() !== savedValue) {
-          target.wrapped.value = savedValue;
-        }
-        continue;
-      }
-      if (event.value === null) {
-        event.value = target.obj._getValue();
-      }
-      savedValue = target.obj._getValue();
-      const formattedValue = this.runActions(target, target, event, "Format") ? event.value?.toString?.() : null;
-      target.obj._send({
-        id: target.obj._id,
-        siblings: target.obj._siblings,
-        value: savedValue,
-        formattedValue
-      });
-    }
-  }
-}
-
 ;// ./src/scripting_api/fullscreen.js
 
 
@@ -1803,16 +1819,16 @@ class App extends PDFObject {
       interval
     };
     this._timeoutIds.set(timeout, id);
-    this._timeoutIdsRegistry.register(timeout, id);
+    this._timeoutIdsRegistry.register(timeout, id, timeout);
     return timeout;
   }
   _unregisterTimeout(timeout) {
-    this._timeoutIdsRegistry.unregister(timeout);
     const data = this._timeoutIds.get(timeout);
     if (!data) {
       return;
     }
     this._timeoutIds.delete(timeout);
+    this._timeoutIdsRegistry.unregister(timeout);
     this._cleanTimeout(data);
   }
   _cleanTimeout({
@@ -1986,7 +2002,7 @@ class App extends PDFObject {
     return this._runtimeHighlightColor;
   }
   set runtimeHighlightColor(val) {
-    if (Color._isValidColor(val)) {
+    if (isValidColor(val)) {
       this._runtimeHighlightColor = val;
     }
   }
@@ -2425,7 +2441,6 @@ class Doc extends PDFObject {
         this._runActions(actionName);
       }
     }
-    this._runActions("OpenAction");
     this._disableSaving = false;
   }
   _dispatchDocEvent(name) {
@@ -2449,7 +2464,14 @@ class Doc extends PDFObject {
         break;
       case "WillSave":
         this._disableSaving = true;
-        this._runActions(name);
+        try {
+          this._runActions(name);
+        } catch (error) {
+          this._send(serializeError(error));
+        }
+        this._send({
+          command: "WillSaveFinished"
+        });
         this._disableSaving = false;
         break;
       default:
@@ -2480,9 +2502,7 @@ class Doc extends PDFObject {
       try {
         this._globalEval(action);
       } catch (error) {
-        const serializedError = serializeError(error);
-        serializedError.value = `Error when executing "${name}" for document\n${serializedError.value}`;
-        this._send(serializedError);
+        this._send(serializeError(error, `Error when executing "${name}" for document\n`));
       }
     }
   }
@@ -2490,17 +2510,9 @@ class Doc extends PDFObject {
     this._fields.set(name, field);
     this._fieldNames.push(name);
     this._numFields++;
-    const po = field.obj._actions.get("PageOpen");
-    const pc = field.obj._actions.get("PageClose");
-    if (po || pc) {
+    for (const [page, eventName, scripts] of field.obj._getPageActions()) {
       this.#otherPageActions ??= new Map();
-      const actions = this.#otherPageActions.getOrInsertComputed(field.obj._page + 1, makeMap);
-      if (po) {
-        actions.getOrInsertComputed("PageOpen", makeArr).push(...po);
-      }
-      if (pc) {
-        actions.getOrInsertComputed("PageClose", makeArr).push(...pc);
-      }
+      this.#otherPageActions.getOrInsertComputed(page + 1, makeMap).getOrInsertComputed(eventName, makeArr).push(...scripts);
     }
   }
   _getDate(date) {
@@ -3616,9 +3628,6 @@ class Util extends PDFObject {
     }
     return new Date(data.year, data.month, data.day, data.hours, data.minutes, data.seconds);
   }
-  scand(cFormat, cDate) {
-    return this._scand(cFormat, cDate);
-  }
   #createScandData(cFormat) {
     const months = this.#months,
       days = this.#days;
@@ -3756,9 +3765,9 @@ class Util extends PDFObject {
       actions.push(action);
       return pattern.includes(",") ? `(?=${pattern})\\${actions.length}` : pattern;
     });
-    return [new RegExp(`^${re}$`, "g"), actions];
+    return [new RegExp(`^${re}$`), actions];
   }
-  _scand(cFormat, cDate, strict = false) {
+  scand(cFormat, cDate) {
     if (typeof cDate !== "string") {
       return new Date(cDate);
     }
@@ -3776,7 +3785,7 @@ class Util extends PDFObject {
     const [regex, actions] = (this.#scandCache ??= new Map()).getOrInsertComputed(cFormat, this.#createScandDataBound);
     const matches = regex.exec(cDate);
     if (!matches || matches.length !== actions.length + 1) {
-      return strict ? null : this.#tryToGuessDate(cFormat, cDate);
+      return this.#tryToGuessDate(cFormat, cDate);
     }
     const data = {
       year: 2000,
@@ -3814,7 +3823,7 @@ function initSandbox(params) {
   delete globalThis.pdfjsScripting;
   const externalCall = globalThis.callExternalFunction;
   delete globalThis.callExternalFunction;
-  const globalEval = code => globalThis.eval(code);
+  const globalEval = globalThis.eval.bind(globalThis);
   const send = data => externalCall("send", [data]);
   const proxyHandler = new ProxyHandler();
   const {
@@ -3976,3 +3985,5 @@ function initSandbox(params) {
 globalThis.pdfjsScripting = {
   initSandbox: initSandbox
 };
+/******/ })()
+;

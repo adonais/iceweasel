@@ -23,4 +23,4 @@ reduce the number of tasks by filtering on platforms (e.g. linux) or build type
 ```
 
 [Firefox CI]: https://treeherder.mozilla.org/
-[try preset]: https://firefox-source-docs.mozilla.org/tools/try/presets.html
+[try preset]: /tools/try/presets.md

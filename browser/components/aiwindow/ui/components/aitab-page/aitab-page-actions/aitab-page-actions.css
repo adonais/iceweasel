@@ -6,6 +6,11 @@
   --button-text-color-disabled: var(--aitab-text-color-deemphasized);
 }
 
+.aitab-action-refresh {
+  /* This will be re-enabled after v0 launches */
+  display: none;
+}
+
 .aitab-page-actions {
   display: flex;
   gap: var(--space-medium);

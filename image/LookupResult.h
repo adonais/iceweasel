@@ -98,6 +98,9 @@ class MOZ_STACK_CLASS LookupResult {
     return *this;
   }
 
+  LookupResult(const LookupResult&) = delete;
+  LookupResult& operator=(const LookupResult& aOther) = delete;
+
   DrawableSurface& Surface() { return mSurface; }
   const DrawableSurface& Surface() const { return mSurface; }
   const gfx::IntSize& SuggestedSize() const { return mSuggestedSize; }
@@ -112,9 +115,6 @@ class MOZ_STACK_CLASS LookupResult {
   bool GetFailedToRequestDecode() { return mFailedToRequestDecode; }
 
  private:
-  LookupResult(const LookupResult&) = delete;
-  LookupResult& operator=(const LookupResult& aOther) = delete;
-
   DrawableSurface mSurface;
   MatchType mMatchType;
 

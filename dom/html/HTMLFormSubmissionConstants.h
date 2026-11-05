@@ -5,6 +5,8 @@
 #ifndef mozilla_dom_HTMLFormSubmissionConstants_h
 #define mozilla_dom_HTMLFormSubmissionConstants_h
 
+#include "nsAttrValue.h"
+
 #define NS_FORM_METHOD_GET 0
 #define NS_FORM_METHOD_POST 1
 #define NS_FORM_METHOD_DIALOG 2

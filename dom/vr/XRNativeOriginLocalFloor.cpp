@@ -22,6 +22,8 @@ XRNativeOriginLocalFloor::XRNativeOriginLocalFloor(
   mFloorRandom = double(rand()) / double(RAND_MAX) * kFloorFuzz;
 }
 
+XRNativeOriginLocalFloor::~XRNativeOriginLocalFloor() = default;
+
 gfx::PointDouble3D XRNativeOriginLocalFloor::GetPosition() {
   // Keep returning {0,-fuzz,0} until a position can be found
   const auto standing =

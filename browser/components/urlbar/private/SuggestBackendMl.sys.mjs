@@ -53,6 +53,12 @@ export class SuggestBackendMl extends SuggestBackend {
     // the original `searchString` isn't necessarily.
     searchString = queryContext.trimmedLowerCaseSearchString;
 
+    // Don't run inference on an empty search string, e.g. in the zero prefix
+    // view.
+    if (!searchString) {
+      return [];
+    }
+
     this.logger.debug("Handling query", { searchString });
 
     // Don't waste time calling into `MLSuggest` if no ML intents are enabled.

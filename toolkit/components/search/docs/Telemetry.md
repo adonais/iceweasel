@@ -106,7 +106,7 @@ Telemetry for the user's default search engine is currently reported via two
 systems:
 
 1. Legacy telemetry:
-   [Fields are reported within the legacy telemetry environment](https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/data/environment.html#defaultsearchengine)
+   [Fields are reported within the legacy telemetry environment](/toolkit/components/telemetry/data/environment.md#defaultsearchengine)
 2. Glean:
    [Fields are documented in the Glean dictionary](https://dictionary.telemetry.mozilla.org/apps/firefox_desktop?search=search.engine).
 

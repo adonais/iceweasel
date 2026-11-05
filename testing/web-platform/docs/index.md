@@ -168,7 +168,7 @@ Values can be made conditional using a Python-like conditional syntax:
 ```
 
 The available variables for the conditions are those provided by
-[mozinfo](https://firefox-source-docs.mozilla.org/mozbase/mozinfo.html), plus
+{doc}`mozinfo </mozbase/mozinfo>`, plus
 some additional [wpt-specific values](https://searchfox.org/mozilla-central/search?q=def%20run_info_extras&path=testing%2Fweb-platform%2Ftests%2Ftools%2Fwptrunner%2Fwptrunner%2Fbrowsers%2Ffirefox.py&case=false&regexp=false).
 
 For more information on manifest files, see the [wptrunner

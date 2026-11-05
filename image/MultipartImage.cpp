@@ -73,20 +73,29 @@ class NextPartObserver : public IProgressObserver {
   }
 
   void BlockUntilDecodedAndFinishObserving() {
+    MOZ_ASSERT(mImage);
+    if (!mImage) {
+      return;
+    }
+
     // Use RequestDecodeForSize() to block until our image finishes decoding.
     // The size is ignored because we don't pass the FLAG_HIGH_QUALITY_SCALING
     // flag.
-    mImage->RequestDecodeForSize(gfx::IntSize(0, 0),
-                                 imgIContainer::FLAG_SYNC_DECODE);
+    RefPtr<Image> image = mImage;
+    image->RequestDecodeForSize(gfx::IntSize(0, 0),
+                                imgIContainer::FLAG_SYNC_DECODE);
+    if (mImage != image) {
+      return;
+    }
 
     // Vector images need special handling to make sure they are in a complete
     // state.
-    FinishPotentialVectorImage(mImage);
+    FinishPotentialVectorImage(image);
 
     // RequestDecodeForSize() should've sent synchronous notifications that
     // would have caused us to call FinishObserving() (and null out mImage)
     // already. If for some reason it didn't, we should do so here.
-    if (mImage) {
+    if (mImage == image) {
       FinishObserving();
     }
   }
@@ -133,9 +142,13 @@ class NextPartObserver : public IProgressObserver {
     mImage->GetHeight(&height);
 
     // Request decoding at the intrinsic size.
-    mImage->RequestDecodeForSize(IntSize(width, height),
-                                 imgIContainer::DECODE_FLAGS_DEFAULT |
-                                     imgIContainer::FLAG_HIGH_QUALITY_SCALING);
+    RefPtr<Image> image = mImage;
+    image->RequestDecodeForSize(IntSize(width, height),
+                                imgIContainer::DECODE_FLAGS_DEFAULT |
+                                    imgIContainer::FLAG_HIGH_QUALITY_SCALING);
+    if (mImage != image) {
+      return;
+    }
 
     // If there's already an error, we may never get a FRAME_COMPLETE
     // notification, so go ahead and notify our owner right away.
@@ -166,11 +179,12 @@ class NextPartObserver : public IProgressObserver {
   void FinishObserving() {
     MOZ_ASSERT(mImage);
 
-    RefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
+    RefPtr<Image> image = std::move(mImage);
+    RefPtr<ProgressTracker> tracker = image->GetProgressTracker();
     tracker->RemoveObserver(this);
-    mImage = nullptr;
 
-    mOwner->FinishTransition();
+    RefPtr<MultipartImage> owner = mOwner;
+    owner->FinishTransition();
   }
 
   MultipartImage* mOwner;
@@ -207,6 +221,7 @@ void MultipartImage::BeginTransitionToPart(Image* aNextPart) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aNextPart);
 
+  RefPtr<MultipartImage> kungFuDeathGrip(this);
   if (mNextPart) {
     // Let the decoder catch up so we don't drop frames.
     mNextPartObserver->BlockUntilDecodedAndFinishObserving();
@@ -233,16 +248,18 @@ void MultipartImage::FinishTransition() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mNextPart, "Should have a next part here");
 
-  RefPtr<ProgressTracker> newCurrentPartTracker =
-      mNextPart->GetProgressTracker();
-  if (newCurrentPartTracker->GetProgress() & FLAG_HAS_ERROR) {
-    // This frame has an error; drop it.
-    mNextPart = nullptr;
+  // NextPartObserver has stopped observing mNextPart, so clear it before
+  // anything below can call out and re-enter us.
+  RefPtr<Image> nextPart = std::move(mNextPart);
+  RefPtr<Image> outgoingPart = InnerImage();
 
-    // We still need to notify, though.
+  RefPtr<ProgressTracker> newCurrentPartTracker =
+      nextPart->GetProgressTracker();
+  if (newCurrentPartTracker->GetProgress() & FLAG_HAS_ERROR) {
+    // This frame has an error; drop it. We still need to notify, though.
     mTracker->ResetForNewRequest();
     RefPtr<ProgressTracker> currentPartTracker =
-        InnerImage()->GetProgressTracker();
+        outgoingPart->GetProgressTracker();
     mTracker->SyncNotifyProgress(
         FilterProgress(currentPartTracker->GetProgress()));
 
@@ -253,19 +270,23 @@ void MultipartImage::FinishTransition() {
   // state. (Only the first part can require this, subsequent parts have
   // FinishPotentialVectorImage called on them before they become the current
   // part.)
-  FinishPotentialVectorImage(InnerImage());
+  FinishPotentialVectorImage(outgoingPart);
 
   // Stop observing the current part.
   {
     RefPtr<ProgressTracker> currentPartTracker =
-        InnerImage()->GetProgressTracker();
+        outgoingPart->GetProgressTracker();
     currentPartTracker->RemoveObserver(this);
+  }
+
+  // If a newer part became current while we were notifying, nextPart is stale.
+  if (InnerImage() != outgoingPart) {
+    return;
   }
 
   // Make the next part become the current part.
   mTracker->ResetForNewRequest();
-  SetInnerImage(mNextPart);
-  mNextPart = nullptr;
+  SetInnerImage(nextPart);
   newCurrentPartTracker->AddObserver(this);
 
   // Finally, send all the notifications for the new current part and send a

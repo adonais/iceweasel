@@ -56,6 +56,10 @@ class HgRepository(Repository):
     def head_rev(self):
         return self._run("log", "-r", ".", "-T", "{node}")
 
+    @property
+    def is_shallow(self):
+        return False
+
     def is_cinnabar_repo(self) -> bool:
         return False
 
@@ -512,7 +516,12 @@ class HgRepository(Repository):
 
         return vct_dir
 
-    def configure(self, state_dir: Path, update_only: bool = False):
+    def configure(
+        self,
+        state_dir: Path,
+        update_only: bool = False,
+        no_system_changes: bool = False,
+    ):
         """Run the Mercurial configuration wizard."""
         vct_dir = self._update_vct(state_dir)
 

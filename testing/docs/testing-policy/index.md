@@ -16,7 +16,7 @@ One of the following Project Tags must be applied in Phabricator before landing,
   * In another commit in the Stack.
   * In a followup bug.
   * In an external repository for third party code.
-  * When following the [Security Bug Approval Process](https://firefox-source-docs.mozilla.org/bug-mgmt/processes/security-approval.html) tests are usually landed later, but should be written and reviewed at the same time as the commit.
+  * When following the {doc}`Security Bug Approval Process </bug-mgmt/processes/security-approval>` tests are usually landed later, but should be written and reviewed at the same time as the commit.
 * **testing-exception-other**: Commits where none of the defined exceptions above apply but it should still be landed. This should be scrutinized by the reviewer before using it - consider whether an exception is actually required or if a test could be reasonably added before using it. This **requires a comment** from the reviewer explaining why it’s appropriate to land without tests. Some examples that have been identified include:
   * Interacting with external hardware or software and our code is missing abstractions to mock the interaction out.
   * Inability to reproduce a reported problem, so landing something to test a fix in Nightly.

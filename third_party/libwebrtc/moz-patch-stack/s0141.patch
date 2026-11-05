@@ -33,7 +33,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/98da8060c3ad5cf8d
  sdk/android/api/org/webrtc/Metrics.java       |  13 +-
  .../webrtc/SoftwareVideoDecoderFactory.java   |  23 +--
  .../webrtc/SoftwareVideoEncoderFactory.java   |  23 +--
- .../api/org/webrtc/TimestampAligner.java      |  20 +-
+ .../api/org/webrtc/TimestampAligner.java      |  19 +-
  .../api/org/webrtc/TurnCustomizer.java        |  12 +-
  .../api/org/webrtc/VideoDecoderFallback.java  |  10 +-
  .../api/org/webrtc/VideoEncoderFallback.java  |  10 +-
@@ -53,7 +53,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/98da8060c3ad5cf8d
  .../org/webrtc/audio/WebRtcAudioRecord.java   |  21 +--
  .../org/webrtc/audio/WebRtcAudioTrack.java    |  15 +-
  webrtc.gni                                    |  20 +-
- 42 files changed, 241 insertions(+), 721 deletions(-)
+ 42 files changed, 241 insertions(+), 720 deletions(-)
 
 diff --git a/examples/androidnativeapi/BUILD.gn b/examples/androidnativeapi/BUILD.gn
 index fd6a836223..28589325c3 100644
@@ -102,7 +102,7 @@ index 3520196b3b..6b1f515a13 100644
    }
  }
 diff --git a/sdk/android/api/org/webrtc/AudioTrack.java b/sdk/android/api/org/webrtc/AudioTrack.java
-index 725f371792..ca745db634 100644
+index 24d35d8573..66ca1deb00 100644
 --- a/sdk/android/api/org/webrtc/AudioTrack.java
 +++ b/sdk/android/api/org/webrtc/AudioTrack.java
 @@ -10,8 +10,6 @@
@@ -115,11 +115,11 @@ index 725f371792..ca745db634 100644
  public class AudioTrack extends MediaStreamTrack {
    public AudioTrack(long nativeTrack) {
 @@ -22,7 +20,7 @@ public class AudioTrack extends MediaStreamTrack {
-    *  0 to 10.
+    * Sets the volume for the underlying MediaSource. Volume is a gain value in the range 0 to 10.
     */
    public void setVolume(double volume) {
--    AudioTrackJni.get().setVolume(getNativeAudioTrack(), volume);
-+    nativeSetVolume(getNativeAudioTrack(), volume);
+-    lifecycleLock.run(nativeTrack -> AudioTrackJni.get().setVolume(nativeTrack, volume));
++    lifecycleLock.run(nativeTrack -> nativeSetVolume(nativeTrack, volume));
    }
  
    /** Returns a pointer to webrtc::AudioTrackInterface. */
@@ -186,7 +186,7 @@ index 897d2e6a58..e884d4c3b9 100644
 +  private static native long nativeCreateBuiltinAudioEncoderFactory();
  }
 diff --git a/sdk/android/api/org/webrtc/CallSessionFileRotatingLogSink.java b/sdk/android/api/org/webrtc/CallSessionFileRotatingLogSink.java
-index 3ac7d89eb1..6683fc9da6 100644
+index 35bc00b4fd..46dfa401a7 100644
 --- a/sdk/android/api/org/webrtc/CallSessionFileRotatingLogSink.java
 +++ b/sdk/android/api/org/webrtc/CallSessionFileRotatingLogSink.java
 @@ -10,12 +10,6 @@
@@ -200,7 +200,7 @@ index 3ac7d89eb1..6683fc9da6 100644
 - * log sink.
 - */
  public class CallSessionFileRotatingLogSink {
-   private long nativeSink;
+   private final NativeLifecycleLock lifecycleLock;
  
 @@ -23,7 +17,7 @@ public class CallSessionFileRotatingLogSink {
      if (dirPath == null) {
@@ -211,21 +211,19 @@ index 3ac7d89eb1..6683fc9da6 100644
    }
  
    @SuppressWarnings("EnumOrdinal")
-@@ -32,23 +26,17 @@ public class CallSessionFileRotatingLogSink {
-     if (dirPath == null) {
-       throw new IllegalArgumentException("dirPath may not be null.");
-     }
--    nativeSink =
--        CallSessionFileRotatingLogSinkJni.get().addSink(dirPath, maxFileSize, severity.ordinal());
-+    nativeSink = nativeAddSink(dirPath, maxFileSize, severity.ordinal());
+@@ -35,21 +29,15 @@ public class CallSessionFileRotatingLogSink {
+     this.lifecycleLock =
+         new NativeLifecycleLock(
+             "CallSessionFileRotatingLogSink",
+-            CallSessionFileRotatingLogSinkJni.get()
+-                .addSink(dirPath, maxFileSize, severity.ordinal()));
++            nativeAddSink(dirPath, maxFileSize, severity.ordinal()));
    }
  
    public void dispose() {
-     if (nativeSink != 0) {
--      CallSessionFileRotatingLogSinkJni.get().deleteSink(nativeSink);
-+      nativeDeleteSink(nativeSink);
-       nativeSink = 0;
-     }
+     lifecycleLock.dispose(
+-        nativeSink -> CallSessionFileRotatingLogSinkJni.get().deleteSink(nativeSink));
++        nativeSink -> nativeDeleteSink(nativeSink));
    }
  
 -  @NativeMethods
@@ -241,7 +239,7 @@ index 3ac7d89eb1..6683fc9da6 100644
 +  private static native byte[] nativeGetLogData(String dirPath);
  }
 diff --git a/sdk/android/api/org/webrtc/DataChannel.java b/sdk/android/api/org/webrtc/DataChannel.java
-index c17ca1489f..be125e20b4 100644
+index 06cbaa8225..0225a91c2e 100644
 --- a/sdk/android/api/org/webrtc/DataChannel.java
 +++ b/sdk/android/api/org/webrtc/DataChannel.java
 @@ -11,8 +11,6 @@
@@ -253,71 +251,70 @@ index c17ca1489f..be125e20b4 100644
  
  /** Java wrapper for a C++ DataChannelInterface. */
  public class DataChannel {
-@@ -116,31 +114,31 @@ public class DataChannel {
-   public void registerObserver(Observer observer) {
-     checkDataChannelExists();
-     if (nativeObserver != 0) {
--      DataChannelJni.get().unregisterObserver(this, nativeObserver);
-+      nativeUnregisterObserver(nativeObserver);
-     }
--    nativeObserver = DataChannelJni.get().registerObserver(this, observer);
-+    nativeObserver = nativeRegisterObserver(observer);
+@@ -117,9 +115,9 @@ public class DataChannel {
+     lifecycleLock.run(
+         () -> {
+           if (nativeObserver != 0) {
+-            DataChannelJni.get().unregisterObserver(this, nativeObserver);
++            nativeUnregisterObserver(nativeObserver);
+           }
+-          nativeObserver = DataChannelJni.get().registerObserver(this, observer);
++          nativeObserver = nativeRegisterObserver(observer);
+         });
    }
  
-   /** Unregister the (only) observer. */
+@@ -127,21 +125,21 @@ public class DataChannel {
    public void unregisterObserver() {
-     checkDataChannelExists();
--    DataChannelJni.get().unregisterObserver(this, nativeObserver);
-+    nativeUnregisterObserver(nativeObserver);
-     nativeObserver = 0;
+     lifecycleLock.runIfAlive(
+         () -> {
+-          DataChannelJni.get().unregisterObserver(this, nativeObserver);
++          nativeUnregisterObserver(nativeObserver);
+           nativeObserver = 0;
+         });
    }
  
    public String label() {
-     checkDataChannelExists();
--    return DataChannelJni.get().label(this);
-+    return nativeLabel();
+-    return lifecycleLock.call(() -> DataChannelJni.get().label(this));
++    return lifecycleLock.call(() -> nativeLabel());
    }
  
    public int id() {
-     checkDataChannelExists();
--    return DataChannelJni.get().id(this);
-+    return nativeId();
+-    return lifecycleLock.call(() -> DataChannelJni.get().id(this));
++    return lifecycleLock.call(() -> nativeId());
    }
  
    public State state() {
-     checkDataChannelExists();
--    return DataChannelJni.get().state(this);
-+    return nativeState();
+-    return lifecycleLock.call(() -> DataChannelJni.get().state(this));
++    return lifecycleLock.call(() -> nativeState());
    }
  
    /**
-@@ -150,13 +148,13 @@ public class DataChannel {
+@@ -149,12 +147,12 @@ public class DataChannel {
+    * queued using SendBuffer but have not yet been transmitted to the network.
     */
    public long bufferedAmount() {
-     checkDataChannelExists();
--    return DataChannelJni.get().bufferedAmount(this);
-+    return nativeBufferedAmount();
+-    return lifecycleLock.call(() -> DataChannelJni.get().bufferedAmount(this));
++    return lifecycleLock.call(() -> nativeBufferedAmount());
    }
  
    /** Close the channel. */
    public void close() {
-     checkDataChannelExists();
--    DataChannelJni.get().close(this);
-+    nativeClose();
+-    lifecycleLock.runIfAlive(() -> DataChannelJni.get().close(this));
++    lifecycleLock.runIfAlive(() -> nativeClose());
    }
  
    /** Send `data` to the remote peer; return success. */
-@@ -166,7 +164,7 @@ public class DataChannel {
-     // ByteBuffer is direct and/or is backed by an array.
-     byte[] data = new byte[buffer.data.remaining()];
-     buffer.data.get(data);
--    return DataChannelJni.get().send(this, data, buffer.binary);
-+    return nativeSend(data, buffer.binary);
+@@ -165,7 +163,7 @@ public class DataChannel {
+           // ByteBuffer is direct and/or is backed by an array.
+           byte[] data = new byte[buffer.data.remaining()];
+           buffer.data.get(data);
+-          return DataChannelJni.get().send(this, data, buffer.binary);
++          return nativeSend(data, buffer.binary);
+         });
    }
  
-   /** Dispose of native resources attached to this channel. */
-@@ -187,22 +185,12 @@ public class DataChannel {
-     }
+@@ -185,22 +183,12 @@ public class DataChannel {
+     return lifecycleLock.getNativePointer();
    }
  
 -  @NativeMethods
@@ -371,7 +368,7 @@ index c160dc49ba..2a79988470 100644
 +  static native long nativeCreateDecoder();
  }
 diff --git a/sdk/android/api/org/webrtc/DtmfSender.java b/sdk/android/api/org/webrtc/DtmfSender.java
-index a740edcc2a..c0ea30f244 100644
+index 071c7273da..c9260fbd21 100644
 --- a/sdk/android/api/org/webrtc/DtmfSender.java
 +++ b/sdk/android/api/org/webrtc/DtmfSender.java
 @@ -10,8 +10,6 @@
@@ -382,54 +379,52 @@ index a740edcc2a..c0ea30f244 100644
 -
  /** Java wrapper for a C++ DtmfSenderInterface. */
  public class DtmfSender {
-   private long nativeDtmfSender;
+   private final NativeLifecycleLock lifecycleLock;
 @@ -25,7 +23,7 @@ public class DtmfSender {
     */
    public boolean canInsertDtmf() {
-     checkDtmfSenderExists();
--    return DtmfSenderJni.get().canInsertDtmf(nativeDtmfSender);
-+    return nativeCanInsertDtmf(nativeDtmfSender);
+     return lifecycleLock.call(
+-        nativeDtmfSender -> DtmfSenderJni.get().canInsertDtmf(nativeDtmfSender));
++        nativeDtmfSender -> nativeCanInsertDtmf(nativeDtmfSender));
    }
  
    /**
-@@ -47,7 +45,7 @@ public class DtmfSender {
-    */
+@@ -47,14 +45,14 @@ public class DtmfSender {
    public boolean insertDtmf(String tones, int duration, int interToneGap) {
-     checkDtmfSenderExists();
--    return DtmfSenderJni.get().insertDtmf(nativeDtmfSender, tones, duration, interToneGap);
-+    return nativeInsertDtmf(nativeDtmfSender, tones, duration, interToneGap);
+     return lifecycleLock.call(
+         nativeDtmfSender ->
+-            DtmfSenderJni.get().insertDtmf(nativeDtmfSender, tones, duration, interToneGap));
++            nativeInsertDtmf(nativeDtmfSender, tones, duration, interToneGap));
    }
  
    /**
-@@ -55,7 +53,7 @@ public class DtmfSender {
+    * @return The tones remaining to be played out
     */
    public String tones() {
-     checkDtmfSenderExists();
--    return DtmfSenderJni.get().tones(nativeDtmfSender);
-+    return nativeTones(nativeDtmfSender);
+-    return lifecycleLock.call(nativeDtmfSender -> DtmfSenderJni.get().tones(nativeDtmfSender));
++    return lifecycleLock.call(nativeDtmfSender -> nativeTones(nativeDtmfSender));
    }
  
    /**
-@@ -64,7 +62,7 @@ public class DtmfSender {
+@@ -62,7 +60,7 @@ public class DtmfSender {
+    *     insertDtmf() method, or the default value of 100 ms if insertDtmf() was never called.
     */
    public int duration() {
-     checkDtmfSenderExists();
--    return DtmfSenderJni.get().duration(nativeDtmfSender);
-+    return nativeDuration(nativeDtmfSender);
+-    return lifecycleLock.call(nativeDtmfSender -> DtmfSenderJni.get().duration(nativeDtmfSender));
++    return lifecycleLock.call(nativeDtmfSender -> nativeDuration(nativeDtmfSender));
    }
  
    /**
-@@ -74,7 +72,7 @@ public class DtmfSender {
+@@ -72,23 +70,17 @@ public class DtmfSender {
     */
    public int interToneGap() {
-     checkDtmfSenderExists();
--    return DtmfSenderJni.get().interToneGap(nativeDtmfSender);
-+    return nativeInterToneGap(nativeDtmfSender);
+     return lifecycleLock.call(
+-        nativeDtmfSender -> DtmfSenderJni.get().interToneGap(nativeDtmfSender));
++        nativeDtmfSender -> nativeInterToneGap(nativeDtmfSender));
    }
  
    public void dispose() {
-@@ -89,16 +87,10 @@ public class DtmfSender {
-     }
+     lifecycleLock.dispose(JniCommon::nativeReleaseRef);
    }
  
 -  @NativeMethods
@@ -697,7 +692,7 @@ index e9cfa01271..71bcd1374b 100644
 +  static native boolean nativeIsSupported();
  }
 diff --git a/sdk/android/api/org/webrtc/MediaSource.java b/sdk/android/api/org/webrtc/MediaSource.java
-index 59a7b8b2df..66e4af5247 100644
+index 6334832177..1216187cdf 100644
 --- a/sdk/android/api/org/webrtc/MediaSource.java
 +++ b/sdk/android/api/org/webrtc/MediaSource.java
 @@ -10,8 +10,6 @@
@@ -709,16 +704,16 @@ index 59a7b8b2df..66e4af5247 100644
  /** Java wrapper for a C++ MediaSourceInterface. */
  public class MediaSource {
    /** Tracks MediaSourceInterface.SourceState */
-@@ -37,7 +35,7 @@ public class MediaSource {
+@@ -36,7 +34,7 @@ public class MediaSource {
+   }
  
    public State state() {
-     checkMediaSourceExists();
--    return MediaSourceJni.get().getState(nativeSource);
-+    return nativeGetState(nativeSource);
+-    return lifecycleLock.call(nativeSource -> MediaSourceJni.get().getState(nativeSource));
++    return lifecycleLock.call(nativeSource -> nativeGetState(nativeSource));
    }
  
    public void dispose() {
-@@ -72,8 +70,5 @@ public class MediaSource {
+@@ -62,8 +60,5 @@ public class MediaSource {
      }
    }
  
@@ -729,7 +724,7 @@ index 59a7b8b2df..66e4af5247 100644
 +  private static native State nativeGetState(long pointer);
  }
 diff --git a/sdk/android/api/org/webrtc/MediaStreamTrack.java b/sdk/android/api/org/webrtc/MediaStreamTrack.java
-index b3ac30d793..c73ee20ab6 100644
+index c3948aa098..c172b7cf64 100644
 --- a/sdk/android/api/org/webrtc/MediaStreamTrack.java
 +++ b/sdk/android/api/org/webrtc/MediaStreamTrack.java
 @@ -11,7 +11,6 @@
@@ -749,41 +744,38 @@ index b3ac30d793..c73ee20ab6 100644
      if (trackKind.equals(AUDIO_TRACK_KIND)) {
        return new AudioTrack(nativeTrack);
      } else if (trackKind.equals(VIDEO_TRACK_KIND)) {
-@@ -82,27 +81,27 @@ public class MediaStreamTrack {
+@@ -81,24 +80,24 @@ public class MediaStreamTrack {
+   }
  
    public String id() {
-     checkMediaStreamTrackExists();
--    return MediaStreamTrackJni.get().getId(nativeTrack);
-+    return nativeGetId(nativeTrack);
+-    return lifecycleLock.call(nativeTrack -> MediaStreamTrackJni.get().getId(nativeTrack));
++    return lifecycleLock.call(nativeTrack -> nativeGetId(nativeTrack));
    }
  
    public String kind() {
-     checkMediaStreamTrackExists();
--    return MediaStreamTrackJni.get().getKind(nativeTrack);
-+    return nativeGetKind(nativeTrack);
+-    return lifecycleLock.call(nativeTrack -> MediaStreamTrackJni.get().getKind(nativeTrack));
++    return lifecycleLock.call(nativeTrack -> nativeGetKind(nativeTrack));
    }
  
    public boolean enabled() {
-     checkMediaStreamTrackExists();
--    return MediaStreamTrackJni.get().getEnabled(nativeTrack);
-+    return nativeGetEnabled(nativeTrack);
+-    return lifecycleLock.call(nativeTrack -> MediaStreamTrackJni.get().getEnabled(nativeTrack));
++    return lifecycleLock.call(nativeTrack -> nativeGetEnabled(nativeTrack));
    }
  
    public boolean setEnabled(boolean enable) {
-     checkMediaStreamTrackExists();
--    return MediaStreamTrackJni.get().setEnabled(nativeTrack, enable);
-+    return nativeSetEnabled(nativeTrack, enable);
+     return lifecycleLock.call(
+-        nativeTrack -> MediaStreamTrackJni.get().setEnabled(nativeTrack, enable));
++        nativeTrack -> nativeSetEnabled(nativeTrack, enable));
    }
  
    public State state() {
-     checkMediaStreamTrackExists();
--    return MediaStreamTrackJni.get().getState(nativeTrack);
-+    return nativeGetState(nativeTrack);
+-    return lifecycleLock.call(nativeTrack -> MediaStreamTrackJni.get().getState(nativeTrack));
++    return lifecycleLock.call(nativeTrack -> nativeGetState(nativeTrack));
    }
  
    public void dispose() {
-@@ -122,16 +121,9 @@ public class MediaStreamTrack {
-     }
+@@ -109,16 +108,9 @@ public class MediaStreamTrack {
+     return lifecycleLock.getNativePointer();
    }
  
 -  @NativeMethods
@@ -965,7 +957,7 @@ index 88a6b04f17..ad19b4c8c1 100644
 +  private static native List<VideoCodecInfo> nativeGetSupportedCodecs(long factory);
  }
 diff --git a/sdk/android/api/org/webrtc/TimestampAligner.java b/sdk/android/api/org/webrtc/TimestampAligner.java
-index a96fbeda74..a93f07c37f 100644
+index 565db59e70..4e54050113 100644
 --- a/sdk/android/api/org/webrtc/TimestampAligner.java
 +++ b/sdk/android/api/org/webrtc/TimestampAligner.java
 @@ -10,8 +10,6 @@
@@ -977,33 +969,29 @@ index a96fbeda74..a93f07c37f 100644
  /**
   * The TimestampAligner class helps translating camera timestamps into the same timescale as is
   * used by webrtc. Some cameras have built in timestamping which is more accurate than
-@@ -39,7 +37,7 @@ public class TimestampAligner {
-   }
- 
+@@ -41,7 +39,7 @@ public class TimestampAligner {
    public TimestampAligner(Environment webrtcEnv) {
--    nativeTimestampAligner = TimestampAlignerJni.get().createTimestampAligner(webrtcEnv.ref());
-+    nativeTimestampAligner = nativeCreateTimestampAligner(webrtcEnv.ref());
+     this.lifecycleLock =
+         new NativeLifecycleLock(
+-            "TimestampAligner", TimestampAlignerJni.get().createTimestampAligner(webrtcEnv.ref()));
++            "TimestampAligner", nativeCreateTimestampAligner(webrtcEnv.ref()));
    }
  
    /**
-@@ -49,13 +47,13 @@ public class TimestampAligner {
-    */
+@@ -52,22 +50,17 @@ public class TimestampAligner {
    public long translateTimestamp(long cameraTimeNs) {
-     checkNativeAlignerExists();
--    return TimestampAlignerJni.get().translateTimestamp(nativeTimestampAligner, cameraTimeNs);
-+    return nativeTranslateTimestamp(nativeTimestampAligner, cameraTimeNs);
+     return lifecycleLock.call(
+         nativeTimestampAligner ->
+-            TimestampAlignerJni.get().translateTimestamp(nativeTimestampAligner, cameraTimeNs));
++            nativeTranslateTimestamp(nativeTimestampAligner, cameraTimeNs));
    }
  
    /** Dispose native timestamp aligner. */
    public void dispose() {
-     checkNativeAlignerExists();
--    TimestampAlignerJni.get().releaseTimestampAligner(nativeTimestampAligner);
-+    nativeReleaseTimestampAligner(nativeTimestampAligner);
-     nativeTimestampAligner = 0;
-   }
- 
-@@ -65,13 +63,7 @@ public class TimestampAligner {
-     }
+     lifecycleLock.dispose(
+         nativeTimestampAligner ->
+-            TimestampAlignerJni.get().releaseTimestampAligner(nativeTimestampAligner));
++            nativeReleaseTimestampAligner(nativeTimestampAligner));
    }
  
 -  @NativeMethods
@@ -1018,9 +1006,8 @@ index a96fbeda74..a93f07c37f 100644
 +  private static native void nativeReleaseTimestampAligner(long timestampAligner);
 +  private static native long nativeTranslateTimestamp(long timestampAligner, long cameraTimeNs);
  }
--
 diff --git a/sdk/android/api/org/webrtc/TurnCustomizer.java b/sdk/android/api/org/webrtc/TurnCustomizer.java
-index 64c77406c8..41bedb7dcb 100644
+index 89f5a6edc6..2681822388 100644
 --- a/sdk/android/api/org/webrtc/TurnCustomizer.java
 +++ b/sdk/android/api/org/webrtc/TurnCustomizer.java
 @@ -10,9 +10,6 @@
@@ -1032,14 +1019,13 @@ index 64c77406c8..41bedb7dcb 100644
 -
  /** Java wrapper for a C++ TurnCustomizer. */
  public class TurnCustomizer {
-   private long nativeTurnCustomizer;
-@@ -23,10 +20,12 @@ public class TurnCustomizer {
+   private final NativeLifecycleLock lifecycleLock;
+@@ -23,17 +20,14 @@ public class TurnCustomizer {
  
    public void dispose() {
-     checkTurnCustomizerExists();
--    TurnCustomizerJni.get().freeTurnCustomizer(nativeTurnCustomizer);
-+    nativeFreeTurnCustomizer(nativeTurnCustomizer);
-     nativeTurnCustomizer = 0;
+     lifecycleLock.dispose(
+-        nativeTurnCustomizer -> TurnCustomizerJni.get().freeTurnCustomizer(nativeTurnCustomizer));
++        nativeTurnCustomizer -> nativeFreeTurnCustomizer(nativeTurnCustomizer));
    }
  
 +  private static native void nativeFreeTurnCustomizer(long turnCustomizer);
@@ -1047,9 +1033,7 @@ index 64c77406c8..41bedb7dcb 100644
    /** Return a pointer to webrtc::TurnCustomizer. */
    @CalledByNative
    long getNativeTurnCustomizer() {
-@@ -39,9 +38,4 @@ public class TurnCustomizer {
-       throw new IllegalStateException("TurnCustomizer has been disposed.");
-     }
+     return lifecycleLock.getNativePointer();
    }
 -
 -  @NativeMethods
@@ -1119,7 +1103,7 @@ index 9f693288f0..86b6507691 100644
 +      long webrtcEnvRef, VideoEncoder fallback, VideoEncoder primary);
  }
 diff --git a/sdk/android/api/org/webrtc/VideoTrack.java b/sdk/android/api/org/webrtc/VideoTrack.java
-index e42f3889a1..512e46c26e 100644
+index fd4d42c153..8bd431a3f8 100644
 --- a/sdk/android/api/org/webrtc/VideoTrack.java
 +++ b/sdk/android/api/org/webrtc/VideoTrack.java
 @@ -11,7 +11,6 @@
@@ -1130,40 +1114,41 @@ index e42f3889a1..512e46c26e 100644
  
  /** Java version of VideoTrackInterface. */
  public class VideoTrack extends MediaStreamTrack {
-@@ -36,9 +35,9 @@ public class VideoTrack extends MediaStreamTrack {
-     // We allow calling addSink() with the same sink multiple times. This is similar to the C++
-     // VideoTrack::AddOrUpdateSink().
-     if (!sinks.containsKey(sink)) {
--      final long nativeSink = VideoTrackJni.get().wrapSink(sink);
-+      final long nativeSink = nativeWrapSink(sink);
-       sinks.put(sink, nativeSink);
--      VideoTrackJni.get().addSink(getNativeMediaStreamTrack(), nativeSink);
-+      nativeAddSink(getNativeMediaStreamTrack(), nativeSink);
-     }
-   }
- 
-@@ -50,16 +49,16 @@ public class VideoTrack extends MediaStreamTrack {
-   public void removeSink(VideoSink sink) {
-     final Long nativeSink = sinks.remove(sink);
-     if (nativeSink != null) {
--      VideoTrackJni.get().removeSink(getNativeMediaStreamTrack(), nativeSink);
--      VideoTrackJni.get().freeSink(nativeSink);
-+      nativeRemoveSink(getNativeMediaStreamTrack(), nativeSink);
-+      nativeFreeSink(nativeSink);
-     }
-   }
- 
-   @Override
-   public void dispose() {
-     for (long nativeSink : sinks.values()) {
--      VideoTrackJni.get().removeSink(getNativeMediaStreamTrack(), nativeSink);
--      VideoTrackJni.get().freeSink(nativeSink);
-+      nativeRemoveSink(getNativeMediaStreamTrack(), nativeSink);
-+      nativeFreeSink(nativeSink);
-     }
-     sinks.clear();
-     super.dispose();
-@@ -70,14 +69,8 @@ public class VideoTrack extends MediaStreamTrack {
+@@ -38,9 +37,9 @@ public class VideoTrack extends MediaStreamTrack {
+         nativeTrack -> {
+           synchronized (sinks) {
+             if (!sinks.containsKey(sink)) {
+-              final long nativeSink = VideoTrackJni.get().wrapSink(sink);
++              final long nativeSink = nativeWrapSink(sink);
+               sinks.put(sink, nativeSink);
+-              VideoTrackJni.get().addSink(nativeTrack, nativeSink);
++              nativeAddSink(nativeTrack, nativeSink);
+             }
+           }
+         });
+@@ -57,8 +56,8 @@ public class VideoTrack extends MediaStreamTrack {
+           synchronized (sinks) {
+             final Long nativeSink = sinks.remove(sink);
+             if (nativeSink != null) {
+-              VideoTrackJni.get().removeSink(nativeTrack, nativeSink);
+-              VideoTrackJni.get().freeSink(nativeSink);
++              nativeRemoveSink(nativeTrack, nativeSink);
++              nativeFreeSink(nativeSink);
+             }
+           }
+         });
+@@ -70,8 +69,8 @@ public class VideoTrack extends MediaStreamTrack {
+         nativeTrack -> {
+           synchronized (sinks) {
+             for (long nativeSink : sinks.values()) {
+-              VideoTrackJni.get().removeSink(nativeTrack, nativeSink);
+-              VideoTrackJni.get().freeSink(nativeSink);
++              nativeRemoveSink(nativeTrack, nativeSink);
++              nativeFreeSink(nativeSink);
+             }
+             sinks.clear();
+           }
+@@ -84,14 +83,8 @@ public class VideoTrack extends MediaStreamTrack {
      return getNativeMediaStreamTrack();
    }
  

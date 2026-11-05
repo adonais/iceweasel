@@ -16,43 +16,43 @@ const OBSERVED_TOPICS = [
   "sessionstore-initiating-manual-restore",
 ];
 
-export var StartupPerformance = {
+class _StartupPerformance {
   /**
    * Once we have finished restoring initial tabs, we broadcast on this topic.
    */
-  RESTORED_TOPIC: "sessionstore-finished-restoring-initial-tabs",
+  RESTORED_TOPIC = "sessionstore-finished-restoring-initial-tabs";
 
   // Instant at which we have started restoration (notification "sessionstore-restoring-on-startup")
-  _startTimeStamp: null,
+  #startTimeStamp = null;
 
   // Latest instant at which we have finished restoring a tab (DOM event "SSTabRestored")
-  _latestRestoredTimeStamp: null,
+  #latestRestoredTimeStamp = null;
 
   // A promise resolved once we have finished restoring all the startup tabs.
-  _promiseFinished: null,
+  #promiseFinished = null;
 
-  // Function `resolve()` for `_promiseFinished`.
-  _resolveFinished: null,
+  // Function `resolve()` for `#promiseFinished`.
+  #resolveFinished = null;
 
   // A timer
-  _deadlineTimer: null,
+  #deadlineTimer = null;
 
   // `true` once the timer has fired
-  _hasFired: false,
+  #hasFired = false;
 
   // `true` once we are restored
-  _isRestored: false,
+  #isRestored = false;
 
   // Statistics on the session we need to restore.
-  _totalNumberOfEagerTabs: 0,
-  _totalNumberOfTabs: 0,
-  _totalNumberOfWindows: 0,
+  #totalNumberOfEagerTabs = 0;
+  #totalNumberOfTabs = 0;
+  #totalNumberOfWindows = 0;
 
   init() {
     for (let topic of OBSERVED_TOPICS) {
       Services.obs.addObserver(this, topic);
     }
-  },
+  }
 
   /**
    * Return the timestamp at which we finished restoring the latest tab.
@@ -61,25 +61,25 @@ export var StartupPerformance = {
    * tabs.
    */
   get latestRestoredTimeStamp() {
-    return this._latestRestoredTimeStamp;
-  },
+    return this.#latestRestoredTimeStamp;
+  }
 
   /**
    * `true` once we have finished restoring startup tabs.
    */
   get isRestored() {
-    return this._isRestored;
-  },
+    return this.#isRestored;
+  }
 
   // Called when restoration starts.
-  // Record the start timestamp, setup the timer and `this._promiseFinished`.
+  // Record the start timestamp, setup the timer and `this.#promiseFinished`.
   // Behavior is unspecified if there was already an ongoing measure.
-  _onRestorationStarts(isAutoRestore) {
+  #onRestorationStarts(isAutoRestore) {
     ChromeUtils.addProfilerMarker("_onRestorationStarts");
-    this._latestRestoredTimeStamp = this._startTimeStamp = Date.now();
-    this._totalNumberOfEagerTabs = 0;
-    this._totalNumberOfTabs = 0;
-    this._totalNumberOfWindows = 0;
+    this.#latestRestoredTimeStamp = this.#startTimeStamp = Date.now();
+    this.#totalNumberOfEagerTabs = 0;
+    this.#totalNumberOfTabs = 0;
+    this.#totalNumberOfWindows = 0;
 
     // While we may restore several sessions in a single run of the browser,
     // that's a very unusual case, and not really worth measuring, so let's
@@ -90,21 +90,21 @@ export var StartupPerformance = {
     }
 
     Services.obs.addObserver(this, "sessionstore-single-window-restored");
-    this._promiseFinished = new Promise(resolve => {
-      this._resolveFinished = resolve;
+    this.#promiseFinished = new Promise(resolve => {
+      this.#resolveFinished = resolve;
     });
-    this._promiseFinished.then(() => {
+    this.#promiseFinished.then(() => {
       try {
-        this._isRestored = true;
+        this.#isRestored = true;
         Services.obs.notifyObservers(null, this.RESTORED_TOPIC);
 
-        if (this._latestRestoredTimeStamp == this._startTimeStamp) {
+        if (this.#latestRestoredTimeStamp == this.#startTimeStamp) {
           // Apparently, we haven't restored any tab.
           return;
         }
 
         // Once we are done restoring tabs, update Telemetry.
-        let delta = this._latestRestoredTimeStamp - this._startTimeStamp;
+        let delta = this.#latestRestoredTimeStamp - this.#startTimeStamp;
         if (isAutoRestore) {
           Glean.sessionRestore.autoRestoreDurationUntilEagerTabsRestored.accumulateSingleSample(
             delta
@@ -115,56 +115,56 @@ export var StartupPerformance = {
           );
         }
         Glean.sessionRestore.numberOfEagerTabsRestored.accumulateSingleSample(
-          this._totalNumberOfEagerTabs
+          this.#totalNumberOfEagerTabs
         );
         Glean.sessionRestore.numberOfTabsRestored.accumulateSingleSample(
-          this._totalNumberOfTabs
+          this.#totalNumberOfTabs
         );
         Glean.sessionRestore.numberOfWindowsRestored.accumulateSingleSample(
-          this._totalNumberOfWindows
+          this.#totalNumberOfWindows
         );
 
         // Reset
-        this._startTimeStamp = null;
+        this.#startTimeStamp = null;
       } catch (ex) {
         console.error("StartupPerformance: error after resolving promise", ex);
       }
     });
-  },
+  }
 
-  _startTimer() {
-    if (this._hasFired) {
+  #startTimer() {
+    if (this.#hasFired) {
       return;
     }
-    if (this._deadlineTimer) {
-      lazy.clearTimeout(this._deadlineTimer);
+    if (this.#deadlineTimer) {
+      lazy.clearTimeout(this.#deadlineTimer);
     }
-    this._deadlineTimer = lazy.setTimeout(() => {
+    this.#deadlineTimer = lazy.setTimeout(() => {
       try {
-        this._resolveFinished();
+        this.#resolveFinished();
       } catch (ex) {
         console.error("StartupPerformance: Error in timeout handler", ex);
       } finally {
         // Clean up.
-        this._deadlineTimer = null;
-        this._hasFired = true;
-        this._resolveFinished = null;
+        this.#deadlineTimer = null;
+        this.#hasFired = true;
+        this.#resolveFinished = null;
         Services.obs.removeObserver(
           this,
           "sessionstore-single-window-restored"
         );
       }
     }, COLLECT_RESULTS_AFTER_MS);
-  },
+  }
 
   observe(subject, topic) {
     try {
       switch (topic) {
         case "sessionstore-restoring-on-startup":
-          this._onRestorationStarts(true);
+          this.#onRestorationStarts(true);
           break;
         case "sessionstore-initiating-manual-restore":
-          this._onRestorationStarts(false);
+          this.#onRestorationStarts(false);
           break;
         case "sessionstore-single-window-restored":
           {
@@ -183,9 +183,9 @@ export var StartupPerformance = {
             //   we postpone the timer to ensure that the new eager tabs have
             //   `COLLECT_RESULTS_AFTER_MS` to be restored;
             // - whenever a tab is restored, we update
-            //   `this._latestRestoredTimeStamp`;
+            //   `this.#latestRestoredTimeStamp`;
             // - after `COLLECT_RESULTS_AFTER_MS`, we collect the final version
-            //   of `this._latestRestoredTimeStamp`, and use it to determine the
+            //   of `this.#latestRestoredTimeStamp`, and use it to determine the
             //   entire duration of the collection.
             //
             // Note that this heuristic may be inaccurate if a user clicks
@@ -194,9 +194,9 @@ export var StartupPerformance = {
             // affect too much the results.
             //
             // Reset the delay, to give the tabs a little (more) time to restore.
-            this._startTimer();
+            this.#startTimer();
 
-            this._totalNumberOfWindows += 1;
+            this.#totalNumberOfWindows += 1;
 
             // Observe the restoration of all tabs. We assume that all tabs of this
             // window will have been restored before `COLLECT_RESULTS_AFTER_MS`.
@@ -206,17 +206,17 @@ export var StartupPerformance = {
 
             let observer = () => {
               ChromeUtils.addProfilerMarker("SSTabRestored");
-              this._latestRestoredTimeStamp = Date.now();
-              this._totalNumberOfEagerTabs += 1;
+              this.#latestRestoredTimeStamp = Date.now();
+              this.#totalNumberOfEagerTabs += 1;
             };
             win.gBrowser.tabContainer.addEventListener(
               "SSTabRestored",
               observer
             );
-            this._totalNumberOfTabs += win.gBrowser.tabContainer.itemCount;
+            this.#totalNumberOfTabs += win.gBrowser.tabContainer.itemCount;
 
             // Once we have finished collecting the results, clean up the observers.
-            this._promiseFinished.then(() => {
+            this.#promiseFinished.then(() => {
               if (!win.gBrowser.tabContainer) {
                 // May be undefined during shutdown and/or some tests.
                 return;
@@ -235,5 +235,7 @@ export var StartupPerformance = {
       console.error("StartupPerformance error", ex, ex.stack);
       throw ex;
     }
-  },
-};
+  }
+}
+
+export const StartupPerformance = new _StartupPerformance();

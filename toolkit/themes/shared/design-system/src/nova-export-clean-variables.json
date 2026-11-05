@@ -181,17 +181,17 @@
       }
     },
     "link": {
-      "border": {
-        "radius": {
-          "focus": {
-            "Value": "{border/radius/xsmall}"
-          }
-        }
-      },
       "focus": {
         "outline": {
           "offset": {
             "Value": 1
+          }
+        }
+      },
+      "border": {
+        "radius": {
+          "focus": {
+            "Value": "{border/radius/xsmall}"
           }
         }
       }
@@ -1821,6 +1821,15 @@
             "Smart Light (WIP)": "{color/green/30}"
           }
         },
+        "icon": {
+          "color": {
+            "Light": "{theme-color-text}",
+            "Dark": "{theme-color-text}",
+            "HCM": "{theme-color-text}",
+            "Private": "{theme-color-text}",
+            "Smart Light (WIP)": "{theme-color-text}"
+          }
+        },
         "grey": {
           "Light": "{color/gray/55}",
           "Dark": "{color/gray/40}",
@@ -1854,15 +1863,6 @@
             "HCM": "{color/gray/40}",
             "Private": "{color/gray/40}",
             "Smart Light (WIP)": "{color/gray/40}"
-          }
-        },
-        "icon": {
-          "color": {
-            "Light": "{theme-color-text}",
-            "Dark": "{theme-color-text}",
-            "HCM": "{theme-color-text}",
-            "Private": "{theme-color-text}",
-            "Smart Light (WIP)": "{theme-color-text}"
           }
         }
       },
@@ -3033,15 +3033,6 @@
       }
     },
     "dialog": {
-      "border": {
-        "color": {
-          "Light": "{popup/border/color}",
-          "Dark": "{panel/border/color}",
-          "HCM": "{panel/border/color}",
-          "Private": "{panel/border/color}",
-          "Smart Light (WIP)": "{panel/border/color}"
-        }
-      },
       "background": {
         "color": {
           "Light": "{popup/background/color}",

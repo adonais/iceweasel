@@ -97,7 +97,10 @@ function getEngineModules() {
   if (Svc.PrefBranch.getBoolPref("engine.creditcards.available", false)) {
     result.CreditCards = {
       module: "resource://autofill/FormAutofillSync.sys.mjs",
-      symbol: "CreditCardsEngine",
+      controllingPref:
+        "extensions.formautofill.creditCards.storage.rust.active",
+      whenTrue: "BridgedCreditCardsEngine",
+      whenFalse: "CreditCardsEngine",
     };
   }
   result["Extension-Storage"] = {

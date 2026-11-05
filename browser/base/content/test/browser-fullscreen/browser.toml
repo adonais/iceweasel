@@ -42,8 +42,6 @@ support-files = [
 ["browser_fullscreen_enterInUrlbar.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1648649
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
 ]
 
@@ -94,7 +92,5 @@ support-files = ["fullscreen.html"]
 ["browser_fullscreen_window_open.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && swgl", # Bug 1795491
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1861827
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1861827
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1861827
 ]

@@ -15,7 +15,7 @@
   color: inherit;
 
   &[_moz-menuactive] {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/no-base-design-tokens */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-color: light-dark(var(--color-black-alpha-10), var(--color-white-alpha-20));
     color: inherit;
 
@@ -39,15 +39,15 @@
     background-color: transparent;
     @media -moz-pref("widget.windows.mica.toplevel-backdrop", 2) {
       /* For acrylic, do the same we do for popups to guarantee some contrast */
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/no-base-design-tokens */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       background-color: light-dark(var(--color-white-alpha-60), var(--color-black-alpha-60));
     }
 
     /* Using a semitransparent background preserves the tinting from the backdrop.
      * Note that the toolbar text color from browser-colors.css should be ok,
      * as the backdrop matches our color scheme. The .6 matches what we do for
-     * acrylic, and the .15 matches the 85% we do for the default toolbar
-     * background on the native theme. */
+     * acrylic, and the .2 roughly matches the 85% we do for the default
+     * toolbar background on the native theme. */
     --toolbar-background-color: light-dark(var(--color-white-alpha-60), var(--color-white-alpha-20));
   }
 
@@ -99,6 +99,8 @@
   appearance: none;
   border: none;
   margin: 0;
+  /* Keep px padding for square hit targets; space tokens are rem-based on the Windows system font (12px). */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: 8px 18px;
   color: inherit;
 
@@ -148,10 +150,13 @@
     }
 
     &.titlebar-close:hover {
+      /* Uses native Windows colors */
       color: white;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       background-color: hsl(355, 86%, 49%);
 
       &:active {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
         background-color: hsl(355, 82%, 69%);
       }
     }
@@ -219,7 +224,7 @@
     appearance: none;
     background: SelectedItem !important;
     color: SelectedItemText !important;
-    fill: SelectedItemText;
+    fill: currentColor;
   }
 }
 
@@ -227,6 +232,8 @@
 
 .urlbar,
 #searchbar {
+  /* Windows-specific size tweak */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 1.15em;
 }
 
@@ -273,7 +280,9 @@
    * Override the --panel-padding so the background extends
    * to the sides and bottom of the panel.
    */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline: -10px;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-bottom: -10px;
 }
 
@@ -305,6 +314,7 @@ menupopup[touchmode] :is(menu, menuitem, menucaption) {
   /* The navigation menuitems are bigger to begin with because of their inner padding,
    * so calculate the padding-block to match normal menuitems height when in touchmode.
    * 3.5em is the desired menuitem height (~42px), minus the menuitem actual height devided by 2. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-block: calc((3.5em - 32px) / 2);
 }
 

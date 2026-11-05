@@ -7,7 +7,14 @@ const { ChromeMigrationUtils } = ChromeUtils.importESModule(
   "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs"
 );
 
-const SOURCE_PROFILE_DIR = "Library/Application Support/Google/Chrome/Default/";
+const SOURCE_PROFILE_SUBDIRS = [
+  "Application Support",
+  "Google",
+  "Chrome",
+  "Default",
+];
+
+let gSourceProfilePath;
 
 const PROFILE = {
   id: "Default",
@@ -15,7 +22,7 @@ const PROFILE = {
 };
 
 /**
- * TEST_URLS reflects the data stored in '${SOURCE_PROFILE_DIR}HistoryMaster'.
+ * TEST_URLS reflects the data stored in the profile's 'HistoryMaster' file.
  * The main object reflects the data in the 'urls' table. The visits property
  * reflects the associated data in the 'visits' table.
  */
@@ -65,8 +72,9 @@ const TEST_URLS = [
 ];
 
 async function setVisitTimes(time) {
-  let loginDataFile = do_get_file(`${SOURCE_PROFILE_DIR}History`);
-  let dbConn = await Sqlite.openConnection({ path: loginDataFile.path });
+  let dbConn = await Sqlite.openConnection({
+    path: PathUtils.join(gSourceProfilePath, "History"),
+  });
 
   await dbConn.execute(`UPDATE urls SET last_visit_time = :last_visit_time`, {
     last_visit_time: time,
@@ -123,35 +131,25 @@ function assertEntryMatches(entry, urlInfo, dateWasInFuture = false) {
   }
 }
 
-function setupHistoryFile() {
-  removeHistoryFile();
-  let file = do_get_file(`${SOURCE_PROFILE_DIR}HistoryMaster`);
-  file.copyTo(file.parent, "History");
-}
-
-function removeHistoryFile() {
-  let file = do_get_file(`${SOURCE_PROFILE_DIR}History`, true);
-  try {
-    file.remove(false);
-  } catch (ex) {
-    // It is ok if this doesn't exist.
-    if (ex.result != Cr.NS_ERROR_FILE_NOT_FOUND) {
-      throw ex;
-    }
-  }
+async function setupHistoryFile() {
+  await IOUtils.copy(
+    PathUtils.join(gSourceProfilePath, "HistoryMaster"),
+    PathUtils.join(gSourceProfilePath, "History")
+  );
 }
 
 add_task(async function setup() {
-  registerFakePath("ULibDir", do_get_file("Library/"));
+  let libDir = await copyFixtureDir("Library/");
+  registerFakePath("ULibDir", libDir);
+  gSourceProfilePath = PathUtils.join(libDir.path, ...SOURCE_PROFILE_SUBDIRS);
 
   registerCleanupFunction(async () => {
     await PlacesUtils.history.clear();
-    removeHistoryFile();
   });
 });
 
 add_task(async function test_import() {
-  setupHistoryFile();
+  await setupHistoryFile();
   await PlacesUtils.history.clear();
   // Update to ~10 days ago since the date can't be too old or Places may expire it.
   const pastDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 10);
@@ -180,7 +178,7 @@ add_task(async function test_import() {
 });
 
 add_task(async function test_import_future_date() {
-  setupHistoryFile();
+  await setupHistoryFile();
   await PlacesUtils.history.clear();
   const futureDate = new Date().getTime() + 6000 * 60 * 24;
   await setVisitTimes(ChromeMigrationUtils.dateToChromeTime(futureDate));

@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b44955c4c033ebaf3
  1 file changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-index 53b0edca26..8d56ca17fb 100644
+index 3e5addb903..6da9a18f8e 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-@@ -593,9 +593,14 @@ void ModuleRtpRtcpImpl2::SetExtmapAllowMixed(bool extmap_allow_mixed) {
+@@ -592,9 +592,14 @@ void ModuleRtpRtcpImpl2::SetExtmapAllowMixed(bool extmap_allow_mixed) {
  void ModuleRtpRtcpImpl2::RegisterRtpHeaderExtension(absl::string_view uri,
                                                      RtpHeaderExtensionId id) {
    RTC_CHECK(rtp_sender_ != nullptr);

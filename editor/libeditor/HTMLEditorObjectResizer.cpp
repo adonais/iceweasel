@@ -106,13 +106,13 @@ ManualNACPtr HTMLEditor::CreateResizer(int16_t aLocation,
   }
 
   if (NS_FAILED(resizer->SetAttr(kNameSpaceID_None, nsGkAtoms::anonlocation,
-                                 locationStr, true))) {
+                                 locationStr, true, IsKnownNewAttr::Yes))) {
     NS_WARNING("Element::SetAttr(nsGkAtoms::anonlocation) failed");
     return nullptr;
   }
   nsAutoString cursor = u"cursor: "_ns + locationStr + u"-resize"_ns;
   if (NS_FAILED(resizer->SetAttr(kNameSpaceID_None, nsGkAtoms::style, cursor,
-                                 true))) {
+                                 true, IsKnownNewAttr::Yes))) {
     NS_WARNING("Element::SetAttr(nsGkAtoms::style) failed");
     return nullptr;
   }
@@ -642,14 +642,14 @@ nsresult HTMLEditor::HideResizersInternal() {
 void HTMLEditor::HideShadowAndInfo() {
   if (mResizingShadow) {
     DebugOnly<nsresult> rvIgnored = mResizingShadow->SetAttr(
-        kNameSpaceID_None, nsGkAtoms::hidden, u""_ns, true);
+        kNameSpaceID_None, nsGkAtoms::hidden, u""_ns, true, IsKnownNewAttr::No);
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rvIgnored),
         "Element::SetAttr(nsGkAtoms::hidden) failed, but ignored");
   }
   if (mResizingInfo) {
     DebugOnly<nsresult> rvIgnored = mResizingInfo->SetAttr(
-        kNameSpaceID_None, nsGkAtoms::hidden, u""_ns, true);
+        kNameSpaceID_None, nsGkAtoms::hidden, u""_ns, true, IsKnownNewAttr::No);
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rvIgnored),
         "Element::SetAttr(nsGkAtoms::hidden, hidden) failed, but ignored");
@@ -829,8 +829,9 @@ nsresult HTMLEditor::StopDraggingResizerOrGrabberAt(
     }
 
     if (mIsMoving) {
-      DebugOnly<nsresult> rvIgnored = mPositioningShadow->SetAttr(
-          kNameSpaceID_None, nsGkAtoms::hidden, u""_ns, true);
+      DebugOnly<nsresult> rvIgnored =
+          mPositioningShadow->SetAttr(kNameSpaceID_None, nsGkAtoms::hidden,
+                                      u""_ns, true, IsKnownNewAttr::No);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                            "Element::SetAttr(nsGkAtoms::hidden) failed");
       if (rv != NS_ERROR_EDITOR_ACTION_CANCELED) {
@@ -1001,7 +1002,7 @@ nsresult HTMLEditor::SetShadowPosition(Element& aShadowElement,
   nsAutoString imageSource;
   aElement.GetAttr(nsGkAtoms::src, imageSource);
   nsresult rv = aShadowElement.SetAttr(kNameSpaceID_None, nsGkAtoms::src,
-                                       imageSource, true);
+                                       imageSource, true, IsKnownNewAttr::No);
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }

@@ -2926,7 +2926,8 @@ class Vp9HeaderObserver : public test::SendTest {
       std::vector<VideoReceiveStreamInterface::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) {}
 
-  virtual void InspectHeader(const RTPVideoHeaderVP9& vp9) = 0;
+  virtual void InspectHeader(const RTPVideoHeaderVP9& vp9)
+      RTC_RUN_ON(&send_sequence_checker_) = 0;
 
  private:
   const int kVp9PayloadType = test::VideoTestConstants::kVideoSendPayloadType;
@@ -2965,6 +2966,8 @@ class Vp9HeaderObserver : public test::SendTest {
   }
 
   Action OnSendRtp(std::span<const uint8_t> packet) override {
+    RTC_DCHECK_RUN_ON(&send_sequence_checker_);
+
     RtpPacket rtp_packet;
     EXPECT_TRUE(rtp_packet.Parse(packet));
 
@@ -2980,18 +2983,37 @@ class Vp9HeaderObserver : public test::SendTest {
           VideoRtpDepacketizerVp9::ParseRtpPayload(rtp_payload, &video_header),
           0);
       EXPECT_EQ(VideoCodecType::kVideoCodecVP9, video_header.codec);
-      // Verify common fields for all configurations.
+
       const auto& vp9_header =
           std::get<RTPVideoHeaderVP9>(video_header.video_type_header);
+
+      // Count temporal units by RTP timestamp transitions rather than by
+      // marker bits. A picture is not guaranteed to end with a marker bit: the
+      // pacer discards packets that are still queued for the stream when the
+      // first packet of a key frame is enqueued, which can cut off the tail of
+      // the previous picture.
+      if (last_packet_timestamp_.has_value() &&
+          IsNewerTimestamp(rtp_packet.Timestamp(), *last_packet_timestamp_)) {
+        // A picture whose packets were all discarded by the pacer is never
+        // observed here, but it did consume a picture id. Use the picture id
+        // delta to keep the count in sync with the pictures the encoder
+        // produced.
+        int pictures = 1;
+        if (!vp9_header.inter_pic_predicted &&
+            vp9_header.picture_id != kNoPictureId &&
+            vp9_header.picture_id > last_vp9_.picture_id) {
+          pictures = vp9_header.picture_id - last_vp9_.picture_id;
+        }
+        MutexLock lock(&mutex_);
+        frames_sent_ += pictures;
+      }
+
+      // Verify common fields for all configurations.
       VerifyCommonHeader(vp9_header);
       CompareConsecutiveFrames(rtp_packet, video_header);
       // Verify configuration specific settings.
       InspectHeader(vp9_header);
 
-      if (rtp_packet.Marker()) {
-        MutexLock lock(&mutex_);
-        ++frames_sent_;
-      }
       last_packet_marker_ = rtp_packet.Marker();
       last_packet_sequence_number_ = rtp_packet.SequenceNumber();
       last_packet_timestamp_ = rtp_packet.Timestamp();
@@ -3003,7 +3025,8 @@ class Vp9HeaderObserver : public test::SendTest {
   }
 
  protected:
-  bool ContinuousPictureId(const RTPVideoHeaderVP9& vp9) const {
+  bool ContinuousPictureId(const RTPVideoHeaderVP9& vp9) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     if (last_vp9_.picture_id > vp9.picture_id) {
       return vp9.picture_id == 0;  // Wrap.
     } else {
@@ -3015,7 +3038,8 @@ class Vp9HeaderObserver : public test::SendTest {
     return params_.scalability_mode.find("_SHIFT") != std::string::npos;
   }
 
-  void VerifySpatialIdxWithinFrame(const RTPVideoHeaderVP9& vp9) const {
+  void VerifySpatialIdxWithinFrame(const RTPVideoHeaderVP9& vp9) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     bool new_layer = vp9.spatial_idx != last_vp9_.spatial_idx;
     EXPECT_EQ(new_layer, vp9.beginning_of_frame);
     EXPECT_EQ(new_layer, last_vp9_.end_of_frame);
@@ -3023,7 +3047,8 @@ class Vp9HeaderObserver : public test::SendTest {
               vp9.spatial_idx);
   }
 
-  void VerifyTemporalIdxWithinFrame(const RTPVideoHeaderVP9& vp9) const {
+  void VerifyTemporalIdxWithinFrame(const RTPVideoHeaderVP9& vp9) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     if (!IsTemporalShiftEnabled()) {
       EXPECT_EQ(vp9.temporal_idx, last_vp9_.temporal_idx);
       return;
@@ -3046,7 +3071,8 @@ class Vp9HeaderObserver : public test::SendTest {
   }
 
   void VerifyFixedTemporalLayerStructure(const RTPVideoHeaderVP9& vp9,
-                                         uint8_t num_layers) const {
+                                         uint8_t num_layers) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     switch (num_layers) {
       case 0:
         VerifyTemporalLayerStructure0(vp9);
@@ -3065,19 +3091,22 @@ class Vp9HeaderObserver : public test::SendTest {
     }
   }
 
-  void VerifyTemporalLayerStructure0(const RTPVideoHeaderVP9& vp9) const {
+  void VerifyTemporalLayerStructure0(const RTPVideoHeaderVP9& vp9) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     EXPECT_EQ(kNoTl0PicIdx, vp9.tl0_pic_idx);
     EXPECT_EQ(kNoTemporalIdx, vp9.temporal_idx);  // no tid
     // Technically true, but layer indices not available.
     EXPECT_FALSE(vp9.temporal_up_switch);
   }
 
-  void VerifyTemporalLayerStructure1(const RTPVideoHeaderVP9& vp9) const {
+  void VerifyTemporalLayerStructure1(const RTPVideoHeaderVP9& vp9) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     EXPECT_NE(kNoTl0PicIdx, vp9.tl0_pic_idx);
     EXPECT_EQ(0, vp9.temporal_idx);  // 0,0,0,...
   }
 
-  void VerifyTemporalLayerStructure2(const RTPVideoHeaderVP9& vp9) const {
+  void VerifyTemporalLayerStructure2(const RTPVideoHeaderVP9& vp9) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     EXPECT_NE(kNoTl0PicIdx, vp9.tl0_pic_idx);
     EXPECT_GE(vp9.temporal_idx, 0);  // 0,1,0,1,... (tid reset on I-frames).
     EXPECT_LE(vp9.temporal_idx, 1);
@@ -3094,7 +3123,8 @@ class Vp9HeaderObserver : public test::SendTest {
     }
   }
 
-  void VerifyTemporalLayerStructure3(const RTPVideoHeaderVP9& vp9) const {
+  void VerifyTemporalLayerStructure3(const RTPVideoHeaderVP9& vp9) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     EXPECT_NE(kNoTl0PicIdx, vp9.tl0_pic_idx);
     EXPECT_GE(vp9.temporal_idx, 0);  // 0,2,1,2,... (tid reset on I-frames).
     EXPECT_LE(vp9.temporal_idx, 2);
@@ -3115,7 +3145,8 @@ class Vp9HeaderObserver : public test::SendTest {
     }
   }
 
-  void VerifyTl0Idx(const RTPVideoHeaderVP9& vp9) const {
+  void VerifyTl0Idx(const RTPVideoHeaderVP9& vp9) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     if (vp9.tl0_pic_idx == kNoTl0PicIdx)
       return;
 
@@ -3125,7 +3156,8 @@ class Vp9HeaderObserver : public test::SendTest {
     EXPECT_EQ(expected_tl0_idx, vp9.tl0_pic_idx);
   }
 
-  bool IsNewPictureId(const RTPVideoHeaderVP9& vp9) const {
+  bool IsNewPictureId(const RTPVideoHeaderVP9& vp9) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     return frames_sent_ > 0 && (vp9.picture_id != last_vp9_.picture_id);
   }
 
@@ -3151,7 +3183,8 @@ class Vp9HeaderObserver : public test::SendTest {
   //      +-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+
   // V:   | SS  ..        |
   //      +-+-+-+-+-+-+-+-+
-  void VerifyCommonHeader(const RTPVideoHeaderVP9& vp9) const {
+  void VerifyCommonHeader(const RTPVideoHeaderVP9& vp9) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     EXPECT_EQ(kMaxTwoBytePictureId, vp9.max_picture_id);       // M:1
     EXPECT_NE(kNoPictureId, vp9.picture_id);                   // I:1
     EXPECT_EQ(vp9_settings_.flexibleMode, vp9.flexible_mode);  // F
@@ -3219,7 +3252,8 @@ class Vp9HeaderObserver : public test::SendTest {
   }
 
   void CompareConsecutiveFrames(const RtpPacket& rtp_packet,
-                                const RTPVideoHeader& video) const {
+                                const RTPVideoHeader& video) const
+      RTC_RUN_ON(&send_sequence_checker_) {
     const auto& vp9_header =
         std::get<RTPVideoHeaderVP9>(video.video_type_header);
 
@@ -3245,10 +3279,55 @@ class Vp9HeaderObserver : public test::SendTest {
     // Compare with last packet in previous frame.
     if (frames_sent_ == 0)
       return;
-    EXPECT_TRUE(last_vp9_.end_of_frame);
-    EXPECT_TRUE(last_packet_marker_);
-    EXPECT_TRUE(ContinuousPictureId(vp9_header));
+
+    // When the first packet of a key frame is enqueued, the pacer discards any
+    // packets that are still queued for the stream. The previous picture may
+    // therefore be missing its tail, including the packet that carries the
+    // marker bit, or not have been sent at all.
+    const bool is_key_picture = !vp9_header.inter_pic_predicted;
+    if (is_key_picture) {
+      // Pictures that were discarded by the pacer are never observed here, so
+      // the picture id may have advanced by more than one.
+      EXPECT_TRUE(ContinuousPictureId(vp9_header) ||
+                  vp9_header.picture_id > last_vp9_.picture_id)
+          << "Picture id did not move forward. " << DescribeState(rtp_packet);
+      return;
+    }
+    EXPECT_TRUE(last_vp9_.end_of_frame)
+        << "Previous picture was truncated. " << DescribeState(rtp_packet);
+    EXPECT_TRUE(last_packet_marker_)
+        << "Previous picture had no marker bit. " << DescribeState(rtp_packet);
+    EXPECT_TRUE(ContinuousPictureId(vp9_header)) << DescribeState(rtp_packet);
     VerifyTl0Idx(vp9_header);
+  }
+
+  // Dumps the state of the current packet and of the previously observed
+  // packet. Used to give failures enough context to be diagnosed from a log.
+  std::string DescribeState(const RtpPacket& rtp_packet) const
+      RTC_RUN_ON(&send_sequence_checker_) {
+    StringBuilder sb;
+    sb << "packet[seq=" << rtp_packet.SequenceNumber()
+       << " ts=" << rtp_packet.Timestamp() << " marker=" << rtp_packet.Marker()
+       << " size=" << rtp_packet.payload_size() << "]";
+    sb << " previous[";
+    if (last_packet_sequence_number_.has_value()) {
+      sb << "seq=" << *last_packet_sequence_number_;
+    } else {
+      sb << "seq=none";
+    }
+    if (last_packet_timestamp_.has_value()) {
+      sb << " ts=" << *last_packet_timestamp_;
+    } else {
+      sb << " ts=none";
+    }
+    sb << " marker=" << last_packet_marker_
+       << " sid=" << static_cast<int>(last_vp9_.spatial_idx)
+       << " tid=" << static_cast<int>(last_vp9_.temporal_idx)
+       << " picture_id=" << last_vp9_.picture_id
+       << " b=" << last_vp9_.beginning_of_frame
+       << " e=" << last_vp9_.end_of_frame << "]";
+    sb << " frames_sent=" << frames_sent_;
+    return sb.Release();
   }
 
   ScalableVideoController::StreamLayersConfig GetScalabilityConfig() const {
@@ -3266,11 +3345,17 @@ class Vp9HeaderObserver : public test::SendTest {
   const Vp9TestParams params_;
   VideoCodecVP9 vp9_settings_;
   VideoEncoderConfig encoder_config_;
-  bool last_packet_marker_ = false;
-  std::optional<uint16_t> last_packet_sequence_number_;
-  std::optional<uint32_t> last_packet_timestamp_;
-  RTPVideoHeaderVP9 last_vp9_;
-  std::map<int, int> last_temporal_idx_by_spatial_idx_;
+  // Packets are expected to be delivered on a single sequence, which is what
+  // makes the state below safe to use without synchronization.
+  SequenceChecker send_sequence_checker_{SequenceChecker::kDetached};
+  bool last_packet_marker_ RTC_GUARDED_BY(send_sequence_checker_) = false;
+  std::optional<uint16_t> last_packet_sequence_number_
+      RTC_GUARDED_BY(send_sequence_checker_);
+  std::optional<uint32_t> last_packet_timestamp_
+      RTC_GUARDED_BY(send_sequence_checker_);
+  RTPVideoHeaderVP9 last_vp9_ RTC_GUARDED_BY(send_sequence_checker_);
+  std::map<int, int> last_temporal_idx_by_spatial_idx_
+      RTC_GUARDED_BY(send_sequence_checker_);
   Mutex mutex_;
   size_t frames_sent_ = 0;
   int expected_width_ = 0;
@@ -3418,7 +3503,8 @@ void VideoSendStreamTest::TestVp9NonFlexMode(
       expected_height_ -= (expected_height_ % divisibility);
     }
 
-    void InspectHeader(const RTPVideoHeaderVP9& vp9) override {
+    void InspectHeader(const RTPVideoHeaderVP9& vp9) override
+        RTC_RUN_ON(&send_sequence_checker_) {
       bool ss_data_expected = !vp9.inter_pic_predicted &&
                               vp9.beginning_of_frame &&
                               !vp9.inter_layer_predicted;
@@ -3451,7 +3537,11 @@ void VideoSendStreamTest::TestVp9NonFlexMode(
         } else {
           EXPECT_EQ(0, vp9.spatial_idx);
         }
-        if (params_.num_spatial_layers > 1)
+        // When a key frame is enqueued, the pacer flushes any packets of the
+        // previous picture that are still queued for this ssrc. That means the
+        // previous picture may be truncated and its top spatial layer never
+        // observed, so only check this for delta pictures.
+        if (params_.num_spatial_layers > 1 && vp9.inter_pic_predicted)
           EXPECT_EQ(params_.num_spatial_layers - 1, last_vp9_.spatial_idx);
       }
 
@@ -3497,7 +3587,8 @@ TEST_F(VideoSendStreamTest, Vp9NonFlexModeSmallResolution) {
       vp9_settings_.interLayerPred = params_.inter_layer_pred;
     }
 
-    void InspectHeader(const RTPVideoHeaderVP9& vp9_header) override {
+    void InspectHeader(const RTPVideoHeaderVP9& vp9_header) override
+        RTC_RUN_ON(&send_sequence_checker_) {
       if (frames_sent_ > kNumFramesToSend)
         observation_complete_.Set();
     }
@@ -3549,7 +3640,8 @@ TEST_F(VideoSendStreamTest, MAYBE_Vp9FlexModeRefCount) {
       vp9_settings_.interLayerPred = params_.inter_layer_pred;
     }
 
-    void InspectHeader(const RTPVideoHeaderVP9& vp9_header) override {
+    void InspectHeader(const RTPVideoHeaderVP9& vp9_header) override
+        RTC_RUN_ON(&send_sequence_checker_) {
       EXPECT_TRUE(vp9_header.flexible_mode);
       EXPECT_EQ(kNoTl0PicIdx, vp9_header.tl0_pic_idx);
       if (vp9_header.inter_pic_predicted) {

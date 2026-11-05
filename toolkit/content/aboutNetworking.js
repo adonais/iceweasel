@@ -137,8 +137,25 @@ function displayDns(data) {
   let trr_url_tbody = document.createElement("tbody");
   trr_url_tbody.id = "dns_trr_url";
   let trr_url = document.createElement("tr");
-  trr_url.appendChild(col(Services.dns.currentTrrURI));
-  trr_url.appendChild(col(Services.dns.currentTrrMode));
+  let current_trr_uri = Services.dns.currentTrrURI;
+  let current_trr_mode = Services.dns.currentTrrMode;
+  switch (current_trr_mode) {
+    case Ci.nsIDNSService.MODE_NATIVEONLY:
+    case Ci.nsIDNSService.MODE_TRROFF:
+      current_trr_mode = "Off";
+      current_trr_uri = "";
+      break;
+    case Ci.nsIDNSService.MODE_TRRFIRST:
+      current_trr_mode = "TRR first";
+      break;
+    case Ci.nsIDNSService.MODE_TRRONLY:
+      current_trr_mode = "TRR only";
+      break;
+    default:
+      break;
+  }
+  trr_url.appendChild(col(current_trr_uri));
+  trr_url.appendChild(col(current_trr_mode));
   trr_url_tbody.appendChild(trr_url);
   let prevURL = document.getElementById("dns_trr_url");
   prevURL.parentNode.replaceChild(trr_url_tbody, prevURL);

@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/environment/environment.h"
 #include "api/payload_type.h"
@@ -40,15 +41,25 @@ class PayloadTypePicker final {
   PayloadTypePicker(PayloadTypePicker&&) = delete;
   PayloadTypePicker& operator=(PayloadTypePicker&&) = delete;
   // Suggest a payload type for the codec.
-  // If the excluder maps it to something different, don't suggest it.
   RTCErrorOr<PayloadType> SuggestMapping(Codec codec,
-                                         const PayloadTypeRecorder* excluder,
                                          bool pick_from_top_of_range = false);
   RTCError AddMapping(PayloadType payload_type, Codec codec);
   std::optional<Codec> LookupCodec(PayloadType payload_type) const;
   bool IsSeen(PayloadType payload_type) const {
-    return seen_payload_types_.contains(payload_type.value());
+    return seen_payload_types_.contains(payload_type);
   }
+
+  // Registers a recorder as an owner of payload type reservations. Called by
+  // PayloadTypeRecorder's constructor and destructor; a recorder has to stay
+  // registered for as long as the mappings it holds are in use.
+  void RegisterRecorder(const PayloadTypeRecorder* absl_nonnull recorder);
+  void UnregisterRecorder(const PayloadTypeRecorder* absl_nonnull recorder);
+
+  // Makes the payload types that no registered recorder maps any more
+  // available for reassignment. A payload type is reserved as soon as it is
+  // suggested, so without this a codec that ended up not being negotiated
+  // would keep its payload type reserved for the lifetime of the picker.
+  void ReleaseUnusedPayloadTypes();
 
  private:
   class MapEntry final {
@@ -57,6 +68,7 @@ class PayloadTypePicker final {
         : payload_type_(payload_type), codec_(std::move(codec)) {}
     PayloadType payload_type() const { return payload_type_; }
     Codec codec() const { return codec_; }
+    void set_codec(Codec codec) { codec_ = std::move(codec); }
 
    private:
     PayloadType payload_type_;
@@ -68,6 +80,12 @@ class PayloadTypePicker final {
   };
   std::vector<MapEntry> entries_;
   flat_set<PayloadType> seen_payload_types_;
+  // The well known payload types that the constructor seeds. These stay
+  // reserved even when no recorder maps them, so that codecs keep getting
+  // their customary payload types.
+  flat_set<PayloadType> default_payload_types_;
+  // The recorders that currently own payload type reservations.
+  flat_set<const PayloadTypeRecorder* absl_nonnull> recorders_;
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const PayloadTypePicker& picker) {
     sink.Append("Reserved:");
@@ -84,14 +102,25 @@ class PayloadTypePicker final {
 class PayloadTypeRecorder final {
  public:
   explicit PayloadTypeRecorder(PayloadTypePicker& suggester)
-      : suggester_(suggester) {}
+      : suggester_(suggester) {
+    suggester_.RegisterRecorder(this);
+  }
+  PayloadTypeRecorder(const PayloadTypeRecorder&) = delete;
+  PayloadTypeRecorder& operator=(const PayloadTypeRecorder&) = delete;
+  PayloadTypeRecorder(PayloadTypeRecorder&&) = delete;
+  PayloadTypeRecorder& operator=(PayloadTypeRecorder&&) = delete;
   ~PayloadTypeRecorder() {
     // Ensure consistent use of paired Disallow/ReallowRedefintion calls.
     RTC_DCHECK(disallow_redefinition_level_ == 0);
+    suggester_.UnregisterRecorder(this);
   }
 
   RTCError AddMapping(PayloadType payload_type, Codec codec);
-  std::vector<std::pair<PayloadType, Codec>> GetMappings() const;
+  // Adds the payload types that this recorder currently maps to
+  // `payload_types`.
+  void AddPayloadTypesTo(flat_set<PayloadType>& payload_types) const;
+  // Drops the mappings whose payload type is not in `payload_types`.
+  void RetainOnly(const flat_set<PayloadType>& payload_types);
   RTCErrorOr<PayloadType> LookupPayloadType(Codec codec) const;
   RTCErrorOr<Codec> LookupCodec(PayloadType payload_type) const;
   // Redefinition guard.
@@ -102,16 +131,10 @@ class PayloadTypeRecorder final {
   // been called more times than Reallow, redefinition is prohibited.
   void DisallowRedefinition();
   void ReallowRedefinition();
-  // Transaction support.
-  // Commit() commits previous changes.
-  void Commit();
-  // Rollback() rolls back to the previous checkpoint.
-  void Rollback();
 
  private:
   PayloadTypePicker& suggester_;
   flat_map<PayloadType, Codec> payload_type_to_codec_;
-  flat_map<PayloadType, Codec> checkpoint_payload_type_to_codec_;
   int disallow_redefinition_level_ = 0;
   flat_set<PayloadType> accepted_definitions_;
 };
@@ -127,15 +150,10 @@ class RtpHeaderExtensionRecorder final {
   RTCErrorOr<RtpHeaderExtensionId> LookupId(absl::string_view uri,
                                             bool encrypt) const;
 
-  void Commit();
-  void Rollback();
-
  private:
   const Environment env_;
   // (uri, encrypt) -> id
   flat_map<std::pair<std::string, bool>, RtpHeaderExtensionId> uri_to_id_;
-  flat_map<std::pair<std::string, bool>, RtpHeaderExtensionId>
-      checkpoint_uri_to_id_;
 };
 
 class RtpHeaderExtensionPicker final {

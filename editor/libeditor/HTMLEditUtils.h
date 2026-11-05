@@ -64,6 +64,7 @@ class HTMLEditUtils final {
  public:
   static constexpr char16_t kNewLine = '\n';
   static constexpr char16_t kCarriageReturn = '\r';
+  static constexpr char16_t kFormFeed = '\f';
   static constexpr char16_t kTab = '\t';
   static constexpr char16_t kSpace = ' ';
   static constexpr char16_t kNBSP = 0x00A0;

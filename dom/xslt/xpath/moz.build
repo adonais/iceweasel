@@ -54,3 +54,18 @@ LOCAL_INCLUDES += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "txExpr.h",
+    "txExprLexer.h",
+    "txExprParser.h",
+    "txExprResult.h",
+    "txForwardContext.h",
+    "txNodeSet.h",
+    "txNodeSetContext.h",
+    "txResultRecycler.h",
+    "txSingleNodeContext.h",
+    "txXPathNode.h",
+    "txXPathOptimizer.h",
+    "txXPathTreeWalker.h",
+]

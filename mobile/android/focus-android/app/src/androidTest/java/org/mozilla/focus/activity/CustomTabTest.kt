@@ -22,6 +22,7 @@ import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.FocusTestRule
 import org.mozilla.focus.helpers.TestAssetHelper.genericAsset
 import org.mozilla.focus.helpers.TestAssetHelper.getGenericTabAsset
+import org.mozilla.focus.helpers.TestAssetHelper.windowOpenAsset
 import org.mozilla.focus.helpers.TestHelper.createCustomTabIntent
 import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.waitingTime
@@ -126,5 +127,24 @@ class CustomTabTest {
             .clickReloadButton {
                 verifyPageContent(secondPage.content)
             }
+    }
+
+    @Test
+    fun openNewWindowRequestsInNewCustomTabTest() {
+        val windowOpenPage = webServerRule.server.windowOpenAsset
+        val secondPage = webServerRule.server.getGenericTabAsset(2)
+        val thirdPage = webServerRule.server.getGenericTabAsset(3)
+
+        launchActivity<IntentReceiverActivity>(createCustomTabIntent(windowOpenPage.url))
+        customTab {
+            verifyPageTitle(windowOpenPage.title)
+            clickLinkMatchingText("Open link in new window")
+            verifyPageTitle(secondPage.title)
+
+            closeCustomTab()
+            verifyPageTitle(windowOpenPage.title)
+            clickLinkMatchingText("Open window with script")
+            verifyPageTitle(thirdPage.title)
+        }
     }
 }

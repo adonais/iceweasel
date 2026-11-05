@@ -9,6 +9,7 @@
  */
 #include "rtc_tools/rtc_event_log_visualizer/log_scream_simulation.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <optional>
 #include <vector>
@@ -33,7 +34,9 @@ namespace webrtc {
 
 LogScreamSimulation::LogScreamSimulation(const Config& config,
                                          const Environment& env)
-    : env_(env), send_rate_tracker_(config.rate_window) {
+    : env_(env),
+      params_(env.field_trials()),
+      send_rate_tracker_(config.rate_window) {
   // Scream is recreated if candidates change.
   scream_.emplace(env_);
   scream_->SetTargetBitrateConstraints(
@@ -129,10 +132,14 @@ void LogScreamSimulation::OnIceConfig(
         remote_candidate_type_ != candidate.remote_candidate_type) {
       // Recreate Scream. This is inline with behaviour in
       // ScreamNetworkController::OnNetworkRouteChange.
+      DataRate start_rate = DataRate::KilobitsPerSec(300);
+      if (scream_.has_value() && params_.safe_reset_on_route_change) {
+        start_rate = std::min(scream_->target_rate(), start_rate);
+      }
       scream_.emplace(env_);
       scream_->SetTargetBitrateConstraints(
           /*min=*/DataRate::Zero(), /*max=*/DataRate::PlusInfinity(),
-          /*start=*/DataRate::KilobitsPerSec(300));
+          /*start=*/start_rate);
       local_candidate_type_ = candidate.local_candidate_type;
       remote_candidate_type_ = candidate.remote_candidate_type;
       feedback_history_.clear();

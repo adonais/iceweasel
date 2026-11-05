@@ -78,6 +78,23 @@
       <menupopup/>
     </menu>
   </menupopup>
+  <menupopup id="auto-nested">
+    <menuitem label="Copy" accesskey="c"/>
+    <menugroup>
+      <menugroup>
+        <menuitem label="Nested" auto-accesskey=""/>
+      </menugroup>
+    </menugroup>
+  </menupopup>
+  <menupopup id="auto-disabled">
+    <menuitem label="One" accesskey="1" disabled="true"/>
+    <menuitem label="翻译" auto-accesskey=""/>
+  </menupopup>
+  <menupopup id="auto-disabled-keyed">
+    <menuitem label="Paste" accesskey="p" disabled="true"/>
+    <menuitem label="Manage"/>
+    <menuitem label="Run" auto-accesskey=""/>
+  </menupopup>
   <menupopup id="auto-others-unkeyed">
     <menuitem label="Manage"/>
     <menuitem label="Move" auto-accesskey="" accesskey="m"/>
@@ -301,6 +318,51 @@ add_task(async function testAutoAccessKeys() {
     "P",
     "The accesskey follows a changed label when the popup opens again"
   );
+});
+
+add_task(async function testAutoAccessKeysNestedAndAdded() {
+  let popup = document.getElementById("auto-nested");
+  let added = document.createXULElement("menuitem");
+  added.setAttribute("label", "Added");
+  added.setAttribute("auto-accesskey", "");
+  popup.addEventListener("popupshowing", () => popup.append(added), {
+    once: true,
+  });
+  await openAndCollectErrors("auto-nested");
+  is(
+    popup.querySelector("menugroup [auto-accesskey]").getAttribute("accesskey"),
+    "N",
+    "An item inside a nested menugroup gets an accesskey"
+  );
+  is(
+    added.getAttribute("accesskey"),
+    "A",
+    "An item added by a popupshowing listener gets an accesskey"
+  );
+  added.remove();
+});
+
+add_task(async function testAutoAccessKeysDisabledItems() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.skipNavigatingDisabledMenuItem", 1]],
+  });
+  await openAndCollectErrors("auto-disabled");
+  is(
+    document
+      .querySelector("#auto-disabled [auto-accesskey]")
+      .getAttribute("accesskey"),
+    "2",
+    "A disabled item's accesskey stays taken"
+  );
+  await openAndCollectErrors("auto-disabled-keyed");
+  is(
+    document
+      .querySelector("#auto-disabled-keyed [auto-accesskey]")
+      .getAttribute("accesskey"),
+    "R",
+    "A disabled item with an accesskey counts as another item with an accesskey"
+  );
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function testAutoAccessKeysOthersUnkeyed() {

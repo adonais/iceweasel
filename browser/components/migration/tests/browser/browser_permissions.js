@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { ChromeProfileMigrator } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/migration/ChromeProfileMigrator.sys.mjs"
+);
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.migrate.chrome.get_permissions.enabled", true]],
@@ -93,6 +97,32 @@ add_task(async function test_permissions() {
       BrowserTestUtils.isVisible(noPermissionsMessage),
       "No permissions message shown."
     );
+    let step2 = shadow.querySelector(
+      ".migration-no-permissions-instructions-step2"
+    );
+    // The instructions are first translated without the path, and again once
+    // the selected browser's path is set.
+    let isMacOS = AppConstants.platform == "macosx";
+    await BrowserTestUtils.waitForMutationCondition(
+      step2,
+      { childList: true, subtree: true, characterData: true },
+      () =>
+        isMacOS
+          ? step2.textContent.includes("file picker")
+          : step2.textContent.includes("/some/path")
+    );
+    if (isMacOS) {
+      Assert.equal(
+        step2.textContent.trim(),
+        "In the file picker, choose “Open”",
+        "Tells macOS users to choose Open."
+      );
+    } else {
+      Assert.ok(
+        step2.textContent.includes("/some/path"),
+        "Shows the path to navigate to."
+      );
+    }
     let getPermissionButton = shadow.querySelector("#get-permissions");
     Assert.ok(
       BrowserTestUtils.isVisible(getPermissionButton),
@@ -163,4 +193,87 @@ add_task(async function test_permissions() {
       object: "wizard",
     }
   );
+
+  sandbox.restore();
+});
+
+/**
+ * Tests that the browser that permission was granted for stays selected
+ * after the list of browsers is refreshed, even if another browser comes
+ * first in that list.
+ */
+add_task(async function test_selection_kept_after_permissions() {
+  let sandbox = sinon.createSandbox();
+  registerCleanupFunction(() => {
+    sandbox.restore();
+  });
+
+  sandbox.stub(MigrationUtils, "availableMigratorKeys").get(() => {
+    return [InternalTestingProfileMigrator.key, ChromeProfileMigrator.key];
+  });
+
+  // Make Chrome the most recently used browser, so that it comes first.
+  sandbox
+    .stub(ChromeProfileMigrator.prototype, "getSourceProfiles")
+    .resolves([{ id: "chrome-test", name: "Chrome test profile" }]);
+  sandbox
+    .stub(ChromeProfileMigrator.prototype, "hasPermissions")
+    .resolves(true);
+  sandbox
+    .stub(ChromeProfileMigrator.prototype, "getResources")
+    .resolves([
+      { type: MigrationUtils.resourceTypes.BOOKMARKS, migrate: () => {} },
+    ]);
+  sandbox
+    .stub(ChromeProfileMigrator.prototype, "getLastUsedDate")
+    .resolves(new Date());
+
+  sandbox
+    .stub(InternalTestingProfileMigrator.prototype, "canGetPermissions")
+    .resolves("/some/path");
+  let hasPermissionsStub = sandbox
+    .stub(InternalTestingProfileMigrator.prototype, "hasPermissions")
+    .resolves(false);
+  let testingMigrator = await MigrationUtils.getMigrator(
+    InternalTestingProfileMigrator.key
+  );
+  sandbox.stub(testingMigrator, "getPermissions").callsFake(async () => {
+    testingMigrator.flushResourceCache();
+    hasPermissionsStub.resolves(true);
+    return true;
+  });
+  let getResourcesStub = sandbox
+    .stub(testingMigrator, "getResources")
+    .resolves([]);
+
+  await withMigrationWizardDialog(async prefsWin => {
+    let wizard = prefsWin.document.body.querySelector("migration-wizard");
+    let shadow = wizard.openOrClosedShadowRoot;
+    let selector = shadow.querySelector("#browser-profile-selector");
+    Assert.equal(
+      selector.selectedPanelItem.getAttribute("key"),
+      ChromeProfileMigrator.key,
+      "Chrome is selected first."
+    );
+
+    shadow
+      .querySelector(`panel-item[key="${InternalTestingProfileMigrator.key}"]`)
+      .click();
+
+    getResourcesStub.restore();
+    let refreshDone = BrowserTestUtils.waitForEvent(
+      wizard,
+      "MigrationWizard:Ready"
+    );
+    shadow.querySelector("#get-permissions").click();
+    await refreshDone;
+
+    Assert.equal(
+      selector.selectedPanelItem.getAttribute("key"),
+      InternalTestingProfileMigrator.key,
+      "The browser that permission was granted for is still selected."
+    );
+  });
+
+  sandbox.restore();
 });

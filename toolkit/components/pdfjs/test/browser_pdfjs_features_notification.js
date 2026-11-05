@@ -126,7 +126,7 @@ add_task(async function test_shown_styled_layout_and_dismiss() {
   await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function test_cta_navigates_to_features() {
+add_task(async function test_cta_opens_features_in_new_tab() {
   await SpecialPowers.pushPrefEnv({
     set: [[IMPRESSION_COUNT_PREF, 0]],
   });
@@ -134,7 +134,16 @@ add_task(async function test_cta_navigates_to_features() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async browser => {
-      await waitForPdfJS(browser, TESTROOT + "file_pdfjs_test.pdf");
+      const pdfUrl = TESTROOT + "file_pdfjs_test.pdf";
+      await waitForPdfJS(browser, pdfUrl);
+      const pdfTab = gBrowser.selectedTab;
+      const tabCount = gBrowser.tabs.length;
+
+      // Reject requests without user activation.
+      await SpecialPowers.spawn(browser, [], () => {
+        content.document.consumeTransientUserGestureActivation();
+        content.wrappedJSObject.PDFViewerApplication.externalServices.openAboutPdfFeatures();
+      });
 
       await SpecialPowers.spawn(browser, [], async () => {
         const bar = content.document.getElementById("pdfFeaturesNotification");
@@ -179,12 +188,10 @@ add_task(async function test_cta_navigates_to_features() {
       contextMenu.hidePopup();
       await popupHidden;
 
-      const locationChanged = BrowserTestUtils.waitForLocationChange(
+      const newTabOpened = BrowserTestUtils.waitForNewTab(
         gBrowser,
-        "about:pdf#features"
-      );
-      const loaded = BrowserTestUtils.browserLoaded(browser, false, url =>
-        url.startsWith("about:pdf")
+        "about:pdf#features",
+        true
       );
       await SpecialPowers.spawn(browser, [], () => {
         const cta = content.document.querySelector(
@@ -202,14 +209,19 @@ add_task(async function test_cta_navigates_to_features() {
           content
         );
       });
-      await Promise.all([locationChanged, loaded]);
+      const featuresTab = await newTabOpened;
 
-      await SpecialPowers.spawn(browser, [], async () => {
-        Assert.equal(
-          content.location.href,
-          "about:pdf#features",
-          "CTA opens the features destination"
-        );
+      Assert.equal(
+        gBrowser.tabs.length,
+        tabCount + 1,
+        "only the CTA activation opened a tab"
+      );
+      Assert.equal(
+        gBrowser.selectedTab,
+        featuresTab,
+        "the features tab is in the foreground"
+      );
+      await SpecialPowers.spawn(featuresTab.linkedBrowser, [], async () => {
         await ContentTaskUtils.waitForCondition(
           () =>
             content.document.getElementById("features-view").checkVisibility(),
@@ -217,22 +229,20 @@ add_task(async function test_cta_navigates_to_features() {
         );
       });
 
-      const pdfUrl = TESTROOT + "file_pdfjs_test.pdf";
-      const backToPdf = BrowserTestUtils.waitForLocationChange(
-        gBrowser,
-        pdfUrl
-      );
+      Assert.equal(browser.currentURI.spec, pdfUrl, "the PDF tab stays put");
       await SpecialPowers.spawn(browser, [], () => {
-        content.document.getElementById("features-back").click();
-      });
-      await backToPdf;
-      Assert.equal(browser.currentURI.spec, pdfUrl, "Back returns to the PDF");
-      await SpecialPowers.spawn(browser, [], async () => {
-        await ContentTaskUtils.waitForCondition(
-          () => content.wrappedJSObject.PDFViewerApplication?.pdfDocument,
-          "the PDF viewer has loaded the document after Back"
+        Assert.ok(
+          content.wrappedJSObject.PDFViewerApplication.pdfDocument,
+          "the PDF viewer keeps its document"
         );
       });
+
+      BrowserTestUtils.removeTab(featuresTab);
+      Assert.equal(
+        gBrowser.selectedTab,
+        pdfTab,
+        "closing the features tab returns to the PDF"
+      );
 
       await waitForPdfJSClose(browser);
     }

@@ -4,6 +4,8 @@
 
 #include "PerformanceMainThread.h"
 
+#include <memory>
+
 #include "LargestContentfulPaint.h"
 #include "PerformanceContainerTiming.h"
 #include "PerformanceEventTiming.h"
@@ -671,8 +673,8 @@ void PerformanceMainThread::CreateNavigationTimingEntry() {
   nsAutoString name;
   GetURLSpecFromChannel(mChannel, name);
 
-  UniquePtr<PerformanceTimingData> timing(
-      new PerformanceTimingData(mChannel, nullptr, 0));
+  UniquePtr<PerformanceTimingData> timing =
+      std::make_unique<PerformanceTimingData>(mChannel, nullptr, 0);
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
   if (httpChannel) {

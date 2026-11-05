@@ -37,3 +37,6 @@ browser.jar:
    content/browser/preferences/dialogs/syncChooseWhatToSync.xhtml
    content/browser/preferences/dialogs/syncChooseWhatToSync.js
    content/browser/preferences/dialogs/translations.xhtml
+   content/browser/preferences/dialogs/vpnSiteRule.xhtml
+   content/browser/preferences/dialogs/vpnSiteRule.js
+   content/browser/preferences/dialogs/vpnSiteRule.css

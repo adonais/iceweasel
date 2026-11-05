@@ -97,7 +97,7 @@ class Sdp {
   virtual SdpMediaSection& GetMediaSection(size_t level) = 0;
 
   virtual SdpMediaSection& AddMediaSection(
-      const SdpMediaSection::MediaType media,
+      const SdpMediaSection::MediaTypeInfo media,
       const SdpDirectionAttribute::Direction dir, const uint16_t port,
       const SdpMediaSection::Protocol proto, const sdp::AddrType addrType,
       const std::string& addr) = 0;

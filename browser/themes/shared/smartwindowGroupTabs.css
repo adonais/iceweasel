@@ -291,7 +291,7 @@
 }
 
 .swgt-create-all-icon {
-  mask-image: url("chrome://global/skin/icons/edit-copy.svg");
+  mask-image: url("chrome://browser/skin/tabbrowser/tab-groups.svg");
 }
 
 .swgt-ungroup-icon {

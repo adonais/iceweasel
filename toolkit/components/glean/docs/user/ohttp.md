@@ -65,6 +65,9 @@ if you'd like to see existing uses in tree.
       generate the necessary code to recognize this ping as needing OHTTP transport.
       It is read in the uploader to ensure the ping is only sent using OHTTP.
 2. [Test your instrumentation][instrumentation-tests].
+    * To assert that your ping is going over OHTTP, you can use an approach similar to
+      {searchfox}`toolkit/components/glean/tests/xpcshell/test_OHTTP.js`
+      and set up a local OHTTP-capable server.
 
 And that's it!
 

@@ -11,6 +11,7 @@ import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.concept.engine.permission.SitePermissions.AutoplayStatus
@@ -43,7 +44,7 @@ class OnDeviceSitePermissionsStorageTest {
     @Before
     fun setUp() {
         database = Room.inMemoryDatabaseBuilder(context, SitePermissionsDatabase::class.java).build()
-        storage = OnDiskSitePermissionsStorage(context)
+        storage = OnDiskSitePermissionsStorage(context, coroutineScope = TestScope())
         storage.databaseInitializer = {
             database
         }
@@ -241,17 +242,17 @@ class OnDeviceSitePermissionsStorageTest {
             execSQL(
                 """
                     INSERT INTO site_permissions (
-                        origin, 
-                        location, 
-                        notification, 
-                        microphone, 
-                        camera, 
-                        bluetooth, 
-                        local_storage, 
-                        autoplay_audible, 
-                        autoplay_inaudible, 
-                        media_key_system_access, 
-                        cross_origin_storage_access, 
+                        origin,
+                        location,
+                        notification,
+                        microphone,
+                        camera,
+                        bluetooth,
+                        local_storage,
+                        autoplay_audible,
+                        autoplay_inaudible,
+                        media_key_system_access,
+                        cross_origin_storage_access,
                         saved_at)
                     VALUES ('${url.tryGetHostFromUrl()}',1,1,1,1,1,1,0,0,1,1,0)
                 """

@@ -133,6 +133,6 @@ telemetry
 skylight
 ```
 
-[messaging system schemas]: https://firefox-source-docs.mozilla.org/toolkit/components/messaging-system/docs/index.html#messaging-system-schemas
-[triggers]: https://firefox-source-docs.mozilla.org/toolkit/components/messaging-system/docs/TriggerActionSchemas/index.html
-[user actions]: https://firefox-source-docs.mozilla.org/toolkit/components/messaging-system/docs/SpecialMessageActionSchemas/index.html
+[messaging system schemas]: /toolkit/components/messaging-system/docs/index.md#messaging-system-schemas
+[triggers]: /toolkit/components/messaging-system/docs/TriggerActionSchemas/index.md
+[user actions]: /toolkit/components/messaging-system/docs/SpecialMessageActionSchemas/index.md

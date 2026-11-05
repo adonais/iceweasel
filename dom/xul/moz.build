@@ -90,3 +90,12 @@ LOCAL_INCLUDES += [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "MenuBarListener.h",
+    "nsXULContentSink.h",
+    "nsXULContentUtils.h",
+    "nsXULControllers.h",
+    "nsXULPopupListener.h",
+    "nsXULPrototypeCache.h",
+]

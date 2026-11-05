@@ -10,7 +10,8 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TestInterfaceSetlikeNode, mParent)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TestInterfaceSetlikeNode, mSetData,
+                                      mParent)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(TestInterfaceSetlikeNode)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(TestInterfaceSetlikeNode)

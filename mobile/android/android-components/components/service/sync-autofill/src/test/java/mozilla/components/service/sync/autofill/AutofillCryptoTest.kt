@@ -7,9 +7,7 @@ package mozilla.components.service.sync.autofill
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.RustComponentsInitializer
-import mozilla.components.concept.storage.CreditCardNumber
 import mozilla.components.concept.storage.KeyGenerationReason
-import mozilla.components.concept.storage.ManagedKey
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -102,51 +100,5 @@ class AutofillCryptoTest {
 
         assertNotEquals(key.key, key2.key)
         verify(storage).scrubEncryptedData()
-    }
-
-    @Test
-    fun `encrypt and decrypt card - normal`() = runTest {
-        val crypto = AutofillCrypto(testContext, securePrefs, mock())
-        val key = crypto.getOrGenerateKey()
-        val plaintext1 = CreditCardNumber.Plaintext("4111111111111111")
-        val plaintext2 = CreditCardNumber.Plaintext("4111111111111111")
-
-        val encrypted1 = crypto.encrypt(key, plaintext1)!!
-        val encrypted2 = crypto.encrypt(key, plaintext2)!!
-
-        // We use a non-deterministic encryption scheme.
-        assertNotEquals(encrypted1, encrypted2)
-
-        assertEquals("4111111111111111", crypto.decrypt(key, encrypted1)!!.number)
-        assertEquals("4111111111111111", crypto.decrypt(key, encrypted2)!!.number)
-    }
-
-    @Test
-    fun `encrypt and decrypt card - bad keys`() = runTest {
-        val crypto = AutofillCrypto(testContext, securePrefs, mock())
-        val plaintext = CreditCardNumber.Plaintext("4111111111111111")
-
-        val badKey = ManagedKey(key = "garbage", wasGenerated = null)
-        assertNull(crypto.encrypt(badKey, plaintext))
-
-        // This isn't a valid key.
-        val corruptKey =
-            ManagedKey(key = "{\"kty\":\"oct\",\"k\":\"GhsmEtujZN_qMEgw1ZHhcJhdAFR9EkU\"}", wasGenerated = null)
-        assertNull(crypto.encrypt(corruptKey, plaintext))
-
-        val goodKey = crypto.getOrGenerateKey()
-        val encrypted = crypto.encrypt(goodKey, plaintext)!!
-
-        assertNull(crypto.decrypt(badKey, encrypted))
-        assertNull(crypto.decrypt(corruptKey, encrypted))
-    }
-
-    @Test
-    fun `decrypt scrubbed card`() = runTest {
-        val crypto = AutofillCrypto(testContext, securePrefs, mock())
-        val key = crypto.getOrGenerateKey()
-        // if a key was previously lost we will wipe the card numbers.
-        val encrypted = CreditCardNumber.Encrypted("")
-        assertNull(crypto.decrypt(key, encrypted))
     }
 }

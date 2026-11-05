@@ -68,6 +68,14 @@ static int ARGBTranspose(const uint8_t* src_argb,
     ScaleARGBRowDownEven = ScaleARGBRowDownEven_RVV;
   }
 #endif
+#if defined(HAS_SCALEARGBROWDOWNEVEN_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    ScaleARGBRowDownEven = ScaleARGBRowDownEven_Any_WASMSIMD;
+    if (IS_ALIGNED(height, 4)) {  // Width of dest.
+      ScaleARGBRowDownEven = ScaleARGBRowDownEven_WASMSIMD;
+    }
+  }
+#endif
 
   for (i = 0; i < width; ++i) {  // column of source to row of dest.
     ScaleARGBRowDownEven(src_argb, 0, src_pixel_step, dst_argb, height);
@@ -152,6 +160,11 @@ static int ARGBRotate180(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBMIRRORROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBMirrorRow = ARGBMirrorRow_AVX512BW;
+  }
+#endif
 #if defined(HAS_ARGBMIRRORROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     ARGBMirrorRow = ARGBMirrorRow_Any_LSX;
@@ -165,6 +178,14 @@ static int ARGBRotate180(const uint8_t* src_argb,
     ARGBMirrorRow = ARGBMirrorRow_Any_LASX;
     if (IS_ALIGNED(width, 16)) {
       ARGBMirrorRow = ARGBMirrorRow_LASX;
+    }
+  }
+#endif
+#if defined(HAS_ARGBMIRRORROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    ARGBMirrorRow = ARGBMirrorRow_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBMirrorRow = ARGBMirrorRow_WASMSIMD;
     }
   }
 #endif

@@ -150,7 +150,7 @@ function run_test() {
     var refName = "image1png16x16.jpg";
     var refFile = do_get_file(refName);
     istream = getFileInputStream(refFile);
-    Assert.equal(istream.available(), 1051);
+    Assert.equal(istream.available(), 1050);
     var referenceBytes = streamToArray(istream);
 
     // compare the encoder's output to the reference file.
@@ -168,7 +168,7 @@ function run_test() {
     refName = "image1png64x64.jpg";
     refFile = do_get_file(refName);
     istream = getFileInputStream(refFile);
-    Assert.equal(istream.available(), 4507);
+    Assert.equal(istream.available(), 4513);
     referenceBytes = streamToArray(istream);
 
     // compare the encoder's output to the reference file.
@@ -689,7 +689,7 @@ function run_test() {
     refName = "image1.webp";
     refFile = do_get_file(refName);
     istream = getFileInputStream(refFile);
-    Assert.equal(istream.available(), 3206);
+    Assert.equal(istream.available(), 3210);
     referenceBytes = streamToArray(istream);
 
     // compare the encoder's output to the reference file.
@@ -722,7 +722,7 @@ function run_test() {
     refName = "image1quality50.webp";
     refFile = do_get_file(refName);
     istream = getFileInputStream(refFile);
-    Assert.equal(istream.available(), 1944);
+    Assert.equal(istream.available(), 1956);
     referenceBytes = streamToArray(istream);
 
     // compare the encoder's output to the reference file.

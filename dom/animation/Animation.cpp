@@ -1231,6 +1231,12 @@ static void RangeBoundaryToTimelineRangeValue(
   }
   // else: a bare <length-percentage>, so rangeName is left null.
 
+  // If CSS Typed OM is disabled, we are not able to set the CSSNumericValue,
+  // i.e. TimelineRangeOffset.offset below, so return early.
+  if (!StaticPrefs::layout_css_typed_om_enabled()) {
+    return;
+  }
+
   // Serialize the computed offset and re-parse it into a CSSNumericValue so
   // percentages, absolute lengths and calc() (including length/percentage
   // mixes) all round-trip. The text came from the style system, so parsing it

@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Maybe.h"   // for Some, Maybe
-#include "mozilla/Span.h"    // for Span
-#include "mozilla/Vector.h"  // for Vector
+#include "mozilla/FloatingPoint.h"  // for NumberEqualsInt64
+#include "mozilla/Maybe.h"          // for Some, Maybe
+#include "mozilla/Span.h"           // for Span
+#include "mozilla/Vector.h"         // for Vector
 
 #include <stddef.h>  // for ptrdiff_t
 #include <stdint.h>  // for uint32_t, UINT32_MAX, SIZE_MAX, int32_t
@@ -556,20 +557,14 @@ bool DebuggerScript::CallData::getChildScripts() {
 }
 
 static bool ScriptOffset(JSContext* cx, const Value& v, size_t* offsetp) {
-  double d;
-  size_t off;
-
-  bool ok = v.isNumber();
-  if (ok) {
-    d = v.toNumber();
-    off = size_t(d);
-  }
-  if (!ok || off != d) {
+  int64_t off;
+  if (!v.isNumber() || !mozilla::NumberEqualsInt64(v.toNumber(), &off) ||
+      off < 0 || off > UINT32_MAX) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_DEBUG_BAD_OFFSET);
     return false;
   }
-  *offsetp = off;
+  *offsetp = static_cast<size_t>(off);
   return true;
 }
 

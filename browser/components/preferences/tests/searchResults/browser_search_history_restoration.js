@@ -80,11 +80,6 @@ add_task(async function search_state_restored_via_history() {
  * the sub-pane was entered from a search.
  */
 add_task(async function subpane_back_from_search_restores_query() {
-  if (!SRD_PREF_VALUE) {
-    info("Skipping: sub-panes only exist when settings redesign is enabled");
-    return;
-  }
-
   await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, { leaveOpen: true });
   let win = gBrowser.contentWindow;
   let doc = gBrowser.contentDocument;

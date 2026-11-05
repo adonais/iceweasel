@@ -19,7 +19,7 @@ class ListenStoreTest {
         store.dispatch(ListenAction.Session.ListenRequested("tab-1", "https://example.org/article"))
         assertEquals("tab-1", store.state.tabId)
 
-        store.dispatch(ListenAction.Session.StopRequested)
+        store.dispatch(ListenAction.Session.StopRequested())
         assertNull(store.state.tabId)
     }
 

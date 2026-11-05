@@ -43,9 +43,8 @@ class nsDeviceContextSpecProxy final : public nsIDeviceContextSpec {
 
   RefPtr<mozilla::gfx::PrintEndDocumentPromise> EndDocument() final;
 
-  NS_IMETHOD BeginPage(const IntSize& aSizeInPoints) final;
-
-  NS_IMETHOD EndPage() final;
+  nsresult BeginPage(const IntSize& aSizeInPoints) final;
+  nsresult EndPage() final;
 
  private:
   ~nsDeviceContextSpecProxy();

@@ -61,6 +61,26 @@ add_task(async function () {
   // Clean up
   Services.console.unregisterListener(onNewMessage);
 
+  // The web console shows a message only if it carries the page's inner
+  // window ID, so check that the upgrade message does.
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+    const innerWindowId = content.windowGlobalChild.innerWindowId;
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        Services.console
+          .getMessageArray()
+          .some(
+            msg =>
+              msg instanceof Ci.nsIScriptError &&
+              msg.innerWindowID == innerWindowId &&
+              msg.message.includes("HSTS:") &&
+              msg.message.includes("Upgrading insecure request") &&
+              msg.message.includes("example.com")
+          ),
+      "HSTS upgrade message is reported to the loaded document's window"
+    );
+  });
+
   await SpecialPowers.popPrefEnv();
 });
 
@@ -118,6 +138,46 @@ add_task(async function () {
   );
 
   await SpecialPowers.popPrefEnv();
+});
+
+// Test that an HSTS upgrade of a WebSocket handshake is logged with the
+// WebSocket schemes.
+add_task(async function () {
+  const page =
+    getRootDirectory(gTestPath).replace(
+      "chrome://mochitests/content",
+      "http://test1.example.com"
+    ) + "file_fragment_noscript.html";
+
+  await BrowserTestUtils.withNewTab(page, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      const innerWindowId = content.windowGlobalChild.innerWindowId;
+      await new Promise((resolve, reject) => {
+        const ws = new content.WebSocket(
+          "ws://example.com/tests/dom/security/test/https-only/file_upgrade_insecure"
+        );
+        ws.onopen = () => {
+          ws.close();
+          resolve();
+        };
+        ws.onerror = reject;
+      });
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          Services.console
+            .getMessageArray()
+            .some(
+              msg =>
+                msg instanceof Ci.nsIScriptError &&
+                msg.innerWindowID == innerWindowId &&
+                msg.message.includes("HSTS:") &&
+                msg.message.includes("ws://example.com/") &&
+                msg.message.includes("wss")
+            ),
+        "HSTS upgrade of a WebSocket is reported with the WebSocket schemes"
+      );
+    });
+  });
 });
 
 add_task(async function () {
@@ -186,7 +246,10 @@ function onExamineResponse(subject) {
 function onNewMessage(msgObj) {
   const message = msgObj.message;
   // ensure that request is not upgraded HTTPS-Only.
-  if (message.includes("Upgrading insecure request")) {
+  if (
+    message.includes("HTTPS-Only Mode:") &&
+    message.includes("Upgrading insecure request")
+  ) {
     ok(false, "Top-Level upgrade shouldn't get logged");
     testFinished = true;
   } else if (

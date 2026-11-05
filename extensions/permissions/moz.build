@@ -31,7 +31,7 @@ XPIDL_SOURCES += [
     "nsIRemotePermissionService.idl",
 ]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "RemotePermissionService.sys.mjs",
 ]
 

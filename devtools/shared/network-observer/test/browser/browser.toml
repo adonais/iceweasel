@@ -23,7 +23,6 @@ support-files = [
 ["browser_networkobserver_auth_listener.js"]
 skip-if = [
   "asan", # Disabled for frequent leaks.
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Disabled for frequent leaks in Bug 1873571.
 ]
 
 ["browser_networkobserver_data_url.js"]
@@ -45,6 +44,8 @@ skip-if = [
 ["browser_networkobserver_override.js"]
 
 ["browser_networkobserver_response_body_limit.js"]
+
+["browser_networkobserver_security_info.js"]
 
 ["browser_networkobserver_serviceworker.js"]
 skip-if = [

@@ -72,6 +72,9 @@ class RaptorRunner(MozbuildObject):
 
         if Conditions.is_android(self) or kwargs["app"] in ANDROID_BROWSERS:
             self.binary_path = None
+        elif kwargs["app"] != "firefox":
+            # Raptor picks the installed browser when --binary isn't given.
+            self.binary_path = kwargs.get("binary")
         else:
             self.binary_path = kwargs.get("binary") or self.get_binary_path()
 
@@ -268,20 +271,37 @@ class RaptorRunner(MozbuildObject):
 
 
 def setup_node(command_context):
-    """Fetch the latest node-22 binary and install it into the .mozbuild directory."""
+    """Fetch the pinned node toolchain and install it into the .mozbuild directory."""
     import platform
 
     from mozbuild.artifact_commands import artifact_toolchain
     from mozbuild.nodeutil import find_node_executable
     from packaging.version import Version
 
+    # Pinned because node upgrades change browsertime performance numbers,
+    # see bug 1942260.
+    node_major = 24
+    plat = platform.system()
+    if plat == "Windows":
+        toolchain_platform = "win64"
+    elif plat == "Darwin":
+        if platform.processor() == "arm":
+            toolchain_platform = "macosx64-aarch64"
+        else:
+            toolchain_platform = "macosx64"
+            # Node 24 requires macOS 13.5, so there is no macosx64-node-24.
+            node_major = 22
+    else:
+        toolchain_platform = "linux64"
+    toolchain_job = f"{toolchain_platform}-node-{node_major}"
+
     print("Setting up node for browsertime...")
     state_dir = get_state_dir()
-    cache_path = os.path.join(state_dir, "browsertime", "node-22")
+    cache_path = os.path.join(state_dir, "browsertime", f"node-{node_major}")
 
     def __check_for_node():
         # Check standard locations first
-        node_exe = find_node_executable(min_version=Version("22.0.0"))
+        node_exe = find_node_executable(min_version=Version(f"{node_major}.0.0"))
         if node_exe and (node_exe[0] is not None):
             return node_exe[0]
         if not os.path.exists(cache_path):
@@ -291,20 +311,9 @@ def setup_node(command_context):
         node_name = "node"
         if platform.system() == "Windows":
             node_name = "node.exe"
-            node_exe_path = os.path.join(
-                state_dir,
-                "browsertime",
-                "node-22",
-                "node",
-            )
+            node_exe_path = os.path.join(cache_path, "node")
         else:
-            node_exe_path = os.path.join(
-                state_dir,
-                "browsertime",
-                "node-22",
-                "node",
-                "bin",
-            )
+            node_exe_path = os.path.join(cache_path, "node", "bin")
 
         node_exe = os.path.join(node_exe_path, node_name)
         if not os.path.exists(node_exe):
@@ -314,19 +323,9 @@ def setup_node(command_context):
 
     node_exe = __check_for_node()
     if node_exe is None:
-        toolchain_job = "{}-node-22"
-        plat = platform.system()
-        if plat == "Windows":
-            toolchain_job = toolchain_job.format("win64")
-        elif plat == "Darwin":
-            if platform.processor() == "arm":
-                toolchain_job = toolchain_job.format("macosx64-aarch64")
-            else:
-                toolchain_job = toolchain_job.format("macosx64")
-        else:
-            toolchain_job = toolchain_job.format("linux64")
-
-        print(f"Downloading Node 22 from Taskcluster toolchain {toolchain_job}...")
+        print(
+            f"Downloading Node {node_major} from Taskcluster toolchain {toolchain_job}..."
+        )
 
         if not os.path.exists(cache_path):
             os.makedirs(cache_path, exist_ok=True)
@@ -348,11 +347,13 @@ def setup_node(command_context):
 
         node_exe = __check_for_node()
         if node_exe is None:
-            raise Exception("Could not find Node v22 binary for Raptor-Browsertime")
+            raise Exception(
+                f"Could not find Node v{node_major} binary for Raptor-Browsertime"
+            )
 
-        print("Finished downloading Node v22 from Taskcluster")
+        print(f"Finished downloading Node v{node_major} from Taskcluster")
 
-    print(f"Node v22+ found at: {node_exe}")
+    print(f"Node v{node_major}+ found at: {node_exe}")
     return node_exe
 
 
@@ -411,9 +412,6 @@ def run_raptor(command_context, **kwargs):
                 "****************************************************************************"
             )
             return 1
-        # Disable fission until geckoview supports fission by default.
-        # Need fission on Android? Use '--setpref fission.autostart=true'
-        kwargs["fission"] = False
 
     # Remove mach global arguments from sys.argv to prevent them
     # from being consumed by raptor. Treat any item in sys.argv

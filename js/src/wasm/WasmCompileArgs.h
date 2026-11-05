@@ -25,6 +25,7 @@
 #include "js/Utility.h"
 #include "js/WasmFeatures.h"
 #include "js/WasmModule.h"
+#include "vm/SharedMem.h"
 #include "wasm/WasmBinaryTypes.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmShareable.h"
@@ -488,6 +489,12 @@ class BytecodeBuffer {
   [[nodiscard]]
   static bool fromSource(const BytecodeSource& bytecodeSource,
                          BytecodeBuffer* bytecodeBuffer);
+  // Create a buffer by copying from shared memory that may be concurrently
+  // mutated. The resulting regions are guaranteed to be consistent with the
+  // copied bytes.
+  [[nodiscard]]
+  static bool fromSharedMemory(SharedMem<uint8_t*> begin, size_t length,
+                               BytecodeBuffer* bytecodeBuffer);
 
   // Copying and moving is allowed, we just hold references to the underyling
   // buffers.
@@ -534,6 +541,7 @@ class BytecodeBufferOrSource {
   [[nodiscard]] bool getOrCreateBuffer(BytecodeBuffer* result) const {
     if (hasBuffer()) {
       *result = buffer();
+      return true;
     }
     return BytecodeBuffer::fromSource(source(), result);
   }

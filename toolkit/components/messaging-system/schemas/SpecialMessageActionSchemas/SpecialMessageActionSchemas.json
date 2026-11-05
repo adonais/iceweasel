@@ -343,6 +343,10 @@
                 "source": {
                   "type": "string",
                   "description": "Identitifer of the browser that should be pre-selected in the import migration wizard popup (e.g. 'chrome'), See https://searchfox.org/mozilla-central/rev/8dae1cc76a6b45e05198bc0d5d4edb7bf1003265/browser/components/migration/MigrationUtils.jsm#917"
+                },
+                "tabModal": {
+                  "type": "boolean",
+                  "description": "Open the migration wizard as a dialog over the current tab instead of in about:preferences."
                 }
               },
               "additionalProperties": false
@@ -1154,6 +1158,31 @@
           "required": ["type"],
           "additionalProperties": false,
           "description": "Gets the user's referral code or generates one if it doesn't exist, and opens about:referrals with the code as a param"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["SELECT_AND_MARK_MENU_ITEM"]
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "itemIds": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "minItems": 1,
+                  "description": "Ids of the items to select and mark. The first is in the app menu's main view; each later id is marked once the user opens the subview holding it."
+                }
+              },
+              "required": ["itemIds"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["type", "data"],
+          "additionalProperties": false,
+          "description": "Opens the app menu and marks an item in it, to point the user at a feature."
         }
       ]
     }

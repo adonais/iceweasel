@@ -28,6 +28,7 @@
 #include "nsError.h"
 #include "nsFocusManager.h"
 #include "nsIClipboardOwner.h"
+#include "nsIMutableArray.h"
 #include "nsIPromptService.h"
 #include "nsISupportsPrimitives.h"
 #include "nsXPCOM.h"

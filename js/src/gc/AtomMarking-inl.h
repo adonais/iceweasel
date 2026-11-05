@@ -128,10 +128,10 @@ inline void GCRuntime::maybeMarkWeaklyHeldAtom(T* atom) {
   // Set the mark bits directly since this may be called after normal marking
   // has finished. Implicitly marked edges are handled via weakmap marking which
   // happens after this.
-  (void)atom->asTenured().markIfUnmarked(MarkColor::Black);
+  (void)atom->asTenured().markIfUnmarkedThreadSafe(MarkColor::Black);
   if constexpr (std::is_same_v<T, JS::Symbol>) {
     if (JSAtom* description = atom->description()) {
-      (void)description->asTenured().markIfUnmarked(MarkColor::Black);
+      (void)description->asTenured().markIfUnmarkedThreadSafe(MarkColor::Black);
     }
   }
 }

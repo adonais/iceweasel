@@ -68,7 +68,7 @@ touching it, and `references/fold-resplit.md` once Phase 2 names a
 dead-intermediate model, since Phase 3 chooses between an absorb and a
 fold-resplit by its leaf plan.
 
-# Goals
+## Goals
 
 - Smoothe out the landing process by avoiding known sources of review and landing friction.
 - Reduce cognitive load during review, so that it's easy for the reviewer to spot bugs, and to understand the impact of a change.
@@ -77,28 +77,28 @@ fold-resplit by its leaf plan.
 - Every patch should look "natural" and not depend on later work to justify its existence.
 - No forward references: an earlier patch's code and comments can't mention a concept that only a later patch introduces.
 
-# Strategies to minimize friction
+## Strategies to minimize friction
 
 - "Land-early nuggets": Often, a larger change will include small tweaks which are orthogonal to the goal of the larger change, but which are non-controversial and which make sense to adopt even if the larger change is rejected. Find those nuggets of value and pull them out into patches that go *before* the larger work - they can be reviewed quickly and will reduce the amount of rebasing that has to happen for the larger change if that one is stuck in review for a while.
 - Refactor first, then change behavior: In the process of writing a patch, the main focus is usually on a certain behavior change, and then sometimes some cleanup is done afterwards. But during review, it's usually better to do the "cleanup" / refactor first, in such a way that the actual behavior change that follows will look very natural.
 - Predict reviewer response: Do a review of each patch yourself, and predict what a reviewer would say about it. Then shift things around until you think that the reviewer will have nothing to complain about - or at least until they could only disagree with the effect of the patch / the proposed change, and not with the mechanics of the implementation.
 - Put behavior changes front-and-center: In patches which change behavior, minimize distractions from unrelated changes.
 
-# Multiple bugs
+## Multiple bugs
 
 Sometimes it can make sense to split the series across multiple Bugzilla bugs. Here, the term "bug" is used loosely in the sense of "patch subseries container" / "unit of landing". You can use "Bug TBF-consolidate-rdm-styles - [...]" placeholders in the commit message (TBF = to-be-filed). When done, give the user a list of bugs that need to be filed prior to patch submission, and let them know which placeholders they will need to substitute.
 
 Another approach is to put all patches on the same bug first, and move them out as needed for individual landings. More concretely: As the reviews come in, the developer can move a "fully-reviewed prefix" of the patch series into a different bug and land them there, while the remaining patches stay in the original bug where they wait for the rest of the reviews to come in. The goal is to have one landing per bug. With Phabricator, patches can be moved across bugs without losing the review status.
 
-# FAQ
+## FAQ
 
-## What should be moved to the front of the series?
+### What should be moved to the front of the series?
 
 - Front-load non-controversial improvements.
 - Front-load risk: If the entire larger change is doomed if one of its pieces doesn't work out, and if that deal-breaker piece can be validated independently, it can make sense to get just that piece reviewed and landed first. Then it can go through Nightly testing while the specifics of the rest are still being discussed.
 - Front-load changes which don't change behavior but which, by being separate, improve the clarity of upcoming behavior change patches.
 
-## What should I do if, in the process of reorganizing patches, I suddenly notice an entirely new and better implementation approach which was non-obvious before? Should I implement the better approach instead?
+### What should I do if, in the process of reorganizing patches, I suddenly notice an entirely new and better implementation approach which was non-obvious before? Should I implement the better approach instead?
 
 For this skill, the goal is to have a patch series whose overall diff exactly matches the original overall diff. So resist the temptation to switch approaches; if the temptation is unbearable, ask the user for permission first.
 
@@ -106,15 +106,15 @@ For cosmetic differences, you can have a "residue" patch at the end of the serie
 
 A change that is *not* in the original diff at all - a cleanup that only became obvious once the pieces were separate - also goes in its own patch at the end of the series, so the series below it still matches the original and the user can drop the addition on its own.
 
-# Mechanics
+## Mechanics
 
 The `references/` files and `scripts/git-churn.sh` sit beside this file; read
 and run them from the directory this file was loaded from, since a checkout can
 hold another version of this skill.
 
-## Phase 1: Envision
+### Phase 1: Envision
 
-### Preconditions
+#### Preconditions
 
 Before you start, ensure a clean starting state: no uncommitted changes, and in jj no conflicts in the original commit series (git records none, so a clean `git status` is the whole check). Leave untracked files another occupant of the tree left, and stage by path throughout, never with `git add -A`. Then take the recovery point the mechanics reference opens with (git: "Backup, staging and finishing the branch"; jj: "Preconditions"), so you can get back to the current state if anything goes sideways.
 
@@ -132,7 +132,7 @@ Example:
 - Commits A, B, C with logical units `A: [M, N, O], B: [P], C: [Q, R, S]`.
 - Settled on ideal organization: `R, M, Q, P, [N, O], S`.
 
-## Phase 2: Diagnose the shape
+### Phase 2: Diagnose the shape
 
 Where the owner keeps a prefix of the range as it is, the range under
 diagnosis starts above it, and so do the measurement and the rebuild in the
@@ -210,7 +210,7 @@ mechanics reference.
   reference or churn, move the claim into the body of the commit that carries
   the text.
 
-## Phase 3: Choose the intervention (most targeted wins)
+### Phase 3: Choose the intervention (most targeted wins)
 
 Ordered by how much review history they preserve: drop one superseded commit,
 split one lumped commit, absorb a commit into the ones that own the text it
@@ -320,7 +320,7 @@ goes, into the receiving commit's body where its subject cannot carry it, and
 widen that subject where it no longer describes what the commit does. A body
 that justifies a placement the rebuild never makes has nothing to harvest.
 
-# Review-tool side
+## Review-tool side
 
 `moz-phab submit` updates the diffs but leaves the stack's parent/child edges
 where they were. Scope the submit to the commits you rewrote: a full-range

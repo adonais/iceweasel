@@ -28,11 +28,13 @@ const PROMPTS_PAGE =
   "chrome://mochitests/content/browser/browser/components/aiwindow/ui/test/browser/test_smartwindow_prompts_page.html";
 
 // Disable memories by default; relevant tests opt in explicitly.
+// Resume pills only show when resumeCards is false.
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.memories.generateFromConversation", false],
       ["browser.smartwindow.memories.generateFromHistory", false],
+      ["browser.smartwindow.resumeCards.enabled", false],
     ],
   });
 });
@@ -927,7 +929,7 @@ add_task(async function test_resume_prompt_click_marks_memory_applied() {
             );
           });
         },
-        { fxAccountToken: "mock-fxa-token" }
+        { token: "mock-fxa-token" }
       );
     } finally {
       await SpecialPowers.popPrefEnv();

@@ -23,3 +23,7 @@ SOURCES += [
 LOCAL_INCLUDES += ["/third_party/wasm2c/wasm2c/"]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "rlbox_wasm2c_thread_locals.h",
+]

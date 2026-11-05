@@ -231,7 +231,6 @@ class PromptDelegateTest :
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        val result = GeckoResult<Void>()
         sessionRule.delegateDuringNextWait(
             object : PromptDelegate {
                 @AssertCalled(count = 1)
@@ -240,14 +239,13 @@ class PromptDelegateTest :
                     prompt: PromptDelegate.AlertPrompt,
                 ): GeckoResult<PromptDelegate.PromptResponse> {
                     assertThat("Message should match", "Alert!", equalTo(prompt.message))
-                    result.complete(null)
                     return GeckoResult.fromValue(prompt.dismiss())
                 }
             }
         )
 
         mainSession.evaluateJS("alert('Alert!');")
-        sessionRule.waitForResult(result)
+        mainSession.waitUntilCalled(PromptDelegate::class, "onAlertPrompt")
     }
 
     // This test checks that saved logins are returned to the app when calling onAuthPrompt
@@ -546,7 +544,6 @@ class PromptDelegateTest :
         mainSession.loadTestPath(SELECT_NESTED_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        val result = GeckoResult<Void>()
         sessionRule.delegateUntilTestEnd(
             object : PromptDelegate {
                 @AssertCalled(count = 1)
@@ -565,14 +562,13 @@ class PromptDelegateTest :
                         prompt.choices[2].items!![0].label,
                         equalTo("GHI"),
                     )
-                    result.complete(null)
                     return null
                 }
             }
         )
 
         mainSession.synthesizeTap(20, 20)
-        sessionRule.waitForResult(result)
+        mainSession.waitUntilCalled(PromptDelegate::class, "onChoicePrompt")
     }
 
     @Test
@@ -581,7 +577,6 @@ class PromptDelegateTest :
         mainSession.loadTestPath(SELECT_LISTBOX_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        val result = GeckoResult<Void>()
         sessionRule.delegateUntilTestEnd(
             object : PromptDelegate {
                 @AssertCalled(count = 1)
@@ -594,14 +589,13 @@ class PromptDelegateTest :
                     assertThat("First choice is correct", prompt.choices[0].label, equalTo("ABC"))
                     assertThat("Second choice is correct", prompt.choices[1].label, equalTo("DEF"))
                     assertThat("Third choice is correct", prompt.choices[2].label, equalTo("GHI"))
-                    result.complete(null)
                     return null
                 }
             }
         )
 
         mainSession.synthesizeTap(20, 20)
-        sessionRule.waitForResult(result)
+        mainSession.waitUntilCalled(PromptDelegate::class, "onChoicePrompt")
     }
 
     @Test
@@ -610,7 +604,6 @@ class PromptDelegateTest :
         mainSession.loadTestPath(SELECT_MULTIPLE_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        val result = GeckoResult<Void>()
         sessionRule.delegateUntilTestEnd(
             object : PromptDelegate {
                 @AssertCalled(count = 1)
@@ -623,14 +616,13 @@ class PromptDelegateTest :
                     assertThat("First choice is correct", prompt.choices[0].label, equalTo("ABC"))
                     assertThat("Second choice is correct", prompt.choices[1].label, equalTo("DEF"))
                     assertThat("Third choice is correct", prompt.choices[2].label, equalTo("GHI"))
-                    result.complete(null)
                     return null
                 }
             }
         )
 
         mainSession.synthesizeTap(20, 20)
-        sessionRule.waitForResult(result)
+        mainSession.waitUntilCalled(PromptDelegate::class, "onChoicePrompt")
     }
 
     @Test

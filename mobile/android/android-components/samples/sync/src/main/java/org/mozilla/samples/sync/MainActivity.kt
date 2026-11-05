@@ -39,6 +39,7 @@ import mozilla.components.concept.sync.TabPrivacy
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
 import mozilla.components.service.fxa.FxaAuthData
+import mozilla.components.service.fxa.FxaService
 import mozilla.components.service.fxa.ServerConfig
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.sync.GlobalSyncableStoreProvider
@@ -131,7 +132,12 @@ class MainActivity :
 
         findViewById<View>(R.id.buttonSignIn).setOnClickListener {
             lifecycleScope.launch {
-                accountManager.beginAuthentication(entrypoint = SampleFxAEntryPoint.HomeMenu)?.let { openWebView(it) }
+                accountManager
+                    .beginAuthentication(
+                        service = FxaService.Sync.identifier,
+                        entrypoint = SampleFxAEntryPoint.HomeMenu,
+                    )
+                    ?.let { openWebView(it) }
             }
         }
 

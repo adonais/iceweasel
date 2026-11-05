@@ -436,6 +436,39 @@ describe("NavigableManager", function () {
     );
   });
 
+  it("Emit navigableId-created event for new browsing contexts", async function test_navigableIdCreatedEvent() {
+    const events = [];
+    const onEvent = (_, data) => events.push(data);
+    NavigableManager.on("navigableId-created", onEvent);
+
+    try {
+      info(`Open a new tab and navigate to ${TEST_URL}`);
+      const tab = await addTabAndWaitForNavigated(gBrowser, TEST_URL);
+      const browser = tab.linkedBrowser;
+      const contexts =
+        browser.browsingContext.getAllBrowsingContextsInSubtree();
+      is(contexts.length, 3, "Top context and 2 child contexts are available");
+
+      for (const context of contexts) {
+        const event = events.find(e => e.browsingContext === context);
+        ok(event, `Received event for browsing context ${context.id}`);
+        is(
+          event.navigableId,
+          NavigableManager.getIdForBrowsingContext(context),
+          "The navigable id is already created and the event contains it"
+        );
+      }
+
+      info("Stop tracking and open a new tab");
+      NavigableManager.stopTracking();
+      events.length = 0;
+      await addTabAndWaitForNavigated(gBrowser, TEST_URL);
+      is(events.length, 0, "No event is emitted when tracking is stopped");
+    } finally {
+      NavigableManager.off("navigableId-created", onEvent);
+    }
+  });
+
   it("Get the Navigable id for a chrome browsing context", async function test_getIdForChromeBrowsingContext() {
     // Get the parent process browsing context (chrome scope)
     const chromeContext = window.browsingContext;

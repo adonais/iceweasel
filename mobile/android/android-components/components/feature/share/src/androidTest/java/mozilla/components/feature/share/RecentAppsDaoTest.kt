@@ -7,6 +7,7 @@ package mozilla.components.feature.share
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.share.db.RecentAppEntity
 import mozilla.components.feature.share.db.RecentAppsDao
 import mozilla.components.feature.share.db.RecentAppsDatabase
@@ -33,7 +34,7 @@ class RecentAppsDaoTest {
     }
 
     @Test
-    fun testGetTwoMostRecentApps() {
+    fun testGetTwoMostRecentApps() = runTest {
         assertEquals(emptyList<RecentApp>(), dao.getRecentAppsUpTo(2))
 
         dao.insertRecentApps(
@@ -54,7 +55,7 @@ class RecentAppsDaoTest {
     }
 
     @Test
-    fun testIncrementSelectedAppCountAndDecayAllOthers() {
+    fun testIncrementSelectedAppCountAndDecayAllOthers() = runTest {
         val activityName = "activityName"
         val selectedAppEntity = RecentAppEntity(score = 1.0, activityName = activityName)
         val otherAppEntity = RecentAppEntity(score = 100.0, activityName = "other")
@@ -73,7 +74,7 @@ class RecentAppsDaoTest {
     }
 
     @Test
-    fun testAddNewlyInstalledAppsToOurDatabase() {
+    fun testAddNewlyInstalledAppsToOurDatabase() = runTest {
         val firstActivityName = "first"
         val secondActivityName = "second"
         val thirdActivityName = "third"
@@ -93,7 +94,7 @@ class RecentAppsDaoTest {
     }
 
     @Test
-    fun testDeleteAnAppFromOurDatabase() {
+    fun testDeleteAnAppFromOurDatabase() = runTest {
         val deleteAppName = "delete"
         val recentApp = RecentAppEntity(score = 1.0, activityName = deleteAppName)
 

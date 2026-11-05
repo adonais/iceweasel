@@ -219,7 +219,7 @@ is the same as for `browser.search.content.*`.
 This is the same as `` `browser.search.withads.* `` but tracks counts for them
 clicks of adverts on SERP pages.
 
-[additional telemetry of its own]: https://firefox-source-docs.mozilla.org/browser/urlbar/telemetry.html
+[additional telemetry of its own]: /browser/urlbar/telemetry.md
 [BrowserSearchTelemetry.sys.mjs]: https://searchfox.org/mozilla-central/source/browser/components/search/BrowserSearchTelemetry.sys.mjs
 [sap.counts event documentation]: https://dictionary.telemetry.mozilla.org/apps/firefox_desktop/metrics/sap_counts
 [searchserptelemetry.sys.mjs and the associated parent/child actors]: https://searchfox.org/mozilla-central/search?q=&path=SearchSERPTelemetry*.sys.mjs&case=false&regexp=false

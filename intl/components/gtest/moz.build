@@ -10,6 +10,7 @@ UNIFIED_SOURCES += [
     "TestDateIntervalFormat.cpp",
     "TestDateTimeFormat.cpp",
     "TestDisplayNames.cpp",
+    "TestLegacyPOSIXTimeZone.cpp",
     "TestListFormat.cpp",
     "TestLocale.cpp",
     "TestLocaleCanonicalizer.cpp",
@@ -25,3 +26,7 @@ UNIFIED_SOURCES += [
 ]
 
 FINAL_LIBRARY = "xul-gtest"
+
+SOURCE_HEADERS += [
+    "TestBuffer.h",
+]

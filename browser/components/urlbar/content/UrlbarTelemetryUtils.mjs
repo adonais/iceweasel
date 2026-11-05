@@ -6,13 +6,14 @@ import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs"
 import { UrlbarResult } from "chrome://browser/content/urlbar/UrlbarResult.mjs";
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
-const lazy = typeof ChromeUtils != "undefined" ? {} : null;
+const { XPCOMUtils } =
+  typeof ChromeUtils == "undefined"
+    ? { XPCOMUtils: null }
+    : ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs");
 
-if (lazy) {
-  ChromeUtils.defineESModuleGetters(lazy, {
-    UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
-  });
-}
+const lazy = XPCOMUtils?.declareLazy({
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+});
 
 /**
  * @import {SmartbarInput} from "moz-src:///browser/components/urlbar/content/SmartbarInput.mjs"

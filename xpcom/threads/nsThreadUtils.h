@@ -1096,7 +1096,7 @@ class RunnableMethodImpl final
 
  private:
   virtual ~RunnableMethodImpl() { Revoke(); };
-  static void TimedOut(nsITimer* aTimer, void* aClosure) {
+  static void TimedOut(nsITimer* /*aTimer*/, void* aClosure) {
     static_assert(IsIdle(Kind), "Don't use me!");
     RefPtr<CancelableIdleRunnable> r =
         static_cast<CancelableIdleRunnable*>(aClosure);

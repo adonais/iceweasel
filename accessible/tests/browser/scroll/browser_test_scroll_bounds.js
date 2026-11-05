@@ -151,6 +151,26 @@ addAccessibleTask(
 );
 
 /**
+ * Test that the scroll position is cached when a document becomes scrollable
+ * without being scrolled.
+ */
+addAccessibleTask(
+  `<p>short</p>`,
+  async function (browser, docAcc) {
+    await invokeContentTask(browser, [], () => {
+      const tall = content.document.createElement("div");
+      tall.style.height = "5000px";
+      content.document.body.append(tall);
+    });
+    await untilCacheOk(
+      () => testCachedScrollPosition(docAcc, 0, 0),
+      "Scroll position cached after the document became scrollable."
+    );
+  },
+  { iframe: true, remoteIframe: true }
+);
+
+/**
  * Test scroll offset fixed-pos acc accs
  */
 addAccessibleTask(

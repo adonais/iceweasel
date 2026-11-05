@@ -8,7 +8,7 @@ import {
   renderPrompt,
   MODEL_FEATURES,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
-import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
+import { AuthProvider } from "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs";
 import { sanitizeUntrustedContent } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 
 const lazy = {};
@@ -77,7 +77,7 @@ export async function generateChatTitle(
     }
 
     const response = await conversation.run({
-      fxAccountToken: await openAIEngine.getFxAccountToken(),
+      token: await AuthProvider.getToken(),
     });
 
     return response?.finalOutput?.trim() || generateDefaultTitle(message);

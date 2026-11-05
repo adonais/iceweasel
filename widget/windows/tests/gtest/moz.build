@@ -9,6 +9,7 @@ UNIFIED_SOURCES += [
     "TestWinDND.cpp",
     "TestWindowGfx.cpp",
     "TestWinUtils.cpp",
+    "TestWorkspaceID.cpp",
 ]
 
 LOCAL_INCLUDES += [

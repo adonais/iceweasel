@@ -92,6 +92,9 @@ bool HTMLIFrameElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
     if (aAttribute == nsGkAtoms::frameborder) {
       return ParseFrameborderValue(aValue, aResult);
     }
+    if (aAttribute == nsGkAtoms::referrerpolicy) {
+      return ParseReferrerAttribute(aValue, aResult);
+    }
     if (aAttribute == nsGkAtoms::scrolling) {
       return ParseScrollingValue(aValue, aResult);
     }

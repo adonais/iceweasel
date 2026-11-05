@@ -258,7 +258,8 @@ add_task(async function test_form_validation() {
         "Condition error clears once a description is entered"
       );
 
-      setInputValue(pageInput, "https://example.com");
+      // A page no test visits, so it has no title and keeps the hostname
+      setInputValue(pageInput, "https://example.com/never-visited");
       await cardJS.updateComplete;
       addPageButton.click();
 
@@ -626,4 +627,129 @@ add_task(async function test_add_button_shown_for_secondary_region() {
   }
 
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_added_page_chip_shows_open_tab_title() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      [SUPPORTED_REGIONS_PREF, TEST_REGION],
+    ],
+  });
+  const OPEN_URL =
+    "https://example.com/browser/browser/components/aiwindow/ui/test/browser/test_context_url_page.html";
+  const pageTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    OPEN_URL
+  );
+  const openTitle = pageTab.linkedBrowser.contentTitle;
+  Assert.ok(openTitle, "The open test page has a title");
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:smartwindowtasks"
+  );
+
+  try {
+    await SpecialPowers.spawn(
+      tab.linkedBrowser,
+      [OPEN_URL, openTitle],
+      async (url, title) => {
+        await content.customElements.whenDefined("ai-tasks");
+        const aiTasks = content.document.querySelector("ai-tasks");
+        aiTasks.shadowRoot.querySelector(".add-task-button").click();
+
+        const card = await ContentTaskUtils.waitForCondition(
+          () =>
+            aiTasks.shadowRoot.querySelector("dialog[open] agent-monitor-item"),
+          "Wait for the create card"
+        );
+        const cardJS = card.wrappedJSObject || card;
+        await cardJS.updateComplete;
+
+        cardJS.pendingUrl = url;
+        await cardJS.updateComplete;
+        card.shadowRoot.querySelector(".add-page-btn").click();
+
+        const chip = () =>
+          card.shadowRoot.querySelector(".page-pills-row ai-website-chip");
+        await ContentTaskUtils.waitForCondition(
+          () => chip()?.getAttribute("label") === title,
+          "Wait for the open tab's title to reach the added page's chip"
+        );
+        Assert.equal(
+          chip().getAttribute("label"),
+          title,
+          "An added page that is open is labelled with its tab title"
+        );
+      }
+    );
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.removeTab(pageTab);
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_title_requests_are_limited_to_watchable_pages() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.enabled", true]],
+  });
+  const OPEN_URL =
+    "https://example.com/browser/browser/components/aiwindow/ui/test/browser/test_context_url_page.html";
+  const pageTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    OPEN_URL
+  );
+  const openTitle = pageTab.linkedBrowser.contentTitle;
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:smartwindowtasks"
+  );
+
+  try {
+    await SpecialPowers.spawn(
+      tab.linkedBrowser,
+      [OPEN_URL, openTitle],
+      async (openUrl, title) => {
+        const requestTitles = urls => {
+          const requester = content.document.createElement("div");
+          content.document.body.append(requester);
+          const answered = ContentTaskUtils.waitForEvent(
+            requester,
+            "agent-monitor-item:titles-resolved"
+          );
+          requester.dispatchEvent(
+            new content.CustomEvent("agent-monitor-item:resolve-titles", {
+              bubbles: true,
+              composed: true,
+              detail: Cu.cloneInto({ urls }, content),
+            })
+          );
+          return answered.then(event => {
+            requester.remove();
+            return event.detail.titles;
+          });
+        };
+
+        Assert.deepEqual(
+          await requestTitles(["javascript:void(0)", "about:robots", openUrl]),
+          { [openUrl]: title },
+          "Pages that can't be watched are dropped and the open page resolves"
+        );
+
+        const unvisited = [1, 2, 3, 4, 5].map(
+          n => `https://example.org/unvisited-${n}`
+        );
+        Assert.deepEqual(
+          await requestTitles([...unvisited, openUrl]),
+          {},
+          "Only as many pages as one monitor holds are looked up"
+        );
+      }
+    );
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.removeTab(pageTab);
+    await SpecialPowers.popPrefEnv();
+  }
 });

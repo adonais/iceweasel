@@ -8,9 +8,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-from mozbuild.buildversion import mozilla_build_version
-from packaging.version import Version
-
 from mozboot.base import BaseBootstrapper
 
 
@@ -103,29 +100,6 @@ class MozillaBuildBootstrapper(BaseBootstrapper):
 
     def install_system_packages(self):
         pass
-
-    def upgrade_mercurial(self, current):
-        # Mercurial upstream sometimes doesn't upload wheels, and building
-        # from source requires MS Visual C++ 9.0. So we force pip to install
-        # the last version that comes with wheels.
-        if mozilla_build_version() >= Version("4.0"):
-            pip_dir = (
-                Path(os.environ["MOZILLABUILD"]) / "python3" / "Scripts" / "pip.exe"
-            )
-        else:
-            pip_dir = (
-                Path(os.environ["MOZILLABUILD"]) / "python" / "Scripts" / "pip.exe"
-            )
-
-        command = [
-            str(pip_dir),
-            "install",
-            "--upgrade",
-            "mercurial",
-            "--only-binary",
-            "mercurial",
-        ]
-        self.run(command)
 
     def install_browser_packages(self, mozconfig_builder):
         pass

@@ -1011,7 +1011,6 @@ angle::Result Program::link(const Context *context, angle::JobResultExpectancy r
     // TODO: http://anglebug.com/42263141: Enable program caching for separable programs
     if (cache && !isSeparable())
     {
-        std::lock_guard<angle::SimpleMutex> cacheLock(context->getProgramCacheMutex());
         egl::CacheGetResult result = egl::CacheGetResult::NotFound;
         ANGLE_TRY(cache->getProgram(context, this, &mProgramHash, &result));
 
@@ -1611,7 +1610,10 @@ angle::Result Program::getBinary(Context *context,
         // TODO: This should be moved to the validation layer but computing the size of the binary
         // before saving it causes the save to happen twice.  It may be possible to write the binary
         // to a separate buffer, validate sizes and then copy it.
-        ANGLE_CHECK(context, false, err::kInsufficientBufferSize, GL_INVALID_OPERATION);
+        context->getMutableErrorSetForValidation()->validationError(
+            angle::EntryPoint::GLGetProgramBinary, GL_INVALID_OPERATION,
+            err::kInsufficientBufferSize);
+        return angle::Result::Stop;
     }
 
     if (binary)
@@ -2559,7 +2561,6 @@ void Program::cacheProgramBinaryIfNotAlready(const Context *context)
     ASSERT(mState.mExecutable->mPostLinkSubTasks.empty());
 
     // Save to the program cache.
-    std::lock_guard<angle::SimpleMutex> cacheLock(context->getProgramCacheMutex());
     MemoryProgramCache *cache = context->getMemoryProgramCache();
     // TODO: http://anglebug.com/42263141: Enable program caching for separable programs
     if (cache && !isSeparable() &&

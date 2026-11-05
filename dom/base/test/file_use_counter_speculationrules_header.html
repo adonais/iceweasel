@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Use counter test for speculation rules from the Speculation-Rules header</title>
+<style>
+  /* Sentinel use counter to signal that telemetry for this document has been captured */
+  div {
+    marker-mid: initial;
+  }
+</style>
+<script>
+// The header rule set triggers an immediate prefetch once it is registered.
+async function waitForPrefetch() {
+  for (;;) {
+    let response = await fetch(
+      "file_use_counter_speculationrules_header.sjs?check"
+    );
+    if ((await response.text()) == "true") {
+      location.hash = "#finished";
+      return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+}
+waitForPrefetch();
+</script>

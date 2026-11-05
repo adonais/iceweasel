@@ -70,6 +70,12 @@ ProgressTracker::ProgressTracker()
       mProgress(NoProgress),
       mIsMultipart(false) {}
 
+already_AddRefed<Image> ProgressTracker::GetImage() const {
+  MutexAutoLock lock(mMutex);
+  RefPtr<Image> image = mImage;
+  return image.forget();
+}
+
 void ProgressTracker::SetImage(Image* aImage) {
   MutexAutoLock lock(mMutex);
   MOZ_ASSERT(aImage, "Setting null image");

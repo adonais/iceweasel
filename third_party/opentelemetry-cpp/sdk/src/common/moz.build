@@ -25,3 +25,9 @@ else:
   UNIFIED_SOURCES += [ "platform/fork_unix.cc" ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+	"fast_random_number_generator.h",
+	"random.h",
+	"wildcard_match.h",
+]

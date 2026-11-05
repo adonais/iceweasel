@@ -6557,12 +6557,16 @@ bool InlinableNativeIRGenerator::hasBoundArguments() const {
   return false;
 }
 
-void IRGenerator::emitCalleeGuard(ObjOperandId calleeId, JSFunction* callee) {
+bool IRGenerator::calleeGuardIsIdentity(JSFunction* callee) const {
   // Guarding on the callee JSFunction* is most efficient, but doesn't work well
   // for lambda clones (multiple functions with the same BaseScript). We guard
   // on the function's BaseScript if the callee is scripted and this isn't the
   // first IC stub.
-  if (isFirstStub_ || !FunctionHasStableBaseScript(callee)) {
+  return isFirstStub_ || !FunctionHasStableBaseScript(callee);
+}
+
+void IRGenerator::emitCalleeGuard(ObjOperandId calleeId, JSFunction* callee) {
+  if (calleeGuardIsIdentity(callee)) {
     writer.guardSpecificFunction(calleeId, callee);
   } else {
     MOZ_ASSERT_IF(callee->isSelfHostedBuiltin(),
@@ -13932,39 +13936,68 @@ void CallIRGenerator::emitCallScriptedGuards(
     emitCalleeGuard(calleeObjId, calleeFunc);
     if (thisShape) {
       // Emit guards to ensure the newTarget's .prototype property is what we
-      // expect. Note that getThisForScripted checked newTarget is a function
-      // with a non-configurable .prototype data property.
+      // expect. Note that getThisShapeForScripted checked newTarget is a
+      // function with a non-configurable .prototype data property.
+      // If .prototype is also non-writable (which is always the case for class
+      // constructors), then we only have to verify the identity of newTarget.
+      // There are a few cases here.
+      // 1. If .prototype is writable, then we guard the shape of newTarget,
+      //    load newTarget.prototype, and guard its value.
+      // 2. If .prototype is non-writable, and the emitCalleeGuard above guarded
+      //    the identity of callee, and callee == newTarget, then we don't need
+      //    any additional guards. Note that callee == newTarget is guaranteed
+      //    for non-super calls (excluding NewContent which can be used for
+      //    Reflect.construct).
+      // 3. If .prototype is non-writable but we can't rely on emitCalleeGuard,
+      //    then we can simply guard the identity of newTarget directly.
+      JSOp op = JSOp(*pc_);
+      bool newTargetIsCallee =
+          isBoundFunction || op == JSOp::New || op == JSOp::SpreadNew;
+      JSFunction* newTarget = newTargetIsCallee
+                                  ? calleeFunc
+                                  : &newTarget_.toObject().as<JSFunction>();
+      MOZ_ASSERT_IF(!isBoundFunction && newTargetIsCallee,
+                    newTarget_ == ObjectValue(*calleeFunc));
 
-      JSFunction* newTarget;
-      ObjOperandId newTargetObjId;
-      if (isBoundFunction) {
-        newTarget = calleeFunc;
-        newTargetObjId = calleeObjId;
-      } else {
-        newTarget = &newTarget_.toObject().as<JSFunction>();
+      auto getNewTargetObjId = [&]() -> ObjOperandId {
+        if (newTargetIsCallee) {
+          return calleeObjId;
+        }
         ValOperandId newTargetValId = writer.loadArgumentDynamicSlot(
             ArgumentKind::NewTarget, argcId, flags);
-        newTargetObjId = writer.guardToObject(newTargetValId);
-      }
+        return writer.guardToObject(newTargetValId);
+      };
 
       Maybe<PropertyInfo> prop = newTarget->lookupPure(cx_->names().prototype);
       MOZ_ASSERT(prop.isSome());
-      uint32_t slot = prop->slot();
-      MOZ_ASSERT(slot >= newTarget->numFixedSlots(),
-                 "Stub code relies on this");
+      MOZ_ASSERT(prop->isDataProperty() && !prop->configurable());
+      if (prop->writable()) {
+        // Case 1: Guard the value of newTarget.prototype
+        ObjOperandId newTargetObjId = getNewTargetObjId();
 
-      writer.guardShape(newTargetObjId, newTarget->shape());
+        uint32_t slot = prop->slot();
+        MOZ_ASSERT(slot >= newTarget->numFixedSlots(),
+                   "Stub code relies on this");
 
-      const Value& value = newTarget->getSlot(slot);
-      if (value.isObject()) {
-        JSObject* prototypeObject = &value.toObject();
+        writer.guardShape(newTargetObjId, newTarget->shape());
 
-        ObjOperandId protoId = writer.loadObject(prototypeObject);
-        writer.guardDynamicSlotIsSpecificObject(
-            newTargetObjId, protoId, slot - newTarget->numFixedSlots());
+        const Value& value = newTarget->getSlot(slot);
+        if (value.isObject()) {
+          JSObject* prototypeObject = &value.toObject();
+
+          ObjOperandId protoId = writer.loadObject(prototypeObject);
+          writer.guardDynamicSlotIsSpecificObject(
+              newTargetObjId, protoId, slot - newTarget->numFixedSlots());
+        } else {
+          writer.guardDynamicSlotIsNotObject(newTargetObjId,
+                                             slot - newTarget->numFixedSlots());
+        }
+      } else if (newTargetIsCallee && calleeGuardIsIdentity(calleeFunc)) {
+        // Case 2: No additional guards required.
       } else {
-        writer.guardDynamicSlotIsNotObject(newTargetObjId,
-                                           slot - newTarget->numFixedSlots());
+        // Case 3: Guard the identity of newTarget.
+        ObjOperandId newTargetObjId = getNewTargetObjId();
+        writer.guardSpecificObject(newTargetObjId, newTarget);
       }
 
       // Call metaCreateThis before emitting the call, so that Warp can use the
@@ -14196,8 +14229,14 @@ AttachDecision CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
   // Ensure the callee's class matches the one in this stub.
   writer.guardAnyClass(calleeObjId, calleeObj->getClass());
 
-  if (isConstructing && calleeObj->is<BoundFunctionObject>()) {
-    writer.guardBoundFunctionIsConstructor(calleeObjId);
+  if (calleeObj->is<BoundFunctionObject>()) {
+    if (isConstructing) {
+      writer.guardBoundFunctionIsConstructor(calleeObjId);
+    }
+
+    // Bound functions don't have an associated realm in the spec, so we
+    // shouldn't switch realms.
+    flags.setIsSameRealm();
   }
 
   writer.callClassHook(calleeObjId, argcId, hook, flags, ClampFixedArgc(argc_));

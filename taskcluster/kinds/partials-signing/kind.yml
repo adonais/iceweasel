@@ -16,9 +16,6 @@ kind-dependencies:
     - partials-zucchini
     - partials-zucchini-l10n
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     partials-signing:
         from-deps:

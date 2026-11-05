@@ -77,6 +77,16 @@ add_task(async function test_buildProposals_usesLlmLabel() {
       JSON.stringify(request).includes("Q3 Roadmap"),
       "The real tab titles are sent to the model"
     );
+    Assert.ok(
+      JSON.stringify(request).includes(
+        `Name this group of tabs in ${Services.locale.appLocaleAsBCP47}.`
+      ),
+      "The system prompt names the group in the app locale"
+    );
+    Assert.ok(
+      !JSON.stringify(request).includes("{locale}"),
+      "No unfilled locale placeholder reaches the model"
+    );
     respond("Work Docs");
     const proposals = await proposalsPromise;
     Assert.equal(
@@ -165,7 +175,7 @@ add_task(async function test_buildProposals_fallsBackToOnDeviceLabel() {
     const proposalsPromise = AutoTabGroupingSuggestions.buildProposals([]);
     await mockEngine.captureRequest({ purpose: NAMING_PURPOSE });
     // Simulate a server / rate-limit error on the model call.
-    mockEngine.rejectAllRequests();
+    await mockEngine.rejectAllRequests();
     const proposals = await proposalsPromise;
     Assert.equal(
       proposals[0].label,

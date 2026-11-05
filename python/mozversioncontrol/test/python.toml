@@ -21,6 +21,8 @@ subsuite = "mozversioncontrol"
 
 ["test_get_upstream_remotes.py"]
 
+["test_is_shallow.py"]
+
 ["test_push.py"]
 
 ["test_push_to_try.py"]

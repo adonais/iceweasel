@@ -47,6 +47,29 @@ async function assertImageLoaded(browser, domain, msg) {
   ok(loaded, msg);
 }
 
+async function loadThirdPartyScript(browser, domain) {
+  let scriptURL = domain + TEST_PATH + "empty_script.js?" + Math.random();
+  return SpecialPowers.spawn(browser, [scriptURL], async url => {
+    let script = content.document.createElement("script");
+    script.src = url;
+    return new content.Promise(resolve => {
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      content.document.body.appendChild(script);
+    });
+  });
+}
+
+async function assertScriptBlocked(browser, domain, msg) {
+  let loaded = await loadThirdPartyScript(browser, domain);
+  ok(!loaded, msg);
+}
+
+async function assertScriptLoaded(browser, domain, msg) {
+  let loaded = await loadThirdPartyScript(browser, domain);
+  ok(loaded, msg);
+}
+
 // content: string-encoded filter list content (may include CRLF etc.).
 async function makeListRecordFromContent(id, name, content) {
   let encoder = new TextEncoder();

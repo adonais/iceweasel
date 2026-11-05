@@ -40,6 +40,16 @@ add_task(function test_applies_the_configured_rule() {
       null,
       "an unlisted origin gets no opinion"
     );
+    Assert.equal(provider.count(rule), 1, `one origin is held as ${rule}`);
+    Assert.equal(
+      provider.count(
+        rule === IPPPrincipalRules.INCLUDED
+          ? IPPPrincipalRules.EXCLUDED
+          : IPPPrincipalRules.INCLUDED
+      ),
+      0,
+      "none is held as the other rule"
+    );
 
     provider.uninit();
   }
@@ -99,6 +109,11 @@ add_task(function test_unreadable_pref_yields_no_opinion() {
     provider.getRule(makePrincipal("https://listed.example/")),
     null,
     "a pref that is not a JSON array leaves the provider with no opinion"
+  );
+  Assert.equal(
+    provider.count(IPPPrincipalRules.INCLUDED),
+    0,
+    "and with nothing held"
   );
 
   provider.uninit();

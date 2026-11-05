@@ -522,4 +522,112 @@ describe("<DiscoveryStreamBase> ASRouterNewTabMessage positions", () => {
       ).not.toBeNull();
     });
   });
+  describe("thematic spaces", () => {
+    const THEMATIC_PREFS = {
+      ...BASE_PREFS,
+      "nova.enabled": true,
+      "pageLayouts.variant": "spaces-thematic-v1",
+      "widgets.enabled": true,
+      "widgets.system.lists.enabled": true,
+      "widgets.lists.enabled": true,
+    };
+
+    function mountThematic(spacesConfig, prefOverrides = {}) {
+      return render(
+        <DiscoveryStreamBase
+          locale="en-US"
+          DiscoveryStream={{
+            layout: POSITION_TEST_LAYOUT,
+            feeds: {
+              loaded: true,
+              data: {
+                "https://example.com/feed": {
+                  data: { sections: [{ sectionKey: "top_stories_section" }] },
+                },
+              },
+            },
+            spocs: { loaded: true, data: { spocs: null } },
+          }}
+          Messages={null}
+          Prefs={{
+            values: {
+              ...THEMATIC_PREFS,
+              ...prefOverrides,
+              trainhopConfig: { spaces: spacesConfig },
+            },
+          }}
+          App={{ locale: "en-US" }}
+          document={{ documentElement: { lang: "en-US" } }}
+          Sections={[
+            { id: "topstories", learnMore: { link: {} }, pref: {} },
+            { id: "highlights", enabled: true },
+          ]}
+          dispatch={jest.fn()}
+        />
+      );
+    }
+
+    const CONFIG = {
+      order: ["home", "widgets"],
+      default: "home",
+      spaces: {
+        home: { label: "Home" },
+        widgets: { label: "Widgets", widgets: ["lists"] },
+      },
+    };
+
+    it("renders a widgets-only space without a feed column", () => {
+      const { container } = mountThematic(CONFIG);
+      const home = container.querySelector("#spaces-panel-home");
+      const widgets = container.querySelector("#spaces-panel-widgets");
+
+      expect(home.querySelector(".layout-content-column")).not.toBeNull();
+      expect(home.querySelector(".ds-layout-widgets")).toBeNull();
+      expect(widgets.querySelector(".layout-content-column")).toBeNull();
+      expect(widgets.querySelector(".ds-layout-widgets")).not.toBeNull();
+    });
+
+    it("shows the arrows alongside the tablist when the config asks", () => {
+      const { container } = mountThematic({ ...CONFIG, arrows: true });
+
+      expect(container.querySelectorAll(".spaces-arrow-rail")).toHaveLength(2);
+      expect(container.querySelector('[role="tablist"]')).not.toBeNull();
+    });
+
+    it("renders Recent activity in the default space when none is marked", () => {
+      const { container } = mountThematic(CONFIG);
+
+      expect(
+        container.querySelector("#spaces-panel-home .layout-highlights-column")
+      ).not.toBeNull();
+    });
+
+    it("renders Recent activity only in the space marked for it", () => {
+      const { container } = mountThematic(
+        {
+          ...CONFIG,
+          order: ["mystuff", ...CONFIG.order],
+          spaces: {
+            ...CONFIG.spaces,
+            mystuff: { label: "My Stuff", activity: true },
+          },
+        },
+        { "feeds.section.highlights": true }
+      );
+      const mystuff = container.querySelector("#spaces-panel-mystuff");
+
+      expect(mystuff.querySelector(".layout-highlights-column")).not.toBeNull();
+      expect(mystuff.querySelector(".layout-content-column")).toBeNull();
+      expect(
+        container.querySelectorAll(".layout-highlights-column")
+      ).toHaveLength(1);
+    });
+
+    it("shows only the tablist otherwise", () => {
+      const { container } = mountThematic(CONFIG);
+
+      expect(container.querySelector(".spaces-arrow-rail")).toBeNull();
+      expect(container.querySelector('[role="tablist"]')).not.toBeNull();
+    });
+  });
 });

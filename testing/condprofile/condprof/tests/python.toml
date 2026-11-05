@@ -1,4 +1,6 @@
 [DEFAULT]
 subsuite = "condprof"
 
+["test_check_install.py"]
+
 ["test_client.py"]

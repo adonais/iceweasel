@@ -28,3 +28,11 @@ LOCAL_INCLUDES += [
     "../src",
     "/caps",
 ]
+
+SOURCE_HEADERS += [
+    "AccessCheck.h",
+    "ChromeObjectWrapper.h",
+    "FilteringWrapper.h",
+    "WaiveXrayWrapper.h",
+    "XrayWrapper.h",
+]

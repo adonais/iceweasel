@@ -31,7 +31,7 @@
  *
  * Portions of this code taken from V8, whose copyright notice is as follows:
  *
- *   Copyright 2017 the V8 project authors. All rights reserved.
+ *   Copyright 2017,2021 the V8 project authors. All rights reserved.
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions are
  *   met:
@@ -839,6 +839,81 @@ BigInt* BigInt::absoluteLeftShiftAlwaysCopy(JSContext* cx, HandleBigInt x,
   return result;
 }
 
+// The schoolbook division algorithm computes an estimate of the quotient
+// (q-hat) by dividing each pair of digits in the dividend by the top digit of
+// the divisor. This two-by-one division is fine on architectures with a wide
+// hardware division instruction, but AArch64 is not one of those; there it is
+// much faster to divide by multiplying against an inverse, and since each
+// operation has the same divisor, we can compute the inverse once. As it turns
+// out, it's just as fast to do things this way on x86/x86-64, so we just take
+// the same path everywhere.
+//
+// Note that this relies on the divisor being "normalized" (left-shifted such
+// that its most significant bit is set); this normalization is stripped off in
+// the end as part of the schoolbook algorithm.
+//
+// This routine was derived from V8's MultiplicativeDigitDiv.
+BigInt::Digit BigInt::normalizedDigitInverse(Digit divisor) {
+  MOZ_ASSERT(divisor & (Digit(1) << (DigitBits - 1)));
+  Digit high = ~divisor;
+  Digit low = Digit(-1);
+  Digit remainder;
+  return digitDiv(high, low, divisor, &remainder);
+}
+
+// This routine was derived from V8's MultiplicativeDigitDiv.
+BigInt::Digit BigInt::digitDivByMultiplication(Digit high, Digit low,
+                                               Digit divisor, Digit inverse,
+                                               Digit* remainder) {
+  MOZ_ASSERT(divisor & (Digit(1) << (DigitBits - 1)));
+  MOZ_ASSERT(high < divisor);
+  MOZ_ASSERT(inverse == normalizedDigitInverse(divisor));
+  // https://gmplib.org/~tege/division-paper.pdf, "Algorithm 4".
+  // Paper: u1 = high, u0 = low, d = divisor, v = inverse,
+  // "mod β" means "truncate to Digit width".
+  // 1. <q1, q0> ← v*u1
+  Digit q1;
+  Digit q0 = digitMul(high, inverse, &q1);
+  // 2. <q1, q0> ← <q1, q0> + <u1, u0>
+  Digit lowCarry = 0;
+  q0 = digitAdd(q0, low, &lowCarry);
+  Digit highCarry = 0;
+  q1 = digitAdd(q1, lowCarry, &highCarry);
+  q1 = digitAdd(q1, high, &highCarry);
+  MOZ_ASSERT(highCarry == 0);
+  // 3. q1 ← (q1 + 1) mod β
+  q1++;
+  // 4. r ← (u0 − q1*d) mod β
+  Digit r = low - q1 * divisor;
+  // 5. if r > q0:  // Unpredictable condition
+  if (r > q0) {
+    // 6. q1 ← (q1 − 1) mod β
+    q1--;
+    // 7. r ← (r + d) mod β
+    r += divisor;
+  }
+  // 8 if r >= d:  // Unlikely condition
+  if (MOZ_UNLIKELY(r >= divisor)) {
+    // 9. q1 ← q1 + 1
+    q1++;
+    // 10. r ← r − d
+    r -= divisor;
+  }
+  // 11. return q1, r
+  *remainder = r;
+
+#ifdef DEBUG
+  {
+    Digit q, r;
+    q = digitDiv(high, low, divisor, &r);
+    MOZ_ASSERT(q == q1);
+    MOZ_ASSERT(r == *remainder);
+  }
+#endif
+
+  return q1;
+}
+
 // Divides `dividend` by `divisor`, returning the result in `quotient` and
 // `remainder`. Mathematically, the contract is:
 //
@@ -924,6 +999,7 @@ bool BigInt::absoluteDivWithBigIntDivisor(
     // Iterate over the dividend's digit (like the "grade school" algorithm).
     // `vn1` is the divisor's most significant digit.
     Digit vn1 = shiftedDivisorDigits[n - 1];
+    Digit vn1Inverse = normalizedDigitInverse(vn1);
     for (int j = m; j >= 0; j--) {
       // D3.
       // Estimate the current iteration's quotient digit (see Knuth for
@@ -939,7 +1015,8 @@ bool BigInt::absoluteDivWithBigIntDivisor(
         // Estimate the current quotient digit by dividing the most significant
         // digits of dividend and divisor. The result will not be too small,
         // but could be a bit too large.
-        qhat = digitDiv(ujn, uDigits[j + n - 1], vn1, &rhat);
+        qhat = digitDivByMultiplication(ujn, uDigits[j + n - 1], vn1,
+                                        vn1Inverse, &rhat);
 
         // Decrement the quotient estimate as needed by looking at the next
         // digit, i.e. by testing whether

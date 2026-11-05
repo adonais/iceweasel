@@ -22,6 +22,7 @@ import { InstallButton } from "./InstallButton";
 import { SubmenuButton } from "./SubmenuButton";
 
 const DEFAULT_AUTO_ADVANCE_MS = 20000;
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 const CORNER_IMAGE_POSITIONS = new Set([
   "bottom-left",
   "bottom-right",
@@ -75,6 +76,47 @@ function resolveDirectionalImage(image) {
   return isRTL && image?.rtl ? { ...image, ...image.rtl } : image;
 }
 
+/**
+ * Dismisses the message once the screen has been shown for `autoDismiss.after`
+ * milliseconds. The countdown only runs while the page is visible and restarts
+ * when it becomes visible again, so the screen can't time out while invisible
+ * in the background.
+ */
+function useAutoDismiss(autoDismiss, messageId) {
+  const after = autoDismiss?.after;
+  useEffect(() => {
+    if (!Number.isFinite(after) || after < 0 || after > MAX_TIMEOUT_MS) {
+      return undefined;
+    }
+
+    let timer = null;
+    let dismissed = false;
+    const dismiss = () => {
+      dismissed = true;
+      MultiStageUtils.sendActionTelemetry(
+        messageId,
+        "auto_dismiss",
+        "AUTO_DISMISS"
+      );
+      window.AWFinish();
+    };
+    const restartCountdown = () => {
+      clearTimeout(timer);
+      timer =
+        !dismissed && document.visibilityState === "visible"
+          ? setTimeout(dismiss, after)
+          : null;
+    };
+
+    restartCountdown();
+    document.addEventListener("visibilitychange", restartCountdown);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", restartCountdown);
+    };
+  }, [after, messageId]);
+}
+
 export const MultiStageProtonScreen = props => {
   const {
     autoAdvance,
@@ -84,6 +126,7 @@ export const MultiStageProtonScreen = props => {
     navigate,
     order,
   } = props;
+  useAutoDismiss(props.autoDismiss, messageId);
   useEffect(() => {
     if (!autoAdvance && !advanceOnExperimentLoad) {
       return () => {};
@@ -650,6 +693,20 @@ export class ProtonScreen extends React.PureComponent {
     );
   }
 
+  // Draws the front card plus one back card for each screen still to come, up
+  // to two.
+  renderCardStackLayers() {
+    const { order = 0, totalNumberOfScreens = 1 } = this.props;
+    const cardsBehind = totalNumberOfScreens - order - 1;
+    return (
+      <>
+        <div className="card-stack-front" />
+        {cardsBehind >= 1 ? <div className="card-stack-layer-1" /> : null}
+        {cardsBehind >= 2 ? <div className="card-stack-layer-2" /> : null}
+      </>
+    );
+  }
+
   renderCornerImage(anchor) {
     const cornerImage = this.props.content.corner_image;
     const position = resolveCornerImagePosition(cornerImage.position);
@@ -1141,7 +1198,18 @@ export class ProtonScreen extends React.PureComponent {
           this.mainContentHeader = input;
         }}
         no-rdm={content.no_rdm ? "" : null}
+        // eslint-disable-next-line react/no-unknown-property
+        initial-card={
+          content.position === "card-stack" &&
+          this.props.isFirstScreen &&
+          this.props.previousOrder < 0
+            ? ""
+            : null
+        }
       >
+        {content.position === "card-stack"
+          ? this.renderCardStackLayers()
+          : null}
         {cornerImageAnchor === "screen"
           ? this.renderCornerImage("screen")
           : null}
@@ -1728,7 +1796,11 @@ export const screenContentShape = {
       // CSS overrides of the tile container. Any CSS properties starting with
       // '--' are also allowed.
       style: PropTypes.object,
-      // Accessible name for the optional carousel pill navigation.
+      // Optional, currently for single-select tiles only. Visual layout for
+      // the tile's items.
+      layout: PropTypes.oneOf(["carousel"]),
+      // Optional, currently for single-select tiles only. Accessible name for
+      // the carousel pill navigation.
       pill_nav_label: localizableThingPropTypes,
       // Array of tile configurations needed for the tile type.
       data: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),

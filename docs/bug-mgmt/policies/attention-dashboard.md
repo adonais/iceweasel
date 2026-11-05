@@ -108,5 +108,5 @@ This list is not designed for including everything or prioritizing your normal w
 If you find that most of your time is spent on high or highest priority tasks, then it’s time to ask some questions to work out why - there’s likely to be a problem behind this and it sounds like a recipe for burnout, and we should do everything we can to even things out.
 
 [phabricator]: https://phabricator.services.mozilla.com/
-[severity]: https://firefox-source-docs.mozilla.org/bug-mgmt/guides/severity.html
+[severity]: /bug-mgmt/guides/severity.md
 [what needs my attention?]: https://bugzilla.mozilla.org/page.cgi?id=whats_next.html

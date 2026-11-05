@@ -3,38 +3,36 @@
 
 "use strict";
 
-add_task(async function test_Monitor_US_region_desc() {
-  const supportedRegion = "US";
-  setupRegions(supportedRegion);
+add_task(async function test_monitor_us_region_utm_content() {
+  await clearPolicies();
+  setupRegions("US");
 
   let { monitorPromoCard } = await getPromoCards();
   ok(monitorPromoCard, "The Monitor promo is visible");
 
-  let monitorDescElement =
-    monitorPromoCard.nextElementSibling.querySelector(".description");
-  is(
-    monitorDescElement.getAttribute("data-l10n-id"),
-    "more-from-moz-mozilla-monitor-global-description",
-    "US Region desc set"
+  let url = new URL(monitorPromoCard.querySelector("moz-box-link").href);
+  Assert.equal(
+    url.searchParams.get("utm_content"),
+    "default-us",
+    "US region uses default-us utm_content"
   );
 
   setupRegions(initialHomeRegion, initialCurrentRegion);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-add_task(async function test_Monitor_global_region_desc() {
-  const supportedRegion = "UK";
-  setupRegions(supportedRegion);
+add_task(async function test_monitor_global_region_utm_content() {
+  await clearPolicies();
+  setupRegions("UK");
 
   let { monitorPromoCard } = await getPromoCards();
   ok(monitorPromoCard, "The Monitor promo is visible");
 
-  let monitorDescElement =
-    monitorPromoCard.nextElementSibling.querySelector(".description");
-  is(
-    monitorDescElement.getAttribute("data-l10n-id"),
-    "more-from-moz-mozilla-monitor-global-description",
-    "Global Region desc set"
+  let url = new URL(monitorPromoCard.querySelector("moz-box-link").href);
+  Assert.equal(
+    url.searchParams.get("utm_content"),
+    "default-global",
+    "Non-US region uses default-global utm_content"
   );
 
   setupRegions(initialHomeRegion, initialCurrentRegion);

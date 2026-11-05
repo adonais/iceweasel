@@ -38,19 +38,20 @@ bool SipccSdpMediaSection::Load(sdp_t* sdp, const uint16_t level,
                                 InternalResults& results) {
   switch (sdp_get_media_type(sdp, level)) {
     case SDP_MEDIA_AUDIO:
-      mMediaType = kAudio;
+      mMediaTypeInfo = {.type = kAudio};
       break;
     case SDP_MEDIA_VIDEO:
-      mMediaType = kVideo;
+      mMediaTypeInfo = {.type = kVideo};
       break;
     case SDP_MEDIA_APPLICATION:
-      mMediaType = kApplication;
+      mMediaTypeInfo = {.type = kApplication};
       break;
     case SDP_MEDIA_TEXT:
-      mMediaType = kText;
+      mMediaTypeInfo = {.type = kText};
       break;
 
     default:
+      // Unknown media types are not supported using SIPCC
       results.AddParseError(sdp_get_media_line_number(sdp, level),
                             "Unsupported media section type");
       return false;

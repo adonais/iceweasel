@@ -144,13 +144,6 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   // Temporary buffer for generating WGR output into.
   UniquePtr<WGR::OutputVertex[]> mWGROutputBuffer;
 
-  RefPtr<WebGLProgram> mSolidProgram;
-  Maybe<uint32_t> mSolidProgramViewport;
-  Maybe<uint32_t> mSolidProgramAA;
-  Maybe<uint32_t> mSolidProgramTransform;
-  Maybe<uint32_t> mSolidProgramColor;
-  Maybe<uint32_t> mSolidProgramClipMask;
-  Maybe<uint32_t> mSolidProgramClipBounds;
   RefPtr<WebGLProgram> mImageProgram;
   Maybe<uint32_t> mImageProgramViewport;
   Maybe<uint32_t> mImageProgramAA;
@@ -162,6 +155,7 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   Maybe<uint32_t> mImageProgramSampler;
   Maybe<uint32_t> mImageProgramClipMask;
   Maybe<uint32_t> mImageProgramClipBounds;
+  Maybe<uint32_t> mImageProgramTexMode;
   RefPtr<WebGLProgram> mBlurProgram;
   Maybe<uint32_t> mBlurProgramViewport;
   Maybe<uint32_t> mBlurProgramTransform;
@@ -185,14 +179,6 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   Maybe<uint32_t> mFilterProgramClipMask;
   Maybe<uint32_t> mFilterProgramClipBounds;
 
-  struct SolidProgramUniformState {
-    Maybe<Array<float, 2>> mViewport;
-    Maybe<Array<float, 1>> mAA;
-    Maybe<Array<float, 6>> mTransform;
-    Maybe<Array<float, 4>> mColor;
-    Maybe<Array<float, 4>> mClipBounds;
-  } mSolidProgramUniformState;
-
   struct ImageProgramUniformState {
     Maybe<Array<float, 2>> mViewport;
     Maybe<Array<float, 1>> mAA;
@@ -202,6 +188,7 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
     Maybe<Array<float, 4>> mColor;
     Maybe<Array<float, 1>> mSwizzle;
     Maybe<Array<float, 4>> mClipBounds;
+    Maybe<Array<int32_t, 1>> mTexMode;
   } mImageProgramUniformState;
 
   struct BlurProgramUniformState {
@@ -242,8 +229,8 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   RefPtr<WebGLBuffer> mUploadBuffer;
   // Offset within mUploadBuffer to use for next upload.
   size_t mUploadBufferOffset = 0;
-  // 1x1 texture with solid white mask for disabling clipping
-  RefPtr<WebGLTexture> mNoClipMask;
+  // 1x1 texture with solid white mask
+  RefPtr<WebGLTexture> mSolidMask;
 
   uint32_t mMaxTextureSize = 0;
   bool mRasterizationTruncates = false;
@@ -316,9 +303,10 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   void SetClipRect(const Rect& aClipRect);
   void SetClipRect(const IntRect& aClipRect) { SetClipRect(Rect(aClipRect)); }
   bool SetClipMask(const RefPtr<WebGLTexture>& aTex);
+  bool InitSolidMask(uint32_t aTexUnit);
   bool SetNoClipMask();
   bool HasClipMask() const {
-    return mLastClipMask && mLastClipMask != mNoClipMask;
+    return mLastClipMask && mLastClipMask != mSolidMask;
   }
 
   Maybe<uint32_t> GetUniformLocation(const RefPtr<WebGLProgram>& prog,
@@ -332,6 +320,10 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   template <class T, size_t N>
   void MaybeUniformData(GLenum aFuncElemType, const Maybe<uint32_t>& aLoc,
                         const Array<T, N>& aData, Maybe<Array<T, N>>& aCached);
+
+  void SetProgram(const RefPtr<WebGLProgram>& aProgram);
+  void SetImageProgram(bool aTexMode = true);
+  void SetSolidColorProgram();
 
   bool IsCurrentTarget(DrawTargetWebgl* aDT) const {
     return aDT == mCurrentTarget;
@@ -442,11 +434,15 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
 
   already_AddRefed<TextureHandle> DrawStrokeMask(
       const PathVertexRange& aVertexRange, const IntSize& aSize);
+  // aPatternOffset is only used when linking a stroke mask texture to aEntry.
+  // Stroke masks have no pattern, so it is never compared, but Link requires
+  // it.
   bool DrawWGRPath(const Path* aPath, const IntRect& aIntBounds,
                    const Rect& aQuantBounds, const Matrix& aPathXform,
                    RefPtr<PathCacheEntry>& aEntry, const DrawOptions& aOptions,
                    const StrokeOptions* aStrokeOptions,
                    AAStrokeMode aAAStrokeMode, const Pattern& aPattern,
+                   const Point& aPatternOffset,
                    const Maybe<DeviceColor>& aColor);
   bool DrawPathAccel(const Path* aPath, const Pattern& aPattern,
                      const DrawOptions& aOptions,

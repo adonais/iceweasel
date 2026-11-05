@@ -1,0 +1,49 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=2078496
+-->
+<head>
+  <meta charset="utf-8">
+  <title>Test for Bug 2078496</title>
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2078496">Mozilla Bug 2078496</a>
+
+<iframe id="frame" src="data:text/html,"></iframe>
+
+<script type="text/javascript">
+/**
+ * An unhandled rejection in a content window whose rejection stack lives in
+ * a chrome compartment must be reported without crashing.
+ */
+add_task(async function test_unhandled_rejection_with_chrome_stack() {
+  const frame = document.getElementById("frame");
+  if (frame.contentDocument?.readyState !== "complete") {
+    await new Promise(resolve => frame.addEventListener("load", resolve, { once: true }));
+  }
+  const win = frame.contentWindow;
+
+  Cu.exportFunction(
+    () => {
+      // eslint-disable-next-line no-throw-literal
+      throw "thrown from chrome";
+    },
+    win,
+    { defineAs: "throwFromChrome" }
+  );
+
+  const unhandled = new Promise(resolve =>
+    win.addEventListener("unhandledrejection", e => resolve(e.reason), { once: true })
+  );
+  Cu.waiveXrays(win).eval("Promise.resolve().then(throwFromChrome)");
+
+  is(await unhandled, "thrown from chrome", "unhandledrejection fired");
+  await new Promise(resolve => SimpleTest.executeSoon(resolve));
+  ok(true, "Reporting the rejection did not crash");
+});
+</script>
+</body>
+</html>

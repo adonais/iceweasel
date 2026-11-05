@@ -13,10 +13,7 @@ geckoview-junit:
     description: "Geckoview junit run"
     suite: geckoview-junit
     variants:
-        - geckoview-fission
-        - no-fission
         - geckoview-isolated-process
-        - geckoview-isolated-process+no-fission
         - geckoview-zygote
     treeherder-symbol: gv-junit()
     treeherder-group-variants: true
@@ -28,18 +25,13 @@ geckoview-junit:
             default: 3600
     run-on-projects:
         by-variant:
-            geckoview-fission: ['trunk']
-            no-fission: built-projects
             geckoview-zygote: []
             geckoview-isolated-process:
                 by-test-platform:
+                    android-em.*-ccov/opt: built-projects
                     android-em.*/debug: built-projects
                     default: []
-            geckoview-isolated-process+no-fission:
-                by-test-platform:
-                    android-em.*/debug: built-projects
-                    default: []
-            default: []
+            default: built-projects
     tier: default
     chunks: 4
     mozharness:
@@ -235,6 +227,10 @@ test-coverage:
         by-test-platform:
             .*-ccov.*: built-projects
             default: []
+    target:
+        by-test-platform:
+            android-em.*: geckoview-test_runner.apk
+            default: null
     tier: 2
     mozharness:
         script:

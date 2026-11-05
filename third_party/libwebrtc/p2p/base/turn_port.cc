@@ -516,6 +516,11 @@ bool TurnPort::CreateTurnClientSocket() {
         }
       });
 
+  // A closed socket is fatal for all protocols, not just the connection
+  // oriented ones.
+  socket_->SubscribeCloseEvent(
+      this, [this](AsyncPacketSocket* s, int err) { OnSocketClose(s, err); });
+
   // TCP and UDP with DTLS port is ready to send stun requests after the socket
   // is connected, while pure UDP port is ready to do so once the socket is
   // created.
@@ -524,8 +529,6 @@ bool TurnPort::CreateTurnClientSocket() {
       server_address_.proto == PROTO_DTLS) {
     socket_->SubscribeConnect(
         this, [this](AsyncPacketSocket* socket) { OnSocketConnect(socket); });
-    socket_->SubscribeCloseEvent(
-        this, [this](AsyncPacketSocket* s, int err) { OnSocketClose(s, err); });
   } else {
     state_ = STATE_CONNECTED;
   }
@@ -961,7 +964,7 @@ void TurnPort::OnAllocateError(int error_code, absl::string_view reason) {
       SafeTask(task_safety_.flag(), [this] { NotifyPortError(this); }));
   std::string address = GetLocalAddress().HostAsSensitiveURIString();
   int port = GetLocalAddress().port();
-  if (server_address_.proto == PROTO_TCP &&
+  if (server_address_.proto != PROTO_UDP &&
       server_address_.address.IsPrivateIP()) {
     address.clear();
     port = 0;
@@ -1002,9 +1005,10 @@ void TurnPort::Release() {
 
 void TurnPort::Close() {
   if (!ready()) {
-    OnAllocateError(
-        STUN_ERROR_SERVER_NOT_REACHABLE,
-        GetProtocol() != PROTO_UDP ? "Failed to establish connection" : "");
+    OnAllocateError(STUN_ERROR_SERVER_NOT_REACHABLE,
+                    GetProtocol() != PROTO_UDP
+                        ? "Failed to establish connection"
+                        : "Socket was closed");
   }
   request_manager_.Clear();
   // Stop the port from creating new connections.

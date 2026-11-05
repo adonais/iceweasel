@@ -13,10 +13,11 @@
  Serializable,  ProbablyShortLivingWrapper]
 interface ImageData {
  [Throws]
- constructor(unsigned long sw, unsigned long sh);
+ constructor(unsigned long sw, unsigned long sh, optional ImageDataSettings settings = {});
  [Throws]
  constructor(Uint8ClampedArray data, unsigned long sw,
-             optional unsigned long sh);
+             optional unsigned long sh,
+             optional ImageDataSettings settings = {});
 
  [Constant]
  readonly attribute unsigned long width;
@@ -24,4 +25,6 @@ interface ImageData {
  readonly attribute unsigned long height;
  [Constant, StoreInSlot]
  readonly attribute Uint8ClampedArray data;
+ [Pref="gfx.canvas.colorspace.enabled"]
+ readonly attribute PredefinedColorSpace colorSpace;
 };

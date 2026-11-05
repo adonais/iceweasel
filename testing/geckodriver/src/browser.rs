@@ -16,6 +16,10 @@ use std::path::{Path, PathBuf};
 use std::time;
 use webdriver::error::{ErrorStatus, WebDriverError, WebDriverResult};
 
+/// Fallback timeout to wait for the browser process to shutdown, used when the
+/// session didn't report a "moz:shutdownTimeout" capability.
+pub(crate) const DEFAULT_SHUTDOWN_TIMEOUT: time::Duration = time::Duration::from_secs(90);
+
 // Status of the browser process.
 pub(crate) enum BrowserStatus {
     Exited(Option<i32>),
@@ -34,10 +38,12 @@ pub(crate) enum Browser {
 }
 
 impl Browser {
-    pub(crate) fn close(self, wait_for_shutdown: bool) -> WebDriverResult<()> {
+    /// Close the browser, and if `shutdown_timeout` is set wait for that long
+    /// for the process to exit on its own before force-killing it.
+    pub(crate) fn close(self, shutdown_timeout: Option<time::Duration>) -> WebDriverResult<()> {
         match self {
-            Browser::Local(x) => x.close(wait_for_shutdown),
-            Browser::Remote(x) => x.close(wait_for_shutdown),
+            Browser::Local(x) => x.close(shutdown_timeout),
+            Browser::Remote(x) => x.close(shutdown_timeout),
             Browser::Existing(_) => Ok(()),
         }
     }
@@ -170,12 +176,14 @@ impl LocalBrowser {
         })
     }
 
-    fn close(mut self, wait_for_shutdown: bool) -> WebDriverResult<()> {
-        if wait_for_shutdown {
-            // TODO(https://bugzil.la/1443922):
-            // Use toolkit.asyncshutdown.crash_timout pref
-            let duration = time::Duration::from_secs(70);
-            match self.process.wait(duration) {
+    fn close(mut self, shutdown_timeout: Option<time::Duration>) -> WebDriverResult<()> {
+        if let Some(timeout) = shutdown_timeout {
+            debug!(
+                "Waiting {}s for browser process {} to exit",
+                timeout.as_secs_f64(),
+                self.process.pid()
+            );
+            match self.process.wait(timeout) {
                 Ok(x) => debug!("Browser process stopped: {}", x),
                 Err(e) => error!("Failed to stop browser process: {}", e),
             }
@@ -320,17 +328,14 @@ impl RemoteBrowser {
         })
     }
 
-    fn close(&self, wait_for_shutdown: bool) -> WebDriverResult<()> {
-        if wait_for_shutdown {
-            // TODO(https://bugzil.la/1443922):
-            // Use toolkit.asyncshutdown.crash_timeout pref
-            let timeout = time::Duration::from_secs(70);
+    fn close(&self, shutdown_timeout: Option<time::Duration>) -> WebDriverResult<()> {
+        if let Some(timeout) = shutdown_timeout {
             let poll_interval = time::Duration::from_millis(100);
             let start = time::Instant::now();
 
             debug!(
                 "Waiting {}s for Android process {} (package {}) to exit",
-                timeout.as_secs(),
+                timeout.as_secs_f64(),
                 self.pid,
                 &self.handler.process.package
             );

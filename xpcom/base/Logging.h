@@ -57,7 +57,8 @@ class LogModule {
   static void Init(int argc, char* argv[]);
 
   /**
-   * Sets the log file to the given filename.
+   * Sets the log file to the given filename, or goes back to logging to
+   * stderr if aFilename is null.
    */
   static void SetLogFile(const char* aFilename);
 

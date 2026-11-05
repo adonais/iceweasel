@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-09-30T03:51:55.689170+00:00'
+updated_at: '2026-10-19T23:26:51.625727+00:00'
 export:
   path: ./docs/mots/index.md
   format: md
@@ -22,6 +22,10 @@ aliases:
   - &TLMC
     nick: TLMC
 people:
+  - &007
+    bmo_id: 689628
+    name: Noah Bond
+    nick: '007'
   - &acottner
     bmo_id: 736702
     name: Alex Cottner
@@ -415,6 +419,10 @@ people:
     bmo_id: 149052
     name: Florian Quèze
     nick: florian
+  - &flozia
+    bmo_id: 708037
+    name: Florian Zia
+    nick: flozia
   - &fredwang
     bmo_id: 739410
     name: Frédéric Wang Nélar
@@ -510,6 +518,10 @@ people:
     bmo_id: 5490
     name: Henri Sivonen
     nick: hsivonen
+  - &hsohaney
+    bmo_id: 726750
+    name: Harshit Sohaney
+    nick: hsohaney
   - &iain
     bmo_id: 623993
     name: Iain Ireland
@@ -558,6 +570,10 @@ people:
     bmo_id: 580382
     name: Julien Cristau
     nick: jcristau
+  - &jdelorenzo
+    bmo_id: 779362
+    name: Julie De Lorenzo
+    nick: jdelorenzo
   - &jdescottes
     bmo_id: 559949
     name: Julian Descottes
@@ -913,6 +929,10 @@ people:
     bmo_id: 557153
     name: Nicolas Chevobbe
     nick: nchevobbe
+  - &ngrato
+    bmo_id: 705149
+    name: Nick Grato
+    nick: ngrato
   - &nical
     bmo_id: 438998
     name: Nicolas Silva
@@ -957,6 +977,10 @@ people:
     bmo_id: 694341
     name: Olivia Hall
     nick: olivia
+  - &omarg
+    bmo_id: 779361
+    name: Omar Gonzalez
+    nick: omarg
   - &overholt
     bmo_id: 442218
     name: Andrew Overholt
@@ -1689,6 +1713,7 @@ modules:
       url: '{doc}`/toolkit/crashreporter/crashreporter/index`'
       components:
         - Toolkit::Crash Reporting
+      review_group: crashreporting-reviewers
     owners:
       - *gsvelto
     peers:
@@ -1836,7 +1861,7 @@ modules:
         - Core::DOM
         - 'Core::DOM: Core & HTML'
         - Core::XSLT
-      review_group: dom-core
+      review_group: dom-reviewers
     owners:
       - *mccr8
     peers:
@@ -2409,6 +2434,9 @@ modules:
         owners:
           - *Mardak
         peers:
+          - *flozia
+          - *ngrato
+          - *omarg
           - *pdahiya
 
       - machine_name: core_machine_learning_models
@@ -2424,12 +2452,26 @@ modules:
           - *rrando
           - *tetchart
 
+      - machine_name: core_machine_learning_multiline_editor
+        name: 'Machine Learning: Multiline Editor'
+        includes:
+          - browser/components/multilineeditor/
+        meta:
+          components:
+            - 'Core::Machine Learning: Frontend'
+          review_group: ai-frontend-reviewers
+        owners:
+          - *flozia
+        peers:
+          - *mak
+
       - machine_name: core_machine_learning_platform
         name: 'Machine Learning: Platform'
         includes:
           - toolkit/components/aboutinference/
           - toolkit/components/ml/
           - toolkit/components/pageextractor/
+          - taskcluster/kinds/toolchain-symbols-upload/kind.yml
         meta:
           components:
             - 'Core::Machine Learning: On Device'
@@ -3274,7 +3316,7 @@ modules:
       - dom/webidl/WebGPU.webidl
       - dom/webgpu/**/*
       - gfx/wgpu_bindings/**/*
-      - taskcluster/kinds/toolchain-dxc-upload/kind.yml
+      - taskcluster/kinds/toolchain-symbols-upload/kind.yml
       - taskcluster/kinds/toolchain/dxc.yml
       - third_party/rust/naga/**/*
       - third_party/rust/wgpu-*/**/*
@@ -3866,6 +3908,7 @@ modules:
         description: Desktop clients for our experiments and off-train deployments
           systems.
         includes:
+          - browser/components/nimbus/**/*
           - toolkit/components/normandy/**/*
           - toolkit/components/nimbus/**/*
         meta:
@@ -4073,21 +4116,24 @@ modules:
       - machine_name: firefox_pip
         name: Picture-in-Picture
         description: A component that allows video elements to be pulled out into
-          an always-on-top window.
+          an always-on-top window. This also includes the Mini Window feature for
+          extracting some or all of a webpage into an always-on-top window.
         includes:
           - toolkit/components/pictureinpicture
+          - browser/components/miniwindow
           - browser/extensions/pictureinpicture
         meta:
           owners_emeritus:
             - *micah
             - *molly
+            - *mconley
           review_group: pip-reviewers
         excludes: []
         owners:
-          - *mconley
+          - *kpatenio
         peers:
           - *niklas
-          - *kpatenio
+          - *hsohaney
 
       - name: Profile Migration
         description: Migrating data from other browsers.
@@ -4368,6 +4414,28 @@ modules:
           - *zombie
           - *tcampbell
           - *jonalmeida
+      - machine_name: fenix_tabs
+        name: Fenix - Tabs
+        description: Submodule for the tabs code in Firefox for Android.
+        includes:
+          - mobile/android/android-components/components/browser/tabstray/**/*
+          - mobile/android/android-components/components/compose/tabstray/**/*
+          - mobile/android/android-components/components/concept/tabstray/**/*
+          - mobile/android/android-components/components/feature/tabs/**/*
+          - mobile/android/android-components/components/feature/tabgroups-storage/**/*
+          - mobile/android/android-components/components/feature/tabdata-coordinator/**/*
+          - mobile/android/fenix/app/src/*/java/org/mozilla/fenix/tabstray/**/*
+          - mobile/android/fenix/app/src/*/java/org/mozilla/fenix/tabgroups/**/*
+          - mobile/android/fenix/app/src/*/java/org/mozilla/fenix/components/tabs/**/*
+        meta:
+          components:
+            - 'Firefox for Android :: Tabs'
+          review_group: android-tabs-reviewers
+        owners:
+          - *007
+        peers:
+          - *calu
+          - *jdelorenzo
 
   - machine_name: focus_android
     name: Focus for Android
@@ -5008,5 +5076,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: c6c8a7e944ae57eed39b210e9d3136a74b2e677c
-  export: 90aa36cae66b6598fb72581f2c4b0f018e621e82
+  config: 0fa1edd1eb9e634b8f3b5cd772db6bf9be49af8f
+  export: 0a1dc9b3b63a79c423de97a6d3fb023bdd50a70f

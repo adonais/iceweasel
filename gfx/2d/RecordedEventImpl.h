@@ -13,10 +13,13 @@
 #include "SFNTData.h"
 #include "ScaledFontBase.h"
 #include "Tools.h"
+#include "gfxOTSUtils.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/CanvasRenderingContextHelper.h"
 #include "mozilla/ipc/SerializeToBytesUtil.h"
 #include "mozilla/layers/BuildConstants.h"
 #include "mozilla/layers/LayersSurfaces.h"
+#include "nsXULAppAPI.h"
 
 namespace mozilla {
 namespace gfx {
@@ -142,11 +145,11 @@ class RecordedCreateSimilarDrawTarget
 class RecordedCreateClippedDrawTarget
     : public RecordedEventDerived<RecordedCreateClippedDrawTarget> {
  public:
-  RecordedCreateClippedDrawTarget(ReferencePtr aRefPtr, const Rect& aBounds,
+  RecordedCreateClippedDrawTarget(ReferencePtr aRefPtr, const IntRect& aRect,
                                   SurfaceFormat aFormat)
       : RecordedEventDerived(CREATECLIPPEDDRAWTARGET),
         mRefPtr(aRefPtr),
-        mBounds(aBounds),
+        mRect(aRect),
         mFormat(aFormat) {}
 
   bool PlayEvent(Translator* aTranslator) const override;
@@ -159,7 +162,8 @@ class RecordedCreateClippedDrawTarget
   std::string GetName() const override { return "CreateClippedDrawTarget"; }
 
   ReferencePtr mRefPtr;
-  Rect mBounds;
+  // In device space of the recording.
+  IntRect mRect;
   SurfaceFormat mFormat;
 
  private:
@@ -413,13 +417,18 @@ class RecordedDrawGlyphs : public RecordedEventDerived<Derived> {
  public:
   RecordedDrawGlyphs(RecordedEvent::EventType aType, ReferencePtr aScaledFont,
                      const Pattern& aPattern, const DrawOptions& aOptions,
-                     const Glyph* aGlyphs, uint32_t aNumGlyphs)
+                     const GlyphBuffer& aBuffer)
       : RecordedEventDerived<Derived>(aType),
         mScaledFont(aScaledFont),
         mPattern(),
         mOptions(aOptions) {
     this->StorePattern(mPattern, aPattern);
-    mGlyphs.Assign(aGlyphs, aNumGlyphs);
+    mGlyphs.Assign(aBuffer.mGlyphs, aBuffer.mNumGlyphs);
+    // Only copied if both are present; see gfx::GlyphBuffer.
+    if (aBuffer.mText && aBuffer.mClusters && aBuffer.mNumGlyphs) {
+      mText.Assign(aBuffer.mText, aBuffer.mTextLength);
+      mClusters.Assign(aBuffer.mClusters, aBuffer.mNumGlyphs);
+    }
   }
 
   bool PlayEvent(Translator* aTranslator) const override;
@@ -442,15 +451,18 @@ class RecordedDrawGlyphs : public RecordedEventDerived<Derived> {
   PatternStorage mPattern;
   DrawOptions mOptions;
   RecordedEventArray<Glyph, uint32_t> mGlyphs;
+  // The source text and clusters for mGlyphs; see gfx::GlyphBuffer. Either both
+  // are empty, or mClusters has one entry per glyph in mGlyphs.
+  RecordedEventArray<char, uint32_t> mText;
+  RecordedEventArray<uint32_t, uint32_t> mClusters;
 };
 
 class RecordedFillGlyphs : public RecordedDrawGlyphs<RecordedFillGlyphs> {
  public:
   RecordedFillGlyphs(ReferencePtr aScaledFont, const Pattern& aPattern,
-                     const DrawOptions& aOptions, const Glyph* aGlyphs,
-                     uint32_t aNumGlyphs)
-      : RecordedDrawGlyphs(FILLGLYPHS, aScaledFont, aPattern, aOptions, aGlyphs,
-                           aNumGlyphs) {}
+                     const DrawOptions& aOptions, const GlyphBuffer& aBuffer)
+      : RecordedDrawGlyphs(FILLGLYPHS, aScaledFont, aPattern, aOptions,
+                           aBuffer) {}
 
   std::string GetName() const override { return "FillGlyphs"; }
 
@@ -473,10 +485,9 @@ class RecordedStrokeGlyphs : public RecordedDrawGlyphs<RecordedStrokeGlyphs>,
  public:
   RecordedStrokeGlyphs(ReferencePtr aScaledFont, const Pattern& aPattern,
                        const StrokeOptions& aStrokeOptions,
-                       const DrawOptions& aOptions, const Glyph* aGlyphs,
-                       uint32_t aNumGlyphs)
+                       const DrawOptions& aOptions, const GlyphBuffer& aBuffer)
       : RecordedDrawGlyphs(STROKEGLYPHS, aScaledFont, aPattern, aOptions,
-                           aGlyphs, aNumGlyphs),
+                           aBuffer),
         mStrokeOptions(aStrokeOptions) {}
 
   std::string GetName() const override { return "StrokeGlyphs"; }
@@ -705,7 +716,7 @@ class RecordedRemoveAllClips
 class RecordedPushLayer : public RecordedEventDerived<RecordedPushLayer> {
  public:
   RecordedPushLayer(bool aOpaque, Float aOpacity, SourceSurface* aMask,
-                    const Matrix& aMaskTransform, const IntRect& aBounds,
+                    const Matrix& aMaskTransform, const Rect& aBounds,
                     bool aCopyBackground)
       : RecordedEventDerived(PUSHLAYER),
         mOpaque(aOpaque),
@@ -733,7 +744,7 @@ class RecordedPushLayer : public RecordedEventDerived<RecordedPushLayer> {
   Float mOpacity = 1.0f;
   ReferencePtr mMask;
   Matrix mMaskTransform;
-  IntRect mBounds;
+  Rect mBounds;
   bool mCopyBackground = false;
 };
 
@@ -741,9 +752,8 @@ class RecordedPushLayerWithBlend
     : public RecordedEventDerived<RecordedPushLayerWithBlend> {
  public:
   RecordedPushLayerWithBlend(bool aOpaque, Float aOpacity, SourceSurface* aMask,
-                             const Matrix& aMaskTransform,
-                             const IntRect& aBounds, bool aCopyBackground,
-                             CompositionOp aCompositionOp)
+                             const Matrix& aMaskTransform, const Rect& aBounds,
+                             bool aCopyBackground, CompositionOp aCompositionOp)
       : RecordedEventDerived(PUSHLAYERWITHBLEND),
         mOpaque(aOpaque),
         mOpacity(aOpacity),
@@ -772,7 +782,7 @@ class RecordedPushLayerWithBlend
   Float mOpacity = 1.0f;
   ReferencePtr mMask;
   Matrix mMaskTransform;
-  IntRect mBounds;
+  Rect mBounds;
   bool mCopyBackground = false;
   CompositionOp mCompositionOp = CompositionOp::OP_OVER;
 };
@@ -2431,6 +2441,15 @@ inline bool RecordedCreateDrawTargetForFilter::PlayEvent(
   return true;
 }
 
+// Layer bounds are recorded in user space, see DrawTargetRecording::PushLayer.
+static inline IntRect UserToDeviceLayerBounds(DrawTarget* aDT,
+                                              const Rect& aBounds) {
+  if (aBounds.IsEmpty()) {
+    return IntRect();
+  }
+  return RoundedOut(aDT->GetTransform().TransformBounds(aBounds));
+}
+
 inline bool RecordedCreateClippedDrawTarget::PlayEvent(
     Translator* aTranslator) const {
   DrawTarget* dt = aTranslator->GetCurrentDrawTarget();
@@ -2438,7 +2457,25 @@ inline bool RecordedCreateClippedDrawTarget::PlayEvent(
     return false;
   }
 
-  RefPtr<DrawTarget> newDT = dt->CreateClippedDrawTarget(mBounds, mFormat);
+  IntRect rect = mRect;
+  // Ensure the clip rect doesn't exceed our own DT. This can happen on blobs
+  // with massive scale transforms or so.
+  {
+    if (dt == aTranslator->GetReferenceDrawTarget()) {
+      Matrix toRecording = aTranslator->GetReferenceDrawTargetTransform();
+      if (toRecording.Invert()) {
+        rect = rect.Intersect(
+            RoundedOut(toRecording.TransformBounds(Rect(dt->GetRect()))));
+      }
+    } else {
+      rect = rect.Intersect(dt->GetRect());
+    }
+    if (rect.IsEmpty()) {
+      rect.SizeTo(1, 1);
+    }
+  }
+
+  RefPtr<DrawTarget> newDT = dt->CreateClippedDrawTargetForRect(rect, mFormat);
 
   // If we couldn't create a DrawTarget this will probably cause us to crash
   // with nullptr later in the playback, so return false to abort.
@@ -2453,7 +2490,7 @@ inline bool RecordedCreateClippedDrawTarget::PlayEvent(
 template <class S>
 void RecordedCreateClippedDrawTarget::Record(S& aStream) const {
   WriteElement(aStream, mRefPtr);
-  WriteElement(aStream, mBounds);
+  WriteElement(aStream, mRect);
   WriteElement(aStream, mFormat);
 }
 
@@ -2461,7 +2498,7 @@ template <class S>
 RecordedCreateClippedDrawTarget::RecordedCreateClippedDrawTarget(S& aStream)
     : RecordedEventDerived(CREATECLIPPEDDRAWTARGET) {
   ReadElement(aStream, mRefPtr);
-  ReadElement(aStream, mBounds);
+  ReadElement(aStream, mRect);
   ReadElementConstrained(aStream, mFormat, SurfaceFormat::B8G8R8A8,
                          SurfaceFormat::UNKNOWN);
 }
@@ -2803,6 +2840,11 @@ inline bool RecordedDrawGlyphs<T>::PlayEvent(Translator* aTranslator) const {
   GlyphBuffer buffer;
   buffer.mGlyphs = mGlyphs.data();
   buffer.mNumGlyphs = mGlyphs.size();
+  if (!mText.empty()) {
+    buffer.mText = mText.data();
+    buffer.mTextLength = mText.size();
+    buffer.mClusters = mClusters.data();
+  }
   DrawGlyphs(dt, scaledFont, buffer, *GenericPattern(mPattern, aTranslator));
   return true;
 }
@@ -2817,14 +2859,42 @@ RecordedDrawGlyphs<T>::RecordedDrawGlyphs(RecordedEvent::EventType aType,
   this->ReadPatternData(aStream, mPattern);
   uint32_t numGlyphs;
   ReadElement(aStream, numGlyphs);
-  if (!aStream.good() || numGlyphs <= 0) {
+  if (!aStream.good()) {
     return;
   }
 
-  if (!mGlyphs.Read(aStream, numGlyphs)) {
+  if (numGlyphs > 0 && !mGlyphs.Read(aStream, numGlyphs)) {
     gfxCriticalNote << "RecordedDrawGlyphs failed to allocate glyphs of size "
                     << numGlyphs;
     aStream.SetIsBad();
+    return;
+  }
+
+  uint32_t textLength;
+  ReadElement(aStream, textLength);
+  if (!aStream.good() || textLength == 0) {
+    return;
+  }
+  if (numGlyphs == 0) {
+    aStream.SetIsBad();
+    return;
+  }
+  if (!mText.Read(aStream, textLength) || !mClusters.Read(aStream, numGlyphs)) {
+    gfxCriticalNote
+        << "RecordedDrawGlyphs failed to allocate glyph source text of size "
+        << textLength;
+    aStream.SetIsBad();
+    return;
+  }
+  // The recording may come from a less privileged process, so validate the
+  // clusters (see gfx::GlyphBuffer) before they are used to index mText.
+  const uint32_t* clusters = mClusters.data();
+  for (uint32_t i = 0; i < numGlyphs; ++i) {
+    if (clusters[i] >= textLength || (i > 0 && clusters[i] < clusters[i - 1])) {
+      gfxCriticalNote << "RecordedDrawGlyphs has invalid glyph clusters";
+      aStream.SetIsBad();
+      return;
+    }
   }
 }
 
@@ -2836,6 +2906,11 @@ void RecordedDrawGlyphs<T>::Record(S& aStream) const {
   this->RecordPatternData(aStream, mPattern);
   WriteElement(aStream, mGlyphs.size());
   mGlyphs.Write(aStream);
+  WriteElement(aStream, mText.size());
+  if (mText.size()) {
+    mText.Write(aStream);
+    mClusters.Write(aStream);
+  }
 }
 
 template <class T>
@@ -3088,8 +3163,8 @@ inline bool RecordedPushLayer::PlayEvent(Translator* aTranslator) const {
 
   SourceSurface* mask =
       mMask ? aTranslator->LookupSourceSurface(mMask) : nullptr;
-  dt->PushLayer(mOpaque, mOpacity, mask, mMaskTransform, mBounds,
-                mCopyBackground);
+  dt->PushLayer(mOpaque, mOpacity, mask, mMaskTransform,
+                UserToDeviceLayerBounds(dt, mBounds), mCopyBackground);
   return true;
 }
 
@@ -3129,8 +3204,9 @@ inline bool RecordedPushLayerWithBlend::PlayEvent(
 
   SourceSurface* mask =
       mMask ? aTranslator->LookupSourceSurface(mMask) : nullptr;
-  dt->PushLayerWithBlend(mOpaque, mOpacity, mask, mMaskTransform, mBounds,
-                         mCopyBackground, mCompositionOp);
+  dt->PushLayerWithBlend(mOpaque, mOpacity, mask, mMaskTransform,
+                         UserToDeviceLayerBounds(dt, mBounds), mCopyBackground,
+                         mCompositionOp);
   return true;
 }
 
@@ -4152,8 +4228,33 @@ inline bool RecordedFontData::PlayEvent(Translator* aTranslator) const {
     return false;
   }
 
+  const uint8_t* data = mData.data();
+  uint32_t length = mData.size();
+
+  UniqueFreePtr<uint8_t> sanitized;
+  if (XRE_IsParentProcess() || XRE_IsGPUProcess()) {
+    size_t lengthHint =
+        gfxOTSContext::GuessSanitizedFontSize(data, length, false);
+    if (!lengthHint) {
+      gfxCriticalNote << "Could not determine type of recorded font of size "
+                      << length;
+      return false;
+    }
+
+    gfxOTSExpandingMemoryStream<gfxOTSMozAlloc> output(lengthHint);
+    gfxOTSContext otsContext;
+    if (!otsContext.Process(&output, data, length)) {
+      gfxCriticalNote << "Failed sanitizing recorded font of size " << length;
+      return false;
+    }
+
+    length = output.Tell();
+    sanitized.reset(static_cast<uint8_t*>(output.forget()));
+    data = sanitized.get();
+  }
+
   RefPtr<NativeFontResource> fontResource = Factory::CreateNativeFontResource(
-      mData.data(), mData.size(), mType, aTranslator->GetFontContext());
+      data, length, mType, aTranslator->GetFontContext());
   if (!fontResource) {
     return false;
   }

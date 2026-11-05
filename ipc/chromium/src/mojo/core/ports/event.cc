@@ -174,8 +174,6 @@ void Event::Serialize(void* buffer) const {
   SerializeData(header + 1);
 }
 
-ScopedEvent Event::CloneForBroadcast() const { return nullptr; }
-
 UserMessageEvent::~UserMessageEvent() = default;
 
 UserMessageEvent::UserMessageEvent(size_t num_ports)
@@ -340,17 +338,6 @@ void ObserveProxyEvent::SerializeData(void* buffer) const {
   data->proxy_port_name = proxy_port_name_;
   data->proxy_target_node_name = proxy_target_node_name_;
   data->proxy_target_port_name = proxy_target_port_name_;
-}
-
-ScopedEvent ObserveProxyEvent::CloneForBroadcast() const {
-  // Don't broadcast events targeted at specific ports. Otherwise a malicious
-  // node can use this to bypass sender verification.
-  if (port_name() != kInvalidPortName) {
-    return nullptr;
-  }
-  return mozilla::MakeUnique<ObserveProxyEvent>(
-      port_name(), from_port(), control_sequence_num(), proxy_node_name_,
-      proxy_port_name_, proxy_target_node_name_, proxy_target_port_name_);
 }
 
 ObserveProxyAckEvent::ObserveProxyAckEvent(const PortName& port_name,

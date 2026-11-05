@@ -4,13 +4,16 @@
 "use strict";
 
 // Tests the certificate overrides we allow.
-// add_cert_override_test will queue a test that does the following:
+// each certOverrideTest will do the following:
 // 1. Attempt to connect to the given host. This should fail with the
 //    given error.
 // 2. Add an override for that host/port/certificate.
 // 3. Connect again. This should succeed.
 
 do_get_profile();
+let gCertDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
 
 // Enable the collection (during test) for all products so even products
 // that don't collect the data will be able to run the test without failure.
@@ -134,8 +137,6 @@ function check_telemetry() {
     70,
     "Actual and expected verification failures unrelated to key size should match"
   );
-
-  run_next_test();
 }
 
 // Internally, specifying "port" -1 is the same as port 443. This tests that.
@@ -189,7 +190,7 @@ function run_port_equivalency_test(inPort, outPort) {
   );
 }
 
-function run_test() {
+add_task(async function run_test() {
   Services.fog.initializeFOG();
   Services.fog.testResetFOG();
 
@@ -197,7 +198,8 @@ function run_test() {
   run_port_equivalency_test(443, -1);
 
   Services.prefs.setIntPref("security.OCSP.enabled", 1);
-  add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
+
+  await asyncStartTLSTestServer("BadCertAndPinningServer", "bad_certs", true);
 
   let fakeOCSPResponder = new HttpServer();
   fakeOCSPResponder.registerPrefixHandler("/", function (request, response) {
@@ -205,561 +207,466 @@ function run_test() {
   });
   fakeOCSPResponder.start(8888);
 
-  add_simple_tests();
-  add_localhost_tests();
-  add_combo_tests();
-  add_distrust_tests();
+  await run_simple_tests();
+  await run_localhost_tests();
+  await run_combo_tests();
+  await run_distrust_tests();
 
-  add_test(function () {
-    fakeOCSPResponder.stop(check_telemetry);
+  await new Promise(resolve => {
+    fakeOCSPResponder.stop(resolve);
   });
 
-  run_next_test();
-}
+  await check_telemetry();
+});
 
-function add_simple_tests() {
-  add_cert_override_test("expired.example.com", SEC_ERROR_EXPIRED_CERTIFICATE);
-  add_cert_override_test(
+async function run_simple_tests() {
+  await certOverrideTest("expired.example.com", SEC_ERROR_EXPIRED_CERTIFICATE);
+  await certOverrideTest(
     "notyetvalid.example.com",
     MOZILLA_PKIX_ERROR_NOT_YET_VALID_CERTIFICATE
   );
-  add_cert_override_test("before-epoch.example.com", SEC_ERROR_INVALID_TIME);
-  add_cert_override_test(
+  await certOverrideTest("before-epoch.example.com", SEC_ERROR_INVALID_TIME);
+  await certOverrideTest(
     "before-epoch-self-signed.example.com",
     MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT
   );
-  add_cert_override_test(
+  await certOverrideTest(
     "selfsigned.example.com",
     MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT
   );
-  add_cert_override_test("unknownissuer.example.com", SEC_ERROR_UNKNOWN_ISSUER);
-  add_cert_override_test(
+  await certOverrideTest("unknownissuer.example.com", SEC_ERROR_UNKNOWN_ISSUER);
+  await certOverrideTest(
     "expiredissuer.example.com",
     SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE
   );
-  add_cert_override_test(
+  await certOverrideTest(
     "notyetvalidissuer.example.com",
     MOZILLA_PKIX_ERROR_NOT_YET_VALID_ISSUER_CERTIFICATE
   );
-  add_cert_override_test(
+  await certOverrideTest(
     "before-epoch-issuer.example.com",
     SEC_ERROR_INVALID_TIME
   );
-  add_cert_override_test(
+  await certOverrideTest(
     "md5signature.example.com",
     SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
   );
-  add_cert_override_test(
+  await certOverrideTest(
     "emptyissuername.example.com",
     MOZILLA_PKIX_ERROR_EMPTY_ISSUER_NAME
   );
   // This has name information in the subject alternative names extension,
   // but not the subject common name.
-  add_cert_override_test("mismatch.example.com", SSL_ERROR_BAD_CERT_DOMAIN);
+  await certOverrideTest("mismatch.example.com", SSL_ERROR_BAD_CERT_DOMAIN);
   // This has name information in the subject common name but not the subject
   // alternative names extension.
-  add_cert_override_test("mismatch-CN.example.com", SSL_ERROR_BAD_CERT_DOMAIN);
+  await certOverrideTest("mismatch-CN.example.com", SSL_ERROR_BAD_CERT_DOMAIN);
 
   // A Microsoft IIS utility generates self-signed certificates with
   // properties similar to the one this "host" will present.
-  add_cert_override_test(
+  await certOverrideTest(
     "selfsigned-inadequateEKU.example.com",
     MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT
   );
 
-  add_prevented_cert_override_test(
+  await preventedCertOverrideTest(
     "inadequatekeyusage.example.com",
     SEC_ERROR_INADEQUATE_KEY_USAGE
   );
 
   // Test triggering the MitM detection. We don't set-up a proxy here. Just
   // set the pref. Without the pref set we expect an unkown issuer error.
-  add_cert_override_test("mitm.example.com", SEC_ERROR_UNKNOWN_ISSUER);
-  add_test(function () {
-    Services.prefs.setStringPref(
-      "security.pki.mitm_canary_issuer",
-      "CN=Test MITM Root"
-    );
-    let certOverrideService = Cc[
-      "@mozilla.org/security/certoverride;1"
-    ].getService(Ci.nsICertOverrideService);
-    certOverrideService.clearValidityOverride("mitm.example.com", 8443, {});
-    run_next_test();
-  });
-  add_cert_override_test("mitm.example.com", MOZILLA_PKIX_ERROR_MITM_DETECTED);
-  add_test(function () {
-    Services.prefs.setStringPref(
-      "security.pki.mitm_canary_issuer",
-      "CN=Other MITM Root"
-    );
-    let certOverrideService = Cc[
-      "@mozilla.org/security/certoverride;1"
-    ].getService(Ci.nsICertOverrideService);
-    certOverrideService.clearValidityOverride("mitm.example.com", 8443, {});
-    run_next_test();
-  });
+  await certOverrideTest("mitm.example.com", SEC_ERROR_UNKNOWN_ISSUER);
+  Services.prefs.setStringPref(
+    "security.pki.mitm_canary_issuer",
+    "CN=Test MITM Root"
+  );
+  let certOverrideService = Cc[
+    "@mozilla.org/security/certoverride;1"
+  ].getService(Ci.nsICertOverrideService);
+  certOverrideService.clearValidityOverride("mitm.example.com", 8443, {});
+  await certOverrideTest("mitm.example.com", MOZILLA_PKIX_ERROR_MITM_DETECTED);
+  Services.prefs.setStringPref(
+    "security.pki.mitm_canary_issuer",
+    "CN=Other MITM Root"
+  );
+  certOverrideService.clearValidityOverride("mitm.example.com", 8443, {});
   // If the canary issuer doesn't match the one we see, we exepct and unknown
   // issuer error.
-  add_cert_override_test("mitm.example.com", SEC_ERROR_UNKNOWN_ISSUER);
+  await certOverrideTest("mitm.example.com", SEC_ERROR_UNKNOWN_ISSUER);
   // If security.pki.mitm_canary_issuer.enabled is false, there should always
   // be an unknown issuer error.
-  add_test(function () {
-    Services.prefs.setBoolPref(
-      "security.pki.mitm_canary_issuer.enabled",
-      false
-    );
-    let certOverrideService = Cc[
-      "@mozilla.org/security/certoverride;1"
-    ].getService(Ci.nsICertOverrideService);
-    certOverrideService.clearValidityOverride("mitm.example.com", 8443, {});
-    run_next_test();
-  });
-  add_cert_override_test("mitm.example.com", SEC_ERROR_UNKNOWN_ISSUER);
-  add_test(function () {
-    Services.prefs.clearUserPref("security.pki.mitm_canary_issuer");
-    run_next_test();
-  });
+  Services.prefs.setBoolPref("security.pki.mitm_canary_issuer.enabled", false);
+  certOverrideService.clearValidityOverride("mitm.example.com", 8443, {});
+  await certOverrideTest("mitm.example.com", SEC_ERROR_UNKNOWN_ISSUER);
+  Services.prefs.clearUserPref("security.pki.mitm_canary_issuer");
 
   // This is intended to test the case where a verification has failed for one
   // overridable reason (e.g. unknown issuer) but then, in the process of
   // reporting that error, a non-overridable error is encountered. The
   // non-overridable error should be prioritized.
-  add_test(function () {
-    let rootCert = constructCertFromFile("bad_certs/test-ca.pem");
-    setCertTrust(rootCert, ",,");
-    run_next_test();
-  });
-  add_prevented_cert_override_test(
+  let rootCert = addCertFromFile(gCertDB, "bad_certs/test-ca.pem", ",,");
+  await preventedCertOverrideTest(
     "nsCertTypeCritical.example.com",
     SEC_ERROR_UNKNOWN_CRITICAL_EXTENSION
   );
-  add_test(function () {
-    let rootCert = constructCertFromFile("bad_certs/test-ca.pem");
-    setCertTrust(rootCert, "CTu,,");
-    run_next_test();
-  });
+  setCertTrust(rootCert, "CTu,,");
 
   // Bug 990603: Apache documentation has recommended generating a self-signed
   // test certificate with basic constraints: CA:true. For compatibility, this
   // is a scenario in which an override is allowed.
-  add_cert_override_test(
+  await certOverrideTest(
     "self-signed-end-entity-with-cA-true.example.com",
     MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT
   );
 
-  add_cert_override_test(
+  await certOverrideTest(
     "ca-used-as-end-entity.example.com",
     MOZILLA_PKIX_ERROR_CA_CERT_USED_AS_END_ENTITY
   );
 
   // If an X.509 version 1 certificate is not a trust anchor, we will
   // encounter an overridable error.
-  add_cert_override_test(
+  await certOverrideTest(
     "end-entity-issued-by-v1-cert.example.com",
     MOZILLA_PKIX_ERROR_V1_CERT_USED_AS_CA
   );
+  // Clear the override.
+  certOverrideService.clearValidityOverride(
+    "end-entity-issued-by-v1-cert.example.com",
+    8443,
+    {}
+  );
   // If we make that certificate a trust anchor, the connection will succeed.
-  add_test(function () {
-    let certOverrideService = Cc[
-      "@mozilla.org/security/certoverride;1"
-    ].getService(Ci.nsICertOverrideService);
-    certOverrideService.clearValidityOverride(
-      "end-entity-issued-by-v1-cert.example.com",
-      8443,
-      {}
-    );
-    let v1Cert = constructCertFromFile("bad_certs/v1Cert.pem");
-    setCertTrust(v1Cert, "CTu,,");
-    clearSessionCache();
-    run_next_test();
-  });
-  add_connection_test(
+  let v1Cert = addCertFromFile(gCertDB, "bad_certs/v1Cert.pem", "CTu,,");
+  clearSessionCache();
+  await asyncConnectTo(
     "end-entity-issued-by-v1-cert.example.com",
     PRErrorCodeSuccess
   );
   // Reset the trust for that certificate.
-  add_test(function () {
-    let v1Cert = constructCertFromFile("bad_certs/v1Cert.pem");
-    setCertTrust(v1Cert, ",,");
-    clearSessionCache();
-    run_next_test();
-  });
+  setCertTrust(v1Cert, ",,");
+  clearSessionCache();
 
   // Due to compatibility issues, we allow overrides for certificates issued by
   // certificates that are not valid CAs.
-  add_cert_override_test(
+  await certOverrideTest(
     "end-entity-issued-by-non-CA.example.com",
     SEC_ERROR_CA_CERT_INVALID
   );
 
   // This host presents a 1016-bit RSA key.
-  add_cert_override_test(
+  await certOverrideTest(
     "inadequate-key-size-ee.example.com",
     MOZILLA_PKIX_ERROR_INADEQUATE_KEY_SIZE
   );
 
   // The test root is not a built-in (by default), so the invalid dNSName entry
   // in the subject alternative name extension is skipped.
-  add_connection_test(
+  await asyncConnectTo(
     "ipAddressAsDNSNameInSAN.example.com",
     PRErrorCodeSuccess
   );
 
   if (gIsDebugBuild) {
     // Treat the test root like a built-in.
-    add_test(function () {
-      let rootCert = constructCertFromFile("bad_certs/test-ca.pem");
-      Services.prefs.setCharPref(
-        "security.test.built_in_root_hash",
-        rootCert.sha256Fingerprint
-      );
-      run_next_test();
-    });
+    let rootCert = constructCertFromFile("bad_certs/test-ca.pem");
+    Services.prefs.setCharPref(
+      "security.test.built_in_root_hash",
+      rootCert.sha256Fingerprint
+    );
     // If the root is a built-in, the invalid dNSName entry in the subject
     // alternative name extension is not skipped, and this result in an error.
-    add_cert_override_test(
+    await certOverrideTest(
       "ipAddressAsDNSNameInSAN.example.com",
       SSL_ERROR_BAD_CERT_DOMAIN
     );
     // Reset the test root's built-in status.
-    add_test(function () {
-      Services.prefs.clearUserPref("security.test.built_in_root_hash");
-      run_next_test();
-    });
+    Services.prefs.clearUserPref("security.test.built_in_root_hash");
   }
 
-  add_cert_override_test("noValidNames.example.com", SSL_ERROR_BAD_CERT_DOMAIN);
-  add_cert_override_test(
+  await certOverrideTest("noValidNames.example.com", SSL_ERROR_BAD_CERT_DOMAIN);
+  await certOverrideTest(
     "badSubjectAltNames.example.com",
     SSL_ERROR_BAD_CERT_DOMAIN
   );
 
-  add_cert_override_test(
+  await certOverrideTest(
     "bug413909.xn--hxajbheg2az3al.xn--jxalpdlp",
     SEC_ERROR_UNKNOWN_ISSUER
   );
-  add_test(function () {
-    // At this point, the override for bug413909.xn--hxajbheg2az3al.xn--jxalpdlp
-    // is still valid. Do some additional tests relating to IDN handling.
-    let certOverrideService = Cc[
-      "@mozilla.org/security/certoverride;1"
-    ].getService(Ci.nsICertOverrideService);
-    let uri = Services.io.newURI(
-      "https://bug413909.xn--hxajbheg2az3al.xn--jxalpdlp"
-    );
-    let cert = constructCertFromFile("bad_certs/idn-certificate.pem");
-    Assert.ok(
-      certOverrideService.hasMatchingOverride(
-        uri.asciiHost,
+  // At this point, the override for bug413909.xn--hxajbheg2az3al.xn--jxalpdlp
+  // is still valid. Do some additional tests relating to IDN handling.
+  let uri = Services.io.newURI(
+    "https://bug413909.xn--hxajbheg2az3al.xn--jxalpdlp"
+  );
+  let cert = constructCertFromFile("bad_certs/idn-certificate.pem");
+  Assert.ok(
+    certOverrideService.hasMatchingOverride(uri.asciiHost, 8443, {}, cert, {}),
+    "IDN certificate should have matching override using ascii host"
+  );
+  Assert.throws(
+    () =>
+      !certOverrideService.hasMatchingOverride(
+        uri.displayHost,
         8443,
         {},
         cert,
         {}
       ),
-      "IDN certificate should have matching override using ascii host"
-    );
-    Assert.throws(
-      () =>
-        !certOverrideService.hasMatchingOverride(
-          uri.displayHost,
-          8443,
-          {},
-          cert,
-          {}
-        ),
-      /NS_ERROR_ILLEGAL_VALUE/,
-      "IDN certificate should not have matching override using (non-ascii) host"
-    );
-    let invalidHost = uri.asciiHost.replace(/./g, c =>
-      String.fromCharCode(c.charCodeAt(0) | 0x100)
-    );
-    Assert.throws(
-      () =>
-        !certOverrideService.hasMatchingOverride(
-          invalidHost,
-          8443,
-          {},
-          cert,
-          {}
-        ),
-      /NS_ERROR_ILLEGAL_VALUE/,
-      "hasMatchingOverride should not truncate high-bytes"
-    );
-    run_next_test();
-  });
+    /NS_ERROR_ILLEGAL_VALUE/,
+    "IDN certificate should not have matching override using (non-ascii) host"
+  );
+  let invalidHost = uri.asciiHost.replace(/./g, c =>
+    String.fromCharCode(c.charCodeAt(0) | 0x100)
+  );
+  Assert.throws(
+    () =>
+      !certOverrideService.hasMatchingOverride(invalidHost, 8443, {}, cert, {}),
+    /NS_ERROR_ILLEGAL_VALUE/,
+    "hasMatchingOverride should not truncate high-bytes"
+  );
 
-  add_test(function () {
-    // Add a bunch of overrides...
-    let certOverrideService = Cc[
-      "@mozilla.org/security/certoverride;1"
-    ].getService(Ci.nsICertOverrideService);
-    let cert = constructCertFromFile("bad_certs/default-ee.pem");
-    certOverrideService.rememberValidityOverride(
-      "example.com",
-      443,
-      {},
-      cert,
-      false
-    );
-    Assert.ok(
-      certOverrideService.hasMatchingOverride("example.com", 443, {}, cert, {}),
-      "Should have added override for example.com:443"
-    );
-    certOverrideService.rememberValidityOverride(
-      "example.com",
-      80,
-      {},
-      cert,
-      false
-    );
-    certOverrideService.rememberValidityOverride("::1", 80, {}, cert, false);
-    Assert.ok(
-      certOverrideService.hasMatchingOverride("example.com", 80, {}, cert, {}),
-      "Should have added override for example.com:80"
-    );
-    certOverrideService.rememberValidityOverride(
+  // Add a bunch of overrides...
+  cert = constructCertFromFile("bad_certs/default-ee.pem");
+  certOverrideService.rememberValidityOverride(
+    "example.com",
+    443,
+    {},
+    cert,
+    false
+  );
+  Assert.ok(
+    certOverrideService.hasMatchingOverride("example.com", 443, {}, cert, {}),
+    "Should have added override for example.com:443"
+  );
+  certOverrideService.rememberValidityOverride(
+    "example.com",
+    80,
+    {},
+    cert,
+    false
+  );
+  certOverrideService.rememberValidityOverride("::1", 80, {}, cert, false);
+  Assert.ok(
+    certOverrideService.hasMatchingOverride("example.com", 80, {}, cert, {}),
+    "Should have added override for example.com:80"
+  );
+  certOverrideService.rememberValidityOverride(
+    "example.org",
+    443,
+    {},
+    cert,
+    false
+  );
+  Assert.ok(
+    certOverrideService.hasMatchingOverride("example.org", 443, {}, cert, {}),
+    "Should have added override for example.org:443"
+  );
+  Assert.ok(
+    certOverrideService.hasMatchingOverride("::1", 80, {}, cert, {}),
+    "Should have added override for [::1]:80"
+  );
+  // When in a private browsing context, overrides added in non-private
+  // contexts should match (but not vice-versa).
+  Assert.ok(
+    certOverrideService.hasMatchingOverride(
       "example.org",
       443,
-      {},
+      { privateBrowsingId: 1 },
       cert,
-      false
-    );
-    Assert.ok(
-      certOverrideService.hasMatchingOverride("example.org", 443, {}, cert, {}),
-      "Should have added override for example.org:443"
-    );
-    Assert.ok(
-      certOverrideService.hasMatchingOverride("::1", 80, {}, cert, {}),
-      "Should have added override for [::1]:80"
-    );
-    // When in a private browsing context, overrides added in non-private
-    // contexts should match (but not vice-versa).
-    Assert.ok(
-      certOverrideService.hasMatchingOverride(
-        "example.org",
-        443,
-        { privateBrowsingId: 1 },
-        cert,
-        {}
-      ),
-      "Should have override for example.org:443 with privateBrowsingId 1"
-    );
-    Assert.ok(
-      certOverrideService.hasMatchingOverride(
-        "example.org",
-        443,
-        { privateBrowsingId: 2 },
-        cert,
-        {}
-      ),
-      "Should have override for example.org:443 with privateBrowsingId 2"
-    );
-    Assert.ok(
-      certOverrideService.hasMatchingOverride(
-        "example.org",
-        443,
-        { firstPartyDomain: "example.org", userContextId: 1 },
-        cert,
-        {}
-      ),
-      "Should ignore firstPartyDomain and userContextId when checking overrides"
-    );
-    certOverrideService.rememberValidityOverride(
+      {}
+    ),
+    "Should have override for example.org:443 with privateBrowsingId 1"
+  );
+  Assert.ok(
+    certOverrideService.hasMatchingOverride(
       "example.org",
-      80,
-      {},
+      443,
+      { privateBrowsingId: 2 },
       cert,
-      true
-    );
-    Assert.ok(
-      certOverrideService.hasMatchingOverride("example.org", 80, {}, cert, {}),
-      "Should have added override for example.org:80"
-    );
-    certOverrideService.rememberValidityOverride(
-      "test.example.org",
+      {}
+    ),
+    "Should have override for example.org:443 with privateBrowsingId 2"
+  );
+  Assert.ok(
+    certOverrideService.hasMatchingOverride(
+      "example.org",
       443,
       { firstPartyDomain: "example.org", userContextId: 1 },
       cert,
-      false
-    );
-    Assert.ok(
-      certOverrideService.hasMatchingOverride(
-        "test.example.org",
-        443,
-        {},
-        cert,
-        {}
-      ),
-      "Should ignore firstPartyDomain and userContextId when adding overrides"
-    );
-    Assert.ok(
-      certOverrideService.hasMatchingOverride(
-        "test.example.org",
-        443,
-        { firstPartyDomain: "example.com", userContextId: 2 },
-        cert,
-        {}
-      ),
-      "Should ignore firstPartyDomain and userContextId when checking overrides"
-    );
-    certOverrideService.rememberValidityOverride(
+      {}
+    ),
+    "Should ignore firstPartyDomain and userContextId when checking overrides"
+  );
+  certOverrideService.rememberValidityOverride(
+    "example.org",
+    80,
+    {},
+    cert,
+    true
+  );
+  Assert.ok(
+    certOverrideService.hasMatchingOverride("example.org", 80, {}, cert, {}),
+    "Should have added override for example.org:80"
+  );
+  certOverrideService.rememberValidityOverride(
+    "test.example.org",
+    443,
+    { firstPartyDomain: "example.org", userContextId: 1 },
+    cert,
+    false
+  );
+  Assert.ok(
+    certOverrideService.hasMatchingOverride(
+      "test.example.org",
+      443,
+      {},
+      cert,
+      {}
+    ),
+    "Should ignore firstPartyDomain and userContextId when adding overrides"
+  );
+  Assert.ok(
+    certOverrideService.hasMatchingOverride(
+      "test.example.org",
+      443,
+      { firstPartyDomain: "example.com", userContextId: 2 },
+      cert,
+      {}
+    ),
+    "Should ignore firstPartyDomain and userContextId when checking overrides"
+  );
+  certOverrideService.rememberValidityOverride(
+    "example.test",
+    443,
+    { privateBrowsingId: 1 },
+    cert,
+    false
+  );
+  Assert.ok(
+    certOverrideService.hasMatchingOverride(
       "example.test",
       443,
       { privateBrowsingId: 1 },
       cert,
-      false
-    );
-    Assert.ok(
-      certOverrideService.hasMatchingOverride(
-        "example.test",
-        443,
-        { privateBrowsingId: 1 },
-        cert,
-        {}
-      ),
-      "Should have added override for example.test:443 with privateBrowsingId 1"
-    );
-    Assert.ok(
-      !certOverrideService.hasMatchingOverride(
-        "example.test",
-        443,
-        { privateBrowsingId: 2 },
-        cert,
-        {}
-      ),
-      "Should not have override for example.test:443 with privateBrowsingId 2"
-    );
-    Assert.ok(
-      !certOverrideService.hasMatchingOverride(
-        "example.test",
-        443,
-        {},
-        cert,
-        {}
-      ),
-      "Should not have override for example.test:443 with non-private OriginAttributes"
-    );
-    // Clear them all...
-    certOverrideService.clearAllOverrides();
+      {}
+    ),
+    "Should have added override for example.test:443 with privateBrowsingId 1"
+  );
+  Assert.ok(
+    !certOverrideService.hasMatchingOverride(
+      "example.test",
+      443,
+      { privateBrowsingId: 2 },
+      cert,
+      {}
+    ),
+    "Should not have override for example.test:443 with privateBrowsingId 2"
+  );
+  Assert.ok(
+    !certOverrideService.hasMatchingOverride("example.test", 443, {}, cert, {}),
+    "Should not have override for example.test:443 with non-private OriginAttributes"
+  );
+  // Clear them all...
+  certOverrideService.clearAllOverrides();
 
-    // And ensure they're all gone.
-    Assert.ok(
-      !certOverrideService.hasMatchingOverride(
-        "example.com",
-        443,
-        {},
-        cert,
-        {}
-      ),
-      "Should have removed override for example.com:443"
-    );
-    Assert.ok(
-      !certOverrideService.hasMatchingOverride("example.com", 80, {}, cert, {}),
-      "Should have removed override for example.com:80"
-    );
-    Assert.ok(
-      !certOverrideService.hasMatchingOverride(
-        "example.org",
-        443,
-        {},
-        cert,
-        {}
-      ),
-      "Should have removed override for example.org:443"
-    );
-    Assert.ok(
-      !certOverrideService.hasMatchingOverride("example.org", 80, {}, cert, {}),
-      "Should have removed override for example.org:80"
-    );
-    Assert.ok(
-      !certOverrideService.hasMatchingOverride(
-        "example.org",
-        443,
-        { privateBrowsingId: 1 },
-        cert,
-        {}
-      ),
-      "Should have removed override for example.org:443 with privateBrowsingId 1"
-    );
-
-    run_next_test();
-  });
+  // And ensure they're all gone.
+  Assert.ok(
+    !certOverrideService.hasMatchingOverride("example.com", 443, {}, cert, {}),
+    "Should have removed override for example.com:443"
+  );
+  Assert.ok(
+    !certOverrideService.hasMatchingOverride("example.com", 80, {}, cert, {}),
+    "Should have removed override for example.com:80"
+  );
+  Assert.ok(
+    !certOverrideService.hasMatchingOverride("example.org", 443, {}, cert, {}),
+    "Should have removed override for example.org:443"
+  );
+  Assert.ok(
+    !certOverrideService.hasMatchingOverride("example.org", 80, {}, cert, {}),
+    "Should have removed override for example.org:80"
+  );
+  Assert.ok(
+    !certOverrideService.hasMatchingOverride(
+      "example.org",
+      443,
+      { privateBrowsingId: 1 },
+      cert,
+      {}
+    ),
+    "Should have removed override for example.org:443 with privateBrowsingId 1"
+  );
 }
 
-function add_localhost_tests() {
-  add_cert_override_test("localhost", SEC_ERROR_UNKNOWN_ISSUER);
-  add_cert_override_test("127.0.0.1", SSL_ERROR_BAD_CERT_DOMAIN);
-  add_cert_override_test("::1", SSL_ERROR_BAD_CERT_DOMAIN);
+async function run_localhost_tests() {
+  await certOverrideTest("localhost", SEC_ERROR_UNKNOWN_ISSUER);
+  await certOverrideTest("127.0.0.1", SSL_ERROR_BAD_CERT_DOMAIN);
+  await certOverrideTest("::1", SSL_ERROR_BAD_CERT_DOMAIN);
 }
 
-function add_combo_tests() {
-  add_cert_override_test(
+async function run_combo_tests() {
+  await certOverrideTest(
     "mismatch-expired.example.com",
     SSL_ERROR_BAD_CERT_DOMAIN
   );
-  add_cert_override_test(
+  await certOverrideTest(
     "mismatch-notYetValid.example.com",
     SSL_ERROR_BAD_CERT_DOMAIN
   );
-  add_cert_override_test(
+  await certOverrideTest(
     "mismatch-untrusted.example.com",
     SEC_ERROR_UNKNOWN_ISSUER
   );
-  add_cert_override_test(
+  await certOverrideTest(
     "untrusted-expired.example.com",
     SEC_ERROR_UNKNOWN_ISSUER
   );
-  add_cert_override_test(
+  await certOverrideTest(
     "mismatch-untrusted-expired.example.com",
     SEC_ERROR_UNKNOWN_ISSUER
   );
 
-  add_cert_override_test(
+  await certOverrideTest(
     "md5signature-expired.example.com",
     SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
   );
 
-  add_cert_override_test(
+  await certOverrideTest(
     "ca-used-as-end-entity-name-mismatch.example.com",
     MOZILLA_PKIX_ERROR_CA_CERT_USED_AS_END_ENTITY
   );
 }
 
-function add_distrust_tests() {
+async function run_distrust_tests() {
   // Before we specifically distrust this certificate, it should be trusted.
-  add_connection_test("untrusted.example.com", PRErrorCodeSuccess);
+  await asyncConnectTo("untrusted.example.com", PRErrorCodeSuccess);
 
-  add_distrust_test(
+  await run_distrust_test(
     "bad_certs/default-ee.pem",
     "untrusted.example.com",
     SEC_ERROR_UNTRUSTED_CERT
   );
 
-  add_distrust_test(
+  await run_distrust_test(
     "bad_certs/other-test-ca.pem",
     "untrustedissuer.example.com",
     SEC_ERROR_UNTRUSTED_ISSUER
   );
 
-  add_distrust_test(
+  await run_distrust_test(
     "bad_certs/test-ca.pem",
     "ca-used-as-end-entity.example.com",
     SEC_ERROR_UNTRUSTED_ISSUER
   );
 }
 
-function add_distrust_test(certFileName, hostName, expectedResult) {
-  let certToDistrust = constructCertFromFile(certFileName);
-
-  add_test(function () {
-    // Add an entry to the NSS certDB that says to distrust the cert
-    setCertTrust(certToDistrust, "pu,,");
-    clearSessionCache();
-    run_next_test();
-  });
-  add_prevented_cert_override_test(hostName, expectedResult);
-  add_test(function () {
-    setCertTrust(certToDistrust, "u,,");
-    run_next_test();
-  });
+async function run_distrust_test(certFileName, hostName, expectedResult) {
+  // Add an entry to the NSS certDB that says to distrust the cert
+  let certToDistrust = addCertFromFile(gCertDB, certFileName, "pu,,");
+  clearSessionCache();
+  await preventedCertOverrideTest(hostName, expectedResult);
+  // Reset the cert's trust.
+  setCertTrust(certToDistrust, "u,,");
 }

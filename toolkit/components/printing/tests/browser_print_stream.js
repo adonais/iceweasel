@@ -6,13 +6,7 @@ const PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
   Ci.nsIPrintSettingsService
 );
 
-async function printToDestination(aBrowser, aDestination) {
-  let tmpDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
-  let fileName = `printDestinationTest-${aDestination}.pdf`;
-  let filePath = PathUtils.join(tmpDir.path, fileName);
-
-  info(`Printing to ${filePath}`);
-
+function createPrintSettings(aDestination) {
   let settings = PSSVC.createNewPrintSettings();
   settings.outputFormat = Ci.nsIPrintSettings.kOutputFormatPDF;
   settings.outputDestination = aDestination;
@@ -25,6 +19,17 @@ async function printToDestination(aBrowser, aDestination) {
   settings.footerStrRight = "";
 
   settings.unwriteableMarginTop = 1; /* Just to ensure settings are respected on both */
+  return settings;
+}
+
+async function printToDestination(aBrowser, aDestination) {
+  let tmpDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
+  let fileName = `printDestinationTest-${aDestination}.pdf`;
+  let filePath = PathUtils.join(tmpDir.path, fileName);
+
+  info(`Printing to ${filePath}`);
+
+  let settings = createPrintSettings(aDestination);
   let outStream = null;
   if (aDestination == Ci.nsIPrintSettings.kOutputDestinationFile) {
     settings.toFileName = PathUtils.join(tmpDir.path, fileName);
@@ -103,5 +108,51 @@ add_task(async function testPrintToStream() {
 
     await IOUtils.remove(filePath);
     await IOUtils.remove(streamPath);
+  });
+});
+
+add_task(async function testPrintToAtomicStream() {
+  await PrintHelper.withTestPage(async helper => {
+    let tmpDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
+    let destFile = tmpDir.clone();
+    destFile.append("printDestinationTest-atomic.pdf");
+    let tempFile = tmpDir.clone();
+    tempFile.append("printDestinationTest-atomic-1.pdf");
+
+    const oldContents = "not a pdf";
+    await IOUtils.writeUTF8(destFile.path, oldContents);
+
+    let outStream = Cc[
+      "@mozilla.org/network/atomic-file-output-stream;1"
+    ].createInstance(Ci.nsIFileOutputStream);
+    outStream.init(destFile, -1, 0o666, 0);
+    ok(
+      outStream instanceof Ci.nsISafeOutputStream,
+      "Should be a safe output stream"
+    );
+
+    let settings = createPrintSettings(
+      Ci.nsIPrintSettings.kOutputDestinationStream
+    );
+    settings.outputStream = outStream;
+
+    ok(tempFile.exists(), "Should write to a temporary file while printing");
+    is(
+      await IOUtils.readUTF8(destFile.path),
+      oldContents,
+      "Destination should be untouched before printing"
+    );
+
+    await helper.sourceBrowser.browsingContext.print(settings);
+
+    let header = await IOUtils.read(destFile.path, { maxBytes: 5 });
+    is(
+      new TextDecoder().decode(header),
+      "%PDF-",
+      "Destination should have been replaced with the PDF"
+    );
+    ok(!tempFile.exists(), "Temporary file should have been moved into place");
+
+    await IOUtils.remove(destFile.path);
   });
 });

@@ -1110,6 +1110,10 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
     }
   }
 
+  if (selectionWasCollapsed == SelectionWasCollapsed::No) {
+    aRangesToDelete.MaybeExtendAnchorFocusRangeToDeleteAdjacentWhiteSpace(
+        aHTMLEditor);
+  }
   nsresult rv = ComputeRangesToDeleteNonCollapsedRanges(
       aHTMLEditor, aDirectionAndAmount, aRangesToDelete, selectionWasCollapsed,
       aEditingHost);
@@ -1385,6 +1389,10 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
     }
   }
 
+  if (selectionWasCollapsed == SelectionWasCollapsed::No) {
+    aRangesToDelete.MaybeExtendAnchorFocusRangeToDeleteAdjacentWhiteSpace(
+        aHTMLEditor);
+  }
   Result<EditActionResult, nsresult> result = HandleDeleteNonCollapsedRanges(
       aHTMLEditor, aDirectionAndAmount, aStripWrappers, aRangesToDelete,
       selectionWasCollapsed, aEditingHost);

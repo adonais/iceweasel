@@ -8,11 +8,21 @@ prefs = [
 support-files = [
   "bug1921817.jpg",
   "encoding_process.js",
+  "file_crossCompartment_frame.html",
   "green.png",
-  "multiple.ico"
+  "multiple.ico",
+  "quadrants-vp9.webm",
+  "videoFrameFormatChecks.js",
+  "vp8-pixel-crop.webm",
 ]
 
+["test_audioData_crossCompartment.html"]
+scheme = "https"
+
 ["test_bug1921817.html"]
+scheme = "https"
+
+["test_encodedAudioChunk_crossCompartment.html"]
 scheme = "https"
 
 ["test_encoding_process.html"]
@@ -27,6 +37,9 @@ tags = "webcodecs media-gpu os_integration"
 run-if = [
   "os != 'android' && mda_gpu",
 ]
+
+["test_imageDecoder_crossCompartment.html"]
+scheme = "https"
 
 ["test_imageDecoder_desiredSize.html"]
 scheme = "https"
@@ -49,4 +62,16 @@ scheme = "https"
 ["test_track_getNativeSizes.html"]
 scheme = "https"
 
+["test_videoFrame_croppedVideo.html"]
+skip-if = [
+  "os == 'android'", # platform decoders hand back opaque textures without a picture rect
+  "os == 'win'", # in-content decoding cannot initialize gfx devices under win32k lockdown
+]
+
 ["test_videoFrame_mismatched_codedSize.html"]
+
+["test_videoFrame_video_element.html"]
+scheme = "https"
+skip-if = [
+  "os == 'android'", # Platform decoders hand back opaque textures
+]

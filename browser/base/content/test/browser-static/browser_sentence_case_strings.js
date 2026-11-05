@@ -25,8 +25,10 @@ const { AppMenuNotifications } = ChromeUtils.importESModule(
 const NAMES = new Set(["Mozilla", "Nightly", "Firefox", "AI"]);
 const PHRASES = new Set([
   "Extensions and Themes",
+  "Extensions for Developers",
   "Find in Page…",
   "Help and Report",
+  "Share Ideas and Feedback…",
   "Troubleshoot Mode…",
   "Create a New Profile",
 ]);

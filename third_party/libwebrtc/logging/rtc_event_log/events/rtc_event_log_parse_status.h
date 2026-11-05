@@ -13,7 +13,6 @@
 
 #include <string>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 
@@ -92,7 +91,7 @@ class RtcEventLogParseStatus {
   }
 
   bool ok() const { return error_.empty(); }
-  ABSL_DEPRECATED("Use ok() instead") explicit operator bool() const {
+  [[deprecated("Use ok() instead")]] explicit operator bool() const {
     return ok();
   }
 

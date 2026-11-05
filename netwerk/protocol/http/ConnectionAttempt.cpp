@@ -20,6 +20,8 @@ ConnectionAttempt::ConnectionAttempt(nsHttpConnectionInfo* ci,
       mSpeculative(speculative),
       mUrgentStart(urgentStart) {}
 
+void ConnectionAttempt::ForgetRealTransaction() { mTransaction = nullptr; }
+
 bool ConnectionAttempt::AcceptsTransaction(nsHttpTransaction* trans) const {
   // When marked as urgent start, only accept urgent start marked transactions.
   // Otherwise, accept any kind of transaction.

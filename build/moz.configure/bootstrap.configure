@@ -75,20 +75,14 @@ def original_path():
 )
 @imports("os")
 @imports("traceback")
+@imports(_from="mozbuild.configure.constants", _import="tier_1_host_toolchain_prefixes")
 @imports(_from="mozbuild.toolchains", _import="toolchain_task_definitions")
 @imports(_from="mozbuild.util", _import="TASKCLUSTER_ROOT_URL")
 @imports(_from="__builtin__", _import="Exception")
 def bootstrap_toolchain_tasks(host):
     if "TASKCLUSTER_ROOT_URL" not in os.environ:
         os.environ["TASKCLUSTER_ROOT_URL"] = TASKCLUSTER_ROOT_URL
-    prefix = {
-        ("x86_64", "GNU", "Linux"): "linux64",
-        ("aarch64", "GNU", "Linux"): "linux64-aarch64",
-        ("x86_64", "OSX", "Darwin"): "macosx64",
-        ("aarch64", "OSX", "Darwin"): "macosx64-aarch64",
-        ("x86_64", "WINNT", "WINNT"): "win64",
-        ("aarch64", "WINNT", "WINNT"): "win64-aarch64",
-    }.get((host.cpu, host.os, host.kernel))
+    prefix = tier_1_host_toolchain_prefixes.get((host.cpu, host.os, host.kernel))
     try:
         tasks = toolchain_task_definitions()
     except Exception as e:

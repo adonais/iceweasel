@@ -92,7 +92,7 @@ substituting `<obj dir>`, `<MAR output path>`, `<version>` and
 ```bash
 ./mach package
 touch "<obj dir>/dist/firefox/precomplete"
-MAR="<obj dir>/dist/host/bin/mar.exe" MOZ_PRODUCT_VERSION=<version> MAR_CHANNEL_ID=<channel> ./tools/update-packaging/make_full_update.sh <MAR output path> "<obj dir>/dist/firefox"
+MAR="<obj dir>/dist/host/bin/mar.exe" MOZ_PRODUCT_VERSION=<version> MAR_CHANNEL_ID=<channel> ./tools/update-packaging/make_full_update.sh <MAR output path> "<obj dir>/dist/firefox" firefox
 ```
 
 For macOS you should use these commands:
@@ -100,7 +100,7 @@ For macOS you should use these commands:
 ```bash
 ./mach package
 touch "<obj dir>/dist/firefox/Firefox.app/Contents/Resources/precomplete"
-MAR="<obj dir>/dist/host/bin/mar.exe" MOZ_PRODUCT_VERSION=<version> MAR_CHANNEL_ID=<channel> ./tools/update-packaging/make_full_update.sh <MAR output path> "<obj dir>/dist/firefox/Firefox.app"
+MAR="<obj dir>/dist/host/bin/mar.exe" MOZ_PRODUCT_VERSION=<version> MAR_CHANNEL_ID=<channel> ./tools/update-packaging/make_full_update.sh <MAR output path> "<obj dir>/dist/firefox/Firefox.app" firefox
 ```
 
 For a local build, `<channel>` can be `default`, and `<version>`

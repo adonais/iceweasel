@@ -3,6 +3,8 @@ name: android-new-module
 description: Guide for creating new Android gradle modules in the android-components project.
 ---
 
+# Creating a new Android module
+
 ## Overview
 
 This skill helps you create new Android gradle modules following Mozilla's conventions and structure. Components are organized into categories: `browser`, `concept`, `feature`, `lib`, `service`, `support`, `ui`, and `compose`.

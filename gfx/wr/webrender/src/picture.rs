@@ -99,7 +99,6 @@ use api::{DebugFlags, ColorF, PrimitiveFlags, SnapshotInfo};
 use api::units::*;
 use crate::command_buffer::{CommandBufferIndex, PrimitiveCommand};
 use crate::renderer::GpuBufferBuilderF;
-use crate::box_shadow::BLUR_SAMPLE_SCALE;
 use crate::pattern::PatternBuilder;
 use crate::pattern::image::{ImagePattern, ShadowPattern};
 use crate::pattern::mix_blend::{MixBlendPattern, FixedFunctionMixBlendPattern};
@@ -136,7 +135,6 @@ use crate::spatial_tree::CoordinateSystemId;
 use crate::surface::{SurfaceDescriptor, SurfaceTileDescriptor, get_surface_rects};
 use crate::surface::{SurfaceIndex, SurfaceInfo, SubpixelMode};
 use smallvec::SmallVec;
-use std::mem;
 use std::ops::Range;
 use crate::picture_textures::PictureCacheTextureHandle;
 use crate::util::{MaxRect, Recycler, ScaleOffset};
@@ -147,10 +145,6 @@ use crate::tile_cache::{TileKey, SubSliceIndex};
 use crate::invalidation::InvalidationReason;
 
 use crate::picture_composite_mode::{PictureCompositeMode, prepare_composite_mode};
-
-// Maximum blur radius for blur filter (different than box-shadow blur).
-// Taken from FilterNodeSoftware.cpp in Gecko.
-pub(crate) const MAX_BLUR_RADIUS: f32 = 100.;
 
 /// Maximum size of a compositor surface.
 pub const MAX_COMPOSITOR_SURFACES_SIZE: f32 = 8192.0;
@@ -397,13 +391,15 @@ pub struct PrimitiveList {
     /// adding prims to this list, which might be rendered as overlays.
     pub yuv_image_surface_count: usize,
     pub needs_scissor_rect: bool,
+    /// For the contents of a shadow, the offset they were translated by
+    /// relative to the shadowed content (zero otherwise). Their rects are
+    /// snapped relative to the shadowed content's, so the shadow stays a whole
+    /// number of device pixels away from it (bug 2076646).
+    pub shadow_offset: LayoutVector2D,
 }
 
 impl PrimitiveList {
-    /// Construct an empty primitive list. This is
-    /// just used during the take_context / restore_context
-    /// borrow check dance, which will be removed as the
-    /// picture traversal pass is completed.
+    /// Construct an empty primitive list.
     pub fn empty() -> Self {
         PrimitiveList {
             clusters: Vec::new(),
@@ -411,6 +407,7 @@ impl PrimitiveList {
             image_surface_count: 0,
             yuv_image_surface_count: 0,
             needs_scissor_rect: false,
+            shadow_offset: LayoutVector2D::zero(),
         }
     }
 
@@ -524,12 +521,10 @@ bitflags! {
     /// Flags describing properties for a given PictureInstance
     #[derive(Debug, Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
     pub struct PictureFlags : u8 {
-        /// This picture is a resolve target (doesn't actually render content itself,
-        /// will have content copied in to it)
-        const IS_RESOLVE_TARGET = 1 << 0;
-        /// This picture establishes a sub-graph, which affects how SurfaceBuilder will
-        /// set up dependencies in the render task graph
-        const IS_SUB_GRAPH = 1 << 1;
+        /// This picture is the outermost picture of a backdrop-filter chain. Its
+        /// output is drawn by the chain's `BackdropRender` rather than into its
+        /// parent.
+        const IS_BACKDROP_CHAIN = 1 << 0;
     }
 }
 
@@ -584,17 +579,6 @@ pub struct PictureInstance {
     /// The spatial node index of this picture when it is
     /// composited into the parent picture.
     pub spatial_node_index: SpatialNodeIndex,
-
-    /// Store the state of the previous local rect
-    /// for this picture. We need this in order to know when
-    /// to invalidate segments / drop-shadow gpu cache handles.
-    pub prev_local_rect: LayoutRect,
-
-    /// If false, this picture needs to (re)build segments
-    /// if it supports segment rendering. This can occur
-    /// if the local rect of the picture changes due to
-    /// transform animation and/or scrolling.
-    pub segments_are_valid: bool,
 
     /// Requested raster space for this picture
     pub raster_space: RasterSpace,
@@ -690,8 +674,6 @@ impl PictureInstance {
             context_3d,
             is_backface_visible: prim_flags.contains(PrimitiveFlags::IS_BACKFACE_VISIBLE),
             spatial_node_index,
-            prev_local_rect: LayoutRect::zero(),
-            segments_are_valid: false,
             raster_space,
             flags,
             clip_root: None,
@@ -709,7 +691,7 @@ impl PictureInstance {
         data_stores: &DataStores,
         scratch: &mut PrimitiveScratchBuffer,
         tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
-    ) -> Option<(PictureContext, PictureState, PrimitiveList, storage::Index<PictureScratch>)> {
+    ) -> Option<(PictureContext, PictureState, storage::Index<PictureScratch>)> {
         let mut picture_scratch = PictureScratch::empty();
 
         let dbg_flags = DebugFlags::PICTURE_CACHING_DBG | DebugFlags::PICTURE_BORDERS;
@@ -743,18 +725,6 @@ impl PictureInstance {
             frame_context.spatial_tree,
         );
 
-        // TODO: Compute the picture bounds by projecting the parent surface's
-        // culling rect into this surface's raster space, rather than the screen
-        // rect from the root.
-        let pic_bounds = map_pic_to_device
-            .unmap(&map_pic_to_device.bounds)
-            .unwrap_or_else(PictureRect::max_rect);
-
-        let map_local_to_pic = SpaceMapper::new(
-            surface_spatial_node_index,
-            pic_bounds,
-        );
-
         match self.raster_config {
             Some(RasterConfig { surface_index, composite_mode: PictureCompositeMode::TileCache { slice_id }, .. }) => {
                 prepare_tiled_picture_surface(
@@ -768,31 +738,11 @@ impl PictureInstance {
                 );
             }
             Some(ref mut raster_config) => {
-                let (pic_rect, force_scissor_rect) = {
-                    let surface = &frame_state.surfaces[raster_config.surface_index.0];
-                    (surface.clipped_local_rect, surface.force_scissor_rect)
-                };
+                let force_scissor_rect = frame_state
+                    .surfaces[raster_config.surface_index.0]
+                    .force_scissor_rect;
 
                 let parent_surface_index = parent_surface_index.expect("bug: no parent for child surface");
-
-                // Layout space for the picture is picture space from the
-                // perspective of its child primitives.
-                let local_rect = pic_rect * Scale::new(1.0);
-
-                // If the precise rect changed since last frame, we need to invalidate
-                // any segments and gpu cache handles for drop-shadows.
-                // TODO(gw): Requiring storage of the `prev_precise_local_rect` here
-                //           is a total hack. It's required because `prev_precise_local_rect`
-                //           gets written to twice (during initial vis pass and also during
-                //           prepare pass). The proper longer term fix for this is to make
-                //           use of the conservative picture rect for segmenting (which should
-                //           be done during scene building).
-                if local_rect != self.prev_local_rect {
-                    // Invalidate any segments built for this picture, since the local
-                    // rect has changed.
-                    self.segments_are_valid = false;
-                    self.prev_local_rect = local_rect;
-                }
 
                 let max_surface_size = frame_context.max_surface_size() as f32;
 
@@ -810,19 +760,17 @@ impl PictureInstance {
                 };
 
                 if let PictureCompositeMode::IntermediateSurface = raster_config.composite_mode {
-                    if !scratch.frame.required_sub_graphs.contains(&pic_index) {
+                    if !scratch.frame.required_backdrop_chains.contains(&pic_index) {
                         return None;
                     }
                 }
 
-                let can_use_shared_surface = !self.flags.contains(PictureFlags::IS_RESOLVE_TARGET);
                 let (surface_descriptor, render_tasks) = prepare_composite_mode(
                     &raster_config.composite_mode,
                     surface_index,
                     parent_surface_index,
                     &surface_rects,
                     &self.snapshot,
-                    can_use_shared_surface,
                     frame_context,
                     frame_state,
                     data_stores,
@@ -832,11 +780,32 @@ impl PictureInstance {
                 picture_scratch.primary_render_task_id = render_tasks[0];
                 picture_scratch.secondary_render_task_id = render_tasks[1];
 
-                let is_sub_graph = self.flags.contains(PictureFlags::IS_SUB_GRAPH);
+                // The task a backdrop is captured into may be padded out for its
+                // filter (a blur rounds its size up to its downscale factor),
+                // and the padding must stay clear, but primitives drawn into it
+                // extend past the content area.
+                if let Some(index) = scratch.frame.backdrop_captures.index_for_picture(pic_index) {
+                    let task_id = surface_descriptor.content_task_id();
+                    // The primitives behind the element were drawn into the
+                    // capture while it was open on the backdrop root's surface,
+                    // before this picture. The task draws from its command buffer
+                    // instead of its own, which stays empty: this picture's only
+                    // primitive, the `BackdropCapture`, emits no commands.
+                    let open = frame_state.surface_builder.close_backdrop_capture(index);
+                    let task = frame_state.rg_builder.get_task_mut(task_id);
+                    if let RenderTaskKind::Picture(ref mut info) = task.kind {
+                        info.capture_clear_color = Some(scratch.frame.backdrop_captures[index].root_background_color.unwrap_or(ColorF::TRANSPARENT));
+                        if let Some(open) = &open {
+                            info.cmd_buffer_index = open.cmd_buffer_index;
+                        }
+                    }
+                    for dependency in open.into_iter().flat_map(|open| open.dependencies) {
+                        frame_state.rg_builder.add_dependency(task_id, dependency);
+                    }
+                }
 
                 frame_state.surface_builder.push_surface(
                     raster_config.surface_index,
-                    is_sub_graph,
                     surface_rects.clipped_notsnapped,
                     Some(surface_descriptor),
                     frame_state.surfaces,
@@ -846,8 +815,17 @@ impl PictureInstance {
             None => {}
         };
 
+        // The backdrop-filters this picture is the backdrop root of capture what
+        // is drawn on its surface before them.
+        for index in scratch.frame.backdrop_captures.rooted_at(pic_index) {
+            let chain_pic_index = scratch.frame.backdrop_captures[index].chain_pic_index;
+            if scratch.frame.required_backdrop_chains.contains(&chain_pic_index) {
+                let open = scratch.frame.backdrop_captures.open(index, frame_state.cmd_buffers);
+                frame_state.surface_builder.open_backdrop_capture(open);
+            }
+        }
+
         let state = PictureState {
-            map_local_to_pic,
             map_pic_to_device,
         };
 
@@ -875,18 +853,15 @@ impl PictureInstance {
             surface_index,
             dirty_region_count,
             subpixel_mode,
+            shadow_offset: self.prim_list.shadow_offset,
         };
 
-        let prim_list = mem::replace(&mut self.prim_list, PrimitiveList::empty());
-
         let scratch_handle = scratch.frame.pictures.push(picture_scratch);
-        Some((context, state, prim_list, scratch_handle))
+        Some((context, state, scratch_handle))
     }
 
     pub fn restore_context(
         &mut self,
-        pic_index: PictureIndex,
-        prim_list: PrimitiveList,
         context: PictureContext,
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
@@ -899,10 +874,7 @@ impl PictureInstance {
 
         if self.raster_config.is_some() {
             frame_state.surface_builder.pop_surface(
-                pic_index,
                 frame_state.rg_builder,
-                frame_state.cmd_buffers,
-                frame_context.spatial_tree,
             );
         }
 
@@ -965,8 +937,6 @@ impl PictureInstance {
                 }
             }
         }
-
-        self.prim_list = prim_list;
     }
 
     /// Add a primitive instance to the plane splitter. The function would generate
@@ -1341,6 +1311,31 @@ impl PictureInstance {
                     }
                 };
 
+                // A backdrop-filter chain rasterizes exactly like the surface it
+                // reads its backdrop from, so that the draws of the primitives
+                // behind the element can be reused for its capture. The chain is
+                // placed in that surface's space, so only the raster root and
+                // scales differ otherwise.
+                let parent_surface = parent_surface_index.map(|index| &surfaces[index.0]);
+                let in_backdrop_chain = parent_surface.map_or(false, |parent_surface| {
+                        parent_surface.surface_spatial_node_index == surface_spatial_node_index && (
+                            self.flags.contains(PictureFlags::IS_BACKDROP_CHAIN) ||
+                            parent_surface.in_backdrop_chain
+                        )
+                    });
+                let (device_pixel_scale, raster_spatial_node_index, surface_snaps, local_scale, world_scale_factors, blur_scale_factors) =
+                    match parent_surface.filter(|_| in_backdrop_chain) {
+                        Some(parent_surface) => (
+                            parent_surface.device_pixel_scale,
+                            parent_surface.raster_spatial_node_index,
+                            parent_surface.allow_snapping,
+                            parent_surface.local_scale,
+                            parent_surface.world_scale_factors,
+                            parent_surface.blur_scale_factors,
+                        ),
+                        None => (device_pixel_scale, raster_spatial_node_index, surface_snaps, local_scale, world_scale_factors, blur_scale_factors),
+                    };
+
                 let mut surface = SurfaceInfo::new(
                     surface_spatial_node_index,
                     raster_spatial_node_index,
@@ -1353,6 +1348,7 @@ impl PictureInstance {
                     surface_snaps,
                     force_scissor_rect,
                 );
+                surface.in_backdrop_chain = in_backdrop_chain;
 
                 // For a backdrop filter the SVGFE graph composites in this
                 // surface's (backdrop-root) space, but its subregions are
@@ -1410,6 +1406,7 @@ impl PictureInstance {
         // Snapper into this surface's raster space, reused across all clusters
         // (a no-op for surfaces that don't snap).
         let mut snapper = SpaceSnapper::new(surface, frame_context.spatial_tree);
+        snapper.set_shadow_offset(self.prim_list.shadow_offset);
 
         for cluster in &mut self.prim_list.clusters {
             cluster.flags.remove(ClusterFlags::IS_VISIBLE);
@@ -1749,7 +1746,8 @@ fn prepare_tiled_picture_surface(
                             tile.is_visible = false;
 
                             if frame_context.fb_config.testing {
-                                debug_info.tiles.insert(
+                                debug_info.add_tile(
+                                    sub_slice_index,
                                     tile.tile_offset,
                                     TileDebugInfo::Occluded,
                                 );
@@ -1789,7 +1787,8 @@ fn prepare_tiled_picture_surface(
             // If the tile has been found to be off-screen / clipped, skip any further processing.
             if !tile.is_visible {
                 if frame_context.fb_config.testing {
-                    debug_info.tiles.insert(
+                    debug_info.add_tile(
+                        sub_slice_index,
                         tile.tile_offset,
                         TileDebugInfo::Culled,
                     );
@@ -1858,7 +1857,8 @@ fn prepare_tiled_picture_surface(
 
             if tile.cached_surface.is_valid {
                 if frame_context.fb_config.testing {
-                    debug_info.tiles.insert(
+                    debug_info.add_tile(
+                        sub_slice_index,
                         tile.tile_offset,
                         TileDebugInfo::Valid,
                     );
@@ -1986,141 +1986,44 @@ fn prepare_tiled_picture_surface(
 
                     let cmd_buffer_index = frame_state.cmd_buffers.create_cmd_buffer();
 
-                    // TODO(gw): As a performance optimization, we could skip the resolve picture
-                    //           if the dirty rect is the same as the resolve rect (probably quite
-                    //           common for effects that scroll underneath a backdrop-filter, for example).
-                    let use_tile_composite = !tile.cached_surface.sub_graphs.is_empty();
-
-                    if use_tile_composite {
-                        let mut local_content_rect = tile.cached_surface.local_dirty_rect;
-
-                        for (sub_graph_rect, surface_stack) in &tile.cached_surface.sub_graphs {
-                            if let Some(dirty_sub_graph_rect) = sub_graph_rect.intersection(&tile.cached_surface.local_dirty_rect) {
-                                for (composite_mode, surface_index) in surface_stack {
-                                    let surface = &frame_state.surfaces[surface_index.0];
-
-                                    let rect = composite_mode.get_coverage(
-                                        surface,
-                                        Some(dirty_sub_graph_rect.cast_unit()),
-                                    ).cast_unit();
-
-                                    local_content_rect = local_content_rect.union(&rect);
-                                }
-                            }
-                        }
-
-                        // We know that we'll never need to sample > 300 device pixels outside the tile
-                        // for blurring, so clamp the content rect here so that we don't try to allocate
-                        // a really large surface in the case of a drop-shadow with large offset.
-                        let max_content_rect = (tile.cached_surface.local_dirty_rect.cast_unit() * device_pixel_scale)
-                            .inflate(
-                                MAX_BLUR_RADIUS * BLUR_SAMPLE_SCALE,
-                                MAX_BLUR_RADIUS * BLUR_SAMPLE_SCALE,
+                    let render_task_id = frame_state.rg_builder.add().init(
+                        RenderTask::new(
+                            RenderTaskLocation::Static {
+                                surface: StaticRenderTaskSurface::PictureCache {
+                                    surface,
+                                },
+                                rect: composite_task_size.into(),
+                            },
+                            RenderTaskKind::new_picture(
+                                composite_task_size,
+                                true,
+                                content_origin,
+                                surface_spatial_node_index,
+                                // raster == surface implicitly for picture cache tiles
+                                surface_spatial_node_index,
+                                device_pixel_scale,
+                                Some(scissor_rect),
+                                Some(valid_rect),
+                                Some(clear_color),
+                                cmd_buffer_index,
+                                false,
+                                None,
                             )
-                            .round_out()
-                            .to_i32();
+                        ),
+                    );
 
-                        let content_device_rect = (local_content_rect.cast_unit() * device_pixel_scale)
-                            .round_out()
-                            .to_i32();
-
-                        let content_device_rect = content_device_rect
-                            .intersection(&max_content_rect)
-                            .expect("bug: no intersection with tile dirty rect: {content_device_rect:?} / {max_content_rect:?}");
-
-                        let content_task_size = content_device_rect.size();
-                        let normalized_content_rect = content_task_size.into();
-
-                        let inner_offset = content_origin + scissor_rect.min.to_vector().to_f32();
-                        let outer_offset = content_device_rect.min.to_f32();
-                        let sub_rect_offset = (inner_offset - outer_offset).round().to_i32();
-
-                        let render_task_id = frame_state.rg_builder.add().init(
-                            RenderTask::new_dynamic(
-                                content_task_size,
-                                RenderTaskKind::new_picture(
-                                    content_task_size,
-                                    true,
-                                    content_device_rect.min.to_f32(),
-                                    surface_spatial_node_index,
-                                    // raster == surface implicitly for picture cache tiles
-                                    surface_spatial_node_index,
-                                    device_pixel_scale,
-                                    Some(normalized_content_rect),
-                                    None,
-                                    Some(clear_color),
-                                    cmd_buffer_index,
-                                    false,
-                                    None,
-                                )
-                            ),
-                        );
-
-                        let composite_task_id = frame_state.rg_builder.add().init(
-                            RenderTask::new(
-                                RenderTaskLocation::Static {
-                                    surface: StaticRenderTaskSurface::PictureCache {
-                                        surface,
-                                    },
-                                    rect: composite_task_size.into(),
-                                },
-                                RenderTaskKind::new_tile_composite(
-                                    sub_rect_offset,
-                                    scissor_rect,
-                                    valid_rect,
-                                    clear_color,
-                                ),
-                            ),
-                        );
-
-                        surface_render_tasks.insert(
-                            tile_key,
-                            SurfaceTileDescriptor {
-                                current_task_id: render_task_id,
-                                composite_task_id: Some(composite_task_id),
-                                dirty_rect: tile.cached_surface.local_dirty_rect,
-                            },
-                        );
-                    } else {
-                        let render_task_id = frame_state.rg_builder.add().init(
-                            RenderTask::new(
-                                RenderTaskLocation::Static {
-                                    surface: StaticRenderTaskSurface::PictureCache {
-                                        surface,
-                                    },
-                                    rect: composite_task_size.into(),
-                                },
-                                RenderTaskKind::new_picture(
-                                    composite_task_size,
-                                    true,
-                                    content_origin,
-                                    surface_spatial_node_index,
-                                    // raster == surface implicitly for picture cache tiles
-                                    surface_spatial_node_index,
-                                    device_pixel_scale,
-                                    Some(scissor_rect),
-                                    Some(valid_rect),
-                                    Some(clear_color),
-                                    cmd_buffer_index,
-                                    false,
-                                    None,
-                                )
-                            ),
-                        );
-
-                        surface_render_tasks.insert(
-                            tile_key,
-                            SurfaceTileDescriptor {
-                                current_task_id: render_task_id,
-                                composite_task_id: None,
-                                dirty_rect: tile.cached_surface.local_dirty_rect,
-                            },
-                        );
-                    }
+                    surface_render_tasks.insert(
+                        tile_key,
+                        SurfaceTileDescriptor {
+                            current_task_id: render_task_id,
+                            dirty_rect: tile.cached_surface.local_dirty_rect,
+                        },
+                    );
                 }
 
                 if frame_context.fb_config.testing {
-                    debug_info.tiles.insert(
+                    debug_info.add_tile(
+                        sub_slice_index,
                         tile.tile_offset,
                         TileDebugInfo::Dirty(DirtyTileDebugInfo {
                             local_valid_rect: tile.cached_surface.current_descriptor.local_valid_rect,
@@ -2283,7 +2186,6 @@ fn prepare_tiled_picture_surface(
 
     frame_state.surface_builder.push_surface(
         surface_index,
-        false,
         surface_device_dirty_rect,
         Some(descriptor),
         frame_state.surfaces,
@@ -2926,6 +2828,7 @@ fn test_large_surface_scale_1() {
             allow_snapping: true,
             force_scissor_rect: false,
             svgfe_source_map: ScaleOffset::identity(),
+            in_backdrop_chain: false,
             picture_to_device: ScaleOffset::identity(),
         },
         SurfaceInfo {
@@ -2948,6 +2851,7 @@ fn test_large_surface_scale_1() {
             allow_snapping: true,
             force_scissor_rect: false,
             svgfe_source_map: ScaleOffset::identity(),
+            in_backdrop_chain: false,
             picture_to_device: ScaleOffset::identity(),
         },
     ];
@@ -3030,6 +2934,7 @@ fn test_drop_filter_dirty_region_outside_prim() {
             allow_snapping: true,
             force_scissor_rect: false,
             svgfe_source_map: ScaleOffset::identity(),
+            in_backdrop_chain: false,
             picture_to_device: ScaleOffset::identity(),
             culling_rect: RasterRect::max_rect(),
             culling_rect_projection_failed: false,
@@ -3055,6 +2960,7 @@ fn test_drop_filter_dirty_region_outside_prim() {
             allow_snapping: true,
             force_scissor_rect: false,
             svgfe_source_map: ScaleOffset::identity(),
+            in_backdrop_chain: false,
             picture_to_device: ScaleOffset::identity(),
             culling_rect: RasterRect::max_rect(),
             culling_rect_projection_failed: false,
@@ -3152,6 +3058,7 @@ fn test_drop_filter_partial_dirty_content_inflate() {
             allow_snapping: true,
             force_scissor_rect: false,
             svgfe_source_map: ScaleOffset::identity(),
+            in_backdrop_chain: false,
             picture_to_device: ScaleOffset::identity(),
             culling_rect: RasterRect::max_rect(),
             culling_rect_projection_failed: false,
@@ -3177,6 +3084,7 @@ fn test_drop_filter_partial_dirty_content_inflate() {
             allow_snapping: true,
             force_scissor_rect: false,
             svgfe_source_map: ScaleOffset::identity(),
+            in_backdrop_chain: false,
             picture_to_device: ScaleOffset::identity(),
             culling_rect: RasterRect::max_rect(),
             culling_rect_projection_failed: false,

@@ -198,6 +198,14 @@ class BuildBackend(LoggingMixin):
         """
         return None
 
+    @classmethod
+    def resolve_targets(cls, what):
+        """Return the targets this backend builds for the names in ``what``.
+
+        A name the backend does not map is built as given.
+        """
+        return list(what)
+
     def _write_purgecaches(self, config):
         """Write .purgecaches sentinels.
 
@@ -353,6 +361,10 @@ def HybridBackend(*backends):
 
         def consume_object(self, obj):
             return any(b.consume_object(obj) for b in self._backends)
+
+        @classmethod
+        def resolve_targets(cls, what):
+            return backends[-1].resolve_targets(what)
 
         def consume_finished(self):
             for backend in self._backends:

@@ -15,7 +15,9 @@ raptor_dir = os.path.join(os.path.dirname(here), "raptor")
 sys.path.insert(0, raptor_dir)
 
 
-from browsertime import Browsertime, BrowsertimeAndroid, BrowsertimeDesktop
+from browsertime import Browsertime
+from browsertime.android import BrowsertimeAndroid
+from browsertime.desktop import BrowsertimeDesktop
 from perftest import Perftest, PerftestAndroid
 
 DEFAULT_TIMEOUT = 125
@@ -91,12 +93,24 @@ def test_direct_playback_forwards_both_android_ports():
         https_port=18443,
     )
 
-    PerftestAndroid.set_reverse_ports(perftest)
+    PerftestAndroid.set_reverse_ports(perftest, {})
 
     assert perftest.set_reverse_port.call_args_list == [
         mock.call(18080),
         mock.call(18443),
     ]
+
+
+def test_support_class_reverse_ports_forwarded_on_android():
+    perftest = mock.Mock()
+    perftest.is_localhost = True
+    perftest.benchmark = None
+    perftest.playback = None
+    support_class = mock.Mock(reverse_ports=[8053])
+
+    PerftestAndroid.set_reverse_ports(perftest, {"support_class": support_class})
+
+    assert perftest.set_reverse_port.call_args_list == [mock.call(8053)]
 
 
 @pytest.mark.parametrize(

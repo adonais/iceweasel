@@ -2828,6 +2828,8 @@ angle::Result Renderer11::copyCompressedTexture(const gl::Context *context,
     mDeviceContext->CopySubresourceRegion(destResource->get(), destSubresource, 0, 0, 0,
                                           sourceResource->get(), sourceSubresource, nullptr);
 
+    destStorage11->markLevelDirty(destLevel);
+
     return angle::Result::Continue;
 }
 
@@ -3269,6 +3271,12 @@ angle::Result Renderer11::generateMipmapUsingD3D(const gl::Context *context,
                                       textureState.getEffectiveMaxLevel(), false, &srv));
 
     mDeviceContext->GenerateMips(srv->get());
+
+    for (size_t level = textureState.getEffectiveBaseLevel() + 1;
+         level <= textureState.getEffectiveMaxLevel(); ++level)
+    {
+        storage11->markLevelDirty(static_cast<int>(level));
+    }
 
     return angle::Result::Continue;
 }
@@ -3738,6 +3746,29 @@ angle::Result Renderer11::blitRenderbufferRect(const gl::Context *context,
     bool partialDSBlit =
         (nativeFormat.depthBits > 0 && depthBlit) != (nativeFormat.stencilBits > 0 && stencilBlit);
 
+    // Fast path: resolve a multisampled source straight into the destination.
+    //
+    // ResolveSubresource covers an entire subresource and cannot offset, scale or flip, so this
+    // is only valid for an unscaled, unflipped, full-surface color blit between matching formats.
+    // When it applies it replaces both the resolve into the renderer-owned scratch texture and the
+    // subsequent full-screen shader blit with a single GPU operation. This is the common shape of
+    // a GLES 3.0 MSAA resolve (render into a multisampled FBO, glBlitFramebuffer to a
+    // single-sampled one), including the blit that presents to the swapchain.
+    if (colorBlit && wholeBufferCopy && !stretchRequired && readRenderTarget->isMultisampled() &&
+        !drawRenderTarget->isMultisampled() &&
+        readRenderTarget11->getFormatSet().formatID ==
+            drawRenderTarget11->getFormatSet().formatID &&
+        !readRenderTarget11->getTexture().is3D() && !drawTexture.is3D())
+    {
+        ASSERT(!outOfBounds && !reversalRequired && !colorMaskingNeeded);
+        ASSERT(!depthBlit && !stencilBlit && !partialDSBlit);
+        mDeviceContext->ResolveSubresource(drawTexture.get(), drawSubresource,
+                                           readRenderTarget11->getTexture().get(),
+                                           readRenderTarget11->getSubresourceIndex(),
+                                           readRenderTarget11->getFormatSet().texFormat);
+        return angle::Result::Continue;
+    }
+
     const bool canCopySubresource =
         drawRenderTarget->getSamples() == readRenderTarget->getSamples() &&
         readRenderTarget11->getFormatSet().formatID ==
@@ -3788,6 +3819,9 @@ angle::Result Renderer11::blitRenderbufferRect(const gl::Context *context,
             ASSERT(readSRV.valid());
         }
     }
+
+    // Stencil blits don't use shaders.
+    ASSERT(readSRV.valid() || stencilBlit || canCopySubresource);
 
     if (canCopySubresource)
     {

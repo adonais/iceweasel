@@ -8,6 +8,8 @@ prefs = [
   "browser.smartwindow.enabled=true",
 ]
 
+["browser_JourneyManager.js"]
+["browser_JourneyStore.js"]
 ["browser_MemoriesManager.js"]
 ["browser_MemoriesSchedulers.js"]
 ["browser_aitab.js"]
@@ -24,6 +26,7 @@ prefs = [
 ["browser_monitor_errors.js"]
 ["browser_monitor_store.js"]
 ["browser_monitor_telemetry.js"]
+["browser_prompt_loader_aitab_versions.js"]
 ["browser_prompt_loader_browser_context.js"]
 ["browser_prompt_loader_build_conversation.js"]
 ["browser_prompt_loader_chat_system_prompt.js"]

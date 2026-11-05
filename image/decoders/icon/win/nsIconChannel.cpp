@@ -9,6 +9,7 @@
 #include "Decoder.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WindowsProcessMitigations.h"
@@ -228,6 +229,9 @@ static bool GetSpecialFolderIcon(nsIFile* aFile, int aFolder, UINT aInfoFlags,
 static nsresult GetIconHandleFromPathInfo(const IconPathInfo& aPathInfo,
                                           HICON* aIcon) {
   MOZ_DIAGNOSTIC_ASSERT(!IsWin32kLockedDown());
+
+  DecodePool::NoteShellCallStarted();
+  auto finished = MakeScopeExit([] { DecodePool::NoteShellCallFinished(); });
 
   // Is this the "Desktop" folder?
   if (GetSpecialFolderIcon(aPathInfo.localFile, CSIDL_DESKTOP,

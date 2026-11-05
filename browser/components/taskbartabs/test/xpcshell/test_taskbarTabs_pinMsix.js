@@ -79,7 +79,7 @@ add_task(async function test_pinCreatesDesktopEntry() {
   sinon.resetHistory();
 
   Assert.equal(
-    await TaskbarTabsPin.pinTaskbarTab(taskbarTab),
+    (await TaskbarTabsPin.pinTaskbarTab(taskbarTab)).shortcut,
     "taskbartab-" + taskbarTab.id,
     "Correct relative path is saved to the taskbar tab"
   );
@@ -99,7 +99,7 @@ add_task(async function test_pinUnusualName() {
   sinon.resetHistory();
 
   Assert.equal(
-    await TaskbarTabsPin.pinTaskbarTab(invalidTaskbarTab),
+    (await TaskbarTabsPin.pinTaskbarTab(invalidTaskbarTab)).shortcut,
     "taskbartab-" + invalidTaskbarTab.id,
     "Correct relative path is saved to the taskbar tab"
   );

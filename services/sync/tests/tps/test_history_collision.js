@@ -80,7 +80,7 @@ var history_after_delete = [
 
 Phase("phase1", [[History.add, history1], [Sync]]);
 
-Phase("phase2", [[Sync], [History.add, history1], [Sync, SYNC_WIPE_REMOTE]]);
+Phase("phase2", [[Sync], [History.add, history1], [Sync]]);
 
 Phase("phase3", [
   [Sync],

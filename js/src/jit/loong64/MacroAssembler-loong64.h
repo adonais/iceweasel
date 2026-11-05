@@ -430,6 +430,11 @@ class MacroAssemblerLOONG64 : public Assembler {
     wasmStoreAbsoluteImpl(access, AnyRegister(value.reg), memoryBase, address);
   }
 
+  FaultingCodeRange wasmStoreLane(const wasm::MemoryAccessDesc& access,
+                                  FloatRegister src, Register memoryBase,
+                                  Register ptr, uint32_t laneSize,
+                                  uint32_t laneIndex);
+
  protected:
   void wasmLoadAbsoluteImpl(const wasm::MemoryAccessDesc& access,
                             Register memoryBase, uint64_t address,

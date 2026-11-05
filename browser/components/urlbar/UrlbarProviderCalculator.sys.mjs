@@ -6,24 +6,16 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
+  l10n: () => new Localization(["browser/browser.ftl"], true),
+  ClipboardHelper: {
+    service: "@mozilla.org/widget/clipboardhelper;1",
+    iid: Ci.nsIClipboardHelper,
+  },
 });
-
-ChromeUtils.defineLazyGetter(lazy, "l10n", () => {
-  return new Localization(["browser/browser.ftl"], true);
-});
-
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "ClipboardHelper",
-  "@mozilla.org/widget/clipboardhelper;1",
-  Ci.nsIClipboardHelper
-);
 
 // This pref is relative to the `browser.urlbar` branch.
 const ENABLED_PREF = "suggest.calculator";

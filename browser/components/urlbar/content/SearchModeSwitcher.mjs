@@ -14,17 +14,18 @@ import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs"
 import { UrlbarContentUtils } from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
-const lazy = typeof ChromeUtils != "undefined" ? {} : null;
+const { XPCOMUtils } =
+  typeof ChromeUtils == "undefined"
+    ? { XPCOMUtils: null }
+    : ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs");
 
-if (lazy) {
-  ChromeUtils.defineESModuleGetters(lazy, {
-    CustomizableUI:
-      "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
-    OpenSearchManager:
-      "moz-src:///browser/components/search/OpenSearchManager.sys.mjs",
-    SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
-  });
-}
+const lazy = XPCOMUtils?.declareLazy({
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
+  OpenSearchManager:
+    "moz-src:///browser/components/search/OpenSearchManager.sys.mjs",
+  SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
+});
 
 /** @type {Localization} */
 let l10n;
@@ -495,7 +496,7 @@ export class SearchModeSwitcher {
         source: selectedEngine?.source || UrlbarShared.RESULT_SOURCE.SEARCH,
         engineName: selectedEngine?.name,
       },
-      this.#input.window.gBrowser.selectedBrowser
+      this.#input.browserWindow?.gBrowser.selectedBrowser
     );
 
     let searchString = this.#getSearchString();
@@ -588,7 +589,7 @@ export class SearchModeSwitcher {
     if (!lazy) {
       throw new Error("addEngine badge code should not be called in content");
     }
-    let browser = this.#input.window.gBrowser?.selectedBrowser;
+    let browser = this.#input.browserWindow?.gBrowser?.selectedBrowser;
     let uri = browser?.currentURI;
     if (!uri) {
       return;
@@ -599,7 +600,7 @@ export class SearchModeSwitcher {
     let apply = count => {
       // The button may have moved on to another page while an async read was
       // in flight.
-      if (browser != this.#input.window.gBrowser?.selectedBrowser) {
+      if (browser != this.#input.browserWindow?.gBrowser?.selectedBrowser) {
         return;
       }
       // Don't hide already shown badges.
@@ -842,7 +843,6 @@ export class SearchModeSwitcher {
       item.remove();
     }
 
-    let browser = this.#input.window.gBrowser;
     let installedEngineSeparator = this.#panelList.querySelector(
       ".searchmode-switcher-panel-installed-engine-separator"
     );
@@ -863,6 +863,7 @@ export class SearchModeSwitcher {
 
     // Add engines that can be installed. Only a browser window has a page to
     // offer them from.
+    let browser = this.#input.browserWindow?.gBrowser;
     let openSearchEngines = browser
       ? lazy.OpenSearchManager.getInstallableEngines(browser.selectedBrowser)
       : [];
@@ -1182,7 +1183,7 @@ export class SearchModeSwitcher {
     await lazy.SearchUIUtils.addOpenSearchEngine(
       engine.uri,
       engine.icon,
-      this.#input.window.gBrowser.selectedBrowser.browsingContext
+      this.#input.browserWindow.gBrowser.selectedBrowser.browsingContext
     );
   }
 }

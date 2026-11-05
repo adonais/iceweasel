@@ -498,6 +498,27 @@ add_task(async function test_fetch_weather_optin_gate() {
       shouldFetch: false,
     },
     {
+      desc: "nova + widgetWeather trainhop opt-in required, not accepted -> no fetch",
+      values: {
+        "nova.enabled": true,
+        trainhopConfig: { widgetWeather: { weatherOptInEnabled: true } },
+        "weather.optInAccepted": false,
+      },
+      shouldFetch: false,
+    },
+    {
+      desc: "nova + widgetWeather opt-in false overrides legacy weather key -> fetch",
+      values: {
+        "nova.enabled": true,
+        trainhopConfig: {
+          widgetWeather: { weatherOptInEnabled: false },
+          weather: { weatherOptInEnabled: true },
+        },
+        "weather.optInAccepted": false,
+      },
+      shouldFetch: true,
+    },
+    {
       desc: "nova + opt-in required, accepted -> fetch",
       values: {
         "nova.enabled": true,
@@ -901,6 +922,36 @@ add_task(async function test_isEnabled_classic_mode() {
   Assert.ok(
     !feed.isEnabled(),
     "isEnabled returns false when showWeather is false in classic mode"
+  );
+
+  sandbox.restore();
+});
+
+add_task(async function test_isEnabled_via_trainhop_namespace() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(WeatherFeed.prototype, "PersistentCache").returns({
+    set: () => {},
+    get: () => {},
+  });
+
+  let feed = new WeatherFeed();
+  feed.store = {
+    getState() {
+      return {
+        Prefs: {
+          values: {
+            "nova.enabled": true,
+            "widgets.weather.enabled": true,
+            trainhopConfig: { widgetWeather: { visible: true } },
+          },
+        },
+      };
+    },
+  };
+
+  Assert.ok(
+    feed.isEnabled(),
+    "isEnabled returns true via trainhopConfig.widgetWeather.visible"
   );
 
   sandbox.restore();

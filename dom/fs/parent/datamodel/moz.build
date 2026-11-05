@@ -24,3 +24,12 @@ LOCAL_INCLUDES += [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "FileSystemDatabaseManager.h",
+    "FileSystemDatabaseManagerVersion001.h",
+    "FileSystemDatabaseManagerVersion002.h",
+    "FileSystemFileManager.h",
+    "SchemaVersion001.h",
+    "SchemaVersion002.h",
+]

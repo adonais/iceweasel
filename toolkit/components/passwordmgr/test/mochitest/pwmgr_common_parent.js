@@ -162,38 +162,6 @@ addMessageListener("resetRecipes", async function () {
   await recipeParent.reset();
 });
 
-addMessageListener("getTelemetryEvents", options => {
-  options = Object.assign(
-    {
-      filterProps: {},
-      clear: false,
-    },
-    options
-  );
-  let snapshots = Services.telemetry.snapshotEvents(
-    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-    options.clear
-  );
-  let events = options.process in snapshots ? snapshots[options.process] : [];
-
-  // event is array of values like: [22476,"pwmgr","autocomplete_field","generatedpassword"]
-  let keys = ["id", "category", "method", "object", "value"];
-  events = events.filter(entry => {
-    for (let idx = 0; idx < keys.length; idx++) {
-      let key = keys[idx];
-      if (
-        key in options.filterProps &&
-        options.filterProps[key] !== entry[idx]
-      ) {
-        return false;
-      }
-    }
-    return true;
-  });
-
-  return events;
-});
-
 addMessageListener("proxyLoginManager", async msg => {
   // Recreate nsILoginInfo objects from vanilla JS objects.
   let recreatedArgs = msg.args.map((arg, index) => {

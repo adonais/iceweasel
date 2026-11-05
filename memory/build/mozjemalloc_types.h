@@ -216,12 +216,18 @@ enum PtrInfoTag {
 // - The 'tag' field unambiguously defines the meaning of the subsequent fields.
 // Helper functions are used to group together related categories of tags.
 typedef struct jemalloc_ptr_info_s {
-  enum PtrInfoTag tag;
-  void* addr;   // meaning depends on tag; see above
-  size_t size;  // meaning depends on tag; see above
+#ifdef __cplusplus
+#  define MOZ_FIELD_INIT(s, v) s = v
+#else
+#  define MOZ_FIELD_INIT(s, v) s
+#endif
+
+  enum PtrInfoTag MOZ_FIELD_INIT(tag, TagUnknown);
+  void* MOZ_FIELD_INIT(addr, nullptr);  // meaning depends on tag; see above
+  size_t MOZ_FIELD_INIT(size, 0);       // meaning depends on tag; see above
 
 #ifdef MOZ_DEBUG
-  arena_id_t arenaId;  // meaning depends on tag; see above
+  arena_id_t MOZ_FIELD_INIT(arenaId, 0);  // meaning depends on tag; see above
 #endif
 
 #ifdef __cplusplus
@@ -238,6 +244,8 @@ typedef struct jemalloc_ptr_info_s {
   {
   }
 #endif
+
+#undef MOZ_FIELD_INIT
 } jemalloc_ptr_info_t;
 
 static inline bool jemalloc_ptr_is_live(jemalloc_ptr_info_t* info) {
@@ -281,6 +289,10 @@ enum may_purge_now_result_t {
   // if we need a purge.
   WantsLater,
 };
+
+// Asked whether a deferred purge should carry on. Gets the closure that was
+// passed to moz_may_purge_now().
+typedef bool (*purge_keep_going_t)(void* aClosure);
 
 #ifdef __cplusplus
 }  // extern "C"

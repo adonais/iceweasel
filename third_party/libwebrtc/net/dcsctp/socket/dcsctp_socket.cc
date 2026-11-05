@@ -447,6 +447,9 @@ void DcSctpSocket::RestoreFromState(const DcSctpSocketHandoverState& state) {
       tcb_->RestoreFromState(now, state);
 
       SetState(State::kEstablished, "restored from handover state");
+      // Outstanding data was restored and marked for retransmission. Send it
+      // right away instead of waiting for the T3-RTX timer to expire.
+      tcb_->SendBufferedPackets(now);
       callbacks_.OnConnected();
     }
   }

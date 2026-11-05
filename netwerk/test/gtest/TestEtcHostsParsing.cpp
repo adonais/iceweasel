@@ -279,6 +279,23 @@ TEST_F(TestEtcHostsParsing, ParseNonExistentFile) {
   EXPECT_FALSE(mCallbackInvoked);
 }
 
+TEST_F(TestEtcHostsParsing, PersistentReadError) {
+  sCurrentTest = this;
+
+  // Opening a directory succeeds on Unix, but every read fails with EISDIR.
+  nsCOMPtr<nsIFile> tmpDir;
+  nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(tmpDir));
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  nsAutoCString path;
+  rv = GetCrossplatformNativePath(tmpDir, path);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  rust_parse_etc_hosts(&path, TestCallback);
+
+  EXPECT_EQ(mParsedHosts.Length(), 0u);
+}
+
 TEST_F(TestEtcHostsParsing, CallbackReturnsFalse) {
   sCurrentTest = this;
   CreateNormalHostsFile();

@@ -95,8 +95,6 @@ void WebGL2Context::UniformBlockBinding(WebGLProgram& program,
   const FuncScope funcScope(*this, "uniformBlockBinding");
   if (IsContextLost()) return;
 
-  if (!ValidateObject("program", program)) return;
-
   program.UniformBlockBinding(uniformBlockIndex, uniformBlockBinding);
 }
 

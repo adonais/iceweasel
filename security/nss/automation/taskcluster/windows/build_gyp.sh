@@ -2,33 +2,28 @@
 
 set -v -e -x
 
-# Parse for the -t option.
+# Parse for the -t and --clang-cl options.
 m=x64
+clang_cl=0
 for i in "$@"; do
     case "$i" in
         -t|--target) m= ;;
         --target=*) m="${i#*=}" ;;
+        --clang-cl) clang_cl=1 ;;
         *) [[ -z "$m" ]] && m="$i" ;;
     esac
 done
 [[ "$m" == "ia32" ]] && m=x86
 source "$(dirname "$0")/setup.sh"
 
-git clone https://chromium.googlesource.com/external/gyp
+# Install gyp-next, as the macOS build does. chromium's original gyp has no
+# ARM64 support at all: its MsvsSettings.GetArch() maps only Win32 and x64 and
+# silently falls back to x86 for everything else, so an ARM64 configuration
+# would quietly build for x86.
+source "$(dirname "$0")/../scripts/install_gyp.sh"
+install_gyp gyp-env
 
-# Install GYP.
-pushd gyp
-python3 -m venv ./test-env
-test-env/Scripts/python3 setup.py install
-test-env/Scripts/python3 -m pip install --upgrade pip
-test-env/Scripts/pip install --upgrade 'setuptools<45.0.0' six
-# Fool GYP.
-touch "${VSPATH}/VC/vcvarsall.bat"
-export GYP_MSVS_OVERRIDE_PATH="${VSPATH}"
-export GYP_MSVS_VERSION=2015
-popd
-
-export PATH="${PATH}:${PWD}/ninja/bin:${PWD}/gyp/test-env/Scripts"
+export PATH="${PATH}:${PWD}/ninja/bin"
 
 test -v VCS_PATH
 
@@ -53,6 +48,16 @@ export -f make
 
 # Build sqlite3 CLI tool for use by dbtests.
 bash "$(dirname "$0")/build_sqlite3.sh" dist nss/lib/sqlite
+
+# Builds against gecko's Visual Studio (see setup.sh) need a CRT at least as new
+# as its toolset, which the machines running their certs and tests don't have
+# -- nor, for a cross build, any CRT for the target at all. Ship the VC runtime
+# next to the executables, since Windows looks in an executable's directory
+# first, including for the DLLs in dist/$(cat dist/latest)/lib. The UCRT is not
+# needed: it is part of Windows 10 and later, which ignore an app-local copy.
+if [ "$m" == "arm64" ] || [ "$clang_cl" == 1 ]; then
+    cp "${WIN32_REDIST_DIR}"/*.dll "dist/$(cat dist/latest)/bin/"
+fi
 
 # Package.
 7z a public/build/dist.7z dist

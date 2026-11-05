@@ -19,72 +19,6 @@ registerCleanupFunction(() => {
  * RunSearch.runSearch and the post-tool sidebar handoff can find the window.
  */
 
-async function dispatchSmartbarCommit(browser, value, action) {
-  await SpecialPowers.spawn(browser, [value, action], async (val, act) => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-
-    const smartbar = await ContentTaskUtils.waitForCondition(
-      () => aiWindowElement.shadowRoot?.querySelector("#ai-window-smartbar"),
-      "Wait for Smartbar to be rendered"
-    );
-    const commitEvent = new content.CustomEvent("smartbar-commit", {
-      detail: {
-        value: val,
-        action: act,
-      },
-      bubbles: true,
-      composed: true,
-    });
-
-    smartbar.ownerDocument.dispatchEvent(commitEvent);
-  });
-}
-
-async function assertSidebarSmartbarFocused(win, message) {
-  const sidebarBrowser = win.document.getElementById("ai-window-browser");
-  await TestUtils.waitForCondition(() => {
-    const focusedElement = Services.focus.focusedElement;
-    return (
-      focusedElement === sidebarBrowser ||
-      focusedElement?.ownerDocument === sidebarBrowser.contentDocument
-    );
-  }, `${message}: wait for sidebar browser focus`);
-
-  await SpecialPowers.spawn(sidebarBrowser, [message], async msg => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = await ContentTaskUtils.waitForCondition(
-      () => aiWindowElement.shadowRoot?.querySelector("#ai-window-smartbar"),
-      `${msg}: wait for Smartbar`
-    );
-    // Smartbar lives in ai-window's shadow root, so document.activeElement
-    // returns the AI-WINDOW shadow host. Pierce one boundary to confirm
-    // focus actually landed on the smartbar's input field.
-    await ContentTaskUtils.waitForCondition(
-      () => smartbar.contains(aiWindowElement.shadowRoot.activeElement),
-      `${msg}: wait for Smartbar focus`
-    );
-    Assert.ok(
-      smartbar.contains(aiWindowElement.shadowRoot.activeElement),
-      `${msg}: Smartbar should contain shadow active element`
-    );
-  });
-}
-
-async function preloadAndCloseSidebar(win, aiTab) {
-  const preloadTab = await BrowserTestUtils.openNewForegroundTab(
-    win.gBrowser,
-    "https://example.com/"
-  );
-
-  await AIWindowUI.openSidebar(win);
-  await AIWindowUI.focusSidebar(win);
-  await assertSidebarSmartbarFocused(win, "Preloaded sidebar");
-  AIWindowUI.closeSidebar(win, "test");
-
-  await BrowserTestUtils.removeTab(preloadTab);
-  win.gBrowser.selectedTab = aiTab;
-}
-
 // Fullpage run_search from a new AI tab: the tool navigates the tab away, then
 // the post-tool handoff in Chat.sys.mjs opens the sidebar to continue streaming.
 add_task(async function test_run_search_fullpage_opens_sidebar() {
@@ -96,21 +30,9 @@ add_task(async function test_run_search_fullpage_opens_sidebar() {
     // browsingContext becomes stale.
     const runSearchStub = sb
       .stub(RunSearch, "runSearch")
-      .callsFake(async (_params, browsingContext) => {
-        const browser = browsingContext.embedderElement;
-        const win = browsingContext.topChromeWindow;
-        const tab = win.gBrowser.getTabForBrowser(browser);
-        await AIWindow.moveConversationToSidebar(win, tab);
-        BrowserTestUtils.startLoadingURIString(
-          browser,
-          "https://example.com/search_results"
-        );
-        await BrowserTestUtils.browserLoaded(browser);
-        browser.focus();
-        await AIWindow.focusSidebar(win);
-        await assertSidebarSmartbarFocused(win, "Search completed handoff");
-        return "Mock search results";
-      });
+      .callsFake((_params, browsingContext) =>
+        AIWindowTestUtils.runSearchWithSidebarHandoff(browsingContext)
+      );
     let gotToolResultRequest = false;
 
     await withServer(
@@ -134,9 +56,9 @@ add_task(async function test_run_search_fullpage_opens_sidebar() {
           AIWINDOW_URL
         );
         const browser = tab.linkedBrowser;
-        await preloadAndCloseSidebar(win, tab);
+        await AIWindowTestUtils.preloadAndCloseSidebar(win, tab);
 
-        await dispatchSmartbarCommit(
+        await AIWindowTestUtils.dispatchSmartbarCommit(
           browser,
           "search the web for something",
           "chat"
@@ -160,7 +82,10 @@ add_task(async function test_run_search_fullpage_opens_sidebar() {
           "Server should receive follow-up request with tool results"
         );
 
-        await assertSidebarSmartbarFocused(win, "Full-page search handoff");
+        await AIWindowTestUtils.assertSidebarSmartbarFocused(
+          win,
+          "Full-page search handoff"
+        );
 
         await BrowserTestUtils.closeWindow(win);
       }
@@ -270,7 +195,7 @@ add_task(
             return el?.shadowRoot;
           }, "Wait for sidebar ai-window element and shadow root");
 
-          await dispatchSmartbarCommit(
+          await AIWindowTestUtils.dispatchSmartbarCommit(
             sidebarBrowser,
             "search the web from sidebar",
             "chat"

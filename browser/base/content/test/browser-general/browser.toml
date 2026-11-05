@@ -309,9 +309,6 @@ support-files = [
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_invalid_uri_back_forward_manipulation.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && socketprocess_networking",
-]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_menuButtonFitts.js"]

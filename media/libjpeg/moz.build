@@ -280,3 +280,19 @@ AllowCompilerWarnings()
 
 FINAL_LIBRARY = 'xul'
 
+
+SOURCE_HEADERS += [
+	"jconfigint.h",
+	"jversion.h",
+]
+
+# The IJG license requires the documentation of an executable-only
+# distribution to state that it is based in part on the work of the
+# Independent JPEG Group (README.ijg).
+LICENSES += ['libjpeg']
+LICENSES['libjpeg'].title = 'libjpeg-turbo License'
+LICENSES['libjpeg'].acknowledgement = (
+    'This software is based in part on the work of the Independent JPEG Group.'
+)
+
+LICENSED_UNDER += ['libjpeg']

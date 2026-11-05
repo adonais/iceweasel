@@ -16,6 +16,7 @@ const {
   OAUTH_CLIENT_ID,
   ONLOGOUT_NOTIFICATION,
   DEPRECATED_SCOPE_ECOSYSTEM_TELEMETRY,
+  scopesForService,
 } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccountsCommon.sys.mjs"
 );
@@ -886,7 +887,6 @@ add_task(async function test_getOAuthTokenCachedWithSessionToken() {
   await fxa.setSignedInUser(alice);
   let result = await fxa.getOAuthToken({
     scope: "profile",
-    service: "test-service",
   });
   Assert.equal(numOauthTokenCalls, 1);
   Assert.equal(
@@ -897,7 +897,6 @@ add_task(async function test_getOAuthTokenCachedWithSessionToken() {
   // requesting it again should not re-fetch the token.
   result = await fxa.getOAuthToken({
     scope: "profile",
-    service: "test-service",
   });
   Assert.equal(numOauthTokenCalls, 1);
   Assert.equal(
@@ -907,7 +906,6 @@ add_task(async function test_getOAuthTokenCachedWithSessionToken() {
   // But requesting the same service and a different scope *will* get a new one.
   result = await fxa.getOAuthToken({
     scope: "something-else",
-    service: "test-service",
   });
   Assert.equal(numOauthTokenCalls, 2);
   Assert.equal(
@@ -964,7 +962,6 @@ add_task(async function test_getOAuthTokenCachedScopeNormalization() {
   await fxa.setSignedInUser(alice);
   let result = await fxa.getOAuthToken({
     scope: ["foo", "bar"],
-    service: "test-service",
   });
   Assert.equal(numOAuthTokenCalls, 1);
   Assert.equal(
@@ -975,7 +972,6 @@ add_task(async function test_getOAuthTokenCachedScopeNormalization() {
   // requesting it again with the scope array in a different order should not re-fetch the token.
   result = await fxa.getOAuthToken({
     scope: ["bar", "foo"],
-    service: "test-service",
   });
   Assert.equal(numOAuthTokenCalls, 1);
   Assert.equal(
@@ -985,7 +981,6 @@ add_task(async function test_getOAuthTokenCachedScopeNormalization() {
   // requesting it again with the scope array in different case should not re-fetch the token.
   result = await fxa.getOAuthToken({
     scope: ["Bar", "Foo"],
-    service: "test-service",
   });
   Assert.equal(numOAuthTokenCalls, 1);
   Assert.equal(
@@ -995,7 +990,6 @@ add_task(async function test_getOAuthTokenCachedScopeNormalization() {
   // But requesting with a new entry in the array does fetch one.
   result = await fxa.getOAuthToken({
     scope: ["foo", "bar", "etc"],
-    service: "test-service",
   });
   Assert.equal(numOAuthTokenCalls, 2);
   Assert.equal(
@@ -1003,6 +997,104 @@ add_task(async function test_getOAuthTokenCachedScopeNormalization() {
     "43793fdfffec22eb39fc3c44ed09193a6fde4c24e5d6a73f73178597b268af69"
   );
 });
+
+add_task(async function test_activeSubscriptions_retries_stale_token() {
+  let fxa = new MockFxAccounts();
+  let tokens = ["stale", "fresh"];
+  let removed = [];
+  fxa.getOAuthToken = async ({ scope }) => {
+    Assert.equal(scope, "https://identity.mozilla.com/account/subscriptions");
+    return tokens.shift();
+  };
+  fxa.removeCachedOAuthToken = async ({ token }) => removed.push(token);
+  fxa._internal.fxAccountsClient.activeSubscriptions = async token => {
+    if (token == "stale") {
+      throw Object.assign(new Error("Unauthorized"), { code: 401 });
+    }
+    return [{ subscriptionId: "sub-1" }];
+  };
+
+  let result = await fxa.activeSubscriptions();
+  Assert.deepEqual(result, [{ subscriptionId: "sub-1" }]);
+  Assert.deepEqual(removed, ["stale"]);
+});
+
+add_task(async function test_activeSubscriptions_other_errors_propagate() {
+  let fxa = new MockFxAccounts();
+  let tokenCalls = 0;
+  fxa.getOAuthToken = async () => {
+    tokenCalls++;
+    return "token";
+  };
+  fxa._internal.fxAccountsClient.activeSubscriptions = async () => {
+    throw Object.assign(new Error("Server error"), { code: 500 });
+  };
+
+  await Assert.rejects(fxa.activeSubscriptions(), err => err.code == 500);
+  Assert.equal(tokenCalls, 1);
+});
+
+add_task(async function test_getOAuthToken_service_resolves_scopes() {
+  let fxa = new MockFxAccounts();
+  let alice = getTestUser("alice");
+  alice.verified = true;
+  let requested;
+
+  fxa._internal.oauth.getAccessToken = async (_accountState, scopes) => {
+    requested = scopes;
+    return { token: MOCK_TOKEN_RESPONSE.access_token };
+  };
+
+  await fxa.setSignedInUser(alice);
+  const result = await fxa.getOAuthToken({ service: "relay" });
+  Assert.equal(result, MOCK_TOKEN_RESPONSE.access_token);
+  Assert.deepEqual(
+    [...requested].sort(),
+    ["profile", "https://identity.mozilla.com/apps/relay"].sort(),
+    "the service's scopes were resolved and requested"
+  );
+  await fxa.signOut(true);
+});
+
+add_task(async function test_getOAuthToken_service_and_scope() {
+  let fxa = new MockFxAccounts();
+  let alice = getTestUser("alice");
+  alice.verified = true;
+  await fxa.setSignedInUser(alice);
+
+  // Exactly one of `service` and `scope` is required. Supplying both, or an
+  // unknown service, is a caller bug, so those surface as-is rather than as one
+  // of the documented error classes.
+  await Assert.rejects(
+    fxa.getOAuthToken({ service: "relay", scope: "profile" }),
+    /Only one of the 'service' and 'scope' options/,
+    "supplying both service and scope is an error"
+  );
+  await Assert.rejects(
+    fxa.getOAuthToken({ service: "nope" }),
+    /unknown FxA service 'nope'/,
+    "an unknown service is an error"
+  );
+  await Assert.rejects(
+    fxa.getOAuthToken({}),
+    err => err.message === "INVALID_PARAMETER",
+    "supplying neither service nor scope is an error"
+  );
+  await fxa.signOut(true);
+});
+
+add_task(async function test_scopes_for_unknown_service_throws() {
+  // Migration relies on this to keep accidental services from sneaking in.
+  Assert.throws(() => scopesForService("nope"), /unknown FxA service/);
+});
+
+add_task(
+  async function test_scopes_for_unknown_service_includes_browser_scopes() {
+    let scopes = scopesForService("relay");
+    Assert.ok(scopes.includes("profile"));
+    Assert.ok(scopes.includes("https://identity.mozilla.com/apps/relay"));
+  }
+);
 
 add_test(function test_getOAuthToken_invalid_param() {
   let fxa = new MockFxAccounts();

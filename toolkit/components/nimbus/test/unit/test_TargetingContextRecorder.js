@@ -168,6 +168,36 @@ add_task(async function testAttributeTransforms() {
   }
 });
 
+add_task(async function testForgetButtonAreaType() {
+  const { cleanup, manager, sandbox } = await setupTest();
+
+  let forgetButtonAreaType;
+  sandbox.stub(manager, "createTargetingContext").callsFake(() => ({
+    activeExperiments: [],
+    activeRollouts: [],
+    enrollmentsMap: {},
+    isFirstStartup: false,
+    forgetButtonAreaType,
+  }));
+
+  for (const [value, expected] of [
+    [null, "none"],
+    ["toolbar", "toolbar"],
+  ]) {
+    forgetButtonAreaType = value;
+    await GleanPings.nimbusTargetingContext.testSubmission(() => {
+      assertRecordingFailures();
+      Assert.equal(
+        Glean.nimbusTargetingContext.forgetButtonAreaType.testGetValue(),
+        expected,
+        `forgetButtonAreaType ${value} is recorded as ${expected}`
+      );
+    }, recordTargetingContextAndSubmit);
+  }
+
+  await cleanup();
+});
+
 add_task(async function testNimbusTargetingContextAllKeysPresent() {
   info(
     "testing nimbus_targeting_context metrics contain all keys in the Nimbus targeting context"

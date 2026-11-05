@@ -125,6 +125,20 @@ Maybe<Rect> SVGCircleElement::GetGeometryBounds(
   return Some(aToBoundsSpace.TransformBounds(rect));
 }
 
+void SVGCircleElement::GetAsSimpleShape(SimpleShape* aShape) {
+  float x = 0.0f, y = 0.0f, r = 0.0f;
+  DebugOnly<bool> ok =
+      SVGGeometryProperty::ResolveAll<SVGT::Cx, SVGT::Cy, SVGT::R>(this, &x, &y,
+                                                                   &r);
+  MOZ_ASSERT(ok, "SVGGeometryProperty::ResolveAll failed");
+
+  if (r <= 0.0f) {
+    aShape->Reset();
+    return;
+  }
+  aShape->SetEllipse(CSSPoint(x, y), CSSSize(r, r));
+}
+
 already_AddRefed<Path> SVGCircleElement::BuildPath(PathBuilder* aBuilder) {
   float x, y, r;
   if (!SVGGeometryProperty::ResolveAll<SVGT::Cx, SVGT::Cy, SVGT::R>(this, &x,

@@ -85,6 +85,27 @@ class TestStaticAnalysis(unittest.TestCase):
             ]
         )
 
+    def test_build_export(self):
+        from mozbuild.code_analysis.mach_commands import _build_export
+
+        command_context = mock.MagicMock()
+        dispatch = command_context._mach_context.commands.dispatch
+        dispatch.return_value = 0
+
+        self.assertEqual(_build_export(command_context, jobs=4, verbose=True), 0)
+
+        dispatch.assert_called_once_with(
+            "build",
+            command_context._mach_context,
+            what=["analysis-prereqs"],
+            directory=".",
+            jobs=4,
+            verbose=True,
+            priority="normal",
+            no_completion_messages=True,
+        )
+        command_context._run_make.assert_not_called()
+
 
 if __name__ == "__main__":
     main()

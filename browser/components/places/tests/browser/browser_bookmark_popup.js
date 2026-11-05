@@ -38,6 +38,9 @@ add_setup(async function () {
   registerCleanupFunction(async () => {
     delete win.StarUI._closePanelQuickForTesting;
     await BrowserTestUtils.closeWindow(win);
+    Services.prefs.clearUserPref(
+      "browser.bookmarks.editDialog.confirmationHintShowCount"
+    );
   });
 });
 
@@ -575,6 +578,90 @@ add_task(async function enter_on_remove_bookmark_should_remove_bookmark() {
     },
     isBookmarkRemoved: true,
   });
+});
+
+add_task(
+  {
+    // TODO(bug 2079699): Expanding the folder tree leaks the window.
+    skip_if: () => AppConstants.DEBUG,
+  },
+  async function enter_in_folder_tree_should_save_bookmark() {
+    await PlacesUtils.bookmarks.insert({
+      url: TEST_URL,
+      parentGuid: PlacesUtils.bookmarks.menuGuid,
+      title: "Home Page",
+    });
+
+    await BrowserTestUtils.withNewTab(
+      { gBrowser: win.gBrowser, url: TEST_URL },
+      async function () {
+        let shownPromise = promisePopupShown(bookmarkPanel);
+        bookmarkStar.click();
+        await shownPromise;
+
+        win.document.getElementById("editBMPanel_foldersExpander").click();
+        let folderTree = win.document.getElementById("editBMPanel_folderTree");
+        Assert.equal(
+          win.document.activeElement,
+          folderTree,
+          "The folder tree should be focused"
+        );
+        folderTree.selectItems([PlacesUtils.bookmarks.unfiledGuid]);
+
+        let movedPromise = PlacesTestUtils.waitForNotification(
+          "bookmark-moved",
+          events => events.some(({ url }) => url == TEST_URL)
+        );
+        let hiddenPromise = promisePopupHidden(bookmarkPanel);
+        EventUtils.synthesizeKey("KEY_Enter", {}, win);
+        await Promise.all([movedPromise, hiddenPromise]);
+      }
+    );
+
+    let bookmark = await PlacesUtils.bookmarks.fetch({ url: TEST_URL });
+    Assert.equal(
+      bookmark.parentGuid,
+      PlacesUtils.bookmarks.unfiledGuid,
+      "The bookmark should be moved to the folder selected in the tree"
+    );
+    await PlacesUtils.bookmarks.remove(bookmark);
+  }
+);
+
+add_task(async function save_button_accesskey_should_save_bookmark() {
+  await SpecialPowers.pushPrefEnv({ set: [["ui.key.chromeAccess", 4]] });
+  await PlacesUtils.bookmarks.insert({
+    url: TEST_URL,
+    parentGuid: PlacesUtils.bookmarks.menuGuid,
+    title: "Home Page",
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser: win.gBrowser, url: TEST_URL },
+    async function () {
+      let shownPromise = promisePopupShown(bookmarkPanel);
+      bookmarkStar.click();
+      await shownPromise;
+
+      let bookmarkTitle = win.document.getElementById("editBMPanel_namePicker");
+      bookmarkTitle.focus();
+      bookmarkTitle.select();
+      EventUtils.sendString("new title", win);
+
+      let titleChangedPromise = PlacesTestUtils.waitForNotification(
+        "bookmark-title-changed",
+        events => events.some(({ url }) => url == TEST_URL)
+      );
+      let hiddenPromise = promisePopupHidden(bookmarkPanel);
+      EventUtils.synthesizeKey("a", { altKey: true }, win);
+      await Promise.all([titleChangedPromise, hiddenPromise]);
+    }
+  );
+
+  let bookmark = await PlacesUtils.bookmarks.fetch({ url: TEST_URL });
+  Assert.equal(bookmark.title, "new title", "The new title should be saved");
+  await PlacesUtils.bookmarks.remove(bookmark);
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function mouse_hovering_panel_should_prevent_autoclose() {

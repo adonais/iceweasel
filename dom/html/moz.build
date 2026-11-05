@@ -225,3 +225,8 @@ LOCAL_INCLUDES += [
 ]
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "HTMLFormSubmissionConstants.h",
+    "nsDOMStringMap.h",
+]

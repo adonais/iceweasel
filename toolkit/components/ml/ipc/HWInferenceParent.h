@@ -50,10 +50,12 @@ class HWInferenceParent final : public PHWInferenceParent {
   // Resolved once bound, rejected if the process dies or never comes up.
   RefPtr<GenericNonExclusivePromise> WhenReady() { return mReadyPromise; }
 
+#ifdef MOZ_WEBSPEECH
   // Sends aEndpoint once bound. The caller must hold a keep-alive.
   void StartContentSpeechRecognition(
       Endpoint<PSpeechRecognitionParent>&& aEndpoint,
       dom::ContentParentId aChildId);
+#endif
 
   // Same for a text generator; aModel is the model file the parent opened.
   void StartTextGeneration(Endpoint<PTextGenerationChild>&& aEndpoint,

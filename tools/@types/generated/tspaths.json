@@ -61,11 +61,14 @@
       "chrome://browser/content/aiwindow/components/aitab-error.mjs": [
         "../../../browser/components/aiwindow/ui/components/aitab-page/aitab-error/aitab-error.mjs"
       ],
+      "chrome://browser/content/aiwindow/components/aitab-footer.mjs": [
+        "../../../browser/components/aiwindow/ui/components/aitab-page/aitab-footer/aitab-footer.mjs"
+      ],
       "chrome://browser/content/aiwindow/components/aitab-header.mjs": [
         "../../../browser/components/aiwindow/ui/components/aitab-page/aitab-header/aitab-header.mjs"
       ],
       "chrome://browser/content/aiwindow/components/aitab-highlights.mjs": [
-        "../../../browser/components/aiwindow/ui/components/aitab-highlights/aitab-highlights.mjs"
+        "../../../browser/components/aiwindow/ui/components/aitab-page/aitab-highlights/aitab-highlights.mjs"
       ],
       "chrome://browser/content/aiwindow/components/aitab-list.mjs": [
         "../../../browser/components/aiwindow/ui/components/aitab-page/aitab-list/aitab-list.mjs"
@@ -74,7 +77,7 @@
         "../../../browser/components/aiwindow/ui/components/aitab-page/aitab-page-actions/aitab-page-actions.mjs"
       ],
       "chrome://browser/content/aiwindow/components/aitab-table.mjs": [
-        "../../../browser/components/aiwindow/ui/components/aitab-table/aitab-table.mjs"
+        "../../../browser/components/aiwindow/ui/components/aitab-page/aitab-table/aitab-table.mjs"
       ],
       "chrome://browser/content/aiwindow/components/aitab-text-block.mjs": [
         "../../../browser/components/aiwindow/ui/components/aitab-page/aitab-text-block/aitab-text-block.mjs"
@@ -528,6 +531,9 @@
       ],
       "chrome://browser/content/webrtc/webrtc-preview.mjs": [
         "../../../browser/components/webrtc/content/webrtc-preview/webrtc-preview.mjs"
+      ],
+      "chrome://browser/content/widgets/moz-widget-header.mjs": [
+        "../../../browser/components/widgets/content/moz-widget-header.mjs"
       ],
       "chrome://devtools-startup/content/DevToolsShim.sys.mjs": [
         "../../../devtools/startup/DevToolsShim.sys.mjs"
@@ -2278,6 +2284,9 @@
       "resource://devtools/client/application/src/components/session-history/SessionHistoryUnavailable.js": [
         "../../../devtools/client/application/src/components/session-history/SessionHistoryUnavailable.js"
       ],
+      "resource://devtools/client/application/src/components/speculative-loads/SpeculativeLoadsPage.js": [
+        "../../../devtools/client/application/src/components/speculative-loads/SpeculativeLoadsPage.js"
+      ],
       "resource://devtools/client/application/src/components/ui/UIButton.js": [
         "../../../devtools/client/application/src/components/ui/UIButton.js"
       ],
@@ -3931,8 +3940,8 @@
       "resource://devtools/client/responsive/utils/window.js": [
         "../../../devtools/client/responsive/utils/window.js"
       ],
-      "resource://devtools/client/settings/panel.js": [
-        "../../../devtools/client/settings/panel.js"
+      "resource://devtools/client/settings/panel.mjs": [
+        "../../../devtools/client/settings/panel.mjs"
       ],
       "resource://devtools/client/shared/WeakMapMap.js": [
         "../../../devtools/client/shared/WeakMapMap.js"
@@ -6091,6 +6100,9 @@
       "resource://gre/modules/GeckoViewModule.sys.mjs": [
         "../../../mobile/shared/modules/geckoview/GeckoViewModule.sys.mjs"
       ],
+      "resource://gre/modules/GeckoViewPictureInPicture.sys.mjs": [
+        "../../../mobile/shared/modules/geckoview/GeckoViewPictureInPicture.sys.mjs"
+      ],
       "resource://gre/modules/GeckoViewPreferences.sys.mjs": [
         "../../../mobile/shared/components/geckoview/GeckoViewPreferences.sys.mjs"
       ],
@@ -6331,6 +6343,9 @@
       "resource://gre/modules/ProfileAge.sys.mjs": [
         "../../../toolkit/modules/ProfileAge.sys.mjs"
       ],
+      "resource://gre/modules/ProfileKekPassword.sys.mjs": [
+        "../../../toolkit/modules/ProfileKekPassword.sys.mjs"
+      ],
       "resource://gre/modules/PromiseWorker.sys.mjs": [
         "../../../toolkit/components/promiseworker/PromiseWorker.sys.mjs"
       ],
@@ -6429,9 +6444,6 @@
       ],
       "resource://gre/modules/SitePolicyUtils.sys.mjs": [
         "../../../toolkit/components/enterprisepolicies/SitePolicyUtils.sys.mjs"
-      ],
-      "resource://gre/modules/SpeechRecognitionFeature.sys.mjs": [
-        "../../../dom/media/webspeech/recognition/SpeechRecognitionFeature.sys.mjs"
       ],
       "resource://gre/modules/Sqlite.sys.mjs": [
         "../../../toolkit/modules/Sqlite.sys.mjs"
@@ -6661,12 +6673,6 @@
       "resource://gre/modules/launchonlogin/WindowsLaunchOnLogin.sys.mjs": [
         "../../../toolkit/modules/launchonlogin/WindowsLaunchOnLogin.sys.mjs"
       ],
-      "resource://gre/modules/media/IdpSandbox.sys.mjs": [
-        "../../../dom/media/IdpSandbox.sys.mjs"
-      ],
-      "resource://gre/modules/media/PeerConnectionIdp.sys.mjs": [
-        "../../../dom/media/PeerConnectionIdp.sys.mjs"
-      ],
       "resource://gre/modules/megalist/MegalistViewModel.sys.mjs": [
         "../../../toolkit/components/satchel/megalist/MegalistViewModel.sys.mjs"
       ],
@@ -6847,9 +6853,6 @@
       "resource://gre/modules/translations/LanguageDetector.sys.mjs": [
         "../../../toolkit/components/translations/LanguageDetector.sys.mjs"
       ],
-      "resource://gre/modules/vtt.sys.mjs": [
-        "../../../dom/media/webvtt/vtt.sys.mjs"
-      ],
       "resource://gre/modules/workers/PromiseWorker.js": [
         "../../../tools/@types/subs/PromiseWorker.d.ts"
       ],
@@ -6943,6 +6946,9 @@
       "resource://newtab/lib/InferredModel/InferredConstants.sys.mjs": [
         "../../../browser/extensions/newtab/lib/InferredModel/InferredConstants.sys.mjs"
       ],
+      "resource://newtab/lib/InferredModel/LocationInterestGrid.sys.mjs": [
+        "../../../browser/extensions/newtab/lib/InferredModel/LocationInterestGrid.sys.mjs"
+      ],
       "resource://newtab/lib/InferredPersonalizationFeed.sys.mjs": [
         "../../../browser/extensions/newtab/lib/InferredPersonalizationFeed.sys.mjs"
       ],
@@ -7003,6 +7009,9 @@
       "resource://newtab/lib/SmartShortcutsRanker/ThomSample.mjs": [
         "../../../browser/extensions/newtab/lib/SmartShortcutsRanker/ThomSample.mjs"
       ],
+      "resource://newtab/lib/SponsoredTopSitesScoreProvider/SponsoredTopSitesScoreProvider.mjs": [
+        "../../../browser/extensions/newtab/lib/SponsoredTopSitesScoreProvider/SponsoredTopSitesScoreProvider.mjs"
+      ],
       "resource://newtab/lib/StartupCacheInit.sys.mjs": [
         "../../../browser/extensions/newtab/lib/StartupCacheInit.sys.mjs"
       ],
@@ -7042,6 +7051,9 @@
       "resource://newtab/lib/WebNotificationsFeed.sys.mjs": [
         "../../../browser/extensions/newtab/lib/WebNotificationsFeed.sys.mjs"
       ],
+      "resource://newtab/lib/Widgets/ExtensionWidgetsFeed.sys.mjs": [
+        "../../../browser/extensions/newtab/lib/Widgets/ExtensionWidgetsFeed.sys.mjs"
+      ],
       "resource://newtab/lib/Widgets/ListsFeed.sys.mjs": [
         "../../../browser/extensions/newtab/lib/Widgets/ListsFeed.sys.mjs"
       ],
@@ -7062,6 +7074,9 @@
       ],
       "resource://newtab/lib/Widgets/TimerFeed.sys.mjs": [
         "../../../browser/extensions/newtab/lib/Widgets/TimerFeed.sys.mjs"
+      ],
+      "resource://newtab/lib/Widgets/TravelFeed.sys.mjs": [
+        "../../../browser/extensions/newtab/lib/Widgets/TravelFeed.sys.mjs"
       ],
       "resource://newtab/lib/actors/NewTabAttributionParent.sys.mjs": [
         "../../../browser/extensions/newtab/lib/actors/NewTabAttributionParent.sys.mjs"
@@ -7102,9 +7117,6 @@
       "resource://nimbus/lib/Telemetry.sys.mjs": [
         "../../../toolkit/components/nimbus/lib/Telemetry.sys.mjs"
       ],
-      "resource://normandy-content/AboutPages.sys.mjs": [
-        "../../../toolkit/components/normandy/content/AboutPages.sys.mjs"
-      ],
       "resource://normandy/Normandy.sys.mjs": [
         "../../../toolkit/components/normandy/Normandy.sys.mjs"
       ],
@@ -7125,9 +7137,6 @@
       ],
       "resource://normandy/lib/CleanupManager.sys.mjs": [
         "../../../toolkit/components/normandy/lib/CleanupManager.sys.mjs"
-      ],
-      "resource://normandy/lib/ClientEnvironment.sys.mjs": [
-        "../../../toolkit/components/normandy/lib/ClientEnvironment.sys.mjs"
       ],
       "resource://normandy/lib/EventEmitter.sys.mjs": [
         "../../../toolkit/components/normandy/lib/EventEmitter.sys.mjs"
@@ -7443,6 +7452,12 @@
       ],
       "resource://test/es6module_top_level_await.js": [
         "../../../js/xpconnect/tests/unit/es6module_top_level_await.js"
+      ],
+      "resource://test/es6module_valid_import_target.js": [
+        "../../../js/xpconnect/tests/unit/es6module_valid_import_target.js"
+      ],
+      "resource://test/es6module_valid_then_missing_import.js": [
+        "../../../js/xpconnect/tests/unit/es6module_valid_then_missing_import.js"
       ],
       "resource://test/esm_lazy-1.sys.mjs": [
         "../../../js/xpconnect/tests/unit/esm_lazy-1.sys.mjs"

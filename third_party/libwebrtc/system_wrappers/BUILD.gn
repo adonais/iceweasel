@@ -64,27 +64,51 @@ rtc_library("metrics") {
 }
 
 if (rtc_include_tests && !build_with_chromium) {
-  rtc_test("system_wrappers_unittests") {
-    testonly = true
-    sources = [
-      "source/clock_unittest.cc",
-      "source/metrics_default_unittest.cc",
-      "source/metrics_unittest.cc",
-      "source/ntp_time_unittest.cc",
-    ]
-
+  rtc_cc_test("clock_unittest") {
+    sources = [ "source/clock_unittest.cc" ]
     deps = [
-      ":metrics",
       ":system_wrappers",
       "../api/units:time_delta",
       "../api/units:timestamp",
-      "../rtc_base:checks",
-      "../rtc_base:random",
+      "../test:test_support",
+    ]
+  }
+
+  rtc_cc_test("metrics_default_unittest") {
+    sources = [ "source/metrics_default_unittest.cc" ]
+    deps = [
+      ":metrics",
       "../rtc_base:stringutils",
+      "../test:test_support",
+      "//third_party/abseil-cpp/absl/strings:string_view",
+    ]
+  }
+
+  rtc_cc_test("metrics_unittest") {
+    sources = [ "source/metrics_unittest.cc" ]
+    deps = [
+      ":metrics",
+      "../rtc_base:checks",
       "../test:rtc_expect_death",
       "../test:test_support",
-      "//testing/gtest",
       "//third_party/abseil-cpp/absl/strings:string_view",
+    ]
+  }
+
+  rtc_cc_test("ntp_time_unittest") {
+    sources = [ "source/ntp_time_unittest.cc" ]
+    deps = [
+      ":system_wrappers",
+      "../test:test_support",
+    ]
+  }
+
+  rtc_test_suite("system_wrappers_unittests") {
+    tests = [
+      ":clock_unittest",
+      ":metrics_default_unittest",
+      ":metrics_unittest",
+      ":ntp_time_unittest",
     ]
   }
 }

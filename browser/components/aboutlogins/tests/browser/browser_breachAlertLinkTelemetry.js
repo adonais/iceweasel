@@ -1,10 +1,6 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
 EXPECTED_BREACH = {
   AddedDate: "2018-12-20T23:56:26Z",
   BreachDate: "2018-12-16",
@@ -55,7 +51,10 @@ add_task(async function test_breach_alert_link_click_telemetry() {
 
   let promiseNewTab = BrowserTestUtils.waitForNewTab(
     gBrowser,
-    TEST_LOGIN3.origin + "/"
+    TEST_LOGIN3.origin + "/",
+    true /*waitForLoad*/,
+    false /*waitForAnyTab*/,
+    true /*maybeErrorPage*/
   );
 
   await SpecialPowers.spawn(

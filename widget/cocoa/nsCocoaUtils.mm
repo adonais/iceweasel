@@ -254,7 +254,8 @@ void nsCocoaUtils::HideOSChromeOnScreen(bool aShouldHide) {
 }
 
 #define NS_APPSHELLSERVICE_CONTRACTID "@mozilla.org/appshell/appShellService;1"
-nsIWidget* nsCocoaUtils::GetHiddenWindowWidget() {
+
+already_AddRefed<nsIWidget> nsCocoaUtils::GetHiddenWindowWidget() {
   nsCOMPtr<nsIAppShellService> appShell(
       do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
   if (!appShell) {
@@ -283,7 +284,7 @@ nsIWidget* nsCocoaUtils::GetHiddenWindowWidget() {
     return nullptr;
   }
 
-  return hiddenWindowWidget;
+  return hiddenWindowWidget.forget();
 }
 
 BOOL nsCocoaUtils::WasLaunchedAtLogin() {

@@ -1,0 +1,10 @@
+var subject = "abc" + String.fromCodePoint(0x1F600);
+var wide = "(?:[\\u{1F600}])$" + String.fromCharCode(0x1234);
+var pattern = wide.substring(0, wide.length - 1);
+if (pattern !== "(?:[\\u{1F600}])$") throw new Error("unexpected pattern text");
+var unanchored = new RegExp("(?:[\\u{1F600}])", "u").exec(subject);
+if (unanchored === null || unanchored.index !== 3 || unanchored[0].length !== 2) throw new Error("unanchored form must match at index 3");
+var m = new RegExp(pattern, "u").exec(subject);
+if (m === null) throw new Error("end-anchored class failed to match the final code point");
+if (m.index !== 3) throw new Error("wrong index " + m.index);
+if (m[0].length !== 2) throw new Error("wrong match length " + m[0].length);

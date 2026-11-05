@@ -44,6 +44,32 @@ class nsFind : public nsIFind {
     mSkipNativeAnonymousContent = aSkipNativeAnonymousContent;
   }
 
+  // Word boundary offsets for a text node, stored in ascending order.
+  // mCursor is last position checked. Since lookups usually occur in order
+  // this can speed things up. Out of order lookups still work.
+  struct NodeBoundaries {
+    nsTArray<uint32_t> mBoundaries;
+    uint32_t mCursor = 0;
+
+    void Add(uint32_t aOffset) { mBoundaries.AppendElement(aOffset); }
+
+    bool Contains(uint32_t aOffset) {
+      while (mCursor < mBoundaries.Length() && mBoundaries[mCursor] < aOffset) {
+        ++mCursor;
+      }
+      while (mCursor > 0 && mBoundaries[mCursor - 1] >= aOffset) {
+        --mCursor;
+      }
+      return mCursor < mBoundaries.Length() && mBoundaries[mCursor] == aOffset;
+    }
+  };
+
+  using WordBoundaryCache =
+      nsTHashMap<nsPtrHashKey<mozilla::dom::Text>, NodeBoundaries>;
+  void SetWordBoundaryCache(WordBoundaryCache* aCache) {
+    mWordBoundaryCache = aCache;
+  }
+
   already_AddRefed<mozilla::dom::Range> FindFromRangeBoundaries(
       const nsAString& aPatText, const mozilla::RangeBoundary& aStartPoint,
       const mozilla::RangeBoundary& aEndPoint);
@@ -59,8 +85,10 @@ class nsFind : public nsIFind {
   bool mWordStartBounded = false;
   bool mWordEndBounded = false;
   bool mSkipNativeAnonymousContent = false;
+  bool mSegmenterWordBoundaries = false;
   mozilla::intl::WordBreakIteratorUtf16 mWordBreakIter{nullptr};
   nsContentUtils::NodeIndexCache* mNodeIndexCache = nullptr;
+  WordBoundaryCache* mWordBoundaryCache = nullptr;
   struct State;
   class StateRestorer;
 
@@ -73,6 +101,21 @@ class nsFind : public nsIFind {
   // This could be improved because some languages require more context than two
   // characters to determine where line breaks can occur
   bool BreakInBetween(char32_t x, char32_t y);
+
+  // Collect text from aBlockStart forward up to the next forced break. Appends
+  // into aCollectedText and records each node it collected from into
+  // aCollectedNodes for mapping segmenter offsets back to DOM.
+  void CollectBlockText(mozilla::dom::Text* aBlockStart, State& aState,
+                        nsAString& aCollectedText,
+                        nsTArray<mozilla::dom::Text*>& aCollectedNodes) const;
+
+  // Returns the first text node of the block containing aFromNode.
+  mozilla::dom::Text* FindBlockStart(mozilla::dom::Text* aFromNode,
+                                     State& aState) const;
+
+  // Check if there is a word boundary at aOffset in aState's current node.
+  // Caches all boundaries within the node's block.
+  bool HasWordBoundaryAtOffset(int32_t aOffset, State& aState);
 
   // Get the first character from the next node (last if mFindBackward).
   //

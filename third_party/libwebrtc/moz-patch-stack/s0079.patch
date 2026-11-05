@@ -18,10 +18,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d92a578327f524ec3
  4 files changed, 24 insertions(+), 7 deletions(-)
 
 diff --git a/call/rtp_video_sender.cc b/call/rtp_video_sender.cc
-index 106014195f..9e91703bbd 100644
+index 8529361eaf..1324bde0d7 100644
 --- a/call/rtp_video_sender.cc
 +++ b/call/rtp_video_sender.cc
-@@ -528,6 +528,7 @@ void RtpVideoSender::SetModuleIsActive(bool sending,
+@@ -521,6 +521,7 @@ void RtpVideoSender::SetModuleIsActive(bool sending,
      return;
    }
  
@@ -30,10 +30,10 @@ index 106014195f..9e91703bbd 100644
    rtp_module.SetSendingMediaStatus(sending);
    if (sending) {
 diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
-index d3cdeab12d..ef8c5f76dd 100644
+index 825399a025..7c5c53698d 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtcp_sender.cc
-@@ -202,10 +202,25 @@ bool RTCPSender::Sending() const {
+@@ -198,10 +198,25 @@ bool RTCPSender::Sending() const {
  
  void RTCPSender::SetSendingStatus(const FeedbackState& /* feedback_state */,
                                    bool sending) {
@@ -64,10 +64,10 @@ index d3cdeab12d..ef8c5f76dd 100644
  
  void RTCPSender::SetNonSenderRttMeasurement(bool enabled) {
 diff --git a/modules/rtp_rtcp/source/rtcp_sender_unittest.cc b/modules/rtp_rtcp/source/rtcp_sender_unittest.cc
-index e3c982379d..b83041c6f2 100644
+index 1a6e4766e8..b10159a3e0 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender_unittest.cc
 +++ b/modules/rtp_rtcp/source/rtcp_sender_unittest.cc
-@@ -340,12 +340,13 @@ TEST_F(RtcpSenderTest, SendBye) {
+@@ -338,12 +338,13 @@ TEST_F(RtcpSenderTest, SendBye) {
    EXPECT_EQ(kSenderSsrc, parser()->bye()->sender_ssrc());
  }
  
@@ -84,10 +84,10 @@ index e3c982379d..b83041c6f2 100644
  
  TEST_F(RtcpSenderTest, SendFir) {
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index a89d0bd252..4716bd1144 100644
+index 9b8693225c..f12d039c1a 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-@@ -275,7 +275,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
+@@ -274,7 +274,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
    // Returns the FlexFEC SSRC, if there is one.
    virtual std::optional<uint32_t> FlexfecSsrc() const = 0;
  

@@ -696,7 +696,7 @@ describe("SmartWindowRequestResponseTelemetry", () => {
 
   it("records fxaTokenUnavailable when FxA token is missing", async () => {
     sb.stub(openAIEngine, "build").resolves(makeFakeEngine());
-    sb.stub(openAIEngine, "getFxAccountToken").resolves(null);
+    sb.stub(AuthProvider, "getToken").resolves(null);
 
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
@@ -731,7 +731,7 @@ describe("SmartWindowRequestResponseTelemetry", () => {
         },
       })
     );
-    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock-fxa-token");
+    sb.stub(AuthProvider, "getToken").resolves("mock-fxa-token");
 
     const originalOffline = Services.io.offline;
     Services.io.offline = false;
@@ -772,7 +772,7 @@ describe("SmartWindowRequestResponseTelemetry", () => {
         },
       })
     );
-    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock-fxa-token");
+    sb.stub(AuthProvider, "getToken").resolves("mock-fxa-token");
 
     const originalOffline = Services.io.offline;
     Services.io.offline = true;
@@ -815,7 +815,7 @@ describe("SmartWindowRequestResponseTelemetry", () => {
         },
       })
     );
-    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock-fxa-token");
+    sb.stub(AuthProvider, "getToken").resolves("mock-fxa-token");
 
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;

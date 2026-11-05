@@ -118,6 +118,7 @@ UNIFIED_SOURCES += [
     "OscillatorNode.cpp",
     "PannerNode.cpp",
     "PeriodicWave.cpp",
+    "PlayingRefChangeHandler.cpp",
     "ScriptProcessorNode.cpp",
     "StereoPannerNode.cpp",
     "ThreeDPoint.cpp",
@@ -149,3 +150,13 @@ include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [".."]
+
+SOURCE_HEADERS += [
+    "AlignmentUtils.h",
+    "AudioNodeEngineGeneric.h",
+    "AudioNodeEngineGenericImpl.h",
+    "AudioWorkletImpl.h",
+    "DelayBuffer.h",
+    "PanningUtils.h",
+    "PlayingRefChangeHandler.h",
+]

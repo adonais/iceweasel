@@ -8,6 +8,7 @@
 #include "nspr.h"
 #include "prenv.h"
 #include "prerror.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "mozilla/Base64.h"
 
@@ -185,16 +186,26 @@ nsAuthSambaNTLM::Init(const nsACString& serviceName, uint32_t serviceFlags,
   NS_ASSERTION(username.IsEmpty() && domain.IsEmpty() && password.IsEmpty(),
                "unexpected credentials");
 
-  static bool sTelemetrySent = false;
-  if (!sTelemetrySent) {
+  // Init runs on background threads, so several auths may reach this
+  // concurrently.
+  static mozilla::Atomic<bool> sTelemetrySent{false};
+  if (sTelemetrySent.compareExchange(false, true)) {
     mozilla::glean::security::ntlm_module_used.AccumulateSingleSample(
         serviceFlags & nsIAuthModule::REQ_PROXY_AUTH
             ? NTLM_MODULE_SAMBA_AUTH_PROXY
             : NTLM_MODULE_SAMBA_AUTH_DIRECT);
-    sTelemetrySent = true;
   }
 
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAuthSambaNTLM::InitAsync(const nsACString& aServiceName,
+                           uint32_t aServiceFlags, const nsAString& aDomain,
+                           const nsAString& aUsername,
+                           const nsAString& aPassword,
+                           nsIAuthModuleInitCallback* aCallback) {
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP

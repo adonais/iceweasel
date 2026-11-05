@@ -1166,6 +1166,10 @@ nsresult EditorBase::UndoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
                          "CanHandleAndMaybeDispatchBeforeInputEvent() failed");
     return EditorBase::ToGenericNSResult(rv);
   }
+  if (editActionData.GetEditContext()) {
+    // Only fire beforeinput for EditContext, don't actually undo.
+    return NS_OK;
+  }
 
   AutoUpdateViewBatch preventSelectionChangeEvent(*this, __FUNCTION__);
 
@@ -1230,6 +1234,10 @@ nsresult EditorBase::RedoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
     NS_WARNING_ASSERTION(rv == NS_ERROR_EDITOR_ACTION_CANCELED,
                          "CanHandleAndMaybeDispatchBeforeInputEvent() failed");
     return EditorBase::ToGenericNSResult(rv);
+  }
+  if (editActionData.GetEditContext()) {
+    // Only fire beforeinput for EditContext, don't actually redo.
+    return NS_OK;
   }
 
   AutoUpdateViewBatch preventSelectionChangeEvent(*this, __FUNCTION__);
@@ -1912,6 +1920,10 @@ nsresult EditorBase::CutAsAction(nsIPrincipal* aPrincipal) {
       }
     }
   }
+
+  editActionData.SetSelectionCreatedByDoubleclick(
+      SelectionRef().GetFrameSelection() &&
+      SelectionRef().GetFrameSelection()->IsDoubleClickSelection());
 
   // Dispatch "beforeinput" event after dispatching "cut" event.
   nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();
@@ -3017,6 +3029,13 @@ NS_IMETHODIMP EditorBase::NotifySelectionChanged(Document* aDocument,
                                                  int32_t aAmount) {
   if (NS_WARN_IF(!aDocument) || NS_WARN_IF(!aSelection)) {
     return NS_ERROR_INVALID_ARG;
+  }
+
+  if (IsDispatchingInputEvent()) {
+    mEditActionData
+        ->SetSelectionCreatedByDoubleclickOfEditActionDispatchingInputEvent(
+            aSelection->GetFrameSelection() &&
+            aSelection->GetFrameSelection()->IsDoubleClickSelection());
   }
 
   if (mTextInputListener) {

@@ -267,7 +267,7 @@ add_task(async function test_get_open_tabs_returns_sanitized_data() {
 
   BrowserTestUtils.removeTab(aboutTab);
   await server.cleanup();
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await BrowserTestUtils.closeWindow(win);
 });
@@ -309,7 +309,7 @@ add_task(async function test_get_open_tabs_empty_when_no_http_tabs() {
     "untrustedInput stays false when no tabs are returned."
   );
 
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await BrowserTestUtils.closeWindow(win);
 });
@@ -375,7 +375,7 @@ add_task(async function test_get_open_tabs_caps_and_sorts() {
     "untrustedInput stays false; tab titles are truncated and spotlighted."
   );
 
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await server.cleanup();
   await BrowserTestUtils.closeWindow(win);
@@ -442,7 +442,7 @@ add_task(async function test_get_open_tabs_records_seen_urls() {
     "seenUrls contains exactly the context mention plus the two http tab URLs."
   );
 
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await server.cleanup();
   await BrowserTestUtils.closeWindow(win);
@@ -554,7 +554,7 @@ add_task(async function test_get_open_tabs_aggregates_across_ai_windows() {
   );
 
   BrowserTestUtils.removeTab(noiseTab.tab);
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await server.cleanup();
   await BrowserTestUtils.closeWindow(winA);

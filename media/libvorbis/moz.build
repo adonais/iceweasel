@@ -61,6 +61,8 @@ if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
 # Add libFuzzer configuration directives
 #include('/tools/fuzzing/libfuzzer-config.mozbuild')
 
-LICENSED_UNDER += [
-    "xiph",
-]
+# The text is upstream's COPYING, which names the copyright holders.
+LICENSES += ["libvorbis"]
+LICENSES["libvorbis"].title = "libvorbis License"
+
+LICENSED_UNDER += ["libvorbis"]

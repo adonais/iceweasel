@@ -29,22 +29,12 @@ function resolveColor(className, spec) {
   return a == 1 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 
-// `gray` is only excluded when nova is off: the CSS then uses `currentColor` to
-// follow the theme, while the API exposes a fixed code for extensions. When nova
-// is on, gray uses the `--color-gray-40` token like every other color and is
-// compared normally.
 add_task(async function container_color_codes_match_css() {
-  const novaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
-  // Under nova the painted container color is the tab stroke (--color-<name>-40);
-  // proton keeps the legacy literal on --identity-icon-color.
-  const cssVar = novaEnabled
-    ? "--identity-stroke-color"
-    : "--identity-icon-color";
   for (const color of ContextualIdentityService.containerColors) {
-    if (color === "gray" && !novaEnabled) {
-      continue;
-    }
-    let cssColor = resolveColor(`identity-color-${color}`, `var(${cssVar})`);
+    let cssColor = resolveColor(
+      `identity-color-${color}`,
+      "var(--identity-stroke-color)"
+    );
     let apiColor = resolveColor(
       null,
       ContextualIdentityService.getContainerColorCode(color)

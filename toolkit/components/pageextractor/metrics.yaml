@@ -75,7 +75,8 @@ page_extractor:
         type: string
         description: >
           The phase's outcome: "success", "error", or a handled non-error
-          outcome such as "unavailable", "document-hidden", or "empty".
+          outcome such as "unavailable", "document-hidden", "empty",
+          "not-readerable", or "document-unloaded".
       error_name:
         type: string
         description: >

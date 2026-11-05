@@ -1293,7 +1293,7 @@ NS_IMETHODIMP IPCFuzzController::IPCFuzzLoop::Run() {
             case ACCEPT_INVITE_MESSAGE_TYPE:
             case REQUEST_INTRODUCTION_MESSAGE_TYPE:
             case INTRODUCE_MESSAGE_TYPE:
-            case BROADCAST_MESSAGE_TYPE:
+            case DEAD_PROXY_MESSAGE_TYPE:
               // This set of special messages will not be routed to actors and
               // therefore we won't see these as stopped messages later. These
               // messages are either used by NodeChannel, DataPipe or

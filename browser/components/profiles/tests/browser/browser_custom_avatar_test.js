@@ -936,7 +936,7 @@ add_task(async function test_edit_profile_custom_avatar_keyboard_crop() {
           "Should be showing the profile avatar selector"
         );
 
-        EventUtils.synthesizeKey("Escape", {}, content);
+        EventUtils.synthesizeKey("KEY_Escape", {}, content);
 
         await ContentTaskUtils.waitForCondition(
           () => ContentTaskUtils.isHidden(avatarSelector.dialog),
@@ -974,7 +974,7 @@ add_task(async function test_edit_profile_custom_avatar_keyboard_crop() {
           "Waiting for avatar selector input to be visible"
         );
 
-        EventUtils.synthesizeKey("Escape", {}, content);
+        EventUtils.synthesizeKey("KEY_Escape", {}, content);
 
         await ContentTaskUtils.waitForCondition(
           () => ContentTaskUtils.isHidden(avatarSelector.dialog),
@@ -1038,7 +1038,7 @@ add_task(async function test_edit_profile_custom_avatar_keyboard_crop() {
 
         await avatarSelector.updateComplete;
 
-        EventUtils.synthesizeKey("Escape", {}, content);
+        EventUtils.synthesizeKey("KEY_Escape", {}, content);
 
         await ContentTaskUtils.waitForCondition(
           () => ContentTaskUtils.isVisible(avatarSelector.input),

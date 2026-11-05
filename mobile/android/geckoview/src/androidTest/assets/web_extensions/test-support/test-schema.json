@@ -79,6 +79,38 @@
         ]
       },
       {
+        "name": "isVideoCloning",
+        "type": "function",
+        "async": true,
+        "description": "Whether the video resolved by a given selector is being cloned visually into another video element.",
+        "parameters": [
+          {
+            "type": "number",
+            "name": "tabId"
+          },
+          {
+            "type": "string",
+            "name": "selector"
+          }
+        ]
+      },
+      {
+        "name": "getVideoStatusMessage",
+        "type": "function",
+        "async": true,
+        "description": "The message the video controls overlay shows over the video resolved by a given selector, or null if it shows none.",
+        "parameters": [
+          {
+            "type": "number",
+            "name": "tabId"
+          },
+          {
+            "type": "string",
+            "name": "selector"
+          }
+        ]
+      },
+      {
         "name": "getRequestedLocales",
         "type": "function",
         "async": true,
@@ -141,6 +173,42 @@
         "type": "function",
         "async": true,
         "description": "Gets the top-level pid belonging to tabId.",
+        "parameters": [
+          {
+            "type": "number",
+            "name": "tabId"
+          }
+        ]
+      },
+      {
+        "name": "getBrowsingContextGroupIdForTab",
+        "type": "function",
+        "async": true,
+        "description": "Gets the id of the browsing context group belonging to tabId.",
+        "parameters": [
+          {
+            "type": "number",
+            "name": "tabId"
+          }
+        ]
+      },
+      {
+        "name": "getRemoteTypeForTab",
+        "type": "function",
+        "async": true,
+        "description": "Gets the remote type of the content process belonging to tabId.",
+        "parameters": [
+          {
+            "type": "number",
+            "name": "tabId"
+          }
+        ]
+      },
+      {
+        "name": "mintPictureInPicturePlacementToken",
+        "type": "function",
+        "async": true,
+        "description": "Mints a picture-in-picture placement token standing for the browsing context group and content process of tabId, as a picture-in-picture request would.",
         "parameters": [
           {
             "type": "number",

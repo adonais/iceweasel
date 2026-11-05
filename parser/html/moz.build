@@ -132,3 +132,20 @@ FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [
     "/dom/base",
 ]
+
+SOURCE_HEADERS += [
+    "nsHtml5AutoPauseUpdate.h",
+    "nsHtml5ElementName.h",
+    "nsHtml5Highlighter.h",
+    "nsHtml5StackNode.h",
+    "nsHtml5StateSnapshot.h",
+    "nsHtml5Tokenizer.h",
+    "nsHtml5TokenizerCppSupplement.h",
+    "nsHtml5TokenizerHSupplement.h",
+    "nsHtml5TokenizerLoopPoliciesALU.h",
+    "nsHtml5TokenizerLoopPoliciesSIMD.h",
+    "nsHtml5TreeBuilder.h",
+    "nsHtml5TreeBuilderCppSupplement.h",
+    "nsHtml5TreeBuilderHSupplement.h",
+    "nsHtml5UTF16BufferCppSupplement.h",
+]

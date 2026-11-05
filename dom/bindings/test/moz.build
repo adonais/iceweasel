@@ -65,3 +65,27 @@ if CONFIG["CC_TYPE"] == "clang-cl":
     CXXFLAGS += ["-Od"]
 else:
     CXXFLAGS += ["-O0"]
+
+SOURCE_HEADERS += [
+    "TestBindingHeader.h",
+    "TestCImplementedInterface.h",
+    "TestFunctions.h",
+    "TestInterfaceAsyncIterableDouble.h",
+    "TestInterfaceAsyncIterableDoubleUnion.h",
+    "TestInterfaceAsyncIterableSingle.h",
+    "TestInterfaceAsyncIterableSingleWithArgs.h",
+    "TestInterfaceIterableDouble.h",
+    "TestInterfaceIterableDoubleUnion.h",
+    "TestInterfaceIterableSingle.h",
+    "TestInterfaceLength.h",
+    "TestInterfaceMaplike.h",
+    "TestInterfaceMaplikeJSObject.h",
+    "TestInterfaceMaplikeObject.h",
+    "TestInterfaceObservableArray.h",
+    "TestInterfaceObservableArrayBase.h",
+    "TestInterfaceSetlike.h",
+    "TestInterfaceSetlikeNode.h",
+    "TestReflectedHTMLAttribute.h",
+    "TestTrialInterface.h",
+    "WrapperCachedNonISupportsTestInterface.h",
+]

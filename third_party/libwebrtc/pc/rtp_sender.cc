@@ -809,8 +809,7 @@ void RtpSenderBase::SetSsrc(uint32_t ssrc) {
     AddTrackToStats();
   }
 
-  RtpParameters current_parameters;
-  bool params_modified = false;
+  std::optional<RtpParameters> applied_parameters;
 
   auto [video_factory, audio_factory] = MaybeCreateFactoryOverride();
 
@@ -820,46 +819,8 @@ void RtpSenderBase::SetSsrc(uint32_t ssrc) {
                                 audio_encoder_factory_override =
                                     std::move(audio_factory)]() mutable {
     RTC_DCHECK_RUN_ON(worker_thread_);
-    if (!init_parameters_.encodings.empty() ||
-        init_parameters_.degradation_preference.has_value()) {
-      if (ssrc != 0) {
-        RTC_DCHECK(media_channel_);
-        // Get the current parameters, which are constructed from the SDP. The
-        // number of layers in the SDP is currently authoritative to support SDP
-        // munging for Plan-B simulcast with "a=ssrc-group:SIM <ssrc-id>..."
-        // lines as described in RFC 5576. All fields should be default
-        // constructed and the SSRC field set, which we need to copy.
-        current_parameters = media_channel_->GetRtpSendParameters(ssrc);
-        // SSRC 0 has special meaning as "no stream". In this case,
-        // current_parameters may have size 0.
-        RTC_CHECK_GE(current_parameters.encodings.size(),
-                     init_parameters_.encodings.size());
-        for (size_t i = 0; i < init_parameters_.encodings.size(); ++i) {
-          init_parameters_.encodings[i].ssrc =
-              current_parameters.encodings[i].ssrc;
-          init_parameters_.encodings[i].rid =
-              current_parameters.encodings[i].rid;
-          current_parameters.encodings[i] = init_parameters_.encodings[i];
-        }
-        current_parameters.degradation_preference =
-            init_parameters_.degradation_preference;
-        params_modified =
-            media_channel_
-                ->SetRtpSendParameters(ssrc, current_parameters, nullptr)
-                .ok();
-        if (params_modified) {
-          // The parameters may change as they're applied.
-          current_parameters = media_channel_->GetRtpSendParameters(ssrc);
-        }
-      }
-      // Clear the `init_parameters_` after they have been applied to the
-      // media channel. This prevents stale values from being used in
-      // subsequent calls to `SetSsrc`, which could happen if `SetSsrc` is
-      // called multiple times on the same sender. See
-      // https://issues.webrtc.org/issues/500993975 for details.
-      init_parameters_.encodings.clear();
-      init_parameters_.degradation_preference = std::nullopt;
-    }
+    applied_parameters = ApplyInitParameters_w(
+        ssrc != 0 ? std::make_optional(ssrc) : std::nullopt);
 
     // While we're on the worker thread, attach the frame decryptor, transformer
     // and selector to the current media channel.
@@ -885,20 +846,118 @@ void RtpSenderBase::SetSsrc(uint32_t ssrc) {
       }
     }
   });
-  if (params_modified) {
+  if (applied_parameters.has_value()) {
     // As a result of the `SetRtpSendParameters` call, an async task will be
     // queued to update `cached_parameters_` - unless the parameters didn't
     // really change. In any case, we might as well stash away the current
     // parameters right away.
-    cached_parameters_ = std::move(current_parameters);
+    cached_parameters_ = std::move(applied_parameters);
   }
 }
 
+std::optional<RtpParameters> RtpSenderBase::ApplyInitParameters_w(
+    std::optional<uint32_t> ssrc) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  if (init_parameters_.encodings.empty() &&
+      !init_parameters_.degradation_preference.has_value()) {
+    return std::nullopt;
+  }
+
+  std::optional<RtpParameters> applied_parameters;
+
+  // Without a send stream there is nothing to apply the parameters to, in
+  // which case they are only cleared below.
+  if (ssrc.has_value()) {
+    RTC_DCHECK(media_channel_);
+    // Get the current parameters, which are constructed from the SDP. The
+    // number of layers in the SDP is currently authoritative to support SDP
+    // munging for Plan-B simulcast with "a=ssrc-group:SIM <ssrc-id>..."
+    // lines as described in RFC 5576. All fields should be default
+    // constructed and the SSRC field set, which we need to copy.
+    RtpParameters current_parameters =
+        media_channel_->GetRtpSendParameters(*ssrc);
+    // An empty result means that the media channel has no send stream for
+    // `ssrc`, so there is nothing to apply the parameters to. A result that is
+    // shorter than `init_parameters_.encodings` means that the media channel's
+    // view is narrower than what the application asked for. `SetSsrcTask()`
+    // reconciles the layer count against the local description before this
+    // runs, but `SetSsrc()` does not, and voice channels only ever report a
+    // single encoding. Apply the layers that fit and drop the rest rather than
+    // failing.
+    const size_t layers = std::min(current_parameters.encodings.size(),
+                                   init_parameters_.encodings.size());
+    if (layers < init_parameters_.encodings.size()) {
+      RTC_LOG(LS_WARNING) << "The media channel has "
+                          << current_parameters.encodings.size()
+                          << " send layer(s) for ssrc " << *ssrc
+                          << " but the sender was configured with "
+                          << init_parameters_.encodings.size()
+                          << ". Dropping the surplus layers.";
+    }
+    for (size_t i = 0; i < layers; ++i) {
+      init_parameters_.encodings[i].ssrc = current_parameters.encodings[i].ssrc;
+      init_parameters_.encodings[i].rid = current_parameters.encodings[i].rid;
+      current_parameters.encodings[i] = init_parameters_.encodings[i];
+    }
+    if (!current_parameters.encodings.empty()) {
+      current_parameters.degradation_preference =
+          init_parameters_.degradation_preference;
+      if (media_channel_
+              ->SetRtpSendParameters(*ssrc, current_parameters, nullptr)
+              .ok()) {
+        // The parameters may change as they're applied.
+        applied_parameters = media_channel_->GetRtpSendParameters(*ssrc);
+      } else {
+        // The media channel rejected the parameters. Keep `init_parameters_`
+        // so that a later negotiation can apply them, rather than silently
+        // discarding what the application asked for.
+        RTC_LOG(LS_WARNING) << "Failed to apply the configured send parameters "
+                               "to ssrc "
+                            << *ssrc << ". Keeping them for the next attempt.";
+        return std::nullopt;
+      }
+    }
+  }
+
+  // Clear the `init_parameters_` encodings now that they have been applied to
+  // the media channel, or there was no send stream to apply them to. This
+  // prevents stale values from being used in subsequent calls to `SetSsrc`,
+  // which could happen if `SetSsrc` is called multiple times on the same
+  // sender. See https://issues.webrtc.org/issues/500993975 for details.
+  init_parameters_.encodings.clear();
+  if (applied_parameters.has_value()) {
+    // The degradation preference is not tied to a specific send stream, so it
+    // is only dropped once it has been applied. Keeping it means that a
+    // preference the application configured before negotiation still takes
+    // effect if this sender is attached to a send stream later.
+    init_parameters_.degradation_preference = std::nullopt;
+  }
+
+  return applied_parameters;
+}
+
 ScopedOperationsBatcher::BatchTaskWithFinalizer RtpSenderBase::SetSsrcTask(
-    uint32_t ssrc) {
+    uint32_t ssrc,
+    size_t layer_count) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   if (stopped_ || ssrc == ssrc_) {
     return nullptr;
+  }
+
+  // The applied local description is authoritative for the number of send
+  // layers. If it describes fewer layers than the application asked for, e.g.
+  // because simulcast was removed by SDP munging, drop the surplus here, where
+  // the mismatch is a negotiation outcome rather than an unexplained
+  // inconsistency on the worker thread. `init_parameters_` is read on the
+  // worker thread by the task returned below, but the signaling thread is
+  // blocked inside `ScopedOperationsBatcher::Run()` while that task runs, and
+  // this code runs before the task is handed to the batcher.
+  if (ssrc != 0 && layer_count < init_parameters_.encodings.size()) {
+    RTC_LOG(LS_WARNING) << "The local description describes " << layer_count
+                        << " send layer(s) but the sender was configured with "
+                        << init_parameters_.encodings.size()
+                        << ". Dropping the surplus layers.";
+    init_parameters_.encodings.resize(layer_count);
   }
 
   cached_parameters_.reset();
@@ -921,49 +980,8 @@ ScopedOperationsBatcher::BatchTaskWithFinalizer RtpSenderBase::SetSsrcTask(
              -> RTCErrorOr<ScopedOperationsBatcher::FinalizerTask> {
     RTC_DCHECK_RUN_ON(worker_thread_);
 
-    RtpParameters current_parameters;
-    bool params_modified = false;
-
-    if (!init_parameters_.encodings.empty() ||
-        init_parameters_.degradation_preference.has_value()) {
-      if (ssrc != 0) {
-        RTC_DCHECK(media_channel_);
-        // Get the current parameters, which are constructed from the SDP. The
-        // number of layers in the SDP is currently authoritative to support SDP
-        // munging for Plan-B simulcast with "a=ssrc-group:SIM <ssrc-id>..."
-        // lines as described in RFC 5576. All fields should be default
-        // constructed and the SSRC field set, which we need to copy.
-        current_parameters = media_channel_->GetRtpSendParameters(ssrc);
-        // SSRC 0 has special meaning as "no stream". In this case,
-        // current_parameters may have size 0.
-        RTC_CHECK_GE(current_parameters.encodings.size(),
-                     init_parameters_.encodings.size());
-        for (size_t i = 0; i < init_parameters_.encodings.size(); ++i) {
-          init_parameters_.encodings[i].ssrc =
-              current_parameters.encodings[i].ssrc;
-          init_parameters_.encodings[i].rid =
-              current_parameters.encodings[i].rid;
-          current_parameters.encodings[i] = init_parameters_.encodings[i];
-        }
-        current_parameters.degradation_preference =
-            init_parameters_.degradation_preference;
-        params_modified =
-            media_channel_
-                ->SetRtpSendParameters(ssrc, current_parameters, nullptr)
-                .ok();
-        if (params_modified) {
-          // The parameters may change as they're applied.
-          current_parameters = media_channel_->GetRtpSendParameters(ssrc);
-        }
-      }
-      // Clear the `init_parameters_` after they have been applied to the
-      // media channel. This prevents stale values from being used in
-      // subsequent calls to `SetSsrc`, which could happen if `SetSsrc` is
-      // called multiple times on the same sender. See
-      // https://issues.webrtc.org/issues/500993975 for details.
-      init_parameters_.encodings.clear();
-      init_parameters_.degradation_preference = std::nullopt;
-    }
+    std::optional<RtpParameters> applied_parameters = ApplyInitParameters_w(
+        ssrc != 0 ? std::make_optional(ssrc) : std::nullopt);
 
     // While we're on the worker thread, attach the frame decryptor, transformer
     // and selector to the current media channel.
@@ -989,15 +1007,14 @@ ScopedOperationsBatcher::BatchTaskWithFinalizer RtpSenderBase::SetSsrcTask(
       }
     }
 
-    if (params_modified) {
+    if (applied_parameters.has_value()) {
       return ScopedOperationsBatcher::FinalizerTask(
-          [this, current_parameters = std::move(current_parameters)]() mutable {
+          [this, applied_parameters = std::move(applied_parameters)]() mutable {
             RTC_DCHECK_RUN_ON(signaling_thread_);
-            cached_parameters_ = std::move(current_parameters);
+            cached_parameters_ = std::move(applied_parameters);
           });
-    } else {
-      return ScopedOperationsBatcher::FinalizerTask();
     }
+    return ScopedOperationsBatcher::FinalizerTask();
   };
 }
 

@@ -15,6 +15,17 @@ namespace mozilla::net {
 
 class Http3Session;
 
+// Parses the flat "HTTP/3 200\r\nname: value\r\n...\r\n\r\n"-style buffer
+// saved from the CONNECT response into aNames/aValues, skipping the status
+// line and filtering out "wt-protocol" (see
+// https://w3c.github.io/webtransport/#process-a-webtransport-fetch-response
+// step 6). Exposed as a free function so it can be unit-tested (see
+// TestHttp3WebTransportSession.cpp) without constructing a full
+// Http3WebTransportSession.
+void ParseFlatWebTransportResponseHeaders(const nsTArray<uint8_t>& aFlatHeaders,
+                                          nsTArray<nsCString>& aNames,
+                                          nsTArray<nsCString>& aValues);
+
 class Http3TunnelStreamBase : public Http3StreamBase,
                               public nsAHttpSegmentWriter,
                               public nsAHttpSegmentReader {
@@ -64,6 +75,7 @@ class Http3TunnelStreamBase : public Http3StreamBase,
 
   nsCString mFlatHttpRequestHeaders;
   nsTArray<uint8_t> mFlatResponseHeaders;
+  nsTArray<uint8_t> mSavedFlatResponseHeaders;
 
   nsresult mSocketInCondition = NS_ERROR_NOT_INITIALIZED;
   nsresult mSocketOutCondition = NS_ERROR_NOT_INITIALIZED;
@@ -116,14 +128,19 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
       WebTransportStreamType aType, uint64_t aId);
 
   void SendDatagram(nsTArray<uint8_t>&& aData, uint64_t aTrackingId,
-                    uint64_t aSendGroupId, int64_t aSendOrder) override;
+                    uint64_t aSendGroupId, int64_t aSendOrder,
+                    TimeStamp aTimestamp) override;
 
   void OnDatagramReceived(nsTArray<uint8_t>&& aData) override;
 
   void GetMaxDatagramSize() override;
 
+  void SetDatagramMaxBufferedDatagrams(uint32_t aMaxBufferedDatagrams) override;
+  void SetDatagramMaxAge(double aMaxAge) override;
+
   nsresult ExportKeyingMaterial(const nsTArray<uint8_t>& aLabel,
                                 const nsTArray<uint8_t>& aContext,
+                                uint32_t aOutputLength,
                                 nsTArray<uint8_t>& aKeyingMaterial) override;
 
   void GetStats() override;
@@ -131,11 +148,14 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
   nsresult RegisterSendGroup(uint64_t aGroupId) override;
 
   void GetNegotiatedProtocol(nsACString& aProtocol) override;
+  void GetResponseHeaders(nsTArray<nsCString>& aNames,
+                          nsTArray<nsCString>& aValues) override;
+
   void OnOutgoingDatagramOutCome(
       uint64_t aId, WebTransportSessionEventListener::DatagramOutcome aOutCome);
 
-  void OnStreamStopSending(uint64_t aId, nsresult aError);
-  void OnStreamReset(uint64_t aId, nsresult aError);
+  void OnStreamStopSending(uint64_t aId, uint64_t aErrorCode);
+  void OnStreamReset(uint64_t aId, uint64_t aErrorCode);
 
  private:
   virtual ~Http3WebTransportSession();

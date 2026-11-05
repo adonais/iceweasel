@@ -490,12 +490,9 @@ static const uint32_t SpillSlotSize =
 static constexpr uint32_t ShadowStackSpace = 0;
 static const uint32_t SizeOfReturnAddressAfterCall = 0;
 
-// When our only strategy for far jumps is to encode the offset directly, and
-// not insert any jump islands during assembly for even further jumps, then the
-// architecture restricts us to -2^27 .. 2^27-4, to fit into a signed 28-bit
-// value.  We further reduce this range to allow the far-jump inserting code to
-// have some breathing room.
-static const uint32_t JumpImmediateRange = ((1 << 27) - (20 * 1024 * 1024));
+// This should be minRange(callWithPatch, farJumpWithPatch) == minRange(+/-128
+// GiB, +/-2 GiB).
+static const uint32_t JumpImmediateRange = INT32_MAX;
 
 struct FloatRegister {
   typedef FloatRegisters Codes;

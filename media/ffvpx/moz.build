@@ -9,3 +9,25 @@ DIRS += [
     'libavutil',
     'libavcodec'
 ]
+
+SOURCE_HEADERS += [
+	"config.h",
+	"config_android32.h",
+	"config_android64.h",
+	"config_android_x86_64.h",
+	"config_audio.h",
+	"config_components.h",
+	"config_components_audio_only.h",
+	"config_components_audio_video.h",
+	"config_darwin64.h",
+	"config_darwin_aarch64.h",
+	"config_generic.h",
+	"config_override.h",
+	"config_unix32.h",
+	"config_unix64.h",
+	"config_unix_aarch64.h",
+	"config_win32.h",
+	"config_win64.h",
+	"config_win64_aarch64.h",
+	"libavutil_visibility.h",
+]

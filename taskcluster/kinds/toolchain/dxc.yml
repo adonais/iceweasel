@@ -4,7 +4,6 @@
 ---
 task-defaults:
     attributes:
-        dxc-crash-symbols: true
         enable-full-crashsymbols: true
         local-toolchain: true
     fetches:

@@ -14,13 +14,15 @@
 
 #include "nsAuthSSPI.h"
 #include "nsComponentManagerUtils.h"
-#include "nsDNSService2.h"
+#include "nsICancelable.h"
 #include "nsIDNSService.h"
 #include "nsIDNSRecord.h"
 #include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 #include "nsCOMPtr.h"
 #include "nsICryptoHash.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "mozilla/StaticPrefs_network.h"
 
@@ -93,51 +95,6 @@ static nsresult InitSSPI() {
 
 //-----------------------------------------------------------------------------
 
-nsresult nsAuthSSPI::MakeSN(const nsACString& principal, nsCString& result) {
-  nsresult rv;
-
-  nsAutoCString buf(principal);
-
-  // The service name looks like "protocol@hostname", we need to map
-  // this to a value that SSPI expects.  To be consistent with IE, we
-  // need to map '@' to '/' and canonicalize the hostname.
-  int32_t index = buf.FindChar('@');
-  if (index == kNotFound) return NS_ERROR_UNEXPECTED;
-
-  nsCOMPtr<nsIDNSService> dnsService =
-      do_GetService(NS_DNSSERVICE_CONTRACTID, &rv);
-  if (NS_FAILED(rv)) return rv;
-
-  auto dns = static_cast<nsDNSService*>(dnsService.get());
-
-  // This could be expensive if our DNS cache cannot satisfy the request.
-  // However, we should have at least hit the OS resolver once prior to
-  // reaching this code, so provided the OS resolver has this information
-  // cached, we should not have to worry about blocking on this function call
-  // for very long.  NOTE: because we ask for the canonical hostname, we
-  // might end up requiring extra network activity in cases where the OS
-  // resolver might not have enough information to satisfy the request from
-  // its cache.  This is not an issue in versions of Windows up to WinXP.
-  nsCOMPtr<nsIDNSRecord> record;
-  mozilla::OriginAttributes attrs;
-  rv = dns->DeprecatedSyncResolve(Substring(buf, index + 1),
-                                  nsIDNSService::RESOLVE_CANONICAL_NAME, attrs,
-                                  getter_AddRefs(record));
-  if (NS_FAILED(rv)) return rv;
-  nsCOMPtr<nsIDNSAddrRecord> rec = do_QueryInterface(record);
-  if (!rec) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  nsAutoCString cname;
-  rv = rec->GetCanonicalName(cname);
-  if (NS_SUCCEEDED(rv)) {
-    result = StringHead(buf, index) + "/"_ns + cname;
-    LOG(("Using SPN of [%s]\n", result.get()));
-  }
-  return rv;
-}
-
 //-----------------------------------------------------------------------------
 
 nsAuthSSPI::nsAuthSSPI(pType package)
@@ -174,54 +131,19 @@ void nsAuthSSPI::Reset() {
   }
 }
 
-NS_IMPL_ISUPPORTS(nsAuthSSPI, nsIAuthModule)
+NS_IMPL_ISUPPORTS(nsAuthSSPI, nsIAuthModule, nsIDNSListener)
 
-NS_IMETHODIMP
-nsAuthSSPI::Init(const nsACString& aServiceName, uint32_t aServiceFlags,
-                 const nsAString& aDomain, const nsAString& aUsername,
-                 const nsAString& aPassword) {
-  LOG(("  nsAuthSSPI::Init\n"));
-
-  mIsFirst = true;
-  free(mCertDERData);
-  mCertDERData = nullptr;
-  mCertDERLength = 0;
-
-  // The caller must supply a service name to be used. (For why we now require
-  // a service name for NTLM, see bug 487872.)
-  NS_ENSURE_TRUE(!aServiceName.IsEmpty(), NS_ERROR_INVALID_ARG);
-
+nsresult nsAuthSSPI::CompleteInit() {
   nsresult rv;
 
-  // XXX lazy initialization like this assumes that we are single threaded
   if (!sspi) {
     rv = InitSSPI();
     if (NS_FAILED(rv)) return rv;
   }
-  SEC_WCHAR* package;
 
-  package = (SEC_WCHAR*)pTypeName[(int)mPackage];
-
-  if (mPackage == PACKAGE_TYPE_NTLM) {
-    // (bug 535193) For NTLM, just use the uri host, do not do canonical host
-    // lookups. The incoming serviceName is in the format: "protocol@hostname",
-    // SSPI expects
-    // "<service class>/<hostname>", so swap the '@' for a '/'.
-    mServiceName = aServiceName;
-    int32_t index = mServiceName.FindChar('@');
-    if (index == kNotFound) return NS_ERROR_UNEXPECTED;
-    mServiceName.Replace(index, 1, '/');
-  } else {
-    // Kerberos requires the canonical host, MakeSN takes care of this through a
-    // DNS lookup.
-    rv = MakeSN(aServiceName, mServiceName);
-    if (NS_FAILED(rv)) return rv;
-  }
-
-  mServiceFlags = aServiceFlags;
+  SEC_WCHAR* package = (SEC_WCHAR*)pTypeName[(int)mPackage];
 
   SECURITY_STATUS rc;
-
   PSecPkgInfoW pinfo;
   rc = (sspi->QuerySecurityPackageInfoW)(package, &pinfo);
   if (rc != SEC_E_OK) {
@@ -239,11 +161,7 @@ nsAuthSSPI::Init(const nsACString& aServiceName, uint32_t aServiceFlags,
   // domain, username, and password will be null if nsHttpNTLMAuth's
   // ChallengeReceived returns false for identityInvalid. Use default
   // credentials in this case by passing null for pai.
-  if (!aUsername.IsEmpty() && !aPassword.IsEmpty()) {
-    // Keep a copy of these strings for the duration
-    mUsername = aUsername;
-    mPassword = aPassword;
-    mDomain = aDomain;
+  if (!mUsername.IsEmpty() && !mPassword.IsEmpty()) {
     ai.Domain = reinterpret_cast<unsigned short*>(mDomain.BeginWriting());
     ai.DomainLength = mDomain.Length();
     ai.User = reinterpret_cast<unsigned short*>(mUsername.BeginWriting());
@@ -259,16 +177,158 @@ nsAuthSSPI::Init(const nsACString& aServiceName, uint32_t aServiceFlags,
                                          &useBefore);
   if (rc != SEC_E_OK) return NS_ERROR_UNEXPECTED;
 
-  static bool sTelemetrySent = false;
-  if (!sTelemetrySent) {
+  // CompleteInit runs on background threads, so several auths may reach this
+  // concurrently.
+  static mozilla::Atomic<bool> sTelemetrySent{false};
+  if (sTelemetrySent.compareExchange(false, true)) {
     mozilla::glean::security::ntlm_module_used.AccumulateSingleSample(
-        aServiceFlags & nsIAuthModule::REQ_PROXY_AUTH
+        mServiceFlags & nsIAuthModule::REQ_PROXY_AUTH
             ? NTLM_MODULE_WIN_API_PROXY
             : NTLM_MODULE_WIN_API_DIRECT);
-    sTelemetrySent = true;
   }
 
   LOG(("AcquireCredentialsHandle() succeeded.\n"));
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAuthSSPI::Init(const nsACString& aServiceName, uint32_t aServiceFlags,
+                 const nsAString& aDomain, const nsAString& aUsername,
+                 const nsAString& aPassword) {
+  LOG(("  nsAuthSSPI::Init\n"));
+
+  mIsFirst = true;
+  free(mCertDERData);
+  mCertDERLength = 0;
+  mCertDERData = nullptr;
+
+  // The caller must supply a service name to be used. (For why we now require
+  // a service name for NTLM, see bug 487872.)
+  NS_ENSURE_TRUE(!aServiceName.IsEmpty(), NS_ERROR_INVALID_ARG);
+
+  // The incoming serviceName is in the format: "protocol@hostname",
+  // SSPI expects "<service class>/<hostname>", so swap the '@' for a '/'.
+  mServiceName = aServiceName;
+  int32_t index = mServiceName.FindChar('@');
+  if (index == kNotFound) return NS_ERROR_UNEXPECTED;
+  mServiceName.Replace(index, 1, '/');
+
+  mServiceFlags = aServiceFlags;
+  // Keep a copy of these strings for the duration
+  mDomain = aDomain;
+  mUsername = aUsername;
+  mPassword = aPassword;
+
+  return CompleteInit();
+}
+
+NS_IMETHODIMP
+nsAuthSSPI::InitAsync(const nsACString& aServiceName, uint32_t aServiceFlags,
+                      const nsAString& aDomain, const nsAString& aUsername,
+                      const nsAString& aPassword,
+                      nsIAuthModuleInitCallback* aCallback) {
+  LOG(("  nsAuthSSPI::InitAsync\n"));
+  NS_ENSURE_ARG(aCallback);
+
+  mIsFirst = true;
+  free(mCertDERData);
+  mCertDERLength = 0;
+  mCertDERData = nullptr;
+
+  // The caller must supply a service name to be used. (For why we now require
+  // a service name for NTLM, see bug 487872.)
+  NS_ENSURE_TRUE(!aServiceName.IsEmpty(), NS_ERROR_INVALID_ARG);
+
+  mServiceFlags = aServiceFlags;
+  // Keep a copy of these strings for the duration
+  mDomain = aDomain;
+  mUsername = aUsername;
+  mPassword = aPassword;
+
+  nsAutoCString buf(aServiceName);
+  int32_t index = buf.FindChar('@');
+  if (index == kNotFound) return NS_ERROR_UNEXPECTED;
+
+  if (mPackage == PACKAGE_TYPE_NTLM) {
+    // (bug 535193) For NTLM, just use the uri host, do not do canonical host
+    // lookups. The incoming serviceName is in the format:
+    // "protocol@hostname", SSPI expects "<service class>/<hostname>", so swap
+    // the '@' for a '/'.
+    mServiceName = buf;
+    mServiceName.Replace(index, 1, '/');
+    nsresult rv = CompleteInit();
+    aCallback->OnInitDone(rv);
+    return NS_OK;
+  }
+
+  // Kerberos requires the canonical host. Resolve it asynchronously.
+  mPendingServicePrefix = StringHead(buf, index);
+  mInitCallback = aCallback;
+
+  nsresult rv;
+  nsCOMPtr<nsIDNSService> dnsService =
+      do_GetService(NS_DNSSERVICE_CONTRACTID, &rv);
+  if (NS_FAILED(rv)) {
+    mInitCallback = nullptr;
+    return rv;
+  }
+
+  // Resolve on a background task queue rather than passing a null target,
+  // which would run OnLookupComplete on the DNS thread. CompleteInit() and
+  // the credential generation the callback goes on to do may both block, so
+  // they must not hold up name resolution.
+  nsCOMPtr<nsISerialEventTarget> target;
+  rv = NS_CreateBackgroundTaskQueue("nsAuthSSPI", getter_AddRefs(target));
+  if (NS_FAILED(rv)) {
+    mInitCallback = nullptr;
+    return rv;
+  }
+
+  nsCOMPtr<nsICancelable> cancelable;
+  mozilla::OriginAttributes attrs;
+  rv = dnsService->AsyncResolveNative(
+      Substring(buf, index + 1), nsIDNSService::RESOLVE_TYPE_DEFAULT,
+      nsIDNSService::RESOLVE_CANONICAL_NAME, nullptr, this, target, attrs,
+      getter_AddRefs(cancelable));
+  if (NS_FAILED(rv)) {
+    mInitCallback = nullptr;
+    return rv;
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAuthSSPI::OnLookupComplete(nsICancelable* aRequest, nsIDNSRecord* aRecord,
+                             nsresult aStatus) {
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  nsCOMPtr<nsIAuthModuleInitCallback> callback = std::move(mInitCallback);
+  MOZ_ASSERT(callback);
+
+  if (NS_FAILED(aStatus)) {
+    callback->OnInitDone(aStatus);
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIDNSAddrRecord> rec = do_QueryInterface(aRecord);
+  if (!rec) {
+    callback->OnInitDone(NS_ERROR_UNEXPECTED);
+    return NS_OK;
+  }
+
+  nsAutoCString cname;
+  nsresult rv = rec->GetCanonicalName(cname);
+  if (NS_FAILED(rv)) {
+    callback->OnInitDone(rv);
+    return NS_OK;
+  }
+
+  mServiceName = mPendingServicePrefix + "/"_ns + cname;
+  LOG(("Using SPN of [%s]\n", mServiceName.get()));
+
+  rv = CompleteInit();
+  callback->OnInitDone(rv);
   return NS_OK;
 }
 

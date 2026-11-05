@@ -246,6 +246,25 @@ def _poll(pipe, poll_interval=0.1):
         return True
 
 
+def _process_sampling_interval(poll_interval):
+    """Return the minimum interval, in seconds, between samples of the running
+    processes, or None if they shouldn't be sampled.
+
+    MOZ_PROCESS_SAMPLING sets that interval. Sampling processes is expensive
+    when there are many of them, so a larger interval trades the precision of
+    their start and end times for less overhead. 0 disables process sampling,
+    and a value that isn't a number samples them along with everything else.
+    """
+    value = os.environ.get("MOZ_PROCESS_SAMPLING")
+    if not value:
+        return None
+    try:
+        interval = float(value)
+    except ValueError:
+        return poll_interval
+    return interval if interval > 0 else None
+
+
 def _collect(pipe, poll_interval):
     """Collects system metrics.
 
@@ -254,7 +273,10 @@ def _collect(pipe, poll_interval):
     """
 
     processes = []
-    sample_processes = "MOZ_PROCESS_SAMPLING" in os.environ
+    process_sampling_interval = _process_sampling_interval(poll_interval)
+    known_processes = dict()
+    # Processes that were already running when monitoring started.
+    initial_processes = set()
 
     try:
         # Establish initial values.
@@ -271,13 +293,23 @@ def _collect(pipe, poll_interval):
 
         sleep_interval = poll_interval
 
-        known_processes = dict()
+        last_process_sample = None
 
         def update_known_processes():
-            nonlocal known_processes
+            nonlocal known_processes, last_process_sample
 
-            if not sample_processes:
+            if process_sampling_interval is None:
                 return
+            now = time.monotonic()
+            # Polls are not evenly spaced, so allow for half a poll of slack
+            # to not skip polls when the interval is a multiple of it.
+            if (
+                last_process_sample is not None
+                and now - last_process_sample + poll_interval / 2
+                < process_sampling_interval
+            ):
+                return
+            last_process_sample = now
 
             updated_known_processes = dict()
             for p in psutil.process_iter():
@@ -300,6 +332,13 @@ def _collect(pipe, poll_interval):
                     cmd = []
                     try:
                         cmd = p.cmdline()
+                    except psutil.AccessDenied:
+                        # e.g. processes from other users on Windows and
+                        # macOS, whose name is usually still available.
+                        try:
+                            cmd = [p.name()]
+                        except Exception as e:
+                            cmd = ["exception", str(e)]
                     except Exception as e:
                         cmd = ["exception", str(e)]
                     ppid = 0
@@ -315,6 +354,9 @@ def _collect(pipe, poll_interval):
             known_processes = updated_known_processes
 
         update_known_processes()
+        initial_processes = {
+            (pid, create_time) for pid, (create_time, _, _) in known_processes.items()
+        }
 
         while not _poll(pipe, poll_interval=sleep_interval):
             io = get_disk_io_counters()
@@ -368,9 +410,16 @@ def _collect(pipe, poll_interval):
             sleep_interval = max(poll_interval / 2, poll_interval - collection_overhead)
 
     except Exception as e:
-        warnings.warn("_collect failed: %s" % e)
+        warnings.warn(f"_collect failed: {e}")
 
     finally:
+        # Record the processes that started while monitoring and are still
+        # running.
+        stop_time = time.time()
+        for pid, (create_time, cmd, ppid) in known_processes.items():
+            if (pid, create_time) not in initial_processes:
+                processes.append((pid, create_time, stop_time, cmd, ppid))
+
         for pid, create_time, end_time, cmd, ppid in processes:
             if len(cmd) > 0:
                 cmd[0] = os.path.basename(cmd[0])
@@ -510,7 +559,7 @@ class SystemResourceMonitor:
     def _format_percent(value):
         return str(round(value, 1)) + "%"
 
-    def __init__(self, poll_interval=1.0, metadata={}):
+    def __init__(self, poll_interval=1.0, metadata=None):
         """Instantiate a system resource monitor instance.
 
         The instance is configured with a poll interval. This is the interval
@@ -587,6 +636,8 @@ class SystemResourceMonitor:
         self._drain_timer = None
         self._pipe_lock = threading.Lock()
 
+        if metadata is None:
+            metadata = {}
         self.metadata = metadata
         # "hg:<host>/<repo>:" prefix and revision parsed once from the profile
         # metadata's sourceURL, used to wrap repo-relative frame paths into
@@ -612,7 +663,7 @@ class SystemResourceMonitor:
             virt = psutil.virtual_memory()
             swap = psutil.swap_memory()
         except Exception as e:
-            warnings.warn("psutil failed to run: %s" % e)
+            warnings.warn(f"psutil failed to run: {e}")
             return
 
         self._cpu_cores = len(cpu_percent)
@@ -821,7 +872,7 @@ class SystemResourceMonitor:
                 ) = self._pipe.recv()
             except Exception as e:
                 if not self._stopped:
-                    warnings.warn("failed to receive data: %s" % e)
+                    warnings.warn(f"failed to receive data: {e}")
                 break
 
             if start_time == "process":
@@ -850,8 +901,7 @@ class SystemResourceMonitor:
                 self._stream_measurement(m)
             except Exception:
                 warnings.warn(
-                    "failed to read the received data: %s"
-                    % str((
+                    "failed to read the received data: {}".format((
                         start_time,
                         end_time,
                         io_diff,
@@ -2078,10 +2128,10 @@ class SystemResourceMonitor:
                 end_time = t
 
         if start_time is None:
-            raise Exception("Could not find start event: %s" % start_event)
+            raise Exception(f"Could not find start event: {start_event}")
 
         if end_time is None:
-            raise Exception("Could not find end event: %s" % end_event)
+            raise Exception(f"Could not find end event: {end_event}")
 
         return self.range_usage(start_time, end_time)
 

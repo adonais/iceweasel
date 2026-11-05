@@ -354,6 +354,8 @@ add_task(
           null,
           "context-take-screenshot",
           true,
+          "context-use-mini-window",
+          true,
           "---",
           null,
           ...askChatMenu,

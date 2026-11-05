@@ -1,5 +1,6 @@
 // This test verifies that Firefox correctly upgrades an HTTP request to HTTPS
-// when the request's domain name matches network.dns.mock_HTTPS_RR_domain.
+// when the request's domain name matches network.dns.mock_HTTPS_RR_domain,
+// and that the upgrade is logged to the web console.
 
 "use strict";
 
@@ -17,6 +18,9 @@ add_task(async function () {
     set: [
       ["network.dns.mock_HTTPS_RR_domain", "example.org"],
       ["network.dns.force_use_https_rr", true],
+      // HTTPS-First is checked before HTTPS RR and would upgrade the request
+      // itself.
+      ["dom.security.https_first", false],
     ],
   });
 
@@ -29,6 +33,26 @@ add_task(async function () {
       ok(
         content.document.location.href.startsWith("https://"),
         "Should be https"
+      );
+    });
+
+    // The web console shows a message only if it carries the page's inner
+    // window ID, so check that the upgrade message does.
+    await SpecialPowers.spawn(browser, [], async () => {
+      const innerWindowId = content.windowGlobalChild.innerWindowId;
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          Services.console
+            .getMessageArray()
+            .some(
+              msg =>
+                msg instanceof Ci.nsIScriptError &&
+                msg.innerWindowID == innerWindowId &&
+                msg.message.includes("HTTPS RR:") &&
+                msg.message.includes("Upgrading insecure request") &&
+                msg.message.includes("example.org")
+            ),
+        "HTTPS RR upgrade message is reported to the loaded document's window"
       );
     });
   });

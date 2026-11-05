@@ -271,7 +271,7 @@ wasmFailValidateText(
     `(global (export "x") i32 (i32.const 0))`,
     `(import "imp" "x" (func))`,
   ),
-  /expected a core function/,
+  /incompatible function type for import/,
 );
 
 // ----------------------------------------------------------------------------
@@ -361,7 +361,7 @@ wasmFailValidateText(
     `(global (export "x") i32 (i32.const 0))`,
     `(import "imp" "x" (table 10 funcref))`,
   ),
-  /expected a table/,
+  /incompatible table type for import/,
 );
 
 // ----------------------------------------------------------------------------
@@ -468,7 +468,7 @@ wasmFailValidateText(
     `(global (export "x") i32 (i32.const 0))`,
     `(import "imp" "x" (memory 1 1))`,
   ),
-  /expected a memory/,
+  /incompatible memory type for import/,
 );
 
 // ----------------------------------------------------------------------------
@@ -535,7 +535,7 @@ wasmFailValidateText(
     `(table (export "x") 10 funcref)`,
     `(import "imp" "x" (global (mut funcref)))`,
   ),
-  /expected a global/,
+  /incompatible global type for import/,
 );
 
 // ----------------------------------------------------------------------------
@@ -580,5 +580,5 @@ wasmFailValidateText(
     `(global (export "x") i32 (i32.const 0))`,
     `(import "imp" "x" (tag))`,
   ),
-  /expected a tag/,
+  /incompatible tag type for import/,
 );

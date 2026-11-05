@@ -6,6 +6,7 @@
 #define DnsAndConnectSocket_h_
 
 #include "ConnectionAttempt.h"
+#include "mozilla/Mutex.h"
 #include "nsAHttpConnection.h"
 #include "nsHttpConnection.h"
 #include "nsHttpTransaction.h"
@@ -63,6 +64,7 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
   bool Claim(nsHttpTransaction* newTransaction = nullptr) override;
 
   DnsAndConnectSocket* ToDnsAndConnectSocket() override { return this; }
+  void ForgetRealTransaction() override;
 
  private:
   // This performs checks that the DnsAndConnectSocket has been properly cleand
@@ -209,6 +211,10 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
   nsresult SetupEvent(SetupEvents event);
 
   bool mDispatchedMTransaction = false;
+
+  // Orders ForgetRealTransaction against GetInterface, which PSM can call on
+  // the main thread.  Other mTransaction accesses are on the socket thread.
+  Mutex mTransactionLock{"DnsAndConnectSocket::mTransactionLock"};
 
   PrimaryTransportSetup mPrimaryTransport;
 

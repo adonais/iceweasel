@@ -549,7 +549,23 @@ class ExistingTasks(ParameterConfig):
                 branches.
                 """,
             },
-        ]
+        ],
+        [
+            ["--use-indexed-tasks"],
+            {
+                "action": "append",
+                "dest": "use_indexed_tasks",
+                "default": [],
+                "metavar": "LABEL=INDEX_PATH",
+                "help": """
+                    Use the task at INDEX_PATH in place of the task LABEL, e.g.
+                the latest signed mozilla-central build. Only completed tasks
+                are indexed. Unlike --use-existing-tasks, which reuses every
+                task of a push, this only replaces LABEL. Can be specified
+                multiple times.
+                """,
+            },
+        ],
     ]
 
     def find_decision_task(self, use_existing_tasks):
@@ -580,21 +596,39 @@ class ExistingTasks(ParameterConfig):
         index_path = f"gecko.v2.{branch}.revision.{revision}.taskgraph.decision"
         return taskcluster.find_task_id(index_path)
 
-    def get_parameters(self, use_existing_tasks, **kwargs):
-        if not use_existing_tasks:
+    def get_parameters(self, use_existing_tasks, use_indexed_tasks, **kwargs):
+        if not use_existing_tasks and not use_indexed_tasks:
             return
 
         from taskgraph.util import taskcluster
 
         set_taskcluster_root_url()
 
-        if use_existing_tasks.startswith("task-id="):
-            tid = use_existing_tasks[len("task-id=") :]
-        else:
-            tid = self.find_decision_task(use_existing_tasks)
+        existing_tasks = {}
+        if use_existing_tasks:
+            if use_existing_tasks.startswith("task-id="):
+                decision_task_id = use_existing_tasks[len("task-id=") :]
+            else:
+                decision_task_id = self.find_decision_task(use_existing_tasks)
 
-        label_to_task_id = taskcluster.get_artifact(tid, "public/label-to-taskid.json")
-        return {"existing_tasks": label_to_task_id}
+            existing_tasks = taskcluster.get_artifact(
+                decision_task_id, "public/label-to-taskid.json"
+            )
+
+        for label_and_index in use_indexed_tasks:
+            label, sep, index_path = label_and_index.partition("=")
+            if not sep or not label or not index_path:
+                print(
+                    "error: --use-indexed-tasks must be LABEL=INDEX_PATH, "
+                    f"got '{label_and_index}'",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            task_id = taskcluster.find_task_id(index_path)
+            print(f"Using indexed task {task_id} for {label} (via {index_path})")
+            existing_tasks[label] = task_id
+
+        return {"existing_tasks": existing_tasks}
 
 
 class RangeAction(Action):

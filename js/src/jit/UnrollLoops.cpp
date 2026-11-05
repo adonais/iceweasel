@@ -334,7 +334,7 @@ class MDefinitionRemapper {
       MOZ_ASSERT(p.first != original);  // not mapped at all
       MOZ_ASSERT(p.second == p.first);  // no `update` calls happened yet
     }
-    return pairs.append(std::pair(original, original));
+    return pairs.emplaceBack(original, original);
   }
   // Look up the binding for `original` in the mapper.
   MDefinition* lookup(const MDefinition* original) const {
@@ -1128,7 +1128,7 @@ static bool UnrollAndOrPeelLoop(MIRGraph& graph, UnrollState& state) {
         MOZ_ASSERT(!valueTable.get(cix, vix));
         valueTable.set(cix, vix, clonedPhi);
         vix++;
-        if (!mapperUpdates.append(std::pair(originalPhi, clonedPhi))) {
+        if (!mapperUpdates.emplaceBack(originalPhi, clonedPhi)) {
           return false;
         }
       }
@@ -1770,7 +1770,7 @@ bool FindInitialCandidates(MIRGraph& graph,
     }
 
     MOZ_RELEASE_ASSERT(numBlocks <= UINT32_MAX);
-    if (!initialCandidates.append(InitialCandidate(header, numBlocks))) {
+    if (!initialCandidates.emplaceBack(header, numBlocks)) {
       return false;
     }
   }

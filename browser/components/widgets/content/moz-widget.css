@@ -1,0 +1,105 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  contain: strict;
+  background: var(--card-background-color);
+  border: var(--card-border);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-box-shadow);
+  box-sizing: border-box;
+  inline-size: var(--size-layout-medium);
+  aspect-ratio: 6 / 5;
+  --widget-size: large;
+}
+
+:host(:hover) {
+  box-shadow: var(--card-box-shadow-hover);
+}
+
+:host(:focus-within) {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+  box-shadow: var(--card-box-shadow-hover);
+}
+
+:host([size="medium"]) {
+  inline-size: var(--size-layout-medium);
+  aspect-ratio: 12 / 5;
+  --widget-size: medium;
+}
+
+:host([size="small"]) {
+  inline-size: calc(var(--size-layout-medium) / 2);
+  aspect-ratio: 6 / 5;
+  --widget-size: small;
+}
+
+.widget {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-block-size: 0;
+}
+
+::slotted([slot="header"]) {
+  flex: 0 0 auto;
+}
+
+.widget-content {
+  flex: 1 1 auto;
+  min-block-size: 0;
+}
+
+iframe,
+::slotted(browser) {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  border: 0;
+}
+
+:host([padded]) {
+  .widget {
+    gap: var(--space-medium);
+    padding: var(--space-medium);
+  }
+
+  ::slotted([slot="header"]) {
+    --widget-header-padding: 0;
+  }
+
+  iframe,
+  ::slotted(browser) {
+    border-radius: var(--border-radius-medium);
+  }
+}
+
+#menu-button {
+  position: absolute;
+  inset-block-start: var(--space-medium);
+  inset-inline-end: var(--space-medium);
+  z-index: 1;
+  opacity: 0;
+}
+
+:host(:hover) #menu-button,
+:host(:focus-within) #menu-button,
+#menu-button[open] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #menu-button {
+    transition: opacity 150ms;
+  }
+}
+
+@media (forced-colors: active) {
+  :host(:hover) {
+    border-color: var(--border-color-interactive-hover);
+  }
+}

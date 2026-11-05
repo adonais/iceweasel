@@ -1,7 +1,9 @@
 # Constants
 
 The `ERRORS` constants for the IP Protection feature are defined in
-`toolkit/components/ipprotection/IPPProxyManager.sys.mjs`.
+`toolkit/components/ipprotection/IPPProxyManager.sys.mjs`, and the
+`IPPMode` constants in
+`toolkit/components/ipprotection/IPPChannelFilter.sys.mjs`.
 
 ## Error Codes
 
@@ -84,10 +86,12 @@ the UI layer.
 
 ### Error propagation
 
-Errors thrown inside `IPPProxyManager.start()` are caught by the activation
-promise. The proxy reverts to its previous state (typically `READY`) and the
-promise resolves with `{ started: false, error }`. The panel reads the error
-code from this result to determine which message to show.
+Errors thrown inside `IPPProxyManager.start()` are reported back to the
+caller; the panel uses the error code to determine which message to show.
+A failed user activation reverts the proxy to its previous state (typically
+`READY`). A failed system activation moves it to `IPPProxyStates.ERROR`
+instead, keeping the channel filter until `stop()`; `ERRORS.NOT_READY` and
+`ERRORS.CANCELED` still revert.
 
 Errors that occur while the proxy is already `ACTIVE` (such as a pass
 rotation failure) move the state machine to `IPPProxyStates.ERROR` and are
@@ -97,3 +101,27 @@ recorded as its `errorType`.
 from `start()` or `stop()` as `Error` objects and bypass the activation
 promise; they represent internal consistency violations and do not affect proxy
 state.
+
+(proxy-modes)=
+## Proxy Modes
+
+`IPPMode` are the routing behaviors a connection can run in, applied to
+requests that no `IPPSiteRuleManager` rule matched. `IPPMode.from()` maps any
+other value onto `MODE_FULL`, and `IPPMode.getDefault()` reads the mode new
+connections start in from `browser.ipProtection.mode`.
+
+`IPPMode.MODE_FULL` (`0`)
+
+: Route every request. The default.
+
+`IPPMode.MODE_PB` (`1`)
+
+: Route only requests made from a private browsing window.
+
+`IPPMode.MODE_TRACKER` (`2`)
+
+: Route only requests classified as third-party tracking.
+
+`IPPMode.MODE_INCLUSION` (`3`)
+
+: Route nothing unless a site rule includes it.

@@ -950,6 +950,11 @@ ImageTestCase DownscaledWebPTestCase() {
                        IntSize(20, 20));
 }
 
+ImageTestCase DownscaledLossyWebPTestCase() {
+  return ImageTestCase("downscaled-lossy.webp", "image/webp", IntSize(100, 100),
+                       IntSize(20, 20));
+}
+
 ImageTestCase DownscaledAVIFTestCase() {
   return ImageTestCase("downscaled.avif", "image/avif", IntSize(100, 100),
                        IntSize(20, 20));

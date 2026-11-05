@@ -49,6 +49,7 @@ export CFLAGS_${TARGET_TRIPLE//-/_}="${TARGET_CFLAGS}"
 export CXX="${MACOS_CXX}"
 TARGET_CXXFLAGS="${MACOS_CFLAGS} --rtlib=compiler-rt -stdlib=libc++"
 export CXXFLAGS_${TARGET_TRIPLE//-/_}="${TARGET_CXXFLAGS}"
+export OBJC="${MACOS_CC}"
 export AR="${MACOS_AR}"
 
 # See documentation in cargo-linker for why we need this. TL;DR is that passing

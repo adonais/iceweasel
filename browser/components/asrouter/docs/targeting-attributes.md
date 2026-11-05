@@ -13,6 +13,25 @@ Please note that some targeting attributes require stricter controls on the tele
 :depth: 1
 ```
 
+### `activeWebPushSubscriptionCount`
+
+The number of unexpired web push subscriptions. System subscriptions, such as the one held by Firefox Accounts, are not counted.
+
+The value is 0 when push is disabled. Until the push service starts, the value is the count saved the last time this attribute was evaluated while push was running, which may be out of date, or 0 if no count has been saved yet.
+
+Nimbus recipes that target on this attribute should also include the `includeForWebPush` feature, so that they are re-evaluated with the current count once the push service starts.
+
+#### Examples
+* Does the user have any active web push subscription?
+```java
+activeWebPushSubscriptionCount > 0
+```
+
+#### Definition
+```ts
+declare const activeWebPushSubscriptionCount: number;
+```
+
 ### `addonsInfo`
 Provides information about the add-ons the user has installed.
 
@@ -1168,25 +1187,25 @@ or equivalently
 (isAIWindow || !isAIWindow)
 ```
 
-### `isSmartTabGroupingAllowed`
+### `isAutoTabGroupingAvailable`
 
-Whether Smart Tab Grouping is available to this user, delegating to
-`SmartTabGroupingManager.isAllowed`. Smart Tab Grouping is currently gated on an
-English application locale, but that rule lives in the feature itself, so prefer
-this attribute over a hand-written locale check: messages that depend on the
-feature then stay in sync when the gate changes.
+Whether Smart Window's Organize Tabs (Auto Tab Grouping) can run for this user,
+delegating to `AutoTabGroupingSuggestions.isAvailable`: the feature is enabled
+(`browser.smartwindow.autoTabGrouping.enabled`), on-device ML is allowed, the app
+locale is listed in `browser.smartwindow.autoTabGrouping.supportedLocales`, and
+the machine has enough memory.
 
 #### Definition
 
 ```ts
-declare const isSmartTabGroupingAllowed: boolean;
+declare const isAutoTabGroupingAvailable: boolean;
 ```
 
 #### Examples
 
-* Only show a message when the feature can actually run:
+* Only show the Organize Tabs callout when the feature can run:
 ```javascript
-isSmartTabGroupingAllowed
+isAIWindow && isAutoTabGroupingAvailable
 ```
 
 ### `userId`
@@ -1202,7 +1221,7 @@ declare const userId: string;
 ### `profileRestartCount`
 
 A session counter that shows how many times the browser was started.
-More info about the details in [the telemetry docs](https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/concepts/sessions.html).
+More info about the details in {doc}`the telemetry docs </toolkit/components/telemetry/concepts/sessions>`.
 
 #### Definition
 
@@ -1417,6 +1436,10 @@ A string of the name of the container where the Firefox View button is shown, nu
 
 A string of the name of the container where the Tab Overflow button (or All Tabs button) is shown, null if the button has been removed.
 
+### `forgetButtonAreaType`
+
+A string of the name of the container where the Forget button is shown, null if the button is not in the toolbar or overflow menu (it is in the customization palette by default).
+
 ### `hasMigratedBookmarks`
 
 A boolean. `true` if the user ever used the Migration Wizard to migrate bookmarks since Firefox 113 released. Available in Firefox 113+; will not be true if the user had only ever migrated bookmarks prior to Firefox 113 being released.
@@ -1497,7 +1520,7 @@ An array that maps about:welcome screen IDs to their most recent impression time
 #### Definition
 
 ```
-declare const screenImpressions: { [key: string]: Array<UnixEpochNumber> };
+declare const screenImpressions: { [key: string]: UnixEpochNumber };
 ```
 
 ### `systemArch`
@@ -1574,30 +1597,11 @@ Indicates whether a user has selected an encrypted or non-encrypted backup metho
 
 A boolean. `true` when a user downloads Firefox from a Smart Window marketing campaign (ie. `attributionData.campaign == "smart_window"`), `false` otherwise.
 
-### `isFirstRun`
-
-`true` on the first time Normandy runs on a new profile. Normandy sets the
-`app.normandy.first_run` pref to `false` after its first run, so this will be
-`true` exactly once per profile regardless of installation mechanism.
-
-> ⚠ **NOTE:** This targeting attribute is only available for the JEXL expressions
-> of experiments' advanced targeting configs, which are defined in the
-> [experimenter repository](https://experimenter.info). Targeting expressions for
-> messages do not have access to this attribute.
-
-#### Definition
-
-```ts
-declare const isFirstRun: boolean;
-```
-
-[Source](https://searchfox.org/mozilla-central/source/toolkit/components/normandy/lib/ClientEnvironment.sys.mjs#121)
-
 ### `isFirstStartup`
 
 `true` while Firefox is running through its first-startup sequence (i.e., when
-`FirstStartup` is in the `IN_PROGRESS` state). Unlike `isFirstRun`, which tracks
-the first Normandy run, this tracks the first startup of the browser itself.
+`FirstStartup` is in the `IN_PROGRESS` state). This tracks the first startup
+of the browser itself.
 
 > ⚠ **NOTE:** This targeting attribute is only available for the JEXL expressions
 > of experiments' advanced targeting configs, which are defined in the

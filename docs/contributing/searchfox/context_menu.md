@@ -134,7 +134,7 @@ For functions, classes, methods, and fields, Searchfox can show the diagram of h
 ## GC analysis
 
 For functions that uses SpiderMonkey JSAPI, Searchfox can show which function can perform GC.
-See the [Static Analysis for Rooting and Heap Write Hazards](https://firefox-source-docs.mozilla.org/js/HazardAnalysis/index.html) document for more details how the analysis works.
+See the {doc}`Static Analysis for Rooting and Heap Write Hazards </js/HazardAnalysis/index>` document for more details how the analysis works.
 
 This is behind the alpha feature gate "Semantic Info Queries".
 

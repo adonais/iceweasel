@@ -10,7 +10,7 @@ The DMG Install Helper is a simple helper application that is run by launchd wit
 
 Debugging elevated launchd applications is tricky and a few things need to be set up first.
 
-* You need an official Mozilla signing certificate for `org.mozilla.nightly` (see instructions on [firefox-source-docs](https://firefox-source-docs.mozilla.org/contributing/signing/configure_development_certificate.html))
+* You need an official Mozilla signing certificate for `org.mozilla.nightly` (see instructions on {doc}`firefox-source-docs </contributing/signing/configure_development_certificate>`)
 * You need these two options in mozconfig
 ```
 ac_add_options --enable-mac-elevated-updates-with-generic-certs

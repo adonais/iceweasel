@@ -95,7 +95,7 @@
     <!-- This is the label of an action we offer when the user selects text in other third-party apps.
          Focus is hard coded since we can't use variables in this context.
          Do not translate or transliterate Focus.-->
-    <string name="text_selection_search_action_focus" tools:ignore="BrandUsage">Search in Focus</string>
+    <string name="text_selection_search_action_focus" tools:ignore="BrandUsage,UnusedResources">Search in Focus</string>
     <!-- This is the label of an action we offer when the user selects text in other third-party apps.
              Klar is hard coded since we can't use variables in this context.
              Do not translate or transliterate Klar.-->
@@ -426,18 +426,6 @@
     <!-- New Onboarding flow second screen skip onboarding button label-->
     <string name="onboarding_second_screen_skip_button_text">Skip</string>
 
-    <!-- First run tour (Default browser): Title -->
-    <string name="firstrun_defaultbrowser_title">Power up your privacy</string>
-
-    <!-- First run tour (Search): Title -->
-    <string name="firstrun_search_title">Your search, your way</string>
-
-    <!-- First run tour (Shortcut): Title -->
-    <string name="firstrun_shortcut_title">Add shortcuts to your home screen</string>
-
-    <!-- First run tour (Privacy): Title -->
-    <string name="firstrun_privacy_title">Make privacy a habit</string>
-
     <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
     <string name="dialog_addtohomescreen_action_add">Add</string>
 
@@ -618,9 +606,6 @@
     <string name="preference_exceptions_menu_remove">Remove</string>
     <!-- Button to remove all websites from the exception list -->
     <string name="preference_exceptions_remove_all_button_label">Remove all websites</string>
-
-    <!-- Title for Preference screen for cookie blocking for exceptions tracking protection -->
-    <string name="preference_block_cookies_title">Block Cookies</string>
 
     <!-- Headline for the tab crash report screen -->
     <string name="tab_crash_report_headline">Sorry. We’re having a problem with this tab.</string>

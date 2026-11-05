@@ -35,3 +35,7 @@ if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
 CXXFLAGS += [
     '-Wno-implicit-fallthrough',
 ]
+
+SOURCE_HEADERS += [
+	"json_tool.h",
+]

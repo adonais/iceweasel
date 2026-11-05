@@ -175,12 +175,12 @@ void DisplayMtl::terminate()
     mIsAMDBronze         = false;
 }
 
-bool DisplayMtl::testDeviceLost()
+bool ThreadSafeDisplayMtl::testDeviceLost()
 {
     return false;
 }
 
-egl::Error DisplayMtl::restoreLostDevice(const egl::Display *display)
+egl::Error ThreadSafeDisplayMtl::restoreLostDevice(const egl::ThreadSafeDisplay *display)
 {
     return egl::NoError();
 }
@@ -334,11 +334,10 @@ egl::Error DisplayMtl::waitNative(const gl::Context *context, EGLint engine)
 
 egl::Error DisplayMtl::waitUntilWorkScheduled()
 {
-    for (auto context : mState.contextMap)
-    {
-        auto contextMtl = GetImplAs<ContextMtl>(context.second);
+    mState.contextMap.forEach([](gl::Context *context) {
+        auto contextMtl = GetImplAs<ContextMtl>(context);
         contextMtl->flushCommandBuffer(mtl::WaitUntilScheduled);
-    }
+    });
     return egl::NoError();
 }
 
@@ -445,7 +444,7 @@ gl::Version DisplayMtl::getMaxConformantESVersion() const
     return std::min(getMaxSupportedESVersion(), gl::Version(3, 0));
 }
 
-EGLSyncImpl *DisplayMtl::createSync()
+EGLSyncImpl *ThreadSafeDisplayMtl::createSync()
 {
     return new EGLSyncMtl();
 }
@@ -796,6 +795,15 @@ void DisplayMtl::ensureCapsInitialized() const
         // Set so we have enough for RGBA8 on every attachment
         // but not enough for RGBA32UI.
         mMaxColorTargetBits = mNativeCaps.maxColorAttachments * 32;
+    }
+
+    if (!mFeatures.limitMaxVisibilityQueryOffset.enabled && supportsAppleGPUFamily(7))
+    {
+        mMaxVisibilityQueryOffset = 262136;
+    }
+    else
+    {
+        mMaxVisibilityQueryOffset = 65528;
     }
 
     // MSAA
@@ -1204,6 +1212,11 @@ void DisplayMtl::initializeFeatures()
     }
 
     ANGLE_FEATURE_CONDITION((&mFeatures), allowGenMultipleMipsPerPass, true);
+
+    // TODO(anglebug.com/537661068): using visibility query offset > 65528 causes bugs in the Apple
+    // Silicon driver.
+    ANGLE_FEATURE_CONDITION((&mFeatures), limitMaxVisibilityQueryOffset, true);
+
     ANGLE_FEATURE_CONDITION((&mFeatures), forceBufferGPUStorage, false);
     ANGLE_FEATURE_CONDITION((&mFeatures), hasExplicitMemBarrier, (isOSX || isCatalyst) && !isARM);
     ANGLE_FEATURE_CONDITION((&mFeatures), hasDepthAutoResolve, supportsEitherGPUFamily(3, 2));

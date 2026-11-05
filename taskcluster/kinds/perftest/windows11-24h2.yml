@@ -412,6 +412,25 @@ linkpreview-perf-hwinference:
         env:
             MOZ_ML_LLAMA_HWINFERENCE: "1"
 
+pdfjs-alttext-perf:
+    description: Run the PDF.js alt-text end-to-end performance test (native ONNX backend)
+    treeherder:
+        symbol: perftest(pdfjs-alttext)
+        tier: 2
+    attributes:
+        batch: false
+        cron: false
+    run-on-projects: [mozilla-central]
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
+            --flavor mochitest
+            --output $MOZ_FETCHES_DIR/../artifacts
+            toolkit/components/pdfjs/test/browser_pdfjs_alttext_perf.js
+
 semantichistory-perf-wasm: &semantichistory-perf
     description: Run the semantic history search end-to-end performance test (wasm ONNX backend)
     treeherder:
@@ -471,6 +490,38 @@ mlsuggest-perf-native:
     description: Run the ML-backed Firefox Suggest end-to-end performance test (native ONNX backend)
     treeherder:
         symbol: perftest(mlsuggest-n)
+        tier: 2
+    worker:
+        env:
+            MOZ_ML_BACKENDS: onnx-native
+
+smartwindow-intent-perf-wasm: &smartwindow-intent-perf
+    description: Run the Smart Window intent classifier end-to-end performance test (wasm ONNX backend)
+    treeherder:
+        symbol: perftest(smartwindow-intent-w)
+        tier: 2
+    attributes:
+        batch: false
+        cron: false
+    run-on-projects: [mozilla-central]
+    worker:
+        env:
+            MOZ_ML_BACKENDS: onnx
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
+            --flavor mochitest
+            --output $MOZ_FETCHES_DIR/../artifacts
+            browser/components/aiwindow/ui/test/browser_perf/browser_smartwindow_intent_perf.js
+
+smartwindow-intent-perf-native:
+    <<: *smartwindow-intent-perf
+    description: Run the Smart Window intent classifier end-to-end performance test (native ONNX backend)
+    treeherder:
+        symbol: perftest(smartwindow-intent-n)
         tier: 2
     worker:
         env:

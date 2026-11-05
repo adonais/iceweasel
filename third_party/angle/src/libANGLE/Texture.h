@@ -49,6 +49,12 @@ class Sampler;
 class State;
 class Texture;
 
+enum class EnsureInitializedLevels
+{
+    BaseOnly,
+    AllEnabledLevels,
+};
+
 constexpr GLuint kInitialMaxLevel = 1000;
 
 bool IsMipmapFiltered(GLenum minFilterMode);
@@ -114,6 +120,10 @@ class TextureState final : private angle::NonCopyable
 
     // Returns the value called "q" in the GLES 3.0.4 spec section 3.8.10.
     GLuint getMipmapMaxLevel() const;
+
+    // Used by validation, returns the number of possible mip levels for this texture type based on
+    // level 0's definition.
+    GLuint getMaxPossibleMipmapLevelsFromLevelZero() const;
 
     // Returns true if base level changed.
     bool setBaseLevel(GLuint baseLevel);
@@ -182,9 +192,18 @@ class TextureState final : private angle::NonCopyable
 
     // Return the enabled mipmap level count.
     GLuint getEnabledLevelCount() const;
+    GLuint getCompatibleLevelCount(GLuint baseLevel,
+                                   GLuint maxLevel,
+                                   bool *anyIncompatibleLevelOut) const;
 
     bool getImmutableFormat() const { return mImmutableFormat; }
     GLuint getImmutableLevels() const { return mImmutableLevels; }
+    bool anyLevelsDefinedAtOrAbove(GLuint level, GLuint maxLevel) const;
+    bool isCompatibleWithLevelZero(GLint level,
+                                   GLsizei width,
+                                   GLsizei height,
+                                   GLsizei depth,
+                                   const InternalFormat &format) const;
 
     const std::vector<ImageDesc> &getImageDescs() const { return mImageDescs; }
 
@@ -207,21 +226,21 @@ class TextureState final : private angle::NonCopyable
         return mEGLImageSourceAttributes;
     }
 
-    SourceImageIndex toSourceIndex(const OwnImageIndex &index) const
+    OwnerImageIndex toOwnerIndex(const ImageIndex &index) const
     {
-        return mEGLImageSourceAttributes.toSourceIndex(index);
+        return mEGLImageSourceAttributes.toOwnerIndex(index);
     }
-    SourceLevel toSourceLevel(OwnLevel level) const
+    OwnerLevel toOwnerLevel(LevelIndex level) const
     {
-        return mEGLImageSourceAttributes.toSourceLevel(level);
+        return mEGLImageSourceAttributes.toOwnerLevel(level);
     }
-    SourceLayer toSourceLayer(OwnLayer layer) const
+    OwnerLayer toOwnerLayer(LayerIndex layer) const
     {
-        return mEGLImageSourceAttributes.toSourceLayer(layer);
+        return mEGLImageSourceAttributes.toOwnerLayer(layer);
     }
-    SourceLayer toSourceDepth(const Offset &offset) const
+    OwnerLayer toOwnerDepth(const Offset &offset) const
     {
-        return mEGLImageSourceAttributes.toSourceDepth(offset);
+        return mEGLImageSourceAttributes.toOwnerDepth(offset);
     }
 
   private:
@@ -717,7 +736,7 @@ class Texture final : public RefCountObject<TextureID>,
     GLuint getId() const override;
 
     // Needed for robust resource init.
-    angle::Result ensureInitialized(const Context *context);
+    angle::Result ensureInitialized(const Context *context, EnsureInitializedLevels levels);
     InitState initState(GLenum binding, const ImageIndex &imageIndex) const override;
     InitState initState() const { return mState.mInitState; }
     void setInitState(GLenum binding, const ImageIndex &imageIndex, InitState initState) override;
@@ -734,7 +753,7 @@ class Texture final : public RefCountObject<TextureID>,
         return false;
     }
 
-    bool isEGLImageSource(const ImageIndex &index) const;
+    bool isEGLImageSource(const OwnerImageIndex &index) const;
 
     bool isDepthOrStencil() const
     {

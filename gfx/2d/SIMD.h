@@ -14,6 +14,9 @@
 #  include <xmmintrin.h>
 #endif
 
+#include <cmath>
+#include <cstdint>
+
 namespace mozilla {
 namespace gfx {
 

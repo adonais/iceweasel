@@ -124,7 +124,7 @@ interface CreditCardsAddressesStorage : Storage, StorageMaintenanceRegistry {
     suspend fun touchAddress(guid: String)
 
     /**
-     * Returns an instance of [CreditCardCrypto] that knows how to encrypt and decrypt credit card numbers.
+     * Returns an instance of [CreditCardCrypto] that manages the key used to protect credit card numbers at rest.
      *
      * @return [CreditCardCrypto] instance.
      */
@@ -150,55 +150,15 @@ interface CreditCardsAddressesStorage : Storage, StorageMaintenanceRegistry {
     }
 }
 
-/** An interface that defines methods for encrypting and decrypting a credit card number. */
-interface CreditCardCrypto : KeyProvider {
-
-    /**
-     * Encrypt a [CreditCardNumber.Plaintext] using the provided key. A `null` result means a bad key was provided. In
-     * that case caller should obtain a new key and try again.
-     *
-     * @param key The encryption key to encrypt the plaintext credit card number.
-     * @param plaintextCardNumber A plaintext credit card number to be encrypted.
-     * @return An encrypted credit card number or `null` if a bad [key] was provided.
-     */
-    fun encrypt(
-        key: ManagedKey,
-        plaintextCardNumber: CreditCardNumber.Plaintext,
-    ): CreditCardNumber.Encrypted?
-
-    /**
-     * Decrypt a [CreditCardNumber.Encrypted] using the provided key. A `null` result means a bad key was provided. In
-     * that case caller should obtain a new key and try again.
-     *
-     * @param key The encryption key to decrypt the decrypt credit card number.
-     * @param encryptedCardNumber An encrypted credit card number to be decrypted.
-     * @return A plaintext, non-encrypted credit card number or `null` if a bad [key] was provided.
-     */
-    fun decrypt(
-        key: ManagedKey,
-        encryptedCardNumber: CreditCardNumber.Encrypted,
-    ): CreditCardNumber.Plaintext?
-}
-
-/**
- * A credit card number. This structure exists to provide better typing at the API surface.
- *
- * @property number Either a plaintext or a ciphertext of the credit card number, depending on the subtype.
- */
-sealed class CreditCardNumber(val number: String) {
-    /** An encrypted credit card number. */
-    @Parcelize data class Encrypted(private val data: String) : CreditCardNumber(data), Parcelable
-
-    /** A plaintext, non-encrypted credit card number. */
-    data class Plaintext(private val data: String) : CreditCardNumber(data)
-}
+/** An interface that manages the key used to protect credit card numbers at rest. */
+interface CreditCardCrypto : KeyProvider
 
 /**
  * Information about a credit card.
  *
  * @property guid The unique identifier for this credit card.
  * @property billingName The credit card billing name.
- * @property encryptedCardNumber The encrypted credit card number.
+ * @property cardNumber The credit card number. Empty for a scrubbed card.
  * @property cardNumberLast4 The last 4 digits of the credit card number.
  * @property expiryMonth The credit card expiry month.
  * @property expiryYear The credit card expiry year.
@@ -212,7 +172,7 @@ sealed class CreditCardNumber(val number: String) {
 data class CreditCard(
     val guid: String,
     val billingName: String,
-    val encryptedCardNumber: CreditCardNumber.Encrypted,
+    val cardNumber: String,
     val cardNumberLast4: String,
     val expiryMonth: Long,
     val expiryYear: Long,
@@ -297,16 +257,14 @@ data class CreditCardEntry(
  * [CreditCardsAddressesStorage.addCreditCard].
  *
  * @property billingName The credit card billing name.
- * @property plaintextCardNumber A plaintext credit card number.
- * @property cardNumberLast4 The last 4 digits of the credit card number.
+ * @property cardNumber A plaintext credit card number.
  * @property expiryMonth The credit card expiry month.
  * @property expiryYear The credit card expiry year.
  * @property cardType The credit card network ID.
  */
 data class NewCreditCardFields(
     val billingName: String,
-    val plaintextCardNumber: CreditCardNumber.Plaintext,
-    val cardNumberLast4: String,
+    val cardNumber: String,
     val expiryMonth: Long,
     val expiryYear: Long,
     val cardType: String,
@@ -317,17 +275,14 @@ data class NewCreditCardFields(
  * [CreditCardsAddressesStorage.updateAddress].
  *
  * @property billingName The credit card billing name.
- * @property cardNumber A [CreditCardNumber] that is either encrypted or plaintext. Passing in plaintext version will
- *   update the stored credit card number.
- * @property cardNumberLast4 The last 4 digits of the credit card number.
+ * @property cardNumber A plaintext credit card number.
  * @property expiryMonth The credit card expiry month.
  * @property expiryYear The credit card expiry year.
  * @property cardType The credit card network ID.
  */
 data class UpdatableCreditCardFields(
     val billingName: String,
-    val cardNumber: CreditCardNumber,
-    val cardNumberLast4: String,
+    val cardNumber: String,
     val expiryMonth: Long,
     val expiryYear: Long,
     val cardType: String,
@@ -460,19 +415,7 @@ interface CreditCardValidationDelegate {
  * Used to handle [Address] and [CreditCard] storage so that the underlying engine doesn't have to. An instance of this
  * should be attached to the Gecko runtime in order to be used.
  */
-interface CreditCardsAddressesStorageDelegate : KeyProvider {
-
-    /**
-     * Decrypt a [CreditCardNumber.Encrypted] into its plaintext equivalent or `null` if it fails to decrypt.
-     *
-     * @param key The encryption key to decrypt the decrypt credit card number.
-     * @param encryptedCardNumber An encrypted credit card number to be decrypted.
-     * @return A plaintext, non-encrypted credit card number.
-     */
-    suspend fun decrypt(
-        key: ManagedKey,
-        encryptedCardNumber: CreditCardNumber.Encrypted,
-    ): CreditCardNumber.Plaintext?
+interface CreditCardsAddressesStorageDelegate {
 
     /**
      * Returns all stored addresses. This is called when the engine believes an address field should be autofilled.

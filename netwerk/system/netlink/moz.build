@@ -10,6 +10,10 @@ if CONFIG["OS_ARCH"] == "Linux":
         "NetlinkService.cpp",
     ]
 
+    SOURCE_HEADERS += [
+        "NetlinkService.h",
+    ]
+
 # for socket
 OS_LIBS += CONFIG["SOCKET_LIBS"]
 

@@ -82,7 +82,6 @@ android {
 
     lint {
         abortOnError = false
-        baseline = file("lint-baseline.xml")
         lintConfig = file("lint.xml")
     }
 
@@ -208,6 +207,8 @@ dependencies {
     testImplementation libs.junit4
     testRuntimeOnly libs.junit.platform.launcher
     testRuntimeOnly libs.junit.vintage
+    testImplementation libs.mockito
+    testImplementation libs.mockwebserver
     testImplementation libs.robolectric
 
     androidTestImplementation libs.androidx.test.espresso.core

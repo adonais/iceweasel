@@ -3,11 +3,11 @@
 
 "use strict";
 
-// End-to-end generateAITab() with only the LLM mocked: the source pages are
+// End-to-end page generation with only the LLM mocked: the chat model calls the
+// generate_page tool through Chat.fetchWithHistory, and the source pages are
 // served over HTTP and read through the real GetPageContent, so this covers
-// extraction, prompt assembly, page validation and metadata derivation. The
-// last task goes one step further and drives the create_aitab tool itself, then
-// loads the viewer link it returns in a tab.
+// tool dispatch, extraction, prompt assembly, page validation, metadata
+// derivation and storage.
 
 const lazy = {};
 
@@ -15,14 +15,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AITab: "moz-src:///browser/components/aiwindow/models/aitab/AITab.sys.mjs",
   AITabStore:
     "moz-src:///browser/components/aiwindow/ui/modules/AITabStore.sys.mjs",
+  Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
   ConversationStore:
     "moz-src:///browser/components/aiwindow/ui/modules/ConversationStore.sys.mjs",
   MLTestUtils: "resource://testing-common/MLTestUtils.sys.mjs",
   MODEL_FEATURES: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
+  PURPOSES: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   MockEngineManager: "resource://testing-common/AIWindowTestUtils.sys.mjs",
+  newChatConversation: "resource://testing-common/AIWindowTestUtils.sys.mjs",
   newConversation: "resource://testing-common/AIWindowTestUtils.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
-  createAITab: "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs",
+  GENERATE_AITAB: "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs",
   expandUrlTokens:
     "moz-src:///browser/components/aiwindow/ui/modules/UrlTokenizer.sys.mjs",
   UrlTokenizer:
@@ -33,7 +36,10 @@ add_setup(async function () {
   // Raise AITab's log verbosity for the duration of this file so a failing run
   // surfaces the module's debug/error output. Reverted automatically at teardown.
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.conversation.logLevel", "Debug"]],
+    set: [
+      ["browser.smartwindow.conversation.logLevel", "Debug"],
+      ["browser.smartwindow.aitab.enabled", true],
+    ],
   });
 });
 
@@ -66,6 +72,31 @@ function servePage() {
       <p>It is a short walk from the Baixa district and has free breakfast.</p>
     </article>
   `;
+}
+
+/**
+ * Have the chat model call generate_page. Answer the generation request before
+ * awaiting the tool's result.
+ *
+ * @param {MockEngineManager} mockEngine
+ * @param {ChatConversation} conversation
+ * @param {object} toolParams - The generate_page arguments.
+ */
+function generatePage(mockEngine, conversation, toolParams) {
+  return callTool(mockEngine, conversation, {
+    toolName: lazy.GENERATE_AITAB,
+    toolParams,
+  });
+}
+
+/**
+ * The page a successful generate_page call stored.
+ *
+ * @param {{body: object|string}} result - What `generatePage()` resolved with.
+ */
+async function storedPage({ body }) {
+  Assert.ok(body.page, `generation should succeed: ${JSON.stringify(body)}`);
+  return lazy.AITabStore.getBySlug(body.page.slug);
 }
 
 /**
@@ -106,11 +137,10 @@ add_task(async function test_generateAITab_success() {
   const mockEngine = new lazy.MockEngineManager();
   const { url: GEN_URL, cleanup: stopServing } = servePage();
   try {
-    const genPromise = lazy.AITab.generateAITab(
-      { urlList: [GEN_URL], focus: "hotels in Lisbon" },
-      lazy.newConversation()
-    );
-
+    const call = generatePage(mockEngine, await lazy.newChatConversation(), {
+      url_list: [GEN_URL],
+      focus: "hotels in Lisbon",
+    });
     // AITAB generation runs on the chat engine purpose (selectFeatureConfig
     // remaps the aitab purpose to chat), so respond there with a valid config.
     const { request, respond } = await mockEngine.captureRequest({
@@ -127,40 +157,119 @@ add_task(async function test_generateAITab_success() {
     );
     respond(JSON.stringify(GENERATED_SURFACE));
 
-    const result = await genPromise;
-
-    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
+    const page = await storedPage(await call);
+    const { metadata, surface } = page.components;
     Assert.deepEqual(
-      result.surface,
+      surface,
       GENERATED_SURFACE,
-      "the validated surface is returned unchanged"
+      "the validated surface is stored unchanged"
     );
     Assert.equal(
-      result.metadata.title,
+      metadata.title,
       "Hotels in Lisbon",
       "metadata title comes from the Header component"
     );
     Assert.equal(
-      result.metadata.id,
-      "hotels_in_lisbon",
+      metadata.id,
+      "hotels-in-lisbon",
       "metadata id is the slugified title"
     );
-    Assert.equal(result.metadata.howCreated, "chat", "howCreated is chat");
+    Assert.equal(metadata.howCreated, "chat", "howCreated is chat");
     Assert.deepEqual(
-      result.metadata.context.urlsUsed.map(u => u.url),
+      page.context.urlsUsed.map(u => u.url),
       [GEN_URL],
       "the requested URL is recorded in the generation context"
     );
     Assert.ok(
-      result.metadata.context.urlsUsed[0].extractedText.includes(
-        "Budget Central Hostel"
-      ),
+      page.context.urlsUsed[0].extractedText.includes("Budget Central Hostel"),
       "the extracted page text is recorded in the generation context"
     );
   } finally {
+    await mockEngine.rejectAllRequests();
     await stopServing();
     mockEngine.cleanupMocks();
+    await lazy.AITabStore.destroyDatabase();
   }
+});
+
+add_task(async function test_generateAITab_telemetry_success() {
+  Services.fog.testResetFOG();
+  const mockEngine = new lazy.MockEngineManager();
+  const { url: GEN_URL, cleanup: stopServing } = servePage();
+  try {
+    const conversation = await lazy.newChatConversation();
+    // Set when the chat was opened from the tab group menu.
+    conversation.aitabSource = "tab_group";
+    const call = generatePage(mockEngine, conversation, {
+      url_list: [GEN_URL, 42],
+      raw_content: "some notes",
+    });
+    const response = JSON.stringify(GENERATED_SURFACE);
+    await mockEngine.respondTo({
+      purpose: lazy.MODEL_FEATURES.AITAB,
+      response,
+    });
+    await storedPage(await call);
+
+    const [initiate] = Glean.smartWindow.aitabCreateInitiate.testGetValue();
+    Assert.deepEqual(
+      initiate.extra,
+      {
+        num_tabs: "1",
+        how_initiated: "tab_group",
+        raw_content_len: "10",
+        // The tool drops the URL that isn't a string before generating.
+        num_tabs_total_attempted: "1",
+      },
+      "aitab_create_initiate describes the request"
+    );
+
+    const [complete] = Glean.smartWindow.aitabCreateComplete.testGetValue();
+    Assert.equal(complete.extra.is_success, "true", "is_success is true");
+    Assert.ok(!("error" in complete.extra), "no error on success");
+    Assert.deepEqual(
+      JSON.parse(complete.extra.components_used),
+      ["Page", "Header", "TextBlock"],
+      "components are listed in render order"
+    );
+    Assert.greater(
+      Number(complete.extra.num_chars_read),
+      "some notes".length,
+      "num_chars_read counts the page and raw content"
+    );
+    Assert.equal(
+      complete.extra.num_chars_out,
+      String(response.length),
+      "num_chars_out is the model output length"
+    );
+    Assert.ok("seconds_elapsed" in complete.extra, "seconds_elapsed is set");
+    Assert.equal(
+      Glean.smartWindow.aitabEditComplete.testGetValue(),
+      null,
+      "a new page is not reported as an edit"
+    );
+  } finally {
+    await mockEngine.rejectAllRequests();
+    await stopServing();
+    mockEngine.cleanupMocks();
+    await lazy.AITabStore.destroyDatabase();
+  }
+});
+
+add_task(async function test_generateAITab_telemetry_failure() {
+  Services.fog.testResetFOG();
+  await lazy.AITab.generateAITab({ urlList: [] }, lazy.newConversation());
+
+  const [initiate] = Glean.smartWindow.aitabCreateInitiate.testGetValue();
+  Assert.equal(initiate.extra.how_initiated, "chat", "defaults to chat");
+  const [complete] = Glean.smartWindow.aitabCreateComplete.testGetValue();
+  Assert.equal(complete.extra.is_success, "false", "is_success is false");
+  Assert.equal(complete.extra.error, "no_content", "the error code is set");
+  Assert.equal(
+    complete.extra.components_used,
+    "[]",
+    "no components on failure"
+  );
 });
 
 add_task(async function test_generateAITab_includes_page_image() {
@@ -176,11 +285,10 @@ add_task(async function test_generateAITab_includes_page_image() {
     previewImageURL: IMAGE_URL,
   });
   try {
-    const genPromise = lazy.AITab.generateAITab(
-      { urlList: [GEN_URL], focus: "hotels in Lisbon" },
-      lazy.newConversation()
-    );
-
+    const call = generatePage(mockEngine, await lazy.newChatConversation(), {
+      url_list: [GEN_URL],
+      focus: "hotels in Lisbon",
+    });
     const { request, respond } = await mockEngine.captureRequest({
       purpose: lazy.MODEL_FEATURES.AITAB,
     });
@@ -197,16 +305,17 @@ add_task(async function test_generateAITab_includes_page_image() {
     );
     respond(JSON.stringify(GENERATED_SURFACE));
 
-    const result = await genPromise;
-    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
+    const page = await storedPage(await call);
     Assert.equal(
-      result.metadata.context.urlsUsed[0].imageUrl,
+      page.context.urlsUsed[0].imageUrl,
       IMAGE_URL,
       "the preview image URL is recorded on the urlsUsed entry"
     );
   } finally {
+    await mockEngine.rejectAllRequests();
     await stopServing();
     mockEngine.cleanupMocks();
+    await lazy.AITabStore.destroyDatabase();
     await PlacesUtils.history.clear();
   }
 });
@@ -227,23 +336,21 @@ add_task(async function test_generateAITab_omits_image_for_denied_url() {
     url: DENIED_URL,
     previewImageURL: IMAGE_URL,
   });
-  const conversation = lazy.newConversation();
-  // Mark the conversation as holding private data and untrusted input;
-  // commit() makes the staged flags visible to the security getters.
-  conversation.securityProperties.setPrivateData();
-  conversation.securityProperties.setUntrustedInput();
-  conversation.securityProperties.commit();
   // A second, readable URL: generation stops before the model when nothing at
   // all can be read, and the denied URL alone would trip that. The SERP ledger
   // exempts this one, so the read is partial rather than empty.
   const { url: ALLOWED_URL, cleanup: stopServing } = servePage();
-  conversation.addSerpUrlsForAnonymousFetch([ALLOWED_URL]);
   try {
-    const genPromise = lazy.AITab.generateAITab(
-      { urlList: [DENIED_URL, ALLOWED_URL] },
-      conversation
-    );
-
+    const conversation = await lazy.newChatConversation();
+    // Mark the conversation as holding private data and untrusted input;
+    // commit() makes the staged flags visible to the security getters.
+    conversation.securityProperties.setPrivateData();
+    conversation.securityProperties.setUntrustedInput();
+    conversation.securityProperties.commit();
+    conversation.addSerpUrlsForAnonymousFetch([ALLOWED_URL]);
+    const call = generatePage(mockEngine, conversation, {
+      url_list: [DENIED_URL, ALLOWED_URL],
+    });
     const { request, respond } = await mockEngine.captureRequest({
       purpose: lazy.MODEL_FEATURES.AITAB,
     });
@@ -259,16 +366,17 @@ add_task(async function test_generateAITab_omits_image_for_denied_url() {
     );
     respond(JSON.stringify(GENERATED_SURFACE));
 
-    const result = await genPromise;
-    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
+    const page = await storedPage(await call);
     Assert.equal(
-      result.metadata.context.urlsUsed[0].imageUrl,
+      page.context.urlsUsed[0].imageUrl,
       null,
       "no preview image URL is recorded for a denied URL"
     );
   } finally {
+    await mockEngine.rejectAllRequests();
     await stopServing();
     mockEngine.cleanupMocks();
+    await lazy.AITabStore.destroyDatabase();
     await PlacesUtils.history.clear();
   }
 });
@@ -298,14 +406,10 @@ add_task(async function test_generateAITab_hydrates_link_favicons() {
     FAVICON_DATA_URL
   );
   try {
-    const genPromise = lazy.AITab.generateAITab(
-      {
-        urlList: [GEN_URL],
-        focus: `hotels in Lisbon, see ${NO_FAVICON_URL}`,
-      },
-      lazy.newConversation()
-    );
-
+    const call = generatePage(mockEngine, await lazy.newChatConversation(), {
+      url_list: [GEN_URL],
+      focus: `hotels in Lisbon, see ${NO_FAVICON_URL}`,
+    });
     await mockEngine.respondTo({
       purpose: lazy.MODEL_FEATURES.AITAB,
       response: JSON.stringify({
@@ -358,14 +462,11 @@ add_task(async function test_generateAITab_hydrates_link_favicons() {
       }),
     });
 
-    const result = await genPromise;
-    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
-    const header = result.surface.components.find(
-      c => c.component === "Header"
-    );
+    const { surface } = (await storedPage(await call)).components;
+    const header = surface.components.find(c => c.component === "Header");
     Assert.equal(
       header.references.items[0].favicon,
-      FAVICON_URL,
+      `page-icon:${GEN_URL}`,
       "a literal SourceLink item gets its stored favicon URL, replacing the model's"
     );
     Assert.ok(
@@ -373,17 +474,19 @@ add_task(async function test_generateAITab_hydrates_link_favicons() {
       "a model-supplied favicon is stripped when Places has none stored"
     );
     Assert.equal(
-      result.surface.dataModel.sources[0].favicon,
-      FAVICON_URL,
+      surface.dataModel.sources[0].favicon,
+      `page-icon:${GEN_URL}`,
       "an absolutely-bound SourceLink item gets its stored favicon URL"
     );
     Assert.ok(
-      !("favicon" in result.surface.dataModel.more[0]),
+      !("favicon" in surface.dataModel.more[0]),
       "a relatively-bound array is not resolved, so its items are not touched"
     );
   } finally {
+    await mockEngine.rejectAllRequests();
     await stopServing();
     mockEngine.cleanupMocks();
+    await lazy.AITabStore.destroyDatabase();
     await PlacesUtils.history.clear();
   }
 });
@@ -403,20 +506,18 @@ add_task(async function test_generateAITab_hydrates_favicon_for_denied_url() {
     FAVICON_URL,
     FAVICON_DATA_URL
   );
-  const conversation = lazy.newConversation();
-  conversation.securityProperties.setPrivateData();
-  conversation.securityProperties.setUntrustedInput();
-  conversation.securityProperties.commit();
   // See the og:image test: a readable companion URL so the read is partial
   // rather than empty, which would stop generation before the model.
   const { url: ALLOWED_URL, cleanup: stopServing } = servePage();
-  conversation.addSerpUrlsForAnonymousFetch([ALLOWED_URL]);
   try {
-    const genPromise = lazy.AITab.generateAITab(
-      { urlList: [DENIED_URL, ALLOWED_URL] },
-      conversation
-    );
-
+    const conversation = await lazy.newChatConversation();
+    conversation.securityProperties.setPrivateData();
+    conversation.securityProperties.setUntrustedInput();
+    conversation.securityProperties.commit();
+    conversation.addSerpUrlsForAnonymousFetch([ALLOWED_URL]);
+    const call = generatePage(mockEngine, conversation, {
+      url_list: [DENIED_URL, ALLOWED_URL],
+    });
     await mockEngine.respondTo({
       purpose: lazy.MODEL_FEATURES.AITAB,
       response: JSON.stringify({
@@ -448,19 +549,18 @@ add_task(async function test_generateAITab_hydrates_favicon_for_denied_url() {
       }),
     });
 
-    const result = await genPromise;
-    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
-    const links = result.surface.components.find(
-      c => c.component === "SourceLinks"
-    );
+    const { surface } = (await storedPage(await call)).components;
+    const links = surface.components.find(c => c.component === "SourceLinks");
     Assert.equal(
       links.items[0].favicon,
-      FAVICON_URL,
+      `page-icon:${DENIED_URL}`,
       "the visited page's stored favicon hydrates despite the content refusal"
     );
   } finally {
+    await mockEngine.rejectAllRequests();
     await stopServing();
     mockEngine.cleanupMocks();
+    await lazy.AITabStore.destroyDatabase();
     await PlacesUtils.history.clear();
   }
 });
@@ -469,11 +569,10 @@ add_task(async function test_generateAITab_rejects_invalid_page() {
   const mockEngine = new lazy.MockEngineManager();
   const { url: GEN_URL, cleanup: stopServing } = servePage();
   try {
-    const genPromise = lazy.AITab.generateAITab(
-      { urlList: [GEN_URL] },
-      lazy.newConversation()
-    );
-
+    const conversation = await lazy.newChatConversation();
+    const call = generatePage(mockEngine, conversation, {
+      url_list: [GEN_URL],
+    });
     // A structurally valid JSON object that does not match the catalog (a root
     // Page referencing an unknown component type) must fail validation rather
     // than be returned.
@@ -488,9 +587,85 @@ add_task(async function test_generateAITab_rejects_invalid_page() {
       }),
     });
 
+    const { body } = await call;
+    Assert.ok(
+      body.startsWith("The page could not be created"),
+      `a surface that fails validation is an error: ${body}`
+    );
+    Assert.deepEqual(
+      await lazy.AITabStore.getAITabPagesByConvId(conversation.id),
+      [],
+      "no page is stored on validation failure"
+    );
+  } finally {
+    await mockEngine.rejectAllRequests();
+    await stopServing();
+    mockEngine.cleanupMocks();
+    await lazy.AITabStore.destroyDatabase();
+  }
+});
+
+add_task(async function test_generateAITab_slug_keeps_accented_letters() {
+  const mockEngine = new lazy.MockEngineManager();
+  const { url, cleanup } = servePage();
+  try {
+    const call = generatePage(mockEngine, await lazy.newChatConversation(), {
+      url_list: [url],
+    });
+
+    await mockEngine.respondTo({
+      purpose: lazy.MODEL_FEATURES.AITAB,
+      response: JSON.stringify({
+        ...GENERATED_SURFACE,
+        components: GENERATED_SURFACE.components.map(c =>
+          c.id == "hdr" ? { ...c, title: "Cafés in São Paulo" } : c
+        ),
+      }),
+    });
+
+    const page = await storedPage(await call);
+    Assert.equal(
+      page.components.metadata.id,
+      "cafes-in-sao-paulo",
+      "accents are dropped but their letters are kept"
+    );
+  } finally {
+    await mockEngine.rejectAllRequests();
+    await cleanup();
+    mockEngine.cleanupMocks();
+    await lazy.AITabStore.destroyDatabase();
+  }
+});
+
+add_task(async function test_generateAITab_model_reported_error() {
+  Services.fog.testResetFOG();
+  const mockEngine = new lazy.MockEngineManager();
+  const { url: GEN_URL, cleanup: stopServing } = servePage();
+  try {
+    const genPromise = lazy.AITab.generateAITab(
+      { urlList: [GEN_URL] },
+      lazy.newConversation()
+    );
+
+    await mockEngine.respondTo({
+      purpose: lazy.MODEL_FEATURES.AITAB,
+      response: JSON.stringify({ error: "the pages have nothing to compare" }),
+    });
+
     const result = await genPromise;
-    Assert.ok(result.error, "a surface that fails validation is an error");
-    Assert.ok(!result.surface, "no surface is returned on validation failure");
+    Assert.ok(
+      result.error?.includes("the pages have nothing to compare"),
+      `the model's error is returned: ${result.error}`
+    );
+    Assert.equal(result.code, "content_related", "the error code is returned");
+
+    const [complete] = Glean.smartWindow.aitabCreateComplete.testGetValue();
+    Assert.equal(complete.extra.is_success, "false", "is_success is false");
+    Assert.equal(
+      complete.extra.error,
+      "content_related",
+      "the error code is set"
+    );
   } finally {
     await stopServing();
     mockEngine.cleanupMocks();
@@ -503,11 +678,9 @@ add_task(async function test_generateAITab_default_title_is_localized() {
   const first = servePage();
   const second = servePage();
   try {
-    const genPromise = lazy.AITab.generateAITab(
-      { urlList: [first.url, second.url] },
-      lazy.newConversation()
-    );
-
+    const call = generatePage(mockEngine, await lazy.newChatConversation(), {
+      url_list: [first.url, second.url],
+    });
     // The model bound the Header title to data that is not a string, so no
     // title can be derived from the surface; with no focus from the user
     // either, it falls all the way through to the localized default.
@@ -527,41 +700,41 @@ add_task(async function test_generateAITab_default_title_is_localized() {
       }),
     });
 
-    const result = await genPromise;
-    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
+    const page = await storedPage(await call);
     Assert.equal(
-      result.metadata.title,
+      page.components.metadata.title,
       "Generated page",
       "the default title comes from ai-tab-default-page-title"
     );
   } finally {
+    await mockEngine.rejectAllRequests();
     await first.cleanup();
     await second.cleanup();
     mockEngine.cleanupMocks();
+    await lazy.AITabStore.destroyDatabase();
   }
 });
 
 add_task(async function test_createAITab_links_to_the_stored_page() {
   const mockEngine = new lazy.MockEngineManager();
   const { url, cleanup: stopServing } = servePage();
-  const conversation = lazy.newConversation();
   try {
-    // The tool is the production entry point: it generates the page and returns
-    // a markdown link carrying the viewer URL as a token.
-    const toolPromise = lazy.createAITab(
-      { url_list: [url], focus: "hotels in Lisbon" },
-      conversation
-    );
+    // The tool generates the page and returns a markdown link carrying the
+    // viewer URL as a token.
+    const conversation = await lazy.newChatConversation();
+    const call = generatePage(mockEngine, conversation, {
+      url_list: [url],
+      focus: "hotels in Lisbon",
+    });
     await mockEngine.respondTo({
       purpose: lazy.MODEL_FEATURES.AITAB,
       response: JSON.stringify(GENERATED_SURFACE),
     });
-    const { success, toolResult, uiData } = await toolPromise;
-    Assert.ok(success);
-    Assert.equal(uiData.properties.state, "choose");
+    const { body: toolResult, toolUIData } = await call;
+    Assert.equal(toolUIData.properties.state, "choose");
 
     Assert.ok(
-      toolResult.aiTab.slug,
+      toolResult.page.slug,
       "the tool reports the stored page's slug, so a later turn can find it"
     );
 
@@ -569,7 +742,7 @@ add_task(async function test_createAITab_links_to_the_stored_page() {
       toolResult.message,
       conversation.tokenToUrl
     );
-    const viewerURL = `about:smartpage?page=${toolResult.aiTab.slug}`;
+    const viewerURL = `about:smartpage?page=${toolResult.page.slug}`;
     Assert.ok(
       expanded.includes(`](${viewerURL})`),
       `the link names the stored page: ${expanded}`
@@ -578,8 +751,73 @@ add_task(async function test_createAITab_links_to_the_stored_page() {
       conversation.seenUrls.has(viewerURL),
       "the link is seen, so the chat renders it as a trusted link"
     );
-    Assert.equal(uiData.properties.viewerURL, viewerURL);
+    Assert.equal(toolUIData.properties.viewerURL, viewerURL);
   } finally {
+    await mockEngine.rejectAllRequests();
+    await lazy.AITabStore.destroyDatabase();
+    await stopServing();
+    mockEngine.cleanupMocks();
+  }
+});
+
+add_task(async function test_modification_is_answered_by_the_model() {
+  const mockEngine = new lazy.MockEngineManager();
+  const { url, cleanup: stopServing } = servePage();
+  let pageTab;
+  try {
+    const conversation = await lazy.newChatConversation();
+    const created = generatePage(mockEngine, conversation, { url_list: [url] });
+    await mockEngine.respondTo({
+      purpose: lazy.MODEL_FEATURES.AITAB,
+      response: JSON.stringify(GENERATED_SURFACE),
+    });
+    const { body: createdResult } = await created;
+
+    const viewerURL = lazy.AITab.buildViewerURL(createdResult.page.slug);
+    pageTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, viewerURL);
+    const reloadSpy = sinon.spy(pageTab.linkedBrowser, "reload");
+
+    conversation.addUserMessage("Make it shorter");
+    conversation.addAssistantMessage("text", "");
+    const turn = lazy.Chat.fetchWithHistory({
+      conversation,
+      browsingContext: pageTab.linkedBrowser.browsingContext,
+    });
+    const id = await mockEngine.respondToWithToolCall({
+      toolName: lazy.GENERATE_AITAB,
+      toolParams: {
+        modify_slug: createdResult.page.slug,
+        modify_instructions: "Make it shorter",
+      },
+    });
+    await mockEngine.respondTo({
+      purpose: lazy.MODEL_FEATURES.AITAB,
+      response: JSON.stringify(GENERATED_SURFACE),
+    });
+
+    const { request, respond } = await mockEngine.captureRequest({
+      purpose: lazy.PURPOSES.CHAT,
+    });
+    Assert.ok(
+      JSON.stringify(request.args).includes("The page was modified."),
+      "the model gets a follow-up turn to tell the user about the change"
+    );
+    respond("I made the page shorter.");
+    await turn;
+    Assert.ok(
+      reloadSpy.calledOnce,
+      "the open page reloads to show the modified version"
+    );
+
+    Assert.ok(
+      !conversation.messages.some(m => m.toolUIData?.toolCallId === id),
+      "a modification leaves no tool card in the chat"
+    );
+  } finally {
+    if (pageTab) {
+      BrowserTestUtils.removeTab(pageTab);
+    }
+    await mockEngine.rejectAllRequests();
     await lazy.AITabStore.destroyDatabase();
     await stopServing();
     mockEngine.cleanupMocks();
@@ -607,23 +845,22 @@ add_task(async function test_generateAITab_persists_its_tool_conversation() {
 
   const SEEN = "https://parent.example/already-seen";
   const SERP = "https://parent.example/search-result";
-  const chat = lazy.newConversation();
-  chat.addSeenUrls([SEEN]);
-  chat.addSerpUrlsForAnonymousFetch([SERP]);
 
   const before = await storedAITabConvIds();
   let convId;
   try {
-    const genPromise = lazy.AITab.generateAITab(
-      { urlList: [GEN_URL], focus: "" },
-      chat
-    );
+    const chat = await lazy.newChatConversation();
+    chat.addSeenUrls([SEEN]);
+    chat.addSerpUrlsForAnonymousFetch([SERP]);
+    const call = generatePage(mockEngine, chat, {
+      url_list: [GEN_URL],
+      focus: "",
+    });
     const { respond } = await mockEngine.captureRequest({
       purpose: lazy.MODEL_FEATURES.AITAB,
     });
     respond(JSON.stringify(GENERATED_SURFACE));
-    const result = await genPromise;
-    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
+    await storedPage(await call);
 
     // The save runs in the background, so the row may land after the call
     // returns.
@@ -658,10 +895,12 @@ add_task(async function test_generateAITab_persists_its_tool_conversation() {
       "search result URLs come across with their anonymous-fetch exemption"
     );
   } finally {
+    await mockEngine.rejectAllRequests();
     if (convId) {
       await lazy.ConversationStore.deleteConversationById(convId);
     }
     await stopServing();
     mockEngine.cleanupMocks();
+    await lazy.AITabStore.destroyDatabase();
   }
 });

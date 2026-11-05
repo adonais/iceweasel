@@ -4,6 +4,7 @@
 
 package mozilla.components.compose.menu.ui
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -25,18 +26,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.CollectionItemInfo
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.Role.Companion.Button
 import androidx.compose.ui.semantics.collectionItemInfo
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.button.IconButton
-import mozilla.components.compose.base.modifier.debouncedClickable
-import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
 import mozilla.components.compose.base.theme.AcornTheme
@@ -44,6 +42,7 @@ import mozilla.components.compose.menu.R
 import mozilla.components.compose.menu.data.MenuItemActionButton
 import mozilla.components.compose.menu.data.MenuItemBadge
 import mozilla.components.compose.menu.data.MenuItemSummary
+import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.store.MenuEvent
 import mozilla.components.compose.menu.ui.MenuItemState.ACTIVE
 import mozilla.components.compose.menu.ui.MenuItemState.DEFAULT
@@ -57,7 +56,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param title The title of the menu item.
  * @param modifier The modifier to apply to the menu item.
  * @param index The optional index of this item in the list.
- * @param onClickEvent [MenuEvent] to dispatch when the menu item is clicked.
+ * @param onClickEvent An optional [MenuEvent] to dispatch when the menu item is clicked.
  * @param onInteraction The callback to invoke when the menu item is interacted with.
  * @param contentDescription An optional content description for the menu item.
  * @param onShownEvent An optional [MenuEvent] to dispatch when the menu item is shown.
@@ -65,16 +64,18 @@ import mozilla.components.ui.icons.R as iconsR
  * @param summary An optional summary of the menu item.
  * @param icon An optional icon of the menu item.
  * @param showNewIndicator Whether to show a new indicator.
- * @param badge An optional badge to show.
+ * @param badge An optional badge to show. For a [Role.Switch] this is expected to show the current state, which screen
+ *   readers will announce whenever it changes.
  * @param actionButton An optional action button to show.
+ * @param trailingIcon An optional icon to show at the end of the menu item, as a hint of what clicking it does.
  * @param state The state of this menu item.
  */
 @Composable
 internal fun MenuListItem(
-    title: Text,
+    title: MenuItemTitle,
     modifier: Modifier = Modifier,
     index: Int? = null,
-    onClickEvent: MenuEvent,
+    onClickEvent: MenuEvent?,
     onInteraction: (MenuEvent) -> Unit,
     contentDescription: Text?,
     onShownEvent: MenuEvent? = null,
@@ -84,6 +85,7 @@ internal fun MenuListItem(
     showNewIndicator: Boolean = false,
     badge: MenuItemBadge? = null,
     actionButton: MenuItemActionButton? = null,
+    @DrawableRes trailingIcon: Int? = null,
     state: MenuItemState = DEFAULT,
 ) {
     LaunchedEffect(onShownEvent) {
@@ -97,6 +99,7 @@ internal fun MenuListItem(
         verticalAlignment = CenterVertically,
     ) {
         val contentDescriptionValue = contentDescription?.value
+        val stateDescriptionValue = badge?.text?.value?.takeIf { role == Role.Switch }
         Row(
             modifier =
                 Modifier.weight(1f)
@@ -119,12 +122,17 @@ internal fun MenuListItem(
                                 )
                         }
                         contentDescriptionValue?.let { this.contentDescription = it }
-                        liveRegion = LiveRegionMode.Polite
-                        this.role = role
+                        stateDescriptionValue?.let { this.stateDescription = it }
                     }
-                    .thenConditional(Modifier.debouncedClickable { onInteraction(onClickEvent) }) { state != DISABLED }
+                    .menuItemClickableBehavior(
+                        state = state,
+                        role = role,
+                        onClickEvent = onClickEvent,
+                        onLongClickEvent = null,
+                        onInteraction = onInteraction,
+                    )
                     .padding(
-                        horizontal = AcornTheme.layout.space.static200,
+                        horizontal = AcornTheme.layout.space.dynamic200,
                         vertical = AcornTheme.layout.space.static100,
                     ),
             verticalAlignment = CenterVertically,
@@ -136,7 +144,16 @@ internal fun MenuListItem(
 
             MenuListItemNewIndicator(showNewIndicator, state)
 
-            MenuListItemBadge(badge)
+            MenuListItemBadge(badge, hideFromAccessibility = stateDescriptionValue != null)
+
+            if (trailingIcon != null) {
+                Icon(
+                    painter = painterResource(trailingIcon),
+                    contentDescription = null,
+                    modifier = Modifier.size(AcornTheme.layout.size.static300),
+                    tint = state.secondaryContentColor,
+                )
+            }
         }
 
         MenuListItemActionButton(actionButton, onInteraction)
@@ -175,7 +192,7 @@ private fun MenuListItemActionButton(
 private fun MenuListItemPreview() {
     AcornTheme {
         MenuListItem(
-            title = Text.String("Title"),
+            title = MenuItemTitle(Text.String("Title")),
             contentDescription = Text.String(""),
             index = 0,
             modifier = Modifier.fillMaxWidth(),
@@ -201,7 +218,7 @@ private fun MenuListItemPreview() {
 private fun ActiveListItemPreview() {
     AcornTheme {
         MenuListItem(
-            title = Text.String("Title"),
+            title = MenuItemTitle(Text.String("Title")),
             contentDescription = Text.String(""),
             index = 0,
             modifier = Modifier.fillMaxWidth(),
@@ -229,7 +246,7 @@ private fun ActiveListItemPreview() {
 private fun DisabledMenuListItemPreview() {
     AcornTheme {
         MenuListItem(
-            title = Text.String("Title"),
+            title = MenuItemTitle(Text.String("Title")),
             contentDescription = Text.String(""),
             index = 0,
             modifier = Modifier.fillMaxWidth(),
@@ -257,7 +274,7 @@ private fun DisabledMenuListItemPreview() {
 private fun WarningMenuListItemPreview() {
     AcornTheme {
         MenuListItem(
-            title = Text.String("Title"),
+            title = MenuItemTitle(Text.String("Title")),
             contentDescription = Text.String(""),
             index = 0,
             modifier = Modifier.fillMaxWidth(),
@@ -285,7 +302,7 @@ private fun WarningMenuListItemPreview() {
 private fun TitleOnlyMenuListItemPreview() {
     AcornTheme {
         MenuListItem(
-            title = Text.String("Title"),
+            title = MenuItemTitle(Text.String("Title")),
             contentDescription = Text.String(""),
             index = 0,
             onClickEvent = object : MenuEvent {},

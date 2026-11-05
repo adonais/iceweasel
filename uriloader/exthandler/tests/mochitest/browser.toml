@@ -126,9 +126,6 @@ support-files = ["blank_webmail.html"]
 ["browser_mailto_user_activation.js"]
 
 ["browser_open_internal_choice_persistence.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1776017
-]
 support-files = [
   "file_pdf_application_pdf.pdf",
   "file_pdf_application_pdf.pdf^headers^",

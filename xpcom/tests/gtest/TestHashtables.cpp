@@ -108,7 +108,7 @@ class EntityToUnicodeEntry : public PLDHashEntryHdr {
   typedef const char* KeyType;
   typedef const char* KeyTypePointer;
 
-  explicit EntityToUnicodeEntry(const char* aKey) { mNode = nullptr; }
+  explicit EntityToUnicodeEntry(const char* /*aKey*/) { mNode = nullptr; }
   EntityToUnicodeEntry(const EntityToUnicodeEntry& aEntry) {
     mNode = aEntry.mNode;
   }

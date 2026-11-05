@@ -26,6 +26,8 @@ struct D3D11DeviceStatus
   DxgiAdapterDesc adapter;
   int32_t sequenceNumber;
   VideoFormatOptionSet formatOptions;
+  bool supportsVideo;
+  bool supportsFences;
 };
 
 struct DevicePrefs

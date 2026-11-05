@@ -73,6 +73,9 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("cocoa", "uikit"):
         "NativeFontResourceMac.cpp",
         "ScaledFontMac.cpp",
     ]
+    SOURCE_HEADERS += [
+        "NativeFontResourceMac.h",
+    ]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     EXPORTS.mozilla.gfx += [
         "DWriteSettings.h",
@@ -86,6 +89,13 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
         "SourceSurfaceD3D11.cpp",
     ]
     DEFINES["WIN32"] = True
+    SOURCE_HEADERS += [
+        "AutoHelpersWin.h",
+        "HelpersWin.h",
+        "HelpersWinFonts.h",
+        "NativeFontResourceDWrite.h",
+        "ScaledFontDWrite.h",
+    ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("android", "gtk"):
     EXPORTS.mozilla.gfx += [
@@ -95,15 +105,26 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("android", "gtk"):
         "NativeFontResourceFreeType.cpp",
         "UnscaledFontFreeType.cpp",
     ]
+    SOURCE_HEADERS += [
+        "NativeFontResourceFreeType.h",
+    ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     SOURCES += [
         "ScaledFontFontconfig.cpp",
     ]
 
+    SOURCE_HEADERS += [
+        "ScaledFontFontconfig.h",
+    ]
+
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
     SOURCES += [
         "ScaledFontFreeType.cpp",
+    ]
+
+    SOURCE_HEADERS += [
+        "ScaledFontFreeType.h",
     ]
 
 EXPORTS.mozilla.gfx += [
@@ -132,6 +153,11 @@ if CONFIG["INTEL_ARCHITECTURE"]:
     SOURCES["SwizzleAVX2.cpp"].flags += ["-mavx2"]
     SOURCES["SwizzleSSE2.cpp"].flags += CONFIG["SSE2_FLAGS"]
     SOURCES["SwizzleSSSE3.cpp"].flags += CONFIG["SSSE3_FLAGS"]
+
+    SOURCE_HEADERS += [
+        "SSEHelpers.h",
+        "SwizzleSSE2.h",
+    ]
 
 UNIFIED_SOURCES += [
     "BezierUtils.cpp",
@@ -186,6 +212,11 @@ if CONFIG["TARGET_CPU"] == "aarch64" or CONFIG["BUILD_ARM_NEON"]:
     SOURCES["LuminanceNEON.cpp"].flags += CONFIG["NEON_FLAGS"]
     SOURCES["SwizzleNEON.cpp"].flags += CONFIG["NEON_FLAGS"]
 
+    SOURCE_HEADERS += [
+        "LuminanceNEON.h",
+        "SwizzleNEON.h",
+    ]
+
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
@@ -205,4 +236,27 @@ LOCAL_INCLUDES += CONFIG["SKIA_INCLUDES"]
 LOCAL_INCLUDES += [
     "/gfx/cairo/cairo/src",
     "/third_party/xsimd/include",
+]
+
+SOURCE_HEADERS += [
+    "BigEndianInts.h",
+    "BufferEdgePad.h",
+    "BufferUnrotate.h",
+    "DrawTargetCairo.h",
+    "FilterProcessing.h",
+    "FilterProcessingSIMD-inl.h",
+    "ImageScaling.h",
+    "MMIHelpers.h",
+    "PathAnalysis.h",
+    "PathCairo.h",
+    "PathRecording.h",
+    "RecordedEventImpl.h",
+    "SFNTData.h",
+    "SIMD.h",
+    "SkConvolver.h",
+    "SourceSurfaceSkia.h",
+    "SVGTurbulenceRenderer-inl.h",
+    "SwizzleGeneric.h",
+    "SwizzleGenericDecls.h",
+    "SwizzleHelpers.h",
 ]

@@ -433,25 +433,24 @@ void BackgroundHangThread::ReportHang(TimeDuration aHangTime,
       dom::RemoteType::NotRemote().Stringify(), mThreadName, mRunnableName,
       std::move(mHangStack), std::move(mAnnotations));
 
-  PersistedToDisk persistedToDisk = aPersistedToDisk;
-  if (aPersistedToDisk == PersistedToDisk::Yes && XRE_IsParentProcess() &&
-      mManager->mPermahangFile) {
-    auto res = WriteHangDetailsToFile(hangDetails, mManager->mPermahangFile);
-    persistedToDisk = res.isOk() ? PersistedToDisk::Yes : PersistedToDisk::No;
-  }
-
   // If the hang processing thread exists, we can process the native stack
   // on it. Otherwise, we are unable to report a native stack, so we just
-  // report without one.
+  // report without one. Permahangs are also written to disk on that thread,
+  // so that the file I/O doesn't happen while we hold mManager->mLock.
   if (mManager->mHangProcessingThread) {
+    nsCOMPtr<nsIFile> permahangFile =
+        aPersistedToDisk == PersistedToDisk::Yes && XRE_IsParentProcess()
+            ? mManager->mPermahangFile
+            : nullptr;
     nsCOMPtr<nsIRunnable> processHangStackRunnable =
-        new ProcessHangStackRunnable(std::move(hangDetails), persistedToDisk);
+        new ProcessHangStackRunnable(std::move(hangDetails),
+                                     std::move(permahangFile));
     mManager->mHangProcessingThread->Dispatch(
         processHangStackRunnable.forget());
   } else {
     NS_WARNING("Unable to report native stack without a BHR processing thread");
     RefPtr<nsHangDetails> hd =
-        new nsHangDetails(std::move(hangDetails), persistedToDisk);
+        new nsHangDetails(std::move(hangDetails), PersistedToDisk::No);
     hd->Submit();
   }
 

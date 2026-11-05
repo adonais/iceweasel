@@ -47,7 +47,6 @@ UNIFIED_SOURCES += [
     "Asserts.cpp",
     "CacheConstants.cpp",
     "CachedTableAccessible.cpp",
-    "CssAltContent.cpp",
     "DocManager.cpp",
     "EmbeddedObjCollector.cpp",
     "EventQueue.cpp",
@@ -124,3 +123,30 @@ else:
 FINAL_LIBRARY = "xul"
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "AccIterator.h",
+    "ARIAMap.h",
+    "ARIAStateMap.h",
+    "CachedTableAccessible.h",
+    "EmbeddedObjCollector.h",
+    "EventQueue.h",
+    "EventTree.h",
+    "Filters.h",
+    "NotificationController.h",
+    "nsAccCache.h",
+    "nsAccUtils.h",
+    "nsCoreUtils.h",
+    "nsEventShell.h",
+    "nsTextEquivUtils.h",
+    "Pivot.h",
+    "Relation.h",
+    "Statistics.h",
+    "StyleInfo.h",
+    "TextAttrs.h",
+    "TextLeafRange.h",
+    "TextRange-inl.h",
+    "TextRange.h",
+    "TextUpdater.h",
+    "TreeWalker.h",
+]

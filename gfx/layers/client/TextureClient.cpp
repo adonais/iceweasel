@@ -266,13 +266,6 @@ static TextureType ChooseTextureType(gfx::SurfaceFormat aFormat,
   }
 #endif
 
-#ifdef MOZ_WIDGET_ANDROID
-  if (StaticPrefs::gfx_use_surfacetexture_textures_AtStartup() &&
-      !aKnowsCompositor->UsingSoftwareWebRender()) {
-    return TextureType::AndroidNativeWindow;
-  }
-#endif
-
   return TextureType::Unknown;
 }
 
@@ -297,10 +290,6 @@ TextureData* TextureData::Create(TextureType aTextureType,
 #ifdef XP_MACOSX
     case TextureType::MacIOSurface:
       return MacIOSurfaceTextureData::Create(aSize, aFormat, aBackendType);
-#endif
-#ifdef MOZ_WIDGET_ANDROID
-    case TextureType::AndroidNativeWindow:
-      return AndroidNativeWindowTextureData::Create(aSize, aFormat);
 #endif
     default:
       return nullptr;
@@ -504,7 +493,14 @@ void TextureClient::Destroy() {
     mActor->Lock();
   }
 
-  mBorrowedDrawTarget = nullptr;
+  if (mBorrowedDrawTarget) {
+    if (mData) {
+      mData->ReturnDrawTarget(mBorrowedDrawTarget.forget());
+    } else {
+      mBorrowedDrawTarget->DetachAllSnapshots();
+      mBorrowedDrawTarget = nullptr;
+    }
+  }
   mBorrowedSnapshot = false;
 
   RefPtr<TextureChild> actor = std::move(mActor);
@@ -979,6 +975,35 @@ already_AddRefed<gfx::SourceSurface> TextureClient::BorrowSnapshot() {
 void TextureData::ReturnSnapshot(
     already_AddRefed<gfx::SourceSurface> aSnapshot) {
   RefPtr<gfx::SourceSurface> snapshot(aSnapshot);
+}
+
+already_AddRefed<gfx::SourceSurface> TextureClient::GetBufferSnapshot() {
+  MutexAutoLock lock(mMutex);
+  if (!mData) {
+    return nullptr;
+  }
+  auto* bufferData = mData->AsBufferTextureData();
+  if (!bufferData) {
+    return nullptr;
+  }
+
+  RefPtr<gfx::DrawTarget> drawTarget = bufferData->BorrowDrawTarget();
+  if (!drawTarget) {
+    return nullptr;
+  }
+  RefPtr<gfx::SourceSurface> surface = drawTarget->Snapshot();
+  if (!surface) {
+    return nullptr;
+  }
+
+  static gfx::UserDataKey sShmemHolderKey;
+  RefPtr<ShmemHolder> shmemHolder = bufferData->GetShmemHolder();
+  if (shmemHolder && !surface->GetUserData(&sShmemHolderKey)) {
+    surface->AddUserData(
+        &sShmemHolderKey, shmemHolder.forget().take(),
+        [](void* aData) { static_cast<ShmemHolder*>(aData)->Release(); });
+  }
+  return surface.forget();
 }
 
 void TextureClient::ReturnSnapshot(
@@ -1868,6 +1893,11 @@ bool UpdateYCbCrTextureClient(TextureClient* aTexture,
   MOZ_ASSERT(aTexture->IsValid());
   MOZ_ASSERT(aData.mCbSkip == aData.mCrSkip);
 
+  const auto sizes = aData.GetPlaneSizes();
+  if (!sizes) {
+    return false;
+  }
+
   MappedYCbCrTextureData mapped;
   if (!aTexture->BorrowMappedYCbCrData(mapped)) {
     NS_WARNING("Failed to extract YCbCr info!");
@@ -1878,17 +1908,17 @@ bool UpdateYCbCrTextureClient(TextureClient* aTexture,
       BytesPerPixel(SurfaceFormatForColorDepth(aData.mColorDepth));
   MappedYCbCrTextureData srcData;
   srcData.y.data = aData.mYChannel;
-  srcData.y.size = aData.YDataSize();
+  srcData.y.size = sizes->mY;
   srcData.y.stride = aData.mYStride;
   srcData.y.skip = aData.mYSkip;
   srcData.y.bytesPerPixel = bytesPerPixel;
   srcData.cb.data = aData.mCbChannel;
-  srcData.cb.size = aData.CbCrDataSize();
+  srcData.cb.size = sizes->mCbCr;
   srcData.cb.stride = aData.mCbCrStride;
   srcData.cb.skip = aData.mCbSkip;
   srcData.cb.bytesPerPixel = bytesPerPixel;
   srcData.cr.data = aData.mCrChannel;
-  srcData.cr.size = aData.CbCrDataSize();
+  srcData.cr.size = sizes->mCbCr;
   srcData.cr.stride = aData.mCbCrStride;
   srcData.cr.skip = aData.mCrSkip;
   srcData.cr.bytesPerPixel = bytesPerPixel;

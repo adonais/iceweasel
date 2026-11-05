@@ -49,7 +49,8 @@ bool CSS::Supports(const GlobalObject& aGlobal, const nsACString& aCondition) {
           aGlobal.GetAsSupports())) {
     urlData = doc->DefaultStyleAttrURLData();
   }
-  return Servo_CSSSupports(&aCondition, &params, urlData);
+  return Servo_CSSSupports(&aCondition, &params, urlData,
+                           StyleCssRuleType::Style);
 }
 
 /* static */

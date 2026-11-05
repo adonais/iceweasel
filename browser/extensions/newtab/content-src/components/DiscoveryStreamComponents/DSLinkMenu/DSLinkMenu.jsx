@@ -91,6 +91,7 @@ export class _DSLinkMenu extends React.PureComponent {
         shim: this.props.shim,
         bookmarkGuid: this.props.bookmarkGuid,
         flight_id: this.props.flightId,
+        dwell_label: this.props.dwellLabel,
         tile_id: this.props.tile_id,
         corpus_item_id: this.props.corpus_item_id,
         scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,

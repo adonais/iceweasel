@@ -6,6 +6,10 @@
 ChromeUtils.defineESModuleGetters(this, {
   InferredPersonalizationFeed:
     "resource://newtab/lib/InferredPersonalizationFeed.sys.mjs",
+  GeolocationUtils:
+    "moz-src:///browser/components/urlbar/private/GeolocationUtils.sys.mjs",
+  FeatureModel: "resource://newtab/lib/InferredModel/FeatureModel.sys.mjs",
+  NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
@@ -139,6 +143,208 @@ const TEST_MODEL_DATA = {
     },
   },
 };
+
+add_task(function test_locationVectorEligibility() {
+  const feed = InferredPersonalizationFeed.prototype;
+  for (const hasClicks of [false, true]) {
+    for (const topicValue of [0, 1]) {
+      equal(
+        feed.computeShouldUseLocationVector(hasClicks, { arts: topicValue }),
+        !(hasClicks && topicValue > 0),
+        `Location fallback for clicks=${hasClicks}, topic=${topicValue}`
+      );
+    }
+  }
+  ok(
+    feed.computeShouldUseLocationVector(true, {
+      clicks: 3,
+      timeZoneOffset: 2,
+      model_id: 1,
+      arts: 0,
+    }),
+    "Click category, time zone, and metadata do not qualify as topic interests"
+  );
+  ok(
+    feed.computeShouldUseLocationVector(true),
+    "Missing coarse interests retain the location fallback"
+  );
+});
+
+add_task(async function test_locationInitializationPrefGate() {
+  const sandbox = sinon.createSandbox();
+  const feed = Object.create(InferredPersonalizationFeed.prototype);
+  const prefs = {
+    trainhopConfig: { locationInitInferred: { enabled: false } },
+  };
+  feed.store = { getState: () => ({ Prefs: { values: prefs } }) };
+  sandbox.stub(GeolocationUtils, "geolocation").resolves(null);
+  sinon.stub(feed, "getLocationInterestTopics").resolves({ arts: 0 });
+  const model = {
+    transformLocationTopicsToInterestVector: sinon
+      .stub()
+      .returns({ arts: 0, clicks: 3 }),
+    supportsCoarsePrivateInterests: sinon.stub().returns(true),
+    computePrivateLocationInterestVector: sinon
+      .stub()
+      .returns({ arts: "100", clicks: "0001" }),
+  };
+  const options = {
+    model,
+    modelId: "test-model",
+    clickDataPerInterval: [[["click", 0, 1]]],
+    indexSchema: { feature: 0, feature_value: 2 },
+    coarseInferredInterests: { arts: 1 },
+  };
+
+  await feed.updateLocationInterestVectors(options);
+  ok(
+    model.transformLocationTopicsToInterestVector.notCalled,
+    "Disabled by default"
+  );
+  ok(!feed.shouldUseLocationVector, "Disabled location fallback is false");
+
+  prefs.trainhopConfig.locationInitInferred.enabled = true;
+  await feed.updateLocationInterestVectors(options);
+  ok(
+    model.transformLocationTopicsToInterestVector.notCalled,
+    "Qualifying engagement skips calculation"
+  );
+  ok(
+    model.computePrivateLocationInterestVector.notCalled,
+    "Qualifying engagement skips privacy"
+  );
+  ok(!feed.shouldUseLocationVector, "Qualifying engagement ends fallback");
+
+  await feed.updateLocationInterestVectors({
+    ...options,
+    clickDataPerInterval: [[]],
+  });
+  deepEqual(feed.locationInterestVector, { arts: 0, clicks: 3 });
+  deepEqual(feed.locationPrivateInferredInterests, {
+    values: ["100", "0001"],
+    model_id: "test-model",
+  });
+  ok(feed.shouldUseLocationVector, "Without clicks, retain location fallback");
+
+  model.transformLocationTopicsToInterestVector.returns(null);
+  model.computePrivateLocationInterestVector.resetHistory();
+  await feed.updateLocationInterestVectors({
+    ...options,
+    clickDataPerInterval: [[]],
+  });
+  equal(feed.locationPrivateInferredInterests, null, "No incomplete payload");
+  ok(!feed.shouldUseLocationVector, "Missing model features use engagement");
+  ok(model.computePrivateLocationInterestVector.notCalled, "Skips privacy");
+
+  prefs.trainhopConfig.locationInitInferred.enabled = false;
+  model.transformLocationTopicsToInterestVector.resetHistory();
+  model.computePrivateLocationInterestVector.resetHistory();
+  await feed.updateLocationInterestVectors(options);
+  ok(
+    model.transformLocationTopicsToInterestVector.notCalled,
+    "Disabled skips calculation"
+  );
+  ok(
+    model.computePrivateLocationInterestVector.notCalled,
+    "Disabled skips privacy"
+  );
+  equal(feed.locationInterestVector, null, "Clears previous location vector");
+  equal(feed.locationPrivateInferredInterests, null, "Clears private vector");
+  ok(!feed.shouldUseLocationVector, "Clears previous fallback flag");
+  sandbox.restore();
+});
+
+add_task(async function test_locationVectorPreservesModelLayout() {
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(GeolocationUtils, "geolocation").resolves(null);
+  sandbox.stub(NewTabUtils, "getUtcOffset").returns(20);
+  const locationTopics = {
+    sports: 0,
+    arts: 1,
+    government: 2,
+    "society-parenting": 1,
+    food: 1,
+    tech: 3,
+    "education-science": 3,
+  };
+  const topicNames = Object.keys(locationTopics);
+  try {
+    for (const timezonePosition of [0, 3, 7]) {
+      const featureNames = [...topicNames];
+      featureNames.splice(timezonePosition, 0, "timeZoneOffset");
+      for (const privateFeatures of [
+        [...featureNames].reverse(),
+        null,
+        topicNames,
+      ]) {
+        const model = FeatureModel.fromJSON({
+          model_type: "ctr",
+          rescale: true,
+          ctr_prior_strength: 500,
+          day_time_weighting: { days: [90], relative_weight: [1] },
+          interest_vector: Object.fromEntries(
+            featureNames.map(name => [
+              name,
+              {
+                features: name === "timeZoneOffset" ? {} : { [`t_${name}`]: 1 },
+                thresholds:
+                  name === "timeZoneOffset"
+                    ? [15, 18.1, 19.1]
+                    : [1.1, 1.4, 1.7],
+                diff_p: 1,
+                diff_q: 0,
+              },
+            ])
+          ),
+          private_features: privateFeatures,
+        });
+        const feed = Object.create(InferredPersonalizationFeed.prototype);
+        feed.store = {
+          getState: () => ({
+            Prefs: {
+              values: {
+                trainhopConfig: { locationInitInferred: { enabled: true } },
+              },
+            },
+          }),
+        };
+        sandbox.stub(feed, "queryDatabaseForTimeIntervals").resolves([[]]);
+        sandbox.stub(feed, "_getDebugOverrides").resolves({});
+        sandbox.stub(feed, "getLocationInterestTopics").resolves({
+          ...locationTopics,
+          timeZoneOffset: 0,
+        });
+
+        const result = await feed.generateInterestVector(
+          model,
+          "inferred-v3-model"
+        );
+        const privateNames = featureNames.filter(
+          name => !privateFeatures || privateFeatures.includes(name)
+        );
+        deepEqual(Object.keys(feed.locationInterestVector), featureNames);
+        equal(feed.locationInterestVector.timeZoneOffset, 3);
+        deepEqual(result.locationPrivateInferredInterests, {
+          values: privateNames.map(name => {
+            const level = name === "timeZoneOffset" ? 3 : locationTopics[name];
+            return `${"0".repeat(level)}1${"0".repeat(3 - level)}`;
+          }),
+          model_id: "inferred-v3-model",
+        });
+        deepEqual(
+          result.coarsePrivateInferredInterests.values,
+          privateNames.map(name =>
+            name === "timeZoneOffset" ? "0001" : "1000"
+          ),
+          "Engagement interests retain their own values and model ordering"
+        );
+        ok(result.shouldUseLocationVector);
+      }
+    }
+  } finally {
+    sandbox.restore();
+  }
+});
 
 add_task(
   async function test_getDebuggingInterestFeaturesSupported_noModelData() {

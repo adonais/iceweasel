@@ -84,10 +84,10 @@ class nsPrinterBase : public nsIPrinter {
   using BackgroundTask = Result (nsPrinterBase::*)(Args...) const;
 
   // Resolves an async attribute via a background task.
-  template <typename T, typename... Args>
+  template <typename T, typename... TArgs, typename... Args>
   nsresult AsyncPromiseAttributeGetter(JSContext*, Promise**, AsyncAttribute,
-                                       BackgroundTask<T, Args...>,
-                                       Args... aArgs);
+                                       BackgroundTask<T, TArgs...>,
+                                       Args&&... aArgs);
 
  protected:
   nsPrinterBase(const mozilla::CommonPaperInfoArray* aPaperInfoArray,

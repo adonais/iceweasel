@@ -418,7 +418,7 @@ add_task(async function test_collapsed_launcher_width_triggers_compact() {
 
     // Put the launcher in its visible-but-collapsed state explicitly rather
     // than relying on the default, which can be overridden by persisted state.
-    win.SidebarController._state.launcherVisible = true;
+    win.SidebarController._state.userLauncherVisible = true;
     win.SidebarController._state.launcherExpanded = false;
 
     Assert.ok(
@@ -449,7 +449,7 @@ add_task(async function test_collapsed_launcher_width_triggers_compact() {
   await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function test_closing_sidebar_disengages_compact() {
+add_task(async function test_hiding_launcher_disengages_compact() {
   await SpecialPowers.pushPrefEnv({
     set: [
       [PREF_NOVA, true],
@@ -467,28 +467,30 @@ add_task(async function test_closing_sidebar_disengages_compact() {
     );
 
     // Start from the STR's state: sidebar closed, launcher not showing.
-    win.SidebarController._state.launcherVisible = false;
+    win.SidebarController._state.userLauncherVisible = false;
 
     await withLauncherWidthCheckOnly(win, async () => {
       await TestUtils.waitForCondition(
         () => !isCompact(win),
         "Window starts non-compact with the launcher hidden"
       );
-      Assert.ok(!isCompact(win), "Not compact while the sidebar is closed");
+      Assert.ok(!isCompact(win), "Not compact while the launcher is hidden");
 
-      await win.SidebarController.show("viewHistorySidebar");
+      // Showing the launcher is the user's call in this mode - opening a panel
+      // doesn't do it - so use the toolbar button as a user would.
+      await win.SidebarController.handleToolbarButtonClick();
       await TestUtils.waitForCondition(
         () => isCompact(win),
-        "Compact engages when the panel makes the collapsed launcher visible"
+        "Compact engages when the collapsed launcher is revealed"
       );
-      Assert.ok(isCompact(win), "Compact engages when the panel opens");
+      Assert.ok(isCompact(win), "Compact engages when the launcher shows");
 
-      win.SidebarController.hide();
+      await win.SidebarController.handleToolbarButtonClick();
       await TestUtils.waitForCondition(
         () => !isCompact(win),
-        "Compact disengages once the panel is closed and the launcher hidden"
+        "Compact disengages once the launcher is hidden again"
       );
-      Assert.ok(!isCompact(win), "Compact disengages when the panel closes");
+      Assert.ok(!isCompact(win), "Compact disengages when the launcher hides");
     });
   });
 
@@ -515,7 +517,7 @@ add_task(async function test_expand_on_hover_keeps_compact() {
       "SidebarController is initialized"
     );
 
-    win.SidebarController._state.launcherVisible = true;
+    win.SidebarController._state.userLauncherVisible = true;
     win.SidebarController._state.launcherExpanded = false;
 
     await withLauncherWidthCheckOnly(win, async () => {

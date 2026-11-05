@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { actionCreators as ac } from "common/Actions.mjs";
+import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { DSImage } from "../DSImage/DSImage.jsx";
 import { DSLinkMenu } from "../DSLinkMenu/DSLinkMenu";
 import { ImpressionStats } from "../../DiscoveryStreamImpressionStats/ImpressionStats";
@@ -165,6 +165,7 @@ export class _DSCard extends React.PureComponent {
     super(props);
 
     this.onLinkClick = this.onLinkClick.bind(this);
+    this.onLinkOpenIntent = this.onLinkOpenIntent.bind(this);
     this.doesLinkTopicMatchSelectedTopic =
       this.doesLinkTopicMatchSelectedTopic.bind(this);
     this.onMenuUpdate = this.onMenuUpdate.bind(this);
@@ -296,57 +297,77 @@ export class _DSCard extends React.PureComponent {
     return "false";
   }
 
-  onLinkClick() {
+  getClickEventData(dwellId) {
     const matchesSelectedTopic = this.doesLinkTopicMatchSelectedTopic();
     const cardColumn = getCardColumn(this.contextMenuButtonHostElement);
+    return {
+      event: "CLICK",
+      source: this.props.type.toUpperCase(),
+      action_position: this.props.pos,
+      value: {
+        event_source: "card",
+        card_type: this.props.flightId ? "spoc" : "organic",
+        tile_id: this.props.id,
+        // Matches the dwell_id SafeAnchor put on the OPEN_LINK it dispatched a
+        // moment ago, so TelemetryFeed can attach this story's identity to the
+        // dwell measurement already in flight.
+        ...(dwellId ? { dwell_id: dwellId } : {}),
+        ...(this.props.shim && this.props.shim.click
+          ? { shim: this.props.shim.click }
+          : {}),
+        corpus_item_id: this.props.corpus_item_id,
+        scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
+        recommended_at: this.props.recommended_at,
+        received_rank: this.props.received_rank,
+        variant_id: this.props.variant_id,
+        source_section_id: this.props.source_section_id,
+        topic: this.props.topic,
+        features: this.props.features,
+        matches_selected_topic: matchesSelectedTopic,
+        selected_topics: this.props.selectedTopics,
+        attribution: this.props.attribution,
+        ...(cardColumn ? { card_column: cardColumn } : {}),
+        ...(this.props.format
+          ? { format: this.props.format }
+          : {
+              format: getActiveCardSize(
+                window.innerWidth,
+                this.props.sectionsClassNames,
+                this.props.section,
+                this.props.flightId,
+                getNovaColumnLayout(this.contextMenuButtonHostElement)
+              ),
+            }),
+        ...(this.props.section
+          ? {
+              section: this.props.section,
+              section_position: this.props.sectionPosition,
+              is_section_followed: this.props.sectionFollowed,
+              layout_name: this.props.sectionLayoutName,
+            }
+          : {}),
+      },
+    };
+  }
+
+  onLinkClick(event, dwellId) {
     if (this.props.dispatch) {
       this.props.dispatch(
-        ac.DiscoveryStreamUserEvent({
-          event: "CLICK",
-          source: this.props.type.toUpperCase(),
-          action_position: this.props.pos,
-          value: {
-            event_source: "card",
-            card_type: this.props.flightId ? "spoc" : "organic",
-            tile_id: this.props.id,
-            ...(this.props.shim && this.props.shim.click
-              ? { shim: this.props.shim.click }
-              : {}),
-            corpus_item_id: this.props.corpus_item_id,
-            scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
-            recommended_at: this.props.recommended_at,
-            received_rank: this.props.received_rank,
-            variant_id: this.props.variant_id,
-            source_section_id: this.props.source_section_id,
-            topic: this.props.topic,
-            features: this.props.features,
-            matches_selected_topic: matchesSelectedTopic,
-            selected_topics: this.props.selectedTopics,
-            attribution: this.props.attribution,
-            ...(cardColumn ? { card_column: cardColumn } : {}),
-            ...(this.props.format
-              ? { format: this.props.format }
-              : {
-                  format: getActiveCardSize(
-                    window.innerWidth,
-                    this.props.sectionsClassNames,
-                    this.props.section,
-                    this.props.flightId,
-                    getNovaColumnLayout(this.contextMenuButtonHostElement)
-                  ),
-                }),
-            ...(this.props.section
-              ? {
-                  section: this.props.section,
-                  section_position: this.props.sectionPosition,
-                  is_section_followed: this.props.sectionFollowed,
-                  layout_name: this.props.sectionLayoutName,
-                }
-              : {}),
-          },
-        })
+        ac.DiscoveryStreamUserEvent(this.getClickEventData(dwellId))
       );
     }
+  }
+
+  onLinkOpenIntent(event) {
+    this.props.dispatch?.(
+      ac.OnlyToMain({
+        type: at.BROWSER_LINK_OPEN_INTENT,
+        data: {
+          url: event.currentTarget.href,
+          userEvent: this.getClickEventData(),
+        },
+      })
+    );
   }
 
   onMenuUpdate(showContextMenu) {
@@ -645,6 +666,9 @@ export class _DSCard extends React.PureComponent {
           className="ds-card-link"
           dispatch={this.props.dispatch}
           onLinkClick={!this.props.placeholder ? this.onLinkClick : undefined}
+          onLinkOpenIntent={
+            !this.props.placeholder ? this.onLinkOpenIntent : undefined
+          }
           url={this.props.url}
           title={this.props.title}
           isSponsored={!!this.props.flightId}
@@ -734,6 +758,9 @@ export class _DSCard extends React.PureComponent {
               shim={this.props.shim}
               bookmarkGuid={this.props.bookmarkGuid}
               flightId={this.props.flightId}
+              dwellLabel={
+                this.props.flightId ? "story_sponsored" : "story_organic"
+              }
               showPrivacyInfo={!!this.props.flightId}
               onMenuUpdate={this.onMenuUpdate}
               onMenuShow={this.onMenuShow}

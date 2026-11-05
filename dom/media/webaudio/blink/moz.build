@@ -36,3 +36,24 @@ LOCAL_INCLUDES += [
 LICENSED_UNDER += [
     "apple",
 ]
+
+SOURCE_HEADERS += [
+    "Biquad.h",
+    "DenormalDisabler.h",
+    "DynamicsCompressor.h",
+    "DynamicsCompressorKernel.h",
+    "FFTConvolver.h",
+    "HRTFDatabase.h",
+    "HRTFDatabaseLoader.h",
+    "HRTFElevation.h",
+    "HRTFKernel.h",
+    "HRTFPanner.h",
+    "IIRFilter.h",
+    "PeriodicWave.h",
+    "Reverb.h",
+    "ReverbAccumulationBuffer.h",
+    "ReverbConvolver.h",
+    "ReverbConvolverStage.h",
+    "ReverbInputBuffer.h",
+    "ZeroPole.h",
+]

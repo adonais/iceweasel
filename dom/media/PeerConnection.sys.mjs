@@ -4,7 +4,7 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  PeerConnectionIdp: "resource://gre/modules/media/PeerConnectionIdp.sys.mjs",
+  PeerConnectionIdp: "moz-src:///dom/media/PeerConnectionIdp.sys.mjs",
 });
 
 const PC_CONTRACT = "@mozilla.org/dom/peerconnection;1";

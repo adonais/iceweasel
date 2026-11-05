@@ -632,6 +632,10 @@ bool ArgumentsObject::reifyIterator(JSContext* cx,
   return true;
 }
 
+JSFunction& MappedArgumentsObject::callee() const {
+  return getFixedSlotTyped(CALLEE_SLOT).toObject().as<JSFunction>();
+}
+
 /* static */
 bool MappedArgumentsObject::reifyCallee(JSContext* cx,
                                         Handle<MappedArgumentsObject*> obj) {

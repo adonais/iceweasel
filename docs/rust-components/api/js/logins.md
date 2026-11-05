@@ -110,9 +110,3 @@
 
 ```{js:autofunction} RustLogins.sys.createLoginStoreWithStaticKeyManager
 ```
-
-```{js:autofunction} RustLogins.sys.createManagedEncdec
-```
-
-```{js:autofunction} RustLogins.sys.createStaticKeyManager
-```

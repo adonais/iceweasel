@@ -17,6 +17,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ChromeMigrationUtils:
     "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs",
+  FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
@@ -95,6 +96,22 @@ export class ChromeProfileMigrator extends MigratorBase {
    */
   #dataPathRemappings = new Map();
 
+  /**
+   * True once the user has selected a folder in the file picker opened by
+   * getPermissions. Reset if that folder did not give access and the user
+   * then cancels the file picker.
+   *
+   * @type {boolean}
+   */
+  #hasUserSelectedDataFolder = false;
+
+  #shouldAvoidReadingData() {
+    return (
+      !this.#hasUserSelectedDataFolder &&
+      MigratorBase.needsFolderSelectionToReadData()
+    );
+  }
+
   static get key() {
     return "chrome";
   }
@@ -115,6 +132,10 @@ export class ChromeProfileMigrator extends MigratorBase {
     let dataPath = await this._getChromeUserDataPathIfExists();
     if (!dataPath) {
       return true;
+    }
+
+    if (this.#shouldAvoidReadingData()) {
+      return false;
     }
 
     let localStatePath = PathUtils.join(dataPath, "Local State");
@@ -142,6 +163,11 @@ export class ChromeProfileMigrator extends MigratorBase {
       let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
       fp.init(win?.browsingContext, "", Ci.nsIFilePicker.modeGetFolder);
       fp.filterIndex = 1;
+      // Folders such as ~/Library are hidden in the file picker, so open it
+      // in the folder that the user needs to select.
+      if (originalDataPath) {
+        fp.displayDirectory = new lazy.FileUtils.File(originalDataPath);
+      }
       // Now wait for the filepicker to open and close. If the user picks
       // the local state folder, the OS should grant us read access to everything
       // inside, so we don't need to check or do anything else with what's
@@ -149,9 +175,13 @@ export class ChromeProfileMigrator extends MigratorBase {
       let result = await new Promise(resolve => fp.open(resolve));
       // Bail if the user cancels the dialog:
       if (result == Ci.nsIFilePicker.returnCancel) {
+        this.#hasUserSelectedDataFolder = false;
         return false;
       }
 
+      this.#hasUserSelectedDataFolder = true;
+      // Resources looked up before the folder was selected may be empty.
+      this._resourcesByProfile = null;
       let file = fp.file;
       if (file && file.path != originalDataPath) {
         this.#dataPathRemappings.set(originalDataPath, file.path);
@@ -307,7 +337,7 @@ export class ChromeProfileMigrator extends MigratorBase {
     }
 
     let chromeUserDataPath = await this._getChromeUserDataPathIfExists();
-    if (!chromeUserDataPath) {
+    if (!chromeUserDataPath || this.#shouldAvoidReadingData()) {
       return [];
     }
 

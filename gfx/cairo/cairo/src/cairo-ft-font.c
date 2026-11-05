@@ -527,6 +527,9 @@ _cairo_ft_unscaled_font_init (cairo_ft_unscaled_font_t *unscaled,
         }
 
         if (getVar && getVarDesignCoords) {
+            /* The external face may already be in use by another renderer. */
+            if (face_context)
+                mozilla_LockSharedFTFace (face_context, NULL);
 	    if (0 == (*getVar) (face, &ft_mm_var))
 	    {
 		unscaled->variations = _cairo_calloc_ab (ft_mm_var->num_axis, sizeof (FT_Fixed));
@@ -537,6 +540,8 @@ _cairo_ft_unscaled_font_init (cairo_ft_unscaled_font_t *unscaled,
 		else
 		    free (ft_mm_var);
 	    }
+            if (face_context)
+                mozilla_UnlockSharedFTFace (face_context);
 	}
     } else {
 	char *filename_copy;

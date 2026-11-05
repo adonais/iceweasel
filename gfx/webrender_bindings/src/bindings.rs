@@ -185,12 +185,17 @@ pub struct DocumentHandle {
 
 impl DocumentHandle {
     pub fn new(
-        api: RenderApi,
+        mut api: RenderApi,
         hit_tester: Option<Arc<dyn ApiHitTester>>,
         size: DeviceIntSize,
         id: u32,
     ) -> DocumentHandle {
         let doc = api.add_document_with_id(size, id);
+        if static_prefs::pref!("gfx.webrender.enforce-embed-policy") {
+            let mut txn = Transaction::new();
+            txn.set_embed_policy_enforcement(true);
+            api.send_transaction(doc, txn);
+        }
         let hit_tester_request = if hit_tester.is_none() {
             // Request the hit tester early to reduce the likelihood of blocking on the
             // first hit testing query.
@@ -1098,6 +1103,15 @@ impl SceneBuilderHooks for APZCallbacks {
 
     fn deregister(&self) {
         unsafe { apz_deregister_updater(self.window_id) }
+    }
+
+    fn embed_policy_violation(&self, _document_id: DocumentId, embedder: PipelineId, child: PipelineId) {
+        let msg = CString::new(format!(
+            "WebRender ignored an iframe of pipeline {:?} in pipeline {:?}",
+            child, embedder
+        ))
+        .unwrap();
+        unsafe { gfx_critical_note(msg.as_ptr()) };
     }
 }
 
@@ -2537,6 +2551,22 @@ pub extern "C" fn wr_transaction_remove_pipeline(txn: &mut Transaction, pipeline
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn wr_transaction_set_embed_policy(
+    txn: &mut Transaction,
+    pipeline_id: WrPipelineId,
+    restricted: bool,
+    namespaces: *const u32,
+    namespace_count: usize,
+) {
+    let policy = if restricted {
+        webrender::api::EmbedPolicy::Restricted(make_slice(namespaces, namespace_count).to_vec())
+    } else {
+        webrender::api::EmbedPolicy::Unrestricted
+    };
+    txn.set_embed_policy(pipeline_id, policy);
+}
+
+#[no_mangle]
 pub extern "C" fn wr_transaction_set_display_list(
     txn: &mut Transaction,
     epoch: WrEpoch,
@@ -2872,6 +2902,15 @@ pub extern "C" fn wr_resource_updates_add_snapshot_image(txn: &mut Transaction, 
 #[no_mangle]
 pub extern "C" fn wr_resource_updates_delete_snapshot_image(txn: &mut Transaction, key: SnapshotImageKey) {
     txn.delete_snapshot_image(key);
+}
+
+#[no_mangle]
+pub extern "C" fn wr_resource_updates_adopt_snapshot_image(
+    txn: &mut Transaction,
+    from: SnapshotImageKey,
+    to: SnapshotImageKey,
+) {
+    txn.adopt_snapshot_image(from, to);
 }
 
 #[no_mangle]
@@ -4198,6 +4237,7 @@ pub extern "C" fn wr_dp_push_border(
     rect: LayoutRect,
     clip: LayoutRect,
     is_backface_visible: bool,
+    force_antialiasing: bool,
     parent: &WrSpaceAndClipChain,
     do_aa: AntialiasBorder,
     widths: LayoutSideOffsets,
@@ -4222,12 +4262,15 @@ pub extern "C" fn wr_dp_push_border(
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
-    let prim_info = CommonItemProperties {
+    let mut prim_info = CommonItemProperties {
         clip_rect: clip,
         clip_chain_id: space_and_clip.clip_chain_id,
         spatial_id: space_and_clip.spatial_id,
         flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
     };
+    if force_antialiasing {
+        prim_info.flags |= PrimitiveFlags::ANTIALISED;
+    }
 
     state
         .frame_builder
@@ -4309,7 +4352,7 @@ pub extern "C" fn wr_dp_push_border_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_gradient(start_point, end_point, stops_vector, extend_mode);
+            .create_gradient(start_point, end_point, stops_vector, extend_mode, AlphaMode::Premultiplied);
 
     let border_details = BorderDetails::NinePatch(NinePatchBorder {
         source: NinePatchBorderSource::Gradient(gradient),
@@ -4367,7 +4410,7 @@ pub extern "C" fn wr_dp_push_border_radial_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_radial_gradient(center, radius, stops_vector, extend_mode);
+            .create_radial_gradient(center, radius, stops_vector, extend_mode, AlphaMode::Premultiplied);
 
     let border_details = BorderDetails::NinePatch(NinePatchBorder {
         source: NinePatchBorderSource::RadialGradient(gradient),
@@ -4425,7 +4468,7 @@ pub extern "C" fn wr_dp_push_border_conic_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_conic_gradient(center, angle, stops_vector, extend_mode);
+            .create_conic_gradient(center, angle, stops_vector, extend_mode, AlphaMode::Premultiplied);
 
     let border_details = BorderDetails::NinePatch(NinePatchBorder {
         source: NinePatchBorderSource::ConicGradient(gradient),
@@ -4458,12 +4501,14 @@ pub extern "C" fn wr_dp_push_linear_gradient(
     rect: LayoutRect,
     clip: LayoutRect,
     is_backface_visible: bool,
+    force_antialiasing: bool,
     parent: &WrSpaceAndClipChain,
     start: LayoutVector2D,
     end: LayoutVector2D,
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
+    alpha_mode: AlphaMode,
     tile_size: LayoutSize,
     tile_spacing: LayoutSize,
 ) {
@@ -4476,16 +4521,19 @@ pub extern "C" fn wr_dp_push_linear_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_gradient(start, end, stops_vector, extend_mode);
+            .create_gradient(start, end, stops_vector, extend_mode, alpha_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
-    let prim_info = CommonItemProperties {
+    let mut prim_info = CommonItemProperties {
         clip_rect: clip,
         clip_chain_id: space_and_clip.clip_chain_id,
         spatial_id: space_and_clip.spatial_id,
         flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
     };
+    if force_antialiasing {
+        prim_info.flags |= PrimitiveFlags::ANTIALISED;
+    }
 
     state
         .frame_builder
@@ -4499,12 +4547,14 @@ pub extern "C" fn wr_dp_push_radial_gradient(
     rect: LayoutRect,
     clip: LayoutRect,
     is_backface_visible: bool,
+    force_antialiasing: bool,
     parent: &WrSpaceAndClipChain,
     center: LayoutVector2D,
     radius: LayoutSize,
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
+    alpha_mode: AlphaMode,
     tile_size: LayoutSize,
     tile_spacing: LayoutSize,
 ) {
@@ -4517,16 +4567,19 @@ pub extern "C" fn wr_dp_push_radial_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_radial_gradient(center, radius, stops_vector, extend_mode);
+            .create_radial_gradient(center, radius, stops_vector, extend_mode, alpha_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
-    let prim_info = CommonItemProperties {
+    let mut prim_info = CommonItemProperties {
         clip_rect: clip,
         clip_chain_id: space_and_clip.clip_chain_id,
         spatial_id: space_and_clip.spatial_id,
         flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
     };
+    if force_antialiasing {
+        prim_info.flags |= PrimitiveFlags::ANTIALISED;
+    }
 
     state.frame_builder.dl_builder.push_radial_gradient(
         &prim_info,
@@ -4550,6 +4603,7 @@ pub extern "C" fn wr_dp_push_conic_gradient(
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
+    alpha_mode: AlphaMode,
     tile_size: LayoutSize,
     tile_spacing: LayoutSize,
 ) {
@@ -4562,7 +4616,7 @@ pub extern "C" fn wr_dp_push_conic_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_conic_gradient(center, angle, stops_vector, extend_mode);
+            .create_conic_gradient(center, angle, stops_vector, extend_mode, alpha_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 

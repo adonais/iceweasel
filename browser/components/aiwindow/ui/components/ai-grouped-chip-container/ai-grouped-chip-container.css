@@ -22,14 +22,11 @@
 
 .grouped-chips {
   border: var(--border-width) solid var(--border-color-transparent);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-radius: var(--ai-grouped-chip-container-border-radius);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-end-end-radius: var(--ai-grouped-chip-container-border-end-end-radius);
   cursor: pointer;
   display: flex;
   gap: var(--space-xsmall);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: var(--ai-grouped-chip-container-padding);
 
   @media not (prefers-reduced-motion) {
@@ -37,7 +34,6 @@
   }
 
   @media not forced-colors {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-color: var(--ai-grouped-chip-container-bg-color);
   }
 }
@@ -70,7 +66,6 @@
 
 .grouped-chips__favicon,
 .grouped-chips__stacked-icon {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-end: calc(-1 * var(--space-xxsmall));
 
   @media not (prefers-reduced-motion) {

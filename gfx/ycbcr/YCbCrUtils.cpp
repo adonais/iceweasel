@@ -109,6 +109,11 @@ ConvertYCbCr16to8Line(uint8_t* aDst,
 
 struct YUV8BitData {
   nsresult Init(const layers::PlanarYCbCrData& aData) {
+    const auto sizes = aData.GetPlaneSizes();
+    if (!sizes) {
+      return NS_ERROR_INVALID_ARG;
+    }
+
     if (aData.mColorDepth == ColorDepth::COLOR_8) {
       mData = aData;
       return NS_OK;
@@ -118,8 +123,8 @@ struct YUV8BitData {
 
     // We align the destination stride to 32 bytes, so that libyuv can use
     // SSE optimised code.
-    auto ySize = aData.YDataSize();
-    auto cbcrSize = aData.CbCrDataSize();
+    const auto& ySize = sizes->mY;
+    const auto& cbcrSize = sizes->mCbCr;
     mData.mYStride = (ySize.width + 31) & ~31;
     mData.mCbCrStride = (cbcrSize.width + 31) & ~31;
     mData.mYUVColorSpace = aData.mYUVColorSpace;

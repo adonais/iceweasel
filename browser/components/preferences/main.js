@@ -176,15 +176,10 @@ Preferences.addSetting({
 });
 
 Preferences.addSetting(
-  /** @type {{_getLaunchOnLoginEnabledValue: boolean, startWithLastProfile: boolean} & SettingConfig} */ ({
+  /** @type {{_getLaunchOnLoginEnabledValue: boolean} & SettingConfig} */ ({
     id: "windowsLaunchOnLogin",
     deps: ["launchOnLoginApproved", "windowsLaunchOnLoginEnabled"],
     _getLaunchOnLoginEnabledValue: false,
-    get startWithLastProfile() {
-      return Cc["@mozilla.org/toolkit/profile-service;1"].getService(
-        Ci.nsIToolkitProfileService
-      ).startWithLastProfile;
-    },
     get() {
       return this._getLaunchOnLoginEnabledValue;
     },
@@ -193,26 +188,13 @@ Preferences.addSetting(
         return;
       }
 
-      /** @type {boolean} */
-      let getLaunchOnLoginEnabledValue;
-      let maybeEmitChange = () => {
-        if (
-          getLaunchOnLoginEnabledValue !== this._getLaunchOnLoginEnabledValue
-        ) {
-          this._getLaunchOnLoginEnabledValue = getLaunchOnLoginEnabledValue;
+      // @ts-ignore bug 1996860
+      LaunchOnLogin.isEnabled().then(val => {
+        if (val !== this._getLaunchOnLoginEnabledValue) {
+          this._getLaunchOnLoginEnabledValue = val;
           emitChange();
         }
-      };
-      if (!this.startWithLastProfile) {
-        getLaunchOnLoginEnabledValue = false;
-        maybeEmitChange();
-      } else {
-        // @ts-ignore bug 1996860
-        LaunchOnLogin.isEnabled().then(val => {
-          getLaunchOnLoginEnabledValue = val;
-          maybeEmitChange();
-        });
-      }
+      });
     },
     visible: ({ windowsLaunchOnLoginEnabled }) => {
       let isVisible =
@@ -226,7 +208,7 @@ Preferences.addSetting(
       return isVisible;
     },
     disabled({ launchOnLoginApproved }) {
-      return !this.startWithLastProfile || !launchOnLoginApproved.value;
+      return !launchOnLoginApproved.value;
     },
     onUserChange(checked) {
       Glean.launchOnLogin.userToggle.record({ enabled: checked });
@@ -248,36 +230,13 @@ Preferences.addSetting(
 );
 
 Preferences.addSetting({
-  id: "windowsLaunchOnLoginDisabledProfileBox",
-  deps: ["windowsLaunchOnLoginEnabled"],
-  visible: ({ windowsLaunchOnLoginEnabled }) => {
-    if (!LaunchOnLogin.isSupported()) {
-      return false;
-    }
-    let startWithLastProfile = Cc[
-      "@mozilla.org/toolkit/profile-service;1"
-    ].getService(Ci.nsIToolkitProfileService).startWithLastProfile;
-
-    return !startWithLastProfile && windowsLaunchOnLoginEnabled.value;
-  },
-});
-
-Preferences.addSetting({
   id: "windowsLaunchOnLoginDisabledBox",
   deps: ["launchOnLoginApproved", "windowsLaunchOnLoginEnabled"],
   visible: ({ launchOnLoginApproved, windowsLaunchOnLoginEnabled }) => {
     if (!LaunchOnLogin.isSupported()) {
       return false;
     }
-    let startWithLastProfile = Cc[
-      "@mozilla.org/toolkit/profile-service;1"
-    ].getService(Ci.nsIToolkitProfileService).startWithLastProfile;
-
-    return (
-      startWithLastProfile &&
-      !launchOnLoginApproved.value &&
-      windowsLaunchOnLoginEnabled.value
-    );
+    return !launchOnLoginApproved.value && windowsLaunchOnLoginEnabled.value;
   },
 });
 
@@ -555,14 +514,6 @@ function createStartupConfig(hidden = false) {
             ],
           },
         ],
-      },
-      {
-        id: "windowsLaunchOnLoginDisabledProfileBox",
-        control: "moz-message-bar",
-        l10nId: "startup-windows-launch-on-login-profile-disabled",
-        controlAttrs: {
-          role: "status",
-        },
       },
       {
         id: "alwaysCheckDefault",
@@ -1470,25 +1421,9 @@ var gMainPane = {
     // The next time the dialog is opened, a new gBrowserLanguagesDialog is created.
     let { selected } = this.gBrowserLanguagesDialog;
 
-    this.gBrowserLanguagesDialog.recordTelemetry(
-      selected ? "accept" : "cancel"
-    );
-
     if (!selected) {
       // No locales were selected. Cancel the operation.
       return;
-    }
-
-    // Track how often locale fallback order is changed.
-    // Drop the first locale and filter to only include the overlapping set
-    const prevLocales = Services.locale.requestedLocales.filter(
-      lc => selected.indexOf(lc) > 0
-    );
-    const newLocales = selected.filter(
-      (lc, i) => i > 0 && prevLocales.includes(lc)
-    );
-    if (prevLocales.some((lc, i) => newLocales[i] != lc)) {
-      this.gBrowserLanguagesDialog.recordTelemetry("setFallback");
     }
 
     switch (Multilingual.getTransitionType(selected)) {

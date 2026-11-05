@@ -12,3 +12,7 @@ SOURCES += [
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
 
 FINAL_LIBRARY = "xul-gtest"
+
+SOURCE_HEADERS += [
+    "RustFuzzingTargets.h",
+]

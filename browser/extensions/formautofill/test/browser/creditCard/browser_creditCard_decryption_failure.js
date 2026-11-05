@@ -7,6 +7,14 @@ add_setup(async function () {
 });
 
 add_task(async function test_fill_creditCard_with_failed_decryption() {
+  if (RUST_CREDIT_CARD_STORE) {
+    // A card is made unreadable here by re-keying the OS key store under it.
+    // The Rust store's key is NSS's, so that leaves its cards readable and
+    // there is no failure to observe. Its own unreadable-card coverage is in
+    // test_rust_autofill_credit_card_adapter.js.
+    info("The Rust store's key is not the one this test resets");
+    return;
+  }
   if (!OSKeyStoreTestUtils.canTestOSKeyStoreLogin()) {
     todo(
       OSKeyStoreTestUtils.canTestOSKeyStoreLogin(),

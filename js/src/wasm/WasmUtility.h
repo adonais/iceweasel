@@ -6,8 +6,14 @@
 #define wasm_utility_h
 
 #include "mozilla/Maybe.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/Vector.h"
 
 #include <algorithm>
+
+#include "js/AllocPolicy.h"
+
 namespace js {
 namespace wasm {
 

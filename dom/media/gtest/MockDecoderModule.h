@@ -65,11 +65,22 @@ class MockDecoderModule : public PlatformDecoderModule {
         .WillByDefault(testing::Return(media::DecodeSupport::SoftwareDecode));
   }
 
+  RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
+      const CreateDecoderParams& aParams) override {
+    RefPtr<MediaDataDecoder> decoder;
+    if (aParams.IsAudio()) {
+      decoder = CreateAudioDecoder(aParams);
+    } else if (aParams.IsVideo()) {
+      decoder = CreateVideoDecoder(aParams);
+    }
+    return CreateDecoderPromiseFrom(decoder.forget(), aParams);
+  }
+
   MOCK_METHOD(already_AddRefed<MediaDataDecoder>, CreateVideoDecoder,
-              (const CreateDecoderParams& aParams), (override));
+              (const CreateDecoderParams& aParams));
 
   MOCK_METHOD(already_AddRefed<MediaDataDecoder>, CreateAudioDecoder,
-              (const CreateDecoderParams& aParams), (override));
+              (const CreateDecoderParams& aParams));
 
   MOCK_METHOD(media::DecodeSupportSet, SupportsMimeType,
               (const nsACString& aMimeType,

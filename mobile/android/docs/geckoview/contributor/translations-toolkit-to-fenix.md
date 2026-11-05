@@ -146,7 +146,7 @@ if (Cc["@mozilla.org/browser/clh;1"] && lazy.BrowserHandler?.kiosk) {
 
 Larger refactoring or additions to the toolkit code might include updating functions to connect more elegantly to a GeckoView API or adding GeckoView specific modules or actors to coordinate `toolkit` calls.
 
-Another situation is sometimes there can also be code that could be cross platform and moved to `toolkit` from, for example, `browser`. In that case, evaluating if the non-cross platform specific code can and should be moved to `toolkit` is the first step. Be sure to consult with relevant [code owners](https://firefox-source-docs.mozilla.org/mots/index.html), review groups, and other stakeholders during the evaluation process to ensure refactoring or moving code is the best course of action.
+Another situation is sometimes there can also be code that could be cross platform and moved to `toolkit` from, for example, `browser`. In that case, evaluating if the non-cross platform specific code can and should be moved to `toolkit` is the first step. Be sure to consult with relevant {doc}`code owners </mots/index>`, review groups, and other stakeholders during the evaluation process to ensure refactoring or moving code is the best course of action.
 
 It might also be necessary to inspect desktop chrome (view layer) code (found in the `browser` directory) and move segments to `toolkit` as well. Sometimes there will be chrome level code that prepares raw information into a presentation data structure that could be helpful in `toolkit` for joint use. An example in translations was moving `getLanguageList` from `browser` to `toolkit`, as seen in this [patch](https://phabricator.services.mozilla.com/D190118).
 
@@ -158,7 +158,7 @@ Adding or moving code that is useful and usable on all layers to `toolkit` helps
 
 Some of these changes and why they are helpful will become more clear later when designing the GeckoView APIs. For example, it might be better to combine a sequence of toolkit calls into one function. That function will then be the only function linked to the public Java surface. This will improve performance and make the API usage clearer.
 
-One way to begin to get a sense of how the toolkit code works on Android during early development is to create a GeckoView module or connect to an existing module, add a message receiver in the module, add a message sender on the Java side, and call the message sender from Java. Important to note is GeckoView uses the [actor pair architecture](https://firefox-source-docs.mozilla.org/dom/ipc/jsactors.html) and [modules](https://gist.github.com/agi/c900f3e473ff681158c0c907e34780e4#actors).
+One way to begin to get a sense of how the toolkit code works on Android during early development is to create a GeckoView module or connect to an existing module, add a message receiver in the module, add a message sender on the Java side, and call the message sender from Java. Important to note is GeckoView uses the {doc}`actor pair architecture </dom/ipc/jsactors>` and [modules](https://gist.github.com/agi/c900f3e473ff681158c0c907e34780e4#actors).
 
 Two examples of different options on how to perform this connection are outlined below in the [example directly connecting toolkit actors](#example-directly-connecting-toolkit-actors) and the [example using a GeckoView module to call toolkit](#example-using-a-geckoview-module-to-call-toolkit). Testing this way while outlining the APIs will help provide a feedback loop on what functionality is needed.
 
@@ -334,15 +334,15 @@ Delegate:
 Notice in the example that most items directly map from a JavaScript to a Java equivalent, but others needed a new object. Usually the function name is kept similar, but might be refined to make more sense in context. The state listeners were mapped to what will be a delegate.
 
 ```{seealso}
-See the [GeckoView Translations API RFC](https://docs.google.com/document/d/1pMn3IZthtsWPzg-tBGRGoeWebIaI8KJt42odiMTjMII/edit?tab=t.0#heading=h.rkn3k63wwhae) for a more extended example. Or other [design documents here](https://firefox-source-docs.mozilla.org/mobile/android/geckoview/design/index.html).
+See the [GeckoView Translations API RFC](https://docs.google.com/document/d/1pMn3IZthtsWPzg-tBGRGoeWebIaI8KJt42odiMTjMII/edit?tab=t.0#heading=h.rkn3k63wwhae) for a more extended example. Or other {doc}`design documents here </mobile/android/geckoview/design/index>`.
 ```
 
 ### Proposed API Review
 
-It is highly recommended that you send a draft of proposed GeckoView API changes or additions to [geckoview-reviewers](https://firefox-source-docs.mozilla.org/mots/index.html#core-geckoview) before implementing. The [RFC template may be found here](https://docs.google.com/document/d/1oHc4BbqM8pzEtVIq-MD1s2itRYAGTVQ8LkyHvy4s168/edit?tab=t.0#heading=h.ls1dr18v7zrx). This is especially important for non-trivial additions or changes. Some examples of non-trivial changes are introducing an API to support a new end-to-end feature, introduction of a new class or module, significant updates to an existing API, or introduction of an API that traverses multiple layers. Examples of trivial changes are introducing a new preference setting API, adding or updating parameters or responses, or minor updates to reflect changes in Gecko. (Also, extremely important note, public APIs cannot be directly changed, they must go through a [deprecation process](./geckoview-quick-start.md#updating-the-changelog-and-api-documentation) to avoid [breaking changes](../design/breaking-changes.md).) The review group can provide comments and recommendations before implementing. This can save time and potential issues during code review.
+It is highly recommended that you send a draft of proposed GeckoView API changes or additions to [geckoview-reviewers](/mots/index.md#core-geckoview) before implementing. The [RFC template may be found here](https://docs.google.com/document/d/1oHc4BbqM8pzEtVIq-MD1s2itRYAGTVQ8LkyHvy4s168/edit?tab=t.0#heading=h.ls1dr18v7zrx). This is especially important for non-trivial additions or changes. Some examples of non-trivial changes are introducing an API to support a new end-to-end feature, introduction of a new class or module, significant updates to an existing API, or introduction of an API that traverses multiple layers. Examples of trivial changes are introducing a new preference setting API, adding or updating parameters or responses, or minor updates to reflect changes in Gecko. (Also, extremely important note, public APIs cannot be directly changed, they must go through a [deprecation process](./geckoview-quick-start.md#updating-the-changelog-and-api-documentation) to avoid [breaking changes](../design/breaking-changes.md).) The review group can provide comments and recommendations before implementing. This can save time and potential issues during code review.
 
 ```{important}
-Highly recommend creating an [RFC](https://docs.google.com/document/d/1oHc4BbqM8pzEtVIq-MD1s2itRYAGTVQ8LkyHvy4s168/edit?tab=t.0#heading=h.ls1dr18v7zrx) for proposed GeckoView API additions or changes and consult [Core: GeckoView](https://firefox-source-docs.mozilla.org/mots/index.html#core-geckoview) for recommendations.
+Highly recommend creating an [RFC](https://docs.google.com/document/d/1oHc4BbqM8pzEtVIq-MD1s2itRYAGTVQ8LkyHvy4s168/edit?tab=t.0#heading=h.ls1dr18v7zrx) for proposed GeckoView API additions or changes and consult [Core: GeckoView](/mots/index.md#core-geckoview) for recommendations.
 
 The group can help ensure the API will meet the existing architecture requirements.
 ```
@@ -735,7 +735,7 @@ For more details on this session example [see this pull request](https://github.
 
 This guide will only provide code examples on the basics of connecting the GV API to AC. However, for completeness, this section will outline the importance of managing state in AC. In general, AC uses Flux architecture to coordinate data flow. If an action occurs that will change the state or require a reaction, then setting up an observer is the typical pattern. One of the key observers is almost always a store dispatcher which will dispatch an action to the store. The action will then be watched for by a state reducer. The state reducer then will properly update the data store model with the correct information.
 
-Recommend reviewing [Fenix’s Architecture Overview](https://firefox-source-docs.mozilla.org/mobile/android/fenix/architecture-overview.html) for more information, as the concepts apply the same to Android Components.
+Recommend reviewing {doc}`Fenix’s Architecture Overview </mobile/android/fenix/architecture-overview>` for more information, as the concepts apply the same to Android Components.
 
 Briefly, an example outline of how state propagates through the app:
 
@@ -810,7 +810,7 @@ See this [example pull request](https://github.com/mozilla-mobile/firefox-androi
 Tests on the AC side generally correspond to the filename where it was added. For example, translation tests may be found in [GeckoEngineTest.kt](https://searchfox.org/mozilla-central/rev/0b189f017bc9d48b62012205c5b9f8a8b560497b/mobile/android/android-components/components/browser/engine-gecko/src/test/java/mozilla/components/browser/engine/gecko/GeckoEngineTest.kt#3550), [GeckoTranslateSessionDelegateTest.kt](https://searchfox.org/firefox-main/source/mobile/android/android-components/components/browser/engine-gecko/src/test/java/mozilla/components/browser/engine/gecko/translate/GeckoTranslateSessionDelegateTest.kt), [TranslationsActionTest.kt](https://searchfox.org/firefox-main/source/mobile/android/android-components/components/browser/state/src/test/java/mozilla/components/browser/state/action/TranslationsActionTest.kt), and [TranslationsMiddlewareTest.kt](https://searchfox.org/firefox-main/source/mobile/android/android-components/components/browser/state/src/test/java/mozilla/components/browser/state/engine/middleware/TranslationsMiddlewareTest.kt).
 
 ```{seealso}
-See [Fenix’s testing guidelines for more information.](https://firefox-source-docs.mozilla.org/mobile/android/fenix/Development-Test-Plan.html)
+See {doc}`Fenix’s testing guidelines for more information. </mobile/android/fenix/Development-Test-Plan>`
 ```
 
 ### Reference Browser or Sample Browser
@@ -861,7 +861,7 @@ Use cases should only be established for reference browser work. It isn’t an a
 Fenix’s ``TranslationsDialogAction.TranslateAction`` maps directly to AC’s ``TranslationsAction.TranslateAction`` in order to pass and capture some additional ``TranslationsDialogState`` information. ``TranslationsDialogBinding`` helps map over state into ``TranslationsDialogState``.
 
 ```{seealso}
-See [Fenix Architecture Overview](https://firefox-source-docs.mozilla.org/mobile/android/fenix/architecture-overview.html) for more guidance.
+See {doc}`Fenix Architecture Overview </mobile/android/fenix/architecture-overview>` for more guidance.
 ```
 
 [`TranslationsDialogFragment.kt`](https://searchfox.org/firefox-main/source/mobile/android/fenix/app/src/main/java/org/mozilla/fenix/translations/TranslationsDialogFragment.kt):

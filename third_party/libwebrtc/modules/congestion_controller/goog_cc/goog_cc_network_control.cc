@@ -346,11 +346,13 @@ void GoogCcNetworkController::ClampConstraints() {
     min_data_rate_ = std::max(min_data_rate_, min_total_allocated_bitrate_);
   }
   if (max_data_rate_ < min_data_rate_) {
-    RTC_LOG(LS_WARNING) << "max bitrate smaller than min bitrate";
+    RTC_LOG(LS_WARNING) << "max bitrate " << max_data_rate_
+                        << " smaller than min bitrate " << min_data_rate_;
     max_data_rate_ = min_data_rate_;
   }
   if (starting_rate_ && starting_rate_ < min_data_rate_) {
-    RTC_LOG(LS_WARNING) << "start bitrate smaller than min bitrate";
+    RTC_LOG(LS_WARNING) << "start bitrate " << *starting_rate_
+                        << " smaller than min bitrate " << min_data_rate_;
     starting_rate_ = min_data_rate_;
   }
 }

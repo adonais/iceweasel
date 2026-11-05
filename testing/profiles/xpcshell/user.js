@@ -34,6 +34,9 @@ user_pref("security.remote_settings.intermediates.enabled", false);
 // all processes would run at low priority, which is not desirable, so we
 // disable the process priority manager entirely here.
 user_pref("dom.ipc.processPriorityManager.enabled", false);
+// xpcshell tests composite nothing, so a GPU process is only overhead, and on
+// macOS it can hang at shutdown.
+user_pref("layers.gpu-process.enabled", false);
 // Bug 455077 - Ensure we use sRGB as the output profile for test consistency.
 user_pref("gfx.color_management.force_srgb", true);
 user_pref("gfx.color_management.mode", 1);

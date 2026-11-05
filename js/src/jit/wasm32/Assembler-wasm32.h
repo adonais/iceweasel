@@ -193,6 +193,8 @@ class Assembler : public AssemblerWasm32 {
   }
   static uint32_t PatchWrite_NearCallSize() { MOZ_CRASH(); }
 
+  static uint32_t NopSize() { MOZ_CRASH(); }
+
   static void ToggleToJmp(CodeLocationLabel) { MOZ_CRASH(); }
   static void ToggleToCmp(CodeLocationLabel) { MOZ_CRASH(); }
   static void ToggleCall(CodeLocationLabel, bool) { MOZ_CRASH(); }

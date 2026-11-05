@@ -99,5 +99,78 @@ class TestSccacheMozconfig(unittest.TestCase):
         )
 
 
+class TestAgenticTools(unittest.TestCase):
+    def _make_bootstrapper(
+        self, no_interactive=False, no_agentic_tools=False, tools_installed=False
+    ):
+        bootstrapper = Bootstrapper.__new__(Bootstrapper)
+        bootstrapper.no_agentic_tools = no_agentic_tools
+        bootstrapper.instance = MagicMock()
+        bootstrapper.instance.no_interactive = no_interactive
+        bootstrapper.instance.cargo_tools_installed.return_value = tools_installed
+        return bootstrapper
+
+    def test_interactive_accept(self):
+        bootstrapper = self._make_bootstrapper()
+        bootstrapper.instance.prompt_yesno.return_value = True
+
+        bootstrapper.check_agentic_tools()
+
+        bootstrapper.instance.prompt_yesno.assert_called_once()
+        bootstrapper.instance.ensure_cargo_tools.assert_called_once_with()
+
+    def test_interactive_decline(self):
+        bootstrapper = self._make_bootstrapper()
+        bootstrapper.instance.prompt_yesno.return_value = False
+
+        bootstrapper.check_agentic_tools()
+
+        bootstrapper.instance.prompt_yesno.assert_called_once()
+        bootstrapper.instance.ensure_cargo_tools.assert_not_called()
+
+    def test_interactive_already_installed(self):
+        bootstrapper = self._make_bootstrapper(tools_installed=True)
+
+        bootstrapper.check_agentic_tools()
+
+        bootstrapper.instance.prompt_yesno.assert_not_called()
+        bootstrapper.instance.ensure_cargo_tools.assert_called_once_with()
+
+    def test_non_interactive(self):
+        bootstrapper = self._make_bootstrapper(no_interactive=True)
+
+        bootstrapper.check_agentic_tools()
+
+        bootstrapper.instance.prompt_yesno.assert_not_called()
+        bootstrapper.instance.ensure_cargo_tools.assert_called_once_with()
+
+    def test_disabled_interactive(self):
+        bootstrapper = self._make_bootstrapper(no_agentic_tools=True)
+
+        bootstrapper.check_agentic_tools()
+
+        bootstrapper.instance.prompt_yesno.assert_not_called()
+        bootstrapper.instance.ensure_cargo_tools.assert_not_called()
+
+    def test_disabled_non_interactive(self):
+        bootstrapper = self._make_bootstrapper(
+            no_interactive=True, no_agentic_tools=True
+        )
+
+        bootstrapper.check_agentic_tools()
+
+        bootstrapper.instance.prompt_yesno.assert_not_called()
+        bootstrapper.instance.ensure_cargo_tools.assert_not_called()
+
+    def test_disabled_already_installed(self):
+        bootstrapper = self._make_bootstrapper(
+            no_agentic_tools=True, tools_installed=True
+        )
+
+        bootstrapper.check_agentic_tools()
+
+        bootstrapper.instance.ensure_cargo_tools.assert_not_called()
+
+
 if __name__ == "__main__":
     main()

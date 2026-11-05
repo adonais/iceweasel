@@ -54,10 +54,44 @@ CONFIGS = defaultdict(
                 "LIB_SUFFIX": "a",
             },
         },
+        "host-cpp-link": {
+            "defines": {},
+            "substs": {
+                "COMPILE_ENVIRONMENT": "1",
+                "LIB_PREFIX": "lib",
+                "LIB_SUFFIX": "a",
+            },
+        },
+        "per-source-object-deps": {
+            "defines": {},
+            "substs": {
+                "COMPILE_ENVIRONMENT": "1",
+                "LIB_PREFIX": "lib",
+                "LIB_SUFFIX": "a",
+            },
+        },
         "xpidl": {
             "defines": {},
             "substs": {
                 "COMPILE_ENVIRONMENT": "1",
+            },
+        },
+        "database-defines": {
+            "defines": {},
+            "substs": {
+                "CC": ["clang"],
+                "CXX": ["clang++"],
+                "COMPILE_ENVIRONMENT": "1",
+                "LIB_PREFIX": "lib",
+                "LIB_SUFFIX": "a",
+            },
+        },
+        "generated-files-host-tool": {
+            "defines": {},
+            "substs": {
+                "COMPILE_ENVIRONMENT": "1",
+                "LIB_PREFIX": "lib",
+                "LIB_SUFFIX": "a",
             },
         },
         "database-compiler-wrapper": {
@@ -347,6 +381,17 @@ CONFIGS = defaultdict(
                 "LIB_PREFIX": "lib",
                 "LIB_SUFFIX": "a",
                 "OBJ_SUFFIX": "o",
+            },
+        },
+        "shared-lib-paths-windows": {
+            "defines": {},
+            "substs": {
+                "COMPILE_ENVIRONMENT": "1",
+                "OS_ARCH": "WINNT",
+                "OS_TARGET": "WINNT",
+                "DLL_SUFFIX": ".dll",
+                "IMPORT_LIB_SUFFIX": "lib",
+                "LIB_SUFFIX": "lib",
             },
         },
         "l10n-manifest-roots": {

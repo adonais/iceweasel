@@ -30,6 +30,7 @@ dependencies {
     implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.material3
     implementation libs.androidx.compose.ui
+    implementation libs.androidx.lifecycle.compose
     implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')

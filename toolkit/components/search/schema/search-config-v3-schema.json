@@ -1,0 +1,568 @@
+{
+  "title": "Application Provided Search Engines Schema",
+  "description": "This schema contains the details to build application provided search engines shipped in some Mozilla products. The associated remote settings collection is search-config-v3. Note: the top-level properties section is only required to satisfy remoteSettings. The allOf section provides the full details of the different record types.",
+  "definitions": {
+    "recordType": {
+      "title": "Record Type",
+      "description": "The type of details that this record contains.",
+      "enum": ["engine", "defaultEngines", "engineOrders", "availableLocales"]
+    },
+    "environment": {
+      "title": "Environment",
+      "description": "Specifies details of possible user environments that the engine or variant applies to",
+      "type": "object",
+      "properties": {
+        "allRegionsAndLocales": {
+          "title": "All Regions and Locales",
+          "description": "Indicates that this section applies to all regions and locales. May be modified by excludedRegions/excludedLocales.",
+          "type": "boolean"
+        },
+        "regions": {
+          "title": "Regions",
+          "description": "An array of regions that this section applies to. 'default' will apply to situations where we have not been able to detect the user's region.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^([a-z][a-z]|default)$",
+            "minLength": 2,
+            "maxLength": 7
+          },
+          "uniqueItems": true
+        },
+        "locales": {
+          "title": "Locales",
+          "description": "An array of locales that this section applies to. 'default' will apply to situations where we have not been able to detect the user's locale.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^([a-z]{2,3}(-[a-zA-Z]{2,})?(-macos)?|default)$",
+            "minLength": 2
+          },
+          "uniqueItems": true
+        },
+        "excludedRegions": {
+          "title": "Excluded Regions",
+          "description": "An array of regions that this section should be excluded from. 'default' will apply to situations where we have not been able to detect the user's region.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^([a-z]{2,3}|default)$",
+            "minLength": 2,
+            "maxLength": 7
+          },
+          "uniqueItems": true
+        },
+        "excludedLocales": {
+          "title": "Excluded Locales",
+          "description": "An array of locales that this section should be excluded from. 'default' will apply to situations where we have not been able to detect the user's locale.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^([a-z]{2,3}(-[a-zA-Z]{2,})?(-macos)?|default)$",
+            "minLength": 2
+          },
+          "uniqueItems": true
+        },
+        "distributions": {
+          "title": "Distributions",
+          "description": "An array of distribution identifiers that this applies to.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9.-]{0,100}$"
+          },
+          "uniqueItems": true
+        },
+        "excludedDistributions": {
+          "title": "Excluded Distributions",
+          "description": "An array of distribution identifiers that this does not apply to.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9.-]{0,100}$"
+          },
+          "uniqueItems": true
+        },
+        "channels": {
+          "title": "Release Channels",
+          "description": "An array of release channels that this section applies to (not set = everywhere).",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z]{0,100}$",
+            "enum": ["default", "nightly", "aurora", "beta", "release", "esr"]
+          },
+          "uniqueItems": true
+        },
+        "experiment": {
+          "title": "Experiment",
+          "description": "The experiment that this section applies to.",
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9-]{0,100}$"
+        },
+        "applications": {
+          "title": "Application Identifiers",
+          "description": "The application(s) this section applies to (default/not specified is everywhere).",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z-]{0,100}$",
+            "enum": [
+              "firefox-win",
+              "firefox-macosx",
+              "firefox-linux",
+              "firefox-android",
+              "firefox-ios",
+              "focus-android",
+              "focus-ios"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "minVersion": {
+          "title": "Minimum Version",
+          "description": "The minimum application version this section applies to.",
+          "type": "string",
+          "pattern": "^[0-9a-z.]{0,20}$"
+        },
+        "maxVersion": {
+          "title": "Maximum Version",
+          "description": "The maximum application version this section applies to (less-than comparison).",
+          "type": "string",
+          "pattern": "^[0-9a-z.]{0,20}$"
+        },
+        "deviceType": {
+          "title": "Device Type",
+          "description": "The device type(s) this section applies to. On desktop when this property is specified and non-empty, the associated section will be ignored.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z-]{0,100}$",
+            "enum": ["smartphone", "tablet"]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "isNewUntil": {
+      "title": "Is New Until",
+      "type": "string",
+      "description": "Indicates the date until which the engine variant, subvariant, or URL is considered new (format: YYYY-MM-DD).",
+      "format": "date"
+    },
+    "partner": {
+      "title": "Partner Details Map",
+      "description": "A list of partner codes and telemetry suffixes per search access point (SAP). Matching SAPs will use the value in this list. Otherwise a hard-coded map may be used on desktop (see SearchUtils). If no SAP is matched, the 'default' entry should be used.",
+      "type": "object",
+      "properties": {
+        "default": {
+          "title": "Default Partner Details",
+          "description": "Partner details for the default search access point",
+          "$ref": "#/definitions/partnerDetails"
+        }
+      },
+      "propertyNames": {
+        "pattern": "^[a-z_]+$"
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/partnerDetails"
+      }
+    },
+    "partnerDetails": {
+      "title": "Partner Details",
+      "description": "The partner details to use for a particular search access point (SAP).",
+      "type": "object",
+      "properties": {
+        "code": {
+          "title": "Partner Code",
+          "description": "The partner code for the engine or variant. This will be inserted into parameters which include '{partnerCode}'",
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9-_.]*$"
+        },
+        "telemetrySuffix": {
+          "title": "Telemetry Suffix",
+          "description": "Suffix that is appended to the search engine identifier following a dash, i.e. `<identifier>-<suffix>`. There should always be a suffix supplied if the partner code is different for a reason other than being on a different platform.",
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9-]*$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "urls": {
+      "title": "URLs",
+      "description": "The URLs associated with the search engine.",
+      "type": "object",
+      "properties": {
+        "search": {
+          "title": "Search URL",
+          "description": "The URL to use for searches",
+          "$ref": "#/definitions/url"
+        },
+        "suggestions": {
+          "title": "Suggestions URL",
+          "description": "The URL to use for suggestions",
+          "$ref": "#/definitions/url"
+        },
+        "trending": {
+          "title": "Trending Suggestions URL",
+          "description": "The URL to use for tending suggestions",
+          "$ref": "#/definitions/url"
+        },
+        "searchForm": {
+          "title": "SearchForm URL",
+          "description": "The URL of the search engine homepage",
+          "$ref": "#/definitions/url"
+        },
+        "visualSearch": {
+          "title": "Visual search URL",
+          "description": "The URL to use for visual searches",
+          "$ref": "#/definitions/url"
+        }
+      }
+    },
+    "url": {
+      "type": "object",
+      "properties": {
+        "acceptedContentTypes": {
+          "title": "Accepted content types",
+          "description": "If this URL performs searches only for certain MIME types, they should be listed here. If `None`, it's assumed the content type is text or not relevant. This field is intended to be used for URLs like visual search, which might support certain image types and not others. Consumers can use it to determine whether search UI corresponding to the URL should be shown to the user in a given context.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "base": {
+          "title": "Base",
+          "description": "The PrePath and FilePath of the URL. May include variables for engines which have a variable FilePath, e.g. {searchTerm} for when a search term is within the path of the url.",
+          "type": "string"
+        },
+        "displayNameMap": {
+          "title": "Name",
+          "description": "A map from locale codes to display names of the URL. This is useful if the URL corresponds to a brand name distinct from the engine's brand name. Since brand names can be localized, this is a map rather than a URL. The client will fall back to the special locale code 'default' when its locale is not present in the map.",
+          "type": "object"
+        },
+        "excludePartnerCodeFromTelemetry": {
+          "title": "Exclude partner code from telemetry",
+          "description": "Whether the engine's partner code should be excluded from telemetry when this URL is visited.",
+          "type": "boolean"
+        },
+        "isNewUntil": {
+          "$ref": "#/definitions/isNewUntil"
+        },
+        "method": {
+          "title": "Method",
+          "description": "The HTTP method to use to send the request. If not specified, defaults to GET.",
+          "type": "string",
+          "pattern": "^(GET|POST)$",
+          "enum": ["GET", "POST"]
+        },
+        "params": {
+          "title": "Parameters",
+          "description": "The parameters for this URL.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "title": "Parameter",
+            "properties": {
+              "name": {
+                "title": "Name",
+                "description": "The parameter name",
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9-_]*$"
+              },
+              "value": {
+                "title": "Value",
+                "description": "The parameter value, this may be a static value, or additionally contain a parameter replacement, e.g. {inputEncoding}. For the partner code parameter, this field should be {partnerCode}.",
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9-_{}]*$"
+              },
+              "enterpriseValue": {
+                "title": "Value",
+                "description": "Same as value but only used if Services.polices.isEnterprise is true. Overrides other parameters of the same name.",
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9-_{}]*$"
+              },
+              "experimentConfig": {
+                "title": "Experiment Configuration",
+                "description": "The value for the parameter will be derived from the equivalent experiment configuration value. If not experiment is present, this parameter will not be included in the final url.",
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9-_]*$"
+              }
+            },
+            "oneOf": [
+              { "required": ["name", "value"] },
+              { "required": ["name", "enterpriseValue"] },
+              { "required": ["name", "experimentConfig"] }
+            ]
+          }
+        },
+        "searchTermParamName": {
+          "title": "Search Term Parameter Name",
+          "description": "The name of the query parameter for the search term. Automatically appended to the end of the query. This may be skipped if `{searchTerm}` is included in the base.",
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9-_]*$"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "recordType": { "$ref": "#/definitions/recordType" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "recordType": {
+            "const": "engine"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "recordType": { "$ref": "#/definitions/recordType" },
+          "identifier": {
+            "title": "Identifier",
+            "description": "The identifier of the search engine. This is used as an internal identifier, e.g. for saving the user's settings for the engine. It is also used to form the base telemetry id and may be extended by telemetrySuffix.",
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9-_]*$"
+          },
+          "notes": {
+            "title": "Notes",
+            "description": "A short notes section used to potentially aid identification of this section for humans. Not intended for to be read by the application.",
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9-_.() ]*$"
+          },
+          "base": {
+            "title": "Base Details",
+            "description": "Base details for the engine.",
+            "type": "object",
+            "properties": {
+              "aliases": {
+                "title": "Aliases",
+                "description": "An array of aliases that the user can use to search with this engine. The aliases will be prefix by '@' on desktop and potentially other platforms.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z\\xa1-\\uffff]*$"
+                },
+                "uniqueItems": true
+              },
+              "charset": {
+                "title": "Character Set",
+                "description": "The character set this engine uses for queries. Defaults to 'UTF=8' if not set.",
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9-]*$"
+              },
+              "classification": {
+                "title": "Classification",
+                "description": "The classification of search engine according to the main search types. Unspecified types will default to 'unknown'.",
+                "type": "string",
+                "enum": ["ai", "general", "unknown"]
+              },
+              "deprecated": {
+                "title": "Deprecated",
+                "description": "Set if the engine is deprecated. If the user previously used the engine in the last 30 days, then it should be migrated to a user-installed engine, and the configuration engine no longer displayed.",
+                "type": "boolean"
+              },
+              "name": {
+                "title": "Name",
+                "description": "The user visible name for the search engine.",
+                "type": "string",
+                "maxLength": 100
+              },
+              "partner": {
+                "$ref": "#/definitions/partner"
+              },
+              "urls": {
+                "$ref": "#/definitions/urls"
+              }
+            },
+            "required": ["name", "urls", "classification"]
+          },
+          "variants": {
+            "title": "Variants",
+            "description": "This section describes variations of this search engine that may occur depending on the user's environment. The last variant that matches the user's environment will be applied to the engine, subvariants may also be applied.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "environment": {
+                  "$ref": "#/definitions/environment"
+                },
+                "isNewUntil": {
+                  "$ref": "#/definitions/isNewUntil"
+                },
+                "partner": {
+                  "$ref": "#/definitions/partner"
+                },
+                "optional": {
+                  "title": "Optional",
+                  "description": "This search engine is presented as an option that the user may enable. It is not included in the initial list of search engines. If not specified, defaults to false.",
+                  "type": "boolean"
+                },
+                "urls": {
+                  "$ref": "#/definitions/urls"
+                },
+                "subVariants": {
+                  "title": "Subvariants",
+                  "description": "This section describes subvariations of this search engine that may occur depending on the user's environment. The last subvariant that matches the user's environment will be applied to the engine.",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "environment": {
+                        "$ref": "#/definitions/environment"
+                      },
+                      "isNewUntil": {
+                        "$ref": "#/definitions/isNewUntil"
+                      },
+                      "partner": {
+                        "$ref": "#/definitions/partner"
+                      },
+                      "optional": {
+                        "title": "Optional",
+                        "description": "This search engine is presented as an option that the user may enable. It is not included in the initial list of search engines. If not specified, defaults to false.",
+                        "type": "boolean"
+                      },
+                      "urls": {
+                        "$ref": "#/definitions/urls"
+                      }
+                    },
+                    "required": ["environment"]
+                  }
+                }
+              },
+              "required": ["environment"]
+            }
+          }
+        },
+        "required": ["recordType", "identifier", "base", "variants"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "recordType": {
+            "const": "defaultEngines"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "recordType": { "$ref": "#/definitions/recordType" },
+          "globalDefault": {
+            "title": "Global Default",
+            "description": "The identifier of the engine that will be used as the application default if no other engines are specified as default.",
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9-_]*$"
+          },
+          "globalDefaultPrivate": {
+            "title": "Global Default - Private Mode",
+            "description": "The identifier of the engine that will be used as the application default in private mode if no other engines are specified as default.",
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9-_]*$"
+          },
+          "specificDefaults": {
+            "title": "Filters",
+            "description": "The specific environment filters to set a different default engine. The array is ordered, when multiple entries match on environments, the later entry will override earlier entries.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "environment": {
+                  "$ref": "#/definitions/environment"
+                },
+                "default": {
+                  "title": "Default",
+                  "description": "The identifier of the engine that will be used as the application default for the associated environment. If the entry is suffixed with a star, matching is applied on a \"starts with\" basis.",
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9-_]*\\*?$"
+                },
+                "defaultPrivate": {
+                  "title": "Default - Private Mode",
+                  "description": "The identifier of the engine that will be used as the application default in private mode for the associated environment. If the entry is suffixed with a star, matching is applied on a \"starts with\" basis.",
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9-_]*\\*?$"
+                }
+              },
+              "oneOf": [
+                { "required": ["environment", "default"] },
+                { "required": ["environment", "defaultPrivate"] },
+                { "required": ["environment", "default", "defaultPrivate"] }
+              ]
+            }
+          }
+        },
+        "required": ["recordType", "globalDefault"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "recordType": {
+            "const": "engineOrders"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "recordType": { "$ref": "#/definitions/recordType" },
+          "orders": {
+            "title": "Orders",
+            "description": "When a user's instance matches the defined environments, the associated engine order will be applied. The array is ordered, when multiple entries match on environments, the later entry will override earlier entries.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "environment": {
+                  "$ref": "#/definitions/environment"
+                },
+                "order": {
+                  "title": "Engine Order",
+                  "type": "array",
+                  "description": "The order of the engines for the associated environment. If engines are present for the user but not included in this list, they will follow after the ones in this list in alphabetical order. If an individual entry is suffixed with a star, matching is applied on a \"starts with\" basis.",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9-_]*\\*?$"
+                  }
+                }
+              },
+              "required": ["environment"]
+            }
+          }
+        },
+        "required": ["recordType", "orders"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "recordType": {
+            "const": "availableLocales"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "recordType": {
+            "$ref": "#/definitions/recordType"
+          },
+          "locales": {
+            "title": "Locales",
+            "description": "All locales listed in the 'locales' field of each engine record. This is used so that we can choose the correct fallback locales on mobile which generally supplies locales of the form ab-CD. This record is an optimisation so that we can avoid parsing the configuration each time for all the locales.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(?:[a-z]{2,3}(-[a-zA-Z]{2,})?(?:-macos)?|default)$",
+              "minLength": 2
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": ["recordType", "locales"]
+      }
+    }
+  ]
+}

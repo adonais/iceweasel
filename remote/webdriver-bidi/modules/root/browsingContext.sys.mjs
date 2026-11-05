@@ -19,7 +19,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   EventPromise: "chrome://remote/content/shared/Sync.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
   getTimeoutMultiplier: "chrome://remote/content/shared/AppInfo.sys.mjs",
-  getWebDriverSessionById:
+  getWebDriverSessionByInternalSessionId:
     "chrome://remote/content/shared/webdriver/Session.sys.mjs",
   isWebdriverSafeNavigationURL:
     "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
@@ -686,13 +686,9 @@ class BrowsingContextModule extends RootBiDiModule {
         lazy.pprint`Expected "referenceContext" to be a string, got ${referenceContextId}`
       );
 
-      referenceContext =
-        lazy.NavigableManager.getBrowsingContextById(referenceContextId);
-      if (!referenceContext) {
-        throw new lazy.error.NoSuchFrameError(
-          `Browsing Context with id ${referenceContextId} not found`
-        );
-      }
+      referenceContext = this._getNavigable(referenceContextId, {
+        skipPrivilegeCheck: true,
+      });
 
       if (referenceContext.parent) {
         throw new lazy.error.InvalidArgumentError(
@@ -701,7 +697,8 @@ class BrowsingContextModule extends RootBiDiModule {
       }
     }
 
-    let userContext = lazy.UserContextManager.defaultUserContextId;
+    let userContext =
+      this._sessionUserContext ?? lazy.UserContextManager.defaultUserContextId;
     if (referenceContext !== null) {
       userContext =
         lazy.UserContextManager.getIdByBrowsingContext(referenceContext);
@@ -713,11 +710,7 @@ class BrowsingContextModule extends RootBiDiModule {
         lazy.pprint`Expected "userContext" to be a string, got ${userContextId}`
       );
 
-      if (!lazy.UserContextManager.hasUserContextId(userContextId)) {
-        throw new lazy.error.NoSuchUserContextError(
-          `User Context with id ${userContextId} was not found`
-        );
-      }
+      this._assertUserContextId(userContextId);
 
       userContext = userContextId;
 
@@ -944,6 +937,9 @@ class BrowsingContextModule extends RootBiDiModule {
    *     Tree of browsing context information.
    * @throws {NoSuchFrameError}
    *     If the browsing context cannot be found.
+   * @throws {UnsupportedOperationError}
+   *     If "moz:scope" is "chrome" and system access is not allowed, or the
+   *     session is restricted to a single user context.
    */
   getTree(options = {}) {
     const {
@@ -966,6 +962,12 @@ class BrowsingContextModule extends RootBiDiModule {
         `Expected "moz:scope" to be one of ${contextScopes}, ` +
           lazy.pprint`got ${scope}`
       )(scope);
+
+      if (scope == MozContextScope.CHROME && this._isSessionRestricted) {
+        throw new lazy.error.UnsupportedOperationError(
+          `"moz:scope" "${scope}" is not supported in a session restricted to a single user context`
+        );
+      }
 
       if (scope != MozContextScope.CONTENT) {
         // By default only content browsing contexts are allowed.
@@ -1002,9 +1004,9 @@ class BrowsingContextModule extends RootBiDiModule {
         }
         default: {
           // Return all top-level browsing contexts.
-          contexts = lazy.TabManager.getBrowsers().map(
-            browser => browser.browsingContext
-          );
+          contexts = lazy.TabManager.getBrowsers({
+            userContext: this._sessionUserContext,
+          }).map(browser => browser.browsingContext);
         }
       }
     }
@@ -1773,14 +1775,7 @@ class BrowsingContextModule extends RootBiDiModule {
           lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
         );
 
-        const internalId =
-          lazy.UserContextManager.getInternalIdById(userContextId);
-
-        if (internalId === null) {
-          throw new lazy.error.NoSuchUserContextError(
-            `User context with id: ${userContextId} doesn't exist`
-          );
-        }
+        const internalId = this._getUserContextInternalId(userContextId);
 
         userContexts.add(internalId);
       }
@@ -2759,8 +2754,8 @@ class BrowsingContextModule extends RootBiDiModule {
       const navigableId =
         lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
 
-      const session = lazy.getWebDriverSessionById(
-        this.messageHandler.sessionId
+      const session = lazy.getWebDriverSessionByInternalSessionId(
+        this.messageHandler.internalSessionId
       );
       const handlerConfig = session.userPromptHandler.getPromptHandler(
         type == "beforeunload" ? "beforeUnload" : type
@@ -3119,6 +3114,24 @@ class BrowsingContextModule extends RootBiDiModule {
 
   static get supportedCommandsFromContent() {
     return ["_onConfigurationComplete"];
+  }
+
+  static get supportedCommandsInRestrictedSession() {
+    return [
+      "activate",
+      "captureScreenshot",
+      "close",
+      "create",
+      "getTree",
+      "handleUserPrompt",
+      "locateNodes",
+      "navigate",
+      "reload",
+      "setViewport",
+      "startScreencast",
+      "stopScreencast",
+      "traverseHistory",
+    ];
   }
 
   static get supportedEvents() {

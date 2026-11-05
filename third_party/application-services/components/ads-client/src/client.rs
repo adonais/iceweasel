@@ -3,23 +3,20 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+use crate::ads::{AdImage, AdImageOrSpoc, AdSpoc, AdTile};
 #[cfg(feature = "stateful")]
 use crate::ads_store::AdsStore;
-use crate::common::bytesize::ByteSize;
+use crate::bytesize::ByteSize;
 use crate::http_cache::{CachePolicy, HttpCache};
-use crate::mars::ad_request::{AdPlacementRequest, AdRequestFlags};
-use crate::mars::ad_response::{AdImage, AdResponse, AdResponseValue, AdSpoc, AdTile};
+use crate::mars::ad_request::{AdPlacementRequest, AdRequestFlags, AdRequestRelevance};
+use crate::mars::ad_response::{AdResponse, AdResponseValue};
 use crate::mars::error::{RecordClickError, RecordImpressionError, ReportAdError};
 use crate::mars::{MARSClient, ReportReason};
-#[cfg(feature = "stateful")]
-use crate::shutdown::AdsStoreShutdown;
-use crate::shutdown::ShutdownReferences;
-use crate::telemetry::Telemetry;
+use crate::telemetry::{self, ClientOperation};
 use config::AdsClientConfig;
 use context_id::{ContextIDComponent, DefaultContextIdCallback};
 use error::RequestAdsError;
-#[cfg(feature = "stateful")]
-use parking_lot::Mutex;
+use sql_support::open_database;
 use std::collections::HashMap;
 #[cfg(feature = "stateful")]
 use std::sync::Arc;
@@ -34,22 +31,15 @@ const DEFAULT_TTL_SECONDS: u64 = 300;
 const DEFAULT_MAX_CACHE_SIZE_MIB: u64 = 10;
 const DEFAULT_ROTATION_DAYS: u8 = 3;
 
-pub struct AdsClient<T>
-where
-    T: Clone + Telemetry,
-{
+pub struct AdsClient {
     #[cfg(feature = "stateful")]
-    ads_store: Arc<Mutex<Option<AdsStore>>>,
-    client: MARSClient<T>,
+    ads_store: Arc<Option<AdsStore>>,
+    client: MARSClient,
     context_id_component: ContextIDComponent,
-    telemetry: T,
 }
 
-impl<T> AdsClient<T>
-where
-    T: Clone + Telemetry,
-{
-    pub fn new(client_config: AdsClientConfig<T>) -> Self {
+impl AdsClient {
+    pub fn new(client_config: AdsClientConfig) -> Self {
         let context_id_component = ContextIDComponent::new(
             &Uuid::new_v4().to_string(),
             0,
@@ -57,7 +47,6 @@ where
             Box::new(DefaultContextIdCallback),
         );
 
-        let telemetry = client_config.telemetry;
         let environment = client_config.environment;
 
         // Configure the cache if a path is provided.
@@ -78,35 +67,35 @@ where
             {
                 Ok(cache) => Some(cache),
                 Err(e) => {
-                    telemetry.record(&e);
+                    telemetry::record_build_cache_error(&e);
                     None
                 }
             }
         });
 
         #[cfg(feature = "stateful")]
-        let ads_store = client_config.store_config.and_then(|x| {
-            match AdsStore::builder(x.db_path).build(telemetry.clone()) {
-                Ok(store) => Some(store),
-                Err(e) => {
-                    telemetry.record(&e);
-                    None
-                }
-            }
-        });
+        let ads_store =
+            client_config
+                .store_config
+                .and_then(|x| match AdsStore::builder(x.db_path).build() {
+                    Ok(store) => Some(store),
+                    Err(e) => {
+                        telemetry::record_ads_store_error(&e);
+                        None
+                    }
+                });
 
-        let client = MARSClient::new(environment, http_cache, telemetry.clone());
-        telemetry.record(&ClientOperationEvent::New);
+        let client = MARSClient::new(environment, http_cache);
+        telemetry::record_client_operation(ClientOperation::New);
         Self {
+            #[cfg(feature = "stateful")]
+            ads_store: Arc::new(ads_store),
             client,
             context_id_component,
-            telemetry: telemetry.clone(),
-            #[cfg(feature = "stateful")]
-            ads_store: Arc::new(Mutex::new(ads_store)),
         }
     }
 
-    pub fn clear_cache(&self) -> Result<(), rusqlite::Error> {
+    pub fn clear_cache(&self) -> Result<(), open_database::Error> {
         self.client.clear_cache()
     }
 
@@ -118,16 +107,16 @@ where
         // TODO: Re-enable cache invalidation behind a Nimbus experiment.
         // The mobile team has requested this be temporarily disabled.
         // let mut click_url = click_url.clone();
-        // if let Some(request_hash) = pop_request_hash_from_url(&mut click_url) {
+        // if let Some(request_hash) = RequestHash::pop_from_url(&mut click_url) {
         //     let _ = self.client.invalidate_cache_by_hash(&request_hash);
         // }
         self.client
             .record_click(click_url, ohttp)
             .inspect_err(|e| {
-                self.telemetry.record(e);
+                telemetry::record_client_error(ClientOperation::RecordClick, e);
             })
             .inspect(|_| {
-                self.telemetry.record(&ClientOperationEvent::RecordClick);
+                telemetry::record_client_operation(ClientOperation::RecordClick);
             })
     }
 
@@ -139,7 +128,7 @@ where
         // TODO: Re-enable cache invalidation behind a Nimbus experiment.
         // The mobile team has requested this be temporarily disabled.
         // let mut impression_url = impression_url.clone();
-        // if let Some(request_hash) = pop_request_hash_from_url(&mut impression_url) {
+        // if let Some(request_hash) = RequestHash::pop_from_url(&mut impression_url) {
         //     let _ = self.client.invalidate_cache_by_hash(&request_hash);
         // }
 
@@ -168,11 +157,10 @@ where
         self.client
             .record_impression(impression_url, ohttp)
             .inspect_err(|e| {
-                self.telemetry.record(e);
+                telemetry::record_client_error(ClientOperation::RecordImpression, e);
             })
             .inspect(|_| {
-                self.telemetry
-                    .record(&ClientOperationEvent::RecordImpression);
+                telemetry::record_client_operation(ClientOperation::RecordImpression);
             })
     }
 
@@ -185,13 +173,14 @@ where
         self.client
             .report_ad(report_url, reason, ohttp)
             .inspect_err(|e| {
-                self.telemetry.record(e);
+                telemetry::record_client_error(ClientOperation::ReportAd, e);
             })
             .inspect(|_| {
-                self.telemetry.record(&ClientOperationEvent::ReportAd);
+                telemetry::record_client_operation(ClientOperation::ReportAd);
             })
     }
 
+    // relevance is not implemented for image ads, using an empty HashMap.
     pub fn request_image_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
@@ -201,14 +190,22 @@ where
         blocks: Vec<String>,
     ) -> Result<HashMap<String, AdImage>, RequestAdsError> {
         let response = self
-            .request_ads::<AdImage>(ad_placement_requests, flags, options, ohttp, blocks)
+            .request_ads::<AdImage>(
+                ad_placement_requests,
+                flags,
+                options,
+                ohttp,
+                blocks,
+                AdRequestRelevance::default(),
+            )
             .inspect_err(|e| {
-                self.telemetry.record(e);
+                telemetry::record_client_error(ClientOperation::RequestAds, e);
             })?;
-        self.telemetry.record(&ClientOperationEvent::RequestAds);
+        telemetry::record_client_operation(ClientOperation::RequestAds);
         Ok(response.take_first())
     }
 
+    // relevance is not implemented for spocs, using an empty HashMap.
     pub fn request_spoc_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
@@ -217,14 +214,50 @@ where
         ohttp: bool,
         blocks: Vec<String>,
     ) -> Result<HashMap<String, Vec<AdSpoc>>, RequestAdsError> {
-        let result =
-            self.request_ads::<AdSpoc>(ad_placement_requests, flags, options, ohttp, blocks);
+        let result = self.request_ads::<AdSpoc>(
+            ad_placement_requests,
+            flags,
+            options,
+            ohttp,
+            blocks,
+            AdRequestRelevance::default(),
+        );
         result
             .inspect_err(|e| {
-                self.telemetry.record(e);
+                telemetry::record_client_error(ClientOperation::RequestAds, e);
             })
             .map(|response| {
-                self.telemetry.record(&ClientOperationEvent::RequestAds);
+                telemetry::record_client_operation(ClientOperation::RequestAds);
+                response.data
+            })
+    }
+
+    // Sometimes, spoc array requests can return multiple types of ads for specific placements.
+    // This allows both types to be returned without error (as instances of the enum `AdImageOrSpoc`)
+    // TODO: This, as well as the other synchronous functions, are to be deprecated
+    // when the stateful client rework is complete.
+    pub fn request_spoc_or_image_ads(
+        &self,
+        ad_placement_requests: Vec<AdPlacementRequest>,
+        flags: AdRequestFlags,
+        options: Option<CachePolicy>,
+        ohttp: bool,
+        blocks: Vec<String>,
+    ) -> Result<HashMap<String, Vec<AdImageOrSpoc>>, RequestAdsError> {
+        let result = self.request_ads::<AdImageOrSpoc>(
+            ad_placement_requests,
+            flags,
+            options,
+            ohttp,
+            blocks,
+            AdRequestRelevance::default(),
+        );
+        result
+            .inspect_err(|e| {
+                telemetry::record_client_error(ClientOperation::RequestAds, e);
+            })
+            .map(|response| {
+                telemetry::record_client_operation(ClientOperation::RequestAds);
                 response.data
             })
     }
@@ -236,17 +269,35 @@ where
         options: Option<CachePolicy>,
         ohttp: bool,
         blocks: Vec<String>,
+        relevance: AdRequestRelevance,
     ) -> Result<HashMap<String, AdTile>, RequestAdsError> {
-        let result =
-            self.request_ads::<AdTile>(ad_placement_requests, flags, options, ohttp, blocks);
+        let result = self.request_ads::<AdTile>(
+            ad_placement_requests,
+            flags,
+            options,
+            ohttp,
+            blocks,
+            relevance,
+        );
         result
             .inspect_err(|e| {
-                self.telemetry.record(e);
+                telemetry::record_client_error(ClientOperation::RequestAds, e);
             })
             .map(|response| {
-                self.telemetry.record(&ClientOperationEvent::RequestAds);
+                telemetry::record_client_operation(ClientOperation::RequestAds);
                 response.take_first()
             })
+    }
+
+    pub fn shutdown(&self) {
+        telemetry::uninstall();
+
+        #[cfg(feature = "stateful")]
+        if let Some(ads_store) = self.ads_store.as_ref() {
+            ads_store.shutdown_db();
+        }
+
+        self.client.shutdown_db();
     }
 
     fn request_ads<A>(
@@ -256,11 +307,17 @@ where
         options: Option<CachePolicy>,
         ohttp: bool,
         blocks: Vec<String>,
+        relevance: AdRequestRelevance,
     ) -> Result<AdResponse<A>, RequestAdsError>
     where
         A: AdResponseValue,
     {
-        let context_id = self.get_context_id()?;
+        let context_id = if relevance.is_empty() {
+            Some(self.get_context_id()?)
+        } else {
+            None
+        };
+
         let cache_policy = options.unwrap_or_default();
         let (mut response, request_hash) = self.client.fetch_ads::<A>(
             context_id,
@@ -269,27 +326,11 @@ where
             cache_policy,
             ohttp,
             blocks,
+            relevance,
         )?;
         response.enrich_callbacks(&request_hash);
         Ok(response)
     }
-
-    pub fn shutdown_references(&self) -> ShutdownReferences<T> {
-        ShutdownReferences::new(
-            self.telemetry.clone(),
-            #[cfg(feature = "stateful")]
-            AdsStoreShutdown::new(self.ads_store.clone()),
-        )
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ClientOperationEvent {
-    New,
-    RecordClick,
-    RecordImpression,
-    ReportAd,
-    RequestAds,
 }
 
 #[cfg(test)]
@@ -298,7 +339,6 @@ mod tests {
     #[cfg(feature = "stateful")]
     use crate::ads_store::builder::AdsStoreBuilder;
     use crate::{
-        ffi::telemetry::MozAdsTelemetryWrapper,
         mars::Environment,
         test_utils::{
             get_example_happy_image_response, get_example_happy_spoc_response,
@@ -308,11 +348,14 @@ mod tests {
 
     use super::*;
 
-    fn new_with_mars_client(
-        client: MARSClient<MozAdsTelemetryWrapper>,
-    ) -> AdsClient<MozAdsTelemetryWrapper> {
-        let telemetry = client.get_telemetry();
+    fn new_with_mars_client(client: MARSClient) -> AdsClient {
         AdsClient {
+            #[cfg(feature = "stateful")]
+            ads_store: Arc::new(Some(
+                AdsStoreBuilder::new("test_store.db")
+                    .build()
+                    .expect("Simplest AdsStoreBuilder should be constructable"),
+            )),
             client,
             context_id_component: ContextIDComponent::new(
                 &Uuid::new_v4().to_string(),
@@ -320,13 +363,6 @@ mod tests {
                 false,
                 Box::new(DefaultContextIdCallback),
             ),
-            telemetry,
-            #[cfg(feature = "stateful")]
-            ads_store: Arc::new(Mutex::new(Some(
-                AdsStoreBuilder::new("test_store.db")
-                    .build(MozAdsTelemetryWrapper::noop())
-                    .expect("Simplest AdsStoreBuilder should be constructable"),
-            ))),
         }
     }
 
@@ -335,7 +371,6 @@ mod tests {
         let config = AdsClientConfig {
             cache_config: None,
             environment: Environment::Test,
-            telemetry: MozAdsTelemetryWrapper::noop(),
             #[cfg(feature = "stateful")]
             store_config: None,
         };
@@ -355,7 +390,7 @@ mod tests {
             .with_body(serde_json::to_string(&expected_response.data).unwrap())
             .create();
 
-        let mars_client = MARSClient::new(Environment::Test, None, MozAdsTelemetryWrapper::noop());
+        let mars_client = MARSClient::new(Environment::Test, None);
         let ads_client = new_with_mars_client(mars_client);
 
         let result = ads_client.request_image_ads(
@@ -380,7 +415,7 @@ mod tests {
             .with_body(serde_json::to_string(&expected_response.data).unwrap())
             .create();
 
-        let mars_client = MARSClient::new(Environment::Test, None, MozAdsTelemetryWrapper::noop());
+        let mars_client = MARSClient::new(Environment::Test, None);
         let ads_client = new_with_mars_client(mars_client);
 
         let result = ads_client.request_spoc_ads(
@@ -405,7 +440,7 @@ mod tests {
             .with_body(serde_json::to_string(&expected_response.data).unwrap())
             .create();
 
-        let mars_client = MARSClient::new(Environment::Test, None, MozAdsTelemetryWrapper::noop());
+        let mars_client = MARSClient::new(Environment::Test, None);
         let ads_client = new_with_mars_client(mars_client);
 
         let result = ads_client.request_tile_ads(
@@ -414,6 +449,7 @@ mod tests {
             None,
             false,
             Default::default(),
+            AdRequestRelevance::default(),
         );
         assert!(result.is_ok());
         m.assert();
@@ -426,7 +462,6 @@ mod tests {
         let config = AdsClientConfig {
             cache_config: None,
             environment: Environment::Test,
-            telemetry: MozAdsTelemetryWrapper::noop(),
             #[cfg(feature = "stateful")]
             store_config: None,
         };
@@ -459,9 +494,48 @@ mod tests {
     }
 
     #[test]
+    fn test_context_id_is_not_sent_to_mars_when_relevance_is_set() {
+        viaduct_dev::init_backend_dev();
+
+        let config = AdsClientConfig {
+            cache_config: None,
+            environment: Environment::Test,
+            #[cfg(feature = "stateful")]
+            store_config: None,
+        };
+        let client = AdsClient::new(config);
+
+        // Matcher::Json compares the whole body, ignoring key order, so any
+        // extra key such as context_id makes the request go unmatched.
+        // This test will fail if any new fields that are not empty are added to the request.  This is intentional.
+        // Any new fields must be considered along side relevence scores.
+        let expected_response = get_example_happy_uatile_response();
+        let m: mockito::Mock = mockito::mock("POST", "/ads")
+            .match_body(mockito::Matcher::Json(serde_json::json!({
+                "placements": serde_json::to_value(make_happy_placement_requests()).unwrap(),
+                "relevance": {"sports": 0.8},
+            })))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(serde_json::to_string(&expected_response.data).unwrap())
+            .create();
+
+        let result = client.request_tile_ads(
+            make_happy_placement_requests(),
+            AdRequestFlags::default(),
+            None,
+            false,
+            Default::default(),
+            HashMap::from([("sports".to_string(), 0.8)]),
+        );
+        assert!(result.is_ok());
+        m.assert();
+    }
+
+    #[test]
     fn test_record_impression_removes_cap_key() {
         viaduct_dev::init_backend_dev();
-        let mars_client = MARSClient::new(Environment::Test, None, MozAdsTelemetryWrapper::noop());
+        let mars_client = MARSClient::new(Environment::Test, None);
         let ads_client = new_with_mars_client(mars_client);
 
         let base_url = mockito::server_url();
@@ -492,11 +566,7 @@ mod tests {
         let cache = HttpCache::builder("test_record_click_invalidates_cache")
             .build()
             .unwrap();
-        let mars_client = MARSClient::new(
-            Environment::Test,
-            Some(cache),
-            MozAdsTelemetryWrapper::noop(),
-        );
+        let mars_client = MARSClient::new(Environment::Test, Some(cache));
         let ads_client = new_with_mars_client(mars_client);
 
         let response = get_example_happy_image_response();
@@ -542,6 +612,7 @@ mod tests {
                 Some(CachePolicy::default()),
                 false,
                 Default::default(),
+                AdRequestRelevance::default(),
             )
             .unwrap();
 

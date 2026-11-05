@@ -902,6 +902,7 @@ WEBIDL_FILES = [
     "PushSubscription.webidl",
     "PushSubscriptionOptions.webidl",
     "QueuingStrategy.webidl",
+    "QuotaExceededError.webidl",
     "RadioNodeList.webidl",
     "Range.webidl",
     "ReadableByteStreamController.webidl",

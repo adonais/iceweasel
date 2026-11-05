@@ -57,6 +57,6 @@ The durations of unsuccessful classifications are not measured.
 
 * [Bug 1889404][bug-1889404]: Added basic metrics for relevancy manager
 
-[FoG]: https://firefox-source-docs.mozilla.org/toolkit/components/glean/index.html
+[FoG]: /toolkit/components/glean/index.md
 [glean-dictionary]: https://dictionary.telemetry.mozilla.org/
 [bug-1889404]: https://bugzilla.mozilla.org/show_bug.cgi?id=1889404

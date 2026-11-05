@@ -1447,6 +1447,14 @@ void ScalePlaneVertical(int src_height,
     InterpolateRow = InterpolateRow_RVV;
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    InterpolateRow = InterpolateRow_Any_WASMSIMD;
+    if (IS_ALIGNED(dst_width_bytes, 16)) {
+      InterpolateRow = InterpolateRow_WASMSIMD;
+    }
+  }
+#endif
 
   for (j = 0; j < dst_height; ++j) {
     int yi;
@@ -1526,6 +1534,14 @@ void ScalePlaneVertical_16(int src_height,
 #if defined(HAS_INTERPOLATEROW_16_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     InterpolateRow = InterpolateRow_16_SME;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    InterpolateRow = InterpolateRow_16_Any_WASMSIMD;
+    if (IS_ALIGNED(dst_width_words, 8)) {
+      InterpolateRow = InterpolateRow_16_WASMSIMD;
+    }
   }
 #endif
   for (j = 0; j < dst_height; ++j) {

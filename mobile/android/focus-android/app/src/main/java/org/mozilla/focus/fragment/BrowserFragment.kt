@@ -41,6 +41,7 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.concept.engine.HitResult
 import mozilla.components.feature.app.links.AppLinksFeature
 import mozilla.components.feature.contextmenu.ContextMenuFeature
+import mozilla.components.feature.customtabs.CustomTabWindowFeature
 import mozilla.components.feature.downloads.DownloadsFeature
 import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.downloads.temporary.ShareResourceFeature
@@ -49,6 +50,7 @@ import mozilla.components.feature.prompts.PromptFeature
 import mozilla.components.feature.prompts.file.AndroidPhotoPicker
 import mozilla.components.feature.session.PictureInPictureFeature
 import mozilla.components.feature.session.SessionFeature
+import mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage
 import mozilla.components.feature.sitepermissions.SitePermissionsFeature
 import mozilla.components.feature.tabs.WindowFeature
 import mozilla.components.feature.toolbar.ToolbarFeature
@@ -126,6 +128,7 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
     private val downloadsFeature = ViewBoundFeatureWrapper<DownloadsFeature>()
     private val shareResourceFeature = ViewBoundFeatureWrapper<ShareResourceFeature>()
     private val windowFeature = ViewBoundFeatureWrapper<WindowFeature>()
+    private val customTabWindowFeature = ViewBoundFeatureWrapper<CustomTabWindowFeature>()
     private val appLinksFeature = ViewBoundFeatureWrapper<AppLinksFeature>()
     private val topSitesFeature = ViewBoundFeatureWrapper<TopSitesFeature>()
     private var sitePermissionsFeature = ViewBoundFeatureWrapper<SitePermissionsFeature>()
@@ -465,11 +468,11 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
                 requireContext().isAccessibilityEnabled(),
             )
 
-            // TODO Add custom tabs window feature support
-            // We to add support for Custom Tabs here, however in order to send the window request
-            // back to us through the intent system, we need to register a unique schema that we
-            // can handle. For example, Fenix Nighlyt does this today with `fenix-nightly://`.
-            // See https://bugzilla.mozilla.org/show_bug.cgi?id=1804556
+            customTabWindowFeature.set(
+                feature = CustomTabWindowFeature(requireActivity(), components.store, tab.id),
+                owner = this,
+                view = view,
+            )
         } else {
             initialiseNormalBrowserUi(requireContext().isAccessibilityEnabled())
 
@@ -498,6 +501,11 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
             feature =
                 SitePermissionsFeature(
                     context = requireContext(),
+                    storage =
+                        OnDiskSitePermissionsStorage(
+                            requireContext(),
+                            coroutineScope = requireComponents.applicationScope,
+                        ),
                     fragmentManager = parentFragmentManager,
                     promptsStyling =
                         SitePermissionsFeature.PromptsStyling(
@@ -515,6 +523,7 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
                         SitePermissionOptionsStorage(requireContext()).getSitePermissionsSettingsRules(),
                     sessionId = tabId,
                     store = requireComponents.store,
+                    coroutineScope = requireComponents.applicationScope,
                     shouldShowDoNotAskAgainCheckBox = false,
                 ),
             owner = this,

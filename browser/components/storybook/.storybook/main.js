@@ -50,6 +50,8 @@ module.exports = {
     `${projectRoot}/browser/components/multilineeditor/**/*.stories.@(mjs|md)`,
     // Trust Panel components stories
     `${projectRoot}/browser/components/controlcenter/content/components/**/*.stories.mjs`,
+    // Widget components stories
+    `${projectRoot}/browser/components/widgets/content/**/*.stories.@(mjs|md)`,
     // Everything else
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     // Design system files

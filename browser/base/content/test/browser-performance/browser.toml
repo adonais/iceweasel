@@ -70,19 +70,12 @@ skip-if = [
 ]
 
 ["browser_tabclose.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1531417
-]
 
 ["browser_tabclose_grow.js"]
 
 ["browser_tabdetach.js"]
 
 ["browser_tabopen.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1705492
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1870476
-]
 
 ["browser_tabopen_squeeze.js"]
 

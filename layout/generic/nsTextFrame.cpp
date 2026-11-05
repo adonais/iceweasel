@@ -4487,6 +4487,33 @@ void nsTextFrame::PropertyProvider::GetHyphenationBreaks(
   }
 }
 
+bool nsTextFrame::PropertyProvider::GetSourceText(Range aRange,
+                                                  nsAString& aText) const {
+  MOZ_ASSERT(IsInBounds(mStart, mLength, aRange), "Range out of bounds");
+  MOZ_ASSERT(aText.IsEmpty());
+
+  const bool isTransformed =
+      !!(mTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsTransformed);
+  const nsTransformedTextRun* transformedTextRun =
+      isTransformed ? static_cast<const nsTransformedTextRun*>(mTextRun.get())
+                    : nullptr;
+  gfxSkipCharsIterator skipIter(mStart);
+
+  // text-transform must not affect a plain text copy, so we always map back to
+  // the DOM text, even for a transformed textrun. The DOM text is never masked,
+  // so we must explicitly return false for masked password characters.
+  aText.SetCapacity(aRange.Length());
+  for (uint32_t i = aRange.start; i < aRange.end; ++i) {
+    if (transformedTextRun && transformedTextRun->mStyles[i]->mMaskPassword) {
+      aText.Truncate();
+      return false;
+    }
+    aText.Append(mCharacterDataBuffer.CharAt(
+        AssertedCast<uint32_t>(skipIter.ConvertSkippedToOriginal(i))));
+  }
+  return true;
+}
+
 void nsTextFrame::PropertyProvider::InitializeForDisplay(bool aTrimAfter) {
   nsTextFrame::TrimmedOffsets trimmed = mFrame->GetTrimmedOffsets(
       mCharacterDataBuffer,

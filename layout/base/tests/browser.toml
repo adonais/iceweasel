@@ -83,6 +83,8 @@ support-files = [
   "470711-1-ref.xhtml"
 ]
 
+["browser_viewport_size_override.js"]
+
 ["browser_visual_viewport_iframe.js"]
 support-files = [
   "test_visual_viewport_in_oopif.html",

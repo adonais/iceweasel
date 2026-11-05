@@ -10,6 +10,7 @@
 
 #include "modules/rtp_rtcp/source/corruption_detection_extension.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -17,6 +18,10 @@
 #include "api/transport/rtp/corruption_detection_message.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+
+#ifndef WEBRTC_WITHOUT_RUST
+#include "modules/rtp_rtcp/corruption_detection_extension_cxx.rs.h"
+#endif
 
 namespace webrtc {
 namespace {
@@ -207,6 +212,34 @@ TEST(CorruptionDetectionExtensionTest,
   EXPECT_EQ(message.chroma_error_threshold(), 0b1111);
   EXPECT_THAT(message.sample_values(), ElementsAreArray(kSampleValues));
 }
+
+#ifndef WEBRTC_WITHOUT_RUST
+// Verifies interop.
+// Tests to validate parser implementation are located next to it, in Rust.
+TEST(CorruptionDetectionExtensionTest, RustParsesEverythingFromExtension) {
+  rust::Box<RustCorruptionDetectionExtension> message =
+      create_corruption_detection_message();
+  const std::array<uint8_t, 13> kSampleValues = {1, 2, 3,  4,  5,  6, 7,
+                                                 8, 9, 10, 11, 12, 13};
+  const std::array<uint8_t, 16> kData = {0b1100'0100,       220,
+                                         0b1110'1111,       kSampleValues[0],
+                                         kSampleValues[1],  kSampleValues[2],
+                                         kSampleValues[3],  kSampleValues[4],
+                                         kSampleValues[5],  kSampleValues[6],
+                                         kSampleValues[7],  kSampleValues[8],
+                                         kSampleValues[9],  kSampleValues[10],
+                                         kSampleValues[11], kSampleValues[12]};
+
+  EXPECT_TRUE(message->parse(rust::Slice(kData)));
+  EXPECT_EQ(message->sequence_index(), 0b0100'0100);
+  EXPECT_TRUE(message->interpret_sequence_index_as_most_significant_bits());
+  EXPECT_THAT(message->std_dev(),
+              DoubleEq(34.509803921568626));  // 220 / 255.0 * 40.0
+  EXPECT_EQ(message->luma_error_threshold(), 0b1110);
+  EXPECT_EQ(message->chroma_error_threshold(), 0b1111);
+  EXPECT_THAT(message->sample_values(), ElementsAreArray(kSampleValues));
+}
+#endif
 
 TEST(CorruptionDetectionExtensionTest,
      ParsesEverythingFromExtensionWhenLowerBitsAreUsedForSequenceIndex) {

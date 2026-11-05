@@ -24,3 +24,7 @@ XPCOM_MANIFESTS += [
 XPIDL_MODULE = "kvstore"
 
 FINAL_LIBRARY = "xul"
+
+SOURCE_HEADERS += [
+    "nsKeyValueModule.h",
+]

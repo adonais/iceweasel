@@ -48,6 +48,7 @@ namespace gfx {
   _(VP9_HW_DECODE, Feature, "VP9 hardware decoding")                         \
   _(DMABUF_SURFACE_EXPORT, Feature, "WebGL DMABuf surface export")           \
   _(REUSE_DECODER_DEVICE, Feature, "Reuse decoder device")                   \
+  _(D3D11_FENCES, Feature, "D3D11 fences")                                   \
   _(BACKDROP_FILTER, Feature, "Backdrop filter")                             \
   _(CANVAS_RENDERER_THREAD, Feature, "canvas renderer thread")               \
   _(ACCELERATED_CANVAS2D, Feature, "Accelerated Canvas2D")                   \
@@ -67,6 +68,7 @@ namespace gfx {
   _(WEBGL, Feature, "WebGL")                                                 \
   _(VIDEO_HDR, Feature, "HDR video supported")                               \
   _(WEBRENDER_ANGLE_METAL, Feature, "WebRender ANGLE Metal")                 \
+  _(WEBRENDER_ANGLE_GL, Feature, "WebRender ANGLE OpenGL")                   \
   /* Add new entries above this comment */
 
 enum class Feature : uint32_t {

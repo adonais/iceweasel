@@ -129,6 +129,7 @@ if CONFIG["TARGET_CPU"] == "arm" and CONFIG["GNU_AS"]:
     SOURCES += [
         "!celt_pitch_xcorr_arm-gnu.s"
     ]
+    SOURCES["!celt_pitch_xcorr_arm-gnu.s"].object_deps += ["!celt/arm/armopts-gnu.S"]
     # -Os is significantly slower, enable -O3 unless optimization is disabled
     if CONFIG["MOZ_OPTIMIZE"]:
         CFLAGS += [

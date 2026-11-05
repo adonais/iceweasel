@@ -11,21 +11,25 @@ const { DeferredTask } = ChromeUtils.importESModule(
   "resource://gre/modules/DeferredTask.sys.mjs"
 );
 
+const lazy = XPCOMUtils.declareLazy({
+  hasUsedSplitView: { pref: "browser.tabs.splitview.hasUsed", default: false },
+});
+
 /**
  * A shared task which updates the urlbar indicator whenever:
  * - A split view is activated or deactivated.
  * - The active tab of a split view changes.
  * - The order of tabs in a split view changes.
- *
- * @type {DeferredTask}
  */
 const updateUrlbarButton = new DeferredTask(() => {
   const { activeSplitView, selectedTab } = gBrowser;
-  const button = document.getElementById("split-view-button");
+  const button = /** @type {XULElement} */ (
+    document.getElementById("split-view-button")
+  );
   if (activeSplitView) {
     const activeIndex = activeSplitView.tabs.indexOf(selectedTab);
     button.hidden = false;
-    button.setAttribute("data-active-index", activeIndex);
+    button.setAttribute("data-active-index", String(activeIndex));
   } else {
     button.hidden = true;
     button.removeAttribute("data-active-index");
@@ -56,6 +60,14 @@ export class MozTabSplitViewWrapper extends MozXULElement {
   #shouldMoveAllTabsAtOnce = true;
 
   #storedPanelWidths = new WeakMap();
+
+  constructor() {
+    super();
+
+    // Assigned by the tab strip.
+    /** @type {number} */
+    this.elementIndex;
+  }
 
   /**
    * @returns {boolean}
@@ -101,16 +113,6 @@ export class MozTabSplitViewWrapper extends MozXULElement {
     return this.hasAttribute("multiselected");
   }
 
-  constructor() {
-    super();
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_hasUsedSplitView",
-      "browser.tabs.splitview.hasUsed",
-      false
-    );
-  }
-
   connectedCallback() {
     // Set up TabSelect listener, as this gets
     // removed in disconnectedCallback
@@ -127,7 +129,7 @@ export class MozTabSplitViewWrapper extends MozXULElement {
       return;
     }
 
-    if (!this._hasUsedSplitView) {
+    if (!lazy.hasUsedSplitView) {
       Services.prefs.setBoolPref("browser.tabs.splitview.hasUsed", true);
     }
 
@@ -160,8 +162,8 @@ export class MozTabSplitViewWrapper extends MozXULElement {
           this.tabs.forEach((tab, index) => {
             // Renumber tabs so that a11y tools can tell users that a given
             // tab is "1 of 2" in the split view, for example.
-            tab.setAttribute("aria-posinset", index + 1);
-            tab.setAttribute("aria-setsize", this.tabs.length);
+            tab.setAttribute("aria-posinset", String(index + 1));
+            tab.setAttribute("aria-setsize", String(this.tabs.length));
             tab.updateSplitViewAriaLabel(index);
           });
           this.dispatchEvent(
@@ -193,14 +195,14 @@ export class MozTabSplitViewWrapper extends MozXULElement {
   }
 
   set splitViewId(val) {
-    this.setAttribute("splitViewId", val);
+    this.setAttribute("splitViewId", String(val));
   }
 
   /**
    * @returns {MozTabbrowserTab[]}
    */
   get tabs() {
-    return Array.from(this.children).filter(node => node.matches("tab"));
+    return Array.from(this.children).filter(node => Tabbrowser.isTab(node));
   }
 
   get visible() {
@@ -229,7 +231,9 @@ export class MozTabSplitViewWrapper extends MozXULElement {
   get panels() {
     const panels = [];
     for (const { linkedPanel } of this.#tabs) {
-      const el = document.getElementById(linkedPanel);
+      const el = /** @type {XULElement} */ (
+        document.getElementById(linkedPanel)
+      );
       if (el) {
         panels.push(el);
       }
@@ -332,7 +336,7 @@ export class MozTabSplitViewWrapper extends MozXULElement {
    * @param {MozTabbrowserTab[]} tabs
    * @param {object} [options]
    * @param {boolean} [options.isSessionRestore]
-   * @param {int} [options.indexOfReplacedTab] [optional] Used if replacing a tab in the split view
+   * @param {number} [options.indexOfReplacedTab] [optional] Used if replacing a tab in the split view
    */
   addTabs(tabs, { isSessionRestore = false, indexOfReplacedTab = -1 } = {}) {
     for (let tab of tabs) {
@@ -381,7 +385,7 @@ export class MozTabSplitViewWrapper extends MozXULElement {
    *
    * @param {string} [trigger]
    *   The trigger method for ending the split view. Used for telemetry.
-   *   Valid values: "menu_separate", "icon_separate", "icon_close", "tab_close", "footer_separate".
+   *   Valid values: "menu_separate", "icon_separate", "icon_close", "tab_close", "footer_separate", "mini_window".
    */
   unsplitTabs(trigger = null) {
     if (this.#isUnsplitting) {
@@ -486,7 +490,8 @@ export class MozTabSplitViewWrapper extends MozXULElement {
    */
   on_TabSelect(event) {
     const wasActive = this.hasActiveTab;
-    this.hasActiveTab = event.target.splitview === this;
+    let tab = /** @type {MozTabbrowserTab} */ (event.target);
+    this.hasActiveTab = tab.splitview === this;
     if (this.hasActiveTab) {
       this.#activate();
       // This check ensures we don't call suspend for every tab selection

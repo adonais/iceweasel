@@ -193,6 +193,7 @@ describe("sidebar auto-open pref prompt", () => {
       );
       Assert.ok(currentAutoOpen, "openByDefault should start as true");
 
+      Services.fog.testResetFOG();
       const primaryButton = callout.querySelector("button.primary");
       primaryButton.click();
 
@@ -203,6 +204,24 @@ describe("sidebar auto-open pref prompt", () => {
       Assert.ok(
         !currentAutoOpen,
         "openByDefault should switch to false if user accepts prompt"
+      );
+
+      const changeEvents =
+        Glean.smartWindow.sidebarOpenByDefaultChange.testGetValue();
+      Assert.equal(
+        changeEvents.length,
+        1,
+        "One sidebarOpenByDefaultChange event was recorded"
+      );
+      Assert.equal(
+        changeEvents[0].extra.enabled,
+        "false",
+        "The event records the sidebar no longer opening by default"
+      );
+      Assert.equal(
+        Glean.smartWindow.sidebarOpenByDefault.testGetValue(),
+        false,
+        "sidebarOpenByDefault metric is false after accepting the prompt"
       );
     });
 

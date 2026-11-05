@@ -39,6 +39,9 @@ class CopyOnWriteValue final {
   explicit CopyOnWriteValue(RefPtr<T>&& aValue)
       : mValue(std::move(aValue)), mReaders(0), mWriter(false) {}
 
+  CopyOnWriteValue(const CopyOnWriteValue&) = delete;
+  CopyOnWriteValue(CopyOnWriteValue&&) = delete;
+
   T* get() { return mValue.get(); }
   const T* get() const { return mValue.get(); }
 
@@ -81,10 +84,7 @@ class CopyOnWriteValue final {
   };
 
  private:
-  CopyOnWriteValue(const CopyOnWriteValue&) = delete;
-  CopyOnWriteValue(CopyOnWriteValue&&) = delete;
-
-  ~CopyOnWriteValue() {}
+  ~CopyOnWriteValue() = default;
 
   RefPtr<T> mValue;
   uint64_t mReaders = 0;
@@ -131,6 +131,9 @@ class CopyOnWrite final {
 
   explicit CopyOnWrite(RefPtr<T>&& aValue)
       : mValue(MakeRefPtr<CopyOnWriteValue>(std::move(aValue))) {}
+
+  CopyOnWrite(const CopyOnWrite&) = delete;
+  CopyOnWrite(CopyOnWrite&&) = delete;
 
   /// @return true if it's safe to read at this time.
   bool CanRead() const { return !mValue->HasWriter(); }
@@ -235,9 +238,6 @@ class CopyOnWrite final {
   }
 
  private:
-  CopyOnWrite(const CopyOnWrite&) = delete;
-  CopyOnWrite(CopyOnWrite&&) = delete;
-
   RefPtr<CopyOnWriteValue> mValue;
 };
 

@@ -12,6 +12,7 @@
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ContentCompositorBridgeParent.h"
+#include "mozilla/layers/LayerTreeLog.h"
 #include "mozilla/layers/RemoteTextureMap.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
 #include "mozilla/webrender/RenderThread.h"
@@ -139,6 +140,9 @@ void CompositorManagerParent::BindComplete(bool aIsRoot) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread() ||
              NS_IsMainThread());
 
+  LAYERTREE_LOG("Compositor manager bound, namespace {}, content {}, root {}",
+                mNamespace, mContentId, aIsRoot);
+
   StaticMonitorAutoLock lock(sMonitor);
   if (aIsRoot) {
     MOZ_ASSERT(!sInstance);
@@ -149,6 +153,8 @@ void CompositorManagerParent::BindComplete(bool aIsRoot) {
 }
 
 void CompositorManagerParent::ActorDestroy(ActorDestroyReason aReason) {
+  LAYERTREE_LOG("Compositor manager namespace {} destroyed, reason {}",
+                mNamespace, fmt::enums::format_as(aReason));
   GetCurrentSerialEventTarget()->Dispatch(
       NewRunnableMethod("layers::CompositorManagerParent::DeferredDestroy",
                         this, &CompositorManagerParent::DeferredDestroy));

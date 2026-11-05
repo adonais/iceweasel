@@ -66,24 +66,6 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
 
  protected:
   /**
-   * Extend the range by adding a surrounding whitespace character to the range
-   * that is about to be deleted. This method depends on the pref
-   * `layout.word_select.delete_space_after_doubleclick_selection`.
-   *
-   * Considered cases:
-   *   "one [two] three" -> "one [two ]three" -> "one three"
-   *   "[one] two" -> "[one ]two" -> "two"
-   *   "one [two]" -> "one[ two]" -> "one"
-   *   "one [two], three" -> "one[ two], three" -> "one, three"
-   *   "one  [two]" -> "one [ two]" -> "one "
-   *
-   * @param aRange  [inout] The range that is about to be deleted.
-   * @return                NS_OK, unless Range::SetStart / ::SetEnd fails.
-   */
-  nsresult MaybeExtendDeletingRangeWithSurroundingWhitespace(
-      dom::Range& aRange) const;
-
-  /**
    * AppendTransactionsToDeleteIn() creates a DeleteTextTransaction or some
    * DeleteNodeTransactions to remove text or nodes between aStart and aEnd
    * and appends the created transactions to the array.

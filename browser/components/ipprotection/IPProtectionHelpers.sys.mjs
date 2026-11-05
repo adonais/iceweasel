@@ -13,8 +13,6 @@ import { IPProtectionActivator } from "moz-src:///toolkit/components/ipprotectio
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  IPPSiteRuleManager:
-    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
   IPProtection:
     "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
   IPProtectionService:
@@ -61,7 +59,6 @@ class UIHelper {
       this.handleEvent
     );
     lazy.IPProtection.uninit();
-    lazy.IPPSiteRuleManager.uninit();
   }
 
   #handleEvent(_event) {
@@ -73,7 +70,6 @@ class UIHelper {
       state !== lazy.IPProtectionStates.UNAVAILABLE
     ) {
       lazy.IPProtection.init();
-      lazy.IPPSiteRuleManager.init();
     }
 
     if (
@@ -82,7 +78,6 @@ class UIHelper {
         state === lazy.IPProtectionStates.UNAVAILABLE)
     ) {
       lazy.IPProtection.uninit();
-      lazy.IPPSiteRuleManager.uninit();
     }
   }
 }

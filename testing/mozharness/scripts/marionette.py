@@ -27,6 +27,8 @@ from mozharness.mozilla.testing.video_test_recorder import VideoTestRecorder
 
 
 class MarionetteTest(TestingMixin, MercurialScript, CodeCoverageMixin):
+    python_constraints = "requirements-marionette.txt"
+
     config_options = (
         [
             [

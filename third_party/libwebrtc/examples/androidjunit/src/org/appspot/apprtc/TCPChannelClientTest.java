@@ -15,6 +15,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import android.os.Build;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -33,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class TCPChannelClientTest {
-  private static final int PORT = 8888;
+  private static final int PORT = 9000 + Build.VERSION.SDK_INT;
   /**
    * How long we wait before trying to connect to the server. Note: was
    * previously only 10, which was too short (tests were flaky).

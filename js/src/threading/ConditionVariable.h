@@ -34,6 +34,9 @@ class ConditionVariable {
   ConditionVariable() = default;
   ~ConditionVariable() = default;
 
+  ConditionVariable(const ConditionVariable&) = delete;
+  ConditionVariable& operator=(const ConditionVariable&) = delete;
+
   // Wake one thread that is waiting on this condition.
   void notify_one() { impl_.notify_one(); }
 
@@ -107,8 +110,6 @@ class ConditionVariable {
   }
 
  private:
-  ConditionVariable(const ConditionVariable&) = delete;
-  ConditionVariable& operator=(const ConditionVariable&) = delete;
   template <class T>
   friend class ExclusiveWaitableData;
 

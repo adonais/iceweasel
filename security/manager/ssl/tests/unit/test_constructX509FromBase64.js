@@ -11,30 +11,18 @@ const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
   Ci.nsIX509CertDB
 );
 
-function excMessage(e) {
-  if (e.message) {
-    let msg = e.message;
-    if (e.data) {
-      msg = msg + ": " + e.data;
-    }
-    return msg;
-  }
-
-  return e.toString();
-}
-
 function testGood(data) {
-  try {
-    let cert = certDB.constructX509FromBase64(data.cert);
-    equal(
-      cert.commonName,
-      data.cn,
-      "Actual and expected commonName should match"
-    );
-  } catch (e) {
-    info(`Exception: ${excMessage(e)}`);
-    ok(false, `Should not have gotten an exception for "CN=${data.cn}"`);
-  }
+  let cert = certDB.constructX509FromBase64(data.cert);
+  equal(
+    cert.commonName,
+    data.cn,
+    "Actual and expected commonName should match"
+  );
+  throws(
+    () => certDB.setCertTrustFromString(cert, "CTu,CTu,"),
+    /NS_ERROR_ILLEGAL_VALUE/,
+    "Changing the trust of a temporary certificate is not supported"
+  );
 }
 
 function testBad(data) {

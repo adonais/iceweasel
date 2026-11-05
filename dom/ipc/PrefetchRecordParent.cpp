@@ -14,6 +14,7 @@
 #include "mozilla/net/NoVarySearchUtils.h"
 #include "nsContentPolicyUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
+#include "nsICachingChannel.h"
 #include "nsIHttpChannel.h"
 #include "nsILoadInfo.h"
 #include "nsMixedContentBlocker.h"
@@ -106,6 +107,8 @@ void PrefetchRecordParent::Init(WindowGlobalParent* aWGP,
     return;
   }
 
+  mIsEligibleForPrefetch = true;
+
   // Set up the prefetch record's "isolated partition key" for cross-origin
   // isolation (used when creating navigation params by fetching).
   OriginAttributes isolatedAttrs = sourceAttrs;
@@ -113,6 +116,13 @@ void PrefetchRecordParent::Init(WindowGlobalParent* aWGP,
     PopulateIsolatedPartitionKey(isolatedAttrs);
   }
   mIsolatedPartitionKey = isolatedAttrs.mPartitionKey;
+
+  if (StaticPrefs::dom_speculation_rules_prefetch_dry_run()) {
+    LOG_SPECRULES(
+        ("PrefetchRecordParent::Init: this=%p dry run, not fetching", this));
+    mState = PrefetchState::DryRun;
+    return;
+  }
 
   // Use CreateForNonDocument (instead of passing a null aLoadingNode to
   // NS_NewChannelInternal) so the resulting LoadInfo carries aWGP's
@@ -266,6 +276,17 @@ bool PrefetchRecordParent::MatchesURL(nsIURI* aURL) const {
   return net::URLsAreEquivalentModuloVariationConfig(mURL, aURL, data);
 }
 
+// Steps 2a-2b of "prefetch record is expected to match a URL": compare using
+// the rule's No-Vary-Search hint, which is available before any response.
+bool PrefetchRecordParent::MatchesNoVarySearchHint(nsIURI* aURL) const {
+  if (!mURL || mNoVarySearchHint.IsEmpty()) {
+    return false;
+  }
+  net::NoVarySearchData hint =
+      net::ParseNoVarySearchHeader(NS_ConvertUTF16toUTF8(mNoVarySearchHint));
+  return net::URLsAreEquivalentModuloVariationConfig(mURL, aURL, hint);
+}
+
 bool PrefetchRecordParent::IsExpectedToMatch(nsIURI* aURL) const {
   // Implements "prefetch record is expected to match a URL".
   // Spec:
@@ -275,18 +296,20 @@ bool PrefetchRecordParent::IsExpectedToMatch(nsIURI* aURL) const {
     return true;
   }
 
-  // Step 2: "If prefetchRecord's response is null" (there is no response yet,
-  // so use the rule's No-Vary-Search hint instead); step 3 "Otherwise, return
-  // false" covers the early return below.
-  if (mNoVarySearchHint.IsEmpty()) {
+  // Steps 2-3: with no response yet, fall back to the hint.
+  return MatchesNoVarySearchHint(aURL);
+}
+
+bool PrefetchRecordParent::MatchesCandidateURL(nsIURI* aURL) const {
+  if (!mURL) {
     return false;
   }
-  // Step 2a: "Let searchVariance be prefetchRecord's No-Vary-Search hint."
-  net::NoVarySearchData hint =
-      net::ParseNoVarySearchHeader(NS_ConvertUTF16toUTF8(mNoVarySearchHint));
-  // Step 2b: "If prefetchRecord's URL and url are equivalent modulo search
-  // variance given searchVariance, return true."
-  return net::URLsAreEquivalentModuloVariationConfig(mURL, aURL, hint);
+  bool eq = false;
+  mURL->Equals(aURL, &eq);
+  if (eq) {
+    return true;
+  }
+  return MatchesNoVarySearchHint(aURL);
 }
 
 nsString PrefetchRecordParent::ComputePartitionKeyForChannel(
@@ -325,6 +348,9 @@ NS_IMETHODIMP
 PrefetchRecordParent::OnStartRequest(nsIRequest* aRequest) {
   nsCOMPtr<nsIChannel> ch = do_QueryInterface(aRequest);
   FillResponseOnLastEntry(ch);
+  if (nsCOMPtr<nsICachingChannel> caching = do_QueryInterface(aRequest)) {
+    (void)caching->GetCacheToken(getter_AddRefs(mCacheToken));
+  }
 
   if (LOG_SPECRULES_ENABLED()) {
     nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aRequest);
@@ -406,6 +432,11 @@ PrefetchRecordParent::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   mExpiryTime = TimeStamp::Now() +
                 TimeDuration::FromMilliseconds(
                     StaticPrefs::dom_speculation_rules_record_expiry_ms());
+  NS_NewTimerWithCallback(
+      getter_AddRefs(mExpiryTimer),
+      [self = RefPtr{this}](nsITimer*) { self->ReleaseCacheToken(); },
+      StaticPrefs::dom_speculation_rules_record_expiry_ms(),
+      nsITimer::TYPE_ONE_SHOT, "PrefetchRecordParent::Expiry"_ns);
 
   // Step 4: remove prior completed records with the same URL.
   wgp->DedupePrefetchRecords(this);
@@ -485,6 +516,14 @@ void PrefetchRecordParent::FirePrefetchStatusUpdated(bool aSuccess) {
   // https://wicg.github.io/nav-speculation/prefetch.html#trigger-a-prefetch-status-updated-event
 }
 
+void PrefetchRecordParent::ReleaseCacheToken() {
+  mCacheToken = nullptr;
+  if (mExpiryTimer) {
+    mExpiryTimer->Cancel();
+    mExpiryTimer = nullptr;
+  }
+}
+
 void PrefetchRecordParent::MarkCanceled() {
   // Implements "cancel and discard a prefetch record".
   // Spec:
@@ -497,6 +536,7 @@ void PrefetchRecordParent::MarkCanceled() {
   LOG_SPECRULES(("PrefetchRecordParent::MarkCanceled: this=%p", this));
 
   mState = PrefetchState::Canceled;  // Step 3: set state to "canceled"
+  ReleaseCacheToken();
 
   if (mChannel) {  // Step 4: abort the fetch controller
     mChannel->Cancel(NS_BINDING_ABORTED);
@@ -531,6 +571,7 @@ void PrefetchRecordParent::ActorDestroy(ActorDestroyReason aReason) {
     mChannel->Cancel(NS_BINDING_ABORTED);
     mChannel = nullptr;
   }
+  ReleaseCacheToken();
 }
 
 }  // namespace mozilla::dom

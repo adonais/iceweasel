@@ -43,6 +43,7 @@ impl NormalBorderData {
         desc: &QuadDescriptor,
         clips: &QuadClipStack,
         quad_transform: &mut QuadTransformState,
+        snap_thickness: bool,
         frame_context: &FrameBuildingContext,
         targets: &[CommandBufferIndex],
         frame_state: &mut FrameBuildingState,
@@ -79,16 +80,25 @@ impl NormalBorderData {
         // Uses the unclamped device scale factors, since that is the transform
         // the edge is actually composited with, not the power-of-2
         // rasterization scale.
+        //
+        // An anti-aliased border declines the thickness snapping: its thickness
+        // is geometry the caller resolved exactly (an SVG stroke, say) and the
+        // shader resolves its edges at their sub-pixel positions, so moving
+        // them to the grid is what the anti-aliasing is there to avoid. The
+        // corner snapping below still applies, since it is about how the corner
+        // texture is sampled rather than where the border's edges are.
         let mut widths = self.widths;
         let mut border = self.border;
         if let Some((device_scale_x, device_scale_y)) = quad_transform.coplanar_scale_factors() {
             let snap_width = |w: f32, s: f32| {
                 if w >= 1.0 && s > 0.0 { (w * s).round().max(1.0) / s } else { w }
             };
-            widths.left = snap_width(widths.left, device_scale_x);
-            widths.right = snap_width(widths.right, device_scale_x);
-            widths.top = snap_width(widths.top, device_scale_y);
-            widths.bottom = snap_width(widths.bottom, device_scale_y);
+            if snap_thickness {
+                widths.left = snap_width(widths.left, device_scale_x);
+                widths.right = snap_width(widths.right, device_scale_x);
+                widths.top = snap_width(widths.top, device_scale_y);
+                widths.bottom = snap_width(widths.bottom, device_scale_y);
+            }
 
             // A corner's cached texture is rasterized at the whole-pixel size of its
             // corner box and then stretched onto that box, so a box with a fractional
@@ -119,16 +129,27 @@ impl NormalBorderData {
             r.bottom_right.height = snap_radius(r.bottom_right.height, widths.bottom, device_scale_y);
         }
 
-        // Scale factors are normalized to a power of 2 to reduce the number of
-        // resolution changes.
-        // For frames with a changing scale transform round scale factors up to
-        // nearest power-of-2 boundary so that we don't keep having to redraw
-        // the content as it scales up and down. Rounding up to nearest
-        // power-of-2 boundary ensures we never scale up, only down --- avoiding
-        // jaggies. It also ensures we never scale down by more than a factor of
-        // 2, avoiding bad downscaling quality.
-        let scale_width = clamp_to_scale_factor(raster_scale.0, false);
-        let scale_height = clamp_to_scale_factor(raster_scale.1, false);
+        // Under an animated or pinch-zoomed transform, scale factors are
+        // normalized to a power of 2 to reduce the number of resolution changes:
+        // rounding up to the nearest power-of-2 boundary means we don't keep
+        // having to redraw the content as it scales up and down. It ensures we
+        // never scale up, only down --- avoiding jaggies. It also ensures we
+        // never scale down by more than a factor of 2, avoiding bad downscaling
+        // quality.
+        // Under a static transform the exact scale is used, so that the corner
+        // textures composite 1:1 instead of being resampled.
+        let prim_spatial_node = frame_context.spatial_tree
+            .get_spatial_node(quad_transform.prim_spatial_node_index());
+        let scale_may_change = prim_spatial_node.is_ancestor_or_self_animating
+            || prim_spatial_node.is_ancestor_or_self_zooming;
+        let (scale_width, scale_height) = if scale_may_change {
+            (
+                clamp_to_scale_factor(raster_scale.0, false),
+                clamp_to_scale_factor(raster_scale.1, false),
+            )
+        } else {
+            (raster_scale.0.abs(), raster_scale.1.abs())
+        };
         // Pick the maximum dimension as scale
         let mut scale = LayoutToDeviceScale::new(
             scale_width.max(scale_height) * device_pixel_scale.0,

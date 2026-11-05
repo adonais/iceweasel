@@ -36,6 +36,14 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(
     ReadableStreamDefaultTeeSourceAlgorithms)
 NS_INTERFACE_MAP_END_INHERITING(UnderlyingSourceAlgorithmsBase)
 
+ReadableStreamDefaultTeeSourceAlgorithms::
+    ReadableStreamDefaultTeeSourceAlgorithms(TeeState* aTeeState,
+                                             TeeBranch aBranch)
+    : mTeeState(aTeeState), mBranch(aBranch) {}
+
+ReadableStreamDefaultTeeSourceAlgorithms::
+    ~ReadableStreamDefaultTeeSourceAlgorithms() = default;
+
 already_AddRefed<Promise>
 ReadableStreamDefaultTeeSourceAlgorithms::PullCallback(
     JSContext* aCx, ReadableStreamControllerBase& aController,
@@ -65,6 +73,10 @@ NS_IMPL_RELEASE_INHERITED(ReadableStreamDefaultTeeReadRequest, ReadRequest)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ReadableStreamDefaultTeeReadRequest)
 NS_INTERFACE_MAP_END_INHERITING(ReadRequest)
+
+ReadableStreamDefaultTeeReadRequest::ReadableStreamDefaultTeeReadRequest(
+    TeeState* aTeeState)
+    : mTeeState(aTeeState) {}
 
 void ReadableStreamDefaultTeeReadRequest::ChunkSteps(
     JSContext* aCx, JS::Handle<JS::Value> aChunk, ErrorResult& aRv) {
@@ -414,8 +426,8 @@ struct PullWithDefaultReaderReadRequest final : public ReadRequest {
 
             ErrorResult rv;
             ReadableByteStreamControllerError(
-                mTeeState->Branch1()->Controller()->AsByte(), exceptionValue,
-                rv);
+                cx, mTeeState->Branch1()->Controller()->AsByte(),
+                exceptionValue, rv);
             if (rv.MaybeSetPendingException(
                     cx, "Error during ReadableByteStreamControllerError")) {
               return;
@@ -425,8 +437,8 @@ struct PullWithDefaultReaderReadRequest final : public ReadRequest {
             // ReadableByteStreamControllerError(branch2.[[controller]],
             // cloneResult.[[Value]]).
             ReadableByteStreamControllerError(
-                mTeeState->Branch2()->Controller()->AsByte(), exceptionValue,
-                rv);
+                cx, mTeeState->Branch2()->Controller()->AsByte(),
+                exceptionValue, rv);
             if (rv.MaybeSetPendingException(
                     cx, "Error during ReadableByteStreamControllerError")) {
               return;
@@ -702,14 +714,14 @@ class PullWithBYOBReader_ReadIntoRequest final : public ReadIntoRequest {
             // Step 5.2.1
 
             ReadableByteStreamControllerError(
-                byobBranch->Controller()->AsByte(), exception, rv);
+                cx, byobBranch->Controller()->AsByte(), exception, rv);
             if (rv.MaybeSetPendingException(cx)) {
               return;
             }
 
             // Step 5.2.2.
             ReadableByteStreamControllerError(
-                otherBranch->Controller()->AsByte(), exception, rv);
+                cx, otherBranch->Controller()->AsByte(), exception, rv);
             if (rv.MaybeSetPendingException(cx)) {
               return;
             }
@@ -943,7 +955,7 @@ void ForwardReaderError(TeeState* aTeeState,
         // !ReadableByteStreamControllerError(branch1.[[controller]], r).
         MOZ_ASSERT(aTeeState->Branch1()->Controller()->IsByte());
         ReadableByteStreamControllerError(
-            aTeeState->Branch1()->Controller()->AsByte(), aValue, aRv);
+            aCx, aTeeState->Branch1()->Controller()->AsByte(), aValue, aRv);
         if (aRv.Failed()) {
           return;
         }
@@ -952,7 +964,7 @@ void ForwardReaderError(TeeState* aTeeState,
         // !ReadableByteStreamControllerError(branch2.[[controller]], r).
         MOZ_ASSERT(aTeeState->Branch2()->Controller()->IsByte());
         ReadableByteStreamControllerError(
-            aTeeState->Branch2()->Controller()->AsByte(), aValue, aRv);
+            aCx, aTeeState->Branch2()->Controller()->AsByte(), aValue, aRv);
         if (aRv.Failed()) {
           return;
         }

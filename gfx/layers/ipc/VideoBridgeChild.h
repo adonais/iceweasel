@@ -7,6 +7,7 @@
 
 #include "ISurfaceAllocator.h"
 #include "TextureForwarder.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/layers/PVideoBridgeChild.h"
 #include "mozilla/layers/VideoBridgeUtils.h"
 
@@ -24,6 +25,11 @@ class VideoBridgeChild final : public PVideoBridgeChild,
   static void Shutdown();
 
   static RefPtr<VideoBridgeChild> GetSingleton();
+
+  // Resolved once the singleton can send, e.g. after we are given a new
+  // endpoint because the compositor was recreated. Rejected if we are shut
+  // down.
+  static RefPtr<GenericNonExclusivePromise> WaitUntilReady();
 
   mozilla::ipc::IPCResult RecvPing(PingResolver&& aResolver);
 
@@ -71,6 +77,9 @@ class VideoBridgeChild final : public PVideoBridgeChild,
 
   nsCOMPtr<nsISerialEventTarget> mThread;
   bool mCanSend;
+  // Settled when we are replaced by a new instance, or shut down. Guarded by
+  // sVideoBridgeLock.
+  MozPromiseHolder<GenericNonExclusivePromise> mReplacedHolder;
 };
 
 }  // namespace layers

@@ -72,7 +72,7 @@ This kind performs a standalone bootstrap of a Firefox build from various system
 
 Hazard builds are similar to "regular' builds, but use a compiler extension to
 extract a bunch of data from the build and then analyze that data looking for
-hazardous behaviors. See <https://firefox-source-docs.mozilla.org/js/HazardAnalysis/index.html>
+hazardous behaviors. See {doc}`/js/HazardAnalysis/index`
 
 ## l10n
 
@@ -165,10 +165,12 @@ Toolchain builds create the compiler toolchains used to build Firefox. These
 will eventually be dependencies of the builds themselves, but for the moment
 are run manually via try pushes and the results uploaded to tooltool.
 
-## toolchain-dxc-upload
+## toolchain-symbols-upload
 
-Upload Windows symbols for `DirectXShaderCompiler` to tecken, based on builds in `toolchain-dxc`.
-Maintained by Firefox's WebGPU team.
+Upload symbols to tecken for the libraries built by `toolchain` tasks, which the
+Gecko build copies into `dist/bin` rather than building itself and so never dumps
+symbols for. Pairs with each toolchain task setting `enable-full-crashsymbols`:
+currently `dxcompiler.dll` and `onnxruntime`.
 
 ## spidermonkey
 
@@ -513,7 +515,7 @@ Sets up bouncer products for partners.
 
 ## release-early-tagging
 
-Utilises treescript to perform tagging that should happen near the start of a release.
+Utilises landoscript to perform tagging that should happen near the start of a release.
 
 ## release-eme-free-repack
 

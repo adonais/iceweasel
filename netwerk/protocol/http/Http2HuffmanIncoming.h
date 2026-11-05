@@ -4,6 +4,10 @@
 #ifndef mozilla_net_Http2HuffmanIncoming_h
 #define mozilla_net_Http2HuffmanIncoming_h
 
+#include <cstdint>
+
+#include "mozilla/Assertions.h"
+
 namespace mozilla {
 namespace net {
 

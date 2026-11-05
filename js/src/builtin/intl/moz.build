@@ -38,3 +38,32 @@ UNIFIED_SOURCES += [
 
 if CONFIG["FUZZING_JS_FUZZILLI"]:
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "Collator.h",
+    "CommonFunctions.h",
+    "CurrencyDataGenerated.h",
+    "DateTimeFormat.h",
+    "DisplayNames.h",
+    "DurationFormat.h",
+    "FormatBuffer.h",
+    "GlobalIntlData.h",
+    "IntlMathematicalValue.h",
+    "IntlObject.h",
+    "LanguageTag.h",
+    "ListFormat.h",
+    "Locale.h",
+    "LocaleNegotiation.h",
+    "MeasureUnitGenerated.h",
+    "NumberFormat.h",
+    "NumberFormatOptions.h",
+    "NumberingSystemsGenerated.h",
+    "Packed.h",
+    "ParameterNegotiation.h",
+    "PluralRules.h",
+    "RelativeTimeFormat.h",
+    "Segmenter.h",
+    "SharedIntlData.h",
+    "StringAsciiChars.h",
+    "TimeZoneDataGenerated.h",
+]

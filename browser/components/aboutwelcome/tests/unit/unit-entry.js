@@ -143,8 +143,8 @@ const TEST_GLOBAL = {
       return global;
     },
   },
-  ClientEnvironment: {
-    get userId() {
+  ClientEnvironmentBase: {
+    get legacyRandomizationId() {
       return "foo123";
     },
   },
@@ -461,6 +461,7 @@ const TEST_GLOBAL = {
   ShellService: {
     doesAppNeedPin: () => false,
     isDefaultBrowser: () => true,
+    isDefaultBrowserAsync: async () => true,
   },
   FilterExpressions: {
     eval() {

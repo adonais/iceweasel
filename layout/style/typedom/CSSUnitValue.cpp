@@ -229,4 +229,9 @@ already_AddRefed<CSSUnitValue> MakeCSSUnitValue(
       .forget();
 }
 
+already_AddRefed<CSSUnitValue> MakeCSSUnitValue(nsCOMPtr<nsISupports> aParent,
+                                                double aValue) {
+  return CSSUnitValue::Create(std::move(aParent), aValue).forget();
+}
+
 }  // namespace mozilla::dom

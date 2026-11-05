@@ -376,6 +376,7 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
             "NO_FAIL_ON_TEST_ERRORS": "1",
             "MOZ_HIDE_RESULTS_TABLE": "1",
             "MOZ_NODE_PATH": "/usr/local/bin/node",
+            "PYTHONUNBUFFERED": "1",
             "TASKCLUSTER_WORKER_TYPE": job["worker-type"],
         })
 

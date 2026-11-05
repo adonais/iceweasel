@@ -75,6 +75,54 @@ declTest("sendQuery Exception", {
   },
 });
 
+declTest("sendQuery QuotaExceededError", {
+  async test(browser, _window) {
+    let parent = browser.browsingContext.currentWindowGlobal;
+    let actorParent = parent.getActor("TestWindow");
+
+    for (let options of [{}, { quota: 1, requested: 2 }]) {
+      let error = await actorParent
+        .sendQuery("quotaExceededError", { message: "foo", options })
+        .catch(e => e);
+
+      ok(QuotaExceededError.isInstance(error), "Error should keep its type");
+      is(
+        error.name,
+        "QuotaExceededError",
+        "Error should have the correct name"
+      );
+      is(error.message, "foo", "Error should have the correct message");
+      is(
+        error.code,
+        DOMException.QUOTA_EXCEEDED_ERR,
+        "Error should have the correct code"
+      );
+      is(
+        error.quota,
+        options.quota ?? null,
+        "Error should have the correct quota"
+      );
+      is(
+        error.requested,
+        options.requested ?? null,
+        "Error should have the correct requested"
+      );
+    }
+
+    let error = await actorParent
+      .sendQuery("quotaExceededError", {
+        message: "foo",
+        options: { quota: 2, requested: 1 },
+      })
+      .catch(e => e);
+    is(
+      error.name,
+      "RangeError",
+      "requested less than quota should throw a RangeError"
+    );
+  },
+});
+
 declTest("sendQuery testing", {
   async test(browser) {
     let parent = browser.browsingContext.currentWindowGlobal;

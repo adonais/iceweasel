@@ -8,7 +8,6 @@ import os
 from collections import defaultdict
 
 import mozpack.path as mozpath
-from mozshellutil import quote as shell_quote
 
 from mozbuild.backend.common import CommonBackend
 from mozbuild.frontend.data import (
@@ -125,12 +124,19 @@ class CompileDBBackend(CommonBackend):
             # encounter a lot of errors parsing some files.)
             c.insert(-1, "-ferror-limit=0")
 
+            # Header entries come from the static-analysis backend, which adds
+            # -xc++ to tell clang to treat the .h file as C++. On Windows,
+            # CXXFLAGS also contains -TP, clang-cl's own "treat as C++" flag.
+            # With both present, clang warns that -TP is unused, so drop it.
+            if "-xc++" in c:
+                c = [arg for arg in c if arg != "-TP"]
+
             per_source_flags = self._per_source_flags.get(filename)
             if per_source_flags is not None:
                 c.extend(per_source_flags)
             db.append({
                 "directory": directory,
-                "command": shell_quote(*c),
+                "arguments": c,
                 "file": mozpath.join(directory, filename),
             })
 

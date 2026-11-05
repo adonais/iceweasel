@@ -25,50 +25,65 @@ const FIELD_NAMES = [
 
 const TEST_CASES = [
   {
+    // onnx model is not available, so no ML is used
     useML: true,
     successful: false,
     isNativeOnnxRuntimeAvailable: false,
     expectedNativeOnnxAvailablePref: false,
     expectedReason: "regex-heuristic",
+    expectDetectFields: 0,
   },
   {
+    // model is available, so ML is used, but fails, so fallback to heuristics
     useML: true,
     successful: false,
     isNativeOnnxRuntimeAvailable: true,
     expectedNativeOnnxAvailablePref: true,
     expectedReason: "regex-heuristic",
+    expectDetectFields: 1,
   },
   {
+    // onnx model is not available, so no ML is used, successful flag ignored
     useML: true,
     successful: true,
     isNativeOnnxRuntimeAvailable: false,
     expectedNativeOnnxAvailablePref: false,
     expectedReason: "regex-heuristic",
+    expectDetectFields: 1,
   },
   {
+    // model is available, so ML is used
     useML: true,
     successful: true,
     isNativeOnnxRuntimeAvailable: true,
     expectedNativeOnnxAvailablePref: true,
     expectedReason: "ml",
+    expectDetectFields: 2,
   },
   {
+    // ML is disabled
     useML: false,
     successful: false,
     isNativeOnnxRuntimeAvailable: false,
     expectedNativeOnnxAvailablePref: false,
     expectedReason: "regex-heuristic",
+    expectDetectFields: 2,
   },
   {
+    // ML is disabled
     useML: false,
     successful: true,
     isNativeOnnxRuntimeAvailable: false,
     expectedNativeOnnxAvailablePref: false,
     expectedReason: "regex-heuristic",
+    expectDetectFields: 2,
   },
 ];
 
 let nativeOnnxRuntimeAvailabilityStub;
+
+let expectedDetectFieldsResult;
+let detectFieldsCount = 0;
 
 add_setup(function () {
   nativeOnnxRuntimeAvailabilityStub = sinon.stub(
@@ -78,14 +93,21 @@ add_setup(function () {
   const detectFieldsStub = sinon
     .stub(FormAutofillML.prototype, "detectFields")
     .callsFake(async fieldDetails => {
+      detectFieldsCount++;
+
+      if (!expectedDetectFieldsResult) {
+        return false;
+      }
+
       const predictions = [...FIELD_NAMES];
       for (const field of fieldDetails) {
-        if (field.fieldName || !field.mlData) {
+        if (!FormAutofillUtils.canUseML(field)) {
           continue;
         }
         field.fieldName = predictions.shift();
         field.reason = "ml";
       }
+      return expectedDetectFieldsResult;
     });
 
   registerCleanupFunction(() => {
@@ -102,11 +124,11 @@ add_heuristic_tests(
       isNativeOnnxRuntimeAvailable,
       expectedNativeOnnxAvailablePref,
       expectedReason,
+      expectDetectFields,
     }) => ({
       description: `Classify fields with useml=${useML}, successful=${successful}, isNativeOnnxRuntimeAvailable=${isNativeOnnxRuntimeAvailable}`,
       prefs: [
         ["extensions.formautofill.useml", useML],
-        ["extensions.formautofill.useml.successful", successful],
         [NATIVE_ONNX_AVAILABLE_PREF, false],
       ],
       onTestSetup: async () => {
@@ -114,6 +136,8 @@ add_heuristic_tests(
         nativeOnnxRuntimeAvailabilityStub.resolves(
           isNativeOnnxRuntimeAvailable
         );
+
+        expectedDetectFieldsResult = successful;
 
         const addon = await AddonManager.getAddonByID(
           "formautofill@mozilla.org"
@@ -150,6 +174,14 @@ add_heuristic_tests(
           extension.backgroundState,
           "stopped",
           "The Form Autofill background page is stopped"
+        );
+
+        // detectFields is only called when useML and isNativeOnnxRuntimeAvailable
+        // are both true.
+        is(
+          detectFieldsCount,
+          expectDetectFields,
+          "detectFields called 2 times"
         );
       },
       fixtureData: `<form>

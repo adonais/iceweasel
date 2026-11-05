@@ -1,0 +1,17 @@
+<!doctype html>
+<title>Forward navigation from a page that can enter BFCache keeps the inbound view transition</title>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script>
+// The popup has no opener, so the old page can enter BFCache, and Gecko then
+// loads the new page in a new BrowsingContext.
+promise_test(async t => {
+  const channel = `fwd-${Date.now()}`;
+  const bc = new BroadcastChannel(channel);
+  const result = new Promise(r => bc.onmessage = e => r(e.data));
+  window.open(
+      `resources/forward_navigation_bfcache_eligible_old.html?channel=${channel}`,
+      '_blank', 'noopener');
+  assert_equals(await result, 'transition');
+});
+</script>

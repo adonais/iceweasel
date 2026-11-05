@@ -98,6 +98,17 @@ class TextDrawTarget : public DrawTarget {
     }
   }
 
+  // Replaces the bounds and clip that text primitives are emitted with. Used
+  // when one item paints several runs of text in different coordinate spaces.
+  void SetBounds(const LayoutDeviceRect& aBounds) {
+    LayoutDeviceRect layoutClipRect = aBounds;
+    mBoundsRect = wr::ToLayoutRect(aBounds);
+    layoutClipRect.Inflate(1);
+    mSize = IntSize::Ceil(layoutClipRect.Width(), layoutClipRect.Height());
+    mClipStack.ClearAndRetainStorage();
+    mClipStack.AppendElement(layoutClipRect);
+  }
+
   void FoundUnsupportedFeature() { mHasUnsupportedFeatures = true; }
   bool CheckHasUnsupportedFeatures() {
     MOZ_ASSERT(mCallerDoesSaveRestore);

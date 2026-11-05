@@ -6689,14 +6689,14 @@ bool WarpCacheIRTranspiler::emitCallClassHook(ObjOperandId calleeId,
   MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Standard);
   MOZ_ASSERT(flags.getArgFormat() == CallFlags::ArgFormat::Standard);
 
-  // Callees can be from any realm. If this changes, we should update
-  // MCallClassHook::maybeCrossRealm.
-  MOZ_ASSERT(!flags.isSameRealm());
-
   auto* call = MCallClassHook::New(alloc(), target, callInfo_->argc(),
                                    callInfo_->constructing());
   if (!call) {
     return false;
+  }
+
+  if (flags.isSameRealm()) {
+    call->setNotCrossRealm();
   }
 
   if (callInfo_->ignoresReturnValue()) {

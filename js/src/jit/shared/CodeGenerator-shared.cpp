@@ -230,6 +230,30 @@ bool CodeGeneratorShared::generateOutOfLineCode() {
   return !masm.oom();
 }
 
+void CodeGeneratorShared::emitBailoutOOL(LSnapshot* snapshot) {
+  masm.push(Imm32(snapshot->snapshotOffset()));
+  jumpToDeoptLabel();
+}
+
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || \
+    defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+void CodeGeneratorShared::bailoutIf(Assembler::Condition condition,
+                                    LSnapshot* snapshot) {
+  encode(snapshot);
+
+  InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
+  auto* ool = new (alloc()) LambdaOutOfLineCode(
+      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
+
+  // All bailout code is associated with the bytecodeSite of the block we are
+  // bailing out from.
+  addOutOfLineCode(ool,
+                   new (alloc()) BytecodeSite(tree, tree->script()->code()));
+
+  masm.j(condition, ool->entry());
+}
+#endif
+
 void CodeGeneratorShared::bailoutFrom(Label* label, LSnapshot* snapshot) {
   MOZ_ASSERT_IF(!masm.oom(), label->used());
   MOZ_ASSERT_IF(!masm.oom(), !label->bound());
@@ -237,10 +261,8 @@ void CodeGeneratorShared::bailoutFrom(Label* label, LSnapshot* snapshot) {
   encode(snapshot);
 
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
-    masm.push(Imm32(snapshot->snapshotOffset()));
-    jumpToDeoptLabel();
-  });
+  auto* ool = new (alloc()) LambdaOutOfLineCode(
+      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
 
   // All bailout code is associated with the bytecodeSite of the block we are
   // bailing out from.
@@ -961,8 +983,7 @@ void CodeGeneratorShared::markSafepointAt(uint32_t offset, LInstruction* ins) {
     sp->setRecordedInSafepointIndices();
   }
 #endif
-  masm.propagateOOM(safepointIndices_.append(
-      CodegenSafepointIndex(offset, ins->safepoint())));
+  masm.propagateOOM(safepointIndices_.emplaceBack(offset, ins->safepoint()));
 }
 
 void CodeGeneratorShared::ensureOsiSpace() {
@@ -999,7 +1020,7 @@ uint32_t CodeGeneratorShared::markOsiPoint(LOsiPoint* ins) {
 
   uint32_t offset = masm.currentOffset();
   SnapshotOffset so = ins->snapshot()->snapshotOffset();
-  masm.propagateOOM(osiIndices_.append(OsiIndex(offset, so)));
+  masm.propagateOOM(osiIndices_.emplaceBack(offset, so));
   lastOsiPointOffset_ = offset;
 
   return offset;

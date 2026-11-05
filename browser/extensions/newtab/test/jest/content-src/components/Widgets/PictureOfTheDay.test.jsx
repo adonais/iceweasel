@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { render, fireEvent } from "@testing-library/react";
+import { act, render, fireEvent } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { combineReducers, createStore } from "redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
@@ -63,7 +63,7 @@ describe("PictureOfTheDay widget", () => {
       container.querySelector('[data-l10n-id="newtab-picture-check-back"]')
     ).toBeTruthy();
     expect(
-      container.querySelector('[data-l10n-id="newtab-picture-show-button"]')
+      container.querySelector('[data-l10n-id="newtab-picture-show-button2"]')
     ).toBeTruthy();
   });
 
@@ -168,7 +168,7 @@ describe("PictureOfTheDay widget", () => {
     ).toBeTruthy();
 
     const hidePhoto = container.querySelector(
-      '[data-l10n-id="newtab-picture-menu-hide-photo"]'
+      '[data-l10n-id="newtab-picture-menu-hide-photo2"]'
     );
     expect(hidePhoto).toBeTruthy();
     fireEvent.click(hidePhoto);
@@ -229,7 +229,7 @@ describe("PictureOfTheDay widget", () => {
       );
       expect(img.getAttribute("alt")).toBe("A test picture description.");
       expect(
-        container.querySelector('[data-l10n-id="newtab-picture-header-main"]')
+        container.querySelector('[data-l10n-id="newtab-picture-header-date"]')
       ).toBeTruthy();
       expect(
         container.querySelector(".picture-of-the-day-description").textContent
@@ -286,6 +286,68 @@ describe("PictureOfTheDay widget", () => {
       expect(
         container.querySelector(".picture-of-the-day-new-badge")
       ).toBeFalsy();
+    });
+
+    it("marks the picture loaded only after it loads (bug 2071112)", () => {
+      const { container } = renderWidget(jest.fn(), {}, populatedState);
+      const img = container.querySelector("img.picture-of-the-day-image");
+      expect(img.classList.contains("loaded")).toBe(false);
+
+      fireEvent.load(img);
+
+      expect(img.classList.contains("loaded")).toBe(true);
+    });
+
+    const widgetWithState = state => (
+      <WrapWithProvider state={state}>
+        <PictureOfTheDay
+          dispatch={jest.fn()}
+          handleUserInteraction={jest.fn()}
+          widgetsMayBeMaximized={true}
+          widgetEnabledMap={{}}
+        />
+      </WrapWithProvider>
+    );
+
+    it("starts the picture hidden again after it is hidden and shown", () => {
+      const { container, rerender } = render(widgetWithState(populatedState));
+      fireEvent.load(container.querySelector("img.picture-of-the-day-image"));
+
+      rerender(
+        widgetWithState(
+          withPrefs({ "widgets.pictureOfTheDay.dismissedDate": "2026-07-01" })
+        )
+      );
+      expect(
+        container.querySelector("img.picture-of-the-day-image")
+      ).toBeFalsy();
+
+      rerender(widgetWithState(populatedState));
+      expect(
+        container
+          .querySelector("img.picture-of-the-day-image")
+          .classList.contains("loaded")
+      ).toBe(false);
+    });
+
+    it("keeps the current picture showing while a new picture loads", () => {
+      const { container, rerender } = render(widgetWithState(populatedState));
+      fireEvent.load(container.querySelector("img.picture-of-the-day-image"));
+
+      rerender(
+        widgetWithState({
+          ...populatedState,
+          PictureOfTheDay: {
+            ...populatedState.PictureOfTheDay,
+            thumbnailUrl: "https://example.com/potd-thumb-2.jpg",
+          },
+        })
+      );
+      const img = container.querySelector("img.picture-of-the-day-image");
+      expect(img.getAttribute("src")).toBe(
+        "https://example.com/potd-thumb-2.jpg"
+      );
+      expect(img.classList.contains("loaded")).toBe(true);
     });
 
     it("falls back to the empty state when the picture fails to load", () => {
@@ -385,6 +447,131 @@ describe("PictureOfTheDay widget", () => {
       );
     });
 
+    describe("when today's picture is the wallpaper (bug 2065871)", () => {
+      const previous = {
+        imageUrl: "https://example.com/previous.jpg",
+        thumbnailUrl: "https://example.com/previous-thumb.jpg",
+        title: "Previous picture",
+        description: "The previous picture.",
+        publishedDate: "2026-06-30",
+      };
+      const withPrevious = extraPrefs => {
+        const state = withPrefs(extraPrefs);
+        return {
+          ...state,
+          PictureOfTheDay: { ...state.PictureOfTheDay, previous },
+        };
+      };
+      const shownSrc = container =>
+        container
+          .querySelector("img.picture-of-the-day-image")
+          .getAttribute("src");
+
+      it("shows the previous picture, dated, with Set wallpaper for it", () => {
+        const dispatch = jest.fn();
+        const { container } = renderWidget(
+          dispatch,
+          {},
+          withPrevious({
+            "widgets.pictureOfTheDay.wallpaperActive": "2026-07-01",
+          })
+        );
+        expect(shownSrc(container)).toBe(previous.thumbnailUrl);
+        const header = container.querySelector(
+          '[data-l10n-id="newtab-picture-header-date"]'
+        );
+        expect(JSON.parse(header.getAttribute("data-l10n-args"))).toEqual({
+          date: new Date(2026, 5, 30).getTime(),
+        });
+        const button = container.querySelector(
+          ".picture-of-the-day-set-wallpaper"
+        );
+        expect(button.classList.contains("is-collapsed")).toBe(false);
+        fireEvent.click(button);
+        expect(
+          dispatch.mock.calls.find(
+            ([action]) => action.type === at.WIDGETS_PICTURE_SET_WALLPAPER
+          )[0].data
+        ).toEqual({ publishedDate: "2026-06-30" });
+      });
+
+      it("shows today's picture once the previous one is the wallpaper", () => {
+        const { container } = renderWidget(
+          jest.fn(),
+          {},
+          withPrevious({
+            "widgets.pictureOfTheDay.wallpaperActive": "2026-06-30",
+          })
+        );
+        expect(shownSrc(container)).toBe("https://example.com/potd-thumb.jpg");
+      });
+
+      it("shows today's picture while wallpapers are toggled off", () => {
+        const { container } = renderWidget(
+          jest.fn(),
+          {},
+          withPrevious({
+            "widgets.pictureOfTheDay.wallpaperActive": "2026-07-01",
+            "newtabWallpapers.user.enabled": false,
+          })
+        );
+        expect(shownSrc(container)).toBe("https://example.com/potd-thumb.jpg");
+      });
+
+      it("swaps to the previous picture in the same widget once today's is set", () => {
+        const dispatch = jest.fn();
+        const store = createStore(combineReducers(reducers), withPrevious({}));
+        const { container } = render(
+          <Provider store={store}>
+            <PictureOfTheDay
+              dispatch={dispatch}
+              handleUserInteraction={jest.fn()}
+              widgetsMayBeMaximized={true}
+              widgetEnabledMap={{}}
+            />
+          </Provider>
+        );
+        const button = () =>
+          container.querySelector(".picture-of-the-day-set-wallpaper");
+        fireEvent.click(button());
+        expect(button().getAttribute("iconsrc")).toBe(
+          "chrome://global/skin/icons/check.svg"
+        );
+
+        act(() => {
+          store.dispatch({
+            type: at.PREF_CHANGED,
+            data: {
+              name: "widgets.pictureOfTheDay.wallpaperActive",
+              value: "2026-07-01",
+            },
+          });
+        });
+
+        expect(shownSrc(container)).toBe(previous.thumbnailUrl);
+        expect(button().classList.contains("is-collapsed")).toBe(false);
+        expect(button().getAttribute("iconsrc")).toBe(
+          "chrome://browser/skin/canvas.svg"
+        );
+        dispatch.mockClear();
+        fireEvent.click(button());
+        expect(
+          dispatch.mock.calls.find(
+            ([action]) => action.type === at.WIDGETS_PICTURE_SET_WALLPAPER
+          )[0].data
+        ).toEqual({ publishedDate: "2026-06-30" });
+      });
+
+      it("keeps today's picture when there is no previous one", () => {
+        const { container } = renderWidget(
+          jest.fn(),
+          {},
+          withPrefs({ "widgets.pictureOfTheDay.wallpaperActive": "2026-07-01" })
+        );
+        expect(shownSrc(container)).toBe("https://example.com/potd-thumb.jpg");
+      });
+    });
+
     it("hides the Set wallpaper button when custom wallpapers are disabled", () => {
       const { container } = renderWidget(
         jest.fn(),
@@ -472,7 +659,7 @@ describe("PictureOfTheDay widget", () => {
       const { container } = renderWidget(dispatch, {}, populatedState);
       fireEvent.click(
         container.querySelector(
-          '[data-l10n-id="newtab-picture-menu-hide-photo"]'
+          '[data-l10n-id="newtab-picture-menu-hide-photo2"]'
         )
       );
       const setPref = dispatch.mock.calls.find(
@@ -536,7 +723,7 @@ describe("PictureOfTheDay widget", () => {
       );
       fireEvent.click(
         container.querySelector(
-          '[data-l10n-id="newtab-picture-menu-hide-photo"]'
+          '[data-l10n-id="newtab-picture-menu-hide-photo2"]'
         )
       );
       const setPref = dispatch.mock.calls.find(
@@ -591,7 +778,7 @@ describe("PictureOfTheDay widget", () => {
     it("keeps the title and description as plain (non-link) text", () => {
       const { container } = renderWidget(jest.fn(), {}, attributedState);
       expect(
-        container.querySelector('p[data-l10n-id="newtab-picture-header-main"]')
+        container.querySelector('p[data-l10n-id="newtab-picture-header-date"]')
       ).toBeTruthy();
       expect(
         container.querySelector("p.picture-of-the-day-description")
@@ -664,7 +851,7 @@ describe("PictureOfTheDay widget", () => {
         container.querySelector(".picture-of-the-day-image-link")
       ).toBeFalsy();
       expect(
-        container.querySelector('p[data-l10n-id="newtab-picture-header-main"]')
+        container.querySelector('p[data-l10n-id="newtab-picture-header-date"]')
       ).toBeTruthy();
     });
   });
@@ -783,7 +970,7 @@ describe("PictureOfTheDay widget", () => {
       [
         "hide today's picture",
         populated,
-        '[data-l10n-id="newtab-picture-menu-hide-photo"]',
+        '[data-l10n-id="newtab-picture-menu-hide-photo2"]',
       ],
       ["open source", sourced, ".picture-of-the-day-source-link"],
       [

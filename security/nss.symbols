@@ -27,9 +27,9 @@ CERT_AddExtensionByOID
 CERT_AsciiToName
 CERT_CacheOCSPResponseFromSideChannel
 CERT_CertChainFromCert
+CERT_CertListFromCert
 CERT_CertificateRequestTemplate @DATA@
 CERT_CertificateTemplate @DATA@
-CERT_CertListFromCert
 CERT_ChangeCertTrust
 CERT_CheckCertUsage
 CERT_CheckCertValidTimes
@@ -45,15 +45,15 @@ CERT_CreateCertificateRequest
 CERT_CreateSubjectCertList
 CERT_CreateValidity
 CERT_CrlTemplate @DATA@
+CERT_DecodeAVAValue
 CERT_DecodeAltNameExtension
 CERT_DecodeAuthInfoAccessExtension
 CERT_DecodeAuthKeyID
-CERT_DecodeAVAValue
 CERT_DecodeBasicConstraintValue
-CERT_DecodeCertFromPackage
-CERT_DecodeCertificatePoliciesExtension
-CERT_DecodeCertPackage
 CERT_DecodeCRLDistributionPoints
+CERT_DecodeCertFromPackage
+CERT_DecodeCertPackage
+CERT_DecodeCertificatePoliciesExtension
 CERT_DecodeNameConstraintsExtension
 CERT_DecodeOidSequence
 CERT_DecodePrivKeyUsagePeriodExtension
@@ -61,11 +61,11 @@ CERT_DecodeTrustString
 CERT_DecodeUserNotice
 CERT_DerNameToAscii
 CERT_DestroyCertArray
+CERT_DestroyCertList
 CERT_DestroyCertificate
 CERT_DestroyCertificateList
 CERT_DestroyCertificatePoliciesExtension
 CERT_DestroyCertificateRequest
-CERT_DestroyCertList
 CERT_DestroyName
 CERT_DestroyOidSequence
 CERT_DestroyUserNotice
@@ -78,8 +78,8 @@ CERT_EncodeAltNameExtension
 CERT_EncodeAndAddBitStrExtension
 CERT_EncodeAuthKeyID
 CERT_EncodeBasicConstraintValue
-CERT_EncodeCertPoliciesExtension
 CERT_EncodeCRLDistributionPoints
+CERT_EncodeCertPoliciesExtension
 CERT_EncodeInfoAccessExtension
 CERT_EncodeInhibitAnyExtension
 CERT_EncodeNameConstraintsExtension
@@ -109,15 +109,16 @@ CERT_FreeNicknames
 CERT_GenTime2FormattedAscii_Util
 CERT_GetCertChainFromCert
 CERT_GetCertEmailAddress
-CERT_GetCertificateDer
-CERT_GetCertificateRequestExtensions
-CERT_GetCertIsPerm
+CERT_GetCertIsTemp
 CERT_GetCertKeyType
 CERT_GetCertTimes
 CERT_GetCertTrust
+CERT_GetCertificateDer
+CERT_GetCertificateRequestExtensions
 CERT_GetCommonName
 CERT_GetConstrainedCertificateNames
 CERT_GetCountryName
+CERT_GetDERCertTrust
 CERT_GetDefaultCertDB
 CERT_GetFirstEmailAddress
 CERT_GetGeneralNameTypeFromString
@@ -143,8 +144,8 @@ CERT_NewCertList
 CERT_NewTempCertificate
 CERT_NicknameStringsFromCertList
 CERT_OCSPCacheSettings
-CERT_RemoveCertListNode
 CERT_RFC1485_EscapeAndQuote
+CERT_RemoveCertListNode
 CERT_SaveSMimeProfile
 CERT_SequenceOfCertExtensionTemplate @DATA@
 CERT_SetOCSPFailureMode

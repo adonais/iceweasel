@@ -100,7 +100,7 @@ TimeStamp IdlePeriodState::GetIdleDeadlineInternal(
 }
 
 TimeStamp IdlePeriodState::GetLocalIdleDeadline(
-    bool& aShuttingDown, const MutexAutoUnlock& aProofOfUnlock) {
+    bool& aShuttingDown, const MutexAutoUnlock& /*aProofOfUnlock*/) {
   MOZ_ASSERT(NS_IsMainThread(),
              "Why are we touching idle state off the main thread?");
   // If we are shutting down, we won't honor the idle period, and we will
@@ -143,8 +143,8 @@ TimeStamp IdlePeriodState::GetLocalIdleDeadline(
   return idleDeadline;
 }
 
-TimeStamp IdlePeriodState::GetIdleToken(TimeStamp aLocalIdlePeriodHint,
-                                        const MutexAutoUnlock& aProofOfUnlock) {
+TimeStamp IdlePeriodState::GetIdleToken(
+    TimeStamp aLocalIdlePeriodHint, const MutexAutoUnlock& /*aProofOfUnlock*/) {
   MOZ_ASSERT(NS_IsMainThread(),
              "Why are we touching idle state off the main thread?");
 
@@ -197,7 +197,7 @@ void IdlePeriodState::SetIdleToken(uint64_t aId, TimeDuration aDuration) {
   MOZ_ASSERT(NS_IsMainThread(),
              "Why are we touching idle state off the main thread?");
 
-  // We check the request ID.  It's possible that the server may be granting a
+  // We check the request ID.  It's possible that the server may be granting
   // an ealier request that the client has since cancelled and re-requested.
   if (mIdleRequestId == aId) {
     mIdleToken = TimeStamp::Now() + aDuration;
@@ -214,7 +214,7 @@ void IdlePeriodState::SetActive() {
   mActive = true;
 }
 
-void IdlePeriodState::SetPaused(const MutexAutoUnlock& aProofOfUnlock) {
+void IdlePeriodState::SetPaused(const MutexAutoUnlock& /*aProofOfUnlock*/) {
   MOZ_ASSERT(NS_IsMainThread(),
              "Why are we touching idle state off the main thread?");
   MOZ_ASSERT(mActive);

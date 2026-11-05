@@ -76,7 +76,7 @@ function feedWithPrefs(values) {
       return this.state;
     },
     dispatch: sinon.spy(),
-    state: { Prefs: { values } },
+    state: { Prefs: { values: { region: "US", ...values } } },
   };
   return feed;
 }
@@ -584,6 +584,34 @@ add_task(async function test_pref_changed_triggers_fetch() {
     data: { name: "some.unrelated.pref" },
   });
   Assert.equal(broadcasts(), 1, "Ignores unrelated PREF_CHANGED");
+
+  sandbox.restore();
+});
+
+add_task(async function test_region_resolves_triggers_fetch() {
+  const feed = feedWithPrefs({
+    region: "",
+    [PREF_WIDGETS_ENABLED]: true,
+    [PREF_PRIVACY_ENABLED]: true,
+    [PREF_SYSTEM_PRIVACY_ENABLED]: false,
+    trainhopConfig: { widgets: { privacyEnabled: true } },
+  });
+  Assert.ok(!feed.enabled, "Trainhop reveal ignored without a region");
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(PrivacyMetricsService, "getTodayStats")
+    .resolves({ total: 1, lastUpdated: 1 });
+  sandbox.stub(feed, "getSitesVisitedToday").resolves(1);
+
+  feed.store.state.Prefs.values.region = "FR";
+  await feed.onAction({
+    type: actionTypes.PREF_CHANGED,
+    data: { name: "region", value: "FR" },
+  });
+  const broadcasts = feed.store.dispatch
+    .getCalls()
+    .filter(c => c.args[0]?.type === actionTypes.WIDGETS_PRIVACY_UPDATE).length;
+  Assert.equal(broadcasts, 1, "Fetches when the region resolves");
 
   sandbox.restore();
 });

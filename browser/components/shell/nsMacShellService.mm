@@ -10,7 +10,6 @@
 #include "nsIContent.h"
 #include "nsICookieJarSettings.h"
 #include "nsIObserverService.h"
-#include "nsIWebBrowserPersist.h"
 #include "nsMacShellService.h"
 #include "nsIProperties.h"
 #include "nsServiceManagerUtils.h"
@@ -20,7 +19,6 @@
 #include "nsIDocShell.h"
 #include "nsILoadContext.h"
 #include "nsIPrefService.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "DesktopBackgroundImage.h"
 
@@ -39,7 +37,6 @@
 #include "nsThreadUtils.h"
 #include "xpcpublic.h"
 
-using mozilla::dom::Element;
 using mozilla::widget::SetDesktopImage;
 
 #define NETWORK_PREFPANE "/System/Library/PreferencePanes/Network.prefPane"_ns
@@ -50,7 +47,7 @@ using mozilla::widget::SetDesktopImage;
 #define SAFARI_BUNDLE_IDENTIFIER "com.apple.Safari"
 
 NS_IMPL_ISUPPORTS_INHERITED(nsMacShellService, nsShellService, nsIShellService,
-                            nsIMacShellService, nsIWebProgressListener)
+                            nsIMacShellService)
 
 NS_IMETHODIMP
 nsMacShellService::IsDefaultBrowser(bool aForAllTypes,
@@ -134,123 +131,16 @@ nsMacShellService::SetDefaultBrowser(bool aForAllUsers) {
 }
 
 NS_IMETHODIMP
-nsMacShellService::SetDesktopBackground(Element* aElement, int32_t aPosition,
-                                        const nsACString& aImageName) {
+nsMacShellService::SetDesktopBackgroundFile(nsIFile* aFile, int32_t aPosition) {
   // Note: We don't support aPosition on OS X.
+  (void)aPosition;
 
-  // Get the image URI:
-  nsresult rv;
-  nsCOMPtr<nsIImageLoadingContent> imageContent =
-      do_QueryInterface(aElement, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-  nsCOMPtr<nsIURI> imageURI;
-  rv = imageContent->GetCurrentURI(getter_AddRefs(imageURI));
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIObserverService> os(
+      do_GetService("@mozilla.org/observer-service;1"));
+  if (os)
+    os->NotifyObservers(nullptr, "shell:desktop-background-changed", nullptr);
 
-  nsIURI* docURI = aElement->OwnerDoc()->GetDocumentURI();
-  if (!docURI) return NS_ERROR_FAILURE;
-
-  nsCOMPtr<nsIProperties> fileLocator(
-      do_GetService("@mozilla.org/file/directory_service;1", &rv));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  // Get the current user's "Pictures" folder (That's ~/Pictures):
-  fileLocator->Get(NS_OSX_PICTURE_DOCUMENTS_DIR, NS_GET_IID(nsIFile),
-                   getter_AddRefs(mBackgroundFile));
-  if (!mBackgroundFile) return NS_ERROR_OUT_OF_MEMORY;
-
-  nsAutoString fileNameUnicode;
-  CopyUTF8toUTF16(aImageName, fileNameUnicode);
-
-  // and add the imgage file name itself:
-  mBackgroundFile->Append(fileNameUnicode);
-
-  // Download the image; the desktop background will be set in OnStateChange()
-  nsCOMPtr<nsIWebBrowserPersist> wbp(do_CreateInstance(
-      "@mozilla.org/embedding/browser/nsWebBrowserPersist;1", &rv));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  uint32_t flags = nsIWebBrowserPersist::PERSIST_FLAGS_NO_CONVERSION |
-                   nsIWebBrowserPersist::PERSIST_FLAGS_REPLACE_EXISTING_FILES |
-                   nsIWebBrowserPersist::PERSIST_FLAGS_FROM_CACHE;
-
-  wbp->SetPersistFlags(flags);
-  wbp->SetProgressListener(this);
-
-  nsCOMPtr<nsILoadContext> loadContext;
-  nsCOMPtr<nsISupports> container = aElement->OwnerDoc()->GetContainer();
-  nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(container);
-  if (docShell) {
-    loadContext = do_QueryInterface(docShell);
-  }
-
-  auto referrerInfo =
-      mozilla::MakeRefPtr<mozilla::dom::ReferrerInfo>(*aElement);
-
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
-      aElement->OwnerDoc()->CookieJarSettings();
-  return wbp->SaveURI(imageURI, aElement->NodePrincipal(), 0, referrerInfo,
-                      cookieJarSettings, nullptr, nullptr, mBackgroundFile,
-                      nsIContentPolicy::TYPE_IMAGE,
-                      loadContext->UsePrivateBrowsing());
-}
-
-NS_IMETHODIMP
-nsMacShellService::OnProgressChange(nsIWebProgress* aWebProgress,
-                                    nsIRequest* aRequest,
-                                    int32_t aCurSelfProgress,
-                                    int32_t aMaxSelfProgress,
-                                    int32_t aCurTotalProgress,
-                                    int32_t aMaxTotalProgress) {
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsMacShellService::OnLocationChange(nsIWebProgress* aWebProgress,
-                                    nsIRequest* aRequest, nsIURI* aLocation,
-                                    uint32_t aFlags) {
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsMacShellService::OnStatusChange(nsIWebProgress* aWebProgress,
-                                  nsIRequest* aRequest, nsresult aStatus,
-                                  const char16_t* aMessage) {
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsMacShellService::OnSecurityChange(nsIWebProgress* aWebProgress,
-                                    nsIRequest* aRequest, uint32_t aState) {
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsMacShellService::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
-                                          nsIRequest* aRequest,
-                                          uint32_t aEvent) {
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsMacShellService::OnStateChange(nsIWebProgress* aWebProgress,
-                                 nsIRequest* aRequest, uint32_t aStateFlags,
-                                 nsresult aStatus) {
-  if (NS_SUCCEEDED(aStatus) && (aStateFlags & STATE_STOP) &&
-      (aRequest == nullptr)) {
-    nsCOMPtr<nsIObserverService> os(
-        do_GetService("@mozilla.org/observer-service;1"));
-    if (os)
-      os->NotifyObservers(nullptr, "shell:desktop-background-changed", nullptr);
-
-    bool exists = false;
-    nsresult rv = mBackgroundFile->Exists(&exists);
-    if (NS_FAILED(rv) || !exists) {
-      return NS_OK;
-    }
-
-    SetDesktopImage(mBackgroundFile);
-  }
+  SetDesktopImage(aFile);
 
   return NS_OK;
 }

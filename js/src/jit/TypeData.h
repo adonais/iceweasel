@@ -28,7 +28,7 @@ class TypeDataList {
   TypeData typeData_[MaxLength];
 
  public:
-  TypeDataList() {}
+  TypeDataList() = default;
 
   uint8_t count() const { return count_; }
 

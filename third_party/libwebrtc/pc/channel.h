@@ -128,6 +128,7 @@ class BaseChannel : public ChannelInterface,
                             SdpType type) override;
 
   void Enable(bool enable) override;
+  void EnableSframe() override;
 
   const std::vector<StreamParams>& local_streams() const override {
     return local_streams_;

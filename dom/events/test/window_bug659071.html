@@ -20,7 +20,7 @@ function info() {
   window.opener.info.apply(window.opener, arguments);
 }
 
-async function waitForCondition(aFunc) {
+async function waitForZoom(aFunc) {
   for (let i = 0; i < 30; i++) {
     await (new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     if (aFunc(SpecialPowers.getFullZoom(window))) {
@@ -46,7 +46,7 @@ async function runTests() {
     synthesizeWheel(video, 10, 10,
       { deltaMode: WheelEvent.DOM_DELTA_LINE, ctrlKey: true,
         deltaX: 0, deltaY: 1.0, lineOrPageDeltaX: 0, lineOrPageDeltaY: 1 });
-    if (await waitForCondition(aZoomLevel => aZoomLevel < 1.0)) {
+    if (await waitForZoom(aZoomLevel => aZoomLevel < 1.0)) {
       break;
     }
     info("Retrying zoom out...");
@@ -61,7 +61,7 @@ async function runTests() {
     synthesizeWheel(video, 10, 10,
       { deltaMode: WheelEvent.DOM_DELTA_LINE, ctrlKey: true,
         deltaX: 0, deltaY: -1.0, lineOrPageDeltaX: 0, lineOrPageDeltaY: -1 });
-    if (await waitForCondition(aZoomLevel => aZoomLevel > 1.0)) {
+    if (await waitForZoom(aZoomLevel => aZoomLevel > 1.0)) {
       break;
     }
     info("Retrying zoom in...");
@@ -74,7 +74,7 @@ async function runTests() {
 
   synthesizeKey("0", { accelKey: true });
   ok(
-    await waitForCondition(aZoomLevel => aZoomLevel == 1.0),
+    await waitForZoom(aZoomLevel => aZoomLevel == 1.0),
     "Failed to reset zoom at finish the test"
   );
   opener.finish();

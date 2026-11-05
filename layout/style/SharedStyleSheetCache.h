@@ -51,7 +51,7 @@ class SharedStyleSheetCache final
   // This has to be static because it's also called for loaders that don't have
   // a sheet cache (loaders that are not owned by a document).
   static void LoadCompleted(SharedStyleSheetCache*, css::SheetLoadData&,
-                            nsresult);
+                            nsresult, css::Loader::TriggeringPendingLoad);
   using Base::LoadCompleted;
   static void LoadCompletedInternal(SharedStyleSheetCache*, css::SheetLoadData&,
                                     nsTArray<RefPtr<css::SheetLoadData>>&);

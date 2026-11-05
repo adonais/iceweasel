@@ -1,8 +1,4 @@
 [DEFAULT]
-dupe-manifest=true
-prefs = [
-  "browser.settings-redesign.enabled=false",
-]
 support-files = [
   "head.js",
   "site_data_test.html",
@@ -17,12 +13,11 @@ support-files = [
 ["browser_siteData.js"]
 
 ["browser_siteData2.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1775910
-]
 
 ["browser_siteData3.js"]
 
 ["browser_siteData_multi_select.js"]
 
 ["browser_siteData_search.js"]
+
+["browser_siteData_size.js"]

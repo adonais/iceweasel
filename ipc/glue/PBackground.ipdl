@@ -183,9 +183,10 @@ parent:
       bool aRequireUnreliable,
       uint32_t aCongestionControl,
       nsString[] aProtocols,
+      WebTransportHeader[] aHeaders,
       WebTransportHash[] aServerCertHashes,
       Endpoint<PWebTransportParent> aParentEndpoint)
-      returns(nsresult rv, uint8_t aReliability); // Actually WebTransportReliabityMode enum
+      returns(nsresult rv, uint8_t aReliability, uint64_t aMaxDatagramSize); // WebTransportReliabityMode enum
 
 
   // XXX(krosylight): This should ultimately use nsID instead of scope, see bug 1881812.

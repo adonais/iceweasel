@@ -186,6 +186,7 @@ export class TopStoriesFeed {
         );
       }
 
+      /** @type {object} */
       const body = await response.json();
       this.updateSettings(body.settings);
       this.stories = this.rotate(this.transform(body.recommendations));
@@ -287,6 +288,7 @@ export class TopStoriesFeed {
           `Topics endpoint returned unexpected status: ${response.status}`
         );
       }
+      /** @type {object} */
       const body = await response.json();
       const { topics } = body;
       if (topics) {

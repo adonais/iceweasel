@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/taskbartabs/TaskbarTabsUtils.sys.mjs",
 });
 
-sinon.stub(TaskbarTabsPin, "pinTaskbarTab");
+sinon.stub(TaskbarTabsPin, "pinTaskbarTab").resolves({});
 sinon.stub(TaskbarTabsPin, "unpinTaskbarTab");
 
 let gHttpServer = null;

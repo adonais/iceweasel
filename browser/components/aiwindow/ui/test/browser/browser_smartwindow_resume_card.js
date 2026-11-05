@@ -153,7 +153,7 @@ add_task(async function test_resume_card_events() {
     shadow.querySelector(".resume-card-resume-button").click();
     Assert.deepEqual(
       await resumed,
-      { journeyId: "memory-42" },
+      { journeyId: "memory-42", source: "resume_button" },
       "Resume button should dispatch the card's journeyId"
     );
 
@@ -189,7 +189,7 @@ add_task(async function test_resume_card_events() {
     shadow.querySelectorAll("panel-item")[0].click();
     Assert.deepEqual(
       await menuSelected,
-      { journeyId: "memory-42", itemId: "open-tabs" },
+      { journeyId: "memory-42", itemId: "open_tabs" },
       "Clicking the first menu item should dispatch its itemId with the card's journeyId"
     );
     await hidden;
@@ -211,8 +211,10 @@ add_task(async function test_resume_card_whole_card_click_resumes() {
     const shadow = el.shadowRoot;
 
     let resumeCount = 0;
-    el.addEventListener("smartwindow-resume-card:resume", () => {
+    let lastSource;
+    el.addEventListener("smartwindow-resume-card:resume", e => {
       resumeCount++;
+      lastSource = e.detail.source;
     });
 
     shadow.querySelector(".resume-card-title").click();
@@ -221,6 +223,7 @@ add_task(async function test_resume_card_whole_card_click_resumes() {
       1,
       "Clicking anywhere on the card body should resume it"
     );
+    Assert.equal(lastSource, "card", "A card body click has source card");
 
     // Dismiss, the More button, and its menu items must not also resume the
     // card - each stops propagation so only their own event fires.
@@ -401,6 +404,40 @@ add_task(async function test_resume_card_snooze_dismisses_for_session() {
   }
 });
 
+add_task(async function test_resume_card_close_button_snoozes() {
+  const sb = sinon.createSandbox();
+  try {
+    await withRenderedResumeCard(
+      () => stubResumeActivityGeneration(sb),
+      async ({ aiWindow, section, card, memories }) => {
+        const [{ id: journeyId }] = memories;
+
+        card.shadowRoot.querySelector(".resume-card-dismiss").click();
+        await aiWindow.updateComplete;
+        await section.updateComplete;
+
+        Assert.equal(
+          section.shadowRoot.querySelector("smartwindow-resume-card"),
+          null,
+          "Clicking the close button should remove the card"
+        );
+        Assert.equal(
+          section.shadowRoot.querySelector(".resume-section-empty-heading")
+            .dataset.l10nId,
+          "aiwindow-resume-section-empty-all-dismissed-heading",
+          "Closing the last card should show the all-dismissed empty state"
+        );
+        Assert.ok(
+          ResumeActivity.isMemoryDismissed(journeyId),
+          "Closing should snooze the card for the session"
+        );
+      }
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
 add_task(async function test_resume_card_open_tabs_opens_tab_group() {
   const sb = sinon.createSandbox();
   try {
@@ -417,7 +454,7 @@ add_task(async function test_resume_card_open_tabs_opens_tab_group() {
 
         card.dispatchEvent(
           new CustomEvent("smartwindow-resume-card:menu-item-selected", {
-            detail: { journeyId, itemId: "open-tabs" },
+            detail: { journeyId, itemId: "open_tabs" },
             bubbles: true,
             composed: true,
           })
@@ -463,7 +500,7 @@ add_task(async function test_resume_card_open_tabs_switches_to_single_tab() {
 
         card.dispatchEvent(
           new CustomEvent("smartwindow-resume-card:menu-item-selected", {
-            detail: { journeyId, itemId: "open-tabs" },
+            detail: { journeyId, itemId: "open_tabs" },
             bubbles: true,
             composed: true,
           })
@@ -683,9 +720,16 @@ add_task(async function test_resume_card_click_shows_confirmation_card() {
       );
 
       const conversationIdAtClick = aiWindow.conversationId;
+      Services.fog.testResetFOG();
       // Clicking the card body should follow the
       // same resume flow as a pill click.
       card.shadowRoot.querySelector(".resume-card-title").click();
+      assertResumeAction(
+        "resumeCardAction",
+        aiWindow,
+        { action: "card_click", position: "0" },
+        "Clicking the card records card_click"
+      );
 
       await TestUtils.waitForCondition(
         () => fetchWithHistoryStub.calledOnce,
@@ -711,6 +755,310 @@ add_task(async function test_resume_card_click_shows_confirmation_card() {
       await resumeActivityStubs?.cleanup();
       await SpecialPowers.popPrefEnv();
     }
+  } finally {
+    sb.restore();
+  }
+});
+
+/**
+ * Clicks an element the way a user would, with mouse events at its center.
+ *
+ * @param {Element} element
+ */
+function synthesizeClick(element) {
+  element.scrollIntoView({ block: "center" });
+  EventUtils.synthesizeMouseAtCenter(element, {}, element.documentGlobal);
+}
+
+/**
+ * Opens a resume card's "More" menu and clicks one of its items.
+ *
+ * @param {Element} card - The smartwindow-resume-card element
+ * @param {string} l10nId - The menu item's data-l10n-id
+ */
+async function clickResumeCardMenuItem(card, l10nId) {
+  const menu = card.shadowRoot.querySelector("panel-list");
+  const shown = BrowserTestUtils.waitForEvent(menu, "shown");
+  synthesizeClick(card.shadowRoot.querySelector(".resume-card-more-button"));
+  await shown;
+  synthesizeClick(menu.querySelector(`panel-item[data-l10n-id="${l10nId}"]`));
+}
+
+/**
+ * Checks the most recent event recorded for a resume card or section metric.
+ *
+ * @param {"resumeCardAction"|"resumeSectionAction"} metric
+ * @param {Element} aiWindow
+ * @param {object} expected - Extras beyond the shared telemetry context
+ * @param {string} message
+ */
+function assertResumeAction(metric, aiWindow, expected, message) {
+  const event = Glean.smartWindow[metric].testGetValue()?.at(-1);
+  Assert.ok(event, `${message}: an action event was recorded`);
+  Assert.deepEqual(
+    event.extra,
+    {
+      chat_id: String(aiWindow.conversationId),
+      location: "fullpage",
+      message_seq: "0",
+      ...expected,
+    },
+    message
+  );
+}
+
+add_task(async function test_resume_cards_displayed_telemetry() {
+  const sb = sinon.createSandbox();
+  Services.fog.testResetFOG();
+  try {
+    await withRenderedResumeCard(
+      () => stubResumeActivityGenerationPool(sb, 3),
+      async ({ aiWindow }) => {
+        const events = await TestUtils.waitForCondition(
+          () => Glean.smartWindow.resumeCardsDisplayed.testGetValue(),
+          "Wait for the resume cards displayed event"
+        );
+        Assert.equal(events.length, 1, "The section is recorded once");
+        Assert.deepEqual(
+          events[0].extra,
+          {
+            chat_id: String(aiWindow.conversationId),
+            location: "fullpage",
+            message_seq: "0",
+            state: "cards",
+            cards: "2",
+            total_cards: "3",
+          },
+          "The collapsed section shows two of three cards"
+        );
+      }
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(async function test_resume_cards_displayed_telemetry_behind_chat() {
+  const sb = sinon.createSandbox();
+  try {
+    await withRenderedResumeCard(
+      () => stubResumeActivityGeneration(sb),
+      async ({ aiWindow, section }) => {
+        await TestUtils.waitForCondition(
+          () => Glean.smartWindow.resumeCardsDisplayed.testGetValue(),
+          "Wait for the initial resume cards displayed event"
+        );
+        Services.fog.testResetFOG();
+
+        // A restored chat hides the section while its cards are still loading.
+        aiWindow.classList.add("chat-active");
+        aiWindow.resumeCardsLoading = true;
+        await aiWindow.updateComplete;
+        await section.updateComplete;
+        aiWindow.resumeCardsLoading = false;
+        await aiWindow.updateComplete;
+        await section.updateComplete;
+        await new Promise(resolve =>
+          section.documentGlobal.requestAnimationFrame(resolve)
+        );
+
+        Assert.equal(
+          Glean.smartWindow.resumeCardsDisplayed.testGetValue(),
+          null,
+          "Cards that finish loading behind a chat are not recorded"
+        );
+      }
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(async function test_resume_cards_displayed_telemetry_after_hide() {
+  const sb = sinon.createSandbox();
+  Services.fog.testResetFOG();
+  // The section isn't rendered while loading, so it first appears with
+  // loading already done.
+  ResumeActivity.hideSectionForSession();
+  try {
+    await withRenderedResumeCard(
+      () => stubResumeActivityGeneration(sb),
+      async () => {
+        const events = await TestUtils.waitForCondition(
+          () => Glean.smartWindow.resumeCardsDisplayed.testGetValue(),
+          "Wait for the resume cards displayed event"
+        );
+        Assert.equal(events.length, 1, "The section is recorded once");
+        Assert.equal(
+          events[0].extra.state,
+          "cards",
+          "Cards that arrive after the section was hidden are recorded"
+        );
+      }
+    );
+  } finally {
+    sb.restore();
+    _resetResumeSectionHiddenForTesting();
+  }
+});
+
+add_task(async function test_resume_cards_displayed_telemetry_empty_state() {
+  const sb = sinon.createSandbox();
+  Services.fog.testResetFOG();
+  await SpecialPowers.pushPrefEnv({ set: RESUME_ACTIVITY_PREFS });
+
+  const stubs = await stubResumeActivityGeneration(sb);
+  ResumeActivity.dismissMemory("memory-1");
+  let win;
+  try {
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    const aiWindow = await TestUtils.waitForCondition(
+      () => browser.contentDocument?.querySelector("ai-window"),
+      "Wait for ai-window element"
+    );
+    const [event] = await TestUtils.waitForCondition(
+      () => Glean.smartWindow.resumeCardsDisplayed.testGetValue(),
+      "Wait for the resume cards displayed event"
+    );
+    Assert.equal(
+      event.extra.state,
+      "empty_all_dismissed",
+      "The all-dismissed empty state is recorded"
+    );
+    Assert.equal(event.extra.cards, "0", "No cards are visible");
+
+    const section = aiWindow.shadowRoot.querySelector(
+      "smartwindow-resume-section"
+    );
+    synthesizeClick(
+      section.shadowRoot.querySelector(".resume-section-empty-hide")
+    );
+    assertResumeAction(
+      "resumeSectionAction",
+      aiWindow,
+      { action: "hide_section" },
+      "Hiding the empty section records hide_section"
+    );
+  } finally {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    await stubs.cleanup();
+    sb.restore();
+    _resetResumeSectionHiddenForTesting();
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_resume_card_action_telemetry() {
+  const sb = sinon.createSandbox();
+  Services.fog.testResetFOG();
+  try {
+    await withRenderedResumeCard(
+      () => stubResumeActivityGenerationPool(sb, 3),
+      async ({ aiWindow, section }) => {
+        sb.stub(ToolUI, "openOrGroupTabs").resolves();
+        const card = () =>
+          section.shadowRoot.querySelectorAll("smartwindow-resume-card")[1];
+
+        await clickResumeCardMenuItem(card(), "aiwindow-resume-card-open-tabs");
+        assertResumeAction(
+          "resumeCardAction",
+          aiWindow,
+          { action: "open_tabs", position: "1" },
+          "Open tabs records the card's position"
+        );
+
+        synthesizeClick(
+          section.shadowRoot.querySelector(".resume-section-toggle")
+        );
+        assertResumeAction(
+          "resumeSectionAction",
+          aiWindow,
+          { action: "show_more" },
+          "Show more records show_more"
+        );
+        await section.updateComplete;
+
+        synthesizeClick(
+          section.shadowRoot.querySelector(".resume-section-toggle")
+        );
+        assertResumeAction(
+          "resumeSectionAction",
+          aiWindow,
+          { action: "show_less" },
+          "Show less records show_less"
+        );
+        await section.updateComplete;
+
+        await clickResumeCardMenuItem(card(), "aiwindow-resume-card-snooze");
+        assertResumeAction(
+          "resumeCardAction",
+          aiWindow,
+          { action: "snooze", position: "1" },
+          "Snooze records the card before it is removed"
+        );
+        await aiWindow.updateComplete;
+        await section.updateComplete;
+
+        // The close button only appears while the card is hovered.
+        const firstCard = section.shadowRoot.querySelector(
+          "smartwindow-resume-card"
+        );
+        EventUtils.synthesizeMouseAtCenter(
+          firstCard,
+          { type: "mousemove" },
+          firstCard.documentGlobal
+        );
+        synthesizeClick(
+          firstCard.shadowRoot.querySelector(".resume-card-dismiss")
+        );
+        assertResumeAction(
+          "resumeCardAction",
+          aiWindow,
+          { action: "dismiss", position: "0" },
+          "The close button records dismiss"
+        );
+      }
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(async function test_resume_card_resume_button_telemetry() {
+  const sb = sinon.createSandbox();
+  sb.stub(openAIEngine, "build").resolves({});
+  const fetchWithHistoryStub = sb.stub(Chat, "fetchWithHistory").resolves();
+  try {
+    await withRenderedResumeCard(
+      () => stubResumeActivityGenerationPool(sb, 3),
+      async ({ aiWindow, section }) => {
+        Services.fog.testResetFOG();
+        const card = section.shadowRoot.querySelectorAll(
+          "smartwindow-resume-card"
+        )[1];
+        synthesizeClick(
+          card.shadowRoot.querySelector(".resume-card-resume-button")
+        );
+        assertResumeAction(
+          "resumeCardAction",
+          aiWindow,
+          { action: "resume", position: "1" },
+          "The Resume button records resume"
+        );
+        Assert.equal(
+          Glean.smartWindow.resumeCardAction.testGetValue().length,
+          1,
+          "The Resume button records a single action"
+        );
+        await TestUtils.waitForCondition(
+          () => fetchWithHistoryStub.calledOnce,
+          "Wait for the resume flow to finish before closing the window"
+        );
+      }
+    );
   } finally {
     sb.restore();
   }

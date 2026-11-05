@@ -19,6 +19,7 @@
 #include "cairo.h"
 #include "gfxWindowsPlatform.h"
 #include "gfxWindowsSurface.h"
+#include "gtest/MozGtestFriend.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/EventForwards.h"
@@ -675,6 +676,7 @@ class nsWindow final : public nsIWidget {
   bool NeedsToTrackWindowOcclusionState();
 
   void AsyncUpdateWorkspaceID();
+  FRIEND_TEST(WinWorkspaceID, HungQueryDoesNotBlockShutdown);
 
   // See bug 603793
   static bool HasBogusPopupsDropShadowOnMultiMonitor();
@@ -949,6 +951,10 @@ class nsWindow final : public nsIWidget {
       mWindowBtnRect;
 
   nsString mDesktopId MOZ_GUARDED_BY(mozilla::sMainThreadCapability);
+  bool mDesktopIdUpdatePending MOZ_GUARDED_BY(mozilla::sMainThreadCapability) =
+      false;
+  static uint32_t sDesktopIdRequestsInFlight;
+  static bool sDesktopIdHangForTesting;
 
   friend class nsWindowGfx;
 
