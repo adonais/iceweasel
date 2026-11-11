@@ -122,7 +122,7 @@ jobs:
           exit 255
         fi
         tar Jxf diasdk.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/upcheck.tar.xz?viasf=1 -O upcheck.tar.xz
+        wget https://github.com/adonais/upcheck/releases/latest/download/upcheck.tar.xz -O upcheck.tar.xz
         if [ $? -ne 0 ]; then
           echo Download upcheck failed
           exit 255
