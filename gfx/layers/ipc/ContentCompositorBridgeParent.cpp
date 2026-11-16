@@ -154,14 +154,25 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
   RefPtr<CompositorBridgeParent> cbp = nullptr;
   RefPtr<WebRenderBridgeParent> root = nullptr;
 
+  bool alreadyHasBridge = false;
   {  // scope lock
     MonitorAutoLock lock(*sIndirectLayerTreesLock);
     MOZ_ASSERT(sIndirectLayerTrees.find(layersId) != sIndirectLayerTrees.end());
-    MOZ_ASSERT(sIndirectLayerTrees[layersId].mWrBridge == nullptr);
-    cbp = sIndirectLayerTrees[layersId].mParent;
-    if (cbp) {
-      root = sIndirectLayerTrees[cbp->RootLayerTreeId()].mWrBridge;
+    if (sIndirectLayerTrees[layersId].mWrBridge) {
+      alreadyHasBridge = true;
+    } else {
+      cbp = sIndirectLayerTrees[layersId].mParent;
+      if (cbp) {
+        root = sIndirectLayerTrees[cbp->RootLayerTreeId()].mWrBridge;
+      }
     }
+  }
+
+  if (alreadyHasBridge) {
+    NS_ERROR(
+        "Layer tree already has a WebRenderBridgeParent in "
+        "AllocPWebRenderBridgeParent; dropping message...");
+    return nullptr;
   }
 
   RefPtr<wr::WebRenderAPI> api;
@@ -184,8 +195,15 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
     return parent;
   }
 
-  api = api->Clone();
   RefPtr<AsyncImagePipelineManager> holder = root->AsyncImageManager();
+  if (holder->HasLivePipeline(aPipelineId)) {
+    NS_ERROR(
+        "Pipeline already in use in AllocPWebRenderBridgeParent; dropping "
+        "message...");
+    return nullptr;
+  }
+
+  api = api->Clone();
   WebRenderBridgeParent* parent = new WebRenderBridgeParent(
       this, aPipelineId, nullptr, root->CompositorScheduler(), std::move(api),
       std::move(holder), cbp->GetVsyncInterval());
@@ -203,7 +221,18 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
 bool ContentCompositorBridgeParent::DeallocPWebRenderBridgeParent(
     PWebRenderBridgeParent* aActor) {
   WebRenderBridgeParent* parent = static_cast<WebRenderBridgeParent*>(aActor);
-  EraseLayerState(wr::AsLayersId(parent->PipelineId()));
+  LayersId layersId = wr::AsLayersId(parent->PipelineId());
+  bool ownedByOtherBridge = false;
+  {  // scope lock
+    MonitorAutoLock lock(*sIndirectLayerTreesLock);
+    auto iter = sIndirectLayerTrees.find(layersId);
+    ownedByOtherBridge = iter != sIndirectLayerTrees.end() &&
+                         iter->second.mWrBridge &&
+                         iter->second.mWrBridge != parent;
+  }
+  if (!ownedByOtherBridge) {
+    EraseLayerState(layersId);
+  }
   parent->Release();  // IPDL reference
   return true;
 }

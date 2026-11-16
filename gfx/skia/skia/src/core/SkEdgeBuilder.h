@@ -32,6 +32,7 @@ protected:
     void**              fEdgeList = nullptr;
     SkTDArray<void*>    fList;
     SkSTArenaAlloc<512> fAlloc;
+    bool                fCanCullToTheRight = true;
 
     enum Combine {
         kNo_Combine,

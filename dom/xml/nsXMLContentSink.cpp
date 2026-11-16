@@ -377,6 +377,8 @@ nsresult nsXMLContentSink::OnTransformDone(Document* aSourceDocument,
     // Transform succeeded, or it failed and we have an error document to
     // display.
     mDocument = aResultDocument;
+    // Layout state from the source document doesn't apply to the result.
+    mLayoutStarted = false;
     aResultDocument->SetDocWriteDisabled(false);
 
     // Notify document observers that all the content has been stuck
@@ -1385,6 +1387,8 @@ nsresult nsXMLContentSink::AddAttributes(const char16_t** aAtts,
                                          Element* aContent) {
   // Add tag attributes to the content attributes
   RefPtr<nsAtom> prefix, localName;
+  // Custom element constructors might have set our attributes already.
+  const bool mightHaveAttrs = aContent->HasCustomElementData();
   while (*aAtts) {
     int32_t nameSpaceID;
     nsContentUtils::SplitExpatName(aAtts[0], getter_AddRefs(prefix),
@@ -1392,7 +1396,7 @@ nsresult nsXMLContentSink::AddAttributes(const char16_t** aAtts,
 
     // Add attribute to content
     aContent->SetAttr(nameSpaceID, localName, prefix,
-                      nsDependentString(aAtts[1]), false);
+                      nsDependentString(aAtts[1]), mightHaveAttrs);
     aAtts += 2;
   }
 

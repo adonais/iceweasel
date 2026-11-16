@@ -1933,13 +1933,20 @@ void HttpChannelParent::UpdateAltDataBindingOrigin(HttpBaseChannel* aChannel) {
   principal->GetOrigin(mAltDataBindingOrigin);
 }
 
-// Records, atomically with the alt-data write, the origin of the principal
-// that produced the alt-data.
-static void RecordAltDataPrincipal(nsICacheEntry* aCacheEntry,
-                                   const nsACString& aOrigin) {
+// Records, atomically with the alt-data write, the remote type of the process
+// and the origin of the principal that produced the alt-data.  The remote type
+// comes from the IPC actor, so the content process cannot choose it.
+static void RecordAltDataBinding(nsICacheEntry* aCacheEntry,
+                                 const nsACString& aOrigin,
+                                 PNeckoParent* aNeckoParent) {
   if (!aCacheEntry) {
     return;
   }
+  aCacheEntry->SetMetaDataElement(
+      "alt-data-from-child",
+      PromiseFlatCString(
+          static_cast<ContentParent*>(aNeckoParent->Manager())->GetRemoteType())
+          .get());
   if (aOrigin.IsEmpty()) {
     // Fail closed: without a known principal, clear any binding so that reads
     // reject this alt-data.
@@ -1961,8 +1968,7 @@ nsresult HttpChannelParent::OpenAlternativeOutputStream(
   nsresult rv =
       mCacheEntry->OpenAlternativeOutputStream(type, predictedSize, _retval);
   if (NS_SUCCEEDED(rv)) {
-    mCacheEntry->SetMetaDataElement("alt-data-from-child", "1");
-    RecordAltDataPrincipal(mCacheEntry, mAltDataBindingOrigin);
+    RecordAltDataBinding(mCacheEntry, mAltDataBindingOrigin, Manager());
   }
   return rv;
 }

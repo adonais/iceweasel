@@ -1850,8 +1850,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   // For use by mochitests. Enabling pref "media.test.video-suspend"
   bool mForcedHidden = false;
 
+ protected:
   Visibility mVisibilityState = Visibility::Untracked;
 
+ private:
   UniquePtr<ErrorSink> mErrorSink;
 
   // This wrapper will handle all audio channel related stuffs, eg. the

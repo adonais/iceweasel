@@ -26,9 +26,11 @@ static StaticDataMutex<VideoBridgeTable> sVideoBridgeFromProcess(
     "VideoBridges");
 static Atomic<bool> sVideoBridgeParentShutDown(false);
 
-VideoBridgeParent::VideoBridgeParent(VideoBridgeSource aSource)
+VideoBridgeParent::VideoBridgeParent()
     : mCompositorThreadHolder(CompositorThreadHolder::GetSingleton()),
-      mClosed(false) {
+      mClosed(false) {}
+
+void VideoBridgeParent::RegisterSingleton(VideoBridgeSource aSource) {
   auto videoBridgeFromProcess = sVideoBridgeFromProcess.Lock();
   switch (aSource) {
     case VideoBridgeSource::RddProcess:
@@ -57,12 +59,18 @@ VideoBridgeParent::~VideoBridgeParent() {
 /* static */
 void VideoBridgeParent::Open(Endpoint<PVideoBridgeParent>&& aEndpoint,
                              VideoBridgeSource aSource) {
-  RefPtr<VideoBridgeParent> parent = new VideoBridgeParent(aSource);
+  RefPtr<VideoBridgeParent> parent = new VideoBridgeParent();
+  // Other threads can take a reference from the singleton table at any time,
+  // so the bridge must only be published while we hold a strong reference.
+  parent->RegisterSingleton(aSource);
 
-  CompositorThread()->Dispatch(
-      NewRunnableMethod<Endpoint<PVideoBridgeParent>&&>(
-          "gfx::layers::VideoBridgeParent::Bind", parent,
-          &VideoBridgeParent::Bind, std::move(aEndpoint)));
+  nsISerialEventTarget* thread = CompositorThread();
+  if (!thread || NS_FAILED(thread->Dispatch(
+                     NewRunnableMethod<Endpoint<PVideoBridgeParent>&&>(
+                         "gfx::layers::VideoBridgeParent::Bind", parent,
+                         &VideoBridgeParent::Bind, std::move(aEndpoint))))) {
+    parent->UnregisterSingleton();
+  }
 }
 
 void VideoBridgeParent::Bind(Endpoint<PVideoBridgeParent>&& aEndpoint) {

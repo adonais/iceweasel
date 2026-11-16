@@ -1747,6 +1747,10 @@ XMLHttpRequestMainThread::OnDataAvailable(nsIRequest* request,
                                           uint32_t count) {
   NS_ENSURE_ARG_POINTER(inStr);
 
+  if (request != mChannel) {
+    return NS_BINDING_ABORTED;
+  }
+
   mProgressSinceLastProgressEvent = true;
   XMLHttpRequest_Binding::ClearCachedResponseTextValue(this);
 

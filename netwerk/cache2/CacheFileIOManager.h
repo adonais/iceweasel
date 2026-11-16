@@ -126,6 +126,9 @@ class CacheFileHandle final : public nsISupports {
   // file size is atomic because it is used on main thread by
   // nsHttpChannel::ReportNetVSCacheTelemetry()
   Atomic<int64_t, Relaxed> mFileSize;
+  // Offset of the invalid trailer written past mFileSize while the entry's
+  // data is being written, or -1.  Only accessed on the IO thread.
+  int64_t mInvalidTrailerOffset{-1};
   PRFileDesc* mFD;  // if null then the file doesn't exists on the disk
   nsCString mKey;
 };

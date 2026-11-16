@@ -670,7 +670,9 @@ class OpenRunnable final : public WorkerThreadProxySyncRunnable {
 
     MainThreadRunInternal(aRv);
 
-    mProxy->mWorkerPrivate = oldWorker;
+    // Restore the previous WorkerPrivate for send, unless Init() failed or an
+    // event listener tore down the proxy.
+    mProxy->mWorkerPrivate = mProxy->mXHR ? oldWorker : nullptr;
   }
 
   void MainThreadRunInternal(ErrorResult& aRv);
@@ -783,8 +785,9 @@ void Proxy::Teardown() {
     // floor.
     AddRemoveEventListeners(false, false);
 
+    RefPtr<XMLHttpRequestMainThread> xhr = mXHR;
     ErrorResult rv;
-    mXHR->Abort(rv);
+    xhr->Abort(rv);
     if (NS_WARN_IF(rv.Failed())) {
       rv.SuppressException();
     }
@@ -1168,7 +1171,13 @@ void AbortRunnable::RunOnMainThread(ErrorResult& aRv) {
   WorkerPrivate* oldWorker = mProxy->mWorkerPrivate;
   mProxy->mWorkerPrivate = mWorkerPrivate;
 
-  mProxy->mXHR->Abort(aRv);
+  RefPtr<XMLHttpRequestMainThread> xhr = mProxy->mXHR;
+  xhr->Abort(aRv);
+
+  // An event listener may have spun the event loop and torn down the proxy.
+  if (!mProxy->mXHR) {
+    return;
+  }
 
   mProxy->mWorkerPrivate = oldWorker;
 
@@ -1181,33 +1190,36 @@ void OpenRunnable::MainThreadRunInternal(ErrorResult& aRv) {
     return;
   }
 
+  // Open() fires events; keep the XHR alive if a listener tears down the proxy.
+  RefPtr<XMLHttpRequestMainThread> xhr = mProxy->mXHR;
+
   if (mBackgroundRequest) {
-    mProxy->mXHR->SetMozBackgroundRequestExternal(mBackgroundRequest, aRv);
+    xhr->SetMozBackgroundRequestExternal(mBackgroundRequest, aRv);
     if (aRv.Failed()) {
       return;
     }
   }
 
   if (mOriginStack) {
-    mProxy->mXHR->SetOriginStack(std::move(mOriginStack));
+    xhr->SetOriginStack(std::move(mOriginStack));
   }
 
   if (mWithCredentials) {
-    mProxy->mXHR->SetWithCredentials(mWithCredentials, aRv);
+    xhr->SetWithCredentials(mWithCredentials, aRv);
     if (NS_WARN_IF(aRv.Failed())) {
       return;
     }
   }
 
   if (mTimeout) {
-    mProxy->mXHR->SetTimeout(mTimeout, aRv);
+    xhr->SetTimeout(mTimeout, aRv);
     if (NS_WARN_IF(aRv.Failed())) {
       return;
     }
   }
 
   if (!mMimeTypeOverride.IsVoid()) {
-    mProxy->mXHR->OverrideMimeType(mMimeTypeOverride, aRv);
+    xhr->OverrideMimeType(mMimeTypeOverride, aRv);
     if (NS_WARN_IF(aRv.Failed())) {
       return;
     }
@@ -1216,9 +1228,9 @@ void OpenRunnable::MainThreadRunInternal(ErrorResult& aRv) {
   MOZ_ASSERT(!mProxy->mInOpen);
   mProxy->mInOpen = true;
 
-  mProxy->mXHR->Open(
-      mMethod, mURL, true, mUser.WasPassed() ? mUser.Value() : VoidString(),
-      mPassword.WasPassed() ? mPassword.Value() : VoidString(), aRv);
+  xhr->Open(mMethod, mURL, true,
+            mUser.WasPassed() ? mUser.Value() : VoidString(),
+            mPassword.WasPassed() ? mPassword.Value() : VoidString(), aRv);
 
   MOZ_ASSERT(mProxy->mInOpen);
   mProxy->mInOpen = false;
@@ -1227,16 +1239,24 @@ void OpenRunnable::MainThreadRunInternal(ErrorResult& aRv) {
     return;
   }
 
-  if (mSource) {
-    mProxy->mXHR->SetSource(std::move(mSource));
+  if (!mProxy->mXHR) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
   }
 
-  mProxy->mXHR->SetResponseType(mResponseType, aRv);
+  if (mSource) {
+    xhr->SetSource(std::move(mSource));
+  }
+
+  xhr->SetResponseType(mResponseType, aRv);
 }
 
 void SendRunnable::RunOnMainThread(ErrorResult& aRv) {
+  // Send() fires events; keep the XHR alive if a listener tears down the proxy.
+  RefPtr<XMLHttpRequestMainThread> xhr = mProxy->mXHR;
+
   // Before we change any state let's check if we can send.
-  if (!mProxy->mXHR->CanSend(aRv)) {
+  if (!xhr->CanSend(aRv)) {
     return;
   }
 
@@ -1276,7 +1296,6 @@ void SendRunnable::RunOnMainThread(ErrorResult& aRv) {
   mProxy->mWorkerPrivate = mWorkerPrivate;
 
   MOZ_ASSERT(!mProxy->mSyncLoopTarget);
-  mProxy->mSyncLoopTarget.swap(mSyncLoopTarget);
 
   if (mHasUploadListeners) {
     // Send() can be called more than once before failure,
@@ -1289,23 +1308,30 @@ void SendRunnable::RunOnMainThread(ErrorResult& aRv) {
 
   mProxy->mInnerChannelId++;
 
-  mProxy->mXHR->Send(payload, aRv);
+  xhr->Send(payload, aRv);
 
-  if (!aRv.Failed()) {
-    mProxy->mOutstandingSendCount++;
-
-    if (!mHasUploadListeners) {
-      // Send() can be called more than once before failure,
-      // so don't attach the upload listeners more than once.
-      if (!mProxy->mUploadEventListenersAttached &&
-          !mProxy->AddRemoveEventListeners(true, true)) {
-        MOZ_ASSERT(false, "This should never fail!");
-      }
-    }
-  } else {
+  if (aRv.Failed() || !mProxy->mXHR) {
     // In case of failure we just break the sync loop
     mProxy->mSyncLoopTarget = nullptr;
     mSyncLoopTarget = nullptr;
+    if (!aRv.Failed()) {
+      aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    }
+    return;
+  }
+
+  // Events fired during Send() go to mSyncEventResponseTarget, so only hand
+  // the sync loop to the proxy once we know it survived.
+  mProxy->mSyncLoopTarget.swap(mSyncLoopTarget);
+  mProxy->mOutstandingSendCount++;
+
+  if (!mHasUploadListeners) {
+    // Send() can be called more than once before failure,
+    // so don't attach the upload listeners more than once.
+    if (!mProxy->mUploadEventListenersAttached &&
+        !mProxy->AddRemoveEventListeners(true, true)) {
+      MOZ_ASSERT(false, "This should never fail!");
+    }
   }
 }
 

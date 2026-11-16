@@ -15,7 +15,7 @@ interface StyleSheet {
   readonly attribute DOMString? href;
   // Spec says "Node", but it can go null when the node gets a new
   // sheet.  That's also why it's not [Constant]
-  [Pure]
+  [Pure, BinaryName="ownerNodeForBindings"]
   readonly attribute Node? ownerNode;
   [Pure]
   readonly attribute StyleSheet? parentStyleSheet;
